@@ -89,3 +89,10 @@ Do not store credentials, private infrastructure details, personal data, private
 - Context: 개발환경 장의 예시 플랫폼과 플랫폼 의존 내용의 배치를 정해야 한다.
 - Decision: 예시 플랫폼은 Windows로 한다. 도구는 LLVM clang(권장)과 MinGW-w64 gcc 두 갈래를 제시하고, Visual Studio(MSVC)는 상세 설명 대신 Microsoft 공식 문서 링크로 대신한다. ASan·UBSan·TSan 소개와 설치·사용법을 다루되 사실대로 적는다(Windows에서 ASan/UBSan=clang으로 가능, MinGW gcc=미지원, TSan=Windows 미지원→WSL). 플랫폼 의존 내용은 본문 일반론과 격리된 전용 절(lib.typ `platform` 상자)에만 둔다 — 상자를 건너뛰어도 본문이 성립해야 한다.
 - Consequences: 본문 명령 표기는 `cc`(gcc/clang 공용)로 통일. 예제 교차 검증(gcc+clang) 서사와 정합. 이후 플랫폼 의존 내용이 생길 때마다 같은 상자를 쓴다.
+
+### 2026-08-04: 22장 입력 방식 = 줄 읽기 + sscanf 해석
+
+- Status: Accepted
+- Context: 첫 입력 장의 방식 선택 — scanf 직접 사용 vs 줄 읽기 후 해석.
+- Decision: 한 줄을 통째로 읽고(fgets, sizeof로 그릇 크기 전달) 그 줄을 sscanf로 해석하는 두 단계 방식을 처음부터 가르친다. 근거: 사람 입력의 자연 단위=줄(행 버퍼링 서사와 정합), 실패 뒤처리가 깨끗함(입력 스트림 오염 없음), 안전한 결(그릇 크기 명시)이 33장 안전성 서사로 직결. scanf 직접 사용은 본문 문답에서 존재만 언급.
+- Consequences: 의도된 외상 2건 발생·기일 명시 — char line[100](배열, 32장), &(주소 표시, 29장) + sizeof(29장). 검증 파이프라인에 표준 입력 지원 추가(examples/*.in 파일, demo 장치 stdin: true 표시 상자). 반환값 검사는 분기(25장) 이후 40장에서 규율화.

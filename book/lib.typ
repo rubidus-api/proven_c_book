@@ -51,11 +51,18 @@
 
 // 3.6 코드 시연: 소스와 "실제 실행 결과"를 함께 인쇄한다.
 // 출력은 scripts/verify-examples.sh 가 남긴 캡처 파일에서 읽는다 (수작업 전사 금지, R15).
-#let demo(path, show-output: true, highlight: none) = block(breakable: true, width: 100%)[
+#let demo(path, show-output: true, stdin: false, highlight: none) = block(breakable: true, width: 100%)[
   #block(width: 100%, inset: 8pt, radius: 4pt, fill: rgb("#f6f6f4"),
     stroke: 0.5pt + rgb("#dddddd"))[
     #text(size: 0.8em, fill: rgb("#888888"), raw(path))
     #raw(read("/" + path), lang: "c", block: true)
+  ]
+  #if stdin [
+    #block(width: 100%, inset: 8pt, radius: 4pt, fill: rgb("#f0f4fa"),
+      stroke: 0.5pt + rgb("#b9c9de"))[
+      #text(size: 0.8em, fill: rgb("#5577aa"))[표준 입력으로 준 것]
+      #raw(read("/" + path.replace(".c", ".in")), block: true)
+    ]
   ]
   #if show-output [
     #block(width: 100%, inset: 8pt, radius: 4pt, fill: rgb("#1e1e1e"))[

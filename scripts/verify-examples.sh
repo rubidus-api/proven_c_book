@@ -30,8 +30,14 @@ for src in $(find "$root/examples" -name '*.c' | sort); do
     fi
     rm -f "$out.ccerr"
 
-    if ! "$bin" >"$out" 2>&1; then
-        echo "FAIL run:   $rel (exit $?)"
+    stdin_file="${src%.c}.in"
+    if [ -f "$stdin_file" ]; then
+        run_ok=0; "$bin" <"$stdin_file" >"$out" 2>&1 || run_ok=$?
+    else
+        run_ok=0; "$bin" >"$out" 2>&1 || run_ok=$?
+    fi
+    if [ "$run_ok" -ne 0 ]; then
+        echo "FAIL run:   $rel (exit $run_ok)"
         fail=1
         continue
     fi
