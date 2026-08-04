@@ -38,7 +38,7 @@
   ("제7부 — 기억", none, (30, 31, 32, 33, 34, 35, 36, 37)),
   ("제8부 — 자료의 모양", none, (38, 39)),
   ("제9부 — 정밀", none, (40, 41, 42)),
-  ("제10부 — 구성", none, (43, 44, 45, 46, 47, 48)),
+  ("제10부 — 구성", none, (43, 44, 45, 46, 47, 48, 49)),
 )
 #for (part-title, intro, chs) in parts {
   pagebreak(weak: true)
@@ -55,3 +55,11 @@
     include "chapters/ch" + n + ".typ"
   }
 }
+
+// ── 부록 ─────────────────────────────────────────────
+#pagebreak(weak: true)
+#align(center + horizon, text(font: ("Noto Sans CJK KR",), size: 20pt, weight: "bold", "부록"))
+#pagebreak(weak: true)
+#include "appendix/a1-operators.typ"
+#include "appendix/a2-formats.typ"
+#include "appendix/a3-conversions.typ"
