@@ -26,22 +26,25 @@
 #outline(depth: 2)
 #pagebreak()
 
-// ── 본문 (RFC-0002 5부 17장) ─────────────────────────
-#include "chapters/ch01.typ"
-#include "chapters/ch02.typ"
-#include "chapters/ch03.typ"
-#include "chapters/ch04.typ"
-#include "chapters/ch05.typ"
-#include "chapters/ch06.typ"
-#include "chapters/ch07.typ"
-#include "chapters/ch08.typ"
-#include "chapters/ch09.typ"
-#include "chapters/ch10.typ"
-#include "chapters/ch11.typ"
-#include "chapters/ch12.typ"
-#include "chapters/ch13.typ"
-#include "chapters/ch14.typ"
-#include "chapters/ch15.typ"
-#include "chapters/ch16.typ"
-#include "chapters/ch17.typ"
-#include "chapters/ch18.typ"
+// ── 본문 (RFC-0002 rev.c 10부 43장) ──────────────────
+#let parts = (
+  ("제1부 — 바탕", (1,)),
+  ("제2부 — 전산의 기본과 배경지식", (2, 3, 4, 5, 6, 7, 8, 9, 10)),
+  ("제3부 — 첫 프로그램", (11, 12, 13)),
+  ("제4부 — 최소한의 도구 상자", (14, 15, 16, 17)),
+  ("제5부 — 선언: 이름을 만드는 법", (18, 19, 20)),
+  ("제6부 — 값과 흐름", (21, 22, 23, 24, 25, 26)),
+  ("제7부 — 기억", (27, 28, 29, 30, 31, 32, 33, 34)),
+  ("제8부 — 자료의 모양", (35, 36)),
+  ("제9부 — 정밀", (37, 38, 39)),
+  ("제10부 — 구성", (40, 41, 42, 43)),
+)
+#for (part-title, chs) in parts {
+  pagebreak(weak: true)
+  align(center + horizon, text(font: ("Noto Sans CJK KR",), size: 20pt, weight: "bold", part-title))
+  pagebreak(weak: true)
+  for i in chs {
+    let n = if i < 10 { "0" + str(i) } else { str(i) }
+    include "chapters/ch" + n + ".typ"
+  }
+}
