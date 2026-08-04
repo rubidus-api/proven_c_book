@@ -15,3 +15,7 @@ Before using third-party code, images, audio, fonts, datasets, text, or other re
 - Modification:
 - Attribution:
 - Notes:
+
+## vendor/proven
+
+- proven C 라이브러리 스냅샷 (v26.07.23b-3-gc0e4d09). 라이선스: vendor/proven/LICENSE 참조.

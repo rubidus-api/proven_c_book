@@ -96,3 +96,10 @@ Do not store credentials, private infrastructure details, personal data, private
 - Context: 첫 입력 장의 방식 선택 — scanf 직접 사용 vs 줄 읽기 후 해석.
 - Decision: 한 줄을 통째로 읽고(fgets, sizeof로 그릇 크기 전달) 그 줄을 sscanf로 해석하는 두 단계 방식을 처음부터 가르친다. 근거: 사람 입력의 자연 단위=줄(행 버퍼링 서사와 정합), 실패 뒤처리가 깨끗함(입력 스트림 오염 없음), 안전한 결(그릇 크기 명시)이 33장 안전성 서사로 직결. scanf 직접 사용은 본문 문답에서 존재만 언급.
 - Consequences: 의도된 외상 2건 발생·기일 명시 — char line[100](배열, 32장), &(주소 표시, 29장) + sizeof(29장). 검증 파이프라인에 표준 입력 지원 추가(examples/*.in 파일, demo 장치 stdin: true 표시 상자). 반환값 검사는 분기(25장) 이후 40장에서 규율화.
+
+### 2026-08-04: proven 라이브러리 = vendor 복사
+
+- Status: Accepted
+- Context: 34장부터 예제가 proven을 사용한다. 외부 참조(별도 체크아웃) vs vendor 복사 중 선택 필요.
+- Decision: vendor 복사로 한다. `vendor/proven/`에 include/·src/·platform/·LICENSE를 스냅샷으로 담고(VENDOR.md에 원본 판 기록: v26.07.23b-3-gc0e4d09), 저장소만으로 전 예제가 빌드되게 한다.
+- Consequences: T001 검증 스크립트가 `#include <proven`을 쓰는 예제를 감지해 vendor를 지연 빌드(src=-std=c23, platform=+_DEFAULT_SOURCE/_POSIX_C_SOURCE=200809L)하고 -lm과 함께 링크한다. 상시 검증용 스모크 예제 examples/smoke/proven_link.c 추가. 상류 갱신 시 vendor 재복사+VENDOR.md 갱신.

@@ -13,6 +13,31 @@ bindir="$root/build/examples-bin"
 fail=0
 total=0
 
+# vendor: proven 라이브러리 (예제가 <proven/...>을 include하면 자동 연동)
+vinc="$root/vendor/proven/include"
+vsrc="$root/vendor/proven/src/proven"
+vobj="$root/build/vendor-obj"
+vendor_built=0
+vplat="$root/vendor/proven/platform"
+build_vendor() {
+    [ "$vendor_built" -eq 1 ] && return 0
+    mkdir -p "$vobj"
+    for c in "$vsrc"/*.c; do
+        o="$vobj/$(basename "${c%.c}").o"
+        if [ ! -f "$o" ] || [ "$c" -nt "$o" ]; then
+            $cc -std=c23 -O1 -I"$vinc" -c "$c" -o "$o" || return 1
+        fi
+    done
+    for c in "$vplat"/*.c; do
+        o="$vobj/sys_$(basename "${c%.c}").o"
+        if [ ! -f "$o" ] || [ "$c" -nt "$o" ]; then
+            $cc -std=c23 -O1 -D_DEFAULT_SOURCE -D_POSIX_C_SOURCE=200809L \
+                -I"$vinc" -c "$c" -o "$o" || return 1
+        fi
+    done
+    vendor_built=1
+}
+
 find "$root/examples" -name '*.c' | sort | while IFS= read -r src; do :; done
 
 for src in $(find "$root/examples" -name '*.c' | sort); do
@@ -22,7 +47,17 @@ for src in $(find "$root/examples" -name '*.c' | sort); do
     bin="$bindir/${rel%.c}"
     mkdir -p "$(dirname "$out")" "$(dirname "$bin")"
 
-    if ! $cc $cflags -o "$bin" "$src" 2>"$out.ccerr"; then
+    extra=""
+    if grep -q '#include <proven' "$src"; then
+        if ! build_vendor; then
+            echo "FAIL vendor build (needed by $rel)"
+            fail=1
+            continue
+        fi
+        extra="-I$vinc $vobj/*.o -lm"
+    fi
+
+    if ! $cc $cflags -o "$bin" "$src" $extra 2>"$out.ccerr"; then
         echo "FAIL build: $rel"
         sed 's/^/    /' "$out.ccerr"
         fail=1

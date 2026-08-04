@@ -20,3 +20,4 @@
 
 - 컴파일러는 `CC` 환경변수로 교체 가능(기본 gcc). clang 교차 검증은 후속.
 - 입력이 필요한 예제는 같은 이름의 `.in` 파일을 두면 표준 입력으로 공급된다(책의 demo 장치가 `stdin: true`로 그 내용을 함께 인쇄).
+- `#include <proven`을 쓰는 예제는 vendor/proven이 자동 빌드·링크된다(스모크: examples/smoke/proven_link.c).
