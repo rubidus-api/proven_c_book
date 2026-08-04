@@ -1,24 +1,5 @@
 #import "../lib.typ": *
 
-// 이 장 전용 그림: 메모리 사물함 줄 (주소 라벨 + 내용 셀)
-#let memrow(start, cells, highlight: ()) = {
-  align(center, block(inset: (y: 6pt))[
-    #grid(
-      columns: cells.len(),
-      column-gutter: 0pt,
-      ..cells.enumerate().map(((i, c)) => {
-        let bg = if i in highlight { rgb("#fdf0d5") } else { rgb("#fafafa") }
-        stack(
-          box(width: 3.2em, inset: 4pt, stroke: 0.7pt + rgb("#999999"), fill: bg,
-            align(center, raw(c))),
-          box(width: 3.2em, inset: (top: 3pt),
-            align(center, text(size: 0.72em, fill: rgb("#777777"), raw(str(start + i))))),
-        )
-      })
-    )
-  ])
-}
-
 = 워드와 주소 ↔ C의 원형
 
 #organizer[
@@ -56,7 +37,7 @@
 수다.* 사물함 번호는 그냥 정수이고, 정수이므로 그것을 다른 사물함에 넣어
 둘 수도 있다. "347번 칸에, 512라는 번호를 적어 둔다" — 이상할 것이
 하나도 없다. 이 평범한 착상이 나중에 C에서 가장 유명한 개념인
-*포인터*가 된다(27장). 지금은 "주소도 수라서 어디에든 적어 둘 수 있다"
+*포인터*가 된다(28장). 지금은 "주소도 수라서 어디에든 적어 둘 수 있다"
 까지만 챙기면 된다.
 
 #qa[
@@ -169,7 +150,7 @@ AMD·대부분의 ARM 운용). 날짜 표기와 똑같은 상황이다 — 2026-
 ][
   있다 — 여러 바이트짜리 수를 메모리에 넣고, 그 첫 칸을 1바이트만 따로
   읽어 보면 된다. 첫 칸에 작은 자리 조각이 있으면 리틀 엔디안이다. 이
-  확인을 C로 실제로 해 보이는 것이 36장(공용체)의 시연이다 — 같은
+  확인을 C로 실제로 해 보이는 것이 37장(공용체)의 시연이다 — 같은
   기억을 다른 눈으로 읽는 도구가 그때 생긴다.
 ]
 

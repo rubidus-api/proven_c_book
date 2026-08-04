@@ -65,6 +65,25 @@
   ]
 ]
 
+// 메모리 사물함 도해: 주소 라벨 + 내용 셀 (+ 강조 칸 인덱스)
+#let memrow(start, cells, highlight: ()) = {
+  align(center, block(inset: (y: 6pt))[
+    #grid(
+      columns: cells.len(),
+      column-gutter: 0pt,
+      ..cells.enumerate().map(((i, c)) => {
+        let bg = if i in highlight { rgb("#fdf0d5") } else { rgb("#fafafa") }
+        stack(
+          box(width: 3.2em, inset: 4pt, stroke: 0.7pt + rgb("#999999"), fill: bg,
+            align(center, raw(c))),
+          box(width: 3.2em, inset: (top: 3pt),
+            align(center, text(size: 0.72em, fill: rgb("#777777"), raw(str(start + i))))),
+        )
+      })
+    )
+  ])
+}
+
 // 장 서두 선행조직자
 #let organizer(body) = block(width: 100%, inset: (x: 10pt, y: 8pt), radius: 4pt,
   fill: rgb("#fafafa"), stroke: 0.5pt + rgb("#cccccc"))[

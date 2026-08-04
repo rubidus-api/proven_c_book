@@ -1,5 +1,5 @@
 #import "../lib.typ": *
 
-= 모던 C 총정리
+= proven 전면
 
-_집필 예정 (RFC-0002 rev.c 43장)._
+_집필 예정 (RFC-0002 rev.e 43장)._
