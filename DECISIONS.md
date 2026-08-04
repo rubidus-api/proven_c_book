@@ -82,3 +82,10 @@ Do not store credentials, private infrastructure details, personal data, private
 - Context: 사용자 지시 2건 — ① 속도 이야기 전에 기억의 분화(레지스터 강조→외부 메모리→다층 캐시, 캐시 라인·false sharing·멀티코어)를 별도 장으로. ② 소수점 수(구 5장) 이전에 정수형 배경(부호형·무부호형·오버플로·세 가지 부호 표현과 C23의 2의 보수 확정·시프트)을 별도 장으로.
 - Decision: 9장 "기억의 분화"(고백→레지스터→격차→다층 캐시)와 5장 "정수의 표현"(모듈러·부호-크기/1의 보수/2의 보수 경쟁·C23 확정·signed 오버플로는 여전히 UB라는 구별·시프트의 채움과 CPU별 상이한 대응→UB)을 신설한다. 전체 10부 45장(rev.f). 파이프라인·분기 예측·멀티코어·false sharing·pre-ANSI 역사는 10장이 담당한다.
 - Consequences: 표현의 사다리가 정수(5)→소수(6)→문자(7)→흐름(8) 4단으로 완성. Duff's device는 10장 예고→27장 시연(나선). 장 번호 대이동 2회 — 상호 참조는 자리표시자 2단계 치환으로 갱신(한 자리 수 치환의 부분 문자열 오염 주의를 LESSONS에 기록).
+
+### 2026-08-04: 15장 예시 플랫폼 = Windows(clang 우선), 플랫폼 의존 내용은 격리 절
+
+- Status: Accepted
+- Context: 개발환경 장의 예시 플랫폼과 플랫폼 의존 내용의 배치를 정해야 한다.
+- Decision: 예시 플랫폼은 Windows로 한다. 도구는 LLVM clang(권장)과 MinGW-w64 gcc 두 갈래를 제시하고, Visual Studio(MSVC)는 상세 설명 대신 Microsoft 공식 문서 링크로 대신한다. ASan·UBSan·TSan 소개와 설치·사용법을 다루되 사실대로 적는다(Windows에서 ASan/UBSan=clang으로 가능, MinGW gcc=미지원, TSan=Windows 미지원→WSL). 플랫폼 의존 내용은 본문 일반론과 격리된 전용 절(lib.typ `platform` 상자)에만 둔다 — 상자를 건너뛰어도 본문이 성립해야 한다.
+- Consequences: 본문 명령 표기는 `cc`(gcc/clang 공용)로 통일. 예제 교차 검증(gcc+clang) 서사와 정합. 이후 플랫폼 의존 내용이 생길 때마다 같은 상자를 쓴다.

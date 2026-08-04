@@ -84,6 +84,18 @@
   ])
 }
 
+// 플랫폼 의존 격리 절: 특정 OS/도구에 묶인 내용은 반드시 이 상자 안에 둔다.
+// 본문 일반론은 이 상자를 건너뛰어도 성립해야 한다.
+#let platform(title, body) = block(
+  width: 100%, inset: (x: 10pt, y: 8pt), radius: 4pt,
+  fill: rgb("#eef3f2"), stroke: (left: 2.5pt + rgb("#3d7a78")),
+  breakable: true,
+)[
+  #text(fill: rgb("#2a5a58"), weight: "bold", size: 0.92em)[⊞ 플랫폼 노트 — #title]
+  #v(2pt)
+  #body
+]
+
 // 장 서두 선행조직자
 #let organizer(body) = block(width: 100%, inset: (x: 10pt, y: 8pt), radius: 4pt,
   fill: rgb("#fafafa"), stroke: 0.5pt + rgb("#cccccc"))[
