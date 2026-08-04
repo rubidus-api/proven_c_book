@@ -7,4 +7,4 @@ Routine accepted behavior belongs in root `SPEC.md`. Accepted decisions belong i
 | RFC | Title | Status | Summary | Detail |
 |---|---|---|---|---|
 | 0001 | 교수 설계 (Pedagogy) | Accepted | 읽기 전용 문답형 학습: 본문 즉문즉답·다음 장 심화 문답·오개념 블록·실제 사례·수학 박스·코드 시연, 실습/연습 전면 금지 | rfc-0001-pedagogy.md |
-| 0002 | 책 구성 (장 체계) | Accepted | 1장 배경, 2장 전산의 기본과 배경지식(대형 장: 기계 모델↔C 역사 이중 트랙, 문자셋·IEEE 754 포함), 3장 헬로 월드·개발환경(gcc/clang) 확정 골격 + 5부 17장 | rfc-0002-structure.md |
+| 0002 | 책 구성 (장 체계) | Accepted | rev.b 5부 18장: 1배경·2전산기본(대형: 기계↔C역사 이중트랙)·3헬로월드·4최소도구(구조·수식·입출력)·5선언, 나선형 최소 집합(연산자 배분표), 구조체·공용체=12장 후행 | rfc-0002-structure.md |

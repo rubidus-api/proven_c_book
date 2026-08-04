@@ -44,3 +44,4 @@
 #include "chapters/ch15.typ"
 #include "chapters/ch16.typ"
 #include "chapters/ch17.typ"
+#include "chapters/ch18.typ"
