@@ -20,6 +20,10 @@
     #text(size: 13pt)[proven 라이브러리에 기반한 모던 C 입문]
     #v(1.2cm)
     #text(size: 11pt)[rubidus]
+    #v(0.3cm)
+    #text(size: 9.5pt, fill: rgb("#555555"))[
+      rubidus\@gmail.com #h(0.8em) https://github.com/rubidus-api
+    ]
   ]
 ]
 
