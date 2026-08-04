@@ -18,13 +18,13 @@ int main(void)
     if (safe_div(7, 2, &result)) {
         printf("7 / 2 = %d\n", result);
     } else {
-        printf("7 / 2: 실패\n");
+        printf("7 / 2: failed\n");
     }
 
     if (safe_div(7, 0, &result)) {
         printf("7 / 0 = %d\n", result);
     } else {
-        printf("7 / 0: 0으로 나눌 수 없다 — 계약 위반을 값으로 알렸다\n");
+        printf("7 / 0: cannot divide by zero (reported as a value)\n");
     }
     return 0;
 }

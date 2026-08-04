@@ -8,7 +8,7 @@ int main(void)
     for (int i = 0; i < 5; i += 1) {
         sum += a[i];
     }
-    printf("합: %d\n", sum);
+    printf("sum: %d\n", sum);
 
     printf("a[2] = %d, *(a + 2) = %d\n", a[2], *(a + 2));
 

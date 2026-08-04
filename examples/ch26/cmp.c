@@ -7,6 +7,6 @@ int main(void)
     printf("%d\n", 3 < 5 && 2 + 2 == 4);
 
     /* 단락 평가: 왼쪽이 0(거짓)이면 오른쪽은 아예 평가되지 않는다 */
-    printf("%d\n", 0 && printf("이 글은 결코 찍히지 않는다\n"));
+    printf("%d\n", 0 && printf("this line is never printed\n"));
     return 0;
 }

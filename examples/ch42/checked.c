@@ -9,14 +9,14 @@ int main(void)
     int sum = 0;
 
     if (ckd_add(&sum, a, b)) {
-        printf("%d + %d 는 int 그릇을 넘친다 (계약 밖을 피했다)\n", a, b);
+        printf("%d + %d overflows int (we stayed inside the contract)\n", a, b);
     } else {
-        printf("합: %d\n", sum);
+        printf("sum: %d\n", sum);
     }
 
     int small = 0;
     if (ckd_add(&small, 20, 22)) {
-        printf("넘침\n");
+        printf("overflow\n");
     } else {
         printf("20 + 22 = %d\n", small);
     }

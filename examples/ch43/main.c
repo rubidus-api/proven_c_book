@@ -3,7 +3,7 @@
 
 int main(void)
 {
-    greet("세상");
+    greet("world");
     printf_count();
     return 0;
 }

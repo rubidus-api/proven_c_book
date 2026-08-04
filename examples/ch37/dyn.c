@@ -7,7 +7,7 @@ int main(void)
     int *scores = malloc(count * sizeof *scores);   /* 창고에서 빌린다 */
 
     if (scores == nullptr) {                        /* 빌리기는 실패할 수 있다 */
-        printf("메모리 할당 실패\n");
+        printf("allocation failed\n");
         return 1;
     }
 
@@ -16,7 +16,7 @@ int main(void)
         scores[i] = (i + 1) * 10;
         sum += scores[i];
     }
-    printf("합계: %d\n", sum);
+    printf("total: %d\n", sum);
 
     free(scores);                                   /* 빌린 것은 돌려준다 */
     return 0;

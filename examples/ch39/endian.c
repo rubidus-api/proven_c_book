@@ -9,16 +9,16 @@ int main(void)
 
     memcpy(bytes, &value, sizeof value);   /* 표현을 바이트로 들여다본다 */
 
-    printf("값: 0x%08X\n", value);
-    printf("메모리 순서: %02X %02X %02X %02X\n",
+    printf("value: 0x%08X\n", value);
+    printf("memory order: %02X %02X %02X %02X\n",
            bytes[0], bytes[1], bytes[2], bytes[3]);
-    printf("이 기계는 %s 엔디안이다\n",
-           bytes[0] == 0x78 ? "리틀" : "빅");
+    printf("this machine is %s-endian\n",
+           bytes[0] == 0x78 ? "little" : "big");
 
     struct padded {
         char  tag;      /* 1바이트 */
         int   count;    /* 4바이트 — 정렬 때문에 앞에 빈틈이 생긴다 */
     };
-    printf("1 + 4 = 5 이지만, sizeof = %zu\n", sizeof(struct padded));
+    printf("1 + 4 = 5, but sizeof = %zu\n", sizeof(struct padded));
     return 0;
 }

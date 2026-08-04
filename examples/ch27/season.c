@@ -12,25 +12,25 @@ int main(void)
     case 12:
     case 1:
     case 2:                     /* 세 case가 하나의 답을 공유한다(폴스루) */
-        printf("%d월: 겨울\n", month);
+        printf("month %d: winter\n", month);
         break;
     case 3:
     case 4:
     case 5:
-        printf("%d월: 봄\n", month);
+        printf("month %d: spring\n", month);
         break;
     case 6:
     case 7:
     case 8:
-        printf("%d월: 여름\n", month);
+        printf("month %d: summer\n", month);
         break;
     case 9:
     case 10:
     case 11:
-        printf("%d월: 가을\n", month);
+        printf("month %d: autumn\n", month);
         break;
     default:
-        printf("%d월: 그런 달은 없다\n", month);
+        printf("month %d: no such month\n", month);
         break;
     }
     return 0;

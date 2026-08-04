@@ -8,6 +8,6 @@ int main(void)
     fgets(line, sizeof line, stdin);   /* 1단계: 한 줄을 통째로 읽는다 */
     sscanf(line, "%d", &n);            /* 2단계: 그 줄에서 정수를 해석한다 */
 
-    printf("%d의 제곱은 %d이다.\n", n, n * n);
+    printf("%d squared is %d.\n", n, n * n);
     return 0;
 }

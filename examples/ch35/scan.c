@@ -7,15 +7,15 @@ void try_parse(const char *text)
     proven_result_i64_t r = proven_scan_i64(&sc);
 
     if (proven_is_ok(r.err)) {
-        printf("\"%s\" -> 성공: %lld\n", text, (long long)r.val);
+        printf("\"%s\" -> ok: %lld\n", text, (long long)r.val);
     } else {
-        printf("\"%s\" -> 실패 (수가 아니다)\n", text);
+        printf("\"%s\" -> failed (not a number)\n", text);
     }
 }
 
 int main(void)
 {
-    try_parse("  42 뒤에 다른 글");
-    try_parse("사십이");
+    try_parse("  42 and some text");
+    try_parse("forty-two");
     return 0;
 }

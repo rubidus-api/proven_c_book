@@ -2,6 +2,6 @@
 
 int main(void)
 {
-    printf("%s의 답은 %d이다.\n", "삶과 우주와 모든 것", 6 * 7);
+    printf("The answer to %s is %d.\n", "life, the universe and everything", 6 * 7);
     return 0;
 }
