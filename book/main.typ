@@ -66,6 +66,12 @@
 #outline(depth: 2)
 #pagebreak()
 
+#set heading(numbering: none)
+#include "front/preface.typ"
+#set heading(numbering: "1.1")
+#counter(heading).update(0)
+#pagebreak(weak: true)
+
 // ── 본문 (RFC-0002 rev.f 10부 45장) ──────────────────
 // (제목, 부 도입부 파일 또는 none, 장 번호들)
 #let parts = (
@@ -79,7 +85,7 @@
   ("제8부 — 자료의 모양", none, (38, 39)),
   ("제9부 — 정밀", none, (40, 41, 42)),
   ("제10부 — 구성", none, (43, 44, 45, 46)),
-  ("제11부 — proven — 검증된 기본기", none, (47, 48, 49)),
+  ("제11부 — proven — 검증된 기본기", "parts/part11.typ", (47, 48, 49)),
   ("제12부 — 닫으며", none, (50, 51)),
 )
 #for (part-title, intro, chs) in parts {
