@@ -1,6 +1,6 @@
 # RFC-0002: 책 구성 (장 체계)
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-04
 - Scope: 부(Part)와 장(Chapter)의 체계, 각 장의 역할과 RFC-0001 장치 매핑.
 - 전제: RFC-0001 교수 설계 (읽기 전용 문답형). 기존 C 입문서 목차 답습 금지 (R05).

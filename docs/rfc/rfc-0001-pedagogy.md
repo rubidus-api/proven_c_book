@@ -1,6 +1,6 @@
 # RFC-0001: 교수 설계 (Pedagogy)
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-04
 - Scope: 책 전체의 서술 구조와 학습 장치. 장 구성(목차)은 RFC-0002가 다룬다.
 - 전제된 확정 결정: 읽기 전용 문답형 학습 — 실습·연습 배제 (DECISIONS 2026-08-04, R16·R17)
