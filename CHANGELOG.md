@@ -8,6 +8,13 @@ This project follows Keep a Changelog.
 
 ### Added
 
+- **전 장 초고 완료 (2026-08-05)**: 10부 49장 + 부록 A~C, 약 294쪽.
+  제1부 바탕 / 제2부 전산의 기본과 배경지식(2~12) / 제3부 첫 프로그램 /
+  제4부 최소한의 도구 상자 / 제5부 선언 / 제6부 값과 흐름 / 제7부 기억 /
+  제8부 자료의 모양 / 제9부 정밀 / 제10부 구성.
+- 수록 예제 30여 종, 전부 실제 빌드·실행 검증(T001) — 표준 입력(.in),
+  여러 파일(main.c 규약), vendor proven 자동 링크 지원.
+- vendor/proven 스냅샷(v26.07.23b-3-gc0e4d09).
 - RFC-0001 교수 설계(읽기 전용 문답형)·RFC-0002 책 구성(5부 17장) Accepted.
 - Typst 빌드 골격: `book/main.typ` + 서술 장치 라이브러리 `book/lib.typ`(qa/deepqa/misconception/realcase/mathbox/recap/organizer/demo), 17장 스텁.
 - 예제 전수 검증 `scripts/verify-examples.sh`(T001): C23 빌드·실행 + 출력 캡처(책의 demo가 자동 include).
