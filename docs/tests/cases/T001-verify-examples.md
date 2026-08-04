@@ -18,6 +18,12 @@
 
 ## Notes
 
-- 컴파일러는 `CC` 환경변수로 교체 가능(기본 gcc). clang 교차 검증은 후속.
+- 컴파일러는 `CC` 환경변수로 교체 가능(기본 gcc).
+- **clang 교차 검증(2026-08-05 통과)**: 로컬에는 clang이 없으므로 원격 빌드
+  컨테이너에서 수행한다 — 같은 저장소가 공유되므로 복사 없이
+  `CC=clang ./scripts/verify-examples.sh`만 실행하면 된다. clang 22.1.8로
+  전 예제(30여 종, vendor proven 포함) green 확인.
+  주의: 교차 실행 뒤에는 gcc로 한 번 더 돌려 `build/examples-out`의 캡처를
+  기준 컴파일러 결과로 되돌린다(책이 그 파일을 인쇄하므로).
 - 입력이 필요한 예제는 같은 이름의 `.in` 파일을 두면 표준 입력으로 공급된다(책의 demo 장치가 `stdin: true`로 그 내용을 함께 인쇄).
 - `#include <proven`을 쓰는 예제는 vendor/proven이 자동 빌드·링크된다(스모크: examples/smoke/proven_link.c).
