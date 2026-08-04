@@ -64,6 +64,7 @@
 #pagebreak(weak: true)
 #align(center + horizon, text(font: ("Noto Sans CJK KR",), size: 20pt, weight: "bold", "부록"))
 #pagebreak(weak: true)
+#set heading(numbering: none)
 #include "appendix/a1-operators.typ"
 #include "appendix/a2-formats.typ"
 #include "appendix/a3-conversions.typ"
