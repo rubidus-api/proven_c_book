@@ -1,0 +1,49 @@
+# ── Local operating docs ───────────────────────────────────────────────
+# Working AI/operating state, kept local by default. Only the root-level files
+# below are ignored; durable, shareable docs (README.md, CHANGELOG.md,
+# DECISIONS.md, docs/) stay tracked. To version-control these instead, set
+# "Operating docs tracking: tracked" in INIT.md and delete this block.
+/AGENTS.md
+/CONTEXT.md
+/MEMORY.md
+/BACKLOGS.md
+/WORKLOG.md
+/SPEC.md
+/REQUIREMENTS.md
+/LESSONS.md
+# Legacy rootsator files (TODO/HANDOFF/TESTS <=0.5, CHECKLIST <=0.6); keep them local if an older project still has them.
+/TODO.md
+/HANDOFF.md
+/TESTS.md
+/CHECKLIST.md
+*.local.md
+
+# ── Private material and credentials ────────────────────────────────────
+# Containment beats guessing: keep ANYTHING sensitive inside one of these
+# ignored directories. Then the rest of the project can be fully git-tracked
+# without enumerating secret filenames. Do NOT add broad filename globs such as
+# *token* or *secret* or *.key — they also hide normal source (tokenizer.c,
+# Keynote .key files, etc.).
+*_private/
+*_internal/
+secrets/
+
+# Environment files are the one common in-place secret; commit a template instead.
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# ── Cold planning history and generated output ──────────────────────────
+docs/plans/active/*.md
+docs/plans/archive/*.md
+!docs/plans/active/README.md
+!docs/plans/archive/README.md
+build/
+resources/prep/
+resources/cache/
+
+# ── Common local noise ──────────────────────────────────────────────────
+.DS_Store
+*.tmp
+*.log
