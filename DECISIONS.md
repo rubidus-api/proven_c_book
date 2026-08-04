@@ -103,3 +103,10 @@ Do not store credentials, private infrastructure details, personal data, private
 - Context: 34장부터 예제가 proven을 사용한다. 외부 참조(별도 체크아웃) vs vendor 복사 중 선택 필요.
 - Decision: vendor 복사로 한다. `vendor/proven/`에 include/·src/·platform/·LICENSE를 스냅샷으로 담고(VENDOR.md에 원본 판 기록: v26.07.23b-3-gc0e4d09), 저장소만으로 전 예제가 빌드되게 한다.
 - Consequences: T001 검증 스크립트가 `#include <proven`을 쓰는 예제를 감지해 vendor를 지연 빌드(src=-std=c23, platform=+_DEFAULT_SOURCE/_POSIX_C_SOURCE=200809L)하고 -lm과 함께 링크한다. 상시 검증용 스모크 예제 examples/smoke/proven_link.c 추가. 상류 갱신 시 vendor 재복사+VENDOR.md 갱신.
+
+### 2026-08-05: 라이선스 — 본문 CC BY-NC-SA 4.0, 예제 코드 MIT
+
+- Status: Accepted
+- Context: 부트스트랩 당시 미결로 남겨 둔 라이선스를 정해야 한다. 본문과 예제 코드의 성격이 달라 한 라이선스로 묶기 어렵다.
+- Decision: 책 본문(book/ 및 생성 PDF)은 CC BY-NC-SA 4.0(저작자표시-비영리-동일조건변경허락), 수록 예제 코드(examples/, scripts/)는 MIT로 한다. vendor/proven은 원저작물 라이선스를 따른다.
+- Consequences: 저장소에 `LICENSE`(두 라이선스 안내)·`LICENSE-BOOK`·`LICENSE-CODE` 배치. 책에 판권 페이지 추가(표지 다음, 목차 앞) — 저자 연락처·라이선스·"모든 코드 시연은 실제 실행 결과"·조판 도구 명시. README와 REQUIREMENTS(R18)에도 반영. 근거: 본문은 무단 상업 출판을 막되 학습·공유는 열어 두고, 예제 코드는 독자가 자기 프로그램에 그대로 쓸 수 있게 하려는 것.

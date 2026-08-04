@@ -1,0 +1,23 @@
+Proven C Book — 라이선스 안내
+==============================
+
+이 저장소에는 서로 다른 라이선스가 적용되는 두 종류의 저작물이 들어 있다.
+
+1. 책의 본문 (book/, 그리고 그로부터 생성된 PDF)
+   Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International
+   (CC BY-NC-SA 4.0)
+   전문: https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.ko
+   요약: 출처를 밝히면 자유롭게 공유·개작할 수 있으나, 영리 목적으로는
+   이용할 수 없고, 개작물에는 같은 라이선스를 적용해야 한다.
+   자세한 내용은 LICENSE-BOOK 참조.
+
+2. 수록 예제 코드 (examples/, scripts/)
+   MIT License — LICENSE-CODE 참조.
+   책에서 배운 코드를 자기 프로그램에 제약 없이 가져다 쓸 수 있게 하려는
+   의도다.
+
+3. vendor/proven/
+   proven 라이브러리의 스냅샷으로, 원저작물의 라이선스를 따른다.
+   vendor/proven/LICENSE 참조.
+
+Copyright (c) 2026 rubidus <rubidus@gmail.com>

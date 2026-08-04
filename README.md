@@ -27,3 +27,14 @@ proven C 라이브러리에 기반한 모던 C 프로그래밍 입문서. 저자
 
 - docs/rfc/ — 책 구성·교수 설계 RFC
 - docs/manual/ — 집필 스타일 가이드 등
+
+## 라이선스
+
+- **본문**(`book/`, 생성된 PDF): CC BY-NC-SA 4.0 — 출처를 밝히면 자유롭게
+  공유·개작할 수 있고, 영리 이용은 불가하며, 개작물에도 같은 라이선스가
+  적용된다. (`LICENSE-BOOK`)
+- **예제 코드**(`examples/`, `scripts/`): MIT — 배운 코드를 자기 프로그램에
+  제약 없이 가져다 쓸 수 있다. (`LICENSE-CODE`)
+- `vendor/proven/`: 원저작물의 라이선스를 따른다.
+
+자세한 안내는 `LICENSE`에 있다.

@@ -27,6 +27,42 @@
   ]
 ]
 
+// ── 판권 ──────────────────────────────────────────────
+#page(numbering: none)[
+  #v(1fr)
+  #set text(size: 9.5pt)
+  #set par(justify: false, first-line-indent: 0em)
+
+  *Proven C Book — proven 라이브러리에 기반한 모던 C 입문*
+
+  지은이 rubidus \
+  rubidus\@gmail.com · https://github.com/rubidus-api
+
+  #v(0.5cm)
+
+  이 책의 *본문*은 크리에이티브 커먼즈
+  저작자표시-비영리-동일조건변경허락 4.0 국제 라이선스(CC BY-NC-SA 4.0)에
+  따라 이용할 수 있다. 출처를 밝히면 자유롭게 공유하고 고칠 수 있으나,
+  영리 목적 이용은 허용되지 않으며, 고친 결과물에는 같은 라이선스를
+  적용해야 한다. \
+  #h(0.8em) https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+  #v(0.3cm)
+
+  이 책에 수록된 *예제 코드*는 MIT 라이선스로 배포한다 — 배운 것을 자기
+  프로그램에 제약 없이 가져다 쓸 수 있게 하려는 뜻이다. 예제에서 사용한
+  proven 라이브러리는 그 자체의 라이선스를 따른다.
+
+  #v(0.5cm)
+
+  이 책의 모든 코드 시연은 실제로 컴파일·실행해 얻은 출력을 그대로
+  인쇄한 것이다. 조판은 Typst로 했다.
+
+  #v(0.5cm)
+
+  판 1 · 2026년
+]
+
 #outline(depth: 2)
 #pagebreak()
 
