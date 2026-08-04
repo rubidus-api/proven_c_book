@@ -47,6 +47,17 @@ for src in $(find "$root/examples" -name '*.c' | sort); do
     bin="$bindir/${rel%.c}"
     mkdir -p "$(dirname "$out")" "$(dirname "$bin")"
 
+    # 여러 파일 예제 규약: 같은 디렉터리에 main.c가 있으면 그 디렉터리를
+    # 통째로 한 프로그램으로 빌드한다(main.c가 대표, 나머지는 건너뛴다).
+    srcdir=$(dirname "$src")
+    if [ -f "$srcdir/main.c" ] && [ "$(basename "$src")" != "main.c" ]; then
+        continue
+    fi
+    srcs="$src"
+    if [ "$(basename "$src")" = "main.c" ]; then
+        srcs=$(find "$srcdir" -maxdepth 1 -name '*.c' | sort | tr '\n' ' ')
+    fi
+
     extra=""
     if grep -q '#include <proven' "$src"; then
         if ! build_vendor; then
@@ -57,7 +68,7 @@ for src in $(find "$root/examples" -name '*.c' | sort); do
         extra="-I$vinc $vobj/*.o -lm"
     fi
 
-    if ! $cc $cflags -o "$bin" "$src" $extra 2>"$out.ccerr"; then
+    if ! $cc $cflags -o "$bin" $srcs $extra 2>"$out.ccerr"; then
         echo "FAIL build: $rel"
         sed 's/^/    /' "$out.ccerr"
         fail=1
