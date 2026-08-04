@@ -6,7 +6,8 @@
 #set text(font: ("Noto Serif CJK KR",), size: 10.5pt, lang: "ko")
 #set par(justify: true, leading: 0.78em, first-line-indent: 1em)
 #show heading: set text(font: ("Noto Sans CJK KR",))
-#show raw: set text(size: 0.88em)
+// 코드 글꼴 = D2Coding (비리가처판, 리가처도 명시적으로 끔)
+#show raw: set text(font: "D2Coding", size: 0.92em, ligatures: false)
 #set heading(numbering: "1.1")
 #show heading.where(level: 1): it => pagebreak(weak: true) + it
 
