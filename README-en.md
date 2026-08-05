@@ -7,10 +7,10 @@ computer is actually built rather than with a list of syntax, takes today's
 standard (C23) as its default, and ends as a manual for the
 [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.1.1 — **draft**
-- Korean: [PDF](dist/proven_c_book-v0.1.1-ko.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/ko/)
-- English: [Web](https://rubidus-api.github.io/proven_c_book/en/) — *translation in progress* (preface and chapters 1–7; the web edition is the current one, while the [PDF](dist/proven_c_book-v0.1.1-en.pdf) is as of the v0.1.1 release)
-- 13 parts, 73 chapters, appendices A–E and an index; about 310 pages (repository head; the release assets are as of v0.1.1).
+- **Current edition**: v0.2.0 — **draft**
+- Korean: [PDF](dist/proven_c_book-v0.2.0-ko.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/ko/)
+- English: [Web](https://rubidus-api.github.io/proven_c_book/en/) — *translation in progress* (preface and chapters 1–7; [PDF](dist/proven_c_book-v0.2.0-en.pdf))
+- 13 parts, 73 chapters, appendices A–E and an index; about 310 pages.
 
 ## What makes it different
 

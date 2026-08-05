@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
-## [Unreleased]
+## [v0.2.0] - 2026-08-05
 
 ### Added
 - **39장 「구조체를 부리는 법」 신설** — 중첩 구조체 참조와 `.`/`->` 혼용,
@@ -77,7 +77,7 @@ This project follows Keep a Changelog.
   57장 C와 C++의 관계.
 - 수록 예제 60여 종, 전부 실제 빌드·실행 검증(GCC 14 기준, Clang 교차 확인).
 
-## [Unreleased]
+## [v0.2.0] - 2026-08-05
 
 ### Added
 - **39장 「구조체를 부리는 법」 신설** — 중첩 구조체 참조와 `.`/`->` 혼용,

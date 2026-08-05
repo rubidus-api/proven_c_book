@@ -1,7 +1,7 @@
 // Proven C Book — English edition (in progress). Build: scripts/build-book-en.sh
 #import "../book/lib.typ": *
 
-#let book-version = "v0.1.1"
+#let book-version = "v0.2.0"
 #let book-updated = "2026-08-05"
 #let book-status = "draft — translation in progress"
 #let book-repo = "https://github.com/rubidus-api/proven_c_book"
