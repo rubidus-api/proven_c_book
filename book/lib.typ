@@ -40,15 +40,14 @@
 // 회색 대문자풍 굵은 글씨로 통일한다. 아이콘은 쓰지 않는다(대체 글꼴 사고
 // 방지). 안에서는 얇은 규칙선으로 칸을 가른다.
 #let _open-rule = 3pt + rgb("#111111")
-// 서두 라벨은 본문(명조)과 확실히 갈라 보이도록 고딕·크게·굵게 쓰고,
-// 짧은 밑선을 깔아 제목임을 표시한다 (저자 지시 2026-08-06).
+// 서두 라벨은 본문(명조)과 확실히 갈라 보이도록 고딕·크게·굵게 쓴다.
+// 밑선은 두지 않는다 — 고딕 굵은 글씨만으로 충분히 구별된다
+// (저자 지시 2026-08-06).
 #let _open-label(t) = block(below: 6pt, width: 100%)[
   #text(
     font: ("Noto Sans CJK KR", "Noto Sans"),
     weight: "bold", size: 1.02em, fill: rgb("#111111"), tracking: 0.02em, t,
   )
-  #v(2.5pt)
-  #line(length: 2.2em, stroke: 2pt + rgb("#111111"))
 ]
 #let _open-block(label, body, first: false) = block(
   width: 100%,
@@ -101,15 +100,16 @@
 // 제목(오개념 문장)을 인용부호와 함께 크게·굵게 세우고, 굵은 테두리로 감싼다.
 #let misconception(title, body) = block(
   width: 100%, above: 1.25em, below: 1.25em, breakable: true,
-  stroke: (left: 4pt + rgb("#111111"), rest: 0.5pt + rgb("#888888")),
+  stroke: 0.5pt + rgb("#111111"),
   inset: 0pt,
 )[
   #set par(first-line-indent: 0em)
-  #block(width: 100%, fill: rgb("#f2f2f2"), inset: (x: 11pt, y: 8pt), below: 0pt)[
+  #block(width: 100%, fill: rgb("#f2f2f2"), inset: (x: 11pt, y: 8pt), below: 0pt,
+         stroke: (bottom: 0.5pt + rgb("#111111")))[
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
-          size: 0.82em, fill: rgb("#444444"), tracking: 0.08em)[⚠ #_L.misc]
-    #v(3pt)
-    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 1.05em)[#title]
+          size: 0.95em, fill: rgb("#111111"))[#_L.misc.]
+    #h(4pt)
+    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 1.0em)[#title]
   ]
   #block(width: 100%, inset: (x: 11pt, y: 9pt), above: 0pt)[#body]
 ]
@@ -329,11 +329,18 @@
       }
     })
   } else {
-    align(center, table(
-      columns: columns,
-      stroke: 0.4pt + black,
-      inset: 5pt,
-      ..items,
+    align(center, block(
+      stroke: 1.2pt + rgb("#111111"),
+      inset: 0pt,
+      table(
+        columns: columns,
+        stroke: 0.4pt + rgb("#999999"),
+        inset: 5pt,
+        fill: (_, row) => if row == 0 { rgb("#eeeeee") } else { none },
+        ..items.enumerate().map(((i, c)) => if i < columns {
+          text(weight: "bold", c)
+        } else { c }),
+      ),
     ))
   }
 }
