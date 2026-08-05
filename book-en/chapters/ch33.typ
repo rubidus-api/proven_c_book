@@ -127,6 +127,106 @@ its value is mostly settled at compile time, and it works on a type
   demonstration printed `p == &n`.
 ]
 
+== What kind of number is an address — name, size, order
+
+We have said several times that a pointer cannot be seen as "just a number".
+What kind of number is it, then? Splitting the uses of number into three makes
+the answer sharp.
+
+#dtable(
+  columns: 3,
+  [*use of number*], [*what it means*], [*examples*],
+  [nominal], [it only *distinguishes*. Neither size nor order means anything], [a bus number, a shirt number],
+  [ordinal], [there is a *before and after*. The size of a difference may mean nothing], [a rank, a floor],
+  [cardinal], [it *counts* a size. Adding and subtracting mean something], [three apples, 12 bytes],
+)
+
+An address is not one of the three: it is *all three, and none of them wholly.*
+
+- *As a nominal number*: the most basic use. `&x` is the *name* of the object x,
+  and whether two addresses are the same may always be asked (which is why `==`
+  and `!=` are allowed even between different objects, appendix A). This is
+  exactly what a locker number does.
+- *As an ordinal number*: within one array, before and after mean something.
+  `&a[1] < &a[2]` is true, and on that rest sorting, searching and bounds
+  checks. But *between different arrays the question cannot be asked* — which is
+  why ordering them is outside the contract (appendix A). What has an order is
+  not addresses in general but addresses *within one object*.
+- *As a cardinal number*: the difference of two addresses counts — not bytes but
+  *elements* (chapter 36). `&a[4] - &a[1]` is 3, meaning "three elements lie
+  between". And this subtraction, too, means something only within one array.
+
+In short: *an address may always be used as a nominal number; as an ordinal or a
+cardinal number only within one object.* Half the strangeness of C's pointer
+rules lives here — we learned numbers as things that are all three at once, while
+an address is whichever of the three the context allows.
+
+#figure-svg("pointer-parts", caption: [The three things that travel with one pointer value. The same address does not make the same pointer.])
+
+=== Why an integer, of all things
+
+Naming an object could have been done otherwise — a name string, an index into a
+table, a handle; languages and operating systems have done all of these. C chose
+an integer for a simple reason: *the machine was already doing it that way.* As
+chapters 4 and 5 showed, a machine address is a number, adding to it gives the
+neighbouring slot, and CPUs have circuitry that computes "base + index × size" in
+one step. Choose an integer and arrays, strings and struct access all follow *for
+free*.
+
+That choice became C's power and its danger. The power is expressiveness — arrays
+arrive with no extra syntax (chapter 36), and memory can be handled in bulk
+(chapter 72). The danger is the illusion that the number may be handled *like any
+other number*.
+
+=== The abstraction has thickened with time
+
+Pointers were not always as delicate as they are now. In early C a pointer was
+close to a transcription of the machine address, and it was common practice to
+convert one to an integer, play with it and convert back. Machines were simple
+then — memory was one layer, instructions ran in the order written, and the
+compiler did not greatly rearrange what a person had written.
+
+Since then the layers underneath have thickened.
+
+- *Memory split into levels* (chapter 11) — registers, caches, DRAM, and above
+  them virtual addresses and page tables. The number a program sees has already
+  been translated.
+- *Execution began to overlap* (chapter 12) — pipelines, out-of-order execution,
+  branch prediction. "In the order written" is no longer true.
+- *The compiler became an editor* (chapter 13) — it rewrites code wholesale so
+  long as the observable behaviour is kept. One of the premises that rewriting
+  rests on is "this pointer does not touch that object".
+
+The thicker those layers grew, the more the language had to ask of pointers. For
+a compiler to reorder on the premise that "distinct objects do not touch one
+another", it needs a promise that the program will not break that premise. So
+pointers have drifted away from being *numbers* and been refined into *located
+values with a contract* — the alignment rules (chapter 35), provenance
+(chapter 35), and the rule against forming an address outside its array
+(chapter 36) are all clauses in that direction.
+
+#qa[
+  Is "an address is an integer" wrong, then?
+][
+  It is more accurate to say it is half right. At the layer of *representation*,
+  addresses on today's mainstream machines are represented as integers, which is
+  why the standard provides the passage through `uintptr_t` (chapter 35). But at
+  the layer of the *language* a pointer is not an integer type, and clauses
+  attach to it that no integer has — where it came from, how far it may go, what
+  alignment it stands on.
+
+  The place where the difference shows most clearly is addition and subtraction.
+  An integer's `+1` always adds one; a pointer's `+1` moves *by the size of the
+  type pointed at* (chapter 36), and if the result leaves the range of the
+  original object it is outside the contract by the computation alone. The same
+  sign follows different rules. Even `p - q`, unremarkable for integers, means
+  nothing if the two pointers came from different arrays.
+
+  So this book uses two sentences together — *an address is represented as an
+  integer; a pointer is not an integer.* The first is a matter of the machine,
+  the second a matter of the contract.
+]
+
 == The size of a pointer is not one number
 
 Here is why the answer above said "8 bytes on this machine" so carefully. The

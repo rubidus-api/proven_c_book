@@ -105,6 +105,8 @@ down to the bit layout. IEEE 754 divides a value into three pieces — the *sign
   [`double` (double)], [64 bits], [1], [11], [52],
 )
 
+#figure-svg("ieee754", caption: [The bit layout of `float` and `double`. The width of each field is the ratio of its bit count.])
+
 The rules for reading the three pieces are these.
 
 - *Sign*: 0 for positive, 1 for negative. It is a separate bit, unrelated to the

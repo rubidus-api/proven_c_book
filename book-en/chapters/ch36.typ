@@ -77,6 +77,8 @@ We have just said that `a[i]` is `*(a + i)`. Then what value, exactly, is
 it is *two `int` slots along*, that is eight bytes. Pointer arithmetic moves by
 *multiplying by the size of the type pointed at*.
 
+#figure-svg("ptrmath", caption: [The distance `+1` jumps is the size of the type pointed at.])
+
 Set down exactly, the rule is this.
 
 #dtable(

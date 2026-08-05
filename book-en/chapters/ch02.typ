@@ -27,6 +27,8 @@
 
 #chapter-questions()
 
+#figure-svg("regions", caption: [The map of memory one program uses. Nearly every later chapter is read on top of this picture.])
+
 == Four regions, one metaphor
 
 Think of a person working at a desk and the picture comes together.

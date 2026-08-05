@@ -13,12 +13,11 @@ is written in plain standard C, and why proven does not appear until Part XII.
 Having read the earlier chapters, you may well decide you do not need proven.
 That is a fine outcome too.
 
-The upshot is that this book *is also an introduction to the C language.* It is
-written with a first-time reader in front of it, so it begins with how a
-computer is built and goes on through types and flow, pointers and arrays, the
-lifetime of storage and the standard library. A reader with no intention of
-using proven can read Parts I to XI as a C primer and stop there — that stretch
-stands on its own, without the library.
+The upshot is that this book *is also an introduction to the C language.* It was
+written with a first-time reader in mind, so it begins with how a computer is
+built and goes on through types and flow, pointers and arrays, the lifetime of
+storage and the standard library. Even if proven turns out not to be what the
+reader needs, the earlier parts should be of use in themselves.
 
 == What this book gives, and what it does not
 
@@ -33,10 +32,11 @@ grows *only by writing*. This book does not do that work for you, and I will
 not pretend it can. That part has to continue in some hands-on course, or in
 small programs of your own.
 
-That is not a fault of this book but a choice. Put exercises and assignments
-in and the volume swells, and the reader's burden swells with it. I chose the
-side that gets read to the end without strain, and gave up drill in exchange.
-*This is a book for understanding, not a book for making something quickly.*
+That is a shortcoming of this book, but a deliberate choice as well. Put
+exercises and assignments in and the volume swells, and the reader's burden
+swells with it. I chose the side that gets read to the end without strain, and
+gave up drill in exchange. *This is a book for understanding; it is not a book
+for making something quickly.*
 
 I should also say in advance that the first program comes late. Hello world
 does not appear until Part III. Until then we build up how a computer is
@@ -52,10 +52,12 @@ sit far more steadily on top of it. The gap between someone who knows why
 integers wrap, why a pointer is not simply a number, and what a compiler does
 and does not promise, and someone who does not, only widens with time.
 
-There is also, in these pages, a certain amount of affection for C. Explaining
-why a language past its fiftieth year is still here, and what its design gave
-up in order to gain what it gained, tends to produce that. I have not hidden
-it.
+There is also, in these pages, a certain amount of feeling from someone fond of
+C. Even the dangerous and the inefficient parts — the ones that piled up as the
+language compromised with the constraints and limits of an older age — have
+always struck me as interesting and enjoyable. For the fact that this fondness
+has found its way in as explanation and length somewhat beyond what was needed,
+I apologise to the reader in advance.
 
 Every piece of code in this book has actually been compiled and run. The
 printed output is not transcribed by hand: it is what the machine produced when

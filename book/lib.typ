@@ -5,15 +5,18 @@
 // 라벨은 여기 한 곳에만 둔다. 영어판 빌드는 `--input lang=en` 으로 고른다.
 // 장치를 고치면 한국어판과 영어판이 함께 바뀐다 (사본을 만들지 않는다).
 #let _lang = sys.inputs.at("lang", default: "ko")
+#let _html = sys.inputs.at("mode", default: "paged") == "html"
 #let _L = (
   ko: (q: "문", a: "답", back: "돌아보기", recap: "복습 정리",
        stdin: "표준 입력으로 준 것", output: "실행 결과",
        platform: "플랫폼 노트", organizer: "이 장이 끝나면",
-       prereq: "이 장이 기대는 것", questions: "이 장에서 답할 질문"),
+       prereq: "이 장이 기대는 것", questions: "이 장에서 답할 질문",
+       misc: "흔한 오해"),
   en: (q: "Q", a: "A", back: "Looking back", recap: "Recap",
        stdin: "Given on standard input", output: "Output",
        platform: "Platform note", organizer: "By the end of this chapter",
-       prereq: "What this chapter builds on", questions: "The questions this chapter answers"),
+       prereq: "What this chapter builds on", questions: "The questions this chapter answers",
+       misc: "A common misconception"),
 ).at(_lang)
 
 // 인쇄를 위해 채움(fill)을 쓰지 않는다 — 선의 굵기와 모양으로만 구분한다.
@@ -37,9 +40,16 @@
 // 회색 대문자풍 굵은 글씨로 통일한다. 아이콘은 쓰지 않는다(대체 글꼴 사고
 // 방지). 안에서는 얇은 규칙선으로 칸을 가른다.
 #let _open-rule = 3pt + rgb("#111111")
-#let _open-label(t) = text(
-  weight: "bold", size: 0.9em, fill: rgb("#3a3a3a"), tracking: 0.06em, upper(t),
-)
+// 서두 라벨은 본문(명조)과 확실히 갈라 보이도록 고딕·크게·굵게 쓰고,
+// 짧은 밑선을 깔아 제목임을 표시한다 (저자 지시 2026-08-06).
+#let _open-label(t) = block(below: 6pt, width: 100%)[
+  #text(
+    font: ("Noto Sans CJK KR", "Noto Sans"),
+    weight: "bold", size: 1.02em, fill: rgb("#111111"), tracking: 0.02em, t,
+  )
+  #v(2.5pt)
+  #line(length: 2.2em, stroke: 2pt + rgb("#111111"))
+]
 #let _open-block(label, body, first: false) = block(
   width: 100%,
   inset: (left: 12pt, right: 2pt, top: if first { 7pt } else { 8pt }, bottom: 8pt),
@@ -50,21 +60,31 @@
 )[
   #set par(first-line-indent: 0em, leading: 0.78em)
   #_open-label(label)
-  #v(3pt)
   #body
 ]
 
 // 3.1 문답 (즉문즉답) — 기본 리듬
-#let qa(q, a) = block(width: 100%, above: 1.15em, below: 1.15em, breakable: true)[
+// 3.1 문답 — 문과 답은 *하나의 덩어리*다. 왼쪽 세로선 하나가 둘을 잇고,
+// 질문 줄은 굵은 고딕과 옅은 바탕으로 도드라지게 한다 (저자 지시 2026-08-06).
+#let _qa_rail = 2.5pt + rgb("#111111")
+#let _qa(label_q, label_a, q, a) = block(
+  width: 100%, above: 1.25em, below: 1.25em, breakable: true,
+  stroke: (left: _qa_rail), inset: (left: 10pt),
+)[
   #set par(first-line-indent: 0em)
-  #block(inset: (x: 11pt, y: 7pt), width: 100%, stroke: (left: 2pt + black), below: 6pt)[
+  #block(width: 100%, fill: rgb("#f0f0f0"), inset: (x: 9pt, y: 7pt), below: 0pt)[
     #metadata(q)<qa-q>
-    #text(weight: "bold")[#_L.q] #h(5pt) #q
+    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 0.95em)[#label_q]
+    #h(6pt)
+    #text(weight: "bold")[#q]
   ]
-  #block(inset: (x: 11pt, y: 7pt), width: 100%, stroke: (left: 0.5pt + black))[
-    #text(weight: "bold")[#_L.a] #h(5pt) #a
+  #block(width: 100%, inset: (x: 9pt, top: 7pt, bottom: 2pt), above: 0pt)[
+    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
+          size: 0.9em, fill: rgb("#555555"))[#label_a]
+    #h(6pt) #a
   ]
 ]
+#let qa(q, a) = _qa(_L.q, _L.a, q, a)
 
 // 3.2 심화 문답 (장 서두 회고 전용)
 // ② 인출 문답 — 선행 개념을 표시하는 데 그치지 않고 실제로 꺼내 보게 한다
@@ -77,7 +97,22 @@
 ]
 
 // 3.3 오개념 블록: 그럴듯한 생각 → 왜 그럴듯한가 → 실제로는 → 확인
-#let misconception(title, body) = _device(title, body, (left: 3pt + black), "⚠")
+// 3.3 오개념 — "그럴듯한 생각"이 한눈에 들어와야 교정이 일어난다.
+// 제목(오개념 문장)을 인용부호와 함께 크게·굵게 세우고, 굵은 테두리로 감싼다.
+#let misconception(title, body) = block(
+  width: 100%, above: 1.25em, below: 1.25em, breakable: true,
+  stroke: (left: 4pt + rgb("#111111"), rest: 0.5pt + rgb("#888888")),
+  inset: 0pt,
+)[
+  #set par(first-line-indent: 0em)
+  #block(width: 100%, fill: rgb("#f2f2f2"), inset: (x: 11pt, y: 8pt), below: 0pt)[
+    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
+          size: 0.82em, fill: rgb("#444444"), tracking: 0.08em)[⚠ #_L.misc]
+    #v(3pt)
+    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 1.05em)[#title]
+  ]
+  #block(width: 100%, inset: (x: 11pt, y: 9pt), above: 0pt)[#body]
+]
 
 // 3.4 실제 사례 블록
 #let realcase(title, body) = _device(title, body, (top: 0.5pt + black, bottom: 0.5pt + black), "◉")
@@ -200,6 +235,27 @@
       }
     ]
     _open-close
+  }
+}
+
+// 3.9 개념도 — 공간 관계가 본질인 자리에만 쓴다(생성기: scripts/make-figures.py).
+// 그림 파일은 판마다 따로다: book/figures/{ko,en}/<이름>.svg
+#let figure-svg(name, caption: none, width: 100%) = {
+  if _html {
+    // Typst 의 HTML 내보내기는 이미지를 아직 내지 않는다 — 직접 <figure> 를 낸다.
+    // 그림 파일은 wrap-html.py 가 docs/<판>/figures/ 로 복사한다.
+    html.elem("figure", attrs: (class: "fig"), {
+      html.elem("img", attrs: (src: "figures/" + name + ".svg", alt: name, loading: "lazy"))
+      if caption != none { html.elem("figcaption", caption) }
+    })
+  } else {
+    block(width: 100%, above: 1.3em, below: 1.3em, breakable: false)[
+      #align(center, image("/book/figures/" + _lang + "/" + name + ".svg", width: width))
+      #if caption != none {
+        v(4pt)
+        align(center, text(size: 0.92em, fill: rgb("#444444"), caption))
+      }
+    ]
   }
 }
 
