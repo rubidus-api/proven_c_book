@@ -50,6 +50,42 @@ keyword):
 
 #demo("examples-en/ch35/align.c")
 
+=== The two privileges side by side
+
+Here we tidy up the two passages announced in chapter 33. They do different work.
+
+#dtable(
+  columns: 3,
+  [], [*`void *`*], [*the `char *` family*],
+  [what it forgets], [it forgets the *type* pointed at], [it forgets nothing — it sees the representation as it is],
+  [dereference], [no (it does not know the size)], [yes — one byte at a time],
+  [arithmetic], [no (by the standard)], [yes — in bytes],
+  [aliasing], [not applicable], [*it may read the representation of any object* (the excepted passage)],
+  [round trip], [object pointer ↔ `void *` returns the original value], [reading bytes and recovering a pointer are different matters],
+)
+
+This is why `memcpy` takes `void *` in its prototype and copies bytes inside —
+*it forgets the type on the way in and looks at bytes on the way through.* That
+the standard requires `void *` and the character-type pointers to share a
+representation is for exactly this combination (chapter 33's word-addressed
+machines).
+
+#misconception[
+  "Since `char *` can pick an object apart, a pointer may be built out of the bytes"
+][
+  Two things are mixed up here. *Reading* is permitted — the representation of
+  any object may be read byte by byte through `unsigned char *`. But assembling
+  those bytes back into a pointer and *making it point at another object* is a
+  separate matter, because the provenance attached to that pointer belongs to the
+  original object — which is exactly the subject of the next section.
+
+  The practical conclusion is simple. To move a representation, move the *value*
+  with `memcpy`; if a pointer is needed, obtain it again from the original
+  object. An address assembled out of bytes mostly works on x86-64, but on a
+  machine where pointers carry permissions, such as CHERI, it is stopped on the
+  spot (chapter 33).
+]
+
 == Provenance — the same number, a different origin
 
 Let us collect chapter 14's foreshadowing as practical instinct. In the naive

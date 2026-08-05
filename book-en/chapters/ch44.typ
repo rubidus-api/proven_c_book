@@ -55,10 +55,26 @@ constant.
 IEEE 754 (chapter 8) defines special values besides ordinary numbers. *Infinity*
 (positive and negative) comes out of overflow or division by zero, and *NaN* (Not
 a Number) means "not a number" — the result of an undefinable operation such as
-$0/0$ or the square root of a negative. In contrast to integer division by zero
-being outside the contract (chapter 27), it is interesting that *floating-point
-division by zero is defined behaviour* (infinity) — because IEEE 754 chose a
-design that lets the calculation flow on into a special value instead of stopping.
+$0/0$ or the square root of a negative.
+
+One thing has to be stated exactly here. Integer division by zero is outside the
+contract (chapter 27), and floating-point division by zero is commonly said to
+"be defined and give infinity". *That, however, is not a promise of the C
+language itself.* The standard's rule for division leaves the behaviour
+undefined when the second operand is zero — for reals as much as for integers.
+Infinity appears in implementations that support IEC 60559 (that is, IEEE 754)
+semantics. In such an implementation, dividing a finite non-zero value by zero
+gives a signed infinity and raises the divide-by-zero exception, while $0/0$
+falls on the NaN side. Today's mainstream compilers on x86-64 and AArch64 behave
+that way, but it is not something the standard forces on every implementation.
+
+#platform("Where this distinction actually bites")[
+  If an implementation declares that it follows IEC 60559 (the annex F macros),
+  the behaviour above becomes a contract. Where it does not — some embedded
+  toolchains, and builds that deliberately switch annex F semantics off with
+  something like `-ffast-math` — the guarantee of infinity and NaN goes away.
+  *Portable code screens out a zero divisor first.*
+]
 
 NaN has one famous property — *it is not even equal to itself.* If `x != x` is
 true then x is NaN, and that is the classic idiom for detecting NaN (today one

@@ -169,8 +169,14 @@ chapter 1 arose exactly here.
   fixture even today, which is why systems programming as a whole has moved in the
   direction of "let the language enforce ownership." The defence in C is
   discipline plus tools — the practice of assigning `nullptr` to a pointer right
-  after `free`, and chapter 17's ASan (catching all three of these accidents is
-  ASan's speciality).
+  after `free`, and chapter 17's sanitizers.
+
+  Neither is a cure-all, though. Assigning `nullptr` stops reuse and double free
+  *through that one variable* only; any other alias holding the same address is
+  left as it was — take it as a local defence for when there are no aliases.
+  ASan catches use-after-free and double free very well, but detecting leaks
+  needs LeakSanitizer to be on with it, and that depends on the platform and the
+  settings (on a default build for Linux x86-64 the two usually come together).
 ]
 
 #qa[

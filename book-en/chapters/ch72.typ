@@ -115,6 +115,18 @@ with `<` or `>=` is outside the contract (chapter 35), so the library converts t
 `uintptr_t` and then checks. It is the function chapter 73's arena uses when confirming
 "is this pointer one I handed out".
 
+This detour is not, however, *a portable check the standard guarantees.*
+`uintptr_t` is an optional type — an implementation need not have it — and the
+standard nowhere promises that converting pointers to integers preserves the
+order of addresses. What it promises is only the round trip: pointer →
+`uintptr_t` → the same pointer. On today's mainstream platforms, with their flat
+address spaces, the ordered comparison does what one expects; on machines where
+an address is not a single number — segmented addresses, or capability pointers
+(the CHERI of chapter 5) — it is another story. So this function should be read
+not as a contract but as *an assumption about the platforms proven supports*:
+a flat address space in which the integer conversion preserves order (see the
+support range in chapter 78).
+
 == Slicing — the operation used most in this part
 
 #demo("examples-en/ch72/view.c")

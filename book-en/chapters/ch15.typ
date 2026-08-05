@@ -49,8 +49,11 @@ names are short.
 The precise identity of lines beginning with `#` is revealed in the next
 chapter (preprocessing).
 
-*`int main(void)`* — the agreed starting point. Every C program starts at the
-function named `main`. To run the program is to run `main`. The meanings of the
+*`int main(void)`* — the agreed starting point. A C program that runs on top of
+an operating system, as the one we are making does (a hosted implementation),
+starts at the function named `main`. To run the program is to run `main`. Where
+there is no operating system, even the name of the starting point can differ —
+that story is in chapter 47. The meanings of the
 parentheses, of `int` and of `void` are unravelled in turn in Parts IV and V.
 
 *`{` and `}`* — the fences of beginning and end. Inside the fence is the list of

@@ -100,17 +100,20 @@ C11 is 9899:2011, C99 is 9899:1999. They are useful when you must confirm the cr
 edition of an old codebase.
 
 *The road of obtaining the free drafts.* This is the one used far more often in
-practice. The standards committee (ISO/IEC JTC1/SC22/WG14) puts its working documents
-in a public repository, and *the last working draft before publication* is effectively
-the same in content as the final standard. There are only editorial differences, so
-unless you must cite the standard document itself the draft is enough.
+practice. The standards committee (ISO/IEC JTC1/SC22/WG14) puts its working
+documents in a public repository. *These drafts are not "the published
+standard"* — let that be nailed down first.
 
-The document numbers worth noting are these. One caution, though — *these drafts are
-not "the published standard".* N3220 in particular is an early working draft of the
-next edition (C2y), issued after C23 was published, with editorial corrections laid on
-C23. Its content is very close to C23 and it is widely referred to in practice, but
-*where an exact citation is needed the published ISO/IEC 9899:2024 must be the
-ground.*
+For C99, C11 and C17 the situation is simple. The last working draft before
+publication (N1256, N1570, N2176) is effectively the same in content as the final
+standard, so unless you must cite the standard document itself the draft is
+enough.
+
+*C23 is different.* The widely used N3220 is not the draft immediately *before*
+C23 was published: it is an early working draft of the next edition (C2y),
+issued after C23 came out, with editorial corrections laid on C23. Its content is
+very close to C23 and it is widely referred to in practice, but *where an exact
+citation is needed the published ISO/IEC 9899:2024 must be the ground.*
 
 #dtable(
   columns: 3,
