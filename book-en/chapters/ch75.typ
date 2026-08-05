@@ -35,6 +35,78 @@ The rules are only three.
 There being no `%d`, there is no place for a `%d` and a `double` to go out of step.
 The possibility of mismatch seen in chapter 53 is removed at the level of syntax.
 
+=== The whole grammar after the colon
+
+The order of the specifiers is fixed, and every one may be omitted.
+
+#align(center, block(inset: (y: 4pt))[
+  `{:` `[fill][align]` `[sign]` `[#]` `[0]` `[width]` `[.precision]` `[type]` `}`
+])
+
+#dtable(
+  columns: 3,
+  [*place*], [*what may be written*], [*meaning*],
+  [fill], [any character], [the character filling the spare places. it comes *before* the alignment symbol],
+  [align], [`<` `>` `^`], [left, right, centre. the default is right for numbers, left otherwise],
+  [sign], [`+`], [attach a sign to positives too],
+  [alternative form], [`#`], [attach the `0x`, `0b`, `0` prefix],
+  [zero fill], [`0`], [put before the width to fill with zeros (it goes after the sign)],
+  [width], [a number], [the minimum number of characters. it does not cut if over],
+  [precision], [`.number`], [decimal places for reals],
+  [type], [`x X o b f e g`], [hexadecimal (lower, upper), octal, binary, fixed, exponential, shortest],
+)
+
+They correspond to chapter 53's `printf` formats but differ in three ways. *The
+alignment symbol comes first* (`{:<10}` instead of `%-10s`), *the fill character can be
+chosen* (`{:*>8}`), and *there is no type letter* (`%d`'s `d` has gone — the type comes
+from the argument).
+
+#demo("examples/ch75/spec.c")
+
+The example shows this table in the flesh, a line at a time. A few points.
+
+*① The fill is written before the alignment.* `{:*>8}` is "fill with asterisks, align
+right". Swap the order (`{:>*8}`) and it does not mean anything.
+
+*② The 0 of `{:08}` goes after the sign.* Zero-fill `-42` to a width of 8 and it is
+`-0000042`, not `000000-42` — the same rule as `%08d` seen in chapter 53.
+
+*③ The default notation for reals differs from `printf`'s.* Very large and very small
+numbers are printed by `printf("%f")` as `100000000000000000000.000000` or `0.000000`,
+while this library uses exponential notation, `1.000000e+20` and `5.000000e-07`. The
+side that *does not lose information* was taken as the default, and it is a difference
+to know before comparing two logs. If fixed notation is needed, force it with `{:f}`.
+
+*④ `{:g}` gives the shortest notation that round-trips.* That `3.14159` comes out as it
+stands is that result — the notation keeping the "read it back and it is the same value"
+property seen in chapter 8.
+
+=== Printing a type the library has never heard of
+
+What can go into `{}` is only the types in the `_Generic` list. Then how is my own
+struct printed — *give it one function that draws.*
+
+```c
+static proven_err_t render_frac(proven_fmt_sink_t out, const void *obj)
+{
+    const frac_t *f = obj;
+    /* ... make it ... */
+    return proven_fmt_put(out, view);      /* and send it out */
+}
+
+proven_arg_t a = proven_arg_custom(&half, render_frac);
+proven_println("{} and |{:>8}|", PROVEN_ARG(a), PROVEN_ARG(a));
+```
+
+`proven_fmt_sink_t` is "a hole that receives bytes", and `proven_fmt_put` sends them
+out. As the example's output shows, *width and alignment apply to a user type too*.
+
+There is one contract to know here. *The drawing function is called twice per `{}`* —
+once with a counting sink (because the width and alignment must be calculated) and once
+for real. So this function must be *deterministic* and must not mutate its target. If
+the two results disagree the library returns `INVALID_ARG` rather than print a misaligned
+field. It is the price paid for aligning without allocating.
+
 #demo("examples/ch75/fmt.c")
 
 This example formats not to the screen but *into a string* — the `proven_println`
@@ -51,6 +123,41 @@ correspond to chapter 53's `%10s`, `%-10s` and `%.3f`, differing in that *there 
 type letter*.
 
 *Third, it rounds but keeps the number of digits.* `load=0.42` is what `{:.2}` made.
+
+=== Which formatting function to use
+
+Chapter 74's three kinds are here in formatting too. Organised in a table there is
+nothing to choose over.
+
+#dtable(
+  columns: 4,
+  [*function*], [*when short*], [*allocator*], [*where it is used*],
+  [`proven_println(fmt, …)`], [—], [not needed], [one line to the screen],
+  [`proven_print(fmt, …)`], [—], [not needed], [without a line break],
+  [`proven_eprint(fmt, …)`], [—], [not needed], [to standard error],
+  [`proven_u8str_append_fmt`], [refuses (the original stands)], [not needed], [a fixed buffer. the default],
+  [`proven_u8str_append_fmt_trunc`], [as much as fits], [not needed], [places that may be cut, such as a log line],
+  [`proven_u8str_append_fmt_grow`], [grows], [needed], [when the length is unknown],
+  [`proven_u8str_append_fmt_with_scratch`], [grows], [needed (+ scratch)], [when the temporary memory is to be given separately],
+)
+
+All of them return a `proven_fmt_result_t`, and this bundle has two more numbers beside
+`err`.
+
+```c
+typedef struct {
+    proven_err_t  err;
+    proven_size_t written;    /* the number of bytes actually written */
+    proven_size_t required;   /* the number of bytes needed to write it all */
+} proven_fmt_result_t;
+```
+
+`required` is the same information as `snprintf`'s return value seen in chapter 53. The
+difference is *that it sits in a named slot* — with `snprintf` a human had to remember
+the convention "if the return value is at least the buffer size it was truncated", while
+here `err` already says that and `required` answers "so how much was needed". In the
+output of the example `spec.c`, `written=7 required=10` is that use — how much to enlarge
+the buffer by is known as it stands.
 
 #qa[
   What exactly does `PROVEN_ARG` do?
@@ -105,6 +212,42 @@ succeeded" — it does not say where or why it stopped.
 
 #idx("scanner")proven's scanner is an object with a cursor. It is placed over a view
 and reads onward one at a time. Each read gives its result as a bundle.
+
+```c
+typedef struct {
+    proven_u8str_view_t view;     /* the input being read (borrowed) */
+    proven_size_t       cursor;   /* how far it has read */
+} proven_scan_t;
+```
+
+That there are only two slots says two things. First, *the scanner does not own the
+input* — it is only a cursor laid over a view, so making it allocates nothing and there
+is no destroying. Second, *the cursor can be saved and restored by hand*. Copy the whole
+struct, and on failure put it back, so a parser that "looks a few characters ahead to
+judge" is not hard to write.
+
+```c
+proven_scan_t save = sc;         /* a mark to go back to */
+proven_result_i64_t n = proven_scan_i64(&sc);
+if (!proven_is_ok(n.err)) sc = save;   /* it failed, so let it never have happened */
+```
+
+There are six reading functions, and all of them push the cursor forward.
+
+#dtable(
+  columns: 3,
+  [*function*], [*what it reads*], [*what it returns*],
+  [`proven_scan_i64(&sc)`], [a signed integer], [`{err, val}`],
+  [`proven_scan_u64(&sc)`], [an unsigned integer], [`{err, val}`],
+  [`proven_scan_f64(&sc)`], [a real], [`{err, val}`],
+  [`proven_scan_str(&sc)`], [a word up to whitespace], [`{err, view}` — *a view into the original*],
+  [`proven_scan_skip_whitespace(&sc)`], [skips whitespace], [—],
+  [`proven_scan_skip_until(&sc, t)`], [skips until `t` appears], [`err` (the cursor stands if absent)],
+)
+
+That `proven_scan_str` *returns a view without copying* matters — chapter 74's "text
+handling without copying" holds in parsing too. In exchange that view is valid only
+while the original input is alive (chapter 72).
 
 #demo("examples/ch75/lines.c")
 

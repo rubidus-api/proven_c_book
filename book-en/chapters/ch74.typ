@@ -35,8 +35,56 @@ If the name has `view` in it, it is borrowed, and what is borrowed is not destro
 The rule set up in chapter 73 applied to strings as it is. `u8` means UTF-8 — that
 encoding seen in chapter 9 is this library's default text representation.
 
-There are two roads to obtaining an owning string. Receiving it from an allocator
-(`_create`), or borrowing somebody's buffer (`_borrow`).
+Open them up and why they were divided in two becomes clear.
+
+```c
+/* the borrowed string — the same shape as chapter 72's mem_view_t */
+typedef struct {
+    const proven_byte_t *ptr;
+    proven_size_t        size;
+} proven_u8str_view_t;
+
+/* the owning string — one buffer and an "is it borrowed" flag */
+typedef struct {
+    proven_buf_t internal;   /* { ptr, len, cap } */
+    bool         borrowed;
+} proven_u8str_t;
+```
+
+The three slots of `proven_buf_t` state the string's character as they are. *`len` is
+the number of bytes of content held now*, *`cap` is the whole buffer's size*, and the
+difference between them is the spare room including the NUL's place. So
+`create(alloc, 64)` really takes 65 bytes — 64 is the limit of the *content* and one
+byte is the NUL's share. Thanks to that one byte `proven_u8str_as_cstr` can hand out a
+C string with neither copying nor allocation.
+
+The `borrowed` flag marks a string made with `_borrow`. When this flag is on,
+`_destroy` *releases nothing* and merely empties the struct — somebody else's memory
+cannot be given back.
+
+There are three roads to obtaining a string.
+
+#dtable(
+  columns: 4,
+  [*function*], [*allocates*], [*destroy*], [*where it is used*],
+  [`proven_u8str_create(alloc, limit)`], [yes], [`_destroy` needed], [starting empty and filling it],
+  [`proven_u8str_create_from_view(alloc, v)`], [yes], [`_destroy` needed], [owning a copy of existing content],
+  [`proven_u8str_borrow(buf, cap)`], [no], [unnecessary (harmless)], [over a stack or static array. embedded],
+)
+
+Only beware that `_borrow`'s `cap` is *the whole capacity including the NUL* — give it
+`buf[64]` and the content goes to 63 bytes.
+
+Making a view from a literal is done with one macro.
+
+```c
+PROVEN_LIT("hello")        /* becomes { ptr, 5 } at compile time — no strlen */
+proven_u8str_view_from_cstr(p)   /* counts the length at run time */
+```
+
+`PROVEN_LIT` draws the length from `sizeof("...") - 1`, so its *run-time cost is zero*.
+Using it for string literals is the practice, and `_from_cstr` for a C string whose
+length is unknown.
 
 #demo("examples/ch74/ops.c")
 
@@ -82,9 +130,74 @@ the decision back to the caller* — "there is not enough room. What shall we do
   `_append` writes only within the capacity, while `_append_grow` asks the allocator
   for more if there is not enough — which is why only the latter has an allocator
   argument. The problem is demanding growth on a borrowed buffer (`_borrow`). A stack
-  array cannot grow, so this is a design error. The habit of reading signatures
-  becomes the defence here as it stands — *with an allocator it can grow, without one
-  it cannot.*
+  array cannot grow, so this is a design error.
+
+  In this case the library *does not quietly reallocate somebody else's memory* but
+  returns `OUT_OF_BOUNDS` — it succeeds while things fit and refuses the moment they
+  would not. The habit of reading signatures becomes the defence here as it stands —
+  *with an allocator it can grow, without one it cannot.*
+]
+
+== Three kinds of writing — refuse, truncate, grow
+
+This library's string operations are made so that the kind can be known from the name
+alone. That kind is "what happens when there is not enough room".
+
+#dtable(
+  columns: 4,
+  [*kind*], [*shape of the name*], [*when short*], [*failure atomicity*],
+  [fixed capacity, atomic], [`_append`, `_insert`, `_replace_at`], [refuses (`OUT_OF_BOUNDS`)], [yes — the original stands],
+  [best effort, truncating], [`_append_partial`, `_append_fmt_trunc`], [writes as much as fits and reports], [no (deliberately)],
+  [growing], [`_append_grow`, `_insert_grow`, `_replace_at_grow`], [asks the allocator for more], [yes — the original stands if allocation fails],
+)
+
+All three kinds are needed because the right answer differs by place. Where a file path
+is being built truncation must not happen, so *refusing* is right; where a log line is
+fitted to the screen *truncating* is right; where the length is unknown *growing* is
+right. That the default (the short name) is refusal shows this design's attitude.
+
+== The operations that mend a string
+
+Appending alone is not enough. There are operations that mend the middle, delete, and
+rewrite.
+
+#demo("examples/ch74/edit.c")
+
+#dtable(
+  columns: 3,
+  [*function*], [*what it does*], [*contract*],
+  [`_insert(&s, i, v)`], [inserts at position `i`], [`i` ≤ length. it pushes the tail out],
+  [`_remove(&s, i, n)`], [deletes `n` bytes from `i`], [an error if it exceeds the range],
+  [`_replace_at(&s, i, old, v)`], [a range with other content], [the lengths may differ],
+  [`_replace_first(&s, off, t, r)`], [the first `t` found, into `r`], [★ if absent it returns *success*],
+  [`_reset(&s)`], [empties only the content], [the buffer and capacity stand],
+  [`_reserve(alloc, &s, n)`], [capacity up to `n` in advance], [it pays especially on an arena],
+  [`_append_byte(alloc, &s, b)`], [appends one byte], [grows if needed],
+)
+
+The starred contract of `_replace_first` needs care. *Not finding it is not an error but
+a success* — to distinguish "there was nothing to replace" from "it was replaced" you
+must first check with `proven_u8str_view_find`. That the example's "replacing what is
+not there" comes back as `err=0` is that confirmation.
+
+`_reset` and `_reserve` are a pair for performance. In code that builds a string afresh
+every frame or per request, *reusing the buffer instead of throwing it away* is
+`_reset`, and taking it in advance when you roughly know how large it will grow is
+`_reserve`. As seen in chapter 73, `_reserve` pays especially on an arena — take it
+large before another allocation intervenes and growth in place becomes possible.
+
+#qa[
+  Which should be the default, `_insert` or `_insert_grow`?
+][
+  *`_insert` where I settle the capacity*, *`_insert_grow` where I do not know how much
+  content there will be*. The criterion is simple — "is running short here *a bug*, or
+  *a thing that can happen*?"
+
+  If a protocol header is being assembled in a fixed-size buffer, running short is a bug,
+  and refusal is right there (and that error reveals the bug). If user input is being
+  appended, it can grow to any length, so growing is right. It is also why embedded code
+  uses only the editions without `_grow` — there, *unpredictable growth itself is
+  forbidden* (chapter 78).
 ]
 
 == Finding and cutting — text handling without copying
