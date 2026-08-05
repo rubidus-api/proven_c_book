@@ -2,6 +2,12 @@
 
 = Unions and representation
 
+#prereq(
+  ([chapter 41, Structs], [the layout of a struct]),
+  ([chapter 5, Words and addresses], [seeing a representation as bytes]),
+  ([chapter 13, Compiler optimisation], [strict aliasing]),
+)
+
 #organizer[
 #idx("union")  The device for seeing the same memory through a different eye —
   the union. And this is a chapter of representation too: we run the endianness
@@ -22,6 +28,8 @@
   perspective, "seeing the same bits through this eye and through that", made into
   syntax.
 ]
+
+#chapter-questions()
 
 == The union — laying things over one another
 

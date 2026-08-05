@@ -2,6 +2,11 @@
 
 = Several files — splitting and linking
 
+#prereq(
+  ([chapter 16, The general shape of compilation], [translation units and linking]),
+  ([chapter 24, Declaring and defining functions], [declaration and definition]),
+)
+
 #organizer[
   Every program so far has been one file. Now it grows into several —
 #idx("translation unit")  the division of labour between header and source, the
@@ -22,6 +27,8 @@
   the vessel that carries that promise is the header file. This chapter sees that
   division of labour in the flesh.
 ]
+
+#chapter-questions()
 
 == Translation units and headers
 

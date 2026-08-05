@@ -2,6 +2,11 @@
 
 = Null — the three siblings, formally
 
+#prereq(
+  ([chapter 6, Special knowledge about addresses], [what is special about address zero]),
+  ([chapter 33, Objects, addresses, pointers], [a pointer is a value that points at something]),
+)
+
 #organizer[
   The three nulls whose faces we learned in chapter 6 — the null pointer,
   `NULL`/`nullptr`, and the NUL character — get formal treatment in syntax and
@@ -22,6 +27,8 @@
   does break is another kind of code — code that assumes *at the bit level* that
   "the representation is 0." We see that trap shortly.
 ]
+
+#chapter-questions()
 
 == nullptr — the name of emptiness
 

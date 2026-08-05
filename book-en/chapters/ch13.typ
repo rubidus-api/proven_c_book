@@ -2,6 +2,11 @@
 
 = Compiler optimisation — the abstract machine
 
+#prereq(
+  ([chapter 12, The machinery of speed], [why a standard was needed]),
+  ([chapter 5, Words and addresses], [the relation between address and value]),
+)
+
 #organizer[
   You will learn that a compiler does not translate source code "as written" —
   that as long as the meaning is kept it rearranges, deletes and rewrites at
@@ -23,6 +28,8 @@
   collapsed is this chapter, and that collapse is the final piece that made C an
   abstract language.
 ]
+
+#chapter-questions()
 
 == The editor's workshop — what a compiler does
 

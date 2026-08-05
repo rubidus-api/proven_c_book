@@ -2,6 +2,11 @@
 
 = Getting started — there is nothing to install
 
+#prereq(
+  ([chapter 48, Several files], [several files and linking]),
+  ([chapter 69, The five bugs shipped for fifty years], [the five bugs]),
+)
+
 #organizer[
   The first chapter that actually uses proven. We first see why this library has no
   `configure`, no package manager and no shared library to link — and what that
@@ -24,6 +29,8 @@
   *definition* — exactly chapter 48's picture. proven took the former road, and the
   next section is why.
 ]
+
+#chapter-questions()
 
 == The choice of having nothing to install
 

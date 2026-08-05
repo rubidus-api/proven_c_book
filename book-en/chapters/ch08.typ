@@ -2,6 +2,10 @@
 
 = Representing numbers — the contract called IEEE 754
 
+#prereq(
+  ([chapter 7, Representing integers], [the limits that appear when numbers are held in fixed bits]),
+)
+
 #organizer[
   The next rung on the ladder of representation. You will be able to tell apart
 #idx("floating point")  the two ways of putting a number with a decimal point
@@ -23,6 +27,8 @@
   and carrying the point along in the data (floating). This chapter is the story
   of those two branches.
 ]
+
+#chapter-questions()
 
 == Fixed point — pinning the decimal point down by agreement
 

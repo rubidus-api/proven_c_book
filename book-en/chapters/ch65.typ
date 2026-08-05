@@ -2,6 +2,11 @@
 
 = How to ask about overflow — `<stdckdint.h>`
 
+#prereq(
+  ([chapter 26, Integers], [the finiteness of integers]),
+  ([chapter 46, Undefined behaviour], [overflow is outside the contract]),
+)
+
 #organizer[
 #idx("checked arithmetic")  We learn the checked arithmetic C23 brought in. Why
   hand-written code that "checks after calculating whether it overflowed" is
@@ -22,6 +27,8 @@
   is hard to read and easy to get wrong. C23 tidied this place up at the level of
   the language.
 ]
+
+#chapter-questions()
 
 == The trap of checking afterwards
 

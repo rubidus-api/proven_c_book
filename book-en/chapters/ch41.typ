@@ -2,6 +2,11 @@
 
 = Structs
 
+#prereq(
+  ([chapter 23, Declaring variables], [declaring a variable]),
+  ([chapter 36, Arrays], [several values under one name]),
+)
+
 #organizer[
   We keep the promise put off in Part V with "declarations that make types come
 #idx("struct")  after we have a memory model." The type that binds several
@@ -21,6 +26,8 @@
   the same type*, a struct is *a bundle of different types* — and the moment that
   bundle gets a name, the program's vocabulary grows.
 ]
+
+#chapter-questions()
 
 == Declaration, initialisation, access
 

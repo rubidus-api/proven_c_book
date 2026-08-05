@@ -2,6 +2,12 @@
 
 = The five bugs shipped for fifty years
 
+#prereq(
+  ([chapter 45, Errors and contracts], [errors and contracts]),
+  ([chapter 37, Strings], [the danger of strings]),
+  ([chapter 53, The terrain of the standard library], [the traps of the standard library]),
+)
+
 #organizer[
   This part's statement of the problem. We confirm with actually running code why C
   has kept shipping the same five classes of bug for half a century — that it is not
@@ -36,6 +42,8 @@
   with nothing happening will one day be thrown away. This chapter takes that
   "shape" apart one at a time.
 ]
+
+#chapter-questions()
 
 == One — string functions do not know the size of the vessel
 

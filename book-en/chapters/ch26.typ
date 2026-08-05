@@ -2,6 +2,11 @@
 
 = Integers — a world of finite numbers
 
+#prereq(
+  ([chapter 7, Representing integers], [sign and overflow]),
+  ([chapter 23, Declaring variables], [a type is the shape of the vessel]),
+)
+
 #organizer[
 #idx("integer types")  Part VI forges values and governs flow. Its first chapter
   faces C's integers head on — how the world of representation learned in
@@ -21,6 +26,8 @@
   exactly. The kinds and sizes of containers, where the boundary lies, and the
   rule when it is crossed — that is this chapter.
 ]
+
+#chapter-questions()
 
 == The family of integer types
 

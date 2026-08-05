@@ -2,6 +2,12 @@
 
 = Modern C, gathered up
 
+#prereq(
+  ([chapter 46, Undefined behaviour], [undefined behaviour]),
+  ([chapter 45, Errors and contracts], [contracts]),
+  ([chapter 79, C in practice], [the tools of practice]),
+)
+
 #organizer[
   The last chapter. Chapter 79 looked round the terrain of practice, so now we gather
   up the road travelled. We look back over the faces of C23 this book has used
@@ -23,6 +29,8 @@
   (chapter 17). C23's new syntax appeared as tools that make that criterion *easier to
   keep*. The retrospect below is that list.
 ]
+
+#chapter-questions()
 
 == Retrospect — the C23 already used
 

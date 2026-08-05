@@ -2,6 +2,10 @@
 
 = Characters and text — scars in the standard
 
+#prereq(
+  ([chapter 8, Representing numbers], [a representation is an agreement, and agreements leave scars]),
+)
+
 #organizer[
   How to put letters into the lockers — that a character is, in the end, a
 #idx("UTF-8")  number; what history that numbering table (the character code)
@@ -19,6 +23,8 @@
   number is which letter. To store a letter is to store a number, and text is a
   sequence of numbers. This chapter is the story of those tables.
 ]
+
+#chapter-questions()
 
 == A character is a number
 

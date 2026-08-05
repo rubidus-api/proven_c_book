@@ -2,6 +2,11 @@
 
 = Using structs — temporary values, named arguments, layout
 
+#prereq(
+  ([chapter 41, Structs], [defining a struct]),
+  ([chapter 36, Arrays], [arrays and passing by value]),
+)
+
 #organizer[
   If chapter 41 was the syntax of the struct, this chapter is *how to use it*.
 #idx("compound literal")  The notation for referring to a struct inside a
@@ -26,6 +31,8 @@
   side passed by value leaves the original untouched, and the side that decayed
   into a pointer changes it.
 ]
+
+#chapter-questions()
 
 == Nesting and access — reading dots and arrows mixed
 

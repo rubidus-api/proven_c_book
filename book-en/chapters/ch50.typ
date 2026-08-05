@@ -2,6 +2,11 @@
 
 = Variadic functions
 
+#prereq(
+  ([chapter 22, Output], [printf, a variadic function]),
+  ([chapter 28, Implicit conversions], [the default argument promotions]),
+)
+
 #organizer[
   We open the secret of how `printf` could take any number of arguments. The four
   tools of `<stdarg.h>`, why this device is not type-safe, its history (from K&R's
@@ -23,6 +28,8 @@
   the story of how values are taken out at that "place that does not know types",
   and what it costs.
 ]
+
+#chapter-questions()
 
 == The four tools
 

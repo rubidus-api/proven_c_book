@@ -2,6 +2,10 @@
 
 = The regions of memory — where a program puts what
 
+#prereq(
+  ([chapter 1, Setting the scene], [programming is writing a list of simple instructions]),
+)
+
 #organizer[
 #idx("memory regions")  We first learn that the memory a program uses is not one
   lump but is divided into *a few regions of different purpose*. Code, fixtures, the
@@ -20,6 +24,8 @@
   only while one function runs, and some the programmer borrows and gives back
   personally. Draw this map first and all the later stories find their places.
 ]
+
+#chapter-questions()
 
 == Four regions, one metaphor
 

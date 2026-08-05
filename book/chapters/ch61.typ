@@ -2,6 +2,11 @@
 
 = 시간 — `<time.h>`
 
+#prereq(
+  ([41장 구조체], [구조체로 묶인 값]),
+  ([53장 표준 라이브러리의 지형], [표준이 정한 계약]),
+)
+
 #organizer[
   표준이 유난히 적게 정해 준 헤더다. `time_t`가 무엇인지도, 시간대를 어떻게
   다루는지도 표준은 말하지 않는다. 그 빈틈에서 생기는 함정들 — 1900을 빼는
@@ -21,6 +26,8 @@
   측정은 POSIX의 `clock_gettime(CLOCK_MONOTONIC, …)`이나 Windows의
   `QueryPerformanceCounter` — 즉 *플랫폼 API*의 몫이다.
 ]
+
+#chapter-questions()
 
 == 세 가지 시간 표현
 

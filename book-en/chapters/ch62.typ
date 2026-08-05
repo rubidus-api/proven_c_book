@@ -2,6 +2,11 @@
 
 = Diagnosis and control — `<errno.h>`, `<assert.h>`, `<signal.h>`, `<setjmp.h>`
 
+#prereq(
+  ([chapter 45, Errors and contracts], [reporting an error as a value]),
+  ([chapter 46, Undefined behaviour], [after a contract is broken]),
+)
+
 #organizer[
   We look in one place at the four headers used when a program *has gone wrong*.
   The global holding an error number, the assertion that catches contract
@@ -22,6 +27,8 @@
   the next library call at any time — so once read it is stored at once. These two
   rules are the price of the design that carries errors in global state.
 ]
+
+#chapter-questions()
 
 == `errno` — the price of carrying errors in a global
 

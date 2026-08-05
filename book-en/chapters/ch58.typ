@@ -2,6 +2,11 @@
 
 = The drawer of odds and ends — `<stdlib.h>`
 
+#prereq(
+  ([chapter 53, The terrain of the standard library], [the terrain of the standard library]),
+  ([chapter 40, Dynamic memory], [allocating and giving back]),
+)
+
 #organizer[
   A drawer named, exactly as it says, "the standard library". Functions that turn
   strings into numbers, random numbers, dynamic allocation, program termination,
@@ -21,6 +26,8 @@
   (`errno` being `ERANGE`). `atoi` tells none of them. Its name is short so it
   appears often in introductions, but it is a function not used in the field.
 ]
+
+#chapter-questions()
 
 == Conversion — why `atoi` is abandoned
 

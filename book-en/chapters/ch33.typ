@@ -2,6 +2,11 @@
 
 = Objects, addresses, pointers
 
+#prereq(
+  ([chapter 5, Words and addresses], [an address is a value]),
+  ([chapter 32, The meaning of a function], [copying values alone cannot change the original]),
+)
+
 #organizer[
   Part VII is this book's second mountain — memory. We walk chapter 5's locker
 #idx("pointer")  corridor again, this time in C's syntax. The first chapter
@@ -20,6 +25,8 @@
   the pointer. What we learn today is not a new concept but dressing chapter 5's
   idea in syntax.
 ]
+
+#chapter-questions()
 
 == Three notations — declaration, &, \*
 

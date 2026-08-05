@@ -2,6 +2,11 @@
 
 = Input
 
+#prereq(
+  ([chapter 22, Output], [the two roads of output]),
+  ([chapter 10, The origin of streams], [a stream runs both ways]),
+)
+
 #organizer[
   We complete chapter 22's promise — with somewhere to store a value (a
   variable), we take input. The way this book teaches from the start is exactly
@@ -22,6 +27,8 @@
   line out of the band of characters, and interpreting the lifted line — split
   those two and each becomes simple.
 ]
+
+#chapter-questions()
 
 == Two stages — read, then interpret
 

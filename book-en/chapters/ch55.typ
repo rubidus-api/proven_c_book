@@ -2,6 +2,11 @@
 
 = Streams in reality — `<stdio.h>` ①
 
+#prereq(
+  ([chapter 10, The origin of streams], [the origin of streams]),
+  ([chapter 22, Output], [output in reality]),
+)
+
 #organizer[
   We look at the floor beneath the header used most. How a stream is really opened
   and closed, when the buffer is emptied, where failure shows itself — and the
@@ -24,6 +29,8 @@
   buffering — meaning *the moment at which the same program's output appears
   changes with what it is connected to*, and that is this chapter's first trap.
 ]
+
+#chapter-questions()
 
 == Open, write, close — failure can happen three times
 

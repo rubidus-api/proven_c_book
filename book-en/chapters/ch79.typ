@@ -2,6 +2,11 @@
 
 = C in practice — tools, projects, and territories
 
+#prereq(
+  ([chapter 48, Several files], [a project of several files]),
+  ([chapter 17, Setting up a development environment], [setting up the tools]),
+)
+
 #organizer[
   Before closing the book we look round the world beyond these pages. The two
   essential tools of the field (make and git), the representative projects that run
@@ -19,6 +24,8 @@
   changed and makes only what needs remaking. The classic of the C world and still its
   standard is `make`, and this chapter begins with that tool.
 ]
+
+#chapter-questions()
 
 == make — what is to be remade
 

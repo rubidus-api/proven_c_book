@@ -2,6 +2,11 @@
 
 = Allocation is a parameter
 
+#prereq(
+  ([chapter 40, Dynamic memory], [dynamic memory]),
+  ([chapter 68, Inside the allocator], [inside the allocator]),
+)
+
 #organizer[
   The answer to chapter 69's fourth bug — unclear ownership. The *allocator* that
 #idx("allocator")  handles the source of memory as a value, the *arena* that returns
@@ -21,6 +26,8 @@
   allocator as an argument does not allocate.* If this rule is kept, reading the
   signature alone tells you "this function may take memory".
 ]
+
+#chapter-questions()
 
 == An allocator is a value
 

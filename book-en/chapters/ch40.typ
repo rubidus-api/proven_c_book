@@ -1,5 +1,10 @@
 #import "../../book/lib.typ": *
 
+#prereq(
+  ([chapter 39, Lifetime and storage duration], [the limits of automatic lifetime]),
+  ([chapter 2, The regions of memory], [the warehouse (the heap)]),
+)
+
 = Dynamic memory
 
 #organizer[
@@ -20,6 +25,8 @@
   *heap*. The rule of this place differs decisively from the other two — *the
   programmer directly orders its birth and its death.*
 ]
+
+#chapter-questions()
 
 == Borrowing, and giving back
 

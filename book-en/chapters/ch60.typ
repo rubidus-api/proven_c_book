@@ -2,6 +2,11 @@
 
 = Numbers — `<math.h>`, `<fenv.h>`, `<tgmath.h>`
 
+#prereq(
+  ([chapter 44, Real numbers], [the mathematics of approximation]),
+  ([chapter 8, Representing numbers], [IEEE 754]),
+)
+
 #organizer[
   We look at how real-number calculation reports failure. The mathematics of
   approximation learned in chapters 8 and 44 becomes the contract of functions here
@@ -22,6 +27,8 @@
   the field it is usually simpler to check the return value with `isnan` and
   `isinf`.
 ]
+
+#chapter-questions()
 
 == The properties of NaN and infinity
 

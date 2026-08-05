@@ -2,6 +2,11 @@
 
 = And so C is an abstract language
 
+#prereq(
+  ([chapter 13, Compiler optimisation], [what a compiler keeps is only the observable behaviour]),
+  ([chapter 4, A simple model of the machine], [the simple machine model]),
+)
+
 #organizer[
   The conclusion of Part II. The scattered pieces — memory that became a
   ladder, execution that overlaps, the compiler that acts as an editor — are
@@ -25,6 +30,8 @@
   know the abstract machine not to be shaken by the real machine's vortex
   (chapters 11–13). The two pictures are not rivals but a pair.
 ]
+
+#chapter-questions()
 
 == Completing the thesis — putting three pieces together
 

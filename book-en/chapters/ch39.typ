@@ -2,6 +2,11 @@
 
 = Lifetime and storage duration
 
+#prereq(
+  ([chapter 24, Declaring and defining functions], [while a function runs]),
+  ([chapter 2, The regions of memory], [the stack and the static region]),
+)
+
 #organizer[
   We draw the map of memory — where a variable lives, when it is born and when it
 #idx("stack")  dies. Automatic and static lifetime, the ledger called the stack,
@@ -20,6 +25,8 @@
   together, but the moment they diverge is an accident — the name has gone and
   the address remains (see the misconception box below).
 ]
+
+#chapter-questions()
 
 == The standard's four axes — storage duration, scope, linkage, storage class
 

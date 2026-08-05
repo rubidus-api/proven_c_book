@@ -2,6 +2,11 @@
 
 = From macro to keyword — `bool`, `nullptr` and their companions
 
+#prereq(
+  ([chapter 63, What the new standards added, and the `*_s` controversy], [what the standards added]),
+  ([chapter 29, Booleans and comparison], [the type of true and false]),
+)
+
 #organizer[
 #idx("bool")  We treat the most conspicuous change C23 made to the language. Why
 #idx("nullptr")  things long imitated with macros in headers — `bool`, `true`,
@@ -22,6 +27,8 @@
   really prevents accidents is this chapter's content — and `nullptr` in particular
   is not a renaming but *a new type*.
 ]
+
+#chapter-questions()
 
 == What was promoted
 

@@ -2,6 +2,10 @@
 
 = Real numbers — the mathematics of approximation
 
+#prereq(
+  ([chapter 8, Representing numbers], [the contract called IEEE 754]),
+)
+
 #organizer[
   The world of approximation learned on the page in chapter 8 finally comes down
 #idx("comparing reals")  into C code. Choosing between `float` and `double`, the
@@ -21,6 +25,8 @@
   *relative error* (proportional to size). This chapter's demonstration shows both
   side by side.
 ]
+
+#chapter-questions()
 
 == Choosing a type, and comparing
 

@@ -2,6 +2,11 @@
 
 = The compiler landscape — C compilers in active service
 
+#prereq(
+  ([chapter 16, The general shape of compilation], [the translation process]),
+  ([chapter 17, Setting up a development environment], [setting up the tools]),
+)
+
 #organizer[
 #idx("compiler")  A map of which C compilers exist besides the gcc and clang
   installed in chapter 17, and where each is used. The big three of desktops and
@@ -26,6 +31,8 @@
   be the same, but the tools are many and each is good in a different place —
   mapping that is this chapter.
 ]
+
+#chapter-questions()
 
 == The big three — GCC, Clang/LLVM, MSVC
 

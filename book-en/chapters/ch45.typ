@@ -2,6 +2,11 @@
 
 = Errors and contracts
 
+#prereq(
+  ([chapter 32, The meaning of a function], [how a function reports failure]),
+  ([chapter 38, Safe input, and the appearance of proven], [the idiom of safe input]),
+)
+
 #organizer[
 #idx("contract")  The seed of the contract planted in chapter 32 grows — what a
   function demands and what it promises (preconditions and postconditions), how
@@ -22,6 +27,8 @@
   goes off later somewhere unrelated. This chapter is the story of ways to *make
   the contract visible*.
 ]
+
+#chapter-questions()
 
 == Errors are values — C's way
 

@@ -2,6 +2,11 @@
 
 = Implicit conversions — promotion and the usual arithmetic conversions
 
+#prereq(
+  ([chapter 26, Integers], [integer types differ in width]),
+  ([chapter 27, Integer operations], [an operation happens between one type]),
+)
+
 #organizer[
   When C makes values of different types meet, it converts them *silently*. This
 #idx("integer promotion")  chapter gathers those invisible conversions in one
@@ -21,6 +26,8 @@
   something larger) before the calculation, and the result is that wider type.
   Why that is, and how far it goes, is this chapter.
 ]
+
+#chapter-questions()
 
 == Rule 1 — integer promotion
 

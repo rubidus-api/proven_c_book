@@ -2,6 +2,11 @@
 
 = The traps of reading and writing — `<stdio.h>` ②
 
+#prereq(
+  ([chapter 55, Streams in reality], [the state of a stream]),
+  ([chapter 38, Safe input, and the appearance of proven], [safe input]),
+)
+
 #organizer[
   We begin with the story of the only function ever *deleted* from the standard
   library. Why `gets` died, what stands in its place, and what traps that
@@ -25,6 +30,8 @@
   (deprecated) and only C11 deleted it. For over twenty years in between, every
   compiler spat warnings and yet compiled it.
 ]
+
+#chapter-questions()
 
 == The death of `gets` and its successors
 

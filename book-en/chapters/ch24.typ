@@ -2,6 +2,11 @@
 
 = Declaring and defining functions
 
+#prereq(
+  ([chapter 21, Using functions], [how a function is called]),
+  ([chapter 23, Declaring variables], [the split between declaration and definition]),
+)
+
 #organizer[
   Chapter 21 taught how to *call* a function — now how to *make* one. The
 #idx("function prototype")  distinction between definition and declaration (a
@@ -23,6 +28,8 @@
   what `#include` was fetching (a bundle of declarations) is threaded onto one
   line.
 ]
+
+#chapter-questions()
 
 == Definition — the syntax for making a worker
 

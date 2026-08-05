@@ -8,6 +8,8 @@
   also settles how the book was written and how it is meant to be read.
 ]
 
+#chapter-questions()
+
 == What is programming
 
 A computer is a machine that does what it is told. The difficulty is in the

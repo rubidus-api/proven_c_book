@@ -2,6 +2,11 @@
 
 = The meaning of a function — copying values and side effects
 
+#prereq(
+  ([chapter 24, Declaring and defining functions], [declaring and defining a function]),
+  ([chapter 20, Expressions], [how a value is handed over]),
+)
+
 #organizer[
   Part VI's finish. *How* values cross over in a function call (copying),
 #idx("side effect")  the formal rules of side effects and evaluation order
@@ -21,6 +26,8 @@
   the function touches the original. A demonstration is quicker than words — here
   it is.
 ]
+
+#chapter-questions()
 
 == Copying values — the original is safe
 

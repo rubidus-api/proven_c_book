@@ -2,6 +2,11 @@
 
 = Formatting and parsing — not writing the type twice
 
+#prereq(
+  ([chapter 50, Variadic functions], [variadic arguments and the format string]),
+  ([chapter 53, The terrain of the standard library], [the printf contract]),
+)
+
 #organizer[
   The answer to chapter 69's third bug — the mismatch of format and argument. How the
   typeless placeholder `{}` obtains type safety, what `_Generic` does beneath it, and
@@ -22,6 +27,8 @@
 #idx("implicit conversion")  conversion rules learned in chapter 28, here the type is
   *preserved*.
 ]
+
+#chapter-questions()
 
 == `{}` — the placeholder with no type
 

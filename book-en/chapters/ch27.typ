@@ -2,6 +2,11 @@
 
 = Integer operations — division, bits
 
+#prereq(
+  ([chapter 7, Representing integers], [bits and shifts]),
+  ([chapter 26, Integers], [the finiteness of integers]),
+)
+
 #organizer[
 #idx("division")  We keep the promise deferred in chapter 20 — the truth about
   integer division `/` and remainder `%`, including the rule for negative
@@ -19,6 +24,8 @@
   integer, and the fractional part must be *discarded* one way or the other. The
   question is "which way", and that rule is this chapter's first section.
 ]
+
+#chapter-questions()
 
 == Division and remainder — the direction of discarding
 

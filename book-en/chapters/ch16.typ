@@ -2,6 +2,11 @@
 
 = The general shape of compilation
 
+#prereq(
+  ([chapter 15, Hello world], [the shape of the first program]),
+  ([chapter 4, A simple model of the machine], [the machine executes only machine code]),
+)
+
 #organizer[
   We watch the four-stage relay by which the text `hello.c` becomes an
 #idx("linking")  executable — preprocessing, compiling, assembling, linking.
@@ -22,6 +27,8 @@
   instructions, and a layer that joins the pieces into one lump. This chapter is
   a tour of those four landings.
 ]
+
+#chapter-questions()
 
 == From outside — a single command
 

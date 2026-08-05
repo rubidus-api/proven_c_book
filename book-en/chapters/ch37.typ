@@ -2,6 +2,11 @@
 
 = Strings
 
+#prereq(
+  ([chapter 9, Characters and text], [the representation of letters]),
+  ([chapter 36, Arrays], [arrays and subscripts]),
+)
+
 #organizer[
 #idx("string")  C's string faced head on — its identity as a char array plus
   NUL termination, the special circumstances of string literals, the real cost of
@@ -23,6 +28,8 @@
   array, and an agreement. This chapter treats the use and the cost of that
   agreement.
 ]
+
+#chapter-questions()
 
 == The identity — an array, and an agreement
 

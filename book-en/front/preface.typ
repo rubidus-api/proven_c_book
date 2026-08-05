@@ -20,6 +20,38 @@ lifetime of storage and the standard library. A reader with no intention of
 using proven can read Parts I to XI as a C primer and stop there — that stretch
 stands on its own, without the library.
 
+== What this book gives, and what it does not
+
+One thing must be clear first. *Reading alone will not grow your ability to
+program.* This book has no exercises, no assignments, no "try it yourself".
+What it gives you is an eye for reading code and naming the dangers in it.
+Standing in front of an empty file and breaking a problem into pieces,
+digging out the name of a function that will not come to mind, clearing the
+errors a compiler has poured out one by one, narrowing down the cause when
+the output is not what you expected — that is a different ability, and it
+grows *only by writing*. This book does not do that work for you, and I will
+not pretend it can. That part has to continue in some hands-on course, or in
+small programs of your own.
+
+That is not a fault of this book but a choice. Put exercises and assignments
+in and the volume swells, and the reader's burden swells with it. I chose the
+side that gets read to the end without strain, and gave up drill in exchange.
+*This is a book for understanding, not a book for making something quickly.*
+
+I should also say in advance that the first program comes late. Hello world
+does not appear until Part III. Until then we build up how a computer is
+shaped, how memory is divided, how numbers and letters are represented. That
+order is deliberate: it is there so that pointers arrive as a concept rather
+than as syntax. To a reader who wants to build something soon, the order may
+feel slow. Such a reader may read chapter 15, hello world, first and come
+back to chapter 1 — nothing is lost by breaking the order.
+
+What the book gives in return is *a firm foundation*: not a quick result but
+an understanding that lasts. Skills picked up from other books and courses
+sit far more steadily on top of it. The gap between someone who knows why
+integers wrap, why a pointer is not simply a number, and what a compiler does
+and does not promise, and someone who does not, only widens with time.
+
 There is also, in these pages, a certain amount of affection for C. Explaining
 why a language past its fiftieth year is still here, and what its design gave
 up in order to gain what it gained, tends to produce that. I have not hidden

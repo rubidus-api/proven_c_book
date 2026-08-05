@@ -2,6 +2,11 @@
 
 = Functions as values — the function pointer
 
+#prereq(
+  ([chapter 24, Declaring and defining functions], [the name of a function]),
+  ([chapter 36, Arrays], [a name decaying into a value]),
+)
+
 #organizer[
   Until now a function has been "a thing you call". In this chapter we handle a
   function *as a value* — put it in a variable, pass it as an argument, lay several
@@ -22,6 +27,8 @@
   So the strange situation arises in which `f`, `&f` and `*f` are all the same
   value — which is this chapter's first example.
 ]
+
+#chapter-questions()
 
 == The name decays into a pointer
 

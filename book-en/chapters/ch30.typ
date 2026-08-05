@@ -2,6 +2,10 @@
 
 = Deciding — if and switch
 
+#prereq(
+  ([chapter 29, Booleans and comparison], [the result of a comparison is true or false]),
+)
+
 #organizer[
   The program meets a fork. `if`, which takes a different road according to a
   condition, and `switch`, which spreads several branches at once — we learn both
@@ -22,6 +26,8 @@
   knowledge to be taken out only in the very small amount of code where
   performance matters; the branching learned today may be used freely.
 ]
+
+#chapter-questions()
 
 == if — when the condition is true
 

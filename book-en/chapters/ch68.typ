@@ -2,6 +2,11 @@
 
 = Inside the allocator — the heap, alternative allocators, alternative standard libraries
 
+#prereq(
+  ([chapter 40, Dynamic memory], [dynamic allocation]),
+  ([chapter 67, A program's map of memory], [a program's map of memory]),
+)
+
 #organizer[
 #idx("allocator")  We open the inside of the `malloc` chapter 40 passed over saying
   only "it is expensive". How an allocator manages free pieces (bins, boundary
@@ -24,6 +29,8 @@
   settles an allocator's performance and security entire. This chapter is the map of
   that design.
 ]
+
+#chapter-questions()
 
 == Ledger ① — the header attached to each block
 

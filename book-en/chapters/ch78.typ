@@ -2,6 +2,11 @@
 
 = The boundaries — running things overlapped, and when there is no OS
 
+#prereq(
+  ([chapter 64, Operations that do not split], [operations that do not split]),
+  ([chapter 67, A program's map of memory], [when there is no OS]),
+)
+
 #organizer[
   The last chapter of Part XII. We see the two ways of running several things
 #idx("coroutine")  overlapped (stackless coroutines and the job system), why
@@ -22,6 +27,8 @@
   problem of *performance*. This chapter's coroutines treat the former and the job
   system the latter.
 ]
+
+#chapter-questions()
 
 == Stackless coroutines — overlapping without threads
 

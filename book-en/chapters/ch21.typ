@@ -2,6 +2,11 @@
 
 = Using functions — how to call
 
+#prereq(
+  ([chapter 20, Expressions], [an expression becomes a value]),
+  ([chapter 19, The structure of a program], [the lump of work called a function]),
+)
+
 #organizer[
   How to *make* a function is still some way off (chapter 24). This chapter is
   how to *call* one — learn the three words call, argument and return value, and
@@ -22,6 +27,8 @@
   materials are called arguments, the result the return value — those two words
   are the whole of this chapter.
 ]
+
+#chapter-questions()
 
 == The call — say the name and a worker runs
 

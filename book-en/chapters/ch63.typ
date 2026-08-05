@@ -2,6 +2,11 @@
 
 = What the new standards added, and the `*_s` controversy
 
+#prereq(
+  ([chapter 54, The whole map of the standard library], [the whole map of the standard library]),
+  ([chapter 56, The traps of reading and writing], [bounds and truncation]),
+)
+
 #organizer[
   The last chapter of this part. We skim the headers C99, C11 and C23 added to the
   standard library, and then see the whole story of this language's most famous
@@ -21,6 +26,8 @@
   same — the "annex K: not present in this implementation" the example printed. The
   latter part of this chapter is that story.
 ]
+
+#chapter-questions()
 
 == What C99 added
 

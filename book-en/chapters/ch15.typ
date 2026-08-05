@@ -2,6 +2,10 @@
 
 = Hello world
 
+#prereq(
+  ([chapter 10, The origin of streams], [streams — output is something poured out]),
+)
+
 #organizer[
   At last, the first program. We run one six-line C program on the page and
   read it aloud, line by line. It is normal not to understand all of it yet —
@@ -19,6 +23,8 @@
   descendant of the glass Teletype). What the first program does is exactly this
   — let one line of greeting flow onto standard output.
 ]
+
+#chapter-questions()
 
 == The first program
 

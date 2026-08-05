@@ -8,10 +8,12 @@
 #let _L = (
   ko: (q: "문", a: "답", back: "돌아보기", recap: "복습 정리",
        stdin: "표준 입력으로 준 것", output: "실행 결과",
-       platform: "플랫폼 노트", organizer: "이 장이 끝나면"),
+       platform: "플랫폼 노트", organizer: "이 장이 끝나면",
+       prereq: "이 장이 기대는 것", questions: "이 장에서 답할 질문"),
   en: (q: "Q", a: "A", back: "Looking back", recap: "Recap",
        stdin: "Given on standard input", output: "Output",
-       platform: "Platform note", organizer: "By the end of this chapter"),
+       platform: "Platform note", organizer: "By the end of this chapter",
+       prereq: "What this chapter builds on", questions: "The questions this chapter answers"),
 ).at(_lang)
 
 // 인쇄를 위해 채움(fill)을 쓰지 않는다 — 선의 굵기와 모양으로만 구분한다.
@@ -34,6 +36,7 @@
 #let qa(q, a) = block(width: 100%, above: 1.15em, below: 1.15em, breakable: true)[
   #set par(first-line-indent: 0em)
   #block(inset: (x: 11pt, y: 7pt), width: 100%, stroke: (left: 2pt + black), below: 6pt)[
+    #metadata(q)<qa-q>
     #text(weight: "bold")[#_L.q] #h(5pt) #q
   ]
   #block(inset: (x: 11pt, y: 7pt), width: 100%, stroke: (left: 0.5pt + black))[
@@ -141,6 +144,47 @@
   #set par(first-line-indent: 0em)
   #text(weight: "bold", size: 0.96em)[#_L.organizer] #v(4pt) #body
 ]
+
+// 3.7 기댄 것 (RFC-0006 §3.1) — 이 장이 어느 장의 무슨 개념 위에 서는가.
+// 번호만 쓰지 않고 개념 이름을 함께 적는다. 항목은 (참조, 개념) 쌍이다.
+#let prereq(..items) = block(
+  width: 100%, inset: (x: 11pt, y: 9pt), above: 1.15em, below: 1.15em,
+  stroke: (left: (thickness: 2pt, paint: rgb("#666666"), dash: "dotted")),
+)[
+  #set par(first-line-indent: 0em)
+  #text(weight: "bold", size: 0.96em, fill: rgb("#444444"))[#_L.prereq]
+  #v(5pt)
+  #for (where, what) in items.pos() {
+    block(below: 4pt, width: 100%)[
+      #text(weight: "bold")[#where] #h(6pt) #text(fill: rgb("#333333"))[#what]
+    ]
+  }
+]
+
+// 3.8 이 장에서 답할 질문 (RFC-0006 §3.3) — 목록을 손으로 적지 않는다.
+// 이 자리 뒤부터 다음 1단계 제목 전까지의 문답(qa)에서 질문만 모은다.
+// 답은 싣지 않는다 — 독자가 잠시 생각할 자리를 만드는 것이 목적이다.
+#let chapter-questions(min: 2) = context {
+  let nexts = query(heading.where(level: 1).after(here()))
+  let sel = selector(<qa-q>).after(here())
+  let sel = if nexts.len() > 0 { sel.before(nexts.first().location()) } else { sel }
+  let qs = query(sel)
+  if qs.len() >= min {
+    block(
+      width: 100%, inset: (x: 11pt, y: 9pt), above: 1.15em, below: 1.15em,
+      stroke: (left: 0.5pt + black, rest: (thickness: 0.5pt, paint: rgb("#999999"), dash: "densely-dotted")),
+    )[
+      #set par(first-line-indent: 0em)
+      #text(weight: "bold", size: 0.96em)[#_L.questions]
+      #v(5pt)
+      #for (i, m) in qs.enumerate() {
+        block(below: 4pt, width: 100%)[
+          #text(fill: rgb("#666666"))[#(i + 1).] #h(4pt) #m.value
+        ]
+      }
+    ]
+  }
+}
 
 // ── 색인 ─────────────────────────────────────────────
 // #idx("용어") 를 본문에 두면 그 자리의 쪽 번호가 색인에 실린다.

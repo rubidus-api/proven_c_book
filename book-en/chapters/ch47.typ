@@ -2,6 +2,11 @@
 
 = The three faces of `main` — entry point and exit status
 
+#prereq(
+  ([chapter 3, Programs and processes], [what it is to run as a process]),
+  ([chapter 19, The structure of a program], [the skeleton of a program]),
+)
+
 #organizer[
 #idx("main")  We face head on the `main` that chapter 14 passed over as merely
   "the agreed starting point". The *three forms* the standard permits, the exact
@@ -22,6 +27,8 @@
   value is not decoration but *the program's last conversation with the outside
   world*.
 ]
+
+#chapter-questions()
 
 == The three forms the standard permits
 

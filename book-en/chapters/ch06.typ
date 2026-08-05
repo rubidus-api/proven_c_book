@@ -2,6 +2,10 @@
 
 = Special knowledge about addresses — address 0, alignment, low bits
 
+#prereq(
+  ([chapter 5, Words and addresses], [an address is a number attached to a slot of memory]),
+)
+
 #organizer[
   Three pieces of corner knowledge about the locker corridor. Why locker 0 is
 #idx("alignment")  special, why a large piece of luggage cannot go into just any
@@ -22,6 +26,8 @@
   left empty in the first place — that story is the first section of this
   chapter.
 ]
+
+#chapter-questions()
 
 == What is in locker 0
 

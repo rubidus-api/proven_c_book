@@ -2,6 +2,11 @@
 
 = The terrain of the standard library
 
+#prereq(
+  ([chapter 38, Safe input, and the appearance of proven], [the traps of the standard functions]),
+  ([chapter 16, The general shape of compilation], [a library is linked in]),
+)
+
 #organizer[
 #idx("standard library")  We spread out a map of the standard library we have
   merely been using until now — what toolboxes there are, and what to trust and
@@ -21,6 +26,8 @@
   slower still — the reason `gets`'s funeral took decades, and the key to this
   library's character.
 ]
+
+#chapter-questions()
 
 == The map — the toolboxes
 

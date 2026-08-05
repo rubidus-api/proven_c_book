@@ -2,6 +2,11 @@
 
 = Declaring variables
 
+#prereq(
+  ([chapter 5, Words and addresses], [addresses and slots]),
+  ([chapter 19, The structure of a program], [where a declaration sits]),
+)
+
 #organizer[
 #idx("variable")  Part V's subject is "how names are made." The first step is
   declaring a variable — agreeing a type and a name, holding a value, and
@@ -20,6 +25,8 @@
   address. This chapter teaches how to make that name; meeting the real address
   behind the nickname again is Part VII (chapter 33).
 ]
+
+#chapter-questions()
 
 == Declaration — type, name, and a first value
 

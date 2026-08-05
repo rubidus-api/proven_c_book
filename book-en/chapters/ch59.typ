@@ -2,6 +2,10 @@
 
 = Characters and locales — `<ctype.h>`, `<locale.h>`, `<wchar.h>`
 
+#prereq(
+  ([chapter 9, Characters and text], [letters and encodings]),
+)
+
 #organizer[
   We look at the functions that handle a single character. It is the simplest
   header in appearance, yet two of C's subtlest traps are here — that *passing a
@@ -20,6 +24,8 @@
   tool of the ASCII days; to handle multibyte characters you need the wide-character
   family (`<wctype.h>`) or code that handles the encoding yourself.
 ]
+
+#chapter-questions()
 
 == The first trap — do not pass a `char` as it stands
 

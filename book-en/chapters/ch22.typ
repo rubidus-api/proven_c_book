@@ -2,6 +2,11 @@
 
 = Output
 
+#prereq(
+  ([chapter 10, The origin of streams], [the origin of streams]),
+  ([chapter 19, The structure of a program], [the skeleton of a program]),
+)
+
 #organizer[
 #idx("format string")  `printf` faced head on — the frame called a format
   string, the blanks `%d` and `%s`, and matching the format against the
@@ -24,6 +29,8 @@
   the commotion this habit causes in practice ("my output isn't showing!") and
   how to govern it are met when we take up input and output properly.
 ]
+
+#chapter-questions()
 
 == printf — output with a format
 

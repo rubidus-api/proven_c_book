@@ -2,6 +2,11 @@
 
 = Expressions — the things that become values
 
+#prereq(
+  ([chapter 7, Representing integers], [the representation of integers]),
+  ([chapter 19, The structure of a program], [where statements and expressions sit]),
+)
+
 #organizer[
   We go inside the statement. How to write values in source code (literals), how
   to weave values into calculations (operators and expressions), and the order
@@ -22,6 +27,8 @@
   meaning "as the letters say." That the bridge between the world of letters and
   the world of bits is the compiler — chapter 16's relay is at work here too.
 ]
+
+#chapter-questions()
 
 == Literals — values written in source
 

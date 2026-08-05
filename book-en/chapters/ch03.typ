@@ -2,6 +2,10 @@
 
 = Programs and processes — what it is to be run
 
+#prereq(
+  ([chapter 2, The regions of memory], [the map that divides memory into code, static, stack and heap]),
+)
+
 #organizer[
 #idx("process")  We divide the *program* that exists as a file from the *process*
   that has been run and is alive. What the operating system gives a process (an
@@ -22,6 +26,8 @@
   instruction — that is running, and one set brought to life that way is called a
   *process*.
 ]
+
+#chapter-questions()
 
 == A program is a noun, a process is a verb
 

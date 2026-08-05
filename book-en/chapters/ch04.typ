@@ -2,6 +2,11 @@
 
 = A simple model of the machine — the birth of C
 
+#prereq(
+  ([chapter 1, Setting the scene], [why C is still in use]),
+  ([chapter 2, The regions of memory], [the map of memory regions]),
+)
+
 #organizer[
   You will be able to draw a computer as a simple picture of three parts — a
   place that calculates, a place that remembers, and something that keeps
@@ -21,6 +26,8 @@
   looks straight at that skeleton. As long as the skeleton stays, the language
   of the skeleton stays too.
 ]
+
+#chapter-questions()
 
 == Drawing a computer as three parts
 

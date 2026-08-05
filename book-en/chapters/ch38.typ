@@ -2,6 +2,11 @@
 
 = Safe input, and the appearance of proven
 
+#prereq(
+  ([chapter 25, Input], [the danger of input]),
+  ([chapter 37, Strings], [a string only marks its end]),
+)
+
 #organizer[
   Chapter 25 foreshadowed "why safe input is difficult", and chapters 33 and 37
   taught the roots of that danger (the boundary, NUL termination). This chapter
@@ -22,6 +27,8 @@
   format-string attack was a taste). Safe input is the sum of [blocking overflow +
   handling failure explicitly], and this chapter's two pillars are those two.
 ]
+
+#chapter-questions()
 
 == Dissecting the accident — the epidemic called the boundary violation
 

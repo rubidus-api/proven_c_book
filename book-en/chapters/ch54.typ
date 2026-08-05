@@ -2,6 +2,10 @@
 
 = The whole map of the standard library
 
+#prereq(
+  ([chapter 53, The terrain of the standard library], [the character of the standard library]),
+)
+
 #organizer[
   We spread into a table every header the C standard settles, without missing one.
   Which header entered in which edition, what can be used even without an
@@ -22,6 +26,8 @@
   to let anything in*. It is the other side of the story of `gets`'s funeral taking
   decades (chapter 38).
 ]
+
+#chapter-questions()
 
 == Freestanding and hosted — two worlds
 

@@ -2,6 +2,10 @@
 
 = The origin of streams — punched cards, line printers, printing terminals
 
+#prereq(
+  ([chapter 9, Characters and text], [letters too are in the end an agreement about bytes]),
+)
+
 #organizer[
   You will learn why a computer's input and output has the shape of "characters
   flowing one line at a time." The answer lies in the age of paper — punched
@@ -21,6 +25,8 @@
   "next line" was an actual motion of mechanical parts. Look at the devices of
   that era and everything about the shape of today's input and output unravels.
 ]
+
+#chapter-questions()
 
 == Punched cards — one card is one line
 

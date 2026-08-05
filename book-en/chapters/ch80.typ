@@ -2,6 +2,11 @@
 
 = The embedded toolbox — compilers and the tools beside them
 
+#prereq(
+  ([chapter 18, The compiler landscape], [the terrain of compilers]),
+  ([chapter 67, A program's map of memory], [memory in embedded systems]),
+)
+
 #organizer[
 #idx("embedded")  What people who write C that runs on chips carry with them.
   The compilers that differ by vendor (IAR, Arm, TI, Microchip, Renesas, SDCC
@@ -25,6 +30,8 @@
   a chip with tens of KiB of memory, a few per cent of size decides whether a
   product exists.
 ]
+
+#chapter-questions()
 
 == The embedded compilers
 

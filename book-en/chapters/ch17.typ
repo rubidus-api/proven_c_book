@@ -2,6 +2,10 @@
 
 = Setting up a development environment
 
+#prereq(
+  ([chapter 16, The general shape of compilation], [the four stages: preprocess, compile, assemble, link]),
+)
+
 #organizer[
   We equip the tools to run chapter 16's relay on our own computer. The general
   account, true on any platform, is the main text; concrete installation steps
@@ -25,6 +29,8 @@
   lost when switching tools. That is why this book takes the command line as its
   reference.
 ]
+
+#chapter-questions()
 
 == Only three things are needed
 

@@ -2,6 +2,11 @@
 
 = Booleans and comparison
 
+#prereq(
+  ([chapter 20, Expressions], [the value of an expression]),
+  ([chapter 28, Implicit conversions], [the promotion rules]),
+)
+
 #organizer[
 #idx("boolean")  The world of true and false as values — C23's `bool`, the
   comparison operators, and the logical operators with their special property
@@ -20,6 +25,8 @@
   "question" but *an expression computing a bool value* — that perspective is
   this chapter's centre, and in the next chapter branching consumes that value.
 ]
+
+#chapter-questions()
 
 == bool — a type with two values
 

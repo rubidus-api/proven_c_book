@@ -2,6 +2,11 @@
 
 = The preprocessor and the translation phases
 
+#prereq(
+  ([chapter 16, The general shape of compilation], [the first stage of translation]),
+  ([chapter 19, The structure of a program], [where a macro sits]),
+)
+
 #organizer[
   We open head on the layer chapter 16 passed over as "a text tool that does not
   know C". The identity of the macro, the principle and idioms of the two
@@ -23,6 +28,8 @@
   whatever) and its danger (it upholds neither grammar nor meaning). This chapter
   sees the power and the danger together.
 ]
+
+#chapter-questions()
 
 == Macros — turning a name into a stream of tokens
 

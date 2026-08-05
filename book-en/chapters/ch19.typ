@@ -2,6 +2,11 @@
 
 = The structure of a program
 
+#prereq(
+  ([chapter 15, Hello world], [what hello world already contained]),
+  ([chapter 13, Compiler optimisation], [the contract of the abstract machine]),
+)
+
 #organizer[
   Part IV has one goal — to read one piece of chapter 15's hello world
   *completely*. The first step is the skeleton of a program: comments,
@@ -21,6 +26,8 @@
   but the *observable result* is guaranteed to be the same as "one statement at
   a time, top to bottom." So the reader may safely read with this picture.
 ]
+
+#chapter-questions()
 
 == Comments — writing only humans read
 

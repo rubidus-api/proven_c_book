@@ -2,6 +2,11 @@
 
 = Memory divides — registers, caches, a ladder of layers
 
+#prereq(
+  ([chapter 4, A simple model of the machine], [the machine fetches values from memory and computes]),
+  ([chapter 5, Words and addresses], [the address space]),
+)
+
 #organizer[
   A chapter that begins with a confession — how bold a simplification the
 #idx("register")  three-part picture of chapter 4 really was, and a repair of
@@ -21,6 +26,8 @@
   space was not drawn in chapter 4's picture at all. Now it is time to be
   honest.
 ]
+
+#chapter-questions()
 
 == A confession — that picture was too simple
 

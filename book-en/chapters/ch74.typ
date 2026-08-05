@@ -2,6 +2,11 @@
 
 = Strings and text
 
+#prereq(
+  ([chapter 37, Strings], [strings]),
+  ([chapter 9, Characters and text], [UTF-8 and bytes]),
+)
+
 #organizer[
   The answer to chapter 69's first bug — string functions that do not know the size
   of the vessel. Strings that carry their length, the distinction between owning and
@@ -23,6 +28,8 @@
   This library keeps a NUL internally as well in order to remove that conversion cost
   — a compromise that has both.
 ]
+
+#chapter-questions()
 
 == Two types, one rule
 

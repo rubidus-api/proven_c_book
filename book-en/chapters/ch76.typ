@@ -2,6 +2,12 @@
 
 = Containers and algorithms
 
+#prereq(
+  ([chapter 41, Structs], [structs]),
+  ([chapter 40, Dynamic memory], [a growing array]),
+  ([chapter 72, The foundation], [views and bounds]),
+)
+
 #organizer[
 #idx("hash map")  The tools that hold many — the growing array, the intrusive list,
   the ring buffer, the hash map. And as the answer to chapter 69's fifth bug
@@ -23,6 +29,8 @@
   becomes invalid after reallocation. Rather than getting these three right afresh
   every time you make a container, it is better to use one made properly once.
 ]
+
+#chapter-questions()
 
 == The life cycle of the four containers
 

@@ -2,6 +2,11 @@
 
 = How to read a declaration — two readings and `typedef`
 
+#prereq(
+  ([chapter 51, Functions as values], [the notation of a function pointer]),
+  ([chapter 36, Arrays], [the array declarator]),
+)
+
 #organizer[
 #idx("reading declarations")  C's most notorious place — we learn how to read a
   declaration such as `char *(*table[4])(int)`. There are only two principles:
@@ -24,6 +29,8 @@
   `()` overlap, parentheses intrude because of precedence and it quickly turns
   rough. Hence the separate need for *rules for reading*.
 ]
+
+#chapter-questions()
 
 == The two readings
 

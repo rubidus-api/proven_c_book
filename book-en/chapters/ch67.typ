@@ -2,6 +2,11 @@
 
 = A program's map of memory — operating systems and embedded
 
+#prereq(
+  ([chapter 39, Lifetime and storage duration], [storage duration]),
+  ([chapter 2, The regions of memory], [the regions of memory]),
+)
+
 #organizer[
 #idx("stack size")  We redraw at a larger scale the map of memory sketched in
   chapter 39. What is absent from the C standard and present only in the operating
@@ -25,6 +30,8 @@
   With no operating system the startup code takes on the last two entirely — that is
   the embedded world, and the latter half of this chapter is that story.
 ]
+
+#chapter-questions()
 
 == Regions in the executable file, regions in the address space
 

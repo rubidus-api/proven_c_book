@@ -2,6 +2,11 @@
 
 = Arrays
 
+#prereq(
+  ([chapter 33, Objects, addresses, pointers], [addresses and pointers]),
+  ([chapter 11, Memory divides], [memory is a run of adjacent slots]),
+)
+
 #organizer[
   Contiguous memory — the array. Declaration and traversal, the real relationship
 #idx("buffer overrun")  between arrays and pointers (the notorious "decay"), and
@@ -21,6 +26,8 @@
   "calculable neighbours" is the root of both the array's power (immediate
   access, cache friendliness) and its danger (miscalculating the boundary).
 ]
+
+#chapter-questions()
 
 == Declaration, access, traversal
 

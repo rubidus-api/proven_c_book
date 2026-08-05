@@ -2,6 +2,10 @@
 
 = Repetition — loops and invariants
 
+#prereq(
+  ([chapter 30, Deciding], [flow that forks on a condition]),
+)
+
 #organizer[
   We take a program's real power — repetition — into our hands. The three
   siblings of the loop (`while`, `for`, `do-while`), new operators (`++`, `+=`),
@@ -22,6 +26,8 @@
   (theoretically so as well — all chapter 4's model of computation demands is
   "sequence, branch, repetition").
 ]
+
+#chapter-questions()
 
 == The three siblings of the loop
 

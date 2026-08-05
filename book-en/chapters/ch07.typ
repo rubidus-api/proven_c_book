@@ -2,6 +2,11 @@
 
 = Representing integers — sign, overflow, shift
 
+#prereq(
+  ([chapter 4, A simple model of the machine], [what the machine handles is a bundle of bits of fixed width]),
+  ([chapter 5, Words and addresses], [words and bytes]),
+)
+
 #organizer[
   The first rung on the ladder of representation. You will see how unsigned
 #idx("two's complement")  integers are circular (modular) numbers, how three ways of
@@ -23,6 +28,8 @@
   make that agreement, and how the competition ended, is the heart of this
   chapter.
 ]
+
+#chapter-questions()
 
 == Unsigned integers — numbers that go round like a clock
 

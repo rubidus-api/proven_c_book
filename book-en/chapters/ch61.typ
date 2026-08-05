@@ -2,6 +2,11 @@
 
 = Time — `<time.h>`
 
+#prereq(
+  ([chapter 41, Structs], [values bundled in a struct]),
+  ([chapter 53, The terrain of the standard library], [the contract the standard settles]),
+)
+
 #organizer[
   The header the standard settled unusually little of. The standard says neither
   what `time_t` is nor how time zones are handled. We look at the traps that arise
@@ -23,6 +28,8 @@
   POSIX's `clock_gettime(CLOCK_MONOTONIC, …)` or Windows'
   `QueryPerformanceCounter` — that is, of *a platform API*.
 ]
+
+#chapter-questions()
 
 == Three representations of time
 

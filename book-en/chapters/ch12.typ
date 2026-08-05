@@ -2,6 +2,11 @@
 
 = The machinery of speed — the birth of the standard
 
+#prereq(
+  ([chapter 4, A simple model of the machine], [machines differ from one another]),
+  ([chapter 11, Memory divides], [the layers of memory]),
+)
+
 #organizer[
   If the cache reduced waiting, this time it is the machinery that overlaps
 #idx("pipeline")  execution itself — pipelining, branch prediction, and the
@@ -22,6 +27,8 @@
   decode the one after. That is this chapter's first piece of machinery: the
   pipeline.
 ]
+
+#chapter-questions()
 
 == The pipeline — instructions on an assembly line
 

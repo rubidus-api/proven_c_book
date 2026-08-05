@@ -2,6 +2,11 @@
 
 = Undefined behaviour
 
+#prereq(
+  ([chapter 13, Compiler optimisation], [the abstract machine and observable behaviour]),
+  ([chapter 45, Errors and contracts], [what it means to break a contract]),
+)
+
 #organizer[
   We face head on the world this book has kept deferring under the name "outside
   the contract". What UB exactly is and why it exists, why it is not "a little
@@ -21,6 +26,8 @@
   contract the whole program *loses its meaning*. That difference is this chapter
   entire.
 ]
+
+#chapter-questions()
 
 == Three grey zones — UB, unspecified, implementation-defined
 

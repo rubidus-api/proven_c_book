@@ -2,6 +2,11 @@
 
 = The outside world — files, streams, time, random numbers
 
+#prereq(
+  ([chapter 55, Streams in reality], [streams]),
+  ([chapter 25, Input], [input]),
+)
+
 #organizer[
   From here we touch the operating system. Opening, reading and writing files,
   buffered streams, reading and formatting time, and random numbers — those random
@@ -22,6 +27,8 @@
   reports only success or failure. What most code wants is the latter, and the former
   remains so as not to hide that fact.
 ]
+
+#chapter-questions()
 
 == The life of one file
 

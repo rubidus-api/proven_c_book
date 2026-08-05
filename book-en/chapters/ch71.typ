@@ -2,6 +2,11 @@
 
 = Errors are values
 
+#prereq(
+  ([chapter 45, Errors and contracts], [errors as values]),
+  ([chapter 69, The five bugs shipped for fifty years], [the unchecked return value]),
+)
+
 #organizer[
   We see the answer to chapter 69's second bug — unconfirmed failure. The way of
   returning failure as a value, the bundle holding a value and an error together,
@@ -21,6 +26,8 @@
   them together. proven uses the second and third together — and the third is
   possible because, as learned in chapter 41, a C struct can be returned by value.
 ]
+
+#chapter-questions()
 
 == Two shapes of return
 

@@ -2,6 +2,10 @@
 
 = Words and addresses — the archetype of C
 
+#prereq(
+  ([chapter 4, A simple model of the machine], [the simple machine model that points at memory by address]),
+)
+
 #organizer[
   You will be able to draw memory as a long corridor of numbered lockers. That
 #idx("word")  number is the address, and how many slots the machine handles at
@@ -22,6 +26,8 @@
   separation of what is stored from how it is read — gets its first real
   workout here.
 ]
+
+#chapter-questions()
 
 == The locker corridor
 

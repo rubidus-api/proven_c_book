@@ -2,6 +2,11 @@
 
 = Operations that do not split — `<stdatomic.h>`
 
+#prereq(
+  ([chapter 11, Memory divides], [the cache and the layers of memory]),
+  ([chapter 39, Lifetime and storage duration], [lifetime and sharing]),
+)
+
 #organizer[
 #idx("atomic operations")  We see what happens when several strands touch the same
   memory at once, and learn the tool C11 brought into that place — atomic types and
@@ -21,6 +26,8 @@
   differ per core, so the lag of "written but not visible to the other" is
   compounded. This chapter's first example actually counts that loss out.
 ]
+
+#chapter-questions()
 
 == The lost update — confirmed with the eyes
 

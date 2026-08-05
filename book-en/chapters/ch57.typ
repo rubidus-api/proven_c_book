@@ -2,6 +2,11 @@
 
 = Strings and memory — `<string.h>`
 
+#prereq(
+  ([chapter 37, Strings], [a string is an array that only marks its end]),
+  ([chapter 36, Arrays], [handling memory in bulk]),
+)
+
 #organizer[
   The header in which the most accidents have happened in C. Functions that do not
   take a size, `strncpy` which is not safe despite its name, copying that touches
@@ -23,6 +28,8 @@
   not attach a NUL. Both properties go against the expectations of "string
   copying". This chapter's first example shows it before your eyes.
 ]
+
+#chapter-questions()
 
 == The truth about `strncpy`
 

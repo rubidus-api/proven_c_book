@@ -2,6 +2,12 @@
 
 = The rules of pointers — alignment and provenance
 
+#prereq(
+  ([chapter 33, Objects, addresses, pointers], [what a pointer is]),
+  ([chapter 6, Special knowledge about addresses], [alignment and the low bits]),
+  ([chapter 14, And so C is an abstract language], [the contract of the abstract machine]),
+)
+
 #organizer[
   Two deep rules that bind pointers — the constraint chapter 6's alignment places
   on pointer casts (and the privilege belonging to `char*` alone), and a
@@ -22,6 +28,8 @@
   to a type with stricter alignment is already outside the contract*. A pointer's
   type is both an eye and a contract.
 ]
+
+#chapter-questions()
 
 == Alignment and casts — the privilege of char\*
 

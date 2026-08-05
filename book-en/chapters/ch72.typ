@@ -2,6 +2,12 @@
 
 = The foundation — bytes, views, and arithmetic that does not overflow
 
+#prereq(
+  ([chapter 35, The rules of pointers], [alignment and provenance]),
+  ([chapter 36, Arrays], [arrays and bounds]),
+  ([chapter 65, How to ask about overflow], [arithmetic that does not overflow]),
+)
+
 #organizer[
   We see the four basic vocabularies the whole library stands on — the type that
 #idx("view")  points at raw bytes, the *view* binding pointer and length into one,
@@ -22,6 +28,8 @@
   pointer alone and you forget where your land ends, which is chapter 36's boundary
   trespass. proven's basic vocabulary is these two each made into a type.
 ]
+
+#chapter-questions()
 
 == Bytes have a name
 
