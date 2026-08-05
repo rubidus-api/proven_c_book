@@ -25,7 +25,7 @@
 
 == `errno` — the price of carrying errors in a global
 
-#demo("examples/ch62/errno_demo.c")
+#demo("examples-en/ch62/errno_demo.c")
 
 The output shows the rules exactly. Set it to 0 just before the call, read it
 after confirming failure, and store it before doing anything else. Merely slipping

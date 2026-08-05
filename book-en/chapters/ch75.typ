@@ -61,7 +61,7 @@ alignment symbol comes first* (`{:<10}` instead of `%-10s`), *the fill character
 chosen* (`{:*>8}`), and *there is no type letter* (`%d`'s `d` has gone — the type comes
 from the argument).
 
-#demo("examples/ch75/spec.c")
+#demo("examples-en/ch75/spec.c")
 
 The example shows this table in the flesh, a line at a time. A few points.
 
@@ -107,7 +107,7 @@ for real. So this function must be *deterministic* and must not mutate its targe
 the two results disagree the library returns `INVALID_ARG` rather than print a misaligned
 field. It is the price paid for aligning without allocating.
 
-#demo("examples/ch75/fmt.c")
+#demo("examples-en/ch75/fmt.c")
 
 This example formats not to the screen but *into a string* — the `proven_println`
 seen in chapter 70 is the edition connecting this machinery to standard output. Three
@@ -249,7 +249,7 @@ That `proven_scan_str` *returns a view without copying* matters — chapter 74's
 handling without copying" holds in parsing too. In exchange that view is valid only
 while the original input is alive (chapter 72).
 
-#demo("examples/ch75/lines.c")
+#demo("examples-en/ch75/lines.c")
 
 That three inputs divided into three branches is the heart of it. `bob thirty` had
 its name read but stopped at the age, and the line of whitespace only failed from the

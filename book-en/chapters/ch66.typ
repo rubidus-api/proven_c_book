@@ -25,7 +25,7 @@
 
 == What was promoted
 
-#demo("examples/ch66/keywords.c")
+#demo("examples-en/ch66/keywords.c")
 
 We organise it in one table. On the left is the shape up to C17, on the right C23.
 

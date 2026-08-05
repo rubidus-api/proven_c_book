@@ -26,7 +26,7 @@
 
 == The truth about `strncpy`
 
-#demo("examples/ch57/strncpy.c")
+#demo("examples-en/ch57/strncpy.c")
 
 Two things come out.
 
@@ -117,7 +117,7 @@ destination's size* but *the number of bytes that may additionally be written*.
 
 == Overlapping regions — `memcpy` and `memmove`
 
-#demo("examples/ch57/overlap.c")
+#demo("examples-en/ch57/overlap.c")
 
 `memcpy`'s contract includes "the two regions must not overlap". Calling it with
 them overlapping is undefined behaviour, and in an optimised implementation values

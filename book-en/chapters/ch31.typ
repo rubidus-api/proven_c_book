@@ -40,7 +40,7 @@ turns.
 *`for`* — the form that gathers the loop's housekeeping (start, condition,
 update) onto one line. Seen in a demonstration — the sum from 1 to 100:
 
-#demo("examples/ch31/sum.c")
+#demo("examples-en/ch31/sum.c")
 
 Read `for (int i = 1; i <= 100; i += 1)` in three slots — *start* (`int i = 1`:
 make the loop variable), *condition* (`i <= 100`: checked before each turn), and

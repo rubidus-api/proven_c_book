@@ -37,7 +37,7 @@ a `bool` with `%d` gives 1 and 0 (confirmed in the demonstration).
 There are six comparison operators — `==` (equal), `!=` (not equal), `<`, `<=`,
 `>`, `>=`. All take two values as material and put out a bool.
 
-#demo("examples/ch29/cmp.c")
+#demo("examples-en/ch29/cmp.c")
 
 The first line is the check — the value of the expression `10 > 3` (true) was
 held in a variable and printed as 1 with `%d`. The instinct that judgement is not

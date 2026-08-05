@@ -29,7 +29,7 @@
 *widened to int* before the calculation (to int if int can hold all its values,
 otherwise to unsigned int).
 
-#demo("examples/ch28/conv.c")
+#demo("examples-en/ch28/conv.c")
 
 The first line is the check — two `signed char` values of 100 were added and the
 result is 200. The reason a value that does not fit in a char did not overflow is

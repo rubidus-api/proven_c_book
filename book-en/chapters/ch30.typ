@@ -40,7 +40,7 @@ and each branch takes a block (chapter 19). When there are several branches you
 build a ladder with `else if` — the demonstration is that shape. Notice too that
 chapter 25's input practice (fgets + sscanf) appears again.
 
-#demo("examples/ch30/grade.c", stdin: true)
+#demo("examples-en/ch30/grade.c", stdin: true)
 
 The ladder is checked *in order from the top*, and only the first branch that
 becomes true is executed — that 87 stops at "우" and does not fall further down
@@ -67,7 +67,7 @@ conditions above, broad conditions below, is the standard.
 When the fork is not "which range" but "which *value*", there is a dedicated
 device — `switch`.
 
-#demo("examples/ch30/season.c", stdin: true)
+#demo("examples-en/ch30/season.c", stdin: true)
 
 How to read it — when `switch (month)` steps onto the board holding one value,
 execution *jumps* to the `case` label matching that value. And here is switch's

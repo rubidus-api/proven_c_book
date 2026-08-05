@@ -30,7 +30,7 @@
 compiler builds the array by *appending `'\0'` after* the bytes of the
 characters. The demonstration dissects it.
 
-#demo("examples/ch37/str.c")
+#demo("examples-en/ch37/str.c")
 
 There are layers to read. `strlen` (the length measurement of the standard
 `<string.h>`) answered 6 — "안녕" is *two characters, six bytes* (exactly
@@ -130,7 +130,7 @@ pointer, and one step further in there is a surprising fact — *a string litera
 itself already an array.* Written with its type exactly, `"abcdef"` is `char[7]` (six
 characters + the NUL).
 
-#demo("examples/ch37/literal.c")
+#demo("examples-en/ch37/literal.c")
 
 The output's first two lines are that confirmation. `sizeof "abcdef"` is 7 and
 `sizeof ""` is 1 — not a pointer's size (8) but *the array's size*. A literal decaying

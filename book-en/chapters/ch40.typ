@@ -27,7 +27,7 @@ The syntax is two functions. `malloc(number of bytes)` borrows that many
 contiguous slots from the warehouse and returns their starting address, and
 `free(address)` gives back what was borrowed.
 
-#demo("examples/ch40/dyn.c")
+#demo("examples-en/ch40/dyn.c")
 
 Three practices are stamped into the demonstration.
 
@@ -46,7 +46,7 @@ machine.
 
 == The alignment of the address returned — because it does not know what will go in
 
-#demo("examples/ch40/alloc_cost.c")
+#demo("examples-en/ch40/alloc_cost.c")
 
 The question the first part of the example answers is this. You borrowed a mere
 one byte with `malloc(1)` — may that address sit just anywhere?

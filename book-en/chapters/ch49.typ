@@ -39,7 +39,7 @@ a macro *the tokens as written* are planted into the body. So the operators insi
 argument and the operators in the body meet in one place, and chapter 20's precedence
 divides them. We see four traps together with their actual expansions.
 
-#demo("examples/ch49/parens.c")
+#demo("examples-en/ch49/parens.c")
 
 *① Without wrapping the argument, the operations inside it scatter.*
 
@@ -112,7 +112,7 @@ Put `#` before a macro argument and that argument becomes *a string literal of i
 literally*. The key is that what becomes a string is not the value but *the shape
 as written*.
 
-#demo("examples/ch49/macro.c")
+#demo("examples-en/ch49/macro.c")
 
 The demonstration's `SHOW(2 + 3 * 4)` is that in the flesh — `#expr` becomes the
 string `"2 + 3 * 4"` while the `(expr)` beside it is calculated and becomes 14.
@@ -206,7 +206,7 @@ This idiom is also one the standard document gives directly as an example (in C1
 it is the EXAMPLE of §6.10.3.5, "Scope of macro definitions"; C23 pushed the number
 along by one as `#embed` came in at 6.10.3). We run that example as it stands.
 
-#demo("examples/ch49/glue.c")
+#demo("examples-en/ch49/glue.c")
 
 The third and fourth lines of the output are this section's conclusion. Given the
 same arguments, `glue` produced `hello` and `xglue` produced `hello, world`. We
@@ -316,7 +316,7 @@ ask "was even this settled?". They are not things to use often in practice, but 
 show *what happens when the expansion rules are pushed to their limit*, so they are
 worth reading once. We pick three and really run them.
 
-#demo("examples/ch49/odd.c")
+#demo("examples-en/ch49/odd.c")
 
 The knack the example uses of printing the expansion as text is worth noticing too —
 wrap something in `xstr(…)` and "so what did it become" can be seen as a string. The
@@ -434,7 +434,7 @@ The X macro solves this by *writing the list only once*. The knack is two steps.
 + Define `X` differently each time and unfold the list. The same list comes out as
   different code every time.
 
-#demo("examples/ch49/xmacro.c")
+#demo("examples-en/ch49/xmacro.c")
 
 Four sets came out of one list. Taking them one at a time.
 

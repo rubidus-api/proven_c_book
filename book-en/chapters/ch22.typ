@@ -47,7 +47,7 @@ book's minimal set is three:
 
 Here is the demonstration. Two values go into two blanks in order:
 
-#demo("examples/ch22/fmt.c")
+#demo("examples-en/ch22/fmt.c")
 
 A string literal went into the `%s` slot and the value of the expression `6 * 7`
 into the `%d` slot, completing the sentence. *The format is the frame, the

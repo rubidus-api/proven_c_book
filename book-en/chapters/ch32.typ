@@ -24,7 +24,7 @@
 
 == Copying values — the original is safe
 
-#demo("examples/ch32/copy.c")
+#demo("examples-en/ch32/copy.c")
 
 Inside `try_change` the `x` was changed to 999, but the `n` outside is still 1.
 That is the exact meaning of the call `try_change(n)` — n's *value* 1 was copied
@@ -152,7 +152,7 @@ compiler warnings catch this pattern well is a reassuring backstop.
 If a function can call a function — can it call itself? It can.
 #idx("recursion")That is *recursion*.
 
-#demo("examples/ch32/fact.c")
+#demo("examples-en/ch32/fact.c")
 
 `fact(5)` is `5 * fact(4)`, inside which is `4 * fact(3)`… reach the floor
 (`n <= 1`) and it returns 1, and the layered calls come back in turn carrying
@@ -187,7 +187,7 @@ often stumble. If the two sides differ in type, the usual arithmetic conversions
 (chapter 28) apply and give *one common type*, and that type is settled at
 compile time regardless of the condition's value.
 
-#demo("examples/ch32/ternary.c")
+#demo("examples-en/ch32/ternary.c")
 
 In `1 ? i : d` the condition is true so `i` (int) was chosen, and yet the
 result's size is 8 bytes and its value is `7.0`. `int` met `double` and was

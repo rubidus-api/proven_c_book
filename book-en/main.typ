@@ -1,7 +1,7 @@
 // Proven C Book — English edition. Build: scripts/build-book-en.sh
 #import "../book/lib.typ": *
 
-#let book-version = "v0.4.0"
+#let book-version = "v0.5.0"
 #let book-updated = "2026-08-05"
 #let book-status = "draft"
 #let book-repo = "https://github.com/rubidus-api/proven_c_book"
@@ -14,9 +14,10 @@
 #set text(font: ("Noto Serif", "Noto Serif CJK KR"), size: 10.5pt, lang: "en")
 #set par(justify: true, leading: 0.78em, first-line-indent: (amount: 1em, all: true))
 #show heading: set text(font: ("Noto Sans", "Noto Sans CJK KR"))
-// 코드는 영어권 독자에게 익숙한 라틴 고정폭(Noto Sans Mono)으로 짠다.
-// D2Coding 은 뒤에 두어 코드 안에 이따금 섞이는 한글만 받는다.
-#show raw: set text(font: ("Noto Sans Mono", "D2Coding"), size: 0.88em, ligatures: false)
+// 코드는 영어권 독자에게 익숙한 라틴 고정폭 Noto Sans Mono 로 통일한다.
+// D2Coding 은 쓰지 않는다. 유니코드·인코딩 설명처럼 코드 안에 한글이
+// 꼭 있어야 하는 자리만 Noto Sans CJK KR 이 뒤에서 받는다.
+#show raw: set text(font: ("Noto Sans Mono", "Noto Sans CJK KR"), size: 0.88em, ligatures: false)
 // 인쇄를 위해 구문 강조 색을 쓰지 않는다 (잉크·토너 절약)
 #set raw(theme: none)
 #set heading(numbering: none)

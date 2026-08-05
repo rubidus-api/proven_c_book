@@ -27,7 +27,7 @@
 
 == Open, write, close — failure can happen three times
 
-#demo("examples/ch55/streams.c")
+#demo("examples-en/ch55/streams.c")
 
 It is worth noticing that the example checks for failure in three places.
 
@@ -62,7 +62,7 @@ checks `fclose`'s return value.
 
 The most widespread wrong answer is here.
 
-#demo("examples/ch55/feof_bad.c")
+#demo("examples-en/ch55/feof_bad.c")
 
 Why is `while (!feof(f))` wrong? `feof` is *not a prophet but a recorder* — the
 mark saying "the end of the file was reached" is turned on only *after* a read has

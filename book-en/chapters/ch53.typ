@@ -87,7 +87,7 @@ Write `*` in the width or precision place and that value can be passed as an
 argument. When printing a string that travels as "pointer and length", like
 chapter 10's view, `%.*s` comes in handy.
 
-#demo("examples/ch53/fmtspec.c")
+#demo("examples-en/ch53/fmtspec.c")
 
 There are several things to read here. `%06d` becoming `000042` is because the `0`
 flag fills with zeros instead of spaces, and `%.3s` stopping at `pro` is because
@@ -158,7 +158,7 @@ at all, EOF (a negative value) comes back — it must be distinguished from 0.
 *Fifth, always give `%s` a maximum width.* A `%s` without a width writes without
 knowing the destination's size, the same danger as chapter 38's `gets`.
 
-#demo("examples/ch53/scanspec.c")
+#demo("examples-en/ch53/scanspec.c")
 
 Going through the output line by line makes the rules visible. `mismatch` and
 `nonnum` both have `k=0`, and what matters is that the argument remains as it was —

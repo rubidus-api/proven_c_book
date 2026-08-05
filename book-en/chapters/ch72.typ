@@ -78,7 +78,7 @@ There are paired functions for obtaining a window from an owned lump too —
 `proven_mem_view_from_owned` and `proven_mem_mut_from_owned`. The `from_owned` in the
 name means "leave the ownership as it is and open only a window".
 
-#demo("examples/ch72/mem.c")
+#demo("examples-en/ch72/mem.c")
 
 The example runs the vocabulary of this section and the next once each. Five places to
 point at.
@@ -109,7 +109,7 @@ with `<` or `>=` is outside the contract (chapter 35), so the library converts t
 
 == Slicing — the operation used most in this part
 
-#demo("examples/ch72/view.c")
+#demo("examples-en/ch72/view.c")
 
 `slice 6+4` is this section's heart. From an 8-byte view we asked for 4 bytes from
 the 6th, so two bytes are short. The library *does not cut off as much as there is* —

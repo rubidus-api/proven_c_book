@@ -48,7 +48,7 @@ Chapter 5 booked "actually doing this check in C is this chapter's
 demonstration." Now we pay. Here, instead of a union, we use the most portable
 method — the eye of bytes (`unsigned char`) learned in chapter 35, and `memcpy`.
 
-#demo("examples/ch43/endian.c")
+#demo("examples-en/ch43/endian.c")
 
 The first part is exactly chapter 5's picture. `0x12345678` sits in memory in the
 order `78 56 34 12` — meaning this book's verification machine is little-endian,
@@ -119,7 +119,7 @@ you specify directly how many bits that member occupies. Overlay a union on that
 and you have both "the eye that sees it whole as one word" and "the eye that sees
 it divided into fields" at once.
 
-#demo("examples/ch43/bitfield.c")
+#demo("examples-en/ch43/bitfield.c")
 
 The first part is the typical pattern for handling a hardware register. Write to
 a field as in `r.f.mode = 5` and the value goes into the bit positions without

@@ -24,7 +24,7 @@
 
 == Conversion — why `atoi` is abandoned
 
-#demo("examples/ch58/convert.c")
+#demo("examples-en/ch58/convert.c")
 
 Put the output side by side and the difference is clear.
 

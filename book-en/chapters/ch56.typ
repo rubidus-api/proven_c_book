@@ -42,7 +42,7 @@ Today `gets` is not in the standard, and three remain in its place.
 `fgets` is the right answer, but it is not the end in itself. As seen in
 chapter 55, if the buffer is too small it quietly reads only the front piece.
 
-#demo("examples/ch56/reading.c")
+#demo("examples-en/ch56/reading.c")
 
 The difference between the two approaches is clear. The fixed buffer split the
 long line into five pieces, while the edition that reads while growing returned

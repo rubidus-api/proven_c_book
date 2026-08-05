@@ -42,7 +42,7 @@ character is C's notorious thrift — position is the only way to tell them apar
 The demonstration shows all three at once, including chapter 32's homework — the
 proper method by which a function changes an original.
 
-#demo("examples/ch33/ptr.c")
+#demo("examples-en/ch33/ptr.c")
 
 Read the route of `set_to(&n, 99)` exactly and half of pointers is done — ① `&n`
 (the value that is an address) is *copied* into the parameter `target`

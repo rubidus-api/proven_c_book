@@ -53,7 +53,7 @@ The two readings arrive at the same conclusion. Use whichever suits the occasion
 
 == Reading ① in practice — connecting it in English word order
 
-#demo("examples/ch52/decl.c")
+#demo("examples-en/ch52/decl.c")
 
 We read the example's declarations one at a time. What you say is most natural
 strung together in English — because C's declaration syntax was designed to follow

@@ -25,7 +25,7 @@
 
 == The name decays into a pointer
 
-#demo("examples/ch51/funcptr.c")
+#demo("examples-en/ch51/funcptr.c")
 
 The first two lines of the output are this chapter's heart.
 
@@ -140,7 +140,7 @@ structure. And grow it further — that is the next section's story.
 C has no classes. But *put, as a struct's first member, a pointer to a table of
 function pointers* and you obtain polymorphism, the heart of object orientation.
 
-#demo("examples/ch51/vtable.c")
+#demo("examples-en/ch51/vtable.c")
 
 The design has four bones.
 

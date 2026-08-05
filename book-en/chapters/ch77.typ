@@ -29,7 +29,7 @@ A file is the first resource in this part that touches *the outside world*. The
 discipline of making and giving back is the same as in the earlier chapters, but the
 kinds of failure are far more numerous.
 
-#demo("examples/ch77/fslife.c")
+#demo("examples-en/ch77/fslife.c")
 
 The life cycle is four steps, and at each step failure comes as a value.
 
@@ -89,7 +89,7 @@ neither the original nor the new one*, and the standard practice that prevents i
 `_atomic` does that work for you, and `_durable` hangs a `sync` on it as well so that it
 survives a power cut.
 
-#demo("examples/ch77/fileio.c")
+#demo("examples-en/ch77/fileio.c")
 
 Several things stand out.
 
@@ -170,7 +170,7 @@ what symbol means what*.
 Few tools are as much "the same name, different demands" as random numbers. The
 library does not hide this but divides it into three.
 
-#demo("examples/ch77/rng.c")
+#demo("examples-en/ch77/rng.c")
 
 *Reproducible random numbers* (`proven_xoshiro256ss_t`) are for simulation, games and
 testing. The same seed gives the same sequence — the very reason the example's two

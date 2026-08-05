@@ -61,7 +61,7 @@ from failure, and looks at the branch only when attempting recovery.
   [`ERR_INVALID_FORMAT`], [the format was wrong], [parsing, format strings],
 )
 
-#demo("examples/ch71/codes.c")
+#demo("examples-en/ch71/codes.c")
 
 The latter part of the example shows this table in the flesh. Try to put twelve bytes
 into an eight-byte vessel and `OUT_OF_BOUNDS` comes — *and the original is left
@@ -97,7 +97,7 @@ Only the last row is of a different grain. For formatting, "success or failure" 
 enough — if it was truncated you must know *how much more was needed* — so beside `err`
 it carries two numbers as well (we look at it closely in chapter 75).
 
-#demo("examples/ch71/errval.c")
+#demo("examples-en/ch71/errval.c")
 
 This example contains all of this chapter's syntax. `make_greeting` sends the result
 out through an output parameter (`out`) and used the return value for status alone —
@@ -207,7 +207,7 @@ middle, who gives back what has been taken so far?* In a language with exception
 stack unwinds and destructors handle it, but C has no such device (chapter 62). So an
 idiom is needed.
 
-#demo("examples/ch71/cleanup.c")
+#demo("examples-en/ch71/cleanup.c")
 
 This example deliberately inserts a failing allocator (once the *budget* runs out it
 necessarily gives `NOMEM`) and runs all three cases — failure from the first

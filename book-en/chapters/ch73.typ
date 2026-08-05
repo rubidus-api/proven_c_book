@@ -87,7 +87,7 @@ rule.
 
 == Swapping the three sources
 
-#demo("examples/ch73/three.c")
+#demo("examples-en/ch73/three.c")
 
 Look at the `make_list` function. This function *does not know* whether the memory it
 uses comes from `malloc`, from a static array, or from a recycling bin. The caller
@@ -196,7 +196,7 @@ that appends to a string a little at a time is fast on an arena, and why calling
 chapter 74's `proven_u8str_reserve` in advance pays especially on an arena (an
 intervening allocation breaks the property).
 
-#demo("examples/ch73/arena.c")
+#demo("examples-en/ch73/arena.c")
 
 There really are many places this model fits. The temporary data made while handling
 one request, a game's calculation results used for one frame, the syntax tree made

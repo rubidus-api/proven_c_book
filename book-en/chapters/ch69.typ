@@ -56,7 +56,7 @@ The modern prescription is to use the editions that take a size — `snprintf` i
 representative. And here is a second trap. Functions that take a size *quietly
 truncate* when it overflows.
 
-#demo("examples/ch69/truncate.c")
+#demo("examples-en/ch69/truncate.c")
 
 Look at the third line. What was to be made was
 `/var/log/service/http/access.log`, and what remained in hand is
@@ -111,7 +111,7 @@ that throws the return value away is perfectly legal, and `errno` is global stat
 that must be read at exactly the right moment, before the next call overwrites it
 (chapter 53).
 
-#demo("examples/ch69/unchecked.c")
+#demo("examples-en/ch69/unchecked.c")
 
 That `careless typo` returned 8080 is this section's heart. There was a typo in the
 configuration and the program *quietly fell back to the default*. On the surface
@@ -210,7 +210,7 @@ type. In a language with no generics this is nearly the only way, but the price 
 *the complete abandonment of type checking*. Whatever you cast to inside the
 comparator, the compiler believes you.
 
-#demo("examples/ch69/cmp_bad.c")
+#demo("examples-en/ch69/cmp_bad.c")
 
 The `first-char` comparator's types match perfectly, it compiles without a single
 warning, and it does not die. It is only that `peach` and `pear` are in the wrong

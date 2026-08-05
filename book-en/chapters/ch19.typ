@@ -105,7 +105,7 @@ and has remained one.
 Here is a variation containing all this chapter's material. Only one thing
 changed from chapter 15's hello world — there are now two statements.
 
-#demo("examples/ch19/two.c")
+#demo("examples-en/ch19/two.c")
 
 Notice that the output is one line. There are two statements and two steps —
 but since the first statement has no `\n`, on the band of output (chapter 10)

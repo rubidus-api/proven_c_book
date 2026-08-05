@@ -24,7 +24,7 @@
 
 The demonstration first.
 
-#demo("examples/ch27/divmod.c")
+#demo("examples-en/ch27/divmod.c")
 
 For positive numbers it is as intuition says — `7 / 2` is 3, remainder 1. Where
 a rule is needed is negatives. C *truncates toward zero* — `-7 / 2` is $-3.5$

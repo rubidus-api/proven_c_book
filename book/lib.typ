@@ -70,6 +70,16 @@
 
 // 3.6 코드 시연: 소스와 "실제 실행 결과"를 함께 인쇄한다.
 // 출력은 scripts/verify-examples.sh 가 남긴 캡처 파일에서 읽는다 (수작업 전사 금지, R15).
+//
+// 예제 트리는 판마다 하나다 — 한국어판 `examples/`, 영어판 `examples-en/`
+// (주석과 출력 문자열이 판마다 다르다). 캡처 디렉터리도 그에 맞춰 갈린다.
+#let _out-dir(path) = if path.starts-with("examples-en/") {
+  "/build/examples-out-en/"
+} else {
+  "/build/examples-out/"
+}
+#let _rel(path) = path.replace("examples-en/", "").replace("examples/", "")
+
 #let demo(path, show-output: true, stdin: false, highlight: none) = block(breakable: true, width: 100%)[
   #block(width: 100%, inset: 8pt, stroke: 0.5pt + black)[
     #text(size: 0.8em, raw(path))
@@ -86,7 +96,7 @@
     #block(width: 100%, inset: 8pt,
       stroke: (left: 2pt + black, rest: 0.5pt + black))[
       #text(size: 0.8em, weight: "bold")[#_L.output]
-      #raw(read("/build/examples-out/" + path.replace("examples/", "") + ".out"), block: true)
+      #raw(read(_out-dir(path) + _rel(path) + ".out"), block: true)
     ]
   ]
 ]

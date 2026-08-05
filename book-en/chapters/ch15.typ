@@ -24,7 +24,7 @@
 
 By tradition, the first program greets the world.
 
-#demo("examples/ch15/hello.c")
+#demo("examples-en/ch15/hello.c")
 
 The upper box is the *source code* a person writes, and the lower box marked
 "Output" is the *output* of actually compiling and running this program — as

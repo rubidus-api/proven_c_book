@@ -29,7 +29,7 @@ The demonstration first. A program that takes one integer from standard input
 and reports its square. (What was given on standard input for this run is shown
 in the middle box.)
 
-#demo("examples/ch25/read.c", stdin: true)
+#demo("examples-en/ch25/read.c", stdin: true)
 
 There are two new faces — one per stage.
 

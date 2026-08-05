@@ -248,7 +248,7 @@ So today each has things the other does not.
 
 It is seen not in words but in the flesh. Below is *entirely correct C code*.
 
-#demo("examples/ch79/ccompat.c")
+#demo("examples-en/ch79/ccompat.c")
 
 Compile the same file with `g++ -std=c++20` and this happens.
 

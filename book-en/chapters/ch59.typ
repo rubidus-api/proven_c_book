@@ -23,7 +23,7 @@
 
 == The first trap — do not pass a `char` as it stands
 
-#demo("examples/ch59/ctype.c")
+#demo("examples-en/ch59/ctype.c")
 
 Every function of `<ctype.h>` takes an `int`. And the argument value the standard
 requires is *a value representable as an `unsigned char`, or `EOF`*.

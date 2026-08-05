@@ -239,7 +239,7 @@ time; UBSan and ASan catch at run time. The *checked arithmetic* brought in by
 C23 is a tool of this layer too — functions that report overflow as a value
 instead of making it UB:
 
-#demo("examples/ch46/checked.c")
+#demo("examples-en/ch46/checked.c")
 
 `ckd_add` returns "did it overflow?" as its return value — the standard's answer
 to the trap learned in chapter 7 ("signed overflow is outside the contract"),

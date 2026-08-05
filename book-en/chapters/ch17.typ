@@ -217,7 +217,7 @@ are GNU's `gdb` and LLVM's `lldb`; only the command names differ.
 The program we will use looks like this. The sum should be 150, but it comes out
 100.
 
-#demo("examples/ch17/bug.c")
+#demo("examples-en/ch17/bug.c")
 
 Caught in the debugger it looks like this (really run with gdb 17.2).
 

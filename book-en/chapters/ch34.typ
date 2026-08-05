@@ -34,7 +34,7 @@ uses `nullptr`: `NULL` historically had definitions that differed by
 implementation with subtle traps (variadic arguments and so on), while `nullptr`
 is a modern notation clear down to its type.
 
-#demo("examples/ch34/null.c")
+#demo("examples-en/ch34/null.c")
 
 The rule is exactly this demonstration — *check whether a pointer is empty before
 using it.* Dereferencing an empty pointer (`*p`) is outside the contract

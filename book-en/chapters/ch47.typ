@@ -66,7 +66,7 @@ environment variables is `getenv` (chapter 55).
 
 == The contract of `argc` and `argv`
 
-#demo("examples/ch47/entry.c")
+#demo("examples-en/ch47/entry.c")
 
 What the standard promises is as follows, and these promises form the skeleton of
 argument-handling code.

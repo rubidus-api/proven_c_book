@@ -86,7 +86,7 @@ proven_u8str_view_from_cstr(p)   /* counts the length at run time */
 Using it for string literals is the practice, and `_from_cstr` for a C string whose
 length is unknown.
 
-#demo("examples/ch74/ops.c")
+#demo("examples-en/ch74/ops.c")
 
 The first line shows chapter 73's rule again. `proven_u8str_borrow` has no allocator —
 therefore it does not allocate. It is doing string operations on a 16-byte array taken
@@ -161,7 +161,7 @@ right. That the default (the short name) is refusal shows this design's attitude
 Appending alone is not enough. There are operations that mend the middle, delete, and
 rewrite.
 
-#demo("examples/ch74/edit.c")
+#demo("examples-en/ch74/edit.c")
 
 #dtable(
   columns: 3,

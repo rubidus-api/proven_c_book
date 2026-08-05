@@ -42,7 +42,7 @@ directly but takes the difference with `difftime`.
 
 == The traps of `struct tm`
 
-#demo("examples/ch61/timefns.c")
+#demo("examples-en/ch61/timefns.c")
 
 Two fields are famous traps.
 

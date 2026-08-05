@@ -55,7 +55,7 @@ finds the answer first and the standard ratifies it belatedly.
 
 == C23's answer — `ckd_add`, `ckd_sub`, `ckd_mul`
 
-#demo("examples/ch65/ckdint.c")
+#demo("examples-en/ch65/ckdint.c")
 
 The way to read it is this. All three macros have the same shape.
 

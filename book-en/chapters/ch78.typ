@@ -29,7 +29,7 @@ If a function can do some work, stop, and later start again *from that place*, m
 becomes easy. Because the code can be written in order instead of a state machine
 being written by hand.
 
-#demo("examples/ch78/coro.c")
+#demo("examples-en/ch78/coro.c")
 
 The heart of it is the last line — the state this coroutine remembers is *4 bytes*.
 There is no separate stack, no thread and no allocation. It is a tidying up of an old

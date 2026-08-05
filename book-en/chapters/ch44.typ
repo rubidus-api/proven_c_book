@@ -24,7 +24,7 @@
 
 == Choosing a type, and comparing
 
-#demo("examples/ch44/eps.c")
+#demo("examples-en/ch44/eps.c")
 
 The first three lines are the execution check of chapter 8's first incident —
 `==` is false, and printed to twenty digits the two numbers diverge at the end.

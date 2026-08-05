@@ -72,7 +72,7 @@ result printed on these pages is the output of a program made that way.
 
 One `#include <proven.h>` opens the whole library.
 
-#demo("examples/ch70/hello.c")
+#demo("examples-en/ch70/hello.c")
 
 We read it line by line. `proven_println` takes a format and arguments and prints
 one line to standard output — so far the same as `printf`. What differs is the
@@ -129,7 +129,7 @@ Rather than reading three lines of rules, it is quicker to follow one real thing
 the end. The program below holds the whole course of *making, using and giving back* a
 string object on one screen.
 
-#demo("examples/ch70/first.c")
+#demo("examples-en/ch70/first.c")
 
 Six places to point at.
 

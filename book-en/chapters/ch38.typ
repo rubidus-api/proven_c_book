@@ -54,7 +54,7 @@ For a first demonstration, chapter 25's homework — handling the failure of
 interpreting input — solved with proven. *Both* the success path and the failure
 path are shown:
 
-#demo("examples/ch38/scan.c")
+#demo("examples-en/ch38/scan.c")
 
 How to read it — `proven_scan_init` sets a scanner over a sequence of characters,
 and `proven_scan_i64` interprets one integer. The return value is the heart of

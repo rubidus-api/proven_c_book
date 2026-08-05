@@ -24,7 +24,7 @@
 
 == The lost update — confirmed with the eyes
 
-#demo("examples/ch64/atomic.c")
+#demo("examples-en/ch64/atomic.c")
 
 Four strands turned the same loop 200,000 times each. The expected value is
 800,000, but the unprotected `long` did not even get near it. The vanished share

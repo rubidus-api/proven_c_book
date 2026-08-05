@@ -30,7 +30,7 @@ What `<stdarg.h>` gives is one type and three macros — `va_list` (the reader),
 `va_start` (begin), `va_arg` (take one out), `va_end` (close). Seen in a
 demonstration.
 
-#demo("examples/ch50/va.c")
+#demo("examples-en/ch50/va.c")
 
 The key is the second argument of `va_arg(ap, int)` — *the programmer states the
 type of the value to take out.* The function does not know what arrived, so
@@ -125,7 +125,7 @@ for one type can sit beside code valid only for another. Third, giving a type no
 in the list is *a compile error* unless there is a `default` — and that property
 is the heart of the next section.
 
-#demo("examples/ch50/generic.c")
+#demo("examples-en/ch50/generic.c")
 
 The latter part of the example is this chapter's conclusion. `ARG(x)` uses
 `_Generic` to learn the value's type and makes *a struct carrying the value

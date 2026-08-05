@@ -25,7 +25,7 @@
 
 == The properties of NaN and infinity
 
-#demo("examples/ch60/math.c")
+#demo("examples-en/ch60/math.c")
 
 Four things to point out in the output.
 

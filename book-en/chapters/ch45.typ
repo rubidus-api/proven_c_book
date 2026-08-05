@@ -39,7 +39,7 @@ itself carries "did it succeed?" out with it. There are three conventions.
 We see the first in a demonstration. It is the fact learned in chapter 27, that
 division by zero is outside the contract, governed by a function's contract.
 
-#demo("examples/ch45/errval.c")
+#demo("examples-en/ch45/errval.c")
 
 Three things to read. *The contract is written in comments* — what is demanded
 stands beside the code. *On failure the output argument is not touched* —

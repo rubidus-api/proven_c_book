@@ -105,7 +105,7 @@ pointer.*
 
 == Named arguments — passing one struct
 
-#demo("examples/ch42/opts.c")
+#demo("examples-en/ch42/opts.c")
 
 From here comes the idiom that changes code most in practice. Consider a function
 with five or six arguments.
@@ -176,7 +176,7 @@ Four things are gained.
 
 == Padding — the empty space between members
 
-#demo("examples/ch42/layout.c")
+#demo("examples-en/ch42/layout.c")
 
 The sizes of the three members `char`, `int`, `char` sum to 6, and yet the struct
 is 12 bytes. Six bytes went in as *padding*. The reason is chapter 6's alignment —

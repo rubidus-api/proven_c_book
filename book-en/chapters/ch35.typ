@@ -40,7 +40,7 @@ of chapter 5, "inside a slot it is only bits", is `unsigned char*`.
 The alignment requirement of each type can be asked with `alignof` (a C23
 keyword):
 
-#demo("examples/ch35/align.c")
+#demo("examples-en/ch35/align.c")
 
 == Provenance — the same number, a different origin
 

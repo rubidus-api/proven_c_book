@@ -29,7 +29,7 @@
 First we see the four on one screen. How making, putting in, traversing and giving back
 differ between them is all in this example.
 
-#demo("examples/ch76/tour.c")
+#demo("examples-en/ch76/tour.c")
 
 #dtable(
   columns: 5,
@@ -68,7 +68,7 @@ So the allocator is not given again at destruction either
 
 C having no generics, the type is filled in by macros.
 
-#demo("examples/ch76/arr.c")
+#demo("examples-en/ch76/arr.c")
 
 `PROVEN_ARRAY_INIT(alloc, int, 4)` means "an array to hold ints, initial capacity 4",
 and `PROVEN_ARRAY_PUSH` writes the type again to *check at compile time that it
@@ -204,7 +204,7 @@ when the temporary buffers of internal work such as rehashing are to be obtained
 another allocator — a device for keeping dead memory from piling up when running a map
 on an arena.
 
-#demo("examples/ch76/wordcount.c")
+#demo("examples-en/ch76/wordcount.c")
 
 This one example contains all of this chapter's tools — it counts with a map, gathers
 into an array, sorts and prints. Chapter 74's views were used to cut the words, so

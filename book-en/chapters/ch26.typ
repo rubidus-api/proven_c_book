@@ -102,7 +102,7 @@ those in frequent use:
 `DBL_EPSILON` is met again in chapter 44 when comparing floating-point numbers —
 it is the value used to set the criterion for judging "equal".
 
-#demo("examples/ch26/limits.c")
+#demo("examples-en/ch26/limits.c")
 
 What matters is that this output belongs to *the machine that made this book*.
 Run it on another machine and different numbers may appear — and that is exactly
@@ -139,7 +139,7 @@ The edge of a container is told by the `<limits.h>` toolbox. And the
 wrap-around of the unsigned world — the one learned on the page in chapter 7 —
 can now be run and shown.
 
-#demo("examples/ch26/wrap.c")
+#demo("examples-en/ch26/wrap.c")
 
 One new format has joined — unsigned integers are printed with `%u`, not `%d`
 (chapter 22's format contract growing along with the family of types). And the

@@ -39,7 +39,7 @@ return-type name(parameter list)
 The demonstration makes it quick. A worker that takes an integer and returns its
 square:
 
-#demo("examples/ch24/fn.c")
+#demo("examples-en/ch24/fn.c")
 
 Reading `square`'s definition part by part.
 

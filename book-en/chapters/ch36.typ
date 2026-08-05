@@ -24,7 +24,7 @@
 
 == Declaration, access, traversal
 
-#demo("examples/ch36/arr.c")
+#demo("examples-en/ch36/arr.c")
 
 `int a[5] = {3, 1, 4, 1, 5};` — type, name, slot count, and brace
 initialisation. Access is `a[i]` and *numbering starts at 0* (the first element
@@ -85,7 +85,7 @@ void h(int c[2][3][4]);/*  the real type is  int (*c)[3][4] */
 
 There are three places where this fact becomes visible.
 
-#demo("examples/ch36/param.c")
+#demo("examples-en/ch36/param.c")
 
 *① The value of `sizeof` differs.* On the caller's side `arr` is a real array, so
 40 bytes (ten `int`s), but inside the function it is 8 — the size of one pointer.
@@ -131,7 +131,7 @@ Every array so far had its size settled at compile time. C99 added one more —
 the *variable length array* (VLA). A variable, not a constant, may be written in
 the size slot.
 
-#demo("examples/ch36/vla.c")
+#demo("examples-en/ch36/vla.c")
 
 There are two uses. The first is *the VLA as a local variable* (`int local[n];`),
 where an array whose size is settled at run time is taken on the stack. That is

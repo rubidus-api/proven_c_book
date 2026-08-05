@@ -59,7 +59,7 @@ habit starts now.
 The value of a declared variable is changed by *assignment* (`=`). The operator
 foreshadowed in chapter 20's allotment finally joins. The demonstration first:
 
-#demo("examples/ch23/var.c")
+#demo("examples-en/ch23/var.c")
 
 Reading the third statement `apples = apples + 3;` exactly is the core of this
 chapter. The order is: ① evaluate the right-hand expression `apples + 3` (read

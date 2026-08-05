@@ -59,7 +59,7 @@ Here is the demonstration. The `%d` in the example below is a mark meaning
 "print an integer value here in decimal"; its formal explanation is in
 chapter 22 — for now it is only a window for seeing results.
 
-#demo("examples/ch20/expr.c")
+#demo("examples-en/ch20/expr.c")
 
 == Order — precedence, and the practice of parentheses
 

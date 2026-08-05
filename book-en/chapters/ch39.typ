@@ -173,7 +173,7 @@ Attach `static` and it becomes *static storage duration* — born once before th
 program starts and living until it ends (initialised exactly once too). The
 demonstration contrasts the two.
 
-#demo("examples/ch39/life.c")
+#demo("examples-en/ch39/life.c")
 
 `next_ticket`'s `issued` keeps its value between calls and grows 1, 2, 3, while
 `fresh_count`'s `n` is born anew on each call and is always 1. Both are
@@ -187,7 +187,7 @@ evaluation order unspecified.)
 At this point let us see in one picture how a program's memory is actually laid
 out. Below are addresses printed directly on this book's verification machine.
 
-#demo("examples/ch39/regions.c")
+#demo("examples-en/ch39/regions.c")
 
 The way to read it is *the order, not the values*. From low addresses they line
 up like this.

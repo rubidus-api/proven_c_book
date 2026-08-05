@@ -57,7 +57,7 @@ showing that *entering the standard and becoming usable are different things*.
 
 == What C23 added
 
-#demo("examples/ch63/newheaders.c")
+#demo("examples-en/ch63/newheaders.c")
 
 `<stdckdint.h>` is this edition's practical winner. It reports the wrap-round of
 the size calculations seen in chapter 57 *as a value* — `ckd_add`, `ckd_sub` and

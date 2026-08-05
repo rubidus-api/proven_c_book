@@ -46,7 +46,7 @@ call. Here is a demonstration — `abs` is a worker from the standard library th
 takes one integer and returns its absolute value (it lives in the `<stdlib.h>`
 toolbox, which is why one more `#include` has appeared).
 
-#demo("examples/ch21/call.c")
+#demo("examples-en/ch21/call.c")
 
 The order is exactly as it reads — the inner expression `2 - 10` first becomes
 $-8$, that enters `abs` as material and becomes the return value $8$, and that

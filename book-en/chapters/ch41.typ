@@ -24,7 +24,7 @@
 
 == Declaration, initialisation, access
 
-#demo("examples/ch41/point.c")
+#demo("examples-en/ch41/point.c")
 
 *Declaration* is `struct point { int x; int y; };` — each item inside the braces
 is called a *member*. The declaration itself takes no memory. It is only a

@@ -32,7 +32,7 @@ units into object files separately and having the linker join them into one.
 
 We see the division of labour in a three-file example.
 
-#demo("examples/ch48/main.c")
+#demo("examples-en/ch48/main.c")
 
 `greet.h` (the header) contains only the *declaration* — the contract signature.
 `greet.c` has the *definition*, and `main.c` includes only the header, knows the
