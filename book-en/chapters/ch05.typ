@@ -75,12 +75,22 @@ time as it worked it would be far too slow. So a CPU is built to grab several
 slots in *one handful*. The size of that handful — the number of bits the
 machine handles at once, most naturally — is called the *word*.
 
-This is exactly what "a 64-bit computer" means: that machine's word is 64 bits,
-that is, 8 bytes. The temporary holders inside the CPU (registers) are that
-size, the passage to and from memory (the bus) is matched to that width, and
-addresses are usually handled as numbers of that size too. You might call the
-word the machine's "hand size" — a machine with a big hand grabs a bigger
-number at once.
+This is roughly what "a 64-bit computer" points at — that the representative
+width of the general-purpose registers and of the arithmetic is 64 bits, that
+is, 8 bytes. You might call the word the machine's "hand size": a machine with a
+big hand grabs a bigger number at once.
+
+Take it, though, as *a loose phrase*. Inside one CPU there are registers and
+paths of different widths together (floating-point and vector registers of 128,
+256 or 512 bits are common), the address width may differ from the register
+width, and the width the language gives to `long` or to a pointer is a further
+choice again (chapter 33 shows the cases). Moreover, *some instruction sets use
+the word "word" differently* — in x86 documentation a word is traditionally 16
+bits, 32 bits is a doubleword and 64 bits a quadword.
+
+So "a 64-bit machine" is better received as an idiom meaning *it mostly works at
+that width* than as an exact definition. Where this book says "word", it means
+loosely "the width that machine handles comfortably in one grasp".
 
 #qa[
   So on a 64-bit machine, is everything stored in 8-byte units?
@@ -205,6 +215,9 @@ spaces (the Harvard architecture — the small chips of chapter 80 still do).
 And sometimes what rides inside the number is not a number at all.
 
 #realcase("What travels inside an address value")[
+  (These cases are *not for memorising.* Keep only "an address is not always a
+  single number"; the names can be looked up again when you meet such a machine.)
+
   *The spare low bits.* Thanks to alignment (chapter 6), the low bits of an
   address are always zero. Slipping a small mark into that space is a widely used
   trick — the tagged pointers of the next chapter.

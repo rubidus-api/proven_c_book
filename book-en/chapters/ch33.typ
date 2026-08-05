@@ -176,6 +176,9 @@ Why leave it so loose — because machines really were different.
 Nor is this only in the past tense.
 
 #realcase("Now, and ahead")[
+  (No need to memorise the names here either. Keep only *"the size and
+  representation of a pointer are settled by the machine and the build"*.)
+
   *CHERI and Arm Morello.* Real hardware in which a pointer is a bundle of
   address, bounds and permissions (a capability). The address is 64 bits but the
   pointer is *128*, and `sizeof(void *)` is 16.

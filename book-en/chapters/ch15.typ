@@ -74,7 +74,7 @@ system, meaning "finished without trouble."
 ][
   It is correct not to know yet — and this book manages that "no need to know"
   honestly. There are only two things to take away from these six lines right
-  now: that a program starts at `main`, and that `printf` lets letters flow onto
+  now: that the host program we are making starts at `main`, and that `printf` lets letters flow onto
   standard output. All the rest is *deliberate credit* — Part IV takes as its
   goal the dissection of this one piece from beginning to end, and the debt is
   repaid for statements and blocks in chapter 19, for `printf` and calls in
