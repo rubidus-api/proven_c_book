@@ -69,7 +69,64 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../ko/">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>49 The preprocessor and the translation phases</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We open head on the layer chapter 16 passed over as “a text tool that does not know C”. The identity of the macro, the principle and idioms of the two <span id="idx-entry-86"></span>operators <code>#</code> and <code>##</code>, their traps, and the whole of the <strong>translation phases</strong> the standard pins down for source becoming a program. It is the grammar of the “second language” living inside a C source file.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 19 said lines beginning with <code>#</code> are not statements and have no <span id="idx-entry-87"></span>semicolon, and that the reason is “the preprocessor is a text tool working by lines, not by C’s grammar.” Then what does the preprocessor know of C?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Almost nothing — it knows neither types nor scopes nor functions. What it knows is only <strong>tokens</strong> (word-pieces that cannot be split further: names, numbers, operators, strings), and what it does is delete, insert and join tokens. This ignorance is the preprocessor’s power (it can produce any fragment of code whatever) and its danger (it upholds neither grammar nor meaning). This chapter sees the power and the danger together.</p></div></div><h3>49.1 Macros — turning a name into a stream of tokens</h3><p><code>#define NAME content</code> is the directive “from now on, when you meet the token NAME, replace it with content.” There is also a form taking arguments (<code>#define MAX(a,b) ...</code>), which looks like a function but is not — it is <strong>substitution, not a call</strong>, with neither type checking nor any guarantee about evaluation order.</p><p>Two idioms follow from this difference. First, <strong>wrap the arguments and the whole in parentheses</strong> — as in <code>#define SQ(x) ((x) * (x))</code>. Without them <code>SQ(1+2)</code> unfolds to <code>1+2*1+2</code> and gives 5 (chapter 20′s precedence applying to the substituted token stream as it is). Second, <strong>beware macros that use an argument twice</strong> — <code>SQ(i++)</code> increments <code>i</code> twice. Chapter 32′s “one variable changed only once in one statement” is broken behind your back by a macro.</p><h3>49.2 <code>#</code> — turning a token into a string (stringize)</h3><p>Put <code>#</code> before a macro argument and that argument becomes <strong>a string literal of it literally</strong>. The key is that what becomes a string is not the value but <strong>the shape as written</strong>.</p><div><div><p><code>examples/ch49/macro.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+<h2>49 The preprocessor and the translation phases</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We open head on the layer chapter 16 passed over as “a text tool that does not know C”. The identity of the macro, the principle and idioms of the two <span id="idx-entry-86"></span>operators <code>#</code> and <code>##</code>, their traps, and the whole of the <strong>translation phases</strong> the standard pins down for source becoming a program. It is the grammar of the “second language” living inside a C source file.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 19 said lines beginning with <code>#</code> are not statements and have no <span id="idx-entry-87"></span>semicolon, and that the reason is “the preprocessor is a text tool working by lines, not by C’s grammar.” Then what does the preprocessor know of C?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Almost nothing — it knows neither types nor scopes nor functions. What it knows is only <strong>tokens</strong> (word-pieces that cannot be split further: names, numbers, operators, strings), and what it does is delete, insert and join tokens. This ignorance is the preprocessor’s power (it can produce any fragment of code whatever) and its danger (it upholds neither grammar nor meaning). This chapter sees the power and the danger together.</p></div></div><h3>49.1 Macros — turning a name into a stream of tokens</h3><p><code>#define NAME content</code> is the directive “from now on, when you meet the token NAME, replace it with content.” There is also a form taking arguments (<code>#define MAX(a,b) ...</code>), which looks like a function but is not — it is <strong>substitution, not a call</strong>, with neither type checking nor any guarantee about evaluation order.</p><h4>49.1.1 Parentheses — the first thing anyone using macros learns</h4><p>With a function the argument arrives <strong>after being calculated into one value</strong>, but with a macro <strong>the tokens as written</strong> are planted into the body. So the operators inside the argument and the operators in the body meet in one place, and chapter 20′s precedence divides them. We see four traps together with their actual expansions.</p><div><div><p><code>examples/ch49/parens.c</code></p><pre><code data-lang="c">/* 매크로 인자를 괄호로 감싸야 하는 이유 — 의도와 전개가 갈라지는 자리들.
+   xstr() 로 "그래서 무엇으로 펼쳐졌는가"를 나란히 찍어 확인한다. */
+#include &lt;stdio.h>
+
+#define str(...)   # __VA_ARGS__
+#define xstr(...)  str(__VA_ARGS__)
+
+#define SQ_BAD(x)   x * x           /* 괄호 없음 */
+#define SQ_HALF(x)  (x) * (x)       /* 인자만 감쌈 */
+#define SQ(x)       ((x) * (x))     /* 인자와 전체를 감쌈 — 정석 */
+
+#define NEG_BAD(x)  -x
+#define NEG(x)      (-(x))
+
+/* 인자를 두 번 쓰는 매크로 — 부수효과가 있는 인자를 만나면 */
+#define MAX(a, b)   ((a) > (b) ? (a) : (b))
+
+int main(void)
+{
+    /* ── ① 인자를 안 감싸면 — 우선순위가 끼어든다 ─────────────── */
+    printf("SQ_BAD(1+2)  -> %-16s = %d   (의도는 9)\n",
+           xstr(SQ_BAD(1+2)), SQ_BAD(1+2));
+    printf("SQ_HALF(1+2) -> %-16s = %d\n",
+           xstr(SQ_HALF(1+2)), SQ_HALF(1+2));
+
+    /* ── ② 전체를 안 감싸면 — 바깥 연산자가 끼어든다 ──────────── */
+    printf("100/SQ_HALF(2) -> %-14s = %d   (의도는 25)\n",
+           xstr(100/SQ_HALF(2)), 100/SQ_HALF(2));
+    printf("100/SQ(2)      -> %-14s = %d\n",
+           xstr(100/SQ(2)), 100/SQ(2));
+
+    /* ── ③ 부호가 붙은 인자 ──────────────────────────────────── */
+    printf("NEG_BAD(-3)  -> %-16s  ← 컴파일 오류다(`--3`)\n", xstr(NEG_BAD(-3)));
+    printf("NEG(-3)      -> %-16s = %d\n", xstr(NEG(-3)), NEG(-3));
+
+    /* ── ④ 괄호로도 못 막는 것 — 인자를 두 번 평가한다 ────────── */
+    int i = 5, j = 3;
+    int m = MAX(i++, j);
+    printf("MAX(i++, j)  -> i 가 %d 가 되었다 (한 번만 증가할 줄 알았는데)\n", i);
+    printf("             결과 m = %d\n", m);
+    printf("             전개: %s\n", xstr(MAX(i++, j)));
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>SQ_BAD(1+2)  -> 1+2 * 1+2        = 5   (의도는 9)
+SQ_HALF(1+2) -> (1+2) * (1+2)    = 9
+100/SQ_HALF(2) -> 100/(2) * (2)  = 100   (의도는 25)
+100/SQ(2)      -> 100/((2) * (2)) = 25
+NEG_BAD(-3)  -> --3               ← 컴파일 오류다(`--3`)
+NEG(-3)      -> (-(-3))          = 3
+MAX(i++, j)  -> i 가 7 가 되었다 (한 번만 증가할 줄 알았는데)
+             결과 m = 6
+             전개: ((i++) > (j) ? (i++) : (j))
+</code></pre></div></div><p><strong>① Without wrapping the argument, the operations inside it scatter.</strong></p><pre><code data-lang="c">#define SQ_BAD(x)  x * x
+SQ_BAD(1+2)   →   1+2 * 1+2   →   1 + (2*1) + 2   =  5     /* 9 was expected */</code></pre><p><code>1+2</code> does not go in bound into one value; three tokens are planted as they are, and over them the rule that multiplication is stronger than addition applies. Wrapping the argument in parentheses solves it — <code>(1+2) * (1+2)</code> = 9.</p><p><strong>② Without wrapping the whole, the outer operator cuts in.</strong> Wrapping the argument alone is not enough.</p><pre><code data-lang="c">#define SQ_HALF(x)  (x) * (x)
+100 / SQ_HALF(2)   →   100 / (2) * (2)   =  100            /* 25 was expected */</code></pre><p>Division and multiplication have the same precedence and bind from the left (appendix A), so <code>100/2</code> happens first and is then multiplied by 2. The whole body must be wrapped for <code>100 / ((2) * (2))</code> = 25. <strong>So the canonical form wraps both.</strong></p><pre><code data-lang="c">#define SQ(x)  ((x) * (x))</code></pre><p><strong>③ With a signed argument the tokens can even fuse.</strong></p><pre><code data-lang="c">#define NEG_BAD(x)  -x
+NEG_BAD(-3)   →   --3      /* it becomes the decrement operator — a compile error */</code></pre><p>It is why the example prints this expansion <strong>as text only</strong> — written for real it does not compile. Wrapped as <code>(-(x))</code> it goes properly to <code>(-(-3))</code> = 3.</p><p><strong>④ What parentheses cannot block — the argument is evaluated twice.</strong></p><pre><code data-lang="c">#define MAX(a, b)  ((a) > (b) ? (a) : (b))
+int i = 5, j = 3;
+int m = MAX(i++, j);      →   ((i++) > (j) ? (i++) : (j))</code></pre><p>The example’s output is that result — <code>i</code> jumped from 5 <strong>to 7</strong>, and <code>m</code> is 6 rather than the expected 5. Because <code>i++</code> was planted in the body <strong>twice</strong>. Parentheses solve only the precedence problem, not this one. It is the place where chapter 32′s “one variable changed only once in one statement” is broken behind your back by a macro.</p><table><tr><th><strong>rule</strong></th><th><strong>reason</strong></th></tr><tr><td>wrap every argument in parentheses</td><td>so the operations inside an argument do not scatter</td></tr><tr><td>wrap the whole body in parentheses</td><td>so an outer operator does not cut in</td></tr><tr><td>do not use an argument twice</td><td>the side effects happen twice</td></tr><tr><td>compute values with a <code>static inline</code> function</td><td>then none of the three need be minded</td></tr></table><p>The last row is today’s answer. The reason for computing values with <code>#define</code> was to save the cost of a call, and today’s compilers inline small functions by themselves (chapter 13), so that reason has nearly vanished. <strong>The parenthesis rules are needed only where a macro must be used</strong>, and those places are what the rest of this chapter shows — assembling tokens, conditional compilation, capturing source location.</p><h3>49.2 <code>#</code> — turning a token into a string (stringize)</h3><p>Put <code>#</code> before a macro argument and that argument becomes <strong>a string literal of it literally</strong>. The key is that what becomes a string is not the value but <strong>the shape as written</strong>.</p><div><div><p><code>examples/ch49/macro.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
 
 /* # : 인자를 "글자 그대로" 문자열로 만든다 (stringize) */
 #define SHOW(expr)  printf(#expr " = %d\n", (expr))

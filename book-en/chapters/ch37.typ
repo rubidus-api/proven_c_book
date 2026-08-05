@@ -66,6 +66,130 @@ pointers to literals as `const char*` — where chapter 23's `const` was
 documentation saying "I will not change this", here it works as a lock that stops,
 at compile time, the mistake of trying to change what must not be changed.
 
+== A literal is an array too
+
+The previous section said a literal may be copied into an array or pointed at by a
+pointer, and one step further in there is a surprising fact — *a string literal is
+itself already an array.* Written with its type exactly, `"abcdef"` is `char[7]` (six
+characters + the NUL).
+
+#demo("examples/ch37/literal.c")
+
+The output's first two lines are that confirmation. `sizeof "abcdef"` is 7 and
+`sizeof ""` is 1 — not a pointer's size (8) but *the array's size*. A literal decaying
+into a pointer is the decay seen in chapter 36, and `sizeof` being the exception to
+decay is why the array's real size shows.
+
+Something amusing follows from its being an array. Being an array, *a subscript can be
+attached.*
+
+```c
+"abcdef"[3]     /* 'd' */
+```
+
+And recalling the identity `a[i] ≡ *(a + i)` learned in chapter 36, since addition
+commutes, `*(a + i) ≡ *(i + a) ≡ i[a]`. That is,
+
+```c
+3["abcdef"]     /* 'd' as well — entirely legal grammatically */
+```
+
+That the example prints `d` for both is the evidence. There is no use for it in
+practice (it merely bewilders the reader) and it is notation seen only in obfuscation
+contests, but no example shows more clearly that *the array subscript is not a
+decoration of the grammar but another notation for pointer arithmetic*.
+
+== Concatenation — adjacent literals become one
+
+Write two string literals side by side and the compiler joins them into one.
+
+```c
+"abc" "def"        /* -> "abcdef" — no comma, no operator */
+```
+
+That the example's `sizeof("abc" "def")` is 7 confirms it (3+3+NUL). This happens not
+in the preprocessor but in *translation phase 6* (chapter 49's table) — so a string
+fragment produced by a macro joins with the literal beside it too.
+
+There are three uses.
+
+*① Writing a long sentence over several lines.* It is cleaner than joining lines with
+a backslash — because the indentation does not go inside the string.
+
+```c
+const char *help =
+    "usage: tool [options] file\n"
+    "  -v   verbose\n"
+    "  -o   output file\n";
+```
+
+*② Keeping format fragments under names.* This is the use most often seen in practice.
+
+```c
+#define ID_FMT    "%d"
+#define TEMP_FMT  "%.1f"
+
+printf("id = " ID_FMT ", temp = " TEMP_FMT "\n", id, temp);
+```
+
+The demand that a format string *be a constant* (chapter 53's format string
+vulnerability, and the compiler's format checking) is kept while the fragments are
+managed under names. It contrasts with passing a variable, as in
+`printf(fmt_string_variable, …)`, which makes all that checking vanish at once —
+*concatenation finishes at compile time, so the result is still one literal.*
+
+*③ The standard library uses the same technique.* The format macros of `<inttypes.h>`
+seen in chapter 63 and appendix B stand exactly on this rule.
+
+```c
+printf("total = %" PRIu64 "\n", total);
+```
+
+`PRIu64` is defined as `"lu"` or `"llu"` (it differs by platform) and joins with the
+fragments before and after into one format string. The problem that the format for a
+fixed-width integer differs by platform was solved *by concatenation alone*.
+
+#antipattern[
+  Variables do not join
+][
+  ```c
+  const char *unit = "°C";
+  printf("temp = %.1f" unit "\n", t);   /* a compile error */
+  ```
+  Concatenation is a rule *between literals*. `unit` is a variable and so cannot join.
+  To insert a variable's content the answer is one more placeholder —
+  `printf("temp = %.1f%s\n", t, unit)`.
+
+  For the same reason, when keeping a fragment to be joined in a `#define`, *that macro
+  must expand to a string literal*. Define it as something that is not a literal and it
+  will not join.
+]
+
+== Prefixes — a literal of which encoding
+
+A letter may be attached before a literal to settle *which character type's array it
+is*.
+
+#dtable(
+  columns: 4,
+  [*notation*], [*element type*], [*encoding*], [*`sizeof "AB"`*],
+  [`"AB"`], [`char`], [the execution character set (mostly UTF-8)], [3],
+  [`u8"AB"`], [`char8_t` (C23) / `char`], [UTF-8], [3],
+  [`u"AB"`], [`char16_t`], [UTF-16], [6],
+  [`U"AB"`], [`char32_t`], [UTF-32], [12],
+  [`L"AB"`], [`wchar_t`], [the implementation settles it], [12 on the example's machine],
+)
+
+The example really prints this table. That `L"AB"` is 12 bytes is because this Linux
+machine's `wchar_t` is 4 bytes — *on Windows it is 2 bytes and this becomes 6.* It is
+where chapter 59's "the size of `wchar_t` differs by implementation" shows itself at
+the level of literals.
+
+Character constants take the same prefixes (`L'A'`, `u'A'`). And where concatenation
+meets prefixes there is one more rule — *if only one side has a prefix, the prefixed
+side wins* (the example's `L"wide" " and narrow"` becomes a wide string), and
+*joining two different prefixes is outside the contract.*
+
 #realcase[
   gets — the function expelled from the standard
 ][

@@ -32,12 +32,79 @@ NAME, replace it with content." There is also a form taking arguments
 *substitution, not a call*, with neither type checking nor any guarantee about
 evaluation order.
 
-Two idioms follow from this difference. First, *wrap the arguments and the whole
-in parentheses* — as in `#define SQ(x) ((x) * (x))`. Without them `SQ(1+2)`
-unfolds to `1+2*1+2` and gives 5 (chapter 20's precedence applying to the
-substituted token stream as it is). Second, *beware macros that use an argument
-twice* — `SQ(i++)` increments `i` twice. Chapter 32's "one variable changed only
-once in one statement" is broken behind your back by a macro.
+=== Parentheses — the first thing anyone using macros learns
+
+With a function the argument arrives *after being calculated into one value*, but with
+a macro *the tokens as written* are planted into the body. So the operators inside the
+argument and the operators in the body meet in one place, and chapter 20's precedence
+divides them. We see four traps together with their actual expansions.
+
+#demo("examples/ch49/parens.c")
+
+*① Without wrapping the argument, the operations inside it scatter.*
+
+```c
+#define SQ_BAD(x)  x * x
+SQ_BAD(1+2)   →   1+2 * 1+2   →   1 + (2*1) + 2   =  5     /* 9 was expected */
+```
+
+`1+2` does not go in bound into one value; three tokens are planted as they are, and
+over them the rule that multiplication is stronger than addition applies. Wrapping the
+argument in parentheses solves it — `(1+2) * (1+2)` = 9.
+
+*② Without wrapping the whole, the outer operator cuts in.* Wrapping the argument
+alone is not enough.
+
+```c
+#define SQ_HALF(x)  (x) * (x)
+100 / SQ_HALF(2)   →   100 / (2) * (2)   =  100            /* 25 was expected */
+```
+
+Division and multiplication have the same precedence and bind from the left
+(appendix A), so `100/2` happens first and is then multiplied by 2. The whole body must
+be wrapped for `100 / ((2) * (2))` = 25. *So the canonical form wraps both.*
+
+```c
+#define SQ(x)  ((x) * (x))
+```
+
+*③ With a signed argument the tokens can even fuse.*
+
+```c
+#define NEG_BAD(x)  -x
+NEG_BAD(-3)   →   --3      /* it becomes the decrement operator — a compile error */
+```
+
+It is why the example prints this expansion *as text only* — written for real it does
+not compile. Wrapped as `(-(x))` it goes properly to `(-(-3))` = 3.
+
+*④ What parentheses cannot block — the argument is evaluated twice.*
+
+```c
+#define MAX(a, b)  ((a) > (b) ? (a) : (b))
+int i = 5, j = 3;
+int m = MAX(i++, j);      →   ((i++) > (j) ? (i++) : (j))
+```
+
+The example's output is that result — `i` jumped from 5 *to 7*, and `m` is 6 rather
+than the expected 5. Because `i++` was planted in the body *twice*. Parentheses solve
+only the precedence problem, not this one. It is the place where chapter 32's "one
+variable changed only once in one statement" is broken behind your back by a macro.
+
+#dtable(
+  columns: 2,
+  [*rule*], [*reason*],
+  [wrap every argument in parentheses], [so the operations inside an argument do not scatter],
+  [wrap the whole body in parentheses], [so an outer operator does not cut in],
+  [do not use an argument twice], [the side effects happen twice],
+  [compute values with a `static inline` function], [then none of the three need be minded],
+)
+
+The last row is today's answer. The reason for computing values with `#define` was to
+save the cost of a call, and today's compilers inline small functions by themselves
+(chapter 13), so that reason has nearly vanished. *The parenthesis rules are needed
+only where a macro must be used*, and those places are what the rest of this chapter
+shows — assembling tokens, conditional compilation, capturing source location.
 
 == `#` — turning a token into a string (stringize)
 
