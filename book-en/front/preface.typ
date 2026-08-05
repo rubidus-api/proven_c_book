@@ -13,6 +13,13 @@ is written in plain standard C, and why proven does not appear until Part XII.
 Having read the earlier chapters, you may well decide you do not need proven.
 That is a fine outcome too.
 
+The upshot is that this book *is also an introduction to the C language.* It is
+written with a first-time reader in front of it, so it begins with how a
+computer is built and goes on through types and flow, pointers and arrays, the
+lifetime of storage and the standard library. A reader with no intention of
+using proven can read Parts I to XI as a C primer and stop there — that stretch
+stands on its own, without the library.
+
 There is also, in these pages, a certain amount of affection for C. Explaining
 why a language past its fiftieth year is still here, and what its design gave
 up in order to gain what it gained, tends to produce that. I have not hidden
