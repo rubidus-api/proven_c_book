@@ -84,6 +84,47 @@ least the width, left-shifting a negative = outside the contract), so playing on
 `&&` (logical AND, next chapter) are completely different operators — one
 character changes the entire value.
 
+== The contracts these operators make
+
+Here the operators met so far are gathered under the eye of *contract*: what each
+takes, and where the contract ends (the full table is in appendix A).
+
+#dtable(
+  columns: 3,
+  [*operator*], [*what it demands of its operands*], [*outside the contract / grey zone*],
+  [`/` `%`], [`%` takes *integers only*; `/` also takes reals], [a zero divisor is *outside the contract*. So are `INT_MIN / -1` and `INT_MIN % -1` (the quotient does not fit an int)],
+  [`+` `-` `*`], [arithmetic types], [signed integer overflow is *outside the contract* (chapter 26); the unsigned side wraps],
+  [`& | ^ ~`], [*integers only*], [on a signed type they reach the sign bit — use unsigned],
+  [`<<` `>>`], [*both operands integers*], [see the table below],
+)
+
+Shifts have three grey zones, so they get their own table. These three have not
+changed with the editions.
+
+#dtable(
+  columns: 3,
+  [*situation*], [*verdict*], [*explanation*],
+  [`x << n` or `x >> n` with `n < 0` or `n >= width`], [*outside the contract*], ["width" is the bit count of the promoted left operand. With a 32-bit `int`, `1 << 32` is already outside],
+  [`x` signed and *negative* in `x << n`], [*outside the contract*], [still so in C23],
+  [`x` signed and *positive* but the result does not fit], [*outside the contract*], [`1 << 31` on a 32-bit `int` — write `1u << 31`],
+  [`x` signed and *negative* in `x >> n`], [*implementation-defined*], [usually an arithmetic shift (the sign preserved), but that is not the standard's promise],
+)
+
+#misconception[
+  "C23 mandated two's complement, so the negative-shift problem is gone"
+][
+  Two's complement representation was indeed mandated (chapter 63). The shift
+  clause, however, was left alone — *left-shifting a signed negative value is
+  still outside the contract in C23*, and *right-shifting a negative value is
+  still implementation-defined*. That gcc and clang do an arithmetic shift is a
+  promise of those implementations, not of the standard.
+
+  So this book's rule stands whatever the edition — *shift on unsigned types*.
+  If a signed value must be shifted, move it to unsigned, shift, and move it
+  back; and always check `0 <= n < width`, where the width is
+  `sizeof(x) * CHAR_BIT`.
+]
+
 == Conversion — crossing between containers
 
 With a family of types (chapter 26) comes a new question — what happens when

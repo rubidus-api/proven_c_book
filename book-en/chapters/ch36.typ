@@ -70,6 +70,107 @@ indexed access. The demonstration's `a[2] == *(a + 2)` is the check.
   reappears here at C's function boundary.
 ]
 
+== Adding to a pointer is not ordinary addition
+
+We have just said that `a[i]` is `*(a + i)`. Then what value, exactly, is
+`a + 2`? If it were "2 added to an address" it would be two bytes along; in fact
+it is *two `int` slots along*, that is eight bytes. Pointer arithmetic moves by
+*multiplying by the size of the type pointed at*.
+
+Set down exactly, the rule is this.
+
+#dtable(
+  columns: 3,
+  [*expression*], [*meaning*], [*result type*],
+  [`p + n`, `n + p`], [forward by `n` times the size of what `p` points at], [the same pointer type as `p`],
+  [`p - n`], [backward by the same], [the same],
+  [`p - q`], [*how many elements* fit between the two addresses], [`ptrdiff_t` (a signed integer)],
+  [`p++`, `++p`, `p += n`], [moved by the same rule, then assigned], [the same],
+)
+
+So adding an integer to a pointer is not "adding a number to a number that is an
+address" but *counting in slots*. Only on a `char *` is 1 one byte; on an
+`int *` it is four, on a `struct point *` it is one whole struct.
+
+#qa[
+  Why was it settled this way — would plain byte arithmetic not be simpler?
+][
+  Three reasons overlap.
+
+  *First, it gives arrays away for free.* `a[i]` can be defined as `*(a + i)`
+  only because the addition counts elements. Had it counted bytes, every array
+  access would have had to read `*(a + i * sizeof *a)`, and changing an element
+  type would have meant editing every access. That one rule is how C has arrays
+  without any special machinery for them.
+
+  *Second, the type already knows the size.* Recall chapter 5's refrain — memory
+  has no boundaries, and how many bytes count as one lump is decided by the
+  *reading side*. A pointer's type is exactly that decision. Letting the value
+  that already carries the decision carry the movement too is natural.
+
+  *Third, the machine moves that way.* Most CPUs have an addressing mode that
+  computes "base + index × size" in one step. Element-wise arithmetic maps
+  straight onto it — another instance of chapter 4's "C did not hide the
+  machine".
+]
+
+#demo("examples-en/ch36/ptrmath.c")
+
+The first block of output shows the whole rule. The same `+ 1` moves a different
+distance for each type, and the distance is exactly `sizeof`. So `(char *)p + 1`
+and `p + 1` point at different places — which is where the idiom of casting to a
+character pointer to move by bytes comes from (chapter 72's views do this).
+
+The second block is *subtraction*. `&a[4] - &a[1]` is 3, not 12 — pointer
+subtraction gives a count of *elements*, not of bytes. And that is why the result
+has type `ptrdiff_t`: subtracting a later pointer from an earlier one can be
+negative, so the type must be signed.
+
+=== How far it may go — the contract of the arithmetic
+
+Chapter 35's provenance applies to pointer arithmetic as it stands. Reduced to
+practical sentences:
+
+#dtable(
+  columns: 2,
+  [*what is done*], [*verdict*],
+  [moving a pointer within the array it points into], [fine],
+  [forming a pointer to the position *one past the last element*], [fine — but *dereferencing it is forbidden*],
+  [*forming* an address further out than that], [outside the contract — even if it is only computed and never followed],
+  [`+ 1` on a single object that is not an array], [fine — it is treated as an array of length one],
+  [subtracting pointers into different arrays], [outside the contract],
+  [ordering pointers into different arrays with `<`], [outside the contract (equality with `==` is allowed)],
+  [adding an integer to a `void *`], [not in the standard — a gcc/clang extension (one byte per unit)],
+)
+
+"Outside the contract even when only formed" sounds strange, but it changes how
+loop conditions are written. `p <= a + n` is safe because it goes no further than
+one past the end; `p < a + n + 1` computes an address one further out and is
+outside the contract. Sweeping backwards as
+`for (p = a + n - 1; p >= a - 1; p--)` is dangerous for the same reason — `a - 1`
+is an address before the array, and it is outside the contract the moment it is
+computed.
+
+#antipattern("a backward loop that steps in front of the array")[
+  ```c
+  for (int *p = a + n - 1; p >= a - 1; p--)   /* forms a - 1 — outside the contract */
+      ...
+  ```
+  The safe shapes use an index, or keep the end condition inside the array.
+  ```c
+  for (size_t i = n; i-- > 0; )    /* stops when i is 0 — no address is formed */
+      use(a[i]);
+  ```
+]
+
+#realcase("optimisers really use this rule")[
+  "Outside the contract even when only formed" looks excessive until you see what
+  compilers do with the promise. If `p` is guaranteed to point within the array
+  `a`, then `p >= a` is always true and the test may be deleted — exactly the
+  logic of optimisation from chapter 13. Bounds checks written this way have
+  disappeared from release builds more than once, in bugs reported in earnest.
+]
+
 == An array parameter is not an array
 
 There is one more rule in the position of a function parameter. *Declare it as an
