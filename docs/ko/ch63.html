@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>63 문자열과 텍스트 — Proven C Book</title><style>
+<title>63 에러는 값이다 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -64,71 +64,68 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-311">63 문자열과 텍스트</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>58장의 첫째 버그 — 그릇의 크기를 모르는 문자열 함수 — 에 대한 답이다. 길이를 지니고 다니는 문자열, 소유와 빌림의 구분, 그리고 이 라이브러리 에서 가장 논쟁적인 결정인 <strong>거부하되 자르지 않는다</strong>까지. 7장의 인코딩 이야기와 34장의 경계 이야기가 여기서 하나로 모인다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>34장에서 C 문자열은 “NUL을 만날 때까지”가 곧 길이라, 길이를 알려면 매번 세어야 한다고 했다. 그러면 길이를 함께 들고 다니면 무엇이 좋아지는가 — 그리고 무엇을 잃는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>얻는 것이 셋이다. 길이를 세는 비용이 사라지고(<math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math>이 <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math>이 된다), 중간에 0바이트가 들어 있는 자료도 다룰 수 있으며, 무엇보다 <strong>경계를 검사할 수 있다</strong> — 길이를 모르면 검사할 것 자체가 없다. 잃는 것은 둘이다. 문자열 하나가 한 워드가 아니라 두 워드가 되고, <code>printf("%s")</code> 처럼 NUL 종단을 기대하는 세상과 만날 때 변환이 필요해진다. 이 라이브러리는 그 변환 비용을 없애려고 내부적으로 NUL도 함께 유지한다 — 둘 다 가지는 절충이다.</p></div></div><h3 id="loc-312">63.1 두 개의 타입, 하나의 규칙</h3><p>문자열 어휘는 둘뿐이다.</p><ul><li><code>proven_u8str_t</code> — <strong>소유하는</strong> 문자열. 버퍼와 길이와 용량을 가진다.</li><li><code>proven_u8str_view_t</code> — <strong>빌린</strong> 문자열. 포인터와 길이뿐이다.</li></ul><p>이름에 <code>view</code>가 있으면 빌린 것이고, 빌린 것은 파괴하지 않는다. 62장에서 세운 규칙이 문자열에 그대로 적용된 것이다. <code>u8</code>은 UTF-8을 뜻한다 — 7장에서 본 그 인코딩이 이 라이브러리의 기본 텍스트 표현이다.</p><p>소유하는 문자열을 얻는 길은 둘이다. 할당자에게 받거나(<code>_create</code>), 남의 버퍼를 빌려 쓰거나(<code>_borrow</code>).</p><div><div><p><code>examples/ch63/ops.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2 id="loc-315">63 에러는 값이다</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>61장의 둘째 버그 — 확인되지 않는 실패 — 에 대한 답을 본다. 실패를 값으로 돌려주는 방식, 값과 에러를 함께 담는 꾸러미, 그리고 에러를 버리면 컴파일러가 항의하게 만드는 장치까지. 41장에서 세운 “오류는 값이다”라는 규율이 여기서 타입으로 굳는다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>41장에서 C의 오류 통보 방식이 반환값·전역 상태·프로그램 중단 셋뿐이라 했고, 그중 반환값이 가장 정직하다고 했다. 그러면 반환값 하나로 “실패 했다”와 “결과는 이것이다”를 동시에 말하려면 어떻게 해야 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>방법은 셋이다. 결과 자리에 <strong>불가능한 값</strong>을 섞어 쓰거나(널, <code>-1</code> — 61장에서 본 그 함정이다), 결과를 <strong>출력 매개변수</strong>로 빼고 반환값을 상태 전용으로 쓰거나, 둘을 <strong>하나의 구조체에 담아</strong> 함께 돌려주거나. proven은 둘째와 셋째를 함께 쓴다 — 그리고 셋째가 가능한 이유는 38장에서 배운 대로 C의 구조체가 값으로 반환될 수 있기 때문이다.</p></div></div><h3 id="loc-316">63.1 두 가지 반환 모양</h3><p>규칙은 단순하다. <strong>실패할 수 있는 함수는 반드시 실패를 값으로 돌려준다.</strong></p><ul><li>돌려줄 결과가 없으면 <code>proven_err_t</code> 하나를 돌려준다.</li><li>돌려줄 결과가 있으면 <code>{err, value}</code> 꾸러미를 돌려준다 — <code>proven_result_u8str_t</code>, <code>proven_result_size_t</code>처럼 타입마다 이름이 있다.</li></ul><p><code>proven_err_t</code>는 열거형이고 성공은 <code>PROVEN_OK</code>(0)다. 실패는 종류마다 이름이 있다 — <code>PROVEN_ERR_NOMEM</code>(기억 부족), <code>PROVEN_ERR_OUT_OF_BOUNDS</code>(자리 부족), <code>PROVEN_ERR_NOT_FOUND</code>, <code>PROVEN_ERR_INVALID_ARG</code>, <code>PROVEN_ERR_IO</code>, <code>PROVEN_ERR_EOF</code> 등. 확인은 언제나 <code>proven_is_ok(err)</code> 하나로 한다.</p><div><div><p><code>examples/ch63/errval.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
-static void show(const char *label, proven_u8str_view_t v)
+/* 실패할 수 있는 일을 한다: 정해진 용량의 문자열에 두 조각을 붙인다.
+   에러는 값으로 돌아오고, 호출자는 그것을 그대로 위로 전달한다. */
+static proven_err_t make_greeting(proven_allocator_t alloc,
+                                  const char *who,
+                                  proven_size_t cap,
+                                  proven_u8str_t *out)
 {
-    printf("%-12s [%.*s] (%zu bytes)\n", label, (int)v.size, (const char *)v.ptr, v.size);
+    proven_result_u8str_t made = proven_u8str_create(alloc, cap);
+    if (!proven_is_ok(made.err))
+        return made.err;                 /* 실패를 위로 넘긴다 */
+
+    proven_u8str_t s = made.value;       /* 확인한 뒤에야 value 를 쓴다 */
+
+    proven_err_t e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("Hello, "));
+    if (proven_is_ok(e))
+        e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr(who));
+    if (!proven_is_ok(e)) {
+        proven_u8str_destroy(alloc, &amp;s); /* 실패했으면 뒷정리도 우리 몫 */
+        return e;
+    }
+
+    *out = s;
+    return PROVEN_OK;
+}
+
+static void try(proven_allocator_t alloc, const char *who, proven_size_t cap)
+{
+    proven_u8str_t s;
+    proven_err_t e = make_greeting(alloc, who, cap, &amp;s);
+
+    if (!proven_is_ok(e)) {
+        printf("cap=%2zu who=%-8s -> failed with error code %d\n",
+               cap, who, (int)e);
+        return;
+    }
+    proven_u8str_view_t v = proven_u8str_as_view(&amp;s);
+    printf("cap=%2zu who=%-8s -> \"%.*s\"\n",
+           cap, who, (int)v.size, (const char *)v.ptr);
+    proven_u8str_destroy(alloc, &amp;s);
 }
 
 int main(void)
 {
-    /* ① 할당 없는 문자열: 스택 버퍼를 빌려 쓴다.
-          allocator 가 없는 시그니처 = 할당하지 않는다 */
-    proven_byte_t buf[16];
-    proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
+    proven_allocator_t alloc = proven_heap_allocator();
 
-    proven_err_t e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hello"));
-    printf("append 'hello' : %s\n", proven_is_ok(e) ? "ok" : "refused");
-    show("content", proven_u8str_as_view(&amp;s));
+    try(alloc, "world", 32);   /* 넉넉하다 */
+    try(alloc, "world", 8);    /* 자리가 모자란다 — 자르지 않고 거부한다 */
 
-    /* ② 자리가 모자라면 거부한다 — 자르지 않는다 */
-    e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr(" world, and more"));
-    printf("append long    : %s (err=%d)\n",
-           proven_is_ok(e) ? "ok" : "refused", (int)e);
-    show("unchanged", proven_u8str_as_view(&amp;s));   /* 실패 원자성 */
-
-    /* ③ 찾기와 자르기 — 전부 view 위에서, 복사 없이 */
-    proven_u8str_view_t csv = proven_u8str_view_from_cstr("name,age,city");
-    proven_u8str_view_t comma = proven_u8str_view_from_cstr(",");
-
-    proven_size_t at = proven_u8str_view_find(csv, 0, comma);
-    printf("first comma at : %zu\n", at);
-    show("field 1", proven_u8str_view_slice(csv, 0, at));
-
-    /* ④ 구분자로 훑기: 못 찾으면 센티널(PROVEN_INDEX_NOT_FOUND)이 온다 */
-    proven_size_t start = 0;
-    int n = 0;
-    for (;;) {
-        proven_size_t hit = proven_u8str_view_find(csv, start, comma);
-        proven_size_t end = (hit == PROVEN_INDEX_NOT_FOUND) ? csv.size : hit;
-        char label[24];
-        snprintf(label, sizeof label, "field %d", ++n % 100);
-        show(label, proven_u8str_view_slice(csv, start, end - start));
-        if (hit == PROVEN_INDEX_NOT_FOUND) break;
-        start = hit + 1;
-    }
-
-    /* ⑤ 비교와 접두사 검사 */
-    printf("eq 'name,age,city' : %d\n",
-           proven_u8str_view_eq(csv, proven_u8str_view_from_cstr("name,age,city")));
-    printf("starts with 'name' : %d\n",
-           proven_u8str_view_starts_with(csv, proven_u8str_view_from_cstr("name")));
+    printf("PROVEN_OK is %d, and every failure is non-zero\n", (int)PROVEN_OK);
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>append 'hello' : ok
-content      [hello] (5 bytes)
-append long    : refused (err=2)
-unchanged    [hello] (5 bytes)
-first comma at : 4
-field 1      [name] (4 bytes)
-field 1      [name] (4 bytes)
-field 2      [age] (3 bytes)
-field 3      [city] (4 bytes)
-eq 'name,age,city' : 1
-starts with 'name' : 1
-</code></pre></div></div><p>첫 줄이 62장의 규칙을 다시 보여 준다. <code>proven_u8str_borrow</code>에는 할당자가 없다 — 그러므로 할당하지 않는다. 스택에 잡은 16바이트 배열 위에서 문자열 연산을 하는 것이고, 임베디드에서 힙 없이 문자열을 다루는 방식이 정확히 이것이다.</p><h3 id="loc-313">63.2 거부하되, 자르지 않는다</h3><p>두 번째 <code>append</code>가 이 부에서 가장 중요한 한 줄이다. 16바이트 그릇에 <code>"hello"</code> 다음으로 <code>" world, and more"</code>를 붙이려 하자 라이브러리는 <strong>아무것도 쓰지 않고</strong> <code>PROVEN_ERR_OUT_OF_BOUNDS</code>를 돌려주었다. 그리고 그다음 줄이 보여 주듯 원래 내용 <code>hello</code>는 그대로다 — 60장에서 배운 실패 원자성이다.</p><p>58장에서 본 <code>snprintf</code>의 선택과 정반대다. 왜 자르지 않는가?</p><p><strong>잘린 값은 짧은 값이 아니라 다른 값이기 때문이다.</strong> 잘린 경로는 다른 파일을 가리키고, 잘린 명령은 다른 명령이며, 잘린 사용자 이름은 다른 사람이다. 자르고 성공을 말하면 호출자는 자기가 받은 것이 요청한 것인지 알 수 없다. 그래서 이 라이브러리는 <strong>결정을 호출자에게 되돌려준다</strong> — “자리가 모자랍니다. 어떻게 할까요?”</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>그래도 로그 한 줄처럼 잘려도 괜찮은 자리가 있지 않은가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>있다. 그래서 <strong>명시적으로 부분만 쓰는</strong> 함수가 따로 있다 — <code>proven_u8str_append_partial</code>은 들어간 바이트 수를 돌려준다. 이름이 길고 반환값이 다르다는 점이 핵심이다. 자르기는 여전히 가능하지만, 그것을 하려면 <strong>그렇게 적어야</strong> 한다. 기본값은 언제나 안전한 쪽이고 위험한 선택은 눈에 보이는 이름으로만 할 수 있다는 원칙(61장의 <code>_unchecked</code>와 같다)이 여기서도 지켜진다.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ 성장과 고정 용량을 헷갈리기</p><pre><code data-lang="c">proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
-proven_err_t e = proven_u8str_append_grow(alloc, &amp;s, view);  /* 위험 */</code></pre><p><code>_append</code>는 용량 안에서만 쓰고, <code>_append_grow</code>는 모자라면 할당자에게 더 달라고 한다 — 그래서 후자에만 할당자 인자가 있다. 문제는 빌린 버퍼(<code>_borrow</code>) 위에서 성장을 요구하는 경우다. 스택 배열은 자랄 수 없으므로 이것은 설계 오류다. 시그니처를 읽는 습관이 여기서 그대로 방어가 된다 — <strong>할당자가 있으면 자랄 수 있고, 없으면 자랄 수 없다.</strong></p></div><h3 id="loc-314">63.3 찾기와 자르기 — 복사 없는 텍스트 처리</h3><p>예제의 ③·④가 뷰의 진짜 쓸모다. 부분 문자열을 얻는 데 복사가 필요 없다 — 원본을 가리키는 포인터와 길이를 새로 계산할 뿐이다. CSV 한 줄을 세 필드로 가르는 동안 할당은 한 번도 일어나지 않았다.</p><p>이 무늬는 파서에서 특히 강력하다. 22장에서 <code>sscanf</code>로 줄을 해석할 때는 결과를 담을 버퍼를 미리 준비해야 했지만, 뷰로 자르면 <strong>원본 위에 표시만</strong> 남긴다. 대신 지켜야 할 것이 하나 늘어난다 — 61장에서 본 대로 <strong>원본이 살아 있는 동안만 유효하다</strong>.</p><p><code>find</code>가 못 찾았을 때 돌려주는 값에도 규약이 있다. 0이나 음수가 아니라 <code>PROVEN_INDEX_NOT_FOUND</code>라는 이름의 센티널이다. 58장에서 센티널 값의 위험을 이야기했는데, 여기서는 <strong>이름이 붙어 있고 문서화되어 있다</strong>는 점이 다르다 — 이름 없는 마법의 수와 이름 붙은 계약은 다른 물건이다.</p><div class="dev misconception"><p class="dev-label">⚠ “길이를 들고 다니면 글자 수를 아는 것이다”</p><p>아니다. 길이는 <strong>바이트 수</strong>다. 7장에서 배운 대로 UTF-8에서 한 글자는 1~4바이트이므로, 한글 “가”는 3바이트이고 이모지는 4바이트다. 예제의 출력이 굳이 “(5 bytes)”라고 밝히는 이유다. 그래서 “n번째 글자”를 다루는 일은 여전히 조심스럽고, <strong>바이트 경계에서 아무 데나 자르면</strong> 7장에서 본 깨진 글자가 나온다. 문자열 라이브러리가 해결해 주는 것은 경계 침범이지 인코딩의 본질적 난이도가 아니다.</p></div><h3 id="loc-315">63.4 두 세계의 경계 — NUL 종단과 UTF-16</h3><p>바깥 세계와 만나는 자리마다 변환이 필요하다.</p><ul><li><code>proven_u8str_as_cstr</code> — 소유 문자열에서 NUL 종단 포인터를 얻는다. 내부에 NUL을 유지해 두므로 복사도 할당도 없다. <code>printf("%s")</code>나 파일 API에 넘길 때 쓴다.</li><li><code>proven_u8str_view_to_cstr</code> — 뷰에서 NUL 종단 문자열을 만든다. 이쪽은 <strong>할당자를 받는다</strong> — 뷰는 원본 중간을 가리킬 수 있어 그 자리에 NUL을 쓸 수 없기 때문이다. 시그니처가 다시 한번 사실을 말해 준다.</li><li><code>proven_u16str_t</code> / <code>proven_u16str_view_t</code> — UTF-16 세계와의 다리다. Windows API가 이 인코딩을 쓰므로 변환이 필요하고, 변환은 실패할 수 있다(짝이 맞지 않는 서러게이트 같은 것). 그래서 결과는 꾸러미로 온다.</li></ul><div class="dev realcase"><p class="dev-label">◉ “추측하지 말고 거부하라” — 인코딩 처리의 원칙</p><p>7장에서 본 텍스트 보안 문제들의 뿌리는 대개 <strong>너그러운 디코더</strong>다. 잘못된 UTF-8을 만났을 때 “비슷한 것으로 고쳐 읽는” 구현은 과거 여러 번 보안 사고의 통로가 됐다 — 특히 지나치게 긴 인코딩(overlong)을 허용한 디코더들이 검사를 우회당했다. 그래서 오늘의 규범은 한 문장이다. <strong>유효하지 않은 입력은 고쳐 읽지 말고 거부하라.</strong> proven의 인코딩 변환이 <code>PROVEN_ERR_INVALID_ENCODING</code>을 돌려주며 멈추는 것이 그 규범의 구현이고, 이 원칙은 이 장 전체의 “자르지 않는다”와 정확히 같은 정신이다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>문자열 어휘 요약.</p><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>실패·소유</strong></th></tr><tr><td><code>u8str_create(alloc, cap)</code></td><td>소유 문자열 생성</td><td>꾸러미 반환, <code>_destroy</code> 필요</td></tr><tr><td><code>u8str_borrow(buf, cap)</code></td><td>남의 버퍼 위에 문자열</td><td>할당 없음, 파괴 없음</td></tr><tr><td><code>u8str_append(&amp;s, v)</code></td><td>용량 안에서 덧붙임</td><td>모자라면 거부(원본 보존)</td></tr><tr><td><code>u8str_append_partial</code></td><td>들어가는 만큼</td><td>넣은 바이트 수 반환</td></tr><tr><td><code>u8str_append_grow(alloc,…)</code></td><td>모자라면 늘려서</td><td>할당 실패 가능</td></tr><tr><td><code>u8str_view_find</code></td><td>부분 문자열 위치</td><td>없으면 <code>PROVEN_INDEX_NOT_FOUND</code></td></tr><tr><td><code>u8str_view_slice</code></td><td>부분 뷰</td><td>복사 없음 — 원본 수명에 묶임</td></tr><tr><td><code>u8str_as_cstr</code></td><td>NUL 종단 포인터</td><td>복사 없음</td></tr><tr><td><code>u8str_view_to_cstr</code></td><td>뷰 → C 문자열</td><td>할당자 필요</td></tr></table></div><p>문자열을 안전하게 담고 자를 수 있게 됐다. 그런데 아직 <strong>만드는</strong> 일이 남았다 — 수와 값을 글자로 바꾸고, 글자를 다시 수로 되돌리는 일. 58장의 셋째 버그가 기다리는 자리이자, 이 라이브러리에서 가장 눈에 띄게 다른 문법이 나오는 자리다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>cap=32 who=world    -> "Hello, world"
+cap= 8 who=world    -> failed with error code 2
+PROVEN_OK is 0, and every failure is non-zero
+</code></pre></div></div><p>이 예제에 이 장의 문법이 다 들어 있다. <code>make_greeting</code>은 결과를 출력 매개변수(<code>out</code>)로 내보내고 반환값은 상태 전용으로 썼다 — 실패하면 위로 그대로 넘긴다. 그리고 <code>proven_u8str_create</code>는 꾸러미를 돌려주므로, <strong>확인한 뒤에야</strong> <code>made.value</code>를 꺼낸다. 순서가 뒤바뀌면 안 된다.</p><div class="dev antipattern"><p class="dev-label">✗ 확인하기 전에 <code>value</code>를 꺼내기</p><pre><code data-lang="c">proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* 위험 */</code></pre><p>한 줄로 끝나서 깔끔해 보이지만, 실패했을 때 손에 들어오는 것은 <strong>의미 없는 값</strong>이다. 꾸러미의 계약은 “<code>err</code>가 <code>PROVEN_OK</code>일 때만 <code>value</code>가 뜻을 가진다”이므로, 이 코드는 계약을 건너뛴 것이다. 실패해도 대개 0으로 채워진 구조체가 와서 당장은 죽지 않는다는 점이 오히려 위험하다 — 사고가 한참 뒤로 미뤄진다(61장의 그 무늬다).</p></div><p>두 번째 호출의 출력이 이 부의 주제를 압축한다. 용량 8바이트에 <code>"Hello, world"</code>를 넣으려 하자 라이브러리는 <strong>들어가는 만큼만 넣고 성공을 말하는</strong> 대신, 아무것도 쓰지 않고 실패를 돌려주었다. 61장에서 본 <code>snprintf</code>의 조용한 잘림과 정확히 반대되는 선택이다.</p><h3 id="loc-317">63.2 버리면 컴파일러가 항의한다</h3><p>에러를 값으로 돌려주는 것만으로는 부족하다. 61장에서 본 대로 반환값은 <strong>버릴 수 있기</strong> 때문이다. 그래서 실패가 의미 있는 함수에는 C23의 <span id="idx-entry-86"></span><code>[[nodiscard]]</code>가 붙어 있다(41장에서 이름을 보았다). 결과를 버리면 컴파일러가 실제로 이렇게 말한다.</p><pre><code data-lang="text">warning: ignoring return value of ‘proven_u8str_append’,
+         declared with attribute ‘nodiscard’ [-Wunused-result]
+    5 |     proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hi"));
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+note: declared here
+  123 | [[nodiscard]] proven_err_t proven_u8str_append(...);</code></pre><p>15장에서 권한 <code>-Werror</code>를 켜 두었다면 이것은 경고가 아니라 <strong>빌드 실패</strong>가 된다. “확인은 선택”이던 것이 “확인하지 않으면 컴파일되지 않음”으로 바뀐 것이다.</p><p>물론 정말로 무시하고 싶을 때가 있다. 그때는 <code>(void)</code>를 앞에 붙인다.</p><pre><code data-lang="c">(void)proven_u8str_append(&amp;s, view);   /* 알고도 무시한다 */</code></pre><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>(void)</code>로 무시할 수 있으면 강제가 아니지 않은가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>강제의 목적이 “무시를 막는 것”이 아니라 <strong>“무시를 눈에 보이게 만드는 것”</strong>이기 때문이다. 아무 표시 없이 버려진 에러는 코드 검토에서 보이지 않지만, <code>(void)</code>가 붙은 줄은 “이 실패는 의도적으로 무시한다”는 선언이 된다. 타이핑해야 한다는 사실 자체가 핵심이다 — 실수로는 못 하고, 일부러만 할 수 있다.</p></div></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>그런데 62장의 <code>proven_println</code>에는 그 표시가 없었다. 왜 화면 출력만 예외인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>계약에도 등급이 있기 때문이다. 콘솔로 나가는 쓰기의 실패는 관례적으로 무시되어 왔고(<code>printf</code>의 반환값을 확인하는 코드를 본 적이 있는가?), 모든 출력 한 줄마다 <code>(void)</code>를 붙이게 만들면 코드가 소음으로 뒤덮인다. 그래서 이 라이브러리는 <strong>에러는 돌려주되 확인을 강요하지는 않는</strong> 등급을 출력에 두었다. 반대로 <strong>입력</strong> 쪽 함수들에는 표시가 붙어 있다 — 읽기의 실패를 무시하면 “읽지 않은 데이터”를 읽은 것처럼 다루게 되어, 61장의 둘째 버그가 그대로 재현되기 때문이다. 어디에 표시를 붙일지가 곧 설계 판단이다.</p></div></div><h3 id="loc-318">63.3 실패했을 때 남는 것 — 실패 원자성</h3><p>에러를 돌려받은 뒤 자연스럽게 드는 물음이 있다. <strong>실패한 함수가 건드리던 객체는 지금 어떤 상태인가?</strong></p><span id="idx-entry-87"></span><p>라이브러리의 답은 <strong>실패 원자성</strong>(failure atomicity)이다 — 문서에 달리 적지 않은 한, 실패한 연산은 대상을 손대기 전 상태로 남긴다. 배열을 늘리다 기억이 모자라면 기존 원소는 그대로 살아 있고, 문자열에 덧붙이다 자리가 모자라면 원래 내용이 그대로다. 방금 예제의 두 번째 호출이 그 예다 — 실패했지만 반쯤 쓰인 문자열이 남지는 않았다.</p><p>이것이 왜 중요한가. 실패 원자성이 없으면 호출자는 실패한 뒤 <strong>객체를 버리는 것 말고는</strong> 할 수 있는 일이 없다. 있으면 “이번 추가는 포기하고 지금까지 모은 것으로 계속 간다”가 가능해진다.</p><div class="dev misconception"><p class="dev-label">⚠ “실패하면 어차피 프로그램을 끝낼 텐데 상태가 무슨 상관인가”</p><p>짧게 도는 명령줄 도구라면 그럴 수 있다. 그러나 오래 도는 프로그램 — 서버, 편집기, 게임, 펌웨어 — 은 실패 하나로 죽으면 안 된다. 한 요청의 처리가 기억 부족으로 실패했다고 서버 전체가 내려간다면 그것이 더 큰 사고다. 실패 원자성은 “이 요청만 버리고 다음 요청을 받는” 복구를 가능하게 하는 최소 조건이다.</p></div><h3 id="loc-319">63.4 돌려줄 상대가 없을 때 — 패닉</h3><p>에러를 값으로 돌려주려면 <strong>돌려줄 상대</strong>가 있어야 한다. 그런데 계약 자체가 깨진 자리에서는 그 상대가 없다 — 예를 들어 널 포인터를 넘겨야 할 이유가 전혀 없는 자리에 널이 왔다면, 그것은 실패가 아니라 <strong>프로그램의 논리가 이미 틀렸다</strong>는 뜻이다.</p><p>이런 자리를 위해 라이브러리에는 패닉(panic) 경로가 있다. 41장의 <code>assert</code>와 같은 정신이고, 다른 점은 임베디드에서도 쓸 수 있도록 처리 방식을 갈아 끼울 수 있다는 것이다(70장). 구분은 이렇게 기억하면 된다.</p><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><table><tr><th><strong>상황</strong></th><th><strong>예</strong></th><th><strong>라이브러리의 처리</strong></th></tr><tr><td>바깥 세계의 실패</td><td>기억 부족, 파일 없음, 자리 부족</td><td>에러를 값으로 반환</td></tr><tr><td>호출자의 계약 위반</td><td>있어서는 안 될 널, 파괴한 객체 재사용</td><td>패닉 (또는 미정의)</td></tr><tr><td>무시해도 좋은 실패</td><td>콘솔 출력 실패</td><td>에러를 반환하되 강요하지 않음</td></tr></table></div><div class="dev realcase"><p class="dev-label">◉ 값으로 오는 에러를 택한 다른 언어들</p><p>이 설계는 C만의 발명이 아니라 최근 시스템 언어들의 공통된 흐름이다. Go는 함수가 결과와 에러를 나란히 돌려주고, Rust는 <code>Result</code> 타입 하나로 성공과 실패를 감싸며 무시하면 경고한다. 둘 다 예외(exception)를 쓰지 않기로 한 언어이고, 이유도 같다 — <strong>에러 경로가 코드의 모양에 드러나야 한다</strong>는 것. 예외는 편리하지만 “여기서 어떤 실패가 어디로 튀는가”를 시그니처에서 지운다. 61장 표의 둘째 줄에 대한 답을, 서로 다른 세 언어가 같은 방향에서 찾은 셈이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>이 방식의 대가는 무엇인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><code>if</code>가 늘어난다. 예외처럼 깊은 곳의 실패를 한 번에 걷어 올려 주는 장치가 없으므로, 실패를 만나는 자리마다 확인하고 위로 넘기는 코드가 붙는다. 방금 예제의 <code>make_greeting</code>이 스무 줄 남짓 되는 이유의 절반이 그것이다. 그 대신 얻는 것이 하나 있다 — <strong>어디서 무엇이 실패할 수 있는지가 코드에 그대로 보인다.</strong> 감춰진 실패가 없다는 것, 그것이 이 라이브러리가 파는 물건이다.</p></div></div><p>에러의 모양을 알았으니, 이제 그 에러들이 지키는 대상 — 기억 그 자체 — 으로 내려간다. 다음 장은 바이트와 뷰, 그리고 넘치지 않는 크기 계산이다.</p>
 <div class="nav"><a href="ch62.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch64.html">다음 →</a></div>
 </div></main></body></html>

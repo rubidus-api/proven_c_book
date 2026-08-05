@@ -7,16 +7,19 @@ computer is actually built rather than with a list of syntax, takes today's
 standard (C23) as its default, and ends as a manual for the
 [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.1.0 — **draft**
-- Korean: [PDF](dist/proven_c_book-v0.1.0-ko.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/ko/)
-- English: [PDF](dist/proven_c_book-v0.1.0-en.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/en/) — *translation in progress*
-- 12 parts, 58 chapters, appendices A–E and an index; about 570 pages.
+- **Current edition**: v0.1.1 — **draft**
+- Korean: [PDF](dist/proven_c_book-v0.1.1-ko.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/ko/)
+- English: [Web](https://rubidus-api.github.io/proven_c_book/en/) — *translation in progress* (preface and chapters 1–7; the web edition is the current one, while the [PDF](dist/proven_c_book-v0.1.1-en.pdf) is as of the v0.1.1 release)
+- 13 parts, 72 chapters, appendices A–E and an index; about 302 pages (repository head; the release assets are as of v0.1.1).
 
 ## What makes it different
 
-- **You only read.** No exercises, no "try it yourself". The text moves through
-  question-and-answer, and review happens as deeper questions at the start of
-  the next chapter.
+- **Built to be read, not drilled.** Instead of breaking the flow with exercises
+  or "try it yourself", it carries you along through question-and-answer in the
+  running text, with review as deeper questions at the start of the next
+  chapter. If drills are what you want, the established C primers do that
+  better — this book takes the seat next to them and explains *why things are
+  shaped the way they are*.
 - **Every printed output is real.** All 60+ listings are compiled and run on
   every build and their output is pasted into the page (GCC 14, cross-checked
   with Clang).
@@ -26,9 +29,23 @@ standard (C23) as its default, and ends as a manual for the
 
 ## Translation status
 
-The Korean edition is complete. The English edition currently carries the front
-matter; chapters are added as they are translated. Contributions of translated
-chapters are not accepted (see below) — the translation is done by the author.
+The Korean edition is complete (13 parts, 72 chapters, about 302 pages) and is
+the source. The English edition is translated from it chapter by chapter, with
+**chapter numbers identical to the original**, so a reference to "chapter 49"
+means the same chapter in both editions.
+
+Translated so far: preface, Part II introduction, chapters 1–7.
+Per-chapter status: [TRANSLATION.md](TRANSLATION.md).
+
+The two editions are kept in step mechanically. `scripts/sync-status.py` records
+the hash of the Korean source each translated file was made from and classifies
+every file as synced / stale / pending; both book builds run it, so a change to
+a Korean chapter shows up immediately as a stale English chapter. Narrative
+device labels live in a single localized place, so editing a device changes both
+editions at once.
+
+Contributions of translated chapters are not accepted (see below) — the
+translation is done by the author.
 
 ## Running the examples
 

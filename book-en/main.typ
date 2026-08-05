@@ -81,7 +81,7 @@ Until a chapter arrives here, the complete text is the Korean edition:
 // ── Body ────────────────────────────────────────────
 // Same skeleton as the Korean edition. Only translated chapters are included;
 // the heading counter is set per chapter so numbering matches the original.
-#let translated = (1, 2, 3, 4)
+#let translated = (1, 2, 3, 4, 5, 6, 7)
 
 #let parts = (
   ("Part I — Ground", none, (1,)),
@@ -94,9 +94,9 @@ Until a chapter arrives here, the complete text is the Korean edition:
   ("Part VIII — The shape of data", none, (38, 39)),
   ("Part IX — Precision", none, (40, 41, 42)),
   ("Part X — Structure", none, (43, 44, 45, 46, 47)),
-  ("Part XI — Reading the standard library", "parts/part11s.typ", (48, 49, 50, 51, 52, 53, 54, 55, 56, 57)),
-  ("Part XII — proven — fundamentals, verified", "parts/part12.typ", (58, 59, 60, 61, 62, 63, 64, 65, 66, 67)),
-  ("Part XIII — Closing", none, (68, 69)),
+  ("Part XI — Reading the standard library", "parts/part11s.typ", (48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60)),
+  ("Part XII — proven — fundamentals, verified", "parts/part12.typ", (61, 62, 63, 64, 65, 66, 67, 68, 69, 70)),
+  ("Part XIII — Closing", none, (71, 72)),
 )
 
 #for (part-title, intro, chs) in parts {

@@ -7,17 +7,19 @@ C를 처음 배우는 사람을 위한 한국어 책이다. 문법 목록이 아
 부에서 [proven](https://github.com/rubidus-api) C 라이브러리의 매뉴얼로
 이어진다.
 
-- **현재 판**: v0.1.0 — **초안(draft)**
-- 한국어: [PDF](dist/proven_c_book-v0.1.0-ko.pdf) · [웹으로 읽기](https://rubidus-api.github.io/proven_c_book/ko/)
-- English: [PDF](dist/proven_c_book-v0.1.0-en.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/en/) — 번역 진행 중
-- 묶음 내려받기: [ko zip](dist/proven_c_book-v0.1.0-ko.zip) · [en zip](dist/proven_c_book-v0.1.0-en.zip) · [전체 zip](dist/proven_c_book-v0.1.0-all.zip)
-- 12부 58장 + 부록 A~E + 찾아보기, 약 570쪽
+- **현재 판**: v0.1.1 — **초안(draft)**
+- 한국어: [PDF](dist/proven_c_book-v0.1.1-ko.pdf) · [웹으로 읽기](https://rubidus-api.github.io/proven_c_book/ko/)
+- English: [웹으로 읽기](https://rubidus-api.github.io/proven_c_book/en/) — 번역 진행 중(머리말·1–7장; 웹판이 최신이고 [PDF](dist/proven_c_book-v0.1.1-en.pdf)는 v0.1.1 릴리스 시점판이다)
+- 묶음 내려받기: [ko zip](dist/proven_c_book-v0.1.1-ko.zip) · [en zip](dist/proven_c_book-v0.1.1-en.zip) · [전체 zip](dist/proven_c_book-v0.1.1-all.zip)
+- 13부 72장 + 부록 A~E + 찾아보기, 약 302쪽 (저장소 최신본. 릴리스 자산은 v0.1.1 시점판이다)
 - 이 저장소가 최신본이다. 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 이 책의 특징
 
-- **읽기만 하면 된다.** 연습문제도, "직접 해 보라"도 없다. 본문 곳곳의
-  문답으로 진행한다.
+- **실습보다 읽는 흐름을 택했다.** 연습문제나 "직접 해 보라"로 끊지 않고,
+  본문 곳곳의 즉문즉답을 따라가며 이어 읽도록 썼다. 손으로 익히는 연습이
+  목적이라면 기존의 좋은 C 입문서들이 그 일을 더 잘한다 — 이 책은 그 옆에서
+  "왜 그렇게 생겼는지"를 읽어 나가는 쪽을 맡는다.
 - **인쇄된 실행 결과는 전부 실제 출력이다.** 수록 예제 60여 종을 매 빌드마다
   컴파일·실행해 그 출력을 지면에 싣는다(GCC 14 기준, Clang으로 교차 검증).
 - **오늘의 C.** C23을 기본값으로 쓰고, 옛 관행은 역사로만 다룬다.

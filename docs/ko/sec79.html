@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부록 E — 참고 문헌과 출처 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-397">부록 E — 참고 문헌과 출처</h2><p>이 책이 기대고 있는 문헌과, 본문에서 사례로 든 사건들의 출처를 모았다. 표준 문서를 구하는 방법은 부록 D에 있다.</p><h3 id="loc-398">표준 문서</h3><ul><li>ISO/IEC 9899:2024 (C23) — 이 책의 기준 표준. 무료 초안 N3220.</li><li>ISO/IEC 9899:2018 (C17), 9899:2011 (C11), 9899:1999 (C99), 9899:1990 (C89/C90) — 판을 거슬러 확인할 때. 초안 N2176·N1570·N1256.</li><li>IEEE 754 — 부동소수점 산술 표준(6·40장의 근거).</li><li>The Unicode Standard — 문자 집합과 인코딩, 정규화(7장).</li><li>POSIX (IEEE Std 1003.1) — 표준 C 밖의 시스템 인터페이스(69장의 배경).</li></ul><h3 id="loc-399">언어의 역사</h3><ul><li>Dennis M. Ritchie, “The Development of the C Language” (1993) — CPL→BCPL→B→C의 계보와 초기 설계 결정에 대한 창시자의 서술(2·10장).</li><li>Brian W. Kernighan, Dennis M. Ritchie, <span style="display: inline-block">The C Programming Language</span> (1978, 1988) — 이른바 K&amp;R. C89 이전과 이후를 가르는 기준점.</li><li>WG14 문서 저장소(<code>open-std.org</code>) — 제안서와 결함 보고서. “이 조항이 왜 이렇게 되었나”의 1차 자료.</li></ul><h3 id="loc-400">이 책이 인용한 사건들</h3><ul><li>Ariane 5 비행 501 사고 조사 보고서(1996) — 변환 오류가 부른 실패(23장).</li><li>Apple “goto fail” TLS 검증 결함(CVE-2014-1266) — 중괄호 없는 분기(27장).</li><li>Morris 인터넷 웜(1988) — <code>gets</code>를 통한 버퍼 넘침(35장, 그리고 부록 D의 판데르린던 항목에서 언급한 그 사건).</li><li>형식 문자열 취약점의 대량 발견(1999–2000년) — wu-ftpd 등(19·47장).</li><li>해시 충돌을 이용한 서비스 거부(2011년 다수 웹 프레임워크) 및 algorithmic complexity attack 논문(2003) — 자료구조의 최악 케이스가 보안 문제가 되는 사례(47·68장).</li><li>Debian OpenSSL 난수 결함(CVE-2008-0166) — 예측 가능한 키(69장).</li><li>리눅스 커널의 <code>-fno-strict-aliasing</code> 채택과 VLA 제거(2018) — 현실의 타협(11·15·33장).</li></ul><h3 id="loc-401">도구와 라이브러리</h3><ul><li>GCC, Clang/LLVM 공식 문서 — 경고 옵션, 새니타이저, 확장(15장).</li><li>GDB, LLDB 문서 — 디버거(15장).</li><li>proven C 라이브러리 — 이 책 제12부의 대상. 이 책은 v26.07.23d 스냅샷을 기준으로 서술하고, 예제도 그 판으로 검증했다.</li><li>cppreference.com — 표준 라이브러리의 실용 레퍼런스.</li></ul><h3 id="loc-402">이 책의 검증 환경</h3><p>본문에 인쇄된 모든 실행 결과는 다음 환경에서 실제로 얻은 것이다.</p><ul><li>컴파일: <code>-std=c23 -Wall -Wextra -Werror</code></li><li>기준 컴파일러: GCC 14 (x86-64 리눅스)</li><li>교차 검증: Clang 22</li><li>디버거 세션 캡처: GDB 17.2</li><li>조판: Typst 0.15.1</li></ul>
+<div class="nav"><a href="sec78.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec80.html">다음 →</a></div>
+</div></main></body></html>
