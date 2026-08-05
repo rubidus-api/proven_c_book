@@ -70,6 +70,19 @@ end pointer and `ERANGE`. Moreover `strtod` may, according to the locale, read t
 decimal point as `,` rather than `.` (chapter 59) — a point always to be remembered
 when parsing a data format.
 
+#qa[
+  Why does `qsort` take its comparison through two `void *` — would knowing the type not be faster?
+][
+  Because the standard library must sort *an array of any type at all*. C has no
+  generics, so the only passage that erases a type is `void *` (chapter 33), and
+  the price is a cast and a dereference inside the comparator every time. The
+  price is not only speed. Where the type has been erased, a mistake gets no help
+  from the compiler: pass the wrong element size, or write a comparator that takes
+  `int` where it must take `int*`, and it collapses quietly. That is why chapter
+  76's `proven_array_sort` pins the type with a macro, and why chapter 69 counts
+  "the unchecked callback" among the five bugs.
+]
+
 == Dynamic allocation — four functions and their contracts
 
 We organise what chapter 40 taught, function by function.

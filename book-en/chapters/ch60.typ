@@ -65,6 +65,19 @@ mean to look at `errno`, set it to 0 just before the call (chapter 62).
   (chapter 8's story of calculating money).
 ]
 
+#qa[
+  How do the functions of `math.h` report failure — the return value alone cannot say?
+][
+  In three ways. *Outside the domain* (say `sqrt(-1)`) they return NaN and set
+  `errno` to `EDOM`. *Beyond the range* (say `exp(1000)`) they return infinity and
+  set `ERANGE`. And the floating-point exception flags of `<fenv.h>` are raised.
+
+  The trouble is that *how far each of the three is honoured varies between
+  implementations*. So the practical idiom is to clear `errno = 0` before the call
+  and check immediately after (chapter 62). To inspect the value itself use
+  `isnan` and `isinf` — they say what they mean, unlike tricks such as `x != x`.
+]
+
 == Functions often got wrong
 
 #dtable(

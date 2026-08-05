@@ -164,7 +164,7 @@
 // 3.8 이 장에서 답할 질문 (RFC-0006 §3.3) — 목록을 손으로 적지 않는다.
 // 이 자리 뒤부터 다음 1단계 제목 전까지의 문답(qa)에서 질문만 모은다.
 // 답은 싣지 않는다 — 독자가 잠시 생각할 자리를 만드는 것이 목적이다.
-#let chapter-questions(min: 2) = context {
+#let chapter-questions(min: 1) = context {
   let nexts = query(heading.where(level: 1).after(here()))
   let sel = selector(<qa-q>).after(here())
   let sel = if nexts.len() > 0 { sel.before(nexts.first().location()) } else { sel }

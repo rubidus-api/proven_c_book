@@ -46,6 +46,20 @@
 finally arose, and the practice of every project keeping its own `typedef` until
 then was tidied away.
 
+#qa[
+  If annex K's `*_s` functions failed, what fills their place now?
+][
+  Not one thing but three, sharing it out. *Compiler diagnostics* (warnings and
+  hardened builds such as `_FORTIFY_SOURCE`), *sanitizers* (chapter 17), and
+  *API designs that carry the length along*. The last is the direction this book
+  has pushed, and chapters 72 and 74 are its implementation.
+
+  The lesson is that safety does not arrive by appending `_s` to a function name.
+  What actually worked was making failure impossible to ignore, putting the bounds
+  inside the type, and making the checks something a tool can perform. That is how
+  chapter 69 arranges the five bugs.
+]
+
 == What C11 added
 
 #dtable(

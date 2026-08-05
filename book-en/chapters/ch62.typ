@@ -56,6 +56,21 @@ The error numbers the standard names are only three — `EDOM` (domain), `ERANGE
 by POSIX or the platform. That is, *code comparing `errno` values is that much less
 portable*.
 
+#qa[
+  Why was `assert` made to switch off wholesale with `NDEBUG` — is it not better to always check?
+][
+  Because what `assert` checks is *the programmer's assumption, not the user's
+  input*. "By the time we are here, p is not null" must be true whenever the code
+  is right; if it is false, that is a bug. The original design puts such checks
+  densely during development and removes their cost from the shipped build.
+
+  Two things follow. First, *no side effects inside `assert`* — `assert(pop(&s) == 3)`
+  disappears entirely in the release build. Second, checks on user input, file
+  contents and network data must be made by *code that always runs*, not by
+  `assert`. In chapter 45's vocabulary of contracts, `assert` confirms
+  preconditions *during development*; reporting failure as a value is another job.
+]
+
 == `assert` — the cheapest way to write a contract as code
 
 The macro learned in chapter 45. Pinning down the rules again:

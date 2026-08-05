@@ -47,6 +47,22 @@ it is seconds since 1970-01-01 UTC, but that is *a practice*, not a guarantee of
 the standard. So portable code does not calculate with `time_t`'s internal value
 directly but takes the difference with `difftime`.
 
+#qa[
+  Why do so many types exist for time — would one count of seconds not do?
+][
+  Because three different jobs are involved. `time_t` is an opaque value naming
+  *one moment*; `struct tm` is the *calendar notation* people read (year, month,
+  day, hour, minute, second); `clock_t` is a scale for measuring *elapsed time*.
+  Turning a moment into a calendar is a hard computation full of time zones,
+  daylight saving and leap seconds, so the standard keeps the two in separate
+  types and lets `localtime` and `mktime` bridge them.
+
+  The accidents in practice happen exactly at that border — subtracting two
+  `time_t` values gives seconds, but adding to the fields of a `struct tm`
+  directly produces an unnormalised date. Date arithmetic must go through
+  `mktime`.
+]
+
 == The traps of `struct tm`
 
 #demo("examples-en/ch61/timefns.c")
