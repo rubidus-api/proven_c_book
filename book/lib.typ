@@ -174,9 +174,9 @@
   set par(justify: false, first-line-indent: 0em, leading: 0.62em)
   set text(size: 0.95em)
   // 쪽 번호를 누르면 본문의 그 자리로 간다.
-  // 주의: Typst 0.15.1 의 태그 PDF 생성이 켜져 있으면 링크마다 쪽이 하나씩
-  // 늘어나는 버그가 있다(링크 94개 = 96쪽). 빌드 스크립트가 `--no-pdf-tags`
-  // 로 내보내 이를 피한다.
+  // (2026-08-05: 태그 PDF 가 링크마다 쪽을 늘린다고 보고 `--no-pdf-tags` 를
+  //  썼으나, 재측정 결과 사실이 아니었다 — 태그판과 무태그판의 쪽 수는
+  //  417 쪽으로 같다. 상류 이슈 typst/typst#8722 참고. 태그를 다시 켠다.)
   columns(2, gutter: 1.4em, {
     for t in terms.sorted() {
       let hs = hits.at(terms.position(x => x == t))
