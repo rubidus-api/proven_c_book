@@ -7,9 +7,9 @@ computer is actually built rather than with a list of syntax, takes today's
 standard (C23) as its default, and ends as a manual for the
 [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.3.0 — **draft**
-- Korean: [PDF](dist/proven_c_book-v0.3.0-ko.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/ko/)
-- English: [Web](https://rubidus-api.github.io/proven_c_book/en/) · [PDF](dist/proven_c_book-v0.3.0-en.pdf) — *complete*
+- **Current edition**: v0.4.0 — **draft**
+- Korean: [PDF](dist/proven_c_book-v0.4.0-ko.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/ko/)
+- English: [Web](https://rubidus-api.github.io/proven_c_book/en/) · [PDF](dist/proven_c_book-v0.4.0-en.pdf) — *complete*
 - 13 parts, 81 chapters, appendices A–F and an index; about 350 pages (repository head).
 
 ## What makes it different

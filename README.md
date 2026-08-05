@@ -7,10 +7,10 @@ C를 처음 배우는 사람을 위한 한국어 책이다. 문법 목록이 아
 부에서 [proven](https://github.com/rubidus-api) C 라이브러리의 매뉴얼로
 이어진다.
 
-- **현재 판**: v0.3.0 — **초안(draft)**
-- 한국어: [PDF](dist/proven_c_book-v0.3.0-ko.pdf) · [웹으로 읽기](https://rubidus-api.github.io/proven_c_book/ko/)
-- English: [Web](https://rubidus-api.github.io/proven_c_book/en/) · [PDF](dist/proven_c_book-v0.3.0-en.pdf) — 전권 번역 완료
-- 묶음 내려받기: [ko zip](dist/proven_c_book-v0.3.0-ko.zip) · [en zip](dist/proven_c_book-v0.3.0-en.zip) · [전체 zip](dist/proven_c_book-v0.3.0-all.zip)
+- **현재 판**: v0.4.0 — **초안(draft)**
+- 한국어: [PDF](dist/proven_c_book-v0.4.0-ko.pdf) · [웹으로 읽기](https://rubidus-api.github.io/proven_c_book/ko/)
+- English: [Web](https://rubidus-api.github.io/proven_c_book/en/) · [PDF](dist/proven_c_book-v0.4.0-en.pdf) — 전권 번역 완료
+- 묶음 내려받기: [ko zip](dist/proven_c_book-v0.4.0-ko.zip) · [en zip](dist/proven_c_book-v0.4.0-en.zip) · [전체 zip](dist/proven_c_book-v0.4.0-all.zip)
 - 13부 81장 + 부록 A~F + 찾아보기, 약 350쪽 (저장소 최신본)
 - 이 저장소가 최신본이다. 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
