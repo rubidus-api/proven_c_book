@@ -45,12 +45,22 @@ The order used when the usual arithmetic conversions choose "the wider side". Hi
 above.
 
 ```text
-long long  >  long  >  int  >  short  >  char / bool
+long long  >  long  >  int  >  short  >  char / signed char / unsigned char  >  bool
 ```
 
-At the same width the ranks of the unsigned and the signed side are the same, and then
-*the unsigned side wins*. That is why `-1 < 1u` is false — `-1` turns into a huge
-unsigned value (chapter 28).
+Three things must be distinguished.
+
+*① `char`, `signed char` and `unsigned char` have the same rank.* Having the same
+width, the three sit in one slot.
+
+*② `bool`'s rank is lower than those.* The standard pins `bool` below every signed
+integer type in rank.
+
+*③ Rank is not width.* At the same width the ranks of the unsigned and the signed side
+are the same, and then *the unsigned side wins* in the usual arithmetic conversions.
+That is why `-1 < 1u` is false — `-1` turns into a huge unsigned value (chapter 28).
+Ranks can differ at the same width (where an implementation provides extended integer
+types), and at the same rank the signedness settles the result.
 
 == Which conversion calls down which danger
 
@@ -59,7 +69,8 @@ unsigned value (chapter 28).
   [*conversion*], [*what happens*], [*danger*],
   [signed → unsigned], [the two's complement value is reinterpreted as it is], [a negative becomes a huge value],
   [unsigned → signed], [as it is if it fits, otherwise implementation-defined], [the value changes at the boundary],
-  [wide integer → narrow integer], [the high bits are discarded], [quiet loss of value],
+  [wide integer → narrow unsigned integer], [the remainder modulo $2^N$ (defined)], [quiet loss of value],
+  [wide integer → narrow signed integer], [as it is if it fits, otherwise *implementation-defined*], [so it stands in C23 too],
   [integer → real], [rounded to the nearest value], [loss of precision for large integers (chapter 8)],
   [real → integer], [the fractional part is discarded (towards 0)], [outside the range it is outside the contract],
   [`double` → `float`], [the precision is reduced], [rounding error],
@@ -83,10 +94,16 @@ Implicit conversion happens *without asking* in the following places.
 
 == Other conversions often met
 
-- *Narrowing* (wide → narrow integer): the high bits are cut (chapter 7). In a signed
-  type, if the value does not fit it is implementation-defined behaviour.
+- *Narrowing* (wide → narrow integer): to an *unsigned* destination it becomes the
+  remainder modulo $2^N$ (defined behaviour), and to a *signed* destination it is as it
+  is only if it fits and otherwise implementation-defined (chapter 7). That real
+  implementations mostly discard the high bits is true, but *that is the
+  implementation's choice, not the language's guarantee* — the clause stands even after
+  C23 pinned down two's complement.
 - *Real → integer*: the fractional part is discarded (towards 0). Outside the range it
   is outside the contract.
 - *Array → pointer*: in most contexts it decays into the address of the first element.
-  The exceptions are `sizeof`, `alignof` and `&` (chapter 36).
+  The exceptions are being the operand of `sizeof`, being the operand of unary `&`, and
+  initialising an array from a string literal (chapters 36 and 37). `alignof` takes only
+  *a type name*, so it does not belong in this list.
 - *Function → pointer*: a function name decays into a function pointer.

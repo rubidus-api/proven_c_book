@@ -122,7 +122,7 @@ into an arbitrary memory write, several implementations block it by default toda
 There is almost no reason to use it.
 
 *Buffering and order* — mix `printf` (standard output, usually line-buffered) with
-`fprintf(stderr, ...)` (unbuffered) and the order in which things appear on the
+`fprintf(stderr, ...)` (mostly unbuffered) and the order in which things appear on the
 screen can be reversed. Half of the occasions on which "the output vanished"
 during debugging are this, and the other half are cases where the buffer was not
 emptied just before a collapse.
@@ -135,8 +135,12 @@ emptied just before a collapse.
   execution reached at least there" is dangerous — in reality several more lines
   may have run and died trapped in the buffer.
 
-  The practice of sending debugging output to `stderr` came from here. `stderr` is
-  unbuffered, so the record right up to the moment of death survives. It is also
+  The practice of sending debugging output to `stderr` came from here. What the
+  standard promises about `stderr` goes only as far as *"it is not fully buffered"*
+  (that is, it is unbuffered or line-buffered), and real implementations mostly make it
+  unbuffered. So the record right up to the moment of death is *likely* to survive, but
+  that is not a guarantee — it can be set again with `setvbuf`, and the manner of
+  abnormal termination changes the outcome too. It is also
   the reason chapter 17 discussed debuggers and logs together.
 ]
 
@@ -179,7 +183,7 @@ a file with that name (the class of race called TOCTOU). Within the standard
     [print into a string], [`snprintf`], [return value ≥ buffer size means truncation],
     [parse user input], [`fgets` + `strtol`/`sscanf`], [the item count and the range],
     [temporary file], [`tmpfile`], [`tmpnam` is a race condition],
-    [debugging output], [`fprintf(stderr, …)`], [unbuffered — it survives even a death],
+    [debugging output], [`fprintf(stderr, …)`], [not fully buffered (mostly unbuffered) — likely to survive],
     [never to be used], [`gets`, `%s` without a width, `%n`], [—],
   )
 ]

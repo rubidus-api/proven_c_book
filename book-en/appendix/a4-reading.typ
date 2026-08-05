@@ -105,12 +105,17 @@ in a public repository, and *the last working draft before publication* is effec
 the same in content as the final standard. There are only editorial differences, so
 unless you must cite the standard document itself the draft is enough.
 
-The document numbers worth noting are these.
+The document numbers worth noting are these. One caution, though — *these drafts are
+not "the published standard".* N3220 in particular is an early working draft of the
+next edition (C2y), issued after C23 was published, with editorial corrections laid on
+C23. Its content is very close to C23 and it is widely referred to in practice, but
+*where an exact citation is needed the published ISO/IEC 9899:2024 must be the
+ground.*
 
 #dtable(
   columns: 3,
   [*edition*], [*official number*], [*free draft*],
-  [C23], [ISO/IEC 9899:2024], [N3220],
+  [C23], [ISO/IEC 9899:2024], [N3220 (strictly, a working draft issued just after C23)],
   [C17], [ISO/IEC 9899:2018], [N2176],
   [C11], [ISO/IEC 9899:2011], [N1570],
   [C99], [ISO/IEC 9899:1999], [N1256 (the edition with corrigenda applied)],

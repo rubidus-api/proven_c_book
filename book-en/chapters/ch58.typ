@@ -99,9 +99,22 @@ be multiplied, `calloc` is the safer choice.*
 ]
 
 `realloc` has two more peculiar rules. `realloc(NULL, n)` is the same as
-`malloc(n)`, and `realloc(p, 0)` is *implementation-defined* (C23 tidied it up
-explicitly so). There is old code that uses the latter as "release", but portable
-code uses `free`.
+`malloc(n)`, and *`realloc(p, 0)` is not to be used.* Its status changed from
+edition to edition — up to C17 it was *implementation-defined* and marked as
+deprecated, and in C23 it became outright *undefined behaviour* (proposal N2464).
+It is a place where implementations diverged so far that the standard gave up on
+settling it.
+
+What this change leaves in practice is one line — *to release, use `free(p)`.* Code
+that reallocates to a size that may become 0 must filter that case first.
+
+```c
+proven_err_t resize(char **buf, size_t n) {
+    if (n == 0) { free(*buf); *buf = nullptr; return OK; }  /* never pass 0 */
+    char *tmp = realloc(*buf, n);
+    ...
+}
+```
 
 == Termination — the difference between four ways
 

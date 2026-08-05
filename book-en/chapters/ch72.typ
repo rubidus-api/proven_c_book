@@ -11,7 +11,8 @@
 ]
 
 #deepqa[
-  Chapter 35 said that `char*` (and `unsigned char*`) alone has the privilege of
+  Chapter 35 said that pointers to a character type (`char*`, `signed char*`,
+  `unsigned char*`) alone have the privilege of
   peering into any object byte by byte, and chapter 13 showed code that broke that
   rule quietly collapsing under optimisation. Then what, concretely, does "handling
   bytes safely" keep?

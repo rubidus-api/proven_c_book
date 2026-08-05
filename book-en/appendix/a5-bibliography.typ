@@ -7,7 +7,9 @@ as cases in the body. How to obtain the standard document is in appendix D.
 
 == Standard documents
 
-- ISO/IEC 9899:2024 (C23) — this book's criterion standard. Free draft N3220.
+- ISO/IEC 9899:2024 (C23) — this book's criterion standard. The widely referenced free
+  document is N3220, but that is a working draft issued just after C23 (see
+  appendix D).
 - ISO/IEC 9899:2018 (C17), 9899:2011 (C11), 9899:1999 (C99),
   9899:1990 (C89/C90) — for checking back through the editions. Drafts N2176, N1570,
   N1256.

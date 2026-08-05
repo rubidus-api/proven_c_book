@@ -1,6 +1,6 @@
 #import "../../book/lib.typ": *
 
-= The machinery of speed - the birth of the standard
+= The machinery of speed — the birth of the standard
 
 #organizer[
   If the cache reduced waiting, this time it is the machinery that overlaps

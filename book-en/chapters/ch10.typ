@@ -1,6 +1,6 @@
 #import "../../book/lib.typ": *
 
-= The origin of streams - punched cards, line printers, printing terminals
+= The origin of streams — punched cards, line printers, printing terminals
 
 #organizer[
   You will learn why a computer's input and output has the shape of "characters

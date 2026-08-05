@@ -59,18 +59,26 @@ chapter 28 really happens here.
 #dtable(
   columns: 3,
   [*what you passed*], [*what actually arrives*], [*so*],
-  [`char`, `signed char`, `unsigned char`], [`int`], [`va_arg(ap, char)` is wrong],
-  [`short`, `unsigned short`], [`int`], [take it out with `va_arg(ap, int)`],
+  [`char`, `signed char`, `unsigned char`], [`int` (★)], [`va_arg(ap, char)` is wrong],
+  [`short`, `unsigned short`], [`int` (★)], [take it out with `va_arg(ap, int)`],
   [`bool`], [`int`], [the same],
   [`float`], [`double`], [`va_arg(ap, float)` is wrong],
   [integers at least as wide as `int`], [unchanged], [—],
   [pointers], [unchanged], [but a null constant needs a cast],
 )
 
-The rule in one line — *integers narrower than `int` become `int`, and `float`
-becomes `double`.* That is why `printf` has no float-specific format
+The rule in one line — *integers narrower than `int` undergo integer promotion, and
+`float` becomes `double`.* That is why `printf` has no float-specific format
 (chapter 53), and why writing `va_arg(ap, float)` is a contract violation, taking
 out a type that never arrived.
+
+One qualification attaches to the star in the table. The result of integer promotion
+is *almost always* `int`, but exactly it is "`int` if an `int` can represent every
+value of the original type, otherwise `unsigned int`" (chapter 28). On today's
+mainstream machines an `unsigned short` also fits in an `int` and so becomes `int`, but
+on an implementation where `short` and `int` have the same width an `unsigned short`
+promotes to `unsigned int`. Take it out there with `va_arg(ap, int)` and the signedness
+goes out of step — *the exact rule is that you must use the type actually promoted to.*
 
 The trap when passing a null pointer comes from here too. On an implementation
 where `NULL` is defined as the integer `0`, an integer 0 rides into the `...`

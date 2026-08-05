@@ -55,18 +55,26 @@
 #dtable(
   columns: 3,
   [*넘긴 것*], [*실제로 도착하는 것*], [*그래서*],
-  [`char`, `signed char`, `unsigned char`], [`int`], [`va_arg(ap, char)`는 틀렸다],
-  [`short`, `unsigned short`], [`int`], [`va_arg(ap, int)`로 꺼낸다],
+  [`char`, `signed char`, `unsigned char`], [`int`(★)], [`va_arg(ap, char)`는 틀렸다],
+  [`short`, `unsigned short`], [`int`(★)], [`va_arg(ap, int)`로 꺼낸다],
   [`bool`], [`int`], [같음],
   [`float`], [`double`], [`va_arg(ap, float)`는 틀렸다],
   [`int` 이상의 정수], [그대로], [—],
   [포인터], [그대로], [단 널 상수는 캐스트가 필요하다],
 )
 
-규칙을 한 줄로 줄이면 이렇다 — *`int`보다 좁은 정수는 `int`가 되고,
+규칙을 한 줄로 줄이면 이렇다 — *`int`보다 좁은 정수는 정수 승격을 거치고,
 `float`은 `double`이 된다.* 그래서 `printf`에 `float` 전용 서식이 없고
 (53장), `va_arg(ap, float)`라고 쓰면 도착하지도 않은 타입을 꺼내는
 계약 위반이 된다.
+
+표의 별표에 단서가 하나 붙는다. 정수 승격의 결과는 *거의 언제나* `int`
+이지만, 정확히는 "`int`가 그 타입의 모든 값을 표현할 수 있으면 `int`,
+아니면 `unsigned int`"다(28장). 오늘의 주류 기계에서는 `unsigned short`도
+`int`에 다 들어가므로 `int`가 되지만, `short`와 `int`의 폭이 같은 구현
+에서는 `unsigned short`가 `unsigned int`로 승격된다. 그런 자리에서
+`va_arg(ap, int)`로 꺼내면 부호가 어긋난다 — *꺼낼 때는 실제로 승격된
+타입을 써야 한다*는 것이 정확한 규칙이다.
 
 널 포인터를 넘길 때의 함정도 여기서 나온다. `NULL`이 정수 `0`으로
 정의된 구현에서는 `...` 자리에 정수 0이 실려 가서, 받는 쪽이

@@ -20,7 +20,7 @@ standard (C23) as its default, and ends as a manual for the
   chapter. If drills are what you want, the established C primers do that
   better — this book takes the seat next to them and explains *why things are
   shaped the way they are*.
-- **Every printed output is real.** All 60+ listings are compiled and run on
+- **Every printed output is real.** All 94 listings are compiled and run on
   every build and their output is pasted into the page (GCC 14, cross-checked
   with Clang).
 - **Today's C.** C23 is the default; older habits appear only as history.

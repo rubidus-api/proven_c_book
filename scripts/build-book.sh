@@ -13,6 +13,9 @@ command -v "$typst" >/dev/null 2>&1 || {
 
 "$root/scripts/verify-examples.sh"
 
+# 줄바꿈된 인라인 코드가 우발적 장 제목이 되는 사고를 막는다
+python3 "$root/scripts/check-headings.py" || true
+
 mkdir -p "$root/build"
 fontargs=""
 if [ -n "${FONT_PATH:-}" ]; then

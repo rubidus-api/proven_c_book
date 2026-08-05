@@ -66,6 +66,63 @@ pointers to literals as `const char*` — where chapter 23's `const` was
 documentation saying "I will not change this", here it works as a lock that stops,
 at compile time, the mistake of trying to change what must not be changed.
 
+=== The type is not `const` — C's odd place
+
+And here lies C's famous contradiction. *It must not be modified, and yet its type
+carries no `const`.* The type of `"abcdef"` is not `const char[7]` but plain `char[7]`.
+
+```c
+char *p = "hello";     /* C: it passes without a warning */
+p[0] = 'H';            /* but this is undefined behaviour */
+```
+
+That is, the compiler does not block it. "Not modifiable" exists *only as a contract,
+not as a type*, and breaking it is chapter 46's undefined behaviour — mostly it dies on
+the spot thanks to being placed in a write-protected region, but that is the
+implementation's kindness, not the language's guarantee.
+
+*C++ differs.* In C++ a string literal's type is `const char[N]`, and the first line
+above is *a compile error*. This item belongs in the list of "differences between the
+two languages" seen in chapter 79.
+
+#qa[
+  Why did C not attach `const`?
+][
+  *So as not to break existing code.* The word `const` itself entered the standard only
+  with C89 (chapter 23), and by then the world already had mountains of code putting
+  string literals into a `char *`. The moment the literal's type became `const char[N]`,
+  all of that code would be subject to diagnosis.
+
+  It is the same circumstance as `gets`'s funeral taking twenty years (chapter 56) —
+  *the standard is an institution that must protect existing code*, so when "the right
+  type" and "code already written" collide it leans towards the latter. C++, first
+  standardised in 1998, carried no such burden and could attach `const` from the start
+  (chapter 79's "siblings, not parent and child" is confirmed here too).
+
+  So discipline stands in for the language. *A pointer at a literal is always declared
+  `const char *`.* Then what the type cannot do has been written in by a human, and from
+  there the compiler keeps it. GCC's and Clang's `-Wwrite-strings` is an option that
+  changes a literal's type to `const char[N]` outright, but it is not the default
+  because warnings pour out of old code.
+]
+
+#qa[
+  What of the newest standard and the ones to come?
+][
+  *It stands as it is up to C23.* A string literal's type is still `char[N]` and
+  modifying one is still undefined behaviour. C23 changed two things while leaving this
+  place alone — settling `u8"..."`'s element type as `char8_t` and pinning down two's
+  complement are both separate from this clause.
+
+  Nor is there any sign of change in the next edition (C2y). The reason is the one above
+  — changing the type now would make half a century of code subject to diagnosis. The way
+  the standard tidies this place has been not to mend the type but *to let the tools
+  warn*, and that is likely to remain so.
+
+  In summary, remember it like this — *the type is `char[N]`, the contract is "do not
+  modify", and the defence is `const char *` plus compiler warnings.*
+]
+
 == A literal is an array too
 
 The previous section said a literal may be copied into an array or pointed at by a
@@ -111,7 +168,7 @@ That the example's `sizeof("abc" "def")` is 7 confirms it (3+3+NUL). This happen
 in the preprocessor but in *translation phase 6* (chapter 49's table) — so a string
 fragment produced by a macro joins with the literal beside it too.
 
-There are three uses.
+There are two uses.
 
 *① Writing a long sentence over several lines.* It is cleaner than joining lines with
 a backslash — because the indentation does not go inside the string.
@@ -123,7 +180,26 @@ const char *help =
     "  -o   output file\n";
 ```
 
-*② Keeping format fragments under names.* This is the use most often seen in practice.
+*② Keeping fragments under names and assembling them.* This is the use most often seen
+in practice, and it appears with three faces.
+
+*Assembling a version string.* The value is written in one place and woven in
+elsewhere.
+
+```c
+#define MY_PROGRAM_VERSION  "v3.1.2"
+#define PROGRAM_TITLE       "my_program " MY_PROGRAM_VERSION
+
+puts(PROGRAM_TITLE);                       /* my_program v3.1.2 */
+puts("build: " __DATE__ " " __TIME__);     /* with the compiler's own literals too */
+```
+
+The point is that raising the version means mending *one line*. It weaves just as well
+with literals the compiler predefines (`__DATE__`, chapter 49), so many programs build
+their banner and `--version` output this way.
+
+*Keeping format fragments under names.* The same technique applied to `printf`'s
+format.
 
 ```c
 #define ID_FMT    "%d"
@@ -138,7 +214,7 @@ managed under names. It contrasts with passing a variable, as in
 `printf(fmt_string_variable, …)`, which makes all that checking vanish at once —
 *concatenation finishes at compile time, so the result is still one literal.*
 
-*③ The standard library uses the same technique.* The format macros of `<inttypes.h>`
+*The standard library uses the same technique.* The format macros of `<inttypes.h>`
 seen in chapter 63 and appendix B stand exactly on this rule.
 
 ```c
@@ -148,6 +224,18 @@ printf("total = %" PRIu64 "\n", total);
 `PRIu64` is defined as `"lu"` or `"llu"` (it differs by platform) and joins with the
 fragments before and after into one format string. The problem that the format for a
 fixed-width integer differs by platform was solved *by concatenation alone*.
+
+The three cases come to the same one thing — *give literal fragments names and weave
+them at the place of use.* And all three pair with chapter 49's `#` operator. If the
+version is managed as numbers, the numbers can be turned into strings and woven.
+
+```c
+#define VER_MAJOR 3
+#define VER_MINOR 1
+#define STR_RAW(x) #x
+#define STR(x)     STR_RAW(x)                     /* double expansion (chapter 49) */
+#define VERSION    "v" STR(VER_MAJOR) "." STR(VER_MINOR)   /* "v3.1" */
+```
 
 #antipattern[
   Variables do not join

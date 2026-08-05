@@ -46,7 +46,19 @@ rest may or may not be there.
   [`<stdalign.h>`], [`alignas`, `alignof`], [C11. keywords in C23],
   [`<stdnoreturn.h>`], [`noreturn`], [C11. to be retired in C23],
   [`<iso646.h>`], [alternative spellings such as `and`, `or`], [C95],
+  [`<stdbit.h>`], [bit manipulation], [added in C23],
+  [`<stdckdint.h>`], [checked arithmetic], [added in C23],
 )
+
+That C23 lengthened this list is worth noticing. The two that newly entered are *pure
+computation needing no operating system*, so they can be provided in a freestanding
+environment too, and what they do (counting bits and checking overflow) is especially
+handy in embedded work. That the list grows in the direction of "what works without an
+OS" shows this division's character too.
+
+And a whole header being required differs from only some of its declarations being
+required — `<string.h>`, for example, is not freestanding-required, but if an
+implementation provides it the contracts inside must follow the standard.
 
 That this list is short is the background of this whole book — in embedded work
 neither `printf` nor `malloc` is a given (Part XII's freestanding story begins
@@ -133,7 +145,7 @@ alongside.
     columns: 2,
     [*to remember*], [*the point*],
     [number of headers], [thirty-one as of C23. grown from C89's fifteen],
-    [freestanding], [only nine are guaranteed without an operating system],
+    [freestanding], [only eleven are guaranteed without an operating system (C23 added two)],
     [speed of entering], [slow. the speed of leaving is slower],
     [standard = safe], [no. standard = *the contract is written down*],
     [`<strings.h>`], [not standard (POSIX). do not be fooled by the name],

@@ -1,6 +1,6 @@
 #import "../../book/lib.typ": *
 
-= Characters and text - scars in the standard
+= Characters and text — scars in the standard
 
 #organizer[
   How to put letters into the lockers — that a character is, in the end, a

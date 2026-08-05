@@ -7,6 +7,17 @@
 #define TEMP_FMT  "%.1f"
 #define ID_FMT    "%d"
 
+/* 버전 문자열 조립 — 값은 한 곳에만 적는다 */
+#define MY_PROGRAM_VERSION  "v3.1.2"
+#define PROGRAM_TITLE       "my_program " MY_PROGRAM_VERSION
+
+/* 숫자로 관리하는 버전은 두 겹 우회로 문자열이 된다(49장) */
+#define VER_MAJOR 3
+#define VER_MINOR 1
+#define STR_RAW(x) #x
+#define STR(x)     STR_RAW(x)
+#define VERSION_FROM_NUMBERS  "v" STR(VER_MAJOR) "." STR(VER_MINOR)
+
 int main(void)
 {
     /* ── ① 리터럴은 배열이다 ─────────────────────────────────── */
@@ -28,7 +39,10 @@ int main(void)
         "  -o   출력 파일\n";
     printf("%s", help);
 
-    /* ── ③ 서식 조각을 매크로로 두고 이어 붙이기 ─────────────── */
+    /* ── ③ 조각을 이름으로 두고 조립하기 ─────────────────────── */
+    puts(PROGRAM_TITLE);
+    printf("숫자에서 조립: %s\n", VERSION_FROM_NUMBERS);
+
     int    id   = 7;
     double temp = 36.5;
     printf("id = " ID_FMT ", temp = " TEMP_FMT "\n", id, temp);

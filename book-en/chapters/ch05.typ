@@ -1,6 +1,6 @@
 #import "../../book/lib.typ": *
 
-= Words and addresses - the archetype of C
+= Words and addresses — the archetype of C
 
 #organizer[
   You will be able to draw memory as a long corridor of numbered lockers. That

@@ -65,6 +65,16 @@ side by side.
 separately (chapters 50 and 74's views) can be printed as it is, without NUL
 termination.
 
+One thing must be kept, though. *The width or precision argument that `*` takes is of
+type `int`.* Pass a length carried as a `size_t` (as views mostly do) straight in and
+the variadic argument's type goes out of step — the very mismatch seen in chapter 50.
+The canonical form checks the length and then casts.
+
+```c
+if (v.size <= INT_MAX)
+    printf("%.*s", (int)v.size, (const char *)v.ptr);
+```
+
 == Length modifiers — the place that tells the type's width
 
 Type information does not ride along into variadic arguments (chapter 50), so this

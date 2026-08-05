@@ -29,7 +29,8 @@ Pointer casts (looking through a changed type) are grammatically free but
 narrow by contract. Reduced to a practical sentence — *a cast to a type
 demanding stricter alignment is dangerous.* Changing a `char*` (alignment 1) into
 an `int*` (alignment 4) and following it is the typical violation. The opposite
-direction is safe — and here lies a privilege C intended: *`char*` (and
+direction is safe — and here lies a privilege C intended: *a pointer to a character
+type (`char*`, `signed char*` and
 `unsigned char*`) may look at any object byte by byte.* With alignment 1 it can
 point anywhere, and the standard explicitly permits that "the representation of
 any object may be read through the eye of bytes" (chapter 13's strict aliasing

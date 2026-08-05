@@ -1,6 +1,6 @@
 #import "../../book/lib.typ": *
 
-= Compiler optimisation - the abstract machine
+= Compiler optimisation — the abstract machine
 
 #organizer[
   You will learn that a compiler does not translate source code "as written" —

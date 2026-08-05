@@ -7,6 +7,8 @@ fonts=${FONT_PATH:-$root/../toolchains/fonts}
 python3 "$root/scripts/sync-status.py" || true
 # 장 번호 참조가 원본과 어긋나지 않았는지 대조한다 (빌드는 계속한다)
 python3 "$root/scripts/check-xrefs.py" || true
+# 줄바꿈된 인라인 코드가 우발적 장 제목이 되는 사고를 막는다
+python3 "$root/scripts/check-headings.py" || true
 
 mkdir -p "$root/build"
 # --input lang=en 이 공용 lib.typ 의 장치 라벨을 영어로 고른다 (사본 없음)

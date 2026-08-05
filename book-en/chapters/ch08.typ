@@ -1,6 +1,6 @@
 #import "../../book/lib.typ": *
 
-= Representing numbers - the contract called IEEE 754
+= Representing numbers — the contract called IEEE 754
 
 #organizer[
   The next rung on the ladder of representation. You will be able to tell apart

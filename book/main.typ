@@ -178,7 +178,7 @@
 #counter(heading).update(0)
 #pagebreak(weak: true)
 
-// ── 본문 (RFC-0002 rev.f 10부 50장) ──────────────────
+// ── 본문 (13부 81장) ─────────────────────
 // (제목, 부 도입부 파일 또는 none, 장 번호들)
 #for (part-title, intro, chs) in parts {
   pagebreak(weak: true)

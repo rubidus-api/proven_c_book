@@ -1,6 +1,6 @@
 #import "../../book/lib.typ": *
 
-= A simple model of the machine - the birth of C
+= A simple model of the machine — the birth of C
 
 #organizer[
   You will be able to draw a computer as a simple picture of three parts — a
