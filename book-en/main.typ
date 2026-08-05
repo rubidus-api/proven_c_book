@@ -20,9 +20,10 @@
 // 코드는 영어권 독자에게 익숙한 라틴 고정폭 Noto Sans Mono 로 통일한다.
 // D2Coding 은 쓰지 않는다. 유니코드·인코딩 설명처럼 코드 안에 한글이
 // 꼭 있어야 하는 자리만 Noto Sans CJK KR 이 뒤에서 받는다.
-#show raw: set text(font: ("Noto Sans Mono", "Noto Sans CJK KR"), size: 0.88em, ligatures: false)
+#show raw: set text(font: ("Noto Sans Mono", "Noto Sans CJK KR"), size: 0.96em, ligatures: false)
 // 인쇄를 위해 구문 강조 색을 쓰지 않는다 (잉크·토너 절약)
-#set raw(theme: none)
+// 회색조에서도 구분되는 절제된 구문 강조 (RFC-0006 §7.2)
+#set raw(theme: "/book/theme-print.tmTheme")
 #set heading(numbering: none)
 
 #page(numbering: none)[
@@ -40,7 +41,7 @@
     #v(1.0cm)
     #text(size: 11pt)[rubidus]
     #v(0.25cm)
-    #text(size: 9.5pt)[
+    #text(size: 10pt)[
       #link("mailto:rubidus@gmail.com")[rubidus\@gmail.com] #h(0.8em) #link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]
     ]
   ]
@@ -61,7 +62,7 @@
 // ── 판권 — 한국어판과 같은 내용을 영어로 (book/main.typ 의 대응면) ──────
 #page(numbering: none)[
   #v(1fr)
-  #set text(size: 9.5pt)
+  #set text(size: 10pt)
   #set par(justify: false, first-line-indent: 0em, leading: 0.85em, spacing: 0.95em)
   #show link: it => text(fill: black, it)
 
@@ -70,7 +71,7 @@
       Proven C Book
     ]
     #linebreak()
-    #text(size: 9.5pt)[An Introduction to Modern C with the Proven C Library]
+    #text(size: 10pt)[An Introduction to Modern C with the Proven C Library]
   ]
 
   #v(0.45cm)
@@ -96,7 +97,7 @@
     you credit the source; commercial use is not permitted, and adaptations must
     carry the same licence.
     #linebreak()
-    #text(size: 9pt, fill: rgb("#555555"))[https://creativecommons.org/licenses/by-nc-sa/4.0/]
+    #text(size: 10pt, fill: rgb("#555555"))[https://creativecommons.org/licenses/by-nc-sa/4.0/]
   ]
 
   #v(0.35cm)
@@ -170,7 +171,7 @@
     #v(0.9em)
     #for h in front-extra { row(h.body, h) }
     #for (part-title, intro, chs) in parts {
-      block(above: 1.5em, below: 0.7em)[
+      block(above: 1.5em, below: 0.7em, sticky: true)[
         #text(font: ("Noto Sans", "Noto Sans CJK KR"), size: 10.5pt, weight: "bold", part-title)
       ]
       for i in chs {
@@ -179,7 +180,7 @@
       }
     }
     #if back-extra.len() > 0 {
-      block(above: 1.5em, below: 0.7em)[
+      block(above: 1.5em, below: 0.7em, sticky: true)[
         #text(font: ("Noto Sans", "Noto Sans CJK KR"), size: 10.5pt, weight: "bold")[Appendices and index]
       ]
       for h in back-extra { row(h.body, h) }
@@ -234,7 +235,7 @@ The Korean edition is at:
     #if have.len() < chs.len() {
       v(1.0cm)
       block(width: 70%)[
-        #set text(size: 9.5pt)
+        #set text(size: 10pt)
         #set par(justify: false, first-line-indent: 0em)
         #align(center)[
           Not yet translated:

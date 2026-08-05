@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>name</key>
+  <string>Proven C Book — print</string>
+  <!--
+    인쇄와 화면을 함께 견디는 절제된 강조.
+    색을 잃어도(흑백 인쇄·색각) 굵기와 기울임으로 구분이 남게 짰다.
+      주석      회색 + 기울임
+      키워드    검정 + 굵게
+      문자열·수 짙은 남색
+      전처리기  짙은 자주
+      타입      검정 + 굵게(키워드와 같은 무게)
+  -->
+  <key>settings</key>
+  <array>
+    <dict>
+      <key>settings</key>
+      <dict>
+        <key>background</key><string>#FFFFFF00</string>
+        <key>foreground</key><string>#141414</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key><string>Comment</string>
+      <key>scope</key><string>comment, punctuation.definition.comment</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key><string>#5F5F5F</string>
+        <key>fontStyle</key><string>italic</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key><string>Keyword</string>
+      <key>scope</key><string>keyword, keyword.control, keyword.operator.word, storage, storage.type, storage.modifier</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key><string>#141414</string>
+        <key>fontStyle</key><string>bold</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key><string>String</string>
+      <key>scope</key><string>string, string.quoted, punctuation.definition.string</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key><string>#1F4D7A</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key><string>Number and constant</string>
+      <key>scope</key><string>constant.numeric, constant.character, constant.language</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key><string>#1F4D7A</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key><string>Preprocessor</string>
+      <key>scope</key><string>meta.preprocessor, keyword.control.directive, entity.name.function.preprocessor</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key><string>#6B2D8A</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key><string>Type name</string>
+      <key>scope</key><string>entity.name.type, support.type, storage.type.built-in</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key><string>#141414</string>
+        <key>fontStyle</key><string>bold</string>
+      </dict>
+    </dict>
+  </array>
+  <key>uuid</key>
+  <string>0f2b6a1e-6f2a-4d5b-9b4f-2f7e5c9a1d33</string>
+</dict>
+</plist>

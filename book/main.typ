@@ -15,9 +15,10 @@
 #set par(justify: true, leading: 0.78em, first-line-indent: (amount: 1em, all: true))
 #show heading: set text(font: ("Noto Sans CJK KR",))
 // 코드 글꼴 = D2Coding (비리가처판, 리가처도 명시적으로 끔)
-#show raw: set text(font: "D2Coding", size: 0.92em, ligatures: false)
+#show raw: set text(font: "D2Coding", size: 0.96em, ligatures: false)
 // 인쇄를 위해 구문 강조 색을 쓰지 않는다 (잉크·토너 절약)
-#set raw(theme: none)
+// 회색조에서도 구분되는 절제된 구문 강조 (RFC-0006 §7.2)
+#set raw(theme: "/book/theme-print.tmTheme")
 #set heading(numbering: "1.1")
 #show heading.where(level: 1): it => pagebreak(weak: true) + it
 // 절 제목(1.2 꼴)은 위아래로 숨을 준다 — 기본값은 본문에 너무 붙는다
@@ -40,7 +41,7 @@
     #v(1.0cm)
     #text(size: 11pt)[rubidus]
     #v(0.25cm)
-    #text(size: 9.5pt)[
+    #text(size: 10pt)[
       #link("mailto:rubidus@gmail.com")[rubidus\@gmail.com] #h(0.8em) #link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]
     ]
   ]
@@ -62,7 +63,7 @@
 // ── 판권 ──────────────────────────────────────────────
 #page(numbering: none)[
   #v(1fr)
-  #set text(size: 9.5pt)
+  #set text(size: 10pt)
   // 판권면은 짧은 단락이 여럿이라 행간을 조금 넉넉히 준다
   #set par(justify: false, first-line-indent: 0em, leading: 0.85em, spacing: 0.95em)
   #show link: it => text(fill: black, it)
@@ -72,7 +73,7 @@
       Proven C Book
     ]
     #linebreak()
-    #text(size: 9.5pt)[프로븐 C 라이브러리와 함께하는 현대적 C 입문]
+    #text(size: 10pt)[프로븐 C 라이브러리와 함께하는 현대적 C 입문]
   ]
 
   #v(0.45cm)
@@ -98,7 +99,7 @@
     있으나, 영리 목적 이용은 허용되지 않으며, 고친 결과물에는 같은 라이선스를
     적용해야 합니다.
     #linebreak()
-    #text(size: 9pt, fill: rgb("#555555"))[https://creativecommons.org/licenses/by-nc-sa/4.0/]
+    #text(size: 10pt, fill: rgb("#555555"))[https://creativecommons.org/licenses/by-nc-sa/4.0/]
   ]
 
   #v(0.35cm)
@@ -174,7 +175,7 @@
     #v(0.9em)
     #for h in front-extra { row(h.body, h) }
     #for (part-title, intro, chs) in parts {
-      block(above: 1.5em, below: 0.7em)[
+      block(above: 1.5em, below: 0.7em, sticky: true)[
         #text(font: ("Noto Sans CJK KR",), size: 10.5pt, weight: "bold", part-title)
       ]
       for i in chs {
@@ -183,7 +184,7 @@
       }
     }
     #if back-extra.len() > 0 {
-      block(above: 1.5em, below: 0.7em)[
+      block(above: 1.5em, below: 0.7em, sticky: true)[
         #text(font: ("Noto Sans CJK KR",), size: 10.5pt, weight: "bold")[부록과 찾아보기]
       ]
       for h in back-extra { row(h.body, h) }

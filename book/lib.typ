@@ -17,38 +17,39 @@
 // 인쇄를 위해 채움(fill)을 쓰지 않는다 — 선의 굵기와 모양으로만 구분한다.
 #let _device(title, body, rule, icon) = block(
   width: 100%,
-  inset: (x: 10pt, y: 7pt),
+  inset: (x: 11pt, y: 9pt),
+  above: 1.15em, below: 1.15em,
   stroke: rule,
   breakable: true,
 )[
   #set par(first-line-indent: 0em)
   #if title != none [
-    #text(weight: "bold", size: 0.92em)[#icon #title]
-    #v(2pt)
+    #text(weight: "bold", size: 0.96em)[#icon #title]
+    #v(4pt)
   ]
   #body
 ]
 
 // 3.1 문답 (즉문즉답) — 기본 리듬
-#let qa(q, a) = block(width: 100%, inset: (y: 2pt), breakable: true)[
+#let qa(q, a) = block(width: 100%, above: 1.15em, below: 1.15em, breakable: true)[
   #set par(first-line-indent: 0em)
-  #block(inset: (x: 10pt, y: 5pt), width: 100%, stroke: (left: 2pt + black))[
-    #text(weight: "bold")[#_L.q] #h(4pt) #q
+  #block(inset: (x: 11pt, y: 7pt), width: 100%, stroke: (left: 2pt + black), below: 6pt)[
+    #text(weight: "bold")[#_L.q] #h(5pt) #q
   ]
-  #block(inset: (x: 10pt, y: 5pt), width: 100%, stroke: (left: 0.5pt + black))[
-    #text(weight: "bold")[#_L.a] #h(4pt) #a
+  #block(inset: (x: 11pt, y: 7pt), width: 100%, stroke: (left: 0.5pt + black))[
+    #text(weight: "bold")[#_L.a] #h(5pt) #a
   ]
 ]
 
 // 3.2 심화 문답 (장 서두 회고 전용)
-#let deepqa(q, a) = block(width: 100%, inset: (y: 2pt), breakable: true)[
+#let deepqa(q, a) = block(width: 100%, above: 1.15em, below: 1.15em, breakable: true)[
   #set par(first-line-indent: 0em)
-  #block(inset: (x: 10pt, y: 5pt), width: 100%,
+  #block(inset: (x: 11pt, y: 7pt), width: 100%, below: 6pt,
     stroke: (left: (thickness: 2pt, paint: black, dash: "dashed")))[
-    #text(weight: "bold")[#_L.back] #h(4pt) #q
+    #text(weight: "bold")[#_L.back] #h(5pt) #q
   ]
-  #block(inset: (x: 10pt, y: 5pt), width: 100%, stroke: (left: 0.5pt + black))[
-    #text(weight: "bold")[#_L.a] #h(4pt) #a
+  #block(inset: (x: 11pt, y: 7pt), width: 100%, stroke: (left: 0.5pt + black))[
+    #text(weight: "bold")[#_L.a] #h(5pt) #a
   ]
 ]
 
@@ -82,20 +83,20 @@
 
 #let demo(path, show-output: true, stdin: false, highlight: none) = block(breakable: true, width: 100%)[
   #block(width: 100%, inset: 8pt, stroke: 0.5pt + black)[
-    #text(size: 0.8em, raw(path))
+    #text(size: 0.96em, fill: rgb("#4a4a4a"), raw(path))
     #raw(read("/" + path), lang: "c", block: true)
   ]
   #if stdin [
     #block(width: 100%, inset: 8pt,
       stroke: (left: 2pt + black, rest: 0.5pt + black))[
-      #text(size: 0.8em, weight: "bold")[#_L.stdin]
+      #text(size: 0.96em, weight: "bold")[#_L.stdin]
       #raw(read("/" + path.replace(".c", ".in")), block: true)
     ]
   ]
   #if show-output [
     #block(width: 100%, inset: 8pt,
       stroke: (left: 2pt + black, rest: 0.5pt + black))[
-      #text(size: 0.8em, weight: "bold")[#_L.output]
+      #text(size: 0.96em, weight: "bold")[#_L.output]
       #raw(read(_out-dir(path) + _rel(path) + ".out"), block: true)
     ]
   ]
@@ -113,7 +114,7 @@
           box(width: 3.2em, inset: 4pt, stroke: w + black,
             align(center, raw(c))),
           box(width: 3.2em, inset: (top: 3pt),
-            align(center, text(size: 0.72em, raw(str(start + i))))),
+            align(center, text(size: 0.9em, raw(str(start + i))))),
         )
       })
     )
@@ -129,7 +130,7 @@
   breakable: true,
 )[
   #set par(first-line-indent: 0em)
-  #text(weight: "bold", size: 0.92em)[⊞ #_L.platform — #title]
+  #text(weight: "bold", size: 0.96em)[⊞ #_L.platform — #title]
   #v(2pt)
   #body
 ]
@@ -138,7 +139,7 @@
 #let organizer(body) = block(width: 100%, inset: (x: 10pt, y: 7pt),
   stroke: (top: 1.5pt + black, bottom: 0.5pt + black))[
   #set par(first-line-indent: 0em)
-  #text(weight: "bold", size: 0.92em)[#_L.organizer] #v(2pt) #body
+  #text(weight: "bold", size: 0.96em)[#_L.organizer] #v(4pt) #body
 ]
 
 // ── 색인 ─────────────────────────────────────────────
@@ -172,7 +173,7 @@
     }))
   }
   set par(justify: false, first-line-indent: 0em, leading: 0.62em)
-  set text(size: 0.95em)
+  set text(size: 1.0em)
   // 쪽 번호를 누르면 본문의 그 자리로 간다.
   // (2026-08-05: 태그 PDF 가 링크마다 쪽을 늘린다고 보고 `--no-pdf-tags` 를
   //  썼으나, 재측정 결과 사실이 아니었다 — 태그판과 무태그판의 쪽 수는
