@@ -1,231 +1,168 @@
 #import "../../book/lib.typ": *
 
-= Representing numbers - the contract called IEEE 754
+= Special knowledge about addresses — address 0, alignment, low bits
 
 #organizer[
-  The next rung on the ladder of representation. You will be able to tell apart
-#idx("floating point")  the two ways of putting a number with a decimal point
-  into the lockers — fixed point and floating point — and you will meet
-#idx("IEEE 754")  IEEE 754, the contract that unified a chaos of floating-point
-  formats. One of the most important facts in this book — that a computer's
-  numbers are finite and approximate — takes its place here.
+  Three pieces of corner knowledge about the locker corridor. Why locker 0 is
+#idx("alignment")  special, why a large piece of luggage cannot go into just any
+  number (alignment), and the trick of hiding information in the last digits of
+  a number (tagged pointers). The three different things all called "null" are
+  first told apart here as well.
 ]
 
 #deepqa[
-  Chapter 5 got as far as signed integers in bits — including three competing
-  ways of holding negatives, settled on two's complement. But they are all
-  still integers. A number like 1.5 — how is that held in bits?
+  Chapter 3 said "an address is a number too, so it can be written down in
+  another locker." But suppose you want to record that there is *no address
+  yet* — how do you indicate "points nowhere"?
 ][
-  The bits themselves have no decimal point. So the decimal point too is made by
-  *agreement* — the same principle by which negative numbers were made by an
-  agreement (two's complement). The way of deciding "where shall we pretend the
-  point is when we read this?" splits into two: pinning the point down (fixed)
-  and carrying the point along in the data (floating). This chapter is the story
-  of those two branches.
+  You agree on one special value as the mark for "none." And almost every
+  system chose 0 for that mark — leaving locker 0 empty, used by nobody, and
+  reading "if 0 is written there, it points nowhere."
+#idx("null pointer")  That agreed value is the *null pointer*. But why was locker 0 free to be
+  left empty in the first place — that story is the first section of this
+  chapter.
 ]
 
-== Fixed point — pinning the decimal point down by agreement
+== What is in locker 0
 
-The first method is surprisingly simple. *Just use an integer, and change the
-unit.*
+The answer first: *it differs by machine*. And the difference is interesting.
 
-Money is a good example. To store 1,500.25 won, agree that "our ledger is
-written entirely in units of 0.01 won" and store the integer 150025. The
-decimal point is stored nowhere — everyone reading and writing merely shares
-the agreement "pretend there is a point two digits from the end." This is
-*fixed point*: the position of the point is fixed by agreement.
+On desktops, servers and phones, where the operating system runs in protected
+mode, the OS deliberately makes the area around address 0 a *forbidden zone*.
+A program that tries to read or write address 0 is caught and terminated on the
+spot. This is a kindness — mistakenly using the "none" mark (null) as if it
+were a real address is a very common accident, and because address 0 is
+forbidden, that mistake does not slip by quietly but is caught loudly right
+where it happens.
 
-The virtue of fixed point is that it *is* an integer. Addition and subtraction
-are as fast and exact as integer operations, with no approximation. So it is
-still in active service for money calculations and on small embedded chips with
-no decimal hardware. Its weakness is stiffness — one agreement cannot cover both
-very large and very small numbers. You cannot write the mass of a galaxy and the
-mass of an atom in the same ledger of hundredths.
-
-== Floating point — carrying the point in the data
-
-The second method transfers *scientific notation*, learned in science class, to
-the machine. That is, writing a number as $6.02 times 10^23$ — split into "the
-meaningful digits" and "how many times ten was multiplied in." Store both the
-kernel (the significand) and the multiplication count (the exponent) as data,
-and the decimal point *floats* along with the exponent — hence *floating point*.
-The machine uses 2 instead of 10: it holds numbers in the form
-$"significand" times 2^"exponent"$.
-
-The power of this method is that it covers *an enormous range with the same
-number of bits*. Galaxy and atom fit in one format. The price is precision —
-the number of digits in the kernel is finite, so anything beyond them is
-*discarded by rounding*.
-
-#misconception[
-  "Computers are good at maths, so of course decimal arithmetic is exact"
-][
-  Plausible — you have never seen a calculator get it wrong. But the numbers
-  floating point can hold are only *finitely many*, and a number it cannot hold
-  is rounded to its nearest neighbour. Astonishingly, that includes 0.1 — 0.1 is
-  an infinite fraction in binary (see the box below), so the "0.1" inside the
-  machine is really a different number very close to 0.1. Small discrepancies
-  can accumulate through a calculation. This is not a defect of the computer but
-  a necessity of finite representation, and there are proper ways to handle it
-  (chapter 43). One thing to remember for now: *floating point is not an exact
-  number but a faithful approximation.*
-]
-
-#mathbox[
-  Why 0.1 does not terminate in binary
-][
-  A fraction terminates only when its denominator is made solely of factors of
-  the base. In decimal (base $10 = 2 times 5$), $1/10$ ends after one digit. But
-  binary's base is only 2, so $1/10$, with a 5 in the denominator, never
-  terminates:
-
-  $ 0.1_10 = 0.0001100110011..._2 $
-
-  It is the same as $1/3$ being the endless $0.333...$ in decimal. A finite
-  significand has to cut this infinity off somewhere, and that cut is the source
-  of the approximation.
-]
-
-== Three incidents caused by approximation
-
-Let us look ahead, numerically, at the faces "faithful approximation" wears in
-practice. (Shown here by calculation on the page; running it in C is
-chapter 43.)
-
-*Incident 1 — 0.1 + 0.2 ≠ 0.3.* The most famous non-equation in the programming
-world. As we just saw, 0.1, 0.2 and 0.3 are all infinite in binary, so the
-machine holds each one's "nearest neighbour" instead. And the sum of 0.1's
-neighbour and 0.2's neighbour happens to round the *other way* from 0.3's
-neighbour. Written out in the 64-bit format —
-
-- $0.1 + 0.2$ in the machine = `0.30000000000000004440...`
-- $0.3$ #h(2.4em) in the machine = `0.29999999999999998889...`
-
-Both are faithfully close to 0.3, but *they are not each other*. So when you
-ask "are they equal?" (`==`), the machine answers honestly: no.
-
-Look at the internal representation and the whole incident is visible at a
-glance. The 64-bit format splits into [1 sign bit | 11 exponent bits |
-52 significand bits], and writing these four numbers' 64 bits in hexadecimal —
-
-#dtable(
-  columns: 2,
-  [*number*], [*64-bit internal representation (hex)*],
-  [0.1], [`3FB9 9999 9999 999A`],
-  [0.2], [`3FC9 9999 9999 999A`],
-  [0.3], [`3FD3 3333 3333 3333`],
-  [0.1 + 0.2], [`3FD3 3333 3333 333`#text(fill: rgb("#b0483c"), weight: "bold", raw("4"))],
-)
-
-There are three layers to read here. First, the `9999...` in the significands
-of 0.1 and 0.2 is the repeating binary `0011` seen in hexadecimal, and the fact
-that *the last digit is `A` and not 9* is the trace of rounding up while cutting
-the infinity off at 52 bits — the "cut" of the maths box is stamped right into
-the bits. Second, 0.3's significand `3333...` is the same repetition at a
-different phase, and this one rounded down at the end. Third — the crux — 0.3
-and 0.1+0.2 differ by *exactly one final bit*. They are the immediate
-neighbours, one tick apart (1 ulp, in the jargon). `==` answers "different" even
-to that one-bit difference, so floating-point "equality" breaks under a
-discrepancy of a single tick.
-
-*Incident 2 — so how do you compare?* In the floating-point world the question
-of equality itself has to change — not "are they exactly equal?" but *"are they
-close enough?"* You settle on a tolerance (traditionally called *epsilon*,
-$epsilon$) and count the two numbers as equal if their difference falls inside
-it:
-
-$ |a - b| < epsilon quad "(e.g. " epsilon = 10^(-9) ")" $
-
-That is the basic form; in practice there is one more layer — as numbers grow,
-so does the gap between neighbours (incident 3 below), so instead of a fixed
-$epsilon$ it is safer to use a tolerance *proportional to the size of the
-numbers* (relative error). The concrete use of both, and their traps, is
-covered in C code in chapter 43. What to remember now is one sentence: *code
-that compares floating-point numbers with `==` is almost always suspect.*
-
-*Incident 3 — beside a large number, a small one disappears.* That the
-significant digits are finite also means that when two numbers of very
-different sizes meet in one container, the smaller one *vanishes entirely*.
-Demonstrated with the 32-bit `float` (about 7 significant decimal digits) —
-
-- The moment you store $8.000000001$: the tail beyond 7 significant digits is
-  cut and it simply becomes $8.0$. It vanished *in the storing, before any
-  addition*. The internal representation makes it starker — `float`'s $8.0$ is
-  `4100 0000`, and storing $8.000000001$ gives the *same* `4100 0000`, because
-  the nearest tick is $8.0$. Two different numbers in decimal notation are one
-  and the same number in bits.
-- $8.0 + 0.00000008$: the result is still $8.0$, and the bits are still
-  `4100 0000`. Why — compute the tick spacing (the distance between neighbours)
-  of `float` at the size of $8.0$ and you get
-  $2^3 times 2^(-23) = 2^(-20) approx 0.00000095$. The $0.00000008$ added does
-  not reach even half a tick, so rounding leaves it where it was. This is called
-  *absorption*.
-- Conversely, *subtracting two nearly equal numbers*, as in $8.000001 - 8.0$,
-  erases all the leading digits and leaves only the approximation in the last
-  ones — a calculation that started with 7 significant digits produces an answer
-  with one or two. This is called *cancellation*, and it is the chief culprit in
-  eroding precision in numerical work.
-
-The three incidents have a single root — the representable numbers are a
-*discrete set of ticks*, and the spacing between ticks widens as numbers grow.
-Near 0 the ticks are dense enough to distinguish something like $10^(-300)$, but
-around $10^16$ the spacing exceeds 1 and *even integers get skipped*. It is no
-exaggeration to say that a feel for "how many digits can I trust?" (significant
-digits) is the whole of using floating point.
-
-== The chaos, and the contract called IEEE 754
-
-The idea of floating point was old, but *how* to hold it — how many bits each
-for significand and exponent, which way to round — differed by company for a
-long time. IBM mainframes, DEC's VAX and Cray supercomputers each used a
-different format. The same program moved to another machine gave *different
-answers*, and numerical programmers had to learn each machine's arithmetic
-habits afresh.
-
-In 1985 a standard called IEEE 754 unified the chaos. It is a precise contract
-that pins down the format (1 sign bit + exponent + significand), the rounding
-rules, and the treatment of special values such as infinity and "not a number"
-(NaN). Today essentially every CPU and GPU follows this contract — the 32-bit
-format (C's `float`) and the 64-bit format (C's `double`) being the
-representatives.
-
-The dates are worth noticing. The contract for floating point (IEEE 754, 1985)
-and the contract for the C language (ANSI C, 1989) were born within a few years
-of each other. It was an era in which the industry, unable to bear
-vendor-by-vendor arbitrariness any longer, turned to "let us write contracts" —
-and we meet this "age of contracts" again in chapter 10.
+The embedded world is different. On small chips running without an operating
+system, address 0 is often perfectly good, even important, memory — many
+microcontrollers place the interrupt vector table (a sort of emergency contact
+list) near address 0. On such a machine, reading address 0 is legal and
+meaningful.
 
 #qa[
-  How do you choose between the 32-bit `float` and the 64-bit `double` in
-  practice?
+  On a machine where address 0 is real memory, how do you tell the "none" mark
+  from a genuine address 0?
 ][
-  The default is `double`. The 64-bit format handles about 15–16 significant
-  decimal digits, which leaves room in most calculations. `float` (about 7
-  digits) is chosen for its size advantage where memory and bandwidth matter —
-  large numbers of coordinates, graphics, machine learning. "double for
-  precision, float for volume" is roughly right. Actual use in C is covered in
-  chapter 43.
+  The distinction does blur, and embedded programmers work conscious of that
+  boundary. More interesting is history's answer — machines really did exist
+  that used a value other than 0 as the "none" mark. The following case is that
+  story.
 ]
+
+#realcase[
+  Machines where the null pointer was not zero
+][
+  The C standard was careful from the start. That the constant 0 written in
+  source code means a null pointer is the standard's promise, but *what bit
+  pattern* that null pointer actually has inside the machine was left to the
+  machine's freedom. And there were machines that used that freedom. The Prime
+  50 series used segment 07777, offset 0 as null; the CDC Cyber 180 used the
+  special pattern 0xB00000000000; Lisp-optimised Symbolics machines used a
+  nonzero value, "the address of the NIL object." Look at the bits of a null
+  pointer on such a machine and not one of them is 0 — and yet comparing a
+  pointer against 0 in the source still comes out true, exactly as the standard
+  promises. The 0 in the source is a *symbol*; the representation in the machine
+  is an *implementation* — the "separation of symbol and representation" carried
+  along since chapter 4 repeats here too.
+
+  Today's mainstream machines (Intel, AMD, ARM and so on) all use "all bits
+  zero" as null, so you rarely feel this distinction. But in the world of tagged
+  pointers, coming up shortly, the situation of "the value meaning none is not
+  all zeros" is alive and well right now.
+]
+
+== The three nulls — three things alike only in name
+
+There are three things called "null" around C. Telling them apart once, now,
+saves great confusion later. They get formal treatment in Part VII
+(chapter 35); here we merely learn their faces.
+
+- *The null pointer* — what we just saw. The agreed pointer value meaning
+#idx("NUL character")  "points nowhere." It lives in the world of pointers.
+- *`NULL`* — the name (a macro) used to write a null pointer in C source code.
+  The latest C (C23) also brought in a clearer spelling, `nullptr`. It too
+  lives in the world of pointers.
+- *The NUL character* — an entirely different object. It is a single
+  *character* of value 0, at position 0 of the character table (chapter 9),
+  written `'\0'` in C. It is one byte of data and is used to mark the end of a
+  string (chapter 38). It lives in the world of characters.
+
+All three have "null" in the name and all three have a 0 tangled up in them
+somewhere, so they are easy to mix up, but the pointer's null and the
+character's NUL live in different worlds. Remember them as "strangers who
+resemble each other only because the value happens to be 0."
+
+== Alignment — a two-slot load cannot go just anywhere
+
+The second piece of corner knowledge about the corridor. Chapter 3 said the
+machine grabs several slots in one handful (the word). But the machine's hand
+is not built to take a handful at any position — usually it grabs comfortably
+only *at numbers that are multiples of its own size*. A four-byte number is
+grabbed in one go when it sits at an address that is a multiple of 4 (100, 104,
+108, …); an eight-byte one, at a multiple of 8. This rule is *alignment*.
+
+#memrow(100, ("78", "56", "34", "12", "  ", "  ", "  ", "  "), highlight: (0, 1, 2, 3))
+
+Four bytes starting at 100 (a multiple of 4), as above, are aligned. Put the
+same number starting at 102 and the alignment is off. What happens then also
+differs by machine. A tolerant machine (the Intel line) merely *gets slower*,
+splitting it into two handfuls, but does the job. A strict machine (old SPARC,
+some ARM eras) raised an error (a bus fault) on the spot and stopped the
+program. This is one of the classic sources of the portability problem of "code
+that works only on the machine where it works."
 
 #qa[
-  Integer overflow in chapter 5 and rounding in this chapter are both problems
-  of "a finite container" — are they the same kind of problem?
+  Why can the machine not grab anywhere? In the locker metaphor, what gets in
+  the way?
 ][
-  The root is the same, the symptoms differ. The integer container is finite in
-  *range*, so it overflows at the end (and is perfectly exact until it does);
-  the floating-point container is finite in *precision*, so it approximates a
-  little everywhere (but its range is enormous). An exact but narrow container
-  and a wide but approximating one — a feel for which container to use is a
-  fundamental of handling numbers, and choosing types in C (chapters 25 and 43)
-  is exactly that choosing.
+  Because the machine's hand (the bus) sees the corridor as a grid of four-slot
+  cells and moves accordingly. 100–103 is one cell, 104–107 the next. Four
+  bytes starting at 102 straddle two cells, so grabbing them at once means
+  opening both cells and stitching the needed pieces together — work done twice,
+  or refused outright. It is the same as a locker-room rule that two-slot
+  luggage must start at an even number.
 ]
 
-To summarise this rung of the ladder: the decimal point is not in the bits but
-in an agreement. Pin the agreement down and you have fixed point; carry it in
-the data and you have floating point, whose agreement is unified by the
-contract IEEE 754. And numbers under that contract are not exact numbers but
-faithful approximations.
+== The trick of the low bits — tagged pointers
 
-The next rung is characters. What has to be agreed in order to put "hello" in
-the lockers — the world of characters and text, and the story of the scars left
-where those agreements failed to match.
+The alignment rule has an unexpected by-product. Write a multiple of 4 in
+binary and the last two bits are *always 0*; for a multiple of 8, the last
+three bits are always 0. That is, the low bits of an aligned address are always
+zero — so they can be used as *free space to carry information*.
+
+This trick is called a *tagged pointer*. While writing down the address, you
+tuck a small tag into the trailing digits that are zero anyway. It is genuinely
+widespread — the runtimes of Lisp-family languages and OCaml distinguish "is
+this value an integer or an object address?" by a low-bit tag, and JavaScript
+engines and garbage collectors put status marks on pointers by the same trick.
+It is not free, of course — the tag must be stripped off (the low bits set back
+to 0) before the address is actually used.
+
+Here we meet the earlier null story again. In a tagged world, even the special
+value meaning "none" carries a tag, so *not all of its bits need be 0*. Lisp's
+"none" (NIL), for instance, is the address of a real special object. Even today,
+when C's null pointer is uniformly all-zero on mainstream machines, "nonzero
+none" is still in active service one layer up, in the world of runtimes.
+
+#qa[
+  May a programmer play the tagged-pointer trick directly?
+][
+  It is technically possible in C and is a genuinely used technique, but it is
+  an advanced one with many traps — you need a guarantee of alignment, you must
+  strip the tag before use without fail, and it tangles with the pointer rules
+  to come (provenance in chapter 14, and chapter 36). One conclusion suffices at
+  this stage: the low bits of an address are not "just a number" but a special
+  place that alignment created.
+]
+
+The three pieces of corner knowledge in this chapter — the specialness of
+address 0, alignment, and the low bits — all come from a single fact. An
+address is a number, but *not every number is treated alike*. The corridor has
+a geography.
+
+From the next chapter we turn our eyes to the contents put into the lockers.
+The first rung on the ladder of representation is the integer — the story of
+three competing ways to hold negative numbers in bits and C23's decision,
+numbers that overflow, and shifting bits wholesale left and right.

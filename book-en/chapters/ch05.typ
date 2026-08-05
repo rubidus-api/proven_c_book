@@ -1,310 +1,192 @@
 #import "../../book/lib.typ": *
 
-= Representing integers — sign, overflow, shift
+= Words and addresses - the archetype of C
 
 #organizer[
-  The first rung on the ladder of representation. You will see how unsigned
-#idx("two's complement")  integers are circular (modular) numbers, how three ways of
-  holding negative numbers in bits competed until two's complement settled it —
-  and what C23 finally pinned down. Add numbers that overflow and shifting bits
-#idx("overflow")  wholesale, and the background knowledge about integers is
-  complete.
+  You will be able to draw memory as a long corridor of numbered lockers. That
+#idx("word")  number is the address, and how many slots the machine handles at
+#idx("endianness")  once is the word. You will learn to tell apart, in
+  pictures, the two orders for storing a number that spans several slots —
+  little-endian and big-endian.
 ]
 
 #deepqa[
-  Chapter 3 said that several bytes are joined to hold a large number, and we
-  even saw endianness (the order of storing). But every number so far has been
-  zero or above. Negative numbers — where among the bits do you put the minus
-  sign?
+  Chapter 2 said that a single byte distinguishes only 256 cases, and that
+  larger numbers are held by joining several bytes together. So how does the
+  machine know that the joined bytes are "one lump"?
 ][
-  There is nowhere to put it — bits have only 0 and 1, no minus sign
-  (chapter 2). So negative numbers too are made by *agreement*: we decide to
-  *read* certain bit patterns as negative. That there was more than one way to
-  make that agreement, and how the competition ended, is the heart of this
-  chapter.
+  It does not — and that is where this chapter starts. Memory itself records
+  nothing about which slot belongs with which. What knows about the lump is not
+  the memory but *the side doing the reading*. The program simply decides "from
+  here I shall read four slots as one number." Chapter 2's misconception — the
+  separation of what is stored from how it is read — gets its first real
+  workout here.
 ]
 
-== Unsigned integers — numbers that go round like a clock
+== The locker corridor
 
-First the world without any worry about minus signs. Read $n$ bits as a plain
-binary number and you hold $2^n$ numbers, from $0$ to $2^n - 1$ (chapter 2).
-This is the *unsigned* integer. Eight bits give 0–255.
+Drawn as a picture, memory looks like this. Along a long corridor, lockers of
+identical size run in an endless row, and every locker carries a number. One
+#idx("memory address")locker holds 1 byte. The numbers start at 0 and go up by one. That number is
+the *address*.
 
-There is one property of this world you must take with you: *the end joins back
-to the beginning*. Add 1 to 255 and you get not 256 but — since there is no
-ninth bit to hold 256 — 0. It is the structure of a clock, where one hour after
-twelve is one. In mathematics this kind of arithmetic is called *modular
-arithmetic*.
+#memrow(100, ("01001000", "01101001", "00100001", "00000000", "11111111"))
 
-#mathbox[
-  Modular arithmetic — the exact mathematics of finite numbers
-][
-  Addition, subtraction and multiplication of $n$-bit unsigned integers are
-  exactly the operations that take the remainder of the result modulo $2^n$:
+What is inside a slot is always just eight bits. Whether those eight bits are a
+number, a character, or a fragment of something larger is known neither to the
+slot nor to the corridor — the interpretation of the reader decides.
 
-  $ "result" = (a + b) mod 2^n $
-
-  In eight bits, $250 + 10 = 260 mod 256 = 4$. What matters is that this is not
-  "wrong addition" but *a different addition* — a fully defined, predictable
-  piece of mathematics. The C standard likewise defines unsigned overflow not
-  as an error but as this arithmetic.
-]
-
-This circling has a name — *overflow*, or more precisely *wrap-around*. Defined
-behaviour though it is, it becomes an accident when it happens somewhere you
-did not expect.
-
-#realcase[
-  The wall at level 256 — the Pac-Man kill screen
-][
-  The arcade game Pac-Man has a famous wall. Play proceeds perfectly well up to
-  level 255, and then on level 256 the right half of the screen is buried in
-  meaningless symbols and the game becomes unplayable. The code counted the
-  level number in *eight bits*, so the moment it passed 255 it wrapped to 0, and
-  the routine that drew fruit on the assumption of "what level are we on" drew
-  an absurd number of them and destroyed the screen. The container size the
-  designer thought sufficient — "nobody will get to level 256" — became a wall
-  in front of the best players. A container's size is always a wall that
-  somebody reaches.
-]
-
-== Three agreements for holding negative numbers
-
-Now the negatives. The task is to agree to *read* about half of the $n$-bit
-patterns as negative, and historically three agreements were actually used. We
-compare them by holding $-5$ in eight bits.
-
-*First, sign-magnitude.* It imitates human notation directly — use the leading
-bit as the minus sign (1 means negative) and hold the magnitude in the rest.
-$-5$ is `1_0000101`. Intuitive, but it costs two things. `00000000` (+0) and
-`10000000` (−0) mean there are *two zeros*. And the addition circuit is a
-headache — adding two numbers of different signs needs a separate procedure of
-"compare the magnitudes, subtract the smaller from the larger, and decide the
-sign."
-
-#idx("ones' complement")*Second, ones' complement.* To make a number negative,
-flip every bit. $5$ is `00000101`, so $-5$ is `11111010`. The addition circuit
-gets considerably simpler, but there are still two zeros (`00000000` and
-`11111111`) — and every comparison has to drag along the exception "the two
-zeros count as equal."
-
-*Third, two's complement.* Flip the bits and *add one*. $-5$ is
-`11111010 + 1 = 11111011`. This rule looks arbitrary at first but is in fact
-the most elegant — there is only one zero and, above all, *the unsigned
-addition circuit, used unchanged, gets signed addition right by itself*. No
-separate procedure, no exceptions.
+There is one important fact about addresses that is not visible at first
+glance. *An address is itself a number.* A locker number is just an integer,
+and being an integer, it can be put inside another locker. "In slot 347, write
+the number 512" — nothing strange about it. This ordinary idea later becomes
+C's most famous concept, the *pointer* (chapter 34). For now it is enough to
+take away "an address is a number too, so it can be written down anywhere."
 
 #qa[
-  But why the name "complement"? And in "ones' complement" and "two's
-  complement", what do the one and the two refer to?
+  How long is the corridor — how many lockers are there?
 ][
-  A *complement* is "a number that fills something up to a given reference."
-  Decimal makes it easy to feel. For the three-digit number 304, the number that
-  fills each digit up to 9 is 695, called the *nines' complement* (in each
-  position, $9 - "that digit"$); the number that fills it up to 1000 is 696, the
-  *ten's complement* ($10^3 - 304$). The relation between them is "nines'
-  complement + 1 = ten's complement."
-
-  Do the same thing in binary and the names unravel. The number that fills each
-  position up to *1* — that is, subtracting from `11111111` — is the *ones'
-  complement*, and since $1 - "bit"$ in binary is just flipping the bit, that is
-  where the rule "flip them" comes from. And subtracting from $2^n$ — binary's
-  "$1000...0$", a *power of two* — is the *two's complement*. The trick "flip
-  and add one" is exactly the relation "nines' complement + 1 = ten's
-  complement" in decimal.
-
-  A word on the English spelling. The usual forms are *one's complement* and
-  *two's complement* (there is no "1s'" or "2s'"). But the computer scientist
-  Knuth argued for a witty distinction — the first is a complement with respect
-  to *the ones in every position*, so the plural possessive *ones' complement*
-  is right, while the second is a complement with respect to the *single*
-  number $2^n$, so the singular *two's complement* is right. It sounds like
-  grammatical pedantry, but it captures exactly the difference in the two
-  mathematical definitions (per-position reference vs. whole-number reference) —
-  and *the C standard itself adopted the distinction*. Its clause on
-  representations writes the three schemes as "sign and magnitude", "two's
-  complement" and *"ones' complement"*. Knuth's pedantry won in the statute
-  book. In textbook terminology the two's complement is also called the *radix
-  complement* and the ones' complement the *diminished radix complement*.
+  The number of bits used to write an address decides. If an address is an
+  $n$-bit number, at most $2^n$ lockers can be distinguished (chapter 4's $2^n$
+  is back already). In the days of 32-bit addresses the corridor was at most
+  about 4.3 billion slots — 4 GiB — and today's 64-bit addresses make a
+  corridor longer than anyone can practically fill. This is what phrases like
+  "the 4 GB memory limit on 32-bit systems" really refer to.
 ]
 
-#mathbox[
-  Why two's complement is elegant — modular arithmetic, reused
-][
-  The identity of two's complement is the modular arithmetic above. Since the
-  agreement holds $-x$ as the pattern $2^n - x$, in eight bits $-5$ is
-  $256 - 5 = 251$, that is `11111011`. Then $7 + (-5)$ is, from the circuit's
-  point of view, $7 + 251 = 258 mod 256 = 2$ — the answer comes out right by
-  itself. A negative number is merely "counting the other way round the modular
-  clock", so the circuit need not know about signs at all. The only asymmetry is
-  the range — in eight bits it runs from $-128$ to $+127$, one more negative
-  than positive ($-128$ has no partner $+128$).
-]
+== The word — the machine's natural handful
 
-== The competition of the three, and C23's decision
+Lockers come one slot at a time, but if the machine picked up one slot at a
+time as it worked it would be far too slow. So a CPU is built to grab several
+slots in *one handful*. The size of that handful — the number of bits the
+machine handles at once, most naturally — is called the *word*.
 
-All three schemes were used in real machines — sign-magnitude and ones'
-complement genuinely existed on early mainframes (the UNIVAC and CDC lines
-among them). Because such machines were still in service when C was
-standardised in 1989, the C standard took nobody's side: *it permitted all
-three representations*. That neutrality was not free — with different
-representations the result bits of the same operation differ, so the standard
-had no choice but to leave much of the behaviour of signed integers as "it
-depends on the machine." Half the reason signed overflow became *undefined
-behaviour* (chapter 45) lies here.
-
-Meanwhile reality converged on one side. The circuit simplicity of two's
-complement was overwhelming, so for decades essentially every new CPU used it
-and the other two schemes went to the museum. And *C23 finally decided — the
-representation of signed integers is two's complement*. Half a century of
-practice was promoted to a promise of the standard (exactly the pattern of the
-"byte = 8 bits" discussion in chapter 2).
+This is exactly what "a 64-bit computer" means: that machine's word is 64 bits,
+that is, 8 bytes. The temporary holders inside the CPU (registers) are that
+size, the passage to and from memory (the bus) is matched to that width, and
+addresses are usually handled as numbers of that size too. You might call the
+word the machine's "hand size" — a machine with a big hand grabs a bigger
+number at once.
 
 #qa[
-  Now that the representation is pinned to two's complement, is signed overflow
-  defined as wrap-around too?
+  So on a 64-bit machine, is everything stored in 8-byte units?
 ][
-  No — and this is the subtle, important point. What C23 pinned down is the
-  *representation* (what bit pattern a negative number has), not the *meaning of
-  overflow*. Overflow of signed integers remains undefined behaviour in C23 as
-  well. The reason is optimisation rather than representation — the assumption
-  that "signed numbers do not overflow" is valuable to the compiler
-  (chapter 11) in loop analysis and reordering, so the standard chose to keep
-  it. In summary: unsigned overflow = defined wrap-around, signed overflow =
-  still outside the contract. The practical rules are covered in chapter 25.
+  No. Storage is still free at byte granularity — a one-byte character and a
+  four-byte number live in the same corridor. The word is "the size the machine
+  picks up most comfortably", not "the size of everything." C really does have
+  several number types of different sizes (chapter 26), and the question of
+  where it is convenient to place data of a given size comes back in chapter 6
+  (alignment).
+]
+
+== Endianness — two orders for putting a number in several slots
+
+Now the highlight of the chapter. A four-byte number has to go into four
+lockers. Say the number splits, in hexadecimal, into the four byte-pieces
+`12 34 56 78` (two hex digits are one byte). If it starts at slot 100 — which
+piece goes into slot 100?
+
+There are two schools. *Big-endian* puts the big end first: exactly the order a
+human writes a number on paper.
+
+#memrow(100, ("12", "34", "56", "78"), highlight: (0,))
+
+*Little-endian* puts the little end first. It looks reversed, but it is an
+orderly rule in its own right: "the $i$-th slot holds the $i$-th least
+significant piece."
+
+#memrow(100, ("78", "56", "34", "12"), highlight: (0,))
+
+The computer or phone you are reading this on is almost certainly little-endian
+(Intel, AMD, and most ARM deployments). It is precisely the situation of date
+notation — some countries write 2026-08-04 and others 04-08-2026, neither is
+wrong, but *reading each other's letters verbatim causes accidents*.
+
+#qa[
+  Big-endian looks natural to the human eye, so why did most machines choose
+  the "reversed" little-endian? What is the advantage?
+][
+  Two practical ones.
+
+  First, *the starting slot does not move.* In little-endian the least
+  significant piece of a number is always in the slot at the starting address.
+  Whether you read the number above as "all four bytes" or narrow it to "only
+  the low two bytes" or "only the low byte", the slot you start reading at is
+  the same 100. In big-endian you must shift the starting slot and recompute
+  every time you change the width you read. For a machine that often reads the
+  same value through eyes of different sizes, "the start address is invariant"
+  is a considerable simplification.
+
+  Second, *it matches the direction of the arithmetic.* Think of adding by
+  hand: you add from the ones place and carry upward. A machine adding
+  multi-byte numbers likewise processes from the least significant end, and in
+  little-endian that lines up exactly with "in increasing address order." Early
+  small CPUs could start adding as soon as the first byte arrived, and this
+  advantage soaked into early designs (the ancestors of the Intel line) and has
+  carried through to today.
+
+  To be fair to big-endian: a dump reads directly to the human eye, and
+  comparing bytes whole from the front agrees with the numeric ordering. So
+  big-endian survives where "humans and machines look at the same place",
+  such as communication protocols. Neither is superior — they simply do
+  different things often.
 ]
 
 #misconception[
-  "If an overflow happens, the computer tells you there was an error"
+  "Read memory from the front and you see the number in the order it was
+  written"
 ][
-  A plausible expectation — it is only decent to be told when something goes
-  wrong. But a CPU's addition circuit merely raises an internal signal (a flag)
-  at the moment of overflow; *by default it neither stops nor notifies the
-  program*. C is the same — unsigned numbers wrap silently, and signed numbers
-  are outside the contract (anything may happen). Pac-Man's screen breaking
-  spectacularly was not an overflow "alarm" but a *downstream accident* caused
-  by the wrapped value. Watching for overflow is the programmer's job, not the
-  machine's — which is also why verified tools like proven check arithmetic
-  later on (chapters 37 and 70).
+  Plausible — that is how a number on paper is read. But on a little-endian
+  machine the number `12 34 56 78` sits in memory in the order
+  `78 56 34 12`. Look at memory in slot order (which is exactly how a debugger
+  or file dump shows it) and the number appears "reversed". It is not reversed;
+  the convention for the order of storing is simply different. Remember: a
+  memory dump is not a number written on paper.
 ]
 
-== Shift — pushing bits wholesale
-
-#idx("shift")There is one more basic operation on the bits of an integer —
-the *shift*, pushing the whole string of bits left or right. After pushing,
-two questions remain. *Where do the bits pushed out go, and what fills the
-vacancy?*
-
-*Left shift* has one answer. Bits pushed off the top are discarded and the
-vacancy below is filled with 0. Push `00010110` one place left and you get
-`00101100` — just as adding a 0 on the end multiplies by ten in decimal, one
-place left in binary is *doubling*.
-
-*Right shift* has two answers, differing in what fills the vacancy at the top.
-
-- *Logical shift*: fill with 0. This suits unsigned numbers, and one place
-  right is the quotient on division by two.
-- *Arithmetic shift*: fill by *copying the sign bit*. A negative number in two's
-  complement has its top bits full of ones (see $-5$ = `11111011` above), so
-  ones must be shifted in for the meaning "divide by two" to survive. Fill with
-  zeros and a negative number is suddenly read as an enormous positive one.
-
-So CPUs carry two right-shift instructions (logical and arithmetic), and in C
-the right shift of an unsigned number is logical, while the right shift of a
-negative signed number was — for a long time "machine-dependent" until
-essentially every implementation converged on arithmetic in practice. Alongside
-the settling of two's complement, this is the same direction: practice promoted
-to promise.
-
-#qa[
-  Is the shift important enough to justify learning the rules for pushing and
-  filling?
+#realcase[
+  NUXI — the ghost born of ordering
 ][
-  It is — for two reasons.
-
-  First, *because it is the cheapest operation.* For the circuit a shift is
-  about as much work as moving wires sideways, so on nearly every CPU it is
-  among the fastest, single-beat operations. As we just saw, $k$ places left is
-  multiplication by $2^k$ and $k$ places right is the quotient on division by
-  $2^k$ — so turning multiplication and division by powers of two into shifts
-  was a classic speed trick. In today's C, though, *you need not play that trick
-  yourself*. Write `x * 2` and `x / 8` in the source, meaning exactly that, and
-  the compiler (the editor of chapter 11) turns them into shifts for you. This
-  is a place where you give up readability and gain nothing.
-
-  Second, *because it is the basic move for working in the world of bits.*
-  Packing several values into the bit positions of one integer and taking them
-  back out — assembling UTF-8 bytes as in chapter 7, the tagged pointers of
-  chapter 4, splitting a colour value (RGB), reading the flags of a hardware
-  register — is all a combination of shift and mask: "push to the position you
-  want, and keep only the bits you need." The shift as multiplication has been
-  handed over to the compiler, but the shift as a *placement tool* remains the
-  everyday language of the systems programmer. Its actual use in C's syntax is
-  covered in chapter 26.
+  Engineers porting early Unix to another company's computer saw something odd
+  on screen. Where `UNIX` should have been printed, `NUXI` appeared. The two
+  machines differed in endianness, so the order of the characters within each
+  two-byte bundle came out wholly reversed. The episode became known as "the
+  NUXI problem", the byword for endianness accidents. The same class of accident
+  still happens — saving a file on one machine and reading it on another, or
+  passing numbers over a network, breaks the numbers unless the endianness is
+  agreed. Which is why internet protocols settled on *network byte order*:
+  "send big-endian on the wire."
 ]
 
 #qa[
-  What happens if you push an eight-bit number eight places, or more? Common
-  sense says everything is pushed out and it becomes 0.
+  Can I check with a program that my computer is little-endian?
 ][
-  That very "common sense" differing between machines is the trap. The shift
-  count is processed by a circuit of some width inside the CPU, and machines
-  diverged on what to do when a count at least as large as the width arrived —
-  one family (Intel x86) looks only at the low bits of the count and ignores the
-  rest, so shifting a 32-bit number by 32 leaves it *unchanged*, while others
-  (older ARM and the like) really do push everything out and give *0*. The same
-  code gives different answers on different machines. The C standard's response
-  is by now a familiar pattern — unable to take sides, it put *shifts of at
-  least the width* outside the contract, as undefined behaviour. "Where machines
-  respond differently, the standard gives up on promising" — we meet this
-  pattern formally again in chapter 45.
+  You can — put a multi-byte number in memory and read just its first slot as a
+  single byte. If the first slot holds the least significant piece, it is
+  little-endian. Actually doing this check in C is the demonstration in
+  chapter 44 (unions) — that is where we get the tool for reading the same
+  storage through different eyes.
 ]
 
-== Sign extension — from a narrow container to a wide one
+== The archetype of C is here
 
-The question "what fills the vacancy?" shows up in one more place: moving a
-number held in an eight-bit container into a sixteen-bit one. What fills the
-eight new positions at the top?
+This chapter's corridor picture is also the blueprint of the C language. In the
+days when C was born (chapter 4), the people designing the language did not
+hide this shape of the machine but lifted it, as it was, into the concepts of
+the language. Memory is a sequence of bytes — every piece of data in C has a
+size in bytes. Every slot has an address — in C you can ask for the address of
+almost anything. An address is a number too — the type that holds that number
+(the pointer) sits at the centre of the language. This contrasts with the many
+languages that seal the "locker corridor" away from the programmer.
 
-For unsigned numbers the answer is obvious — *fill with 0* (zero extension).
-The eight-bit `11111011` (= 251) becomes the sixteen-bit
-`00000000 11111011` (= 251). The value is unchanged.
+This honesty cuts both ways. It is the power to work while seeing right through
+the machine, and it is the danger that getting lost in the corridor is an
+accident on the spot. Part VII of this book faces that power and that danger
+head on.
 
-For signed numbers the same method causes an accident. The eight-bit
-`11111011` is $-5$ in two's complement, but filling the top with zeros gives
-the sixteen-bit `00000000 11111011` — the leading bit is 0, so it reads as
-*positive 251*. $-5$ turned into 251 while changing containers. The correct
-answer is the same trick as the arithmetic shift — *fill by copying the sign
-bit*. `11111111 11111011`, still $-5$. This is *sign extension*.
-
-#qa[
-  We filled it with a pile of ones and the value is unchanged? Is that a
-  coincidence?
-][
-  Not a coincidence but a necessity of modular mathematics. In two's complement
-  the eight-bit $-5$ was the pattern $2^8 - 5 = 251$, and the sixteen-bit $-5$
-  is the pattern $2^16 - 5 = 65531$. And $65531 = 251 + 255 dot 256$ — written
-  in binary, exactly "the original pattern with eight ones laid on top."
-  Copying the sign bit is a trick that performs, with a single bit-copy, the
-  arithmetic of "swapping a complement with respect to $2^8$ for a complement
-  with respect to $2^16$." The elegance of two's complement is at work here too
-  — with sign-magnitude or ones' complement there is no such free extension.
-]
-
-Conversely, *narrowing* from a wide container into a narrow one simply cuts off
-the upper bits — a cousin of overflow, in that a value that does not fit its
-container is silently ruined. C has rules for automatically widening small
-integers before a calculation (integer promotion), and when widening and
-narrowing happen and what is dangerous about them is treated formally with C's
-integer types in chapters 25 and 26 — the picture in this chapter (zero fill /
-sign copy / truncation) is the capital for that.
-
-The background on integers is complete. Unsigned numbers are a modular world
-that goes round like a clock; negative numbers were settled, after a
-competition of three agreements, on two's complement, which C23 pinned down;
-overflow is silent; and shifting and changing containers (extension) only make
-sense once you know how the vacancy is filled. C's integer *types* and the
-practical rules are built on this background in chapters 25 and 26.
-
-The next chapter is the next rung on the ladder — beyond integers, the two ways
-of holding numbers with a decimal point, and the contract called IEEE 754.
+The next chapter tours the interesting special cases in the corners of this
+corridor. What is in locker 0, why a two-slot piece of luggage cannot go into
+just any number (alignment), and even the trick of hiding information in the
+fact that the last digit of a number is always 0 (tagged pointers) — you will
+see that the world of addresses is far more like an inhabited neighbourhood
+than you would expect.

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>49 함수를 값으로 — 함수 포인터 — Proven C Book</title><style>
+<title>49 여러 파일 — 분할과 링크 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,132 +68,17 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>49 함수를 값으로 — 함수 포인터</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>지금까지 함수는 “부르는 것”이었다. 이 장에서는 함수를 <strong>값으로</strong> 다룬다 — 변수에 담고, 인자로 넘기고, 배열에 늘어놓는다. 그 과정에서 C의 오래된 규칙 하나(<strong>함수 이름은 포인터로 무너진다</strong>)와, 그 규칙이 만드는 기묘한 문법, 그리고 이 도구로 객체지향을 손수 짓는 방법까지 본다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>35장에서 배열 이름이 첫 원소의 주소로 무너진다고 했고, 48장에서는 가변 인자 함수가 타입 정보를 잃는다고 했다. 그러면 <strong>함수 이름</strong>은 수식에서 무엇으로 평가되는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>함수를 가리키는 포인터</strong>로 평가된다 — 배열과 같은 무너짐(decay)이 함수에도 있다. 예외는 <code>sizeof</code>와 <code>&amp;</code>의 피연산자일 때뿐인데, 함수에 <code>sizeof</code>를 쓰는 것은 애초에 금지이므로 사실상 <code>&amp;</code>만 예외다. 그리고 <code>&amp;함수</code>도 결국 같은 포인터를 준다. 그래서 <code>f</code>, <code>&amp;f</code>, <code>*f</code>가 전부 같은 값이 되는 기묘한 상황이 벌어진다 — 이 장의 첫 예제가 그것이다.</p></div></div><h3>49.1 이름은 포인터로 무너진다</h3><div><div><p><code>examples/ch49/funcptr.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdlib.h>
-#include &lt;string.h>
-
-static int add(int a, int b) { return a + b; }
-static int mul(int a, int b) { return a * b; }
-
-/* 함수 포인터를 받는 함수 — 콜백의 기본형 */
-static int apply(int (*op)(int, int), int a, int b) { return op(a, b); }
+<h2>49 여러 파일 — 분할과 링크</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>지금까지의 프로그램은 파일 하나였다. 이제 여러 파일로 자란다 — <span id="idx-entry-86"></span>헤더와 소스의 분업, 번역 단위라는 개념, 이름의 연결(외부·내부), 그리고 링크 오류를 읽는 법까지. 16장의 릴레이와 25장의 선언/정의 구별이 여기서 하나로 합쳐진다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>25장에서 “원형을 파일 위쪽에 적어 두면 정의는 아래 어디에 있어도 되고, 더 중요하게는 <strong>다른 파일</strong>에 있어도 된다”고 했다. 그 말이 성립하는 근거를 16장의 릴레이로 설명하면?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>컴파일 단계는 <strong>선언만</strong> 보고 일하고, 몸통을 찾아 잇는 것은 링커이기 때문이다(16장). 그래서 파일 하나를 컴파일할 때 다른 파일의 내용은 전혀 필요하지 않다 — 필요한 것은 “이런 이름의 함수가 이런 서명으로 어딘가에 있다”는 약속뿐이고, 그 약속을 담아 나르는 그릇이 헤더 파일 이다. 이 장은 그 분업을 실물로 본다.</p></div></div><h3>49.1 번역 단위와 헤더</h3><p>전처리가 끝난 소스 파일 하나 — <code>#include</code>가 전부 펼쳐진 결과 — 를 <strong>번역 단위</strong>(translation unit)라 부른다. 컴파일러는 언제나 번역 단위 하나만 본다. 여러 파일 프로그램이란 번역 단위 여럿을 각각 목적 파일로 만든 뒤, 링커가 하나로 잇는 것이다.</p><p>세 파일짜리 예제로 분업을 본다.</p><div><div><p><code>examples/ch49/main.c</code></p><pre><code data-lang="c">/* 여러 파일 예제 — 이 파일은 greet의 선언만 보고 컴파일된다. */
+#include "greet.h"
 
 int main(void)
 {
-    /* ① 함수 이름은 값으로 쓰이는 순간 포인터로 무너진다 */
-    int (*p)(int, int) = add;     /* &amp; 없이도 된다 */
-    int (*q)(int, int) = &amp;add;    /* &amp; 를 붙여도 같다 */
-    printf("add == &amp;add : %s\n", p == q ? "같다" : "다르다");
-
-    /* ② 별표를 아무리 붙여도 결과는 같다 — 역참조가 다시 무너지기 때문 */
-    printf("p(2,3)=%d  (*p)(2,3)=%d  (***p)(2,3)=%d  (*******p)(2,3)=%d\n",
-           p(2, 3), (*p)(2, 3), (***p)(2, 3), (*******p)(2, 3));
-
-    /* ③ 반면 &amp; 는 한 번만 쓸 수 있다: &amp;&amp;add 는 문법 오류다
-          (&amp;add 는 값일 뿐, 그 값의 주소를 다시 얻을 수는 없다) */
-
-    /* ④ 디스패치 표 — switch 대신 배열로 고르기 */
-    struct { const char *name; int (*fn)(int, int); } table[] = {
-        { "add", add }, { "mul", mul },
-    };
-    for (size_t i = 0; i &lt; sizeof table / sizeof table[0]; i++)
-        printf("%s(6,7) = %d\n", table[i].name, apply(table[i].fn, 6, 7));
-
-    /* ⑤ 함수 포인터의 크기는 데이터 포인터와 같다는 보장이 없다 */
-    printf("sizeof(void*)=%zu, sizeof(int(*)(int,int))=%zu\n",
-           sizeof(void *), sizeof(int (*)(int, int)));
-
-    /* ⑥ qsort 의 비교자도 함수 포인터다 */
-    int v[] = { 5, 2, 9, 1 };
-    int cmp(const void *a, const void *b);   /* 아래에 정의 */
-    qsort(v, 4, sizeof v[0], cmp);
-    printf("정렬: %d %d %d %d\n", v[0], v[1], v[2], v[3]);
+    greet("world");
+    printf_count();
     return 0;
 }
-
-int cmp(const void *a, const void *b)
-{
-    int x = *(const int *)a, y = *(const int *)b;
-    return (x > y) - (x &lt; y);
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>add == &amp;add : 같다
-p(2,3)=5  (*p)(2,3)=5  (***p)(2,3)=5  (*******p)(2,3)=5
-add(6,7) = 13
-mul(6,7) = 42
-sizeof(void*)=8, sizeof(int(*)(int,int))=8
-정렬: 1 2 5 9
-</code></pre></div></div><p>출력의 첫 두 줄이 이 장의 핵심이다.</p><p><strong><code>add == &amp;add</code></strong> — 함수 이름은 포인터로 무너지고, <code>&amp;</code>를 붙여도 같은 포인터를 얻는다. 그래서 둘은 같다.</p><p><strong><code>(*******p)(2,3)</code>이 컴파일된다</strong> — 별표를 아무리 붙여도 결과가 같은 이유는 이렇다. <code>*p</code>는 포인터를 역참조해 <strong>함수 지시자</strong>를 얻는데, 그 지시자가 값으로 쓰이는 순간 <strong>다시 포인터로 무너진다.</strong> 즉 <code>*</code> 하나가 붙을 때마다 “포인터 → 함수 → 포인터”를 한 바퀴 돌 뿐, 제자리다.</p><p>반대 방향은 성립하지 않는다. <code>&amp;&amp;add</code>는 문법 오류다 — <code>&amp;add</code>는 이미 <strong>값</strong> (포인터)이고, C에서 값의 주소는 얻을 수 없기 때문이다(주소를 얻으려면 이름이 붙은 자리, 즉 lvalue여야 한다). <code>**add</code>는 되는데 <code>&amp;&amp;add</code>는 안 되는 비대칭이 여기서 나온다.</p><div class="dev misconception"><p class="dev-label">⚠ “함수 포인터를 호출하려면 <code>(*p)(x)</code>처럼 역참조해야 한다”</p><p>옛 관행이다. <code>p(x)</code>와 <code>(*p)(x)</code>는 완전히 같고, 표준은 둘 다 허용한다. <code>(*p)(x)</code>를 선호하는 코드베이스가 있는 이유는 <strong>읽는 사람에게 이것이 함수 포인터임을 알리려는</strong> 문서 목적이지 문법 요구가 아니다. 어느 쪽이든 일관되게 쓰면 된다.</p></div><h3>49.2 타입이 곧 계약이다</h3><p>함수 포인터의 타입은 반환형과 매개변수 목록으로 정해진다.</p><pre><code data-lang="c">int  (*p)(int, int);       /* int 둘을 받아 int 를 주는 함수의 포인터 */
-void (*q)(void);           /* 인자도 반환도 없는 함수의 포인터 */
-int  (*r[4])(int);         /* 그런 포인터 네 개의 배열 */
-int  (*(*s)(void))(int);   /* 읽기 어렵다 — typedef 를 쓴다 */</code></pre><p>마지막 줄이 보여 주듯 선언이 금세 험해진다. 실무의 관행은 <code>typedef</code>다.</p><pre><code data-lang="c">typedef int (*binop_fn)(int, int);
-binop_fn table[] = { add, mul };</code></pre><p><strong>다른 타입의 함수 포인터로 캐스트해 호출하는 것은 계약 밖이다.</strong> 예를 들어 <code>void (*)(void)</code>로 캐스트해 둔 것을 <code>int (*)(int)</code>로 되돌려 부르면 안 된다. 저장했다가 <strong>원래 타입으로 되돌려</strong> 부르는 것만 보장된다.</p><div class="dev antipattern"><p class="dev-label">✗ 비교자 시그니처를 캐스트로 맞추기</p><pre><code data-lang="c">int cmp_int(const int *a, const int *b);            /* 편해 보이지만 */
-qsort(v, n, sizeof v[0], (int (*)(const void *, const void *))cmp_int);</code></pre><p><code>qsort</code>는 <code>const void *</code> 두 개를 넘기는데, 실제 함수는 <code>const int *</code>를 기대한다. 두 타입이 같은 표현을 갖는 것이 <strong>보장되지 않으므로</strong> 이 호출은 계약 밖이다. 옳은 방법은 시그니처를 그대로 맞추고 안에서 캐스트하는 것이다 — 예제의 <code>cmp</code>가 그렇게 했다.</p></div><h3>49.3 <code>void *</code>와 함수 포인터는 다른 세계다</h3><p>32장에서 <code>void *</code>가 “어떤 데이터 포인터든 담는 그릇”이라고 배웠다. 그런데 <strong>함수 포인터는 그 그릇에 담기지 않는다.</strong> 표준은 데이터 포인터와 함수 포인터 사이의 변환을 정의하지 않는다.</p><p>이유는 역사와 하드웨어에 있다. <strong>하버드 구조</strong>(Harvard architecture)를 쓰는 기계에서는 코드와 데이터가 서로 다른 주소 공간에 있다 — AVR 마이크로 컨트롤러가 대표적이고, 여기서는 “0번지”가 코드 영역에도 데이터 영역에도 따로 존재한다. 주소의 폭조차 다를 수 있다. 그런 기계에서 두 포인터를 같은 그릇에 담는 것은 애초에 불가능하다.</p><p>그래서 예제가 두 크기를 함께 찍은 것이다. 이 기계에서는 우연히 같았지만, <strong>같다는 보장은 어디에도 없다</strong>.</p><div class="dev realcase"><p class="dev-label">◉ POSIX가 표준과 어긋난 자리 — <code>dlsym</code></p><p>동적 라이브러리에서 함수를 찾아오는 POSIX 함수 <code>dlsym</code>은 <code>void *</code>를 돌려준다. 그런데 우리가 원하는 것은 함수 포인터다. 즉 이 API는 <strong>표준 C가 정의하지 않은 변환</strong>을 요구한다.</p><p>POSIX는 이 모순을 인정하고, 2008년 판에서 “구현은 이 변환을 지원해야 한다”고 따로 못박았다. 그래도 컴파일러는 경고를 내므로, 실무에서는 다음 관용구가 굳었다.</p><pre><code data-lang="c">void (*fn)(void);
-*(void **)&amp;fn = dlsym(handle, "do_work");   /* 표준의 틈을 우회하는 관용구 */</code></pre><p>“표준이 금지한 것을 플랫폼이 요구하는” 드문 사례이고, C의 이식성이 어디서 갈라지는지 보여 주는 좋은 표본이다.</p></div><h3>49.4 디스패치 표 — <code>switch</code> 대신 배열</h3><p>예제의 ④가 그것이다. 이름과 함수를 짝지어 배열에 늘어놓으면, 분기 대신 <strong>자료</strong>로 고르게 된다. 항목을 늘릴 때 코드가 아니라 표만 고치면 되고, 48장의 X 매크로와 결합하면 목록 하나에서 표까지 만들어 낼 수 있다.</p><p>이 무늬가 커지면 상태 기계, 명령 해석기, 플러그인 구조가 된다. 그리고 더 커지면 — 다음 절의 이야기다.</p><h3>49.5 가상 함수 표 — C로 짓는 객체지향</h3><p>C에는 클래스가 없다. 그러나 <strong>구조체의 첫 멤버에 함수 포인터들의 표를 가리키는 포인터를 두면</strong> 객체지향의 핵심인 다형성을 얻을 수 있다.</p><div><div><p><code>examples/ch49/vtable.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;string.h>
-
-/* C 에서 손으로 만드는 객체지향: 가상 함수 표(vtable)를 자료와 분리한다.
-   GTK 의 GObject 가 쓰는 방식과 같은 뼈대다. */
-
-struct shape;                       /* 앞선 선언 */
-
-/* ① 가상 함수 표 — 타입마다 하나만 존재한다 (인스턴스마다가 아니다) */
-struct shape_vtable {
-    const char *name;
-    double (*area)(const struct shape *self);
-    void   (*describe)(const struct shape *self);
-};
-
-/* ② 기반 "클래스": 모든 객체의 첫 멤버가 표를 가리킨다 */
-struct shape {
-    const struct shape_vtable *vt;
-};
-
-/* ③ 파생 "클래스": 기반을 첫 멤버로 두면 포인터를 서로 변환할 수 있다 */
-struct circle { struct shape base; double r; };
-struct rect   { struct shape base; double w, h; };
-
-static double circle_area(const struct shape *s)
-{
-    const struct circle *c = (const struct circle *)s;   /* 첫 멤버라 주소가 같다 */
-    return 3.14159265358979 * c->r * c->r;
-}
-static double rect_area(const struct shape *s)
-{
-    const struct rect *r = (const struct rect *)s;
-    return r->w * r->h;
-}
-static void generic_describe(const struct shape *s)
-{
-    printf("  %-6s 넓이 %.2f\n", s->vt->name, s->vt->area(s));
-}
-
-/* ④ 표는 상수이고 타입마다 하나 — 인스턴스는 포인터만 갖는다 */
-static const struct shape_vtable circle_vt = { "원",   circle_area, generic_describe };
-static const struct shape_vtable rect_vt   = { "사각", rect_area,   generic_describe };
-
-static struct circle make_circle(double r) { return (struct circle){ { &amp;circle_vt }, r }; }
-static struct rect   make_rect(double w, double h) { return (struct rect){ { &amp;rect_vt }, w, h }; }
-
-int main(void)
-{
-    struct circle c = make_circle(2.0);
-    struct rect   r = make_rect(3.0, 4.0);
-
-    /* ⑤ 같은 코드가 서로 다른 타입을 다룬다 — 다형성 */
-    const struct shape *objs[] = { &amp;c.base, &amp;r.base };
-    for (size_t i = 0; i &lt; sizeof objs / sizeof objs[0]; i++)
-        objs[i]->vt->describe(objs[i]);
-
-    /* ⑥ 비용을 눈으로 본다 */
-    printf("객체 크기: circle=%zu, rect=%zu (표 포인터 %zu 바이트 포함)\n",
-           sizeof(struct circle), sizeof(struct rect), sizeof(void *));
-    printf("표 크기  : %zu (타입마다 하나만 존재)\n", sizeof(struct shape_vtable));
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>  원    넓이 12.57
-  사각 넓이 12.00
-객체 크기: circle=16, rect=24 (표 포인터 8 바이트 포함)
-표 크기  : 24 (타입마다 하나만 존재)
-</code></pre></div></div><p>설계의 뼈대는 넷이다.</p><ol><li><strong>표는 타입마다 하나</strong>다(<code>static const</code>). 인스턴스마다 함수 포인터를 복사해 두면 객체가 커지고 캐시가 나빠진다 — 그래서 표는 분리해서 한 벌만 두고, 객체는 그 표를 가리키는 포인터 하나만 갖는다.</li><li><strong>기반 구조체를 첫 멤버로 둔다.</strong> 표준이 “구조체의 첫 멤버는 구조체 자신과 같은 주소에서 시작한다”고 보장하므로, <code>struct circle *</code>와 <code>struct shape *</code>를 안전하게 오갈 수 있다(40장).</li><li><strong>호출은 표를 통해</strong> 한다 — <code>s->vt->area(s)</code>. 이 한 줄이 C++의 가상 함수 호출이 하는 일과 정확히 같다.</li><li><strong>자기 자신을 첫 인자로</strong> 넘긴다. C++이 감춰 주는 <code>this</code>를 손으로 적는 것이다.</li></ol><p>출력의 마지막 두 줄이 비용을 보여 준다. 객체마다 늘어나는 것은 포인터 하나(8바이트)뿐이고, 표는 타입당 한 번만 존재한다.</p><div class="dev realcase"><p class="dev-label">◉ GTK의 GObject — 실제로 쓰이는 손수 지은 객체 체계</p><p>이 방식이 장난감이 아니라는 증거가 GTK다. 리눅스 데스크톱의 주요 툴킷인 GTK는 순수 C로 쓰였고, 그 밑에 <strong>GObject</strong>라는 객체 체계를 두고 있다. 구조는 방금 본 것과 같은 뼈대 위에 서 있다.</p><ul><li>인스턴스 구조체의 첫 멤버가 <strong>클래스 구조체</strong>(우리의 vtable)를 가리킨다.</li><li>클래스 구조체에는 함수 포인터들이 늘어서 있고, 파생 클래스는 그중 일부를 자기 함수로 덮어써서 “재정의”한다.</li><li>상속은 기반 구조체를 첫 멤버로 두는 것으로 표현하고, 타입 변환은 검사를 곁들인 매크로(<code>GTK_WIDGET(x)</code> 같은)로 감싼다.</li><li>여기에 참조 계수, 시그널(관찰자 패턴), 속성 체계가 얹힌다.</li></ul><p>같은 설계를 다른 곳에서도 볼 수 있다. 리눅스 커널의 <code>struct file_operations</code> —파일 시스템마다 다른 <code>read</code>·<code>write</code> 함수를 담은 표— 가 정확히 vtable이고, Windows의 COM은 아예 이 규약을 ABI 수준에서 못박은 것이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>그러면 C++의 가상 함수와 무엇이 다른가?</p></div><div class="dev qa-a"><p class="dev-label">답 개념은 같고 <strong>자동화의 정도</strong>가 다르다. C++은 컴파일러가 표를 만들고, 포인터를 심고, 생성자에서 연결하고, 타입 변환을 검사해 준다. C에서는 그 전부가 손일이고, 그래서 실수할 자리도 많다 — 표를 연결하지 않은 객체, 첫 멤버 규칙을 어긴 구조체, 파생 타입을 잘못 캐스트하는 코드.</p><p>대신 얻는 것도 분명하다. <strong>무엇이 어디에 있는지 전부 보인다.</strong> 표가 몇 개인지, 호출 한 번에 포인터를 몇 번 따라가는지, 객체가 몇 바이트인지 세어 볼 수 있다. 이 책이 내내 말해 온 “비용이 보이는 언어”의 성격이 객체지향에서도 그대로 나타나는 자리다.</p><p>덧붙여, C++의 가상 함수 표 배치는 <strong>표준이 정하지 않는다</strong>(ABI가 정한다). 그래서 C와 C++을 섞을 때 클래스 객체를 경계 너머로 넘기지 않고 <code>extern "C"</code> 함수와 단순 구조체만 주고받는 것이다(77장).</p></div></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>함수 포인터 요약.</p><table><tr><th><strong>규칙</strong></th><th><strong>내용</strong></th></tr><tr><td>무너짐</td><td>함수 이름은 값으로 쓰이면 포인터가 된다</td></tr><tr><td><code>f</code>·<code>&amp;f</code>·<code>*f</code></td><td>모두 같은 포인터. <code>&amp;&amp;f</code>는 문법 오류</td></tr><tr><td>호출 표기</td><td><code>p(x)</code>와 <code>(*p)(x)</code>는 동일</td></tr><tr><td>타입</td><td>반환형+매개변수. 다른 타입으로 캐스트해 호출하면 계약 밖</td></tr><tr><td><code>void *</code></td><td>함수 포인터와 서로 변환된다는 보장이 없다(하버드 구조)</td></tr><tr><td><code>dlsym</code></td><td>POSIX가 따로 보장. <code>*(void **)&amp;fn</code> 관용구</td></tr><tr><td>디스패치 표</td><td>분기 대신 자료로 고르기</td></tr><tr><td>vtable</td><td>표는 타입당 하나, 객체는 포인터 하나. 첫 멤버 규칙이 근거</td></tr><tr><td>실물</td><td>GObject(GTK), 커널의 <code>file_operations</code>, COM</td></tr></table></div><p>함수를 값으로 다루는 법까지 갖췄다. 그런데 이 장에서 몇 번, 선언 자체가 읽기 어려워 <code>typedef</code>로 도망친 자리가 있었다 — <code>int (*(*s)(void))(int);</code> 같은 것들이다. 다음 장이 그 빚을 갚는다: C에서 가장 악명 높은 자리인 <strong>선언 읽기</strong>를, 두 가지 독법과 <code>typedef</code>로 정면 돌파한다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>Hello, world!
+greet was called 1 times
+</code></pre></div></div><p><code>greet.h</code>(헤더)에는 <strong>선언</strong>만 있다 — 계약 서명. <code>greet.c</code>에는 <strong>정의</strong>가 있고, <code>main.c</code>는 헤더만 포함해 계약을 알고 호출한다. 컴파일은 각각 따로 되고, 링커가 <code>greet</code> 호출과 정의를 이어 준다.</p><p>헤더의 <code>#ifndef GREET_H ... #define ... #endif</code>는 <strong>포함 보호</strong>(include guard)다. 헤더가 여러 경로로 두 번 붙어도 내용이 한 번만 펼쳐지게 하는 관용구로, 두 번 선언되면 오류가 나는 것들(구조체 정의 등)을 막는다. 실무에서는 <code>#pragma once</code> 한 줄로 대신하는 경우도 많다(표준은 아니지만 주요 컴파일러가 전부 지원한다).</p><h3>49.2 연결 — 이름이 파일 경계를 넘는가</h3><p>이름에는 스코프(25장) 말고 또 하나의 성질이 있다 — <strong>연결</strong>(linkage), 즉 다른 번역 단위에서 그 이름을 볼 수 있는가다.</p><ul><li><strong>외부 연결</strong>: 파일 밖에서도 보인다. 함수와 전역 변수의 기본값이다.</li><li><strong>내부 연결</strong>: 이 번역 단위 안에서만 보인다. 파일 수준 선언에 <code>static</code>을 붙이면 된다 — 예제의 <code>static int calls</code>가 그 예다.</li></ul><p><code>static</code>이라는 낱말이 40장(정적 수명)과 여기(내부 연결)에서 다른 뜻으로 쓰이는 것은 C의 유명한 낱말 재활용이다 — <strong>함수 안</strong>의 static은 수명을, <strong>파일 수준</strong>의 static은 연결을 뜻한다.</p><p>내부 연결은 실무의 기본 무기다. 39장에서 “C에는 이름 공간이 없어서 접두어가 담장을 대신한다”고 했는데, 파일 안에서만 쓰는 도우미 함수· 변수에 <code>static</code>을 붙이면 그 이름은 아예 바깥 마당에 나가지 않는다 — 충돌도 없고, 컴파일러가 더 공격적으로 최적화할 수 있다(그 이름이 다른 파일에서 불릴 리 없음을 아니까 — 14장의 편집자에게 주는 정직한 신호다).</p><div class="dev misconception"><p class="dev-label">⚠ “헤더 파일에 함수 정의를 넣어도 편하니 괜찮다”</p><p>포함되는 파일마다 정의가 복사되므로, 두 파일이 그 헤더를 포함하면 같은 함수의 정의가 둘이 되어 링커가 <strong>중복 정의</strong> 오류를 낸다(“multiple definition of …”). 헤더의 역할은 계약을 나르는 것이지 구현을 나르는 것이 아니다 — 헤더에는 선언, 소스에는 정의가 기본형이다. (예외가 없지는 않다: <code>static inline</code> 함수나 매크로는 헤더에 두는 것이 관행 이고, C23의 <code>constexpr</code> 상수도 그렇다. 예외를 알고 쓰는 것과 규칙을 모르고 어기는 것은 다르다.)</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>링크 오류 메시지는 어떻게 읽는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>두 문장만 알면 대부분 풀린다. <strong>“undefined reference to X”</strong> — 선언은 보았으나 정의를 못 찾았다는 뜻이다(16장). 소스 파일을 빌드에서 빠뜨렸거나, 라이브러리를 안 이어 줬거나, 철자가 다르다. <strong>“multiple definition of X”</strong> — 정의가 둘 이상이다. 헤더에 정의를 넣었거나, 전역 변수를 헤더에서 선언하며 초기화했을 때 흔하다. 두 메시지 모두 <strong>컴파일러 가 아니라 링커</strong>가 내는 것이라는 점이 진단의 출발점이다 — 문법은 멀쩡했다는 뜻이니까.</p></div></div><p>파일 경계를 넘는 법을 배웠다. 그런데 이 장에서 <code>#include</code>와 <code>#ifndef</code>가 또 나왔다 — 16장에서 “전처리기는 C를 모르는 텍스트 도구”라 하고 지나친 그 층이다. 다음 장에서 그 층을 정면으로 열고, 소스 코드가 프로그램이 되기까지의 정식 단계까지 본다.</p>
 <div class="nav"><a href="ch48.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch50.html">다음 →</a></div>
 </div></main></body></html>

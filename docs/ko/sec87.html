@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부록 F — 문법을 적는 법(EBNF)과 C 문법 참고 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>부록 F — 문법을 적는 법(EBNF)과 C 문법 참고</h2><p>이 부록은 두 가지를 담는다. 프로그래밍 언어의 문법을 <strong>적는 표기법</strong>인 EBNF와, 그 표기로 정리한 <strong>C 문법의 뼈대</strong>다. 16장에서 본 파서가 실제로 무엇을 보고 일하는지, 그리고 표준 문서의 문법 절을 어떻게 읽는지가 여기서 풀린다.</p><h3>문법을 적는 표기 — BNF에서 EBNF로</h3><p>언어의 문법은 <strong>규칙의 목록</strong>으로 적을 수 있다. “문장은 이런 것들로 이루어지고, 그 각각은 또 이런 것들로 이루어진다”를 끝까지 밀고 내려가는 방식이다.</p><span id="idx-entry-114"></span><p>이 방식을 처음 널리 쓴 것이 <strong>BNF</strong>(Backus–Naur Form)다. 1960년의 ALGOL 60 보고서에서 쓰였고, 두 사람(존 배커스, 페테르 나우르)의 이름이 붙었다. 표기는 단순하다.</p><pre><code data-lang="text">&lt;digit>  ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+&lt;number> ::= &lt;digit> | &lt;digit> &lt;number></code></pre><p>읽는 법은 이렇다. <code>::=</code>는 “ 는 다음과 같이 이루어진다”, <code>|</code>는 “또는”, 꺾쇠 안의 이름은 <strong>비단말</strong>(다른 규칙으로 더 풀리는 것), 그냥 적힌 글자는 <strong>단말</strong>(더 풀리지 않는 실제 글자)이다. 두 번째 줄은 재귀로 “숫자 하나, 또는 숫자 하나 뒤에 다시 수”라고 적어 <strong>한 자리 이상의 수</strong>를 정의한다.</p><span id="idx-entry-115"></span><p>BNF에는 반복과 선택을 적을 때마다 재귀를 써야 하는 불편이 있다. 그래서 확장한 것이 <strong>EBNF</strong>(Extended BNF)이고, 기호 몇 개가 더해졌다.</p><table><tr><th><strong>표기</strong></th><th><strong>뜻</strong></th><th><strong>예</strong></th></tr><tr><td><code>=</code> 또는 <code>::=</code></td><td>정의한다</td><td><code>digit = "0" | "1" ;</code></td></tr><tr><td><code>|</code></td><td>또는(선택)</td><td><code>sign = "+" | "-" ;</code></td></tr><tr><td><code>[ … ]</code></td><td>있어도 되고 없어도 된다(0 또는 1회)</td><td><code>[ sign ] number</code></td></tr><tr><td><code>{ … }</code></td><td>0회 이상 반복</td><td><code>digit { digit }</code></td></tr><tr><td><code>( … )</code></td><td>묶음</td><td><code>( "+" | "-" ) digit</code></td></tr><tr><td><code>" … "</code></td><td>단말(글자 그대로)</td><td><code>";"</code></td></tr><tr><td><code>;</code></td><td>규칙의 끝</td><td>—</td></tr></table><p>같은 “한 자리 이상의 수”를 EBNF로 적으면 재귀가 사라진다.</p><pre><code data-lang="text">number = digit { digit } ;</code></pre><p>표준화된 EBNF(ISO/IEC 14977)가 있지만, 실제 문서들은 조금씩 다른 방언을 쓴다. 흔한 변형이 정규식에서 온 후위 기호들이다 — <code>?</code>(0 또는 1회), <code>*</code>(0회 이상), <code>+</code>(1회 이상). 이 표기로 적으면 이렇게 된다.</p><pre><code data-lang="text">number = digit+ ;
+integer = ("+" | "-")? digit+ ;</code></pre><p><strong>C 표준 문서는 EBNF를 쓰지 않는다.</strong> 대신 BNF에 가까운 표기에 “<code>opt</code>”라는 아래첨자로 생략 가능을 나타낸다. 예컨대 표준의 반복문 규칙은 대략 이런 모습이다.</p><pre><code data-lang="text">iteration-statement:
+    while ( expression ) statement
+    do statement while ( expression ) ;
+    for ( expression_opt ; expression_opt ; expression_opt ) statement</code></pre><p>읽는 요령은 같다 — 들여쓴 각 줄이 하나의 선택지이고, <code>_opt</code>가 붙은 것은 없어도 된다는 뜻이다. <code>for (;;)</code>가 왜 무한 루프로 성립하는지가 이 규칙 한 줄에 그대로 적혀 있다(세 자리가 모두 생략 가능하다).</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>문법을 이렇게 적어 두면 무엇이 좋은가?</p></div><div class="dev qa-a"><p class="dev-label">답 세 가지가 좋아진다.</p><p>첫째, <strong>모호함이 드러난다.</strong> 자연어로 “조건 뒤에 문장이 온다”고 쓰면 <code>if (a) if (b) x; else y;</code>에서 <code>else</code>가 어느 <code>if</code>에 붙는지 알 수 없지만, 문법으로 적으면 그 모호함이 규칙의 충돌로 드러난다(C는 “가장 가까운 <code>if</code>에 붙는다”로 정한다).</p><p>둘째, <strong>도구가 읽을 수 있다.</strong> 파서를 손으로 짜지 않고 문법에서 생성하는 도구들(yacc/bison, ANTLR 같은 것)이 이 표기를 입력으로 받는다.</p><p>셋째, <strong>사람이 확인할 수 있다.</strong> “이 자리에 이것을 적어도 되는가”라는 질문에 표준 문서가 답하는 방식이 바로 이 문법 절이다.</p></div></div><h3>C 문법의 뼈대</h3><p>C 표준의 문법은 부록 하나를 통째로 차지할 만큼 길다(선언 문법만 수십 개 규칙이다). 여기서는 <strong>구조를 보는 데 필요한 만큼</strong>을 EBNF 방언으로 간추린다. 정확한 정의는 표준 문서(부록 D의 초안 링크)를 보면 된다.</p><h4>번역 단위와 선언</h4><pre><code data-lang="text">translation-unit  = external-declaration+ ;
+external-declaration = function-definition | declaration ;
+
+function-definition = declaration-specifiers declarator compound-statement ;
+
+declaration       = declaration-specifiers init-declarator-list? ";" ;
+declaration-specifiers = ( storage-class-specifier
+                         | type-specifier
+                         | type-qualifier
+                         | function-specifier
+                         | alignment-specifier )+ ;
+
+storage-class-specifier = "typedef" | "extern" | "static"
+                        | "thread_local" | "auto" | "register" ;
+type-qualifier    = "const" | "restrict" | "volatile" | "_Atomic" ;</code></pre><p>이 몇 줄이 41장에서 정리한 네 축의 문법적 근거다 — 저장 클래스 지정자가 <strong>선언 지정자의 한 종류</strong>로 들어 있고, 그래서 <code>typedef</code>가 <code>static</code>과 같은 자리를 다툰다는 것이 규칙에 그대로 보인다.</p><h4>선언자 — 53장의 그 구조</h4><pre><code data-lang="text">declarator        = pointer? direct-declarator ;
+pointer           = ( "*" type-qualifier* )+ ;
+
+direct-declarator = identifier
+                  | "(" declarator ")"
+                  | direct-declarator "[" assignment-expression? "]"
+                  | direct-declarator "(" parameter-type-list? ")" ;</code></pre><p>53장에서 손으로 익힌 독법이 이 네 줄에 들어 있다. <code>*</code>는 <strong>앞에</strong> 붙고 (<code>pointer? direct-declarator</code>), <code>[]</code>와 <code>()</code>는 <strong>뒤에</strong> 붙으며 (<code>direct-declarator "[" … "]"</code>), 괄호로 묶으면 그 안이 먼저 선언자가 된다 (<code>"(" declarator ")"</code>). “오른쪽이 왼쪽보다 세다”는 규칙이 문법의 모양에서 나온 것임을 여기서 확인할 수 있다.</p><h4>문장</h4><pre><code data-lang="text">statement         = labeled-statement | compound-statement
+                  | expression-statement | selection-statement
+                  | iteration-statement | jump-statement ;
+
+compound-statement    = "{" ( declaration | statement )* "}" ;
+expression-statement  = expression? ";" ;
+selection-statement   = "if" "(" expression ")" statement [ "else" statement ]
+                      | "switch" "(" expression ")" statement ;
+iteration-statement   = "while" "(" expression ")" statement
+                      | "do" statement "while" "(" expression ")" ";"
+                      | "for" "(" expression? ";" expression? ";" expression? ")" statement
+                      | "for" "(" declaration expression? ";" expression? ")" statement ;
+jump-statement        = "goto" identifier ";" | "continue" ";"
+                      | "break" ";" | "return" expression? ";" ;</code></pre><p>읽을거리가 몇 있다. <strong>빈 문장</strong>이 <code>expression? ";"</code>에서 나온다(<code>;</code>만 적어도 문장이다). <strong><code>for</code>가 두 줄인 것</strong>은 C99에서 첫 자리에 선언을 쓸 수 있게 된 결과다(<code>for (int i = 0; …)</code>). 그리고 <code>if</code>의 <code>else</code>가 <code>[ … ]</code>로 선택인 것이 위에서 말한 매달린 <code>else</code> 문제의 출처다.</p><h4>식 — 우선순위가 문법에 새겨져 있다</h4><p>C의 연산자 우선순위는 표로 외우는 것이 아니라 <strong>문법의 계층</strong>으로 정의된다. 아래로 갈수록 더 강하게 묶인다.</p><pre><code data-lang="text">expression            = assignment-expression { "," assignment-expression } ;
+assignment-expression = conditional-expression
+                      | unary-expression assignment-operator assignment-expression ;
+conditional-expression = logical-OR-expression
+                       [ "?" expression ":" conditional-expression ] ;
+logical-OR-expression  = logical-AND-expression  { "||" logical-AND-expression } ;
+logical-AND-expression = inclusive-OR-expression { "&amp;&amp;" inclusive-OR-expression } ;
+   … (비트 연산, 상등, 관계, 시프트) …
+additive-expression    = multiplicative-expression { ("+" | "-") multiplicative-expression } ;
+multiplicative-expression = cast-expression { ("*" | "/" | "%") cast-expression } ;
+cast-expression        = unary-expression | "(" type-name ")" cast-expression ;
+unary-expression       = postfix-expression
+                       | ("++" | "--") unary-expression
+                       | unary-operator cast-expression
+                       | "sizeof" ( unary-expression | "(" type-name ")" ) ;
+postfix-expression     = primary-expression
+                       { "[" expression "]" | "(" argument-list? ")"
+                       | "." identifier | "->" identifier | "++" | "--" } ;
+primary-expression     = identifier | constant | string-literal
+                       | "(" expression ")" | generic-selection ;</code></pre><p>이 사다리가 부록 A의 우선순위 표와 정확히 같은 내용이다. 표는 외우기 위한 요약이고, 문법은 그 표가 어디서 왔는지를 보여 준다 — 곱셈이 덧셈보다 강한 이유는 “덧셈 식이 곱셈 식들로 이루어진다”고 정의됐기 때문이다.</p><p><strong>대입이 오른쪽 결합인 이유</strong>도 여기 보인다. <code>assignment-expression</code>의 오른쪽 항이 다시 <code>assignment-expression</code>이라서 <code>a = b = c</code>가 <code>a = (b = c)</code>로 묶인다. 반대로 덧셈은 <code>{ … }</code> 반복이라 왼쪽부터 묶인다.</p><div class="dev realcase"><p class="dev-label">◉ 문법이 답하지 못하는 것 — 타입 이름 문제</p><p>16장에서 본 모호함이 이 문법의 한계를 보여 준다.</p><pre><code data-lang="c">A * B;</code></pre><p>문법만 보면 이것은 <strong>식 문장</strong>(A와 B의 곱)일 수도, <strong>선언</strong>(A를 가리키는 포인터 B)일 수도 있다. 두 규칙이 같은 토큰 열을 받아들이는 것이다. C는 이 충돌을 문법 밖에서 해결한다 — <code>A</code>가 <code>typedef</code>로 만든 타입 이름 으로 <strong>이미 선언되어 있는가</strong>를 보고 정한다. 그래서 C 파서는 문법만으로는 동작할 수 없고, 이름표(심벌 테이블)와 대화해야 한다(“lexer hack”이라 불리는 구현 관행이 여기서 나왔다).</p><p>문법은 형태를 정하고, 의미 분석이 나머지를 정한다 — 컴파일러가 왜 여러 단계로 나뉘는지(16장)를 이 한 줄이 설명한다.</p></div><h3>표준 문서에서 문법을 찾는 법</h3><p>C 표준(그리고 무료로 받을 수 있는 초안, 부록 D 참고)에는 문법이 두 자리에 있다. 본문의 각 절에 그 절이 다루는 규칙이 붙어 있고, 부록에 <strong>전체 문법</strong>이 한데 모여 있다. 실무에서 “이 자리에 이렇게 적어도 되는가”를 확인할 때는 후자를 펴는 것이 빠르다.</p><p>읽을 때 알아 둘 두 가지. 첫째, 표준의 문법은 <strong>어휘 문법</strong>(토큰을 만드는 규칙)과 <strong>구문 문법</strong>(토큰을 엮는 규칙)이 나뉘어 있다 — 16장에서 본 렉서와 파서의 구분 그대로다. 둘째, 전처리기는 <strong>별도의 문법</strong>을 갖는다. <code>#include</code>나 <code>#define</code> 줄은 위의 C 문법에 나오지 않는다(48장의 번역 단계에서 이미 처리되어 사라지기 때문이다).</p><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>BNF</td><td><code>::=</code>, <code>|</code>, 비단말과 단말. 반복은 재귀로</td></tr><tr><td>EBNF</td><td><code>[ ]</code> 선택, <code>{ }</code> 반복, <code>( )</code> 묶음 — 재귀 없이 적는다</td></tr><tr><td>C 표준의 표기</td><td>BNF 계열 + <code>opt</code> 아래첨자</td></tr><tr><td>선언자 규칙</td><td><code>*</code>는 앞, <code>[]</code>·<code>()</code>는 뒤 — 53장 독법의 근거</td></tr><tr><td>식의 계층</td><td>우선순위 표는 이 계층의 요약</td></tr><tr><td>문법의 한계</td><td><code>A * B;</code> — 타입 이름을 알아야 갈린다</td></tr><tr><td>전처리기</td><td>별도 문법. C 문법에는 나오지 않는다</td></tr></table></div>
+<div class="nav"><a href="sec86.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec88.html">다음 →</a></div>
+</div></main></body></html>

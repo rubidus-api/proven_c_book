@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>75 바깥 세계 — 파일, 스트림, 시간, 난수 — Proven C Book</title><style>
+<title>75 문자열과 텍스트 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,112 +68,71 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>75 바깥 세계 — 파일, 스트림, 시간, 난수</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>여기서부터는 운영체제와 닿는다. 파일을 열고 읽고 쓰는 일, 버퍼드 스트림, 시간을 읽고 형식화하는 일, 그리고 난수 — 용도에 따라 완전히 다른 물건이 되는 그 난수까지. 8장의 스트림 이야기와 24장의 입력 이야기가 여기서 실제 API로 완결된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>8장에서 스트림이 “무엇에 연결됐는지 프로그램은 모른다”는 설계였고, 51장에서는 <code>fopen</code>이 실패를 널로 알린다고 했다. 그러면 파일 API에서 가장 자주 놓치는 실패는 무엇인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>부분 쓰기</strong>다. 열기 실패는 눈에 잘 띄지만, <code>write</code>가 요청한 만큼 다 쓰지 않고 돌아오는 경우는 잊기 쉽다 — 디스크가 차거나, 시그널이 끼어들거나, 상대가 파이프인 경우에 실제로 일어난다. 그래서 이 라이브러리에는 두 판이 있다. <code>proven_fs_write</code>는 <strong>실제로 쓴 바이트 수</strong>를 돌려주고, <code>proven_fs_write_all</code>은 다 쓸 때까지 되풀이한 뒤 성공·실패만 알려 준다. 대부분의 코드가 원하는 것은 후자이고, 전자는 그 사실을 감추지 않기 위해 남아 있다.</p></div></div><h3>75.1 파일 — 열고, 읽고, 닫기</h3><div><div><p><code>examples/ch75/fileio.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>75 문자열과 텍스트</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>70장의 첫째 버그 — 그릇의 크기를 모르는 문자열 함수 — 에 대한 답이다. 길이를 지니고 다니는 문자열, 소유와 빌림의 구분, 그리고 이 라이브러리 에서 가장 논쟁적인 결정인 <strong>거부하되 자르지 않는다</strong>까지. 9장의 인코딩 이야기와 38장의 경계 이야기가 여기서 하나로 모인다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>38장에서 C 문자열은 “NUL을 만날 때까지”가 곧 길이라, 길이를 알려면 매번 세어야 한다고 했다. 그러면 길이를 함께 들고 다니면 무엇이 좋아지는가 — 그리고 무엇을 잃는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>얻는 것이 셋이다. 길이를 세는 비용이 사라지고(<math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math>이 <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math>이 된다), 중간에 0바이트가 들어 있는 자료도 다룰 수 있으며, 무엇보다 <strong>경계를 검사할 수 있다</strong> — 길이를 모르면 검사할 것 자체가 없다. 잃는 것은 둘이다. 문자열 하나가 한 워드가 아니라 두 워드가 되고, <code>printf("%s")</code> 처럼 NUL 종단을 기대하는 세상과 만날 때 변환이 필요해진다. 이 라이브러리는 그 변환 비용을 없애려고 내부적으로 NUL도 함께 유지한다 — 둘 다 가지는 절충이다.</p></div></div><h3>75.1 두 개의 타입, 하나의 규칙</h3><p>문자열 어휘는 둘뿐이다.</p><ul><li><code>proven_u8str_t</code> — <strong>소유하는</strong> 문자열. 버퍼와 길이와 용량을 가진다.</li><li><code>proven_u8str_view_t</code> — <strong>빌린</strong> 문자열. 포인터와 길이뿐이다.</li></ul><p>이름에 <code>view</code>가 있으면 빌린 것이고, 빌린 것은 파괴하지 않는다. 74장에서 세운 규칙이 문자열에 그대로 적용된 것이다. <code>u8</code>은 UTF-8을 뜻한다 — 9장에서 본 그 인코딩이 이 라이브러리의 기본 텍스트 표현이다.</p><p>소유하는 문자열을 얻는 길은 둘이다. 할당자에게 받거나(<code>_create</code>), 남의 버퍼를 빌려 쓰거나(<code>_borrow</code>).</p><div><div><p><code>examples/ch75/ops.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
+
+static void show(const char *label, proven_u8str_view_t v)
+{
+    printf("%-12s [%.*s] (%zu bytes)\n", label, (int)v.size, (const char *)v.ptr, v.size);
+}
 
 int main(void)
 {
-    proven_allocator_t alloc = proven_heap_allocator();
-    proven_u8str_view_t path = proven_u8str_view_from_cstr("proven_demo.txt");
-    const char *text = "one\ntwo\nthree\n";
+    /* ① 할당 없는 문자열: 스택 버퍼를 빌려 쓴다.
+          allocator 가 없는 시그니처 = 할당하지 않는다 */
+    proven_byte_t buf[16];
+    proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
 
-    /* 쓰기: 없으면 만들고, 있으면 비운다 */
-    proven_result_file_t opened = proven_fs_open(
-        alloc, path, PROVEN_FS_WRITE | PROVEN_FS_CREATE | PROVEN_FS_TRUNC);
-    if (!proven_is_ok(opened.err)) {
-        printf("open for write failed (err=%d)\n", (int)opened.err);
-        return 1;
-    }
-    proven_file_t f = opened.value;
+    proven_err_t e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hello"));
+    printf("append 'hello' : %s\n", proven_is_ok(e) ? "ok" : "refused");
+    show("content", proven_u8str_as_view(&amp;s));
 
-    proven_mem_view_t src = {
-        .ptr = (const proven_byte_t *)text,
-        .size = proven_cstr_len(text)
-    };
-    proven_err_t e = proven_fs_write_all(f, src);   /* 부분 쓰기를 되풀이해 준다 */
-    printf("write_all  : %s (%zu bytes)\n", proven_is_ok(e) ? "ok" : "failed", src.size);
-    (void)proven_fs_close(f);
+    /* ② 자리가 모자라면 거부한다 — 자르지 않는다 */
+    e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr(" world, and more"));
+    printf("append long    : %s (err=%d)\n",
+           proven_is_ok(e) ? "ok" : "refused", (int)e);
+    show("unchanged", proven_u8str_as_view(&amp;s));   /* 실패 원자성 */
 
-    /* 읽기 */
-    opened = proven_fs_open(alloc, path, PROVEN_FS_READ);
-    if (!proven_is_ok(opened.err)) return 1;
-    f = opened.value;
+    /* ③ 찾기와 자르기 — 전부 view 위에서, 복사 없이 */
+    proven_u8str_view_t csv = proven_u8str_view_from_cstr("name,age,city");
+    proven_u8str_view_t comma = proven_u8str_view_from_cstr(",");
 
-    proven_result_size_t sz = proven_fs_size(f);
-    printf("size       : %zu bytes\n", sz.value);
+    proven_size_t at = proven_u8str_view_find(csv, 0, comma);
+    printf("first comma at : %zu\n", at);
+    show("field 1", proven_u8str_view_slice(csv, 0, at));
 
-    proven_byte_t buf[64];
-    proven_result_size_t got = proven_fs_read(f, (proven_mem_mut_t){ .ptr = buf, .size = sizeof buf });
-    printf("read       : %zu bytes\n", got.value);
-
-    /* 읽은 것은 뷰로 다룬다 — 줄 단위로 자른다 */
-    proven_u8str_view_t all = { .ptr = buf, .size = got.value };
-    proven_u8str_view_t nl = proven_u8str_view_from_cstr("\n");
+    /* ④ 구분자로 훑기: 못 찾으면 센티널(PROVEN_INDEX_NOT_FOUND)이 온다 */
     proven_size_t start = 0;
-    int line = 0;
-    while (start &lt; all.size) {
-        proven_size_t hit = proven_u8str_view_find(all, start, nl);
-        proven_size_t end = (hit == PROVEN_INDEX_NOT_FOUND) ? all.size : hit;
-        proven_u8str_view_t v = proven_u8str_view_slice(all, start, end - start);
-        printf("  line %d   : %.*s\n", ++line, (int)v.size, (const char *)v.ptr);
+    int n = 0;
+    for (;;) {
+        proven_size_t hit = proven_u8str_view_find(csv, start, comma);
+        proven_size_t end = (hit == PROVEN_INDEX_NOT_FOUND) ? csv.size : hit;
+        char label[24];
+        snprintf(label, sizeof label, "field %d", ++n % 100);
+        show(label, proven_u8str_view_slice(csv, start, end - start));
         if (hit == PROVEN_INDEX_NOT_FOUND) break;
         start = hit + 1;
     }
-    (void)proven_fs_close(f);
 
-    /* 없는 파일을 열면 실패가 값으로 온다 */
-    proven_result_file_t missing = proven_fs_open(
-        alloc, proven_u8str_view_from_cstr("no_such_file.txt"), PROVEN_FS_READ);
-    printf("missing    : %s\n", proven_is_ok(missing.err) ? "opened" : "refused with an error code");
-
-    (void)proven_fs_remove(alloc, path);
+    /* ⑤ 비교와 접두사 검사 */
+    printf("eq 'name,age,city' : %d\n",
+           proven_u8str_view_eq(csv, proven_u8str_view_from_cstr("name,age,city")));
+    printf("starts with 'name' : %d\n",
+           proven_u8str_view_starts_with(csv, proven_u8str_view_from_cstr("name")));
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>write_all  : ok (14 bytes)
-size       : 14 bytes
-read       : 14 bytes
-  line 1   : one
-  line 2   : two
-  line 3   : three
-missing    : refused with an error code
-</code></pre></div></div><p>몇 가지가 눈에 띈다.</p><p><strong>경로도 뷰다.</strong> <code>proven_u8str_view_from_cstr("...")</code> — 문자열이 어디서 왔든 포인터와 길이로 다룬다(72장).</p><p><strong>열기에 할당자가 필요하다.</strong> 시그니처의 첫 인자가 <code>scratch</code> 할당자인데, 경로를 운영체제가 요구하는 형태로 바꾸는 데 임시 기억이 필요할 수 있기 때문이다. 71장의 규칙이 여기서도 정직하게 지켜진다 — <strong>할당할 수 있으면 할당자를 받는다</strong>.</p><p><strong>읽은 것은 뷰가 된다.</strong> 버퍼와 읽은 바이트 수를 묶으면 그다음부터는 72장의 도구가 전부 쓸 수 있다. 예제가 줄을 가르는 데 쓴 것이 그 방식이고, 복사는 한 번도 일어나지 않았다.</p><div class="dev antipattern"><p class="dev-label">✗ <code>size</code>를 믿고 그만큼 읽었다고 가정하기</p><pre><code data-lang="c">proven_result_size_t sz = proven_fs_size(f);
-proven_byte_t *buf = malloc(sz.value);
-(void)proven_fs_read(f, (proven_mem_mut_t){ buf, sz.value });
-process(buf, sz.value);      /* 실제로 그만큼 읽혔는가? */</code></pre><p>파일 크기와 <strong>이번 읽기가 가져온 양</strong>은 다르다. 파이프·터미널·네트워크 에서는 한 번에 조금씩 오고, 파일이라도 중간에 끝날 수 있다. <code>read</code>가 돌려준 수를 써야 하고, 그것이 이 라이브러리가 읽기 결과를 꾸러미로 돌려주는 이유다. 24장에서 “입력은 키보드가 아니라 스트림”이라 했던 그 사실이 여기서 실무 규칙이 된다.</p></div><h3>75.2 스트림 — 버퍼를 둔 읽고 쓰기</h3><p>시스템 호출은 비싸다. 한 바이트씩 <code>write</code>를 부르면 그 비용이 그대로 누적된다. 그래서 표준 C의 <code>FILE*</code>이 버퍼를 두었고(8장의 행 버퍼링 이야기), proven도 같은 자리에 <strong>스트림</strong>을 둔다 — 다만 두 가지가 다르다.</p><ul><li><strong>버퍼를 호출자가 준다.</strong> 스트림이 몰래 할당하지 않는다.</li><li><strong>씻어내기(flush)의 실패가 값으로 온다.</strong> 닫을 때 조용히 삼키지 않는다.</li></ul><p>이 둘은 같은 문제를 향한다. 버퍼가 있는 쓰기에서 진짜 실패는 <code>write</code>가 아니라 <strong>flush</strong>에서 드러나는데, 그 실패를 놓치면 “성공했다고 믿었지만 디스크에 없는” 자료가 생긴다. 데이터베이스와 파일 시스템이 가장 조심하는 자리이기도 하다(<code>proven_fs_sync</code>가 따로 있는 이유다).</p><h3>75.3 시간 — 두 가지 다른 시계</h3><p>시간에는 서로 다른 두 물건이 섞여 있다.</p><ul><li><strong>달력 시간</strong> — “2026년 8월 5일 09시”처럼 사람이 읽는 시각. 사용자에게 보여 주고 기록에 남기는 데 쓴다. 시간대와 윤초와 서머타임이 얽힌다.</li><li><strong>단조 시간</strong>(monotonic) — 뒤로 가지 않는 눈금. <strong>경과 시간</strong>을 재는 데 쓴다.</li></ul><p>둘을 섞으면 유명한 버그가 된다. 달력 시계로 경과 시간을 재면, 시스템이 시간을 맞추거나 서머타임이 바뀌는 순간 <strong>음수 경과</strong>가 나온다. 타임아웃 계산에 그 값이 들어가면 영원히 기다리거나 즉시 만료된다.</p><p>날짜 형식화는 51장에서 본 서식 문법을 그대로 쓴다 — <code>"{year}-{month:0>2}-{day:0>2}"</code>처럼 이름 있는 자리표시자에 폭과 채움을 지정한다. <code>strftime</code>의 <code>%Y-%m-%d</code>와 달리 <strong>무엇을 뜻하는 기호인지 외울 필요가 없다</strong>는 것이 차이다.</p><div class="dev misconception"><p class="dev-label">⚠ “시간은 그냥 숫자니까 더하고 빼면 된다”</p><p>달력 시간에서는 아니다. 하루는 항상 86400초가 아니고(서머타임 전환일은 23시간 또는 25시간이다), 한 달의 길이는 제각각이며, 시간대는 정치적 결정으로 바뀐다. “한 달 뒤”는 산술이 아니라 달력 규칙이다. 반면 <strong>단조 시간</strong>의 차는 그냥 숫자로 다뤄도 된다 — 그것이 경과 시간 측정에 단조 시계를 쓰는 또 하나의 이유다.</p></div><h3>75.4 난수 — 용도가 물건을 정한다</h3><p>난수만큼 “같은 이름, 다른 요구”인 도구도 드물다. 라이브러리는 이것을 숨기지 않고 셋으로 갈라 둔다.</p><div><div><p><code>examples/ch75/rng.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
-#include &lt;stdio.h>
-
-int main(void)
-{
-    /* 재현 가능한 난수: 같은 씨앗 = 같은 수열. 시험과 시뮬레이션용이다 */
-    proven_xoshiro256ss_t g;
-    proven_xoshiro256ss_seed(&amp;g, 12345);
-    proven_rng_t rng = proven_xoshiro256ss_rng(&amp;g);
-
-    printf("seeded run 1:");
-    for (int i = 0; i &lt; 5; i++) printf(" %llu", (unsigned long long)proven_rng_below(rng, 100));
-    printf("\n");
-
-    proven_xoshiro256ss_seed(&amp;g, 12345);          /* 같은 씨앗으로 되감는다 */
-    printf("seeded run 2:");
-    for (int i = 0; i &lt; 5; i++) printf(" %llu", (unsigned long long)proven_rng_below(rng, 100));
-    printf("\n");
-
-    /* 범위 난수: 경계를 포함한다 */
-    proven_xoshiro256ss_seed(&amp;g, 7);
-    printf("dice        :");
-    for (int i = 0; i &lt; 8; i++) printf(" %lld", (long long)proven_rng_range(rng, 1, 6));
-    printf("\n");
-
-    /* 비밀에 쓸 난수는 여기서 얻지 않는다 — OS 난수원이 따로 있다 */
-    proven_byte_t key[16];
-    bool ok = proven_random_bytes(key, sizeof key);
-    printf("os entropy  : %s (%zu bytes requested)\n", ok ? "available" : "unavailable", sizeof key);
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>seeded run 1: 74 13 96 4 55
-seeded run 2: 74 13 96 4 55
-dice        : 5 2 6 6 6 6 1 1
-os entropy  : available (16 bytes requested)
-</code></pre></div></div><p><strong>재현 가능한 난수</strong>(<code>proven_xoshiro256ss_t</code>)는 시뮬레이션·게임·시험용이다. 씨앗이 같으면 수열이 같다 — 예제의 두 줄이 정확히 같은 이유이고, 실패한 시험을 다시 재현할 수 있게 해 주는 성질이기도 하다. 빠르지만 <strong>예측 가능</strong>하므로 비밀에는 절대 쓰지 않는다.</p><p><strong>비밀용 난수</strong>(<code>proven_random_bytes</code>)는 운영체제의 암호학적 난수원에서 온다. 키, 토큰, 세션 식별자처럼 <strong>공격자가 맞히면 안 되는</strong> 값에 쓴다.</p><p>세 번째는 그 둘의 절충인 <code>proven_chacha_rng_t</code>로, OS 난수원에서 한 번 씨앗을 받아 암호학적으로 안전한 수열을 빠르게 이어 간다.</p><div class="dev realcase"><p class="dev-label">◉ 예측 가능한 난수가 만든 사고들</p><p>이 구분을 어긴 사고는 반복해서 일어났다. 온라인 카드 게임이 시각을 씨앗으로 쓴 탓에 패가 예측된 사례, 세션 식별자를 빠른 난수로 만들어 남의 계정에 들어갈 수 있었던 사례, 그리고 2008년 데비안의 OpenSSL 패치가 엔트로피 수집 코드를 지워 <strong>생성 가능한 키가 몇만 개로 줄어든</strong> 사건이 대표적이다. 마지막 것은 이미 만들어진 키를 전부 폐기해야 했다. 교훈은 라이브러리 문서의 한 줄로 요약된다 — <strong>비밀에 쓸 난수는 오직 암호학적 난수원에서만 온다.</strong></p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>운영체제가 없으면 비밀용 난수는 어떻게 되는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>얻을 수 없으므로 <code>proven_random_bytes</code>는 <strong>거짓을 돌려준다</strong> — 그리고 이것이 중요한 설계 결정이다. 많은 라이브러리가 이럴 때 시각이나 주소 값으로 슬쩍 물러나는데, 그러면 “안전한 줄 알았는데 예측 가능한” 최악의 상태가 된다. 이 라이브러리는 물러나지 않고 실패를 말한다. 보드에 진짜 엔트로피원(하드웨어 난수 발생기)이 있다면 그것을 등록해 쓰면 된다. <strong>조용히 나쁜 것을 주느니 없다고 말한다</strong> — 이 부에서 계속 만나 온 원칙의 또 다른 얼굴이다.</p></div></div><h3>75.5 메모리 매핑</h3><p>파일을 읽는 또 하나의 방식이 있다. 파일을 통째로 <strong>주소 공간에 걸어 두고</strong> 포인터로 접근하는 것 — <code>proven_mmap_*</code>이 그 창구다. 큰 파일을 무작위로 넘나들며 읽을 때 유리하고, 여러 프로세스가 같은 파일을 공유할 때도 쓴다.</p><p>대가도 분명하다. 매핑된 영역을 만지다 파일이 잘리면 프로그램이 신호를 받고 죽을 수 있고, 이식성도 파일 API보다 낮다. 그래서 이 도구는 “기본으로 쓰는 것”이 아니라 “이유가 있을 때 고르는 것”이다.</p><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>바깥 세계 요약.</p><table><tr><th><strong>하는 일</strong></th><th><strong>API</strong></th><th><strong>조심할 것</strong></th></tr><tr><td>열기·닫기</td><td><code>proven_fs_open/close</code></td><td>scratch 할당자 필요</td></tr><tr><td>읽기</td><td><code>proven_fs_read</code></td><td>요청량 ≠ 읽은 양</td></tr><tr><td>쓰기</td><td><code>proven_fs_write</code> / <code>_write_all</code></td><td>부분 쓰기</td></tr><tr><td>디스크에 못박기</td><td><code>proven_fs_sync</code></td><td>flush ≠ sync</td></tr><tr><td>버퍼드 입출력</td><td><code>proven_stream_*</code></td><td>버퍼는 호출자가 준다</td></tr><tr><td>현재 시각</td><td><code>proven_time_now_datetime</code></td><td>경과 측정에는 쓰지 않는다</td></tr><tr><td>날짜 형식화</td><td><code>proven_time_u8_fmt</code></td><td><code>{year}</code> 같은 이름 자리표시자</td></tr><tr><td>재현 난수</td><td><code>proven_xoshiro256ss_*</code></td><td>비밀에 쓰지 않는다</td></tr><tr><td>비밀용 난수</td><td><code>proven_random_bytes</code></td><td>없으면 거짓 — 물러나지 않는다</td></tr><tr><td>메모리 매핑</td><td><code>proven_mmap_*</code></td><td>이유가 있을 때만</td></tr></table></div><p>이제 남은 것은 경계다 — 여러 일을 겹쳐 돌리는 방법, 그리고 운영체제가 아예 없는 자리. 마지막 장에서 이 부를 닫는다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>append 'hello' : ok
+content      [hello] (5 bytes)
+append long    : refused (err=2)
+unchanged    [hello] (5 bytes)
+first comma at : 4
+field 1      [name] (4 bytes)
+field 1      [name] (4 bytes)
+field 2      [age] (3 bytes)
+field 3      [city] (4 bytes)
+eq 'name,age,city' : 1
+starts with 'name' : 1
+</code></pre></div></div><p>첫 줄이 74장의 규칙을 다시 보여 준다. <code>proven_u8str_borrow</code>에는 할당자가 없다 — 그러므로 할당하지 않는다. 스택에 잡은 16바이트 배열 위에서 문자열 연산을 하는 것이고, 임베디드에서 힙 없이 문자열을 다루는 방식이 정확히 이것이다.</p><h3>75.2 거부하되, 자르지 않는다</h3><p>두 번째 <code>append</code>가 이 부에서 가장 중요한 한 줄이다. 16바이트 그릇에 <code>"hello"</code> 다음으로 <code>" world, and more"</code>를 붙이려 하자 라이브러리는 <strong>아무것도 쓰지 않고</strong> <code>PROVEN_ERR_OUT_OF_BOUNDS</code>를 돌려주었다. 그리고 그다음 줄이 보여 주듯 원래 내용 <code>hello</code>는 그대로다 — 72장에서 배운 실패 원자성이다.</p><p>70장에서 본 <code>snprintf</code>의 선택과 정반대다. 왜 자르지 않는가?</p><p><strong>잘린 값은 짧은 값이 아니라 다른 값이기 때문이다.</strong> 잘린 경로는 다른 파일을 가리키고, 잘린 명령은 다른 명령이며, 잘린 사용자 이름은 다른 사람이다. 자르고 성공을 말하면 호출자는 자기가 받은 것이 요청한 것인지 알 수 없다. 그래서 이 라이브러리는 <strong>결정을 호출자에게 되돌려준다</strong> — “자리가 모자랍니다. 어떻게 할까요?”</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>그래도 로그 한 줄처럼 잘려도 괜찮은 자리가 있지 않은가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>있다. 그래서 <strong>명시적으로 부분만 쓰는</strong> 함수가 따로 있다 — <code>proven_u8str_append_partial</code>은 들어간 바이트 수를 돌려준다. 이름이 길고 반환값이 다르다는 점이 핵심이다. 자르기는 여전히 가능하지만, 그것을 하려면 <strong>그렇게 적어야</strong> 한다. 기본값은 언제나 안전한 쪽이고 위험한 선택은 눈에 보이는 이름으로만 할 수 있다는 원칙(73장의 <code>_unchecked</code>와 같다)이 여기서도 지켜진다.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ 성장과 고정 용량을 헷갈리기</p><pre><code data-lang="c">proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
+proven_err_t e = proven_u8str_append_grow(alloc, &amp;s, view);  /* 위험 */</code></pre><p><code>_append</code>는 용량 안에서만 쓰고, <code>_append_grow</code>는 모자라면 할당자에게 더 달라고 한다 — 그래서 후자에만 할당자 인자가 있다. 문제는 빌린 버퍼(<code>_borrow</code>) 위에서 성장을 요구하는 경우다. 스택 배열은 자랄 수 없으므로 이것은 설계 오류다. 시그니처를 읽는 습관이 여기서 그대로 방어가 된다 — <strong>할당자가 있으면 자랄 수 있고, 없으면 자랄 수 없다.</strong></p></div><h3>75.3 찾기와 자르기 — 복사 없는 텍스트 처리</h3><p>예제의 ③·④가 뷰의 진짜 쓸모다. 부분 문자열을 얻는 데 복사가 필요 없다 — 원본을 가리키는 포인터와 길이를 새로 계산할 뿐이다. CSV 한 줄을 세 필드로 가르는 동안 할당은 한 번도 일어나지 않았다.</p><p>이 무늬는 파서에서 특히 강력하다. 26장에서 <code>sscanf</code>로 줄을 해석할 때는 결과를 담을 버퍼를 미리 준비해야 했지만, 뷰로 자르면 <strong>원본 위에 표시만</strong> 남긴다. 대신 지켜야 할 것이 하나 늘어난다 — 73장에서 본 대로 <strong>원본이 살아 있는 동안만 유효하다</strong>.</p><p><code>find</code>가 못 찾았을 때 돌려주는 값에도 규약이 있다. 0이나 음수가 아니라 <code>PROVEN_INDEX_NOT_FOUND</code>라는 이름의 센티널이다. 70장에서 센티널 값의 위험을 이야기했는데, 여기서는 <strong>이름이 붙어 있고 문서화되어 있다</strong>는 점이 다르다 — 이름 없는 마법의 수와 이름 붙은 계약은 다른 물건이다.</p><div class="dev misconception"><p class="dev-label">⚠ “길이를 들고 다니면 글자 수를 아는 것이다”</p><p>아니다. 길이는 <strong>바이트 수</strong>다. 9장에서 배운 대로 UTF-8에서 한 글자는 1~4바이트이므로, 한글 “가”는 3바이트이고 이모지는 4바이트다. 예제의 출력이 굳이 “(5 bytes)”라고 밝히는 이유다. 그래서 “n번째 글자”를 다루는 일은 여전히 조심스럽고, <strong>바이트 경계에서 아무 데나 자르면</strong> 9장에서 본 깨진 글자가 나온다. 문자열 라이브러리가 해결해 주는 것은 경계 침범이지 인코딩의 본질적 난이도가 아니다.</p></div><h3>75.4 두 세계의 경계 — NUL 종단과 UTF-16</h3><p>바깥 세계와 만나는 자리마다 변환이 필요하다.</p><ul><li><code>proven_u8str_as_cstr</code> — 소유 문자열에서 NUL 종단 포인터를 얻는다. 내부에 NUL을 유지해 두므로 복사도 할당도 없다. <code>printf("%s")</code>나 파일 API에 넘길 때 쓴다.</li><li><code>proven_u8str_view_to_cstr</code> — 뷰에서 NUL 종단 문자열을 만든다. 이쪽은 <strong>할당자를 받는다</strong> — 뷰는 원본 중간을 가리킬 수 있어 그 자리에 NUL을 쓸 수 없기 때문이다. 시그니처가 다시 한번 사실을 말해 준다.</li><li><code>proven_u16str_t</code> / <code>proven_u16str_view_t</code> — UTF-16 세계와의 다리다. Windows API가 이 인코딩을 쓰므로 변환이 필요하고, 변환은 실패할 수 있다(짝이 맞지 않는 서러게이트 같은 것). 그래서 결과는 꾸러미로 온다.</li></ul><div class="dev realcase"><p class="dev-label">◉ “추측하지 말고 거부하라” — 인코딩 처리의 원칙</p><p>9장에서 본 텍스트 보안 문제들의 뿌리는 대개 <strong>너그러운 디코더</strong>다. 잘못된 UTF-8을 만났을 때 “비슷한 것으로 고쳐 읽는” 구현은 과거 여러 번 보안 사고의 통로가 됐다 — 특히 지나치게 긴 인코딩(overlong)을 허용한 디코더들이 검사를 우회당했다. 그래서 오늘의 규범은 한 문장이다. <strong>유효하지 않은 입력은 고쳐 읽지 말고 거부하라.</strong> proven의 인코딩 변환이 <code>PROVEN_ERR_INVALID_ENCODING</code>을 돌려주며 멈추는 것이 그 규범의 구현이고, 이 원칙은 이 장 전체의 “자르지 않는다”와 정확히 같은 정신이다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>문자열 어휘 요약.</p><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>실패·소유</strong></th></tr><tr><td><code>u8str_create(alloc, cap)</code></td><td>소유 문자열 생성</td><td>꾸러미 반환, <code>_destroy</code> 필요</td></tr><tr><td><code>u8str_borrow(buf, cap)</code></td><td>남의 버퍼 위에 문자열</td><td>할당 없음, 파괴 없음</td></tr><tr><td><code>u8str_append(&amp;s, v)</code></td><td>용량 안에서 덧붙임</td><td>모자라면 거부(원본 보존)</td></tr><tr><td><code>u8str_append_partial</code></td><td>들어가는 만큼</td><td>넣은 바이트 수 반환</td></tr><tr><td><code>u8str_append_grow(alloc,…)</code></td><td>모자라면 늘려서</td><td>할당 실패 가능</td></tr><tr><td><code>u8str_view_find</code></td><td>부분 문자열 위치</td><td>없으면 <code>PROVEN_INDEX_NOT_FOUND</code></td></tr><tr><td><code>u8str_view_slice</code></td><td>부분 뷰</td><td>복사 없음 — 원본 수명에 묶임</td></tr><tr><td><code>u8str_as_cstr</code></td><td>NUL 종단 포인터</td><td>복사 없음</td></tr><tr><td><code>u8str_view_to_cstr</code></td><td>뷰 → C 문자열</td><td>할당자 필요</td></tr></table></div><p>문자열을 안전하게 담고 자를 수 있게 됐다. 그런데 아직 <strong>만드는</strong> 일이 남았다 — 수와 값을 글자로 바꾸고, 글자를 다시 수로 되돌리는 일. 70장의 셋째 버그가 기다리는 자리이자, 이 라이브러리에서 가장 눈에 띄게 다른 문법이 나오는 자리다.</p>
 <div class="nav"><a href="ch74.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch76.html">다음 →</a></div>
 </div></main></body></html>

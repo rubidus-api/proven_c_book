@@ -1,152 +1,182 @@
 #import "../../book/lib.typ": *
 
-= The machinery of speed - the birth of the standard
+= The origin of streams - punched cards, line printers, printing terminals
 
 #organizer[
-  If the cache reduced waiting, this time it is the machinery that overlaps
-#idx("pipeline")  execution itself — pipelining, branch prediction, and the
-  multicore turn forced by the limits of the clock. We also look at the strange
-  accident that arrives with several cores (false sharing). Alongside, we see how
-  C came to write its first contract (C89) in the same era of turmoil.
+  You will learn why a computer's input and output has the shape of "characters
+  flowing one line at a time." The answer lies in the age of paper — punched
+  cards, line printers, and the typewriter-like printing terminal. The origin of
+  the two characters `\n` and of the odd name `tty` unravels here too. By the
+  end of this chapter you will understand in advance what the `printf` of your
+  first program is talking to.
 ]
 
 #deepqa[
-  The exchange in chapter 2 promised that "the number of steps (the clock) is
-  not the whole story — doing several things in one step is the real weapon of a
-  modern CPU." How is more than one thing per step possible? Does one
-  instruction not have to finish before the next?
+  Chapter 7 said that the control characters — instructions to a device, such as
+  "advance the paper one line" — live in a corner of the character table. Why
+  are device commands mixed into a table of letters?
 ][
-  Discard "finish before you start." Split the handling of one instruction into
-  several stages, and carry several instructions at *different* stages at the
-  same time — while one instruction is being calculated, fetch the next and
-  decode the one after. That is this chapter's first piece of machinery: the
-  pipeline.
+  Because in the age that table was made, text *was* the movement of a device.
+  A letter was not drawn on a screen but physically struck onto paper, and
+  "next line" was an actual motion of mechanical parts. Look at the devices of
+  that era and everything about the shape of today's input and output unravels.
 ]
 
-== The pipeline — instructions on an assembly line
+== Punched cards — one card is one line
 
-Think of a laundry. If washing takes 30 minutes, drying 30 and ironing 30, then
-finishing one load before starting the next takes 270 minutes for three loads.
-But put the second load in the washer the moment the first moves to the dryer,
-and three machines handle *different loads at the same time*; once the flow
-fills up, one load comes out every 30 minutes.
+The input of early computing was the *punched card*. Holes punched in a stiff
+paper card record letters — a combination of holes is one letter, and one card
+holds *80 columns* of them. One line of a program is punched onto one card, and
+the whole program becomes a deck of cards. Feed the deck to the machine and the
+cards are drawn in and read one at a time.
 
-The CPU's handling of an instruction divides into stages in exactly the same
-way — fetch, decode, execute, write back. Making an assembly line of those
-stages is the *pipeline*. Individual instructions do not get faster — what
-increases is *the number of instructions completed per unit of time.* Modern
-CPU pipelines run to more than ten stages, and go further by having several
-lines so that multiple instructions complete per beat. Chapter 2's "one step per
-beat" collapses like this — the apparent order is kept, but inside things
-overlap.
-
-Let us record one trick from the same era. To save the management cost of each
-turn of a loop (counting, judging the fork), there is a technique of handling
-*several items per turn* — loop unrolling. In 1983 a programmer named Tom Duff
-pushed this technique to its limit by grotesquely overlapping two pieces of C
-syntax, and the code became a legend under the name *Duff's device*. The code
-itself cannot be shown yet — this book has not introduced those constructs. A
-reunion is booked (chapter 30). One sentence suffices for now: in those days
-people squeezed the machine's beats with acrobatics like this, and today the
-acrobatics are the compiler's job (chapter 11).
-
-== Branch prediction — guessing the fork in advance
-
-The pipeline has a sore spot: *the fork*. Meet an instruction like "if the
-result is zero, jump over there" (a branch) and, until the result is known,
-there is no telling which road's instructions to load onto the line. Halt the
-line and wait, and the gain from overlapping evaporates.
-
-So the CPU *guesses*. Like a café that prepares a regular's order in advance, it
-learns from history that "this fork usually goes this way" and loads that road's
-#idx("branch prediction")instructions onto the line ahead of time — *branch
-prediction*. Right, and it was free; wrong, and it throws away everything
-prepared, flushes the line and starts again. Because that penalty is as large as
-the depth of the pipeline, modern CPUs invest serious circuitry in the predictor,
-and hit rates in everyday code run well past 90%.
-
-#realcase[
-  The episode of the sorted array being faster
-][
-  There is a widely circulated measurement among programmers — the same code
-  that sums "only the values above a threshold" in a large array runs several
-  times faster if the array is *sorted beforehand*. The number of additions is
-  the same, so why? The answer is branch prediction. In a shuffled array the
-  "greater/smaller" fork is random every time, so the prediction is wrong about
-  half the time and pays the line-flush penalty each time. In a sorted array the
-  answer at the fork stays on one side for a long stretch and the predictions are
-  almost all right. An invisible guessing circuit split the speed of the same
-  code several-fold (we use this feel again in chapter 29 — "an `if` is not
-  free").
-]
-
-== The limit of the clock, and multicore
-
-Despite all this overlapping, a wall arrived in the mid-2000s. Raising the clock
-further meant power and heat rising beyond what could be handled — a physical
-limit. The decades-long "a faster clock next year" stopped.
-
-The industry's answer was a change of direction — instead of making one worker
-faster, *increase the number of workers.* CPUs began to contain two, four,
-dozens of engines that independently execute instructions — *cores*. Even
-today's phones commonly have about eight. The free lunch was over — the era in
-which programs got faster by themselves ended, and the problem of *dividing*
-work among many workers became the programmer's (outside this book's scope, but
-worth knowing as terrain).
-
-And once there were many workers, chapter 9's cache became the scene of an
-unexpected accident.
+Two legacies were born here. First, *the sense that "one card = one line."* The
+notion that text is a sequence of lines, now as obvious as air, came from a
+physical object. Second, *the number 80*. The card's 80 columns became the 80
+columns of later terminal screens and survived half a century into today's
+coding convention that "a line of code stays within 80 characters."
 
 #qa[
-  If each core has its own cache (desk), what happens when two cores touch the
-  same data?
+  What happens if you drop the deck?
 ][
-  The hardware keeps the desks consistent behind the scenes — when one core
-  changes a value, the copies on other cores' desks are invalidated, and so on.
-  Correctness is preserved this way; the problem is that this tidying is *not
-  free*, and that its unit is not one variable but chapter 9's *cache-line box*.
-  A strange accident is born here.
+  Catastrophe — several hundred cards out of order is a scrambled program. So
+  there was a trick of punching sequence numbers in a corner of the card and
+  re-sorting them by machine. Cutting one corner of the deck diagonally, so a
+  reversed card could be spotted by eye, was the same wisdom. It sounds like a
+  joke, but the idea that "data with sequence numbers can be recovered after
+  being scrambled" is still a fundamental of networking and database design.
 ]
 
-#idx("false sharing")The accident is called *false sharing*. Two cores touch
-*different* variables — they share nothing at all — but if the two variables
-happen to sit side by side in the *same cache-line box*, then to the hardware's
-eye two cores are fighting over the same box. Every write by one invalidates the
-box on the other's desk, the box ping-pongs between the two desks, and both
-cores slow down by tens of times. Look at the code and nothing is shared, so the
-cause is invisible — a representative modern accident that can only be diagnosed
-by knowing chapter 9's fact that memory moves in boxes.
+== Line printers — output by the line
 
-== The same era: C wrote a contract — pre-standard C and C89
+The physical object on the output side was the *line printer*. As the name
+says, a printer that strikes *one whole line at a time* onto paper. Results
+came out not on a screen but line after line on continuous paper. Input one
+card (= one line) at a time, output one printer line at a time — a computer's
+input and output was *a flow of lines* from birth.
 
-While machines were shaking like this, the world of C had turmoil of another
-kind.
+== Printing terminals — a conversation on paper, and tty
 
-C had *no official standard* for a long time. K&R's 1978 book "The C Programming
-Language" served as the *de facto* standard — not a specification of the
-language, but one well-written book standing in for a statute book. As C spread
-with Unix into universities and industry, every company built its own compiler,
-and dialects grew in every corner the book had not pinned down. The C of that
-era looks loose today — a function declaration did not state the types of its
-arguments (there were no prototypes), and a name without a stated type quietly
-passed as int. Code that worked on one compiler failing on another was routine,
-and porting was an adventure every time.
+With the age of time-sharing (many people using one computer at once) came the
+need for a device in which human and computer could *converse*. The thing that
+took that place was the telegraphic typewriter — the *Teletype*. Strike a key
+on this typewriter-shaped machine and the letter goes to the computer; the
+computer's reply is printed on the same machine's paper. There is no screen.
+The entire conversation is printed on a roll of paper.
 
-Unable to bear it, the industry formed a standards committee (ANSI X3J11) in
-1983, and after six years of heated argument *C89* — the first official C
-standard — appeared in 1989. It brought in function *prototypes* (declarations
-that state argument types too, chapter 23) so compilers could catch mistakes at
-call sites, tightened the loose corners, and above all pinned down *in a
-document*, for the first time, "what the programmer is promised and how far the
-implementation is free." It is within a few years of chapter 6's IEEE 754
-(1985) — an "age of contracts", in which numbers in hardware and syntax in
-languages alike, arbitrary from vendor to vendor, began to be governed by
-written agreements.
+Unix was born beside exactly these devices (chapter 4), and took the name for a
+terminal device from the abbreviation of Teletype — *tty*. The name is still
+alive at the bottom of today's terminal windows.
 
-Why does this notion of a contract matter more and more? Because machines, as
-this chapter has shown, increasingly overlap and guess and divide, and a
-programmer cannot know every detail of that vortex. Between the vortex and the
-programmer stands *one more layer* — a layer that takes source code and
-translates it into the machine's language, holding the right to rework anything
-at all as long as the meaning is kept. The compiler. It is the protagonist of
-the next chapter.
+There is another legacy from the typewriter's body. Changing lines on a
+typewriter is really two motions — *returning* the type carriage to the left
+end, and *advancing* the paper one line. The character table assigned a control
+character to each: carriage return (CR, written `\r` in C) and line feed (LF,
+`\n`). Changing one line needed two instructions because two mechanical parts
+actually moved.
+
+#realcase[
+  CRLF — the hundred-year homework a typewriter left behind
+][
+  The two characters remained after the physical reason vanished, and the world
+  never unified its line-ending notation. The Windows family writes both motions,
+  `\r\n` (CRLF); the Unix family takes the single `\n` as the end of a line. The
+  result is the everyday accidents of today — open a text file made on one side
+  on the other and ghost characters appear at line ends or the whole file looks
+  like one line, and version-control tools (git) print warnings about "CRLF will
+  be replaced by LF." The motion of typewriter parts is still raising warnings at
+  collaboration sites half a century after the parts disappeared.
+
+  And these two characters show their face in security too. Internet protocols
+  (HTTP, email) are text protocols that *separate fields by line breaks* — so if
+  CR and LF get mixed into a value supplied by a user, an attacker can *create
+  and insert a new field*. Put someone else's value straight into a response
+  header and the headers can be wholly manipulated (HTTP response splitting);
+  put it into a log line and fake log lines can be forged (log forging).
+  Chapter 7's refrain repeats here — *do not mix data into the frame*, and
+  filter control characters at the boundary.
+]
+
+== Screen terminals, and streams as the legacy
+
+In time paper became screen — but the new screen devices were built to
+*imitate* printing terminals. Today's terminal window, where letters are pushed
+up from the bottom, is the glass version of the Teletype whose paper was pushed
+upward. Only the appearance changed; the grammar of the conversation stayed.
+
+This whole physical lineage condensed into a single notion. Input and output is
+#idx("stream")*a band of characters flowing past in order, a line at a time* —
+this is the *stream*. Input flows in as cards were drawn in one at a time;
+output flows out as a printer struck one line at a time. C took this notion into
+the language as its input/output model. The two flows given by default to every
+program are *standard input* and *standard output*, and the `printf` we meet in
+the next part of this book is the function that lets letters flow onto the band
+called standard output.
+
+== Swapping the band — redirection and pipelines
+
+The notion of a stream hid an unexpected power. If a program *does not know
+where the end of its output is* — then that end can be swapped from outside.
+
+Unix turned this idea into an institution. A program merely reads and writes on
+the bands called standard input and standard output, and what the other side of
+those bands connects to is decided by *whoever runs the program*. Type
+`> file.txt` after a command in the terminal and the output band leads to a file
+#idx("redirection")instead of the screen (*redirection*); type `< input.txt`
+and the input band flows from a file instead of the keyboard. Not one letter of
+the program's code changes.
+
+One step further is the *pipeline*: joining one program's output band directly
+to another program's input band — the terminal's `|` symbol is that connection.
+
+```text
+$ list | filter | count
+```
+
+Three programs each work looking only at their own band, and joining the three
+makes a new tool. The principle left behind by Doug McIlroy, who invented this
+connection, and the Unix people became a maxim of software design ever after —
+*"Write small programs that do one thing well, and have them cooperate through
+text streams."* The grammar of assembling programs as components came out of
+just this simplicity of swapping bands.
+
+The price of that freedom is something the programmer must observe. You must
+not assume your program's output always goes to a human's screen — decorative
+characters or progress indicators can contaminate the input of the next program.
+So the Unix tradition provides one more channel: the real results go to standard
+output, and what is said to a human (warnings, errors) goes to a separate band
+called *standard error*. That is why a third band exists.
+
+#realcase[
+  This book's printed output is itself a product of redirection
+][
+  This is not an abstract story — the book you are reading is the proof. Every
+  code demonstration in this book is real output obtained by a machine running
+  the example, and that output was not transcribed by a person but obtained by
+  *turning the output band into a file* (redirection), which the typesetting tool
+  then read and printed. Examples that need input likewise have a file joined to
+  the standard input band — which is why the examples reproduce with no one
+  striking a keyboard. When chapter 26 breaks the misconception that "input comes
+  from the keyboard", the living proof is the making of this book.
+]
+
+#qa[
+  Programs these days communicate with windows and buttons — is the stream not
+  an old story?
+][
+  Looking only at the front of the screen it seems so, but round the back the
+  stream is at its peak. The records (logs) of server programs are streams, so
+  are the pipelines joining program to program, and so is an AI chatbot "flowing"
+  its answer one character at a time. Above all, in the setting of learning to
+  program, the stream is the simplest and most honest channel of communication —
+  which is why every example in this book runs on top of one.
+]
+
+The ladder of representation is complete. How to put numbers in the lockers
+(chapter 8), how to put letters in (chapter 9), and how to let letters flow
+(chapter 10) — we can now put anything into the machine and get it out.
+
+From the next chapter comes this part's final climb. How bold a lie the simple
+picture of the machine has been so far — memory splitting apart (chapter 11),
+execution overlapping (chapter 12), the compiler stepping in (chapter 13), and
+therefore why C cannot help being "an abstract language" (chapter 14).

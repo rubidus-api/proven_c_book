@@ -43,14 +43,15 @@
   ]
 
   #v(1.4cm)
-  #align(center, block(width: 74%)[
-    #set text(size: 10pt)
-    #set par(justify: false, first-line-indent: 0em, leading: 0.75em)
+  #align(center, block(width: 76%)[
+    #set text(size: 10.5pt)
+    #set par(justify: false, first-line-indent: 0em, leading: 0.85em)
     #align(center)[
-      이 책은 C 언어 입문서이자, proven C 라이브러리를 소개하기 위한 책이다.
+      이 책은 C 언어 입문서와 proven C 라이브러리 소개를 겸하고 있습니다.
 
-      #v(0.3cm)
-      대상 독자는 C 언어에 막 입문하려는 초보자다.
+      #v(0.35cm)
+      대상 독자는 C 언어에 막 입문하려는 초보자부터, \
+      입문서를 막 뗀 중급자까지입니다.
     ]
   ])
 ]
@@ -59,66 +60,89 @@
 #page(numbering: none)[
   #v(1fr)
   #set text(size: 9.5pt)
-  #set par(justify: false, first-line-indent: 0em)
+  // 판권면은 짧은 단락이 여럿이라 행간을 조금 넉넉히 준다
+  #set par(justify: false, first-line-indent: 0em, leading: 0.85em, spacing: 0.95em)
+  #show link: it => text(fill: black, it)
 
-  *Proven C Book — proven 라이브러리에 기반한 모던 C 입문*
+  #block(width: 100%)[
+    #text(size: 11pt, weight: "bold", font: ("Noto Sans CJK KR",))[
+      Proven C Book
+    ]
+    #linebreak()
+    #text(size: 9.5pt)[proven 라이브러리에 기반한 모던 C 입문]
+  ]
 
-  지은이 rubidus \
-  #link("mailto:rubidus@gmail.com")[rubidus\@gmail.com] · #link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]
+  #v(0.45cm)
 
-  #v(0.5cm)
-
-  이 책의 *본문*은 크리에이티브 커먼즈
-  저작자표시-비영리-동일조건변경허락 4.0 국제 라이선스(CC BY-NC-SA 4.0)에
-  따라 이용할 수 있다. 출처를 밝히면 자유롭게 공유하고 고칠 수 있으나,
-  영리 목적 이용은 허용되지 않으며, 고친 결과물에는 같은 라이선스를
-  적용해야 한다. \
-  #h(0.8em) https://creativecommons.org/licenses/by-nc-sa/4.0/
-
-  #v(0.3cm)
-
-  이 책에 수록된 *예제 코드*는 MIT 라이선스로 배포한다 — 배운 것을 자기
-  프로그램에 제약 없이 가져다 쓸 수 있게 하려는 뜻이다. 예제에서 사용한
-  proven 라이브러리는 그 자체의 라이선스를 따른다.
-
-  #v(0.5cm)
-
-  이 책의 모든 코드 시연은 실제로 컴파일·실행해 얻은 출력을 그대로
-  인쇄한 것이다. 조판은 Typst로 했다.
+  #grid(
+    columns: (4.6em, 1fr),
+    row-gutter: 0.62em,
+    column-gutter: 0.8em,
+    text(fill: rgb("#555555"))[지은이], [rubidus],
+    text(fill: rgb("#555555"))[연락], link("mailto:rubidus@gmail.com")[rubidus\@gmail.com],
+    text(fill: rgb("#555555"))[저장소], link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book],
+    text(fill: rgb("#555555"))[판], [#book-version · #book-date — #book-status],
+    text(fill: rgb("#555555"))[최종 수정], [#book-updated],
+  )
 
   #v(0.5cm)
+  #line(length: 100%, stroke: 0.5pt + rgb("#999999"))
+  #v(0.45cm)
 
-  *#book-version · #book-date* — #book-status \
-  최종 수정 #book-updated
+  #block(width: 100%)[
+    *본문* — 크리에이티브 커먼즈 저작자표시-비영리-동일조건변경허락 4.0
+    국제 라이선스(CC BY-NC-SA 4.0). 출처를 밝히면 자유롭게 공유하고 고칠 수
+    있으나, 영리 목적 이용은 허용되지 않으며, 고친 결과물에는 같은 라이선스를
+    적용해야 합니다.
+    #linebreak()
+    #text(size: 9pt, fill: rgb("#555555"))[https://creativecommons.org/licenses/by-nc-sa/4.0/]
+  ]
 
-  #v(0.3cm)
+  #v(0.35cm)
 
-  *이 책은 계속 고쳐진다.* 지금 읽고 있는 것은 위 번호의 판이고, 그
-  뒤로도 오류 수정과 내용 보강이 이어진다. *가장 새로운 판과 그동안의
-  변경 내역은 저자의 GitHub에 있다* — 오래된 사본을 들고 있다면 그쪽을
-  먼저 확인하는 편이 좋다. 오류 신고와 수정 제안도 같은 자리에서 받는다.
+  #block(width: 100%)[
+    *예제 코드* — MIT 라이선스. 배운 것을 자기 프로그램에 제약 없이 가져다
+    쓸 수 있게 하려는 뜻입니다. 예제에서 사용한 proven 라이브러리는 그 자체의
+    라이선스를 따릅니다.
+  ]
 
-  #h(0.8em) #link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]
+  #v(0.35cm)
+
+  #block(width: 100%)[
+    이 책의 모든 코드 시연은 실제로 컴파일·실행해 얻은 출력을 그대로 인쇄한
+    것입니다. 조판은 Typst로 했습니다.
+  ]
+
+  #v(0.5cm)
+  #line(length: 100%, stroke: 0.5pt + rgb("#999999"))
+  #v(0.45cm)
+
+  #block(width: 100%)[
+    *이 책은 계속 고쳐집니다.* 지금 읽고 계신 것은 위 번호의 판이고, 그 뒤로도
+    오류 수정과 내용 보강이 이어집니다. *가장 새로운 판과 그동안의 변경 내역은
+    저자의 GitHub에 있습니다* — 오래된 사본을 들고 계시다면 그쪽을 먼저
+    확인하시는 편이 좋습니다. 오류 신고와 수정 제안도 같은 자리에서 받습니다.
+  ]
 ]
 
+// ── 본문 구성 ────────────────────────────────────────
+// (제목, 부 도입부 파일 또는 none, 장 번호들)
 #let parts = (
-  ("제1부 — 바탕", none, (1,)),
-  ("제2부 — 전산의 기본과 배경지식", "parts/part02.typ", (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)),
-  ("제3부 — 첫 프로그램", none, (13, 14, 15, 16, 17)),
-  ("제4부 — 최소한의 도구 상자", none, (18, 19, 20, 21)),
-  ("제5부 — 선언: 이름을 만드는 법", none, (22, 23, 24)),
-  ("제6부 — 값과 흐름", none, (25, 26, 27, 28, 29, 30, 31)),
-  ("제7부 — 기억", none, (32, 33, 34, 35, 36, 37, 38, 39)),
-  ("제8부 — 자료의 모양", none, (40, 41, 42)),
-  ("제9부 — 정밀", none, (43, 44, 45)),
-  ("제10부 — 구성", none, (46, 47, 48, 49, 50, 51)),
-  ("제11부 — 표준 라이브러리 정독", "parts/part11s.typ", (52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66)),
-  ("제12부 — proven — 검증된 기본기", "parts/part12.typ", (67, 68, 69, 70, 71, 72, 73, 74, 75, 76)),
-  ("제13부 — 닫으며", none, (77, 78)),
+  ("제1부 — 바탕", none, (1, 2, 3)),
+  ("제2부 — 전산의 기본과 배경지식", "parts/part02.typ", (4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)),
+  ("제3부 — 첫 프로그램", none, (15, 16, 17, 18, 19)),
+  ("제4부 — 최소한의 도구 상자", none, (20, 21, 22, 23)),
+  ("제5부 — 선언: 이름을 만드는 법", none, (24, 25, 26)),
+  ("제6부 — 값과 흐름", none, (27, 28, 29, 30, 31, 32, 33)),
+  ("제7부 — 기억", none, (34, 35, 36, 37, 38, 39, 40, 41)),
+  ("제8부 — 자료의 모양", none, (42, 43, 44)),
+  ("제9부 — 깊은 구석들", none, (45, 46, 47)),
+  ("제10부 — 구성", none, (48, 49, 50, 51, 52, 53, 54)),
+  ("제11부 — 표준 라이브러리 정독", "parts/part11s.typ", (55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69)),
+  ("제12부 — proven — 검증된 기본기", "parts/part12.typ", (70, 71, 72, 73, 74, 75, 76, 77, 78, 79)),
+  ("제13부 — 닫으며", none, (80, 81)),
 )
 
-// 목차: 장만 나열하면 길어지므로 *부 단위로 묶어* 낸다.
-// 장 제목과 쪽 번호는 실제 heading 에서 가져온다(수작업 목록 금지).
 #context {
   let heads = query(heading.where(level: 1)).filter(h => h.numbering != none)
   let by-num = (:)
@@ -154,7 +178,7 @@
 #counter(heading).update(0)
 #pagebreak(weak: true)
 
-// ── 본문 (RFC-0002 rev.f 10부 48장) ──────────────────
+// ── 본문 (RFC-0002 rev.f 10부 51장) ──────────────────
 // (제목, 부 도입부 파일 또는 none, 장 번호들)
 #for (part-title, intro, chs) in parts {
   pagebreak(weak: true)
@@ -181,6 +205,7 @@
 #include "appendix/a2-formats.typ"
 #include "appendix/a3-conversions.typ"
 #include "appendix/a4-reading.typ"
+#include "appendix/a6-grammar.typ"
 #include "appendix/a5-bibliography.typ"
 
 // ── 찾아보기 ─────────────────────────────────────────

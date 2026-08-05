@@ -4,29 +4,29 @@
 `scripts/sync-status.py --write` 가 자동으로 갱신한다.
 The Korean edition is the source; this table is generated.
 
-- **synced** 14 · **stale** 0 · **pending** 75
+- **synced** 10 · **stale** 10 · **pending** 73
 
 | 원본 / source | 상태 / state |
 |---|---|
-| `book/chapters/ch01.typ` | ✅ synced |
-| `book/chapters/ch02.typ` | ✅ synced |
-| `book/chapters/ch03.typ` | ✅ synced |
-| `book/chapters/ch04.typ` | ✅ synced |
-| `book/chapters/ch05.typ` | ✅ synced |
-| `book/chapters/ch06.typ` | ✅ synced |
-| `book/chapters/ch07.typ` | ✅ synced |
-| `book/chapters/ch08.typ` | ✅ synced |
-| `book/chapters/ch09.typ` | ✅ synced |
-| `book/chapters/ch10.typ` | ✅ synced |
-| `book/chapters/ch11.typ` | ✅ synced |
-| `book/chapters/ch12.typ` | ⏳ pending |
-| `book/chapters/ch13.typ` | ⏳ pending |
-| `book/chapters/ch14.typ` | ⏳ pending |
-| `book/chapters/ch15.typ` | ⏳ pending |
-| `book/chapters/ch16.typ` | ⏳ pending |
-| `book/chapters/ch17.typ` | ⏳ pending |
-| `book/chapters/ch18.typ` | ⏳ pending |
-| `book/chapters/ch19.typ` | ⏳ pending |
+| `book/chapters/ch01.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch02.typ` | ⏳ pending |
+| `book/chapters/ch03.typ` | ⏳ pending |
+| `book/chapters/ch04.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch05.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch06.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch07.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch08.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch09.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch10.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch11.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch12.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch13.typ` | ✅ synced |
+| `book/chapters/ch14.typ` | ✅ synced |
+| `book/chapters/ch15.typ` | ✅ synced |
+| `book/chapters/ch16.typ` | ✅ synced |
+| `book/chapters/ch17.typ` | ✅ synced |
+| `book/chapters/ch18.typ` | ✅ synced |
+| `book/chapters/ch19.typ` | ✅ synced |
 | `book/chapters/ch20.typ` | ⏳ pending |
 | `book/chapters/ch21.typ` | ⏳ pending |
 | `book/chapters/ch22.typ` | ⏳ pending |
@@ -86,6 +86,9 @@ The Korean edition is the source; this table is generated.
 | `book/chapters/ch76.typ` | ⏳ pending |
 | `book/chapters/ch77.typ` | ⏳ pending |
 | `book/chapters/ch78.typ` | ⏳ pending |
+| `book/chapters/ch79.typ` | ⏳ pending |
+| `book/chapters/ch80.typ` | ⏳ pending |
+| `book/chapters/ch81.typ` | ⏳ pending |
 | `book/parts/part02.typ` | ✅ synced |
 | `book/parts/part11s.typ` | ⏳ pending |
 | `book/parts/part12.typ` | ⏳ pending |
@@ -95,6 +98,7 @@ The Korean edition is the source; this table is generated.
 | `book/appendix/a3-conversions.typ` | ⏳ pending |
 | `book/appendix/a4-reading.typ` | ⏳ pending |
 | `book/appendix/a5-bibliography.typ` | ⏳ pending |
+| `book/appendix/a6-grammar.typ` | ⏳ pending |
 | `book/back/index.typ` | ⏳ pending |
 | `book/main.typ` | ✅ synced |
 

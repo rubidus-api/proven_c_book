@@ -1,320 +1,310 @@
 #import "../../book/lib.typ": *
 
-= Characters and text - scars in the standard
+= Representing integers — sign, overflow, shift
 
 #organizer[
-  How to put letters into the lockers — that a character is, in the end, a
-#idx("UTF-8")  number; what history that numbering table (the character code)
-  went through on its way to Unicode and UTF-8; and the scar that history left
-  in C's syntax (trigraphs). For a reader who writes Korean this chapter is
-  unusually vivid.
+  The first rung on the ladder of representation. You will see how unsigned
+#idx("two's complement")  integers are circular (modular) numbers, how three ways of
+  holding negative numbers in bits competed until two's complement settled it —
+  and what C23 finally pinned down. Add numbers that overflow and shifting bits
+#idx("overflow")  wholesale, and the background knowledge about integers is
+  complete.
 ]
 
 #deepqa[
-  Chapter 6 said the decimal point is not in the bits but in an agreement. Then
-  what about letters — is the shape "가" inside the bits?
+  Chapter 3 said that several bytes are joined to hold a large number, and we
+  even saw endianness (the order of storing). But every number so far has been
+  zero or above. Negative numbers — where among the bits do you put the minus
+  sign?
 ][
-  No; the principle is the same. Bits have neither shape nor sound. All there is
-  is numbers, and there is a separate *agreed numbering table* saying which
-  number is which letter. To store a letter is to store a number, and text is a
-  sequence of numbers. This chapter is the story of those tables.
+  There is nowhere to put it — bits have only 0 and 1, no minus sign
+  (chapter 4). So negative numbers too are made by *agreement*: we decide to
+  *read* certain bit patterns as negative. That there was more than one way to
+  make that agreement, and how the competition ended, is the heart of this
+  chapter.
 ]
 
-== A character is a number
+== Unsigned integers — numbers that go round like a clock
 
-There is only one way to store "A" in a machine — make an agreement that "A
-shall be number 65" and store the number 65. Such a table of agreements, the
-#idx("character set")correspondence between letters and numbers, is called a
-*character set* or character code.
+First the world without any worry about minus signs. Read $n$ bits as a plain
+binary number and you hold $2^n$ numbers, from $0$ to $2^n - 1$ (chapter 4).
+This is the *unsigned* integer. Eight bits give 0–255.
 
-The problem is that there were *several* such tables. Every company and every
-country made its own. The same number meant a different letter in different
-tables, and when two machines with different tables exchanged text the letters
-came out tangled. The rest of this chapter is the history of that tangle, and
-every turn of that history left a trace in today's C and computing.
-
-== ASCII and EBCDIC — two tables
-
-Two branches of table established themselves in the 1960s. IBM's mainframe
-world used a table called *EBCDIC* — grown out of punched-card codes, so its
-layout looks strange today (the alphabet is not in consecutive numbers, among
-other things), but in IBM's world it was law.
-
-On the other side, centred on the communications industry, came *ASCII*. Seven
-bits, that is a small table of 128 slots, holding the English upper and lower
-case, digits, punctuation, and the *control characters* that are invisible on
-screen. A control character is not a letter but an instruction to a device —
-"advance the paper one line", "sound the bell" — and their story comes in the
-next chapter (streams). And sitting at *slot 0* of this table is the *NUL
-character* whose face we learned in chapter 4. A character meaning "no character
-at all", which C later adopted as the mark for the end of a string
-(chapter 36).
-
-ASCII became the winning table — nearly every character code today carries
-ASCII inside it. But 128 slots were tight even for English and nowhere near
-enough for the world's writing. Here the history of the scars begins.
-
-== ISO 646 — national variants and C's trigraphs
-
-The first stopgap was *ISO 646*, the international edition of ASCII. The idea
-went: "keep one table, but allow each country to replace a few less important
-slots with its own letters." The slots designated for replacement happened to
-include symbols such as `[ ] { } \ | #`.
-
-The result was a disaster for programmers. Open C code on a Danish terminal and
-Danish letters appeared where the braces should be. Same number, different
-table, different letter printed.
-
-#realcase[
-  The ₩ sign — ISO 646's scar left in Korea
-][
-  Korea is a party to this history too. The Korean table (KS X 1003) replaced
-  the backslash `\` with the won sign `₩`. On Korean computers of that era file
-  paths looked like `C:₩Program Files₩...` — and, astonishingly, this scar can
-  still be touched. Even on today's Korean Windows some fonts draw the backslash
-  code as ₩. Same number, same bits, and the table (the font) draws ₩. This
-  book's refrain, "what is stored and how it is read are separate things", is
-  something Korean readers have witnessed on screen every day.
-]
-
-C was standardised in the middle of this confusion (chapter 10). Since C had to
-be usable in countries where braces were invisible, C89 provided a grotesque
-detour — the *trigraph*. Write `??<` and it was read as `{`; write `??/` and it
-was read as `\`; a three-character cipher. A scar of the character-code wars,
-carved into the grammar of the language.
-
-#qa[
-  Are trigraphs still used?
-][
-#idx("Unicode")  No — and their end is a symbolic scene in recent C history. As
-  the Unicode era arrived trigraphs lost their reason to exist and survived only
-  as a trap in which a string like `??!` was unexpectedly transformed. C23
-  *removed* trigraphs from the standard. A scar carved in 1989 was erased only
-  in 2023 — which also shows how much slower a standard is at *removing*
-  something than at admitting it.
-]
-
-== A hundred schools of eight bits, and Hangul
-
-Once the byte settled at 8 bits (chapter 2), the *ISO 8859* family extended the
-table to 256 slots — the first 128 exactly ASCII, the second 128 holding the
-letters of one language region (Latin-1 for Western Europe, and so on). But
-since the upper 128 were used differently per region, the problem of tangled
-letters when you picked the wrong table remained.
-
-And there were writing systems for which 256 slots were nowhere near enough.
-Hangul, Han characters, kana — East Asian scripts run to thousands and tens of
-#idx("encoding")thousands. The solution was multi-byte encodings using *several
-bytes per character* (Korea's EUC-KR among them). With lengths varying per
-character and methods varying per country, a Korean document read with the wrong
-table breaking into a parade of meaningless symbols — the so-called "broken
-characters" — was daily life for Korean computer users of that era.
-
-== Unicode and UTF-8 — one table, a clever way of holding it
-
-In the end there was only one fundamental solution. *Put every letter in the
-world into one table.* That is *Unicode*, from the 1990s. Each letter gets a
-unique number (a code point), written like `U+AC00` (가). The table has more
-than a million slots.
-
-The remaining problem was *how to hold* those large numbers in bytes. Spending
-4 bytes on every letter is wasteful and, above all, incompatible with the
-mountains of existing ASCII text. The answer was the variable-length encoding
-*UTF-8* — letters in the ASCII range stay 1 byte as they are, and everything
-else takes 2–4 bytes. Thanks to the exquisite design by which an existing ASCII
-file is already valid UTF-8, UTF-8 has become effectively the only standard for
-the web and for source code today. It is what this book's examples and C23's
-`u8""` strings use as well (chapter 36).
+There is one property of this world you must take with you: *the end joins back
+to the beginning*. Add 1 to 255 and you get not 256 but — since there is no
+ninth bit to hold 256 — 0. It is the structure of a clock, where one hour after
+twelve is one. In mathematics this kind of arithmetic is called *modular
+arithmetic*.
 
 #mathbox[
-  The byte structure of UTF-8
+  Modular arithmetic — the exact mathematics of finite numbers
 ][
-  The length varies with the size of the code point. The leading bits of the
-  first byte announce how many bytes this character has, and every continuation
-  byte starts with `10`:
+  Addition, subtraction and multiplication of $n$-bit unsigned integers are
+  exactly the operations that take the remainder of the result modulo $2^n$:
 
-  #dtable(
-  columns: 3,
-    [*range*], [*bytes*], [*bit layout*],
-    [U+0000 – U+007F], [1], [`0xxxxxxx` (= ASCII)],
-    [U+0080 – U+07FF], [2], [`110xxxxx 10xxxxxx`],
-    [U+0800 – U+FFFF], [3], [`1110xxxx 10xxxxxx 10xxxxxx`],
-    [U+10000 – U+10FFFF], [4], [`11110xxx 10xxxxxx ×3`],
-)
+  $ "result" = (a + b) mod 2^n $
 
-  Because continuation bytes always start with `10`, you can recover the
-  character boundary even if you wake up in the middle of the text
-  (self-synchronisation). Hangul syllables (around U+AC00) live in the 3-byte
-  range.
+  In eight bits, $250 + 10 = 260 mod 256 = 4$. What matters is that this is not
+  "wrong addition" but *a different addition* — a fully defined, predictable
+  piece of mathematics. The C standard likewise defines unsigned overflow not
+  as an error but as this arithmetic.
+]
+
+This circling has a name — *overflow*, or more precisely *wrap-around*. Defined
+behaviour though it is, it becomes an accident when it happens somewhere you
+did not expect.
+
+#realcase[
+  The wall at level 256 — the Pac-Man kill screen
+][
+  The arcade game Pac-Man has a famous wall. Play proceeds perfectly well up to
+  level 255, and then on level 256 the right half of the screen is buried in
+  meaningless symbols and the game becomes unplayable. The code counted the
+  level number in *eight bits*, so the moment it passed 255 it wrapped to 0, and
+  the routine that drew fruit on the assumption of "what level are we on" drew
+  an absurd number of them and destroyed the screen. The container size the
+  designer thought sufficient — "nobody will get to level 256" — became a wall
+  in front of the best players. A container's size is always a wall that
+  somebody reaches.
+]
+
+== Three agreements for holding negative numbers
+
+Now the negatives. The task is to agree to *read* about half of the $n$-bit
+patterns as negative, and historically three agreements were actually used. We
+compare them by holding $-5$ in eight bits.
+
+*First, sign-magnitude.* It imitates human notation directly — use the leading
+bit as the minus sign (1 means negative) and hold the magnitude in the rest.
+$-5$ is `1_0000101`. Intuitive, but it costs two things. `00000000` (+0) and
+`10000000` (−0) mean there are *two zeros*. And the addition circuit is a
+headache — adding two numbers of different signs needs a separate procedure of
+"compare the magnitudes, subtract the smaller from the larger, and decide the
+sign."
+
+#idx("ones' complement")*Second, ones' complement.* To make a number negative,
+flip every bit. $5$ is `00000101`, so $-5$ is `11111010`. The addition circuit
+gets considerably simpler, but there are still two zeros (`00000000` and
+`11111111`) — and every comparison has to drag along the exception "the two
+zeros count as equal."
+
+*Third, two's complement.* Flip the bits and *add one*. $-5$ is
+`11111010 + 1 = 11111011`. This rule looks arbitrary at first but is in fact
+the most elegant — there is only one zero and, above all, *the unsigned
+addition circuit, used unchanged, gets signed addition right by itself*. No
+separate procedure, no exceptions.
+
+#qa[
+  But why the name "complement"? And in "ones' complement" and "two's
+  complement", what do the one and the two refer to?
+][
+  A *complement* is "a number that fills something up to a given reference."
+  Decimal makes it easy to feel. For the three-digit number 304, the number that
+  fills each digit up to 9 is 695, called the *nines' complement* (in each
+  position, $9 - "that digit"$); the number that fills it up to 1000 is 696, the
+  *ten's complement* ($10^3 - 304$). The relation between them is "nines'
+  complement + 1 = ten's complement."
+
+  Do the same thing in binary and the names unravel. The number that fills each
+  position up to *1* — that is, subtracting from `11111111` — is the *ones'
+  complement*, and since $1 - "bit"$ in binary is just flipping the bit, that is
+  where the rule "flip them" comes from. And subtracting from $2^n$ — binary's
+  "$1000...0$", a *power of two* — is the *two's complement*. The trick "flip
+  and add one" is exactly the relation "nines' complement + 1 = ten's
+  complement" in decimal.
+
+  A word on the English spelling. The usual forms are *one's complement* and
+  *two's complement* (there is no "1s'" or "2s'"). But the computer scientist
+  Knuth argued for a witty distinction — the first is a complement with respect
+  to *the ones in every position*, so the plural possessive *ones' complement*
+  is right, while the second is a complement with respect to the *single*
+  number $2^n$, so the singular *two's complement* is right. It sounds like
+  grammatical pedantry, but it captures exactly the difference in the two
+  mathematical definitions (per-position reference vs. whole-number reference) —
+  and *the C standard itself adopted the distinction*. Its clause on
+  representations writes the three schemes as "sign and magnitude", "two's
+  complement" and *"ones' complement"*. Knuth's pedantry won in the statute
+  book. In textbook terminology the two's complement is also called the *radix
+  complement* and the ones' complement the *diminished radix complement*.
+]
+
+#mathbox[
+  Why two's complement is elegant — modular arithmetic, reused
+][
+  The identity of two's complement is the modular arithmetic above. Since the
+  agreement holds $-x$ as the pattern $2^n - x$, in eight bits $-5$ is
+  $256 - 5 = 251$, that is `11111011`. Then $7 + (-5)$ is, from the circuit's
+  point of view, $7 + 251 = 258 mod 256 = 2$ — the answer comes out right by
+  itself. A negative number is merely "counting the other way round the modular
+  clock", so the circuit need not know about signs at all. The only asymmetry is
+  the range — in eight bits it runs from $-128$ to $+127$, one more negative
+  than positive ($-128$ has no partner $+128$).
+]
+
+== The competition of the three, and C23's decision
+
+All three schemes were used in real machines — sign-magnitude and ones'
+complement genuinely existed on early mainframes (the UNIVAC and CDC lines
+among them). Because such machines were still in service when C was
+standardised in 1989, the C standard took nobody's side: *it permitted all
+three representations*. That neutrality was not free — with different
+representations the result bits of the same operation differ, so the standard
+had no choice but to leave much of the behaviour of signed integers as "it
+depends on the machine." Half the reason signed overflow became *undefined
+behaviour* (chapter 47) lies here.
+
+Meanwhile reality converged on one side. The circuit simplicity of two's
+complement was overwhelming, so for decades essentially every new CPU used it
+and the other two schemes went to the museum. And *C23 finally decided — the
+representation of signed integers is two's complement*. Half a century of
+practice was promoted to a promise of the standard (exactly the pattern of the
+"byte = 8 bits" discussion in chapter 4).
+
+#qa[
+  Now that the representation is pinned to two's complement, is signed overflow
+  defined as wrap-around too?
+][
+  No — and this is the subtle, important point. What C23 pinned down is the
+  *representation* (what bit pattern a negative number has), not the *meaning of
+  overflow*. Overflow of signed integers remains undefined behaviour in C23 as
+  well. The reason is optimisation rather than representation — the assumption
+  that "signed numbers do not overflow" is valuable to the compiler
+  (chapter 13) in loop analysis and reordering, so the standard chose to keep
+  it. In summary: unsigned overflow = defined wrap-around, signed overflow =
+  still outside the contract. The practical rules are covered in chapter 27.
 ]
 
 #misconception[
-  "One character is one byte"
+  "If an overflow happens, the computer tells you there was an error"
 ][
-  A misconception left over from the intuitions of the ASCII era, and especially
-  dangerous when learning C — because C's `char` type is, despite the name, not
-  a "character" but a *byte* (chapter 36). In UTF-8 the English `A` is 1 byte
-  but the Hangul `가` is 3. The two letters of "안녕" are six bytes. Character
-  count and byte count are different objects, and code in which the distinction
-  has collapsed will certainly cause an accident when handling Hangul.
+  A plausible expectation — it is only decent to be told when something goes
+  wrong. But a CPU's addition circuit merely raises an internal signal (a flag)
+  at the moment of overflow; *by default it neither stops nor notifies the
+  program*. C is the same — unsigned numbers wrap silently, and signed numbers
+  are outside the contract (anything may happen). Pac-Man's screen breaking
+  spectacularly was not an overflow "alarm" but a *downstream accident* caused
+  by the wrapped value. Watching for overflow is the programmer's job, not the
+  machine's — which is also why verified tools like proven check arithmetic
+  later on (chapters 39 and 73).
 ]
 
-== Same letter, several representations — the security terrain hidden in text
+== Shift — pushing bits wholesale
 
-Unicode unifying the table did not end the problems. If anything, as the table
-grew and the representations layered up, new traps appeared. It is terrain any
-program handling text meets eventually, so let us survey it as a map. The root
-is single — *if the same thing can be written in two or more ways, the side
-checking it and the side interpreting it can disagree.*
+#idx("shift")There is one more basic operation on the bits of an integer —
+the *shift*, pushing the whole string of bits left or right. After pushing,
+two questions remain. *Where do the bits pushed out go, and what fills the
+vacancy?*
 
-#idx("normalization")*① Normalization — Hangul's NFC and NFD.* The letter "각"
-can be written two ways in Unicode: as one composed syllable (NFC, the single
-code point `U+AC01`) and as a sequence of jamo (NFD, the three code points
-`ᄀ`+`ᅡ`+`ᆨ`). They look identical, but the byte sequences are entirely
-different — so a naive byte comparison answers "각 ≠ 각". For Korean users this
-is not a textbook story: because macOS stored file names in the NFD family, it
-was common for Hangul file names crossing to another OS to appear with the jamo
-undone, or for names to go wrong inside archives. The solution is to *normalise
-to one form at the boundary* — and in a security context the order of that
-normalisation is decisive (see ④ below).
+*Left shift* has one answer. Bits pushed off the top are discarded and the
+vacancy below is filled with 0. Push `00010110` one place left and you get
+`00101100` — just as adding a 0 on the end multiplies by ten in decimal, one
+place left in binary is *doubling*.
 
-*② Overlong encodings — the back door UTF-8 once left open.* By the UTF-8 rules
-in the maths box above, `/` (U+002F) is the single byte `2F`. But early
-implementations generously accepted the same character written "long", in 2
-bytes (`C0 AF`) or 3 — an *overlong* representation. From this came a classic
-attack: the security check looked only for `2F` to filter out path traversal
-(`../`), while the file system interpreted the overlong `C0 AF` as `/` too. A
-disagreement between checking and interpreting — that was the identity of the
-directory-traversal vulnerability that swept IIS servers in 2001. Today's
-standard therefore *declares overlong forms illegal and requires decoders to
-reject them*.
+*Right shift* has two answers, differing in what fills the vacancy at the top.
 
-*③ The ghost of a vanished encoding — UTF-7.* UTF-7, made to send Unicode
-through 7-bit channels (early email), represents other characters using
-ordinary-looking ASCII letters (`+ADw-` becomes `<`). In the days when browsers
-guessed encodings automatically, attackers used this property to get through
-filters — a harmless-looking string at checking time that resurrects as a tag
-the moment the browser interprets it as UTF-7. UTF-7 was effectively retired
-because of these incidents, and today's norm has hardened into *do not guess the
-encoding; state it*.
+- *Logical shift*: fill with 0. This suits unsigned numbers, and one place
+  right is the quotient on division by two.
+- *Arithmetic shift*: fill by *copying the sign bit*. A negative number in two's
+  complement has its top bits full of ones (see $-5$ = `11111011` above), so
+  ones must be shifted in for the meaning "divide by two" to survive. Fill with
+  zeros and a negative number is suddenly read as an enormous positive one.
 
-*④ Traps in Unicode itself — homoglyphs and direction controls.* A large table
-also means there are *different letters that look identical*. Latin `a` and
-Cyrillic `а` are indistinguishable on screen — using this to build a fake domain
-that looks exactly like the real one is a *homograph attack* (which is why
-browsers show suspicious mixed-script domains back in their original notation).
-More cunning are the *directional control characters*: Unicode has invisible
-characters that reverse the display order of text, making it possible for *the
-order a human reads in the source and the order the compiler reads to differ* —
-"Trojan Source", published in 2021, used this technique to show that code
-looking perfectly fine to a reviewer could compile with different logic.
-Compilers began warning about such characters afterwards.
-
-*⑤ When layers stack — escaping and multiple interpretation.* To display `<` as
-a letter on the web you write `&lt;` (HTML escaping). Stack several such layers
-and accidents follow — decode once-escaped text in another layer and the
-original symbol resurrects; conversely, check but forget to escape and the input
-becomes code. The format-string vulnerability of chapter 21, SQL injection in
-databases and XSS on the web are all the same pattern — *making data be mistaken
-for the frame (the code)*. C's trigraphs were an ancestral case of the pattern:
-if `??/` happened to appear inside a string, the preprocessor turned it into a
-backslash, creating an escape the programmer never wrote (one of the reasons
-C23's removal of trigraphs is welcome).
+So CPUs carry two right-shift instructions (logical and arithmetic), and in C
+the right shift of an unsigned number is logical, while the right shift of a
+negative signed number was — for a long time "machine-dependent" until
+essentially every implementation converged on arithmetic in practice. Alongside
+the settling of two's complement, this is the same direction: practice promoted
+to promise.
 
 #qa[
-  If the principle a programmer should take from these traps were reduced to
-  one, what would it be?
+  Is the shift important enough to justify learning the rules for pushing and
+  filling?
 ][
-  *Do not let the representation change between checking and interpreting.*
-  Unfolded into practical rules there are three — first, *do not guess the
-  encoding; state it* (pin UTF-8 at the input/output boundary). Second,
-  *normalise and decode first, and check afterwards* — reverse the order and the
-  overlong and UTF-7 accidents come back. Third, *do not mix data into the
-  frame* — a value always goes in the place for values (the
-  `printf("%s", input)` idiom of chapter 21 is the smallest practice of this
-  principle). All three come from this book's refrain that representation and
-  interpretation are separate.
+  It is — for two reasons.
+
+  First, *because it is the cheapest operation.* For the circuit a shift is
+  about as much work as moving wires sideways, so on nearly every CPU it is
+  among the fastest, single-beat operations. As we just saw, $k$ places left is
+  multiplication by $2^k$ and $k$ places right is the quotient on division by
+  $2^k$ — so turning multiplication and division by powers of two into shifts
+  was a classic speed trick. In today's C, though, *you need not play that trick
+  yourself*. Write `x * 2` and `x / 8` in the source, meaning exactly that, and
+  the compiler (the editor of chapter 13) turns them into shifts for you. This
+  is a place where you give up readability and gain nothing.
+
+  Second, *because it is the basic move for working in the world of bits.*
+  Packing several values into the bit positions of one integer and taking them
+  back out — assembling UTF-8 bytes as in chapter 9, the tagged pointers of
+  chapter 6, splitting a colour value (RGB), reading the flags of a hardware
+  register — is all a combination of shift and mask: "push to the position you
+  want, and keep only the bits you need." The shift as multiplication has been
+  handed over to the compiler, but the shift as a *placement tool* remains the
+  everyday language of the systems programmer. Its actual use in C's syntax is
+  covered in chapter 28.
 ]
-
-== Sequences of letters — ways of holding a string
-
-Now that we know how to hold one letter, a last question remains. When a
-*sequence* of letters — a *string* — goes into the lockers, how do we know
-"where does this string begin and end?" Chapter 3's refrain returns: memory does
-not know the boundaries of a lump; what knows is the agreement of the reader.
-There are several such agreements, so let us look at the main branches.
-
-*Method 1 — write the length in front (length-prefixed).* Attach a number
-meaning "this many characters follow" in front of the string. The Pascal family
-used it, so it is also called a *Pascal string*. Asking for the length needs no
-counting (read the number and you are done), and any byte at all — even
-character 0 — can be held as content. The price is that the size of the length
-field has to be fixed in advance — old Pascal held the length in one byte, so a
-string could not exceed 255 characters (chapter 2's container story, again).
-
-*Method 2 — plant a marker at the end (NUL-terminated).* Instead of writing the
-length, plant a special character at the *end* of the sequence — the NUL
-character of value 0 whose face we learned in chapter 4. *This is the method C
-chose.* Its virtue is extreme simplicity — you need only the starting point, and
-pointing anywhere in the middle of the sequence makes "from there to the NUL"
-a string. The price is threefold: to know the length you must *count all the way
-to the NUL*; you cannot hold a NUL in the content; and above all, forget to
-plant the marker and the reader runs on into other people's land. That last
-price is the terrain of more accidents than any other in C's history, and
-chapter 36 is the scene.
-
-*Method 3 — manage length and capacity together.* The dynamic strings of modern
-languages usually manage three values as one bundle: [where the content is, the
-current length, the capacity of the container] — length queries are immediate,
-appending is free within the capacity, and when it runs out the content moves to
-a larger container. C++'s `std::string` and Rust's `String` have this structure,
-and proven's string handling, which we meet later, thinks in the same family by
-treating length explicitly (chapter 37).
-
-#realcase[
-  The magic of fifteen characters — small string optimization in the MS STL
-][
-  Real implementations of method 3 have a clever double mechanism. In the
-  Microsoft standard library implementation (MS STL) of neighbouring C++,
-  `std::string` does not borrow a big warehouse (dynamic memory) for a short
-  string — specifically *15 characters or fewer* (15 bytes plus the terminator) —
-  but *simply holds it inside the body of the string object itself*. The
-  technique is called SSO, small string optimization. Why 15 — because reusing,
-  as a content buffer for short strings, the space of the pointer, length and
-  capacity fields that must be in the object anyway comes out to exactly that
-  size. The effect is explained by chapter 9's knowledge: most real-world
-  strings are short, and those now travel attached to the object with no
-  warehouse round trip (allocation), moving together on the same cache line.
-  Other implementations (the GCC and Clang standard libraries) use the same
-  technique with different numbers — a modern textbook case of "the choice of
-  representation is speed."
-]
-
-The terrain is wider still — representations for editors that manage a large
-document as a tree of pieces (ropes), views that point at [start, length]
-without copying the original, and so on: each use has its own fitting
-representation. One thing to remember: *the shape a string takes in memory is
-not one thing but a choice made by a language and a library, and that choice
-determines the character of its performance and safety.* What character C's
-choice (NUL termination) has, and how it must be handled, is faced head on in
-chapter 36.
 
 #qa[
-  Why does a beginner need to know this messy history now? Is it not enough to
-  use UTF-8 only?
+  What happens if you push an eight-bit number eight places, or more? Common
+  sense says everything is pushed out and it becomes 0.
 ][
-  For anything new, UTF-8 alone is enough — that is today's practice and this
-  book's premise. But the history is needed for two reasons. First, old
-  encodings still flow through the world's files and systems, so when you meet
-  broken characters you must be able to diagnose "ah, the wrong table." Second,
-  C itself is a product of this history — the name `char`, NUL termination, the
-  wreckage of trigraphs — so knowing the history makes all of C's strange
-  corners read as wounds with a story. There is nothing to memorise. "A character
-  is a number; there were many tables until Unicode unified them; and UTF-8 won
-  as the way of holding them" — those three sentences are enough.
+  That very "common sense" differing between machines is the trap. The shift
+  count is processed by a circuit of some width inside the CPU, and machines
+  diverged on what to do when a count at least as large as the width arrived —
+  one family (Intel x86) looks only at the low bits of the count and ignores the
+  rest, so shifting a 32-bit number by 32 leaves it *unchanged*, while others
+  (older ARM and the like) really do push everything out and give *0*. The same
+  code gives different answers on different machines. The C standard's response
+  is by now a familiar pattern — unable to take sides, it put *shifts of at
+  least the width* outside the contract, as undefined behaviour. "Where machines
+  respond differently, the standard gives up on promising" — we meet this
+  pattern formally again in chapter 47.
 ]
 
-The next chapter is the last rung on the ladder of representation. Now that we
-can hold letters, it is the story of letters *flowing* — why a computer's input
-and output is shaped as "characters going past one line at a time", an answer
-that lies in the age of paper cards and typewriters.
+== Sign extension — from a narrow container to a wide one
+
+The question "what fills the vacancy?" shows up in one more place: moving a
+number held in an eight-bit container into a sixteen-bit one. What fills the
+eight new positions at the top?
+
+For unsigned numbers the answer is obvious — *fill with 0* (zero extension).
+The eight-bit `11111011` (= 251) becomes the sixteen-bit
+`00000000 11111011` (= 251). The value is unchanged.
+
+For signed numbers the same method causes an accident. The eight-bit
+`11111011` is $-5$ in two's complement, but filling the top with zeros gives
+the sixteen-bit `00000000 11111011` — the leading bit is 0, so it reads as
+*positive 251*. $-5$ turned into 251 while changing containers. The correct
+answer is the same trick as the arithmetic shift — *fill by copying the sign
+bit*. `11111111 11111011`, still $-5$. This is *sign extension*.
+
+#qa[
+  We filled it with a pile of ones and the value is unchanged? Is that a
+  coincidence?
+][
+  Not a coincidence but a necessity of modular mathematics. In two's complement
+  the eight-bit $-5$ was the pattern $2^8 - 5 = 251$, and the sixteen-bit $-5$
+  is the pattern $2^16 - 5 = 65531$. And $65531 = 251 + 255 dot 256$ — written
+  in binary, exactly "the original pattern with eight ones laid on top."
+  Copying the sign bit is a trick that performs, with a single bit-copy, the
+  arithmetic of "swapping a complement with respect to $2^8$ for a complement
+  with respect to $2^16$." The elegance of two's complement is at work here too
+  — with sign-magnitude or ones' complement there is no such free extension.
+]
+
+Conversely, *narrowing* from a wide container into a narrow one simply cuts off
+the upper bits — a cousin of overflow, in that a value that does not fit its
+container is silently ruined. C has rules for automatically widening small
+integers before a calculation (integer promotion), and when widening and
+narrowing happen and what is dangerous about them is treated formally with C's
+integer types in chapters 27 and 28 — the picture in this chapter (zero fill /
+sign copy / truncation) is the capital for that.
+
+The background on integers is complete. Unsigned numbers are a modular world
+that goes round like a clock; negative numbers were settled, after a
+competition of three agreements, on two's complement, which C23 pinned down;
+overflow is silent; and shifting and changing containers (extension) only make
+sense once you know how the vacancy is filled. C's integer *types* and the
+practical rules are built on this background in chapters 27 and 28.
+
+The next chapter is the next rung on the ladder — beyond integers, the two ways
+of holding numbers with a decimal point, and the contract called IEEE 754.

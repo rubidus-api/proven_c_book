@@ -1,240 +1,175 @@
 #import "../../book/lib.typ": *
 
-= Compiler optimisation - the abstract machine
+= Memory divides — registers, caches, a ladder of layers
 
 #organizer[
-  You will learn that a compiler does not translate source code "as written" —
-  that as long as the meaning is kept it rearranges, deletes and rewrites at
-  will. You will meet the basis of that freedom, the notion of the observable
-#idx("abstract machine")  result, and the abstract machine, a virtual machine
-  living in the standard document. We also see how C99 and C11 refined this
-  contract.
+  A chapter that begins with a confession — how bold a simplification the
+#idx("register")  three-part picture of chapter 4 really was, and a repair of
+  that picture. The registers that were inside the CPU all along, the large
+  memory outside, and the multi-layered cache that pushed into the widening
+#idx("cache")  speed gap between them — you will learn that memory is not one
+  thing but a ladder.
 ]
 
 #deepqa[
-  At the end of chapter 10 the compiler was called "a layer holding the right to
-  rework anything as long as the meaning is kept." But chapter 3 called C "an
-  honest nickname for the machine" — was the C code I write not in direct
-  correspondence with machine instructions?
+  Chapter 2 said "the CPU fetches the next thing to do from memory and does it."
+  So does the calculation itself happen on memory — does the sum of slot 100 and
+  slot 104 go straight into slot 108?
 ][
-  In those days it largely was; today it is not. Today's compiler is not a
-  literal translator but an *editor* — it rewrites whole sentences as long as
-  the meaning survives. How and why early C's sense of "direct correspondence"
-  collapsed is this chapter, and that collapse is the final piece that made C an
-  abstract language.
+  No — and that question opens this chapter. A CPU does not calculate directly
+  on memory. Calculation happens in a separate space *inside* the CPU. That
+  space was not drawn in chapter 4's picture at all. Now it is time to be
+  honest.
 ]
 
-== The editor's workshop — what a compiler does
+== A confession — that picture was too simple
 
-A few real examples of editing give the feel. Compilers routinely do things
-like this.
+The CPU-memory-clock model of chapter 4 is excellent as a first step of
+learning, but for today's computers it is *excessively simplified*. To what
+degree? If that picture were accurate, today's CPU would spend most of its time
+*waiting blankly*. Clocks got hundreds of thousands of times faster over half a
+century while memory did not keep up. And yet real computers do not sit blank.
+What machinery stepped into the gap is the story of this chapter and the next.
+First, let us fill in what was missing from the picture from the start.
 
-*They calculate in advance.* If the source says `seconds = 24 * 60 * 60`, no
-multiply instruction is generated; 86400 is simply written in. There is no
-reason to multiply at run time.
+== Registers — the CPU's own hand, there all along
 
-*They delete dead work.* A value computed and then used by nobody, a fork that
-cannot be reached — gone entirely. Code present in the source may not exist in
-the executable.
+Inside the CPU are small storage places called *registers*. They were there
+from the beginning — chapter 4's picture merely omitted them. They number only
+a few dozen and each is one word in size (chapter 5). In exchange their speed
+is *immediate*: read and written within the beat of the clock. Call them coins
+held in the hand — nearer than the pocket (memory), and taking no time to pull
+out.
 
-*They change the order.* If two calculations are unrelated, they are rearranged
-so the pipeline (chapter 10) fills well. The order of lines in the source stops
-being a promise about the order of execution.
-
-*They remove trips to memory.* Instead of reading and writing one variable to
-memory on every turn of a loop, they keep it in a register (chapter 9) and put
-it down once at the end. The source may say a thousand memory accesses where
-there are really two.
-
-When these edits pile on one another, the machine instructions in the executable
-and the source code become separate documents that do not correspond sentence by
-#idx("compiler optimisation")sentence. That is why, when you look at an
-optimised program in a debugger, you meet notices like "this line was optimised
-out."
+The important point is this. *All calculation happens on registers.* To add two
+numbers you first bring them from memory into registers (load), add register to
+register, and send the result back to memory (store). The real route of a
+calculation that looks like "slot 100 + slot 104" is always
+[memory → register → calculate → memory].
 
 #qa[
-  What is the basis for rewriting at will? How far can it be rewritten and still
-  count as "keeping the meaning"?
+  If they are that important, why are there only a few dozen? Why not make
+  plenty?
 ][
-  Drawing exactly that boundary is the standard's job, and the boundary's name is
-  the *observable result*. Roughly: as long as what the program exchanges with
-  the outside world (what it printed, what input it read, specially protected
-  accesses) is as promised, everything about how that result is produced is the
-  compiler's discretion. How many times an intermediate calculation happens,
-  whether a variable really exists in memory, in what order the work is done — as
-  long as it is not observed from outside, it does not matter. Look the same on
-  the outside and the inside is free — that is the sentence of the contract.
+  Because fast and many are a trade-off. Registers are immediate because they
+  sit right beside the CPU's calculation circuits, built in the most expensive
+  way. Increase the number and the distance grows and selection time is added,
+  so "immediate" collapses. The design therefore settled on "a little of
+  something very fast" — and this trade-off is the principle that governs the
+  whole chapter: *the faster the memory the smaller it is, and the larger the
+  memory the slower.*
 ]
 
-== The abstract machine — the virtual machine inside the contract
+The surface of C carries a trace of this stratum. C has a keyword `register` —
+an old-days request that "this variable be kept in a register if possible."
+Today compilers place things far better than people do, so the request has
+become decoration; but the question of who puts a variable in a register and
+when it goes back to memory is very much alive, and becomes the core material
+of chapter 13 (compiler optimisation).
 
-Then who sets the standard for "looking the same"? It cannot be a real machine —
-there are thousands of kinds, each different. So the standard defined a *virtual
-machine* inside the document. A machine existing only on paper, which pins down
-that the meaning of a C program is "this is how it executes on this virtual
-machine" — the *abstract machine*.
+== The widening gap — between register and memory
 
-The relationship of three layers now comes into focus.
+Stand the two kinds of memory side by side and the picture sharpens.
 
-- The *programmer* writes code against the abstract machine. The meaning of the
-  code is determined by execution on the abstract machine.
-- The *compiler*, keeping only the observable results of that meaning, freely
-  invents the fastest code for the real machine.
-- The *real machine*, however many layers of cache and stages of pipeline
-  (chapters 9 and 10), does not expose that vortex on the outside.
+- *Registers*: a few dozen × one word. Immediate.
+- *Memory (DRAM)*: tens of billions of slots. On today's CPUs the answer comes
+  back after *hundreds of clock beats*.
 
-This is the answer to chapter 3's remark that C's reputation as "an honest
-nickname for the machine" is only half true today. What C now serves as a
-nickname for is not the real machine but the *abstract machine*. The
-correspondence with the real machine is a translation the compiler invents as it
-goes, guaranteed only in appearance.
+It was not always so. When C was born (chapter 4) the strides of CPU and memory
+roughly matched. Over the following decades the CPU's clock accelerated
+headlong while memory evolved towards capacity and did not keep pace. The gap
+widened year by year to hundreds of times — the relation of a coin in the hand
+to a warehouse an hour's round trip away. If calculation is immediate but
+fetching the material takes hundreds of beats, the machine spends longer waiting
+than working.
 
-== Visible edits — when a value is read and when it is written
-
-The editor's favourite place to work is *trips to memory*. As chapter 9 taught,
-memory is slow and registers are immediate, so the compiler holds values in
-registers where it can. Two scenes give the feel.
-
-*Scene 1 — repeated reads become one.* Consider a loop like this:
-
-```c
-for (int i = 0; i < n; i += 1) {
-    total += table[i] * scale;   /* scale does not change in the loop */
-}
-```
-
-As written, `scale` must be read from memory every turn, but the compiler judges
-that "no code inside this loop changes scale" and *reads it once before the loop
-and keeps it in a register* (loop-invariant code motion). A thousand reads become
-one. `total` likewise lives in a register and is put down in memory once, after
-the loop.
-
-*Scene 2 — deferring writes and changing order.* For code assigning to two
-unrelated variables, the compiler may change the order or defer a write so the
-pipeline (chapter 10) fills well. The line numbers of the source are not a
-promise about the moment of execution.
-
-Both edits keep the *observable result* the same, so both are inside the
-contract. The trouble arises from the fact that "observable" is the standard's
-criterion, not the programmer's expectation.
-
-#realcase[
-  The loop that never turns — believing memory literally
+#misconception[
+  "Memory access costs the same wherever you read"
 ][
-  Consider a classic accident of embedded programming. Suppose a hardware status
-  register appears at some address in memory (that world of chapter 4), and the
-  code "wait until ready" is written like this:
-
-  ```c
-  int flag = *status;                     /* the device changes this value */
-  while (flag == 0) { flag = *status; }   /* wait until ready */
-  ```
-
-  The programmer's picture is "read memory again every turn." But in the
-  compiler's eye there is no code inside this loop that changes `*status` — so
-  the edit of scene 1 applies: read the value *once* into a register and look
-  only at that register thereafter. However much the device changes memory, the
-  program spins forever seeing the old value. An infinite loop.
-
-  The reason lies in the contract. The standard's abstract machine does not know
-  that "something outside this program may change memory" — if that is the case,
-#idx("volatile")  *the programmer must say so*, and the notation for it is
-#idx("multicore")  `volatile` ("really perform this access every time"). The
-  same pattern recurs in the multicore world: poll a value another core changes
-  through an ordinary variable and it freezes for the same reason (there the
-  right answer is not volatile but C11's atomic types — see below). The lesson is
-  one: *the compiler does not execute what is written in the source. It produces
-  only the results the contract guarantees.*
+  A natural misconception planted by the simple picture, and the first illusion
+  to break when trying to understand a program's speed. In reality, touching
+  something near what you just touched and touching a distant place for the
+  first time differ in cost by tens to hundreds of times — why, is exactly the
+  cache of the next section. This is why two programs doing the same work can
+  differ several-fold purely in *what order they touch memory*.
 ]
 
-== Refining the contract — C99, C11
+== The cache — a middle layer wedged into the gap
 
-If C89 was the first edition of the contract (chapter 10), the standards since
-have been revisions honing its clauses. The more aggressively machines and
-compilers evolved, the more sharply "how far may it be rewritten?" had to be
-drawn. We note only the two large revisions.
+Engineering's answer to a hundredfold gap was the *cache*. The idea is exactly
+the trick of someone working in a library. If the round trip to the stacks
+(memory) is slow — *leave the book you just fetched on your desk for a while.*
+When you want it again and it is on the desk (a hit) it is immediate; when it is
+not (a miss) you make the trip to the stacks just then.
 
-*C99* (1999) shaped the language towards giving the editor more grounds for
-discretion — most notably, the rule that names of different types may be
-#idx("strict aliasing")*assumed* not to refer to the same storage (strict
-aliasing) was written into the text. That assumption is what lets the editor
-treat two things as unrelated and rearrange and cache them. The price is a duty
-on the programmer's side — code that breaks the assumption (reading the same
-storage through the eyes of a different type) becomes a violation of the
-contract (revisited with the safe methods in chapter 43).
+This works because of programs' habits. Programs do not touch memory at random —
+they *touch again soon what they just touched*
+#idx("locality") (temporal locality) and *go on to touch the neighbours of what
+they touched* (spatial locality). Think of a loop touching the same variable
+repeatedly, and of an array being scanned from the front. Thanks to these
+habits, a single small desk removes most of the trips to the stacks.
 
-*C11* (2011) is the response to the multicore era of chapter 10 — a *memory
-model* pinning down as a clause "when a write by one core becomes visible to
-another", and the atomic types (`_Atomic`) used for that communication, entered
-the standard. Until then, C on multiple cores was, quite literally, a partnership
-without a contract, leaning on practice outside the standard.
+There is one more trick that exploits spatial locality. The cache does *not*
+fetch things from memory one slot at a time. It carries the requested slot along
+with its neighbours — today usually 64 bytes, sixty-four lockers as one box — in
+#idx("cache line")a single trip. This unit of carriage is the *cache line*. It
+is why scanning an array in order costs one trip to the stacks at the first slot
+and the next sixty-three are free, and conversely why a program that touches far
+apart is slow, carrying a new box every time. This "box" returns in the next
+chapter as the protagonist of an unexpected accident (false sharing).
 
-== A false signal — the ghost summoned by breaking strict aliasing
+== The cache divides — a ladder of layers
 
-Strict aliasing is the most delicate clause in this chapter, so let us look at
-one pattern. To restate the rule — *the compiler may assume that two pointers of
-different types do not refer to the same storage* (the char family is the
-exception, chapter 34).
+The same trade-off as with registers applies to caches — to be fast is to be
+small, to be large is to be slow. So the cache too divided into *layers*: the
+small, fastest L1 right beside the CPU, the intermediate L2 behind it, the large
+and relatively slow L3 shared by several cores — and beyond that, memory. The
+rough feel in numbers is as follows (it differs by machine).
 
-The problem is that this assumption reads as a *signal* in the programmer's
-code. Suppose you used this old technique to look at the bits of a floating-point
-number:
+#dtable(
+  columns: 4,
+  [*layer*], [*order of size*], [*rough wait*], [*metaphor*],
+  [register], [a few dozen], [0 (immediate)], [coins in the hand],
+  [L1 cache], [tens of KiB], [a few beats], [on the desk],
+  [L2 cache], [hundreds of KiB–MiB], [a dozen-odd beats], [the bookshelf],
+  [L3 cache], [a few–tens of MiB], [tens of beats], [stacks on this floor],
+  [memory (DRAM)], [tens of GiB], [hundreds of beats], [the warehouse],
+)
 
-```c
-float f = 1.0f;
-uint32_t bits = *(uint32_t *)&f;   /* contract violation: a float through uint32's eyes */
-```
-
-The programmer's intent is "let us read the same four bytes through different
-eyes", but the signal the compiler received is the opposite — *"this `float*` and
-that `uint32_t*` refer to different storage (you may assume so)."* The editor can
-then confidently keep the write to f in a register and move the read of bits
-earlier — and the result is that "the old bits, from before the write" are read:
-a ghost that cannot be explained from the source alone. Worse, this ghost appears
-*only when optimisation is on*, and comes and goes with the compiler version
-(the classic identity of "it works in the debug build but is wrong only in
-release").
-
-There are two correct methods — copy the bytes with `memcpy` (modern compilers
-recognise this copy and optimise it away for free), or use the union we learn in
-the next part (chapter 43 does this demonstration properly). The point is not the
-technique but the perspective: *a contract violation is not "slightly dangerous
-code" but the act of telling the compiler something untrue as if it were true.*
-That is why the result is not "slightly odd" but "anything at all" — the
-standard's name for this state is *undefined behaviour* (UB), and chapter 45 of
-this book is its head-on treatment.
+There is one way to read it — *each step down is a large slowdown.* Memory is
+not "one lump" but this whole ladder, and a program's speed is determined in
+large part by "on which rung of the ladder the thing you need is found."
 
 #realcase[
-  The vanished eraser — security code deleted by optimisation
+  Same work, five times the time — scanning a two-dimensional table
 ][
-  "Look the same outside and the inside is free" has caused real accidents.
-  Security programs have a practice of overwriting a password's memory with zeros
-  after use — so that no secret is left lying in memory. But in the editor's eye
-  this erasure is *a write nobody reads again*: dead work. It contributes nothing
-  to the observable result — so it may be deleted. Several compilers really did
-  silently delete this erasure, and software shipped with passwords left in
-  memory became the subject of security advisories. The side that ignored the
-  contract was not the compiler but the person who had not read it — afterwards,
-  standards and platforms provided devices for saying "do not delete this write"
-  (`memset_s` and the like). It is an event that shows how heavy a single clause
-  about observable results is in practice.
+  Think of the simple job of summing a large two-dimensional table (say
+  thousands by thousands of numbers). Scan along rows — in the order they lie in
+  memory — and each cache-line box is used thriftily. Scan along columns —
+  jumping far every time — and boxes are carried and discarded over and over.
+  The work done (the number of additions) is exactly the same, and yet measured
+  the difference runs from several-fold to tens of times. The gap produced by the
+  order of two lines of code cannot be explained without knowing that memory is a
+  ladder — and you will see such a measurement as an example in this book
+  (chapter 32).
 ]
 
 #qa[
-  If optimisation is this dangerous, may we not simply switch it off?
+  Can a programmer not control the cache directly — an instruction like "keep
+  this in L1"?
 ][
-  Debug builds during development really do lower the optimisation to keep the
-  correspondence between source and execution alive. But switching it off for
-  release is not the answer — much of modern software's speed comes from the
-  editor's skill, and there is no reason to give up several-fold performance. The
-  right road is one: know the contract and write inside it. The criterion must be
-  "correct on the abstract machine", not "it ran on my computer" — what happens to
-  code outside the contract is faced head on in chapter 45 (undefined behaviour).
+  In general, no. The cache is run automatically by hardware, and C has no
+  standard syntax for touching it directly. What the programmer does is not
+  control but *cooperation* — keeping data together with its neighbours and
+  touching it in order. The code of someone who knows memory is a ladder
+  naturally comes out that way. And that alone produces the several-fold
+  difference we just saw.
 ]
 
-The materials are now all assembled. Memory is a ladder (chapter 9), execution
-is overlap and guesswork (chapter 10), and above that vortex stands an editor
-who guarantees only appearances (chapter 11). Put the three together and one
-conclusion follows — what a C programmer deals with is not the real machine. The
-next chapter completes this part's thesis and closes with a panorama of which
-machine's language C finally is — including a contrast between CPU and GPU.
+The first half of the repair is done — memory is not one thing but a ladder from
+register to warehouse. But that is only half. The CPU was not content with
+reducing waiting; it also evolved towards *overlapping execution itself* —
+stacking instructions like an assembly line, guessing at forks in advance, and
+finally increasing the number of workers (cores). That story, and how C came to
+write its first contract (C89) in the middle of that turmoil, is the next
+chapter.

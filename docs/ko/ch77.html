@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>77 실전의 C — 도구, 프로젝트, 그리고 영역 — Proven C Book</title><style>
+<title>77 컨테이너와 알고리즘 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,73 +68,118 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>77 실전의 C — 도구, 프로젝트, 그리고 영역</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>책을 닫기 전에 지면 밖의 세계를 둘러본다. 실무의 두 필수 도구(make와 git), 오늘도 순수 C로 도는 대표 프로젝트들과 그들이 C를 고른 이유, 임베디드에서 C가 하는 일, 그리고 C의 한계를 실전에서 어떻게 넘는지 까지. 이 책이 가르친 언어가 실제로 어디에 서 있는지의 지도다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>46장에서 여러 파일 프로그램은 각 파일을 목적 파일로 만들어 두었다가 링크만 다시 하는 것이 관행이라 했다. 파일이 수백 개인 프로젝트에서 그 일을 사람이 손으로 할 수는 없을 텐데 — 무엇이 대신하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>빌드 도구</strong>다. 파일 사이의 의존 관계를 적어 두면, 무엇이 바뀌었는지 보고 다시 만들 것만 골라 만들어 준다. C 세계의 고전이자 여전한 표준이 <code>make</code>이고, 이 장이 그 도구부터 시작한다.</p></div></div><h3>77.1 make — 무엇을 다시 만들 것인가</h3><p><code>make</code>의 착상은 한 줄이다 — <strong>결과물이 재료보다 오래됐으면 다시 만든다.</strong> 규칙을 적는 문법도 그 착상 그대로다:</p><pre><code data-lang="text">hello: hello.c greet.c greet.h      # 목표: 재료들
-  cc -Wall -Wextra -o hello hello.c greet.c    # 만드는 법(탭으로 시작)</code></pre><p><code>make hello</code>라고 부르면 파일들의 시각을 비교해, 필요할 때만 명령을 실행한다. 파일 하나만 고쳤을 때 전체를 다시 컴파일하지 않는 것 — 14장의 릴레이와 46장의 분할이 실무에서 시간을 아끼는 방식이 이것이다.</p><p>make는 1976년에 만들어져 지금도 쓰인다. 문법의 괴벽(명령 줄은 반드시 탭으로 시작해야 한다 — 만든 사람 스스로 “그때는 사용자가 열둘뿐이었다”고 회고한 실수다)까지 그대로 남았지만, “의존 관계를 적으면 필요한 것만 다시 만든다”는 착상은 이후 모든 빌드 도구의 뿌리가 됐다. 오늘의 큰 프로젝트는 CMake·Meson·Ninja 같은 도구를 얹어 쓰지만, 그 도구들이 결국 만들어 내는 것도 대개 make류의 규칙이다.</p><h3>77.2 git — 무엇이 언제 바뀌었나</h3><p>두 번째 필수 도구는 <strong>버전 관리</strong>다. 코드의 모든 변경을 기록해 두고, 언제든 되돌리고, 여럿이 같은 코드를 고쳐도 합칠 수 있게 하는 도구 — 오늘의 사실상 표준이 <code>git</code>이다.</p><p>일상의 명령은 다섯이면 시작할 수 있다.</p><pre><code data-lang="text">$ git init                 # 이 폴더를 저장소로
-$ git add hello.c          # 기록할 변경을 고른다
-$ git commit -m "첫 프로그램"   # 이유와 함께 기록한다
-$ git log                  # 지나온 기록을 본다
-$ git diff                 # 지금 무엇이 바뀌었나</code></pre><p>git이 이 책의 주제와 이어지는 대목이 하나 있다 — <strong>git 자신이 순수 C로 쓰인 프로그램이다.</strong> 2005년 리누스 토르발스가 리눅스 커널 개발을 위해 며칠 만에 초기판을 만들었고, 지금은 세계에서 가장 널리 쓰이는 개발 도구가 됐다. 8장에서 본 CRLF 경고를 내는 그 도구가, 이 책이 가르친 언어로 만들어져 있는 것이다.</p><h3>77.3 오늘도 C로 도는 것들 — 그리고 왜</h3><p>1장에서 “C는 어디에나 있다”고 했다. 이제 구체적인 이름과 이유를 적을 수 있다.</p><table><tr><th><strong>프로젝트</strong></th><th><strong>무엇</strong></th><th><strong>왜 C인가</strong></th></tr><tr><td>Linux 커널</td><td>운영체제의 심장</td><td>하드웨어를 직접 다뤄야 하고, 런타임 의존이 없어야 하며, 모든 아키텍처에 컴파일러가 있다</td></tr><tr><td>SQLite</td><td>세계에서 가장 많이 배포된 데이터베이스</td><td>어디에나 이식되어야 하고(휴대폰·항공기·브라우저), 단일 소스 파일로 배포하는 극단적 단순함이 필요했다</td></tr><tr><td>FFmpeg</td><td>영상·음성 처리의 표준 도구</td><td>성능이 전부인 코덱 작업, 하드웨어 가속 API와의 직접 연동</td></tr><tr><td>Redis</td><td>메모리 기반 데이터 저장소</td><td>예측 가능한 지연시간과 메모리 제어 — 9장의 사다리를 직접 관리한다</td></tr><tr><td>curl</td><td>인터넷 전송의 만능 도구</td><td>모든 플랫폼·모든 기기에 올라가야 한다(자동차·TV·우주선까지)</td></tr><tr><td>CPython·Ruby 등</td><td>다른 언어의 구현체</td><td>언어 런타임은 결국 가장 낮은 층이 필요하고, C 인터페이스가 생태계의 공용어다</td></tr><tr><td>OpenSSL·zlib</td><td>암호화·압축 라이브러리</td><td>모든 언어에서 불려야 하므로 — C ABI가 사실상의 만국 공통 인터페이스</td></tr></table><p>공통점을 뽑으면 C를 고르는 이유가 네 가지로 정리된다.</p><ul><li><strong>가장 낮은 층에 서야 할 때</strong> — 운영체제, 드라이버, 런타임.</li><li><strong>어디에나 옮겨야 할 때</strong> — 새 칩이 나오면 C 컴파일러부터 만들어진다 (2장의 이식성 혁명이 반세기째 유효하다).</li><li><strong>성능과 자원을 손으로 통제해야 할 때</strong> — 메모리 배치, 지연시간, 실행 파일 크기.</li><li><strong>다른 모든 언어와 대화해야 할 때</strong> — 파이썬·자바·러스트 어느 쪽에서든 C 함수는 부를 수 있다. C ABI가 언어들 사이의 국제 공용어다.</li></ul><h3>77.4 C와 C++ — 형제이지, 부모와 자식이 아니다</h3><p>가장 흔한 오해를 여기서 정리한다. <strong>C는 C++의 부분집합이 아니다.</strong> C++은 “C에 객체지향과 템플릿을 더한 언어”가 아니라, C에서 갈라져 나와 <strong>따로 자란 다른 언어</strong>다.</p><p>역사를 짧게 보면 관계가 분명해진다. 1979년 비야네 스트롭스트룹이 C에 클래스를 얹은 “C with Classes”를 만들었고, 1983년 C++로 이름이 바뀌었다. 여기까지는 확장이 맞다. 그런데 그 뒤로 두 언어는 <strong>각자의 위원회에서 각자 표준을 만들며</strong> 갈라졌다 — C는 1989년 C89로, C++은 1998년 C++98로 처음 표준을 얻었고, 이후 서로를 참고하되 서로에게 종속되지 않았다.</p><p>그래서 오늘날 양쪽 모두에 상대에게 없는 것이 있다.</p><table><tr><th><strong>C에 있고 C++에 없는 것</strong></th><th><strong>C++에 있고 C에 없는 것</strong></th></tr><tr><td><code>restrict</code> 한정자</td><td>클래스·상속·가상 함수</td></tr><tr><td>가변 길이 배열(35장)</td><td>템플릿과 그 위의 표준 라이브러리</td></tr><tr><td>유연 배열 멤버</td><td>참조(<code>&amp;</code>)와 연산자 다중 정의</td></tr><tr><td><code>_Generic</code>(48장)</td><td>예외와 RAII</td></tr><tr><td>순서 무관 지정 초기화</td><td>이름 공간(namespace)</td></tr><tr><td>복합 리터럴(40장)</td><td><code>auto</code> 타입 추론, 람다</td></tr></table><h3>77.5 C 코드를 C++ 컴파일러에 넣으면</h3><p>말이 아니라 실물로 보인다. 아래는 <strong>완전히 올바른 C 코드</strong>다.</p><div><div><p><code>examples/ch77/ccompat.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdlib.h>
-
-/* 아래는 전부 올바른 C 코드다. 그런데 C++ 컴파일러에 그대로 넣으면
-   상당수가 컴파일되지 않는다. 이 예제는 C 로만 빌드된다. */
-
-struct point { int x, y; };
-
-/* ① C++ 의 예약어가 C 에서는 평범한 이름이다 */
-static int class_of(int n) { return n / 10; }
+<h2>77 컨테이너와 알고리즘</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-110"></span><p>여럿을 담는 도구들이다 — 자라는 배열, 침습적 리스트, 링 버퍼, 해시 맵. 그리고 70장의 다섯째 버그(검사되지 않는 콜백)와 그 자리에 딸린 성능 함정에 대한 답으로, <strong>최악에도 보장이 있는</strong> 정렬과 <strong>공격을 견디는</strong> 해시를 본다. 36장의 배열과 42장의 구조체가 여기서 실전 부품이 된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>36장에서 C의 배열은 크기가 컴파일 시간에 정해지고, 41장에서 <code>realloc</code> 으로 늘릴 수 있다고 배웠다. 그러면 “자라는 배열”을 직접 만들 때 가장 틀리기 쉬운 자리는 어디인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>세 곳이다. 첫째, <strong>늘릴 크기 계산</strong> — 73장에서 본 곱셈 감김이 여기서 일어난다. 둘째, <strong>실패했을 때의 상태</strong> — <code>realloc</code>이 실패하면 원본 포인터는 그대로 유효한데, 반환값을 곧바로 원본 변수에 대입하는 흔한 코드는 그 원본을 잃어버린다(누수다). 셋째, <strong>늘어난 뒤의 포인터</strong> — 원소를 가리키던 포인터는 재할당 후 무효가 된다. 컨테이너를 직접 만들 때마다 이 셋을 다시 맞히는 것보다, 한 번 제대로 만든 것을 쓰는 편이 낫다.</p></div></div><h3>77.1 자라는 배열</h3><p><code>proven_array_t</code>는 원소 크기와 정렬을 알고 있는 바이트 버퍼다. C에는 제네릭이 없으므로 타입은 매크로가 채워 준다.</p><div><div><p><code>examples/ch77/arr.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
 
 int main(void)
 {
-    /* ② void* 에서 다른 포인터로의 암묵 변환 — C 는 허용, C++ 는 거부 */
-    int *buf = malloc(4 * sizeof *buf);
-    if (!buf) return 1;
-    for (int i = 0; i &lt; 4; i++) buf[i] = i * i;
+    proven_allocator_t alloc = proven_heap_allocator();
 
-    /* ③ 문자 상수의 타입: C 에서는 int 다 */
-    printf("sizeof('a') = %zu  (C++ 에서는 1 이 나온다)\n", sizeof('a'));
+    proven_result_array_t made = PROVEN_ARRAY_INIT(alloc, int, 4);
+    if (!proven_is_ok(made.err)) {
+        printf("array creation failed\n");
+        return 1;
+    }
+    proven_array_t arr = made.value;
 
-    /* ④ 순서를 바꾼 지정 초기화 — C99 는 허용 */
-    struct point p = { .y = 2, .x = 1 };
-    printf("point = (%d, %d)\n", p.x, p.y);
+    for (int i = 1; i &lt;= 6; i += 1) {          /* 용량 4를 넘겨 자동으로 자란다 */
+        if (!proven_is_ok(PROVEN_ARRAY_PUSH(&amp;arr, int, i * i))) {
+            printf("push failed\n");
+            PROVEN_ARRAY_DESTROY(&amp;arr);
+            return 1;
+        }
+    }
 
-    /* ⑤ 구조체 태그는 별도 이름 공간이라 struct 를 붙여야 한다 */
-    struct point q = p;
-    printf("copy  = (%d, %d)\n", q.x, q.y);
+    printf("count: %zu\n", arr.len);
+    for (size_t i = 0; i &lt; arr.len; i += 1) {
+        printf("%d ", *PROVEN_ARRAY_GET(&amp;arr, int, i));
+    }
+    printf("\n");
 
-    printf("class_of(37) = %d\n", class_of(37));
-    printf("buf = %d %d %d %d\n", buf[0], buf[1], buf[2], buf[3]);
-
-    free(buf);
+    PROVEN_ARRAY_DESTROY(&amp;arr);
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>sizeof('a') = 4  (C++ 에서는 1 이 나온다)
-point = (1, 2)
-copy  = (1, 2)
-class_of(37) = 3
-buf = 0 1 4 9
-</code></pre></div></div><p>같은 파일을 <code>g++ -std=c++20</code>으로 컴파일하면 이렇게 된다.</p><pre><code data-lang="text">error: invalid conversion from ‘void*’ to ‘int*’ [-fpermissive]
-   15 |     int *buf = malloc(4 * sizeof *buf);
-      |                ~~~~~~^~~~~~~~~~~~~~~~~
-      |                      void*
-error: designator order for field ‘point::x’ does not match
-       declaration order in ‘point’
-   23 |     struct point p = { .y = 2, .x = 1 };</code></pre><p>C가 허용하는 <code>void *</code>의 암묵 변환을 C++은 거부한다 — 그래서 C++에서는 <code>malloc</code>의 결과에 반드시 캐스트가 붙는다(그리고 그것이 C에서는 <strong>권하지 않는</strong> 관행이다. 거기서 “malloc의 반환값을 캐스트해야 하는가” 논쟁이 갈린다). 지정 초기화도 C++20이 받아들이긴 했지만 <strong>순서를 바꿀 수는 없다</strong>.</p><p>그 밖에 조용히 뜻이 달라지는 자리도 있다. 대표가 문자 상수다.</p><pre><code data-lang="text">C  : sizeof('a') = 4      (문자 상수의 타입이 int)
-C++: sizeof('a') = 1      (타입이 char)</code></pre><p>컴파일은 양쪽 다 되는데 결과가 다르다 — 이런 자리가 가장 위험하다. <code>class</code>, <code>new</code>, <code>template</code>, <code>this</code> 같은 C++ 예약어를 C에서 변수 이름으로 쓴 코드도 그대로는 넘어가지 않는다.</p><div class="dev realcase"><p class="dev-label">◉ 표준이 차이를 따로 적어 둔다</p><p>이 문제는 C++ 표준도 정식으로 다룬다. C++ 표준 문서에는 <strong>부속서 C (Annex C, Compatibility)</strong> 라는 절이 있어서, “C와 다른 점”을 조항 단위로 나열한다 — 문자 상수의 타입, <code>void *</code> 변환, 태그 이름 공간, 문자열 리터럴의 타입 같은 것들이다. 차이를 알고 싶으면 추측하는 대신 그 부속서를 펴는 것이 정확하다. 부속서가 존재한다는 사실 자체가 이 절의 논지를 증명한다 — <strong>두 언어는 호환을 신경 써야 할 만큼 서로 다르다.</strong></p></div><h3>77.6 C++ 쪽의 시간은 더 빨리 흐른다</h3><p>1장에서 잠깐 말한 사정을 여기서 조금 더 적는다. C++은 2011년 이후 <strong>3년 주기</strong>로 표준을 낸다 — C++11, 14, 17, 20, 23, 26. 매 판마다 언어와 표준 라이브러리에 큰 기능이 들어오고, 그만큼 “현대적 C++”의 모습도 빠르게 바뀐다. 반면 C의 개정 주기는 훨씬 길고(C89 → C99 → C11 → C17 → C23), 들어오는 것도 대체로 작고 보수적이다.</p><p>이 속도 차이는 취향의 문제가 아니라 <strong>역할의 차이</strong>에서 온다. C는 운영체제와 펌웨어, 다른 언어들이 기대는 바닥층의 언어라 바뀌지 않는 것 자체가 기능이 된다. 30년 된 코드가 오늘도 컴파일되는 것, 그리고 어느 플랫폼에나 C 컴파일러가 있는 것이 그 대가로 얻은 자산이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>그러면 배우는 사람은 이 차이를 어떤 태도로 보아야 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답 세 가지를 권한다.</p><p><strong>첫째, “C++을 배우면 C는 저절로 안다”는 생각을 버린다.</strong> 반대도 마찬가지다. 겹치는 문법이 많아서 서로를 빨리 익히게 해 주는 것은 사실 이지만, 관용구와 사고방식은 꽤 다르다. C++의 습관(예외, RAII, 템플릿)을 C에 그대로 가져오면 어색한 코드가 되고, C의 습관(수동 관리, 매크로)을 C++에 가져오면 위험한 코드가 된다.</p><p><strong>둘째, 어느 언어로 컴파일되는지를 항상 의식한다.</strong> <code>.c</code>와 <code>.cpp</code>는 확장자 차이가 아니라 <strong>언어의 차이</strong>다. 같은 파일이 두 언어에서 다른 뜻이 될 수 있다는 것을 아는 것만으로 사고의 절반이 예방된다.</p><p><strong>셋째, 이 책에서 배운 것의 대부분은 어느 쪽에서도 유효하다.</strong> 기억의 사다리, 표현과 추상의 구분, 계약과 정의되지 않은 동작, 소유권과 수명 — 이것들은 문법이 아니라 <strong>기계와 언어 설계의 현실</strong>이다. C++를 배우러 가도 그 눈은 그대로 쓰인다.</p></div></div><h3>77.7 섞어 쓰는 법 — <code>extern "C"</code></h3><p>실무에서는 두 언어를 섞는 일이 아주 흔하다. C로 짠 라이브러리를 C++ 프로그램이 부르는 경우가 대표적이다. 문제는 <strong>이름 장식</strong>(name mangling) 이다 — C++ 컴파일러는 오버로딩을 지원하려고 함수 이름에 매개변수 타입 정보를 섞어 목적 파일에 심는데(46장의 링크를 떠올리면 된다), C 컴파일러는 이름을 그대로 둔다. 그래서 그냥 이으면 링커가 짝을 찾지 못한다.</p><p>해법은 선언에 “이건 C 규약으로 다뤄라”라고 표시하는 것이다.</p><pre><code data-lang="c">/* mylib.h — C 로 만든 라이브러리의 헤더 */
-#ifndef MYLIB_H
-#define MYLIB_H
+</code></pre></div><div><p>실행 결과</p><pre><code>count: 6
+1 4 9 16 25 36 
+</code></pre></div></div><p><code>PROVEN_ARRAY_INIT(alloc, int, 4)</code>는 “int를 담을 배열, 초기 용량 4”라는 뜻이고, <code>PROVEN_ARRAY_PUSH</code>는 타입을 다시 적어 <strong>컴파일 시간에 맞는지 확인한다</strong>. 용량 4를 넘긴 다섯째 원소에서 배열은 스스로 늘어났다 — 그리고 그 성장은 할당자를 통해 일어난다(74장의 규칙 그대로, 배열이 자기가 만들어질 때 받은 할당자를 기억한다).</p><div class="dev antipattern"><p class="dev-label">✗ 원소 포인터를 들고 있다가 push 하기</p><pre><code data-lang="c">int *first = PROVEN_ARRAY_GET_MUT(&amp;arr, int, 0);
+(void)PROVEN_ARRAY_PUSH(&amp;arr, int, 42);   /* 여기서 버퍼가 옮겨갈 수 있다 */
+*first = 7;                               /* 옛 주소에 쓴다 — 사용 후 해제 */</code></pre><p>배열이 자라면 내용이 새 버퍼로 옮겨가고, 옛 주소를 가리키던 포인터는 무효가 된다. 41장에서 배운 사용 후 해제가 컨테이너 위에서 나타나는 형태다. 규칙은 하나다 — <strong>컨테이너를 바꾼 뒤에는 인덱스로 다시 얻는다.</strong> 포인터가 아니라 인덱스를 들고 다니는 습관이 여기서 방어가 된다.</p></div><h3>77.2 침습적 리스트와 링 버퍼</h3><p><code>proven_list_t</code>는 <strong>침습적</strong>(intrusive) 연결 리스트다 — 노드가 자료를 품는 것이 아니라, 자료 구조체 안에 링크 필드를 심는다. 42장에서 만든 <code>struct</code> 안에 <code>proven_list_node_t link;</code>를 한 칸 두는 식이다.</p><p>무엇이 좋은가. 리스트에 넣기 위해 <strong>따로 할당할 것이 없다</strong> — 노드가 곧 자료이기 때문이다. 힙이 없는 환경에서도 리스트를 쓸 수 있고(79장), 같은 객체를 두 리스트에 동시에 매다는 것도 링크 필드를 둘 두면 된다. 대가는 자료 구조체가 리스트를 알아야 한다는 것이다.</p><p><code>proven_ring_t</code>는 고정 크기 원형 버퍼다. 생산자와 소비자가 오가는 자리, 로그의 최근 N개, 오디오·센서 샘플처럼 <strong>지나간 것은 버려도 되는</strong> 흐름에 쓴다. 크기가 고정이므로 가득 차면 어떻게 할지가 계약의 일부다 — 여기서도 기본은 조용히 덮지 않고 알리는 쪽이다.</p><h3>77.3 해시 맵, 그리고 공격받는 자료구조</h3><p><code>proven_map_t</code>는 열린 주소 방식(open addressing) 해시 맵이다. 키는 정수나 바이트열이고, 문자열 키는 두 가지 모드가 있다 — <strong>빌린 키</strong>(호출자가 바이트를 살려 둔다)와 <strong>소유한 키</strong>(맵이 복사해 들고 있다). 74장의 소유·빌림 구분이 여기서도 그대로 나타난다.</p><div><div><p><code>examples/ch77/wordcount.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+/* 낱말을 세어 정렬해 찍는다 — 맵과 배열과 정렬을 한 번에 */
+typedef struct { proven_u8str_view_t word; int count; } entry_t;
 
-int mylib_add(int a, int b);
-void mylib_reset(void);
+/* 비교자는 전순서여야 한다: 동점도 일관되게 갈라 준다 (47장의 반례를 피한다) */
+static int by_count_desc(const void *a, const void *b)
+{
+    const entry_t *x = a, *y = b;
+    if (x->count != y->count) return (x->count &lt; y->count) - (x->count > y->count);
 
-#ifdef __cplusplus
+    proven_size_t n = x->word.size &lt; y->word.size ? x->word.size : y->word.size;
+    int c = proven_memcmp(x->word.ptr, y->word.ptr, n);
+    if (c != 0) return c;
+    return (x->word.size > y->word.size) - (x->word.size &lt; y->word.size);
 }
-#endif
 
-#endif</code></pre><p><code>__cplusplus</code>는 C++ 컴파일러만 정의하는 매크로다. 그래서 이 헤더는 C에서 읽으면 평범한 선언 둘이고, C++에서 읽으면 <code>extern "C" { ... }</code>로 감싸인 선언이 된다 — <strong>헤더 하나로 두 언어를 모두 만족시키는</strong> 표준 관용구이고, 세상의 거의 모든 C 라이브러리 헤더가 이 모양을 하고 있다.</p><p>몇 가지 규칙을 함께 기억하면 된다.</p><ul><li><code>extern "C"</code>는 <strong>이름과 호출 규약</strong>에만 관여한다. 함수의 내용이나 타입 검사와는 무관하다.</li><li>오버로딩된 함수는 <code>extern "C"</code>로 묶을 수 없다 — 이름이 하나뿐이어야 하기 때문이다.</li><li>C 헤더를 C++에서 쓸 때는 C++ 예약어(<code>class</code>, <code>new</code>, <code>template</code>, <code>namespace</code>, <code>this</code>)를 매개변수 이름으로 쓰지 않는 것이 예의다.</li><li>경계를 넘는 자료는 <strong>두 언어가 모두 이해하는 모양</strong>으로 유지한다 — 단순 구조체와 포인터, 그리고 명시적인 크기. C++의 클래스나 예외를 경계 너머로 던지지 않는다.</li></ul><h3>77.8 임베디드 — C의 본진</h3><p>일상에서 눈에 안 띄지만 물량으로는 가장 큰 C의 영역이 임베디드다. 세탁기와 에어컨의 제어판, 자동차의 수십 개 제어 장치, 의료 기기, 드론과 로봇의 저수준 제어, 통신 모듈의 펌웨어 — 대부분이 C로 쓰인다.</p><p>이유는 그 환경의 제약에 있다. 메모리가 킬로바이트 단위이고, 운영체제가 없을 수도 있고(4장의 0번지가 인터럽트 벡터인 그 세계), 실행 시간이 예측 가능해야 하며(가비지 컬렉션 같은 예측 불가한 멈춤이 허용되지 않는다), 전력이 제한된다. C는 이런 환경에서 <strong>실행되지 않는 것에는 비용을 물리지 않는</strong> 언어라 자연스럽게 맞는다 — 표준 라이브러리 없이 쓸 수 있고(51장의 프리스탠딩), 생성되는 코드가 예측 가능하다.</p><p>임베디드의 C에는 이 책의 지식이 유난히 직접적으로 쓰인다 — 특정 주소를 장치 레지스터로 다루기(4장), <code>volatile</code>로 최적화를 막기(11장), 비트 연산으로 하드웨어 플래그를 조작하기(5·26장), 동적 할당을 아예 쓰지 않기(39장), 정렬과 표현을 의식하며 통신 프로토콜을 다루기(3·42장).</p><h3>77.9 한계를 넘는 법 — 실전의 요령</h3><p>C의 결핍은 분명하다 — 이름 공간이 없고, 제네릭이 없고, 자원 정리가 자동이 아니고, 안전이 강제되지 않는다. 실전은 이것을 언어 밖의 규율과 도구로 메운다. 이 책이 지나온 것들을 실무 지침으로 모으면 이렇다.</p><ul><li><strong>이름 공간이 없다</strong> → 접두어 규약(37장의 <code>proven_</code>)과 파일 수준 <code>static</code>(46장의 내부 연결).</li><li><strong>제네릭이 없다</strong> → 매크로로 코드 생성(47장의 <code>##</code>, X 매크로), 또는 <code>void *</code>와 크기·비교 함수를 받는 일반화(표준의 <code>qsort</code>가 그 방식이다), 또는 C11의 <code>_Generic</code> 선택.</li><li><strong>자원 정리가 자동이 아니다</strong> → 소유 규약을 이름과 문서로 명시하고 (39장), 한 함수의 정리 지점을 한 곳으로 모으는 관용구(정리 라벨로 <code>goto</code>하는 패턴은 커널에서 표준 관행이다).</li><li><strong>안전이 강제되지 않는다</strong> → 그물을 겹친다(15장): 경고 최대, 새니타이저, 두 컴파일러 교차, 정적 분석 도구, 그리고 검사가 내장된 부품(제12부).</li><li><strong>표준 라이브러리가 얇다</strong> → 필요한 층을 고르거나 만든다. vendor로 들여와 빌드를 단순하게 유지하는 것이 작은 프로젝트의 정석이다.</li><li><strong>큰 프로젝트의 복잡도</strong> → 컴파일 단위를 작게 나누고 헤더로 계약을 드러내며(46장), 테스트와 빌드를 자동화한다(이 장의 make·git).</li></ul><div class="dev realcase"><p class="dev-label">◉ 섞어 쓰는 현실 — C는 사라지지 않고 층이 된다</p><p>오늘의 큰 시스템은 대개 한 언어로만 쓰이지 않는다. 성능이 필요한 핵심부는 C(또는 C++·Rust)로, 그 위의 논리는 파이썬·자바스크립트로 쓰는 층 구조가 일반적이다. 파이썬의 수치 계산 라이브러리가 빠른 이유는 그 밑이 C·포트란이기 때문이고, 브라우저가 영상을 재생하는 것도 밑에 C 코덱이 있기 때문이다. 1장에서 Rust와 Zig가 C의 영역을 잠식한다고 했지만, 실제로 벌어지는 일은 대체보다 <strong>공존</strong>에 가깝다 — 새 언어들도 기존 C 자산과 대화해야 하므로 C 인터페이스를 갖추고 태어난다. C를 읽고 쓸 줄 안다는 것은, 그래서 어느 층에서 일하든 아래층을 들여다볼 수 있다는 뜻이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>이 책을 다 읽은 사람이 다음으로 만들어 볼 만한 것은 무엇인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>작고 끝이 있는 것이 좋다. 텍스트 파일을 읽어 통계를 내는 도구, 간단한 설정 파일 파서(73장의 스캐너가 그대로 쓰인다), 자료구조 하나를 직접 구현해 보기(40장의 연결 구조), 좋아하는 작은 C 프로젝트의 소스를 읽고 한 곳 고쳐 보기. 마지막 것이 특히 권할 만하다 — 남의 코드를 읽는 능력이 실무에서 쓰는 시간의 대부분을 차지하고, 이 책은 그 읽기를 위한 눈을 기르는 데 상당 부분을 썼다.</p></div></div><p>지면 밖의 지형까지 둘러보았다. 다음 장에서 이 책이 지나온 길을 한 번 되짚고 책을 닫는다.</p>
+int main(void)
+{
+    proven_allocator_t alloc = proven_heap_allocator();
+    const char *text = "the quick fox the lazy dog the fox";
+
+    /* 문자열 키 맵: 기본은 HashDoS 에 견디는 키드 해시를 쓴다 */
+    proven_result_map_t made_map =
+        proven_map_create(alloc, 16, PROVEN_KEY_TYPE_U8_OWNED, sizeof(int), alignof(int));
+    if (!proven_is_ok(made_map.err)) return 1;
+    proven_map_t counts = made_map.value;
+
+    proven_u8str_view_t all = proven_u8str_view_from_cstr(text);
+    proven_u8str_view_t space = proven_u8str_view_from_cstr(" ");
+    proven_size_t start = 0;
+
+    for (;;) {
+        proven_size_t hit = proven_u8str_view_find(all, start, space);
+        proven_size_t end = (hit == PROVEN_INDEX_NOT_FOUND) ? all.size : hit;
+        proven_u8str_view_t w = proven_u8str_view_slice(all, start, end - start);
+
+        const int *seen = proven_map_get(&amp;counts, (proven_map_key_t){ .str = w });
+        int next = seen ? *seen + 1 : 1;
+        if (!proven_is_ok(proven_map_set(&amp;counts, (proven_map_key_t){ .str = w }, &amp;next)))
+            break;
+
+        if (hit == PROVEN_INDEX_NOT_FOUND) break;
+        start = hit + 1;
+    }
+    printf("distinct words: %zu\n", counts.len);
+
+    /* 세어 둔 것을 배열에 모아 정렬한다 */
+    proven_result_array_t made_arr = PROVEN_ARRAY_INIT(alloc, entry_t, 8);
+    if (!proven_is_ok(made_arr.err)) return 1;
+    proven_array_t list = made_arr.value;
+
+    const char *words[] = {"the", "quick", "fox", "lazy", "dog"};
+    for (size_t i = 0; i &lt; sizeof words / sizeof words[0]; i++) {
+        proven_u8str_view_t w = proven_u8str_view_from_cstr(words[i]);
+        const int *c = proven_map_get(&amp;counts, (proven_map_key_t){ .str = w });
+        entry_t e = { .word = w, .count = c ? *c : 0 };
+        if (!proven_is_ok(PROVEN_ARRAY_PUSH(&amp;list, entry_t, e))) break;
+    }
+
+    proven_array_sort(&amp;list, by_count_desc);   /* 최악에도 O(n log n) 보장 */
+    for (size_t i = 0; i &lt; list.len; i++) {
+        const entry_t *e = PROVEN_ARRAY_GET(&amp;list, entry_t, i);
+        printf("  %.*s = %d\n", (int)e->word.size, (const char *)e->word.ptr, e->count);
+    }
+
+    PROVEN_ARRAY_DESTROY(&amp;list);
+    proven_map_destroy(&amp;counts);
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>distinct words: 5
+  the = 3
+  fox = 2
+  dog = 1
+  lazy = 1
+  quick = 1
+</code></pre></div></div><p>이 예제 하나에 이 장의 도구가 다 들어 있다 — 맵으로 세고, 배열에 모으고, 정렬해서 찍는다. 낱말을 자르는 데는 75장의 뷰를 썼으므로 문자열 복사는 맵이 키를 소유할 때 한 번뿐이다.</p><div class="dev realcase"><p class="dev-label">◉ HashDoS — 해시 맵이 공격 대상이 된 사건</p><p>2011년, 여러 웹 프레임워크가 동시에 같은 취약점으로 무너졌다. 공격자가 <strong>같은 버킷으로 몰리는 키들</strong>을 골라 요청 하나에 수천 개의 매개변수로 실어 보내면, 평균 <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math>이던 삽입이 <math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math>이 되고 전체가 <math><mi>𝑂</mi><mrow><mo>(</mo><msup><mi>𝑛</mi><mn>2</mn></msup><mo>)</mo></mrow></math>으로 퇴화해 서버 한 대가 요청 몇 개로 멎었다. 해시 함수가 공개되어 있어 충돌을 <strong>계산할 수 있었다</strong>는 것이 원인이었다.</p><p>오늘의 처방은 <strong>키드 해시</strong>(keyed hash)다 — 프로세스마다 무작위 비밀을 뽑아 해시에 섞으면 공격자가 충돌을 미리 계산할 수 없다. proven의 <code>proven_map_create</code>가 문자열 키에 SipHash-2-4와 무작위 씨앗을 기본으로 쓰는 이유이고, 반대로 키가 전부 내 코드에서 오는 경우를 위해 더 빠른 FNV-1a를 쓰는 <code>proven_map_create_trusted</code>를 따로 둔 이유다. <strong>기본값은 안전한 쪽, 빠른 쪽은 이름을 밝혀서</strong> — 이 부에서 반복해 만난 원칙이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>키드 해시를 쓰면 얼마나 느려지는가? 그리고 OS가 없으면 무작위 비밀은 어디서 오는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>SipHash는 FNV-1a보다 느리지만 문자열 길이에 비례하는 정도이고, 맵 연산 전체에서 해시 계산이 차지하는 몫은 대개 크지 않다. 무작위 비밀은 운영체제의 난수원에서 한 번 뽑는다 — 그리고 OS가 없는 환경(79장)에서는 뽑을 곳이 없으므로 FNV-1a로 물러난다. 라이브러리는 이 사실을 숨기지 않고 문서에 적어 두는데, 근거가 분명하다: <strong>공격자가 없는 곳에는 공격자 모델도 필요 없다.</strong> 펌웨어 안에서 키를 고르는 외부인은 존재하지 않는다.</p></div></div><h3>77.4 최악을 보장하는 정렬</h3><p>70장에서 본 두 가지 문제 — 검사되지 않는 비교자, 그리고 최악에서 무너지는 알고리즘 — 을 여기서 함께 다룬다.</p><span id="idx-entry-111"></span><p><code>proven_array_sort</code>는 <strong>introsort</strong>다. 빠른 퀵소트로 시작하되, 재귀가 너무 깊어지면 힙소트로 갈아탄다. 그래서 평균은 퀵소트만큼 빠르고 최악에도 <math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math>이 <strong>보장</strong>된다 — 70장에서 본 복잡도 공격이 통하지 않는다. 헤더의 문구를 그대로 옮기면 “<math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math>은 평균이 아니라 보장”이다.</p><p>비교자 쪽은 언어가 도와줄 수 없으므로 계약을 문서와 예제로 밝힌다. 예제의 <code>by_count_desc</code>가 그 본보기다 — 개수로 내림차순, <strong>동점이면 낱말로</strong> 가른다. 70장의 반례(첫 글자만 보는 비교자)와 정확히 대비된다.</p><div class="dev misconception"><p class="dev-label">⚠ “동점은 어떻게 처리해도 상관없다”</p><p>상관있다. 비교자는 <strong>전순서</strong>(total order)를 이뤄야 한다 — 같으면 0, 일관되게 크고 작아야 하며, <code>cmp(a,b)</code>와 <code>cmp(b,a)</code>의 부호가 반대여야 한다. 이것을 어기면 결과가 뒤죽박죽이 되는 정도가 아니라, 구현에 따라 <strong>배열 밖을 침범</strong>할 수도 있다(파티션 알고리즘이 경계를 비교 결과로 판단하기 때문이다). “동점을 아무렇게나” 돌려주는 비교자는 그래서 버그이지 취향이 아니다.</p></div><h3>77.5 바이트를 글자로 — 해시와 인코딩</h3><p>같은 상자 안에 든 나머지 도구들도 짚어 둔다.</p><ul><li><strong>용도별 해시</strong> — 맵의 내부용(빠른 혼합), 무결성 확인용(CRC-32), 암호학적 용도(SHA-256), 그리고 앞서 본 키드 해시(SipHash). 라이브러리가 이들을 구분해 두는 이유는 <strong>같은 “해시”라는 낱말이 전혀 다른 요구를 뜻하기</strong> 때문이다 — 빠르기만 하면 되는 자리에 SHA-256을 쓰면 낭비이고, 적대적 입력이 오는 자리에 FNV-1a를 쓰면 위험하다.</li><li><strong>hex와 Base64</strong> — 바이트를 텍스트로 옮기는 두 표준. 여기서도 원칙은 같다. 잘못된 입력(홀수 길이 hex, 잘못된 패딩)은 <strong>추측해 고치지 않고</strong> <code>PROVEN_ERR_INVALID_ENCODING</code>으로 거부한다(75장의 그 규범이다).</li></ul><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>컨테이너 요약.</p><table><tr><th><strong>도구</strong></th><th><strong>모양</strong></th><th><strong>맞는 자리</strong></th><th><strong>주의</strong></th></tr><tr><td><code>array</code></td><td>자라는 연속 배열</td><td>순서 있는 목록</td><td>자라면 포인터 무효</td></tr><tr><td><code>list</code></td><td>침습적 연결 리스트</td><td>할당 없이 잇기</td><td>자료가 링크를 품는다</td></tr><tr><td><code>ring</code></td><td>고정 크기 원형</td><td>흐름·최근 N개</td><td>가득 찼을 때의 계약</td></tr><tr><td><code>map</code></td><td>열린 주소 해시</td><td>키로 찾기</td><td>키 소유 여부를 고른다</td></tr><tr><td><code>array_sort</code></td><td>introsort</td><td>무엇이든 정렬</td><td>비교자는 전순서</td></tr><tr><td>해시 4종</td><td>용도별</td><td>맵·무결성·암호·반공격</td><td>용도를 섞지 않는다</td></tr></table></div><p>여기까지가 순수한 계산의 세계다 — 운영체제가 없어도 전부 돈다. 다음 장에서는 바깥으로 나간다. 파일, 스트림, 시간, 난수 — OS와 닿는 자리다.</p>
 <div class="nav"><a href="ch76.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch78.html">다음 →</a></div>
 </div></main></body></html>

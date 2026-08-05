@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>56 잡동사니 서랍 — &lt;stdlib.h&gt; — Proven C Book</title><style>
+<title>56 스트림의 실제 — &lt;stdio.h&gt; ① — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,66 +68,109 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>56 잡동사니 서랍 — <code>&lt;stdlib.h></code></h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>이름 그대로 “표준 라이브러리”라는 서랍이다. 문자열을 수로 바꾸는 함수, 난수, 동적 할당, 프로그램 종료, 정렬과 이진 탐색이 한데 들어 있다. 공통점이 없는 대신 함정은 많다 — 특히 <strong>실패를 알릴 방법이 없는 변환 함수</strong>와 <strong>종료 함수들의 미묘한 차이</strong>가 이 장의 두 축이다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>24장에서 입력을 <code>fgets</code>로 읽고 <code>sscanf</code>로 해석했고, 51장에서는 <code>sscanf</code>가 “어디에서 왜 실패했는지” 말해 주지 않는다고 했다. 그러면 문자열 하나를 정수로 바꾸는 가장 정확한 방법은 무엇인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><code>strtol</code> 계열이다. 이 함수는 세 가지를 한꺼번에 알려 준다 — 변환한 값, <strong>어디서 멈췄는지</strong>(끝 포인터), 그리고 범위를 넘었는지(<code>errno</code>가 <code>ERANGE</code>). <code>atoi</code>는 이 중 아무것도 알려 주지 않는다. 이름이 짧아 입문서에 자주 등장하지만, 실무에서는 쓰지 않는 함수다.</p></div></div><h3>56.1 변환 — <code>atoi</code>를 버리는 이유</h3><div><div><p><code>examples/ch56/convert.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdlib.h>
-#include &lt;errno.h>
-#include &lt;limits.h>
+<h2>56 스트림의 실제 — <code>&lt;stdio.h></code> ①</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>가장 많이 쓰는 헤더의 밑바닥을 본다. 스트림이 실제로 어떻게 열리고 닫히는지, 버퍼가 언제 비워지는지, 실패는 어디서 드러나는지 — 그리고 입문서들이 반복해서 틀리는 자리인 <code>feof</code>의 오용까지. 10장에서 배운 스트림의 관념이 여기서 API가 된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>10장에서 스트림은 “무엇에 연결됐는지 프로그램이 모르는 띠”였고, 그래서 같은 프로그램이 화면·파일·다른 프로그램에 두루 쓰인다고 했다. 그러면 프로그램이 쓴 바이트는 <strong>언제</strong> 실제로 목적지에 도착하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>대개 즉시가 아니다. 표준 라이브러리는 스트림마다 <strong>버퍼</strong>를 두고 모아 두었다가 한 번에 내보낸다 — 시스템 호출이 비싸기 때문이다(제12부에서 다시 만난다). 언제 비우는지는 세 가지 방식이 있다. <strong>완전 버퍼링</strong>은 버퍼가 찰 때, <strong>행 버퍼링</strong>은 개행을 만날 때, <strong>버퍼 없음</strong>은 즉시다. 터미널에 연결된 표준 출력은 보통 행 버퍼링이고, 파일로 리다이렉션되면 완전 버퍼링으로 바뀐다 — <strong>같은 프로그램의 출력 시점이 연결 대상에 따라 달라진다</strong>는 뜻이고, 이것이 이 장의 첫 함정이다.</p></div></div><h3>56.1 열고, 쓰고, 닫기 — 실패는 세 번 일어날 수 있다</h3><div><div><p><code>examples/ch56/streams.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
 #include &lt;string.h>
 
-/* 문자열을 수로 바꾸는 세 가지 방법과 그 차이 */
-static void try_atoi(const char *s)
-{
-    printf("  atoi(\"%s\") = %d\n", s, atoi(s));   /* 실패를 알릴 방법이 없다 */
-}
-
-static void try_strtol(const char *s)
-{
-    errno = 0;
-    char *end;
-    long v = strtol(s, &amp;end, 10);
-
-    if (end == s)                 printf("  strtol(\"%s\"): 숫자가 아님\n", s);
-    else if (errno == ERANGE)     printf("  strtol(\"%s\"): 범위 밖 (ERANGE)\n", s);
-    else if (*end != '\0')        printf("  strtol(\"%s\"): %ld, 남은 글자 [%s]\n", s, v, end);
-    else                          printf("  strtol(\"%s\"): %ld (온전)\n", s, v);
-}
-
+/* 스트림의 세 가지 실제 — 버퍼링, 반환값, 끝을 아는 법 */
 int main(void)
 {
-    const char *cases[] = { "42", "abc", "42abc", "99999999999999999999", " 7", "" };
+    const char *path = "stream_demo.txt";
 
-    printf("atoi — 실패와 0 을 구별할 수 없다:\n");
-    for (size_t i = 0; i &lt; sizeof cases / sizeof cases[0]; i++) try_atoi(cases[i]);
+    /* ① 쓰기: fopen 은 실패하면 널이다 */
+    FILE *f = fopen(path, "w");
+    if (!f) { perror("fopen"); return 1; }
 
-    printf("strtol — 무엇이 잘못됐는지 말해 준다:\n");
-    for (size_t i = 0; i &lt; sizeof cases / sizeof cases[0]; i++) try_strtol(cases[i]);
+    /* fprintf 도 실패할 수 있다 — 반환값은 찍은 글자 수 */
+    int written = fprintf(f, "one\ntwo\nthree\n");
+    printf("fprintf wrote %d chars\n", written);
 
-    printf("LONG_MAX = %ld\n", LONG_MAX);
+    /* ② 닫기도 실패할 수 있다: 버퍼를 비우다 실패하면 여기서 드러난다 */
+    if (fclose(f) != 0) { perror("fclose"); return 1; }
+
+    /* ③ 읽기: 줄 단위로 */
+    f = fopen(path, "r");
+    if (!f) { perror("fopen"); return 1; }
+
+    char line[64];
+    int n = 0;
+    while (fgets(line, sizeof line, f)) {
+        line[strcspn(line, "\n")] = '\0';   /* 개행 제거의 관용구 */
+        printf("line %d: [%s]\n", ++n, line);
+    }
+
+    /* ④ 왜 멈췄는가 — 파일 끝인가 오류인가를 구분한다 */
+    if (ferror(f))      printf("stopped by an error\n");
+    else if (feof(f))   printf("stopped at end of file\n");
+
+    /* ⑤ 버퍼 크기보다 긴 줄은 잘려서 두 번에 나뉘어 온다 */
+    rewind(f);
+    char tiny[4];
+    printf("with a 4-byte buffer:\n");
+    for (int i = 0; i &lt; 3 &amp;&amp; fgets(tiny, sizeof tiny, f); i++)
+        printf("  chunk %d: [%s] (has newline: %s)\n",
+               i + 1, tiny, strchr(tiny, '\n') ? "yes" : "no");
+
+    fclose(f);
+    remove(path);
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>atoi — 실패와 0 을 구별할 수 없다:
-  atoi("42") = 42
-  atoi("abc") = 0
-  atoi("42abc") = 42
-  atoi("99999999999999999999") = -1
-  atoi(" 7") = 7
-  atoi("") = 0
-strtol — 무엇이 잘못됐는지 말해 준다:
-  strtol("42"): 42 (온전)
-  strtol("abc"): 숫자가 아님
-  strtol("42abc"): 42, 남은 글자 [abc]
-  strtol("99999999999999999999"): 범위 밖 (ERANGE)
-  strtol(" 7"): 7 (온전)
-  strtol(""): 숫자가 아님
-LONG_MAX = 9223372036854775807
-</code></pre></div></div><p>출력을 나란히 놓으면 차이가 분명하다.</p><ul><li><code>atoi("abc")</code>는 0이다. 그런데 <code>atoi("0")</code>도 0이다 — <strong>실패와 성공을 구별할 수 없다.</strong></li><li><code>atoi("42abc")</code>는 42다. 뒤에 붙은 쓰레기를 조용히 무시한다.</li><li><code>atoi("99999999999999999999")</code>는 −1이 나왔다. 표준은 이 경우 <strong>정의되지 않은 동작</strong>이라고만 말한다 — 우연히 −1이 나왔을 뿐, 어떤 값이든 나올 수 있고 무엇도 보장되지 않는다.</li></ul><p><code>strtol</code>은 같은 입력에 대해 “숫자가 아님”, “남은 글자 있음”, “범위 밖”을 각각 구별해 냈다. 검사 코드가 길어 보이지만, 그 길이가 바로 <strong>바깥에서 온 문자열을 다루는 일의 실제 복잡도</strong>다.</p><div class="dev antipattern"><p class="dev-label">✗ <code>atoi</code>로 사용자 입력 읽기</p><pre><code data-lang="c">int port = atoi(argv[1]);      /* "0"과 "잘못된 입력"이 같은 값 */</code></pre><p>고쳐 쓰면 이렇다.</p><pre><code data-lang="c">errno = 0;
-char *end;
-long v = strtol(argv[1], &amp;end, 10);
-if (end == argv[1] || *end != '\0') { /* 숫자가 아니다 */ }
-else if (errno == ERANGE || v &lt; 1 || v > 65535) { /* 범위 밖 */ }
-else port = (int)v;</code></pre><p><code>errno</code>를 <strong>호출 직전에 0으로 놓는 것</strong>이 규약이다(60장). 그러지 않으면 이전 호출이 남긴 값을 읽게 된다.</p></div><p>실수 변환도 같다. <code>atof</code>는 실패를 알리지 못하고, <code>strtod</code>는 끝 포인터와 <code>ERANGE</code>를 준다. 게다가 <code>strtod</code>는 로케일에 따라 소수점을 <code>.</code>이 아니라 <code>,</code>로 읽을 수 있다(57장) — 데이터 형식을 파싱할 때 반드시 기억할 점이다.</p><h3>56.2 동적 할당 — 네 함수와 그 계약</h3><p>39장에서 배운 것을 함수 단위로 정리한다.</p><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>계약과 함정</strong></th></tr><tr><td><code>malloc(n)</code></td><td>n바이트 할당</td><td>내용은 미정. 실패 시 널</td></tr><tr><td><code>calloc(k, n)</code></td><td>k×n바이트 할당 + 0으로 채움</td><td>★ 곱셈 넘침을 <strong>구현이</strong> 검사한다</td></tr><tr><td><code>realloc(p, n)</code></td><td>크기 바꾸기</td><td>★ 실패 시 원본 유지 — 반환값을 원본에 바로 대입하면 누수</td></tr><tr><td><code>free(p)</code></td><td>해제</td><td>널은 안전. 두 번 해제는 계약 밖</td></tr><tr><td><code>aligned_alloc(a, n)</code></td><td>정렬된 할당(C11)</td><td>n이 a의 배수여야 한다</td></tr></table><p><code>calloc</code>의 곱셈 검사가 유용한 지점이다. <code>malloc(k * n)</code>은 55장에서 본 대로 곱이 감길 수 있지만, <code>calloc(k, n)</code>은 구현이 넘침을 검사해 널을 돌려주도록 표준이 요구한다. <strong>크기를 곱해야 한다면 <code>calloc</code>이 더 안전한 선택</strong>이다.</p><div class="dev antipattern"><p class="dev-label">✗ <code>realloc</code>의 반환값을 원본에 바로 대입하기</p><pre><code data-lang="c">buf = realloc(buf, new_size);   /* 실패하면 원본 주소를 잃는다 → 누수 */
-if (!buf) return -1;</code></pre><p>올바른 관용구는 임시 변수를 거치는 것이다.</p><pre><code data-lang="c">char *tmp = realloc(buf, new_size);
-if (!tmp) { /* buf 는 여전히 유효하다 — 정리하거나 계속 쓸 수 있다 */ return -1; }
-buf = tmp;</code></pre><p>54장의 줄 읽기 예제가 이 관용구를 쓴 이유다.</p></div><p><code>realloc</code>에는 특이한 규칙이 둘 더 있다. <code>realloc(NULL, n)</code>은 <code>malloc(n)</code>과 같고, <code>realloc(p, 0)</code>은 <strong>구현 정의</strong>다(C23에서 명시적으로 그렇게 정리됐다). 후자를 “해제”로 쓰는 옛 코드가 있는데, 이식성 있는 코드는 <code>free</code>를 쓴다.</p><h3>56.3 종료 — 네 가지 방법의 차이</h3><table><tr><th><strong>방법</strong></th><th><strong>정리 작업</strong></th><th><strong>쓰는 자리</strong></th></tr><tr><td><code>return</code> (main에서)</td><td><code>exit</code>와 같다</td><td>정상 종료</td></tr><tr><td><code>exit(status)</code></td><td><code>atexit</code> 실행, 스트림 flush·닫기</td><td>정상 종료(깊은 곳에서)</td></tr><tr><td><code>quick_exit(status)</code></td><td><code>at_quick_exit</code>만 실행, flush 없음</td><td>빠른 종료(C11)</td></tr><tr><td><code>_Exit(status)</code></td><td>아무것도 하지 않음</td><td>자식 프로세스 등 특수한 자리</td></tr><tr><td><code>abort()</code></td><td>정리 없음, 비정상 종료 신호</td><td>복구 불가능한 오류</td></tr></table><p>핵심은 <strong>버퍼</strong>다. <code>exit</code>는 스트림을 비워 주지만 <code>_Exit</code>와 <code>abort</code>는 그러지 않는다 — 54장에서 본 “출력이 사라지는” 사고가 여기서 난다. <code>abort</code>로 죽는 프로그램의 마지막 로그가 안 보이는 이유이기도 하다.</p><p><code>atexit</code>로 등록한 함수는 등록의 <strong>역순</strong>으로 불리고, 표준은 최소 32개까지 등록을 보장한다. 등록 함수 안에서 다시 <code>exit</code>를 부르는 것은 계약 밖이다.</p><h3>56.4 정렬과 탐색 — <code>qsort</code>·<code>bsearch</code></h3><p>52장에서 예고한 그 함수다. 계약을 정확히 적으면 이렇다.</p><ul><li>비교자는 <code>int cmp(const void *a, const void *b)</code>이고, 음수·0·양수를 돌려준다. <strong>뺄셈으로 만들면 넘칠 수 있다</strong> — <code>return *x - *y;</code>는 큰 값에서 틀린다. <code>return (*x > *y) - (*x &lt; *y);</code>가 안전한 관용구다.</li><li>비교자는 <strong>전순서</strong>여야 한다(67장). 일관되지 않으면 결과가 뒤죽박죽인 정도가 아니라 배열 밖을 침범할 수 있다.</li><li><code>qsort</code>는 <strong>안정 정렬이 아니다.</strong> 같은 값의 상대 순서가 보존되지 않는다. 필요하면 비교자에 원래 인덱스를 얹어 동점을 가른다.</li><li>최악 성능은 구현이 정한다. 표준은 아무 보장도 하지 않는다 — 52장의 복잡도 공격이 가능했던 이유다.</li><li><code>bsearch</code>는 <strong>정렬된 배열</strong>을 전제한다. 정렬되지 않았으면 결과는 의미 없다.</li></ul><h3>56.5 난수 — <code>rand</code>의 한계</h3><p><code>rand</code>는 0부터 <code>RAND_MAX</code>까지의 수를 돌려준다. <code>RAND_MAX</code>는 최소 32767만 보장되므로, 그보다 큰 범위가 필요하면 조합해야 한다.</p><div class="dev antipattern"><p class="dev-label">✗ <code>rand() % n</code>으로 범위 만들기</p><pre><code data-lang="c">int dice = rand() % 6 + 1;      /* 값이 고르지 않다 */</code></pre><p><code>RAND_MAX + 1</code>이 <code>n</code>의 배수가 아니면 앞쪽 값이 더 자주 나온다. 범위가 작으면 치우침도 작지만, <code>n</code>이 커질수록 눈에 띈다. 게다가 옛 구현 중에는 하위 비트의 품질이 나쁜 것이 있어 <code>% 2</code>가 번갈아 나오기도 했다.</p><p>고른 분포가 필요하면 <strong>거부 표집</strong>(rejection sampling)을 쓴다 — 범위를 넘는 값이 나오면 버리고 다시 뽑는다. 그리고 <strong>비밀에는 절대 쓰지 않는다</strong> (제12부의 난수 이야기).</p></div><p><code>srand</code>로 씨앗을 주지 않으면 <code>srand(1)</code>과 같다 — 매번 같은 수열이다. <code>srand(time(NULL))</code>이 흔한 관용구이지만, 같은 초에 시작한 두 프로세스는 같은 수열을 얻는다.</p><h3>56.6 환경과 프로세스</h3><p><code>getenv</code>는 환경 변수를 돌려주지만, 그 문자열은 <strong>수정하면 안 되고</strong> 다음 <code>setenv</code>류 호출 뒤에는 유효하지 않을 수 있다. 값이 필요하면 복사해 둔다.</p><p><code>system</code>은 셸을 띄워 명령을 실행한다. 사용자 입력이 그 문자열에 섞이면 <strong>명령 주입</strong>이 된다 — 웹 애플리케이션의 고전적 취약점과 같은 부류다. 표준 안에서는 대안이 없고, 플랫폼 API(<code>posix_spawn</code>, <code>CreateProcess</code>)를 써서 인자를 배열로 넘기는 것이 정답이다.</p><div class="dev realcase"><p class="dev-label">◉ <code>qsort</code> 비교자의 뺄셈이 만든 실제 버그</p><p><code>return a - b;</code> 꼴의 비교자는 정렬 코드에서 가장 흔한 실수다. 값이 <code>INT_MIN</code>에 가까우면 뺄셈이 넘쳐 부호가 뒤집히고, 정렬은 조용히 틀린 결과를 낸다 — 5장에서 배운 부호 있는 오버플로가 계약 밖이므로 컴파일러의 최적화에 따라 증상이 달라지기까지 한다.</p><p>이 무늬는 커널·데이터베이스·게임 엔진 가릴 것 없이 반복해서 보고됐고, 정적 분석 도구들이 별도 규칙으로 잡아 줄 만큼 흔하다. 고치는 법은 한 줄이다 — 빼지 말고 비교한다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p><code>&lt;stdlib.h></code> 요약.</p><table><tr><th><strong>하고 싶은 일</strong></th><th><strong>쓸 것</strong></th><th><strong>피할 것</strong></th></tr><tr><td>문자열 → 정수</td><td><code>strtol</code> + 끝 포인터 + <code>errno</code></td><td><code>atoi</code></td></tr><tr><td>문자열 → 실수</td><td><code>strtod</code>(로케일 주의)</td><td><code>atof</code></td></tr><tr><td>배열 할당</td><td><code>calloc(k, n)</code></td><td><code>malloc(k * n)</code></td></tr><tr><td>크기 바꾸기</td><td>임시 변수 경유 <code>realloc</code></td><td>원본에 바로 대입</td></tr><tr><td>정상 종료</td><td><code>return</code>/<code>exit</code></td><td><code>_Exit</code>(버퍼 손실)</td></tr><tr><td>정렬</td><td><code>qsort</code> + 전순서 비교자</td><td>뺄셈 비교자, 안정성 가정</td></tr><tr><td>난수</td><td>거부 표집, 용도에 맞는 생성기</td><td><code>rand() % n</code>, 비밀에 사용</td></tr><tr><td>외부 명령</td><td>플랫폼 API로 인자 배열</td><td><code>system</code>에 입력 이어 붙이기</td></tr></table></div><p>서랍을 정리했다. 다음 장은 한 글자를 다루는 함수들 — 그리고 그 함수들이 로케일이라는 전역 상태에 묶여 있다는 사실이다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>fprintf wrote 14 chars
+line 1: [one]
+line 2: [two]
+line 3: [three]
+stopped at end of file
+with a 4-byte buffer:
+  chunk 1: [one] (has newline: no)
+  chunk 2: [
+] (has newline: yes)
+  chunk 3: [two] (has newline: no)
+</code></pre></div></div><p>예제가 실패를 세 자리에서 확인한다는 점을 눈여겨보면 된다.</p><p><strong>① <code>fopen</code></strong> — 실패하면 널을 돌려준다. 이유는 <code>errno</code>에 남고, <code>perror</code>가 그것을 사람이 읽을 문장으로 찍어 준다(63장). 파일이 없을 수도, 권한이 없을 수도, 열린 파일이 너무 많을 수도 있다.</p><p><strong>② 쓰기</strong> — <code>fprintf</code>는 찍은 글자 수를 돌려주고 실패하면 음수다. 확인하는 코드는 드물지만, 디스크가 차거나 파이프가 끊기면 여기서 드러난다.</p><p><strong>③ <code>fclose</code></strong> — 여기가 진짜 함정이다. 버퍼에 남아 있던 것을 마지막으로 내보내는 자리이므로, <strong>쓰기 실패가 닫을 때 처음 드러나는 일이 흔하다</strong>. 그래서 데이터를 잃으면 안 되는 프로그램은 <code>fclose</code>의 반환값을 반드시 확인한다.</p><div class="dev antipattern"><p class="dev-label">✗ 닫기의 실패를 무시하기</p><pre><code data-lang="c">fprintf(f, "%s\n", important);
+fclose(f);                  /* 실패했는지 아무도 묻지 않았다 */
+puts("저장 완료");           /* 사실은 저장되지 않았을 수 있다 */</code></pre><p>버퍼가 있는 쓰기에서 “성공했다”고 말할 수 있는 시점은 <strong>닫기가 성공한 뒤</strong>다. 정말로 디스크에 못박아야 한다면 닫기 전에 <code>fflush</code>로 내보내고 플랫폼의 동기화 호출(<code>fsync</code> 등)까지 불러야 한다 — 데이터베이스가 그렇게 한다.</p></div><h3>56.2 파일 끝을 아는 법 — <code>feof</code>의 오용</h3><p>가장 널리 퍼진 오답이 여기 있다.</p><div><div><p><code>examples/ch56/feof_bad.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+/* feof 로 반복을 제어하면 마지막 항목이 한 번 더 처리된다 —
+   C 입문서의 고전적 오답이다. */
+int main(void)
+{
+    const char *path = "feof_demo.txt";
+    FILE *f = fopen(path, "w");
+    if (!f) return 1;
+    fputs("10\n20\n30\n", f);
+    fclose(f);
+
+    printf("틀린 판 — while (!feof(f)):\n");
+    f = fopen(path, "r");
+    if (!f) return 1;
+    while (!feof(f)) {
+        int v;
+        fscanf(f, "%d", &amp;v);          /* 마지막 읽기 실패 후에도 한 번 더 돈다 */
+        printf("  read %d\n", v);      /* 30 이 두 번 찍힌다 */
+    }
+    fclose(f);
+
+    printf("올바른 판 — 읽기의 반환값으로 제어:\n");
+    f = fopen(path, "r");
+    if (!f) return 1;
+    int v;
+    while (fscanf(f, "%d", &amp;v) == 1)
+        printf("  read %d\n", v);
+    if (ferror(f)) printf("  (read error)\n");
+    fclose(f);
+
+    remove(path);
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>틀린 판 — while (!feof(f)):
+  read 10
+  read 20
+  read 30
+  read 30
+올바른 판 — 읽기의 반환값으로 제어:
+  read 10
+  read 20
+  read 30
+</code></pre></div></div><p><code>while (!feof(f))</code>가 왜 틀리는가. <code>feof</code>는 <strong>예언자가 아니라 기록자</strong>다 — “파일 끝에 도달했다”는 표시는 읽기가 실패한 <strong>뒤에야</strong> 켜진다. 그래서 마지막 값을 읽은 직후에는 아직 꺼져 있고, 루프가 한 번 더 돌아 실패한 읽기의 결과(=바뀌지 않은 이전 값)를 그대로 쓴다. 예제에서 30이 두 번 찍힌 것이 그 증거다.</p><p>규칙은 하나다. <strong>읽기 함수의 반환값으로 루프를 제어한다.</strong> <code>feof</code>와 <code>ferror</code>는 루프가 끝난 뒤 “왜 끝났는가”를 가르는 데 쓴다.</p><table><tr><th><strong>함수</strong></th><th><strong>성공</strong></th><th><strong>끝·실패</strong></th></tr><tr><td><code>fgets</code></td><td>버퍼 포인터</td><td>널 — <code>feof</code>/<code>ferror</code>로 가른다</td></tr><tr><td><code>fscanf</code></td><td>채운 항목 수</td><td>0(형식 불일치) 또는 <code>EOF</code></td></tr><tr><td><code>fgetc</code></td><td>읽은 문자(부호 없는 char를 int로)</td><td><code>EOF</code></td></tr><tr><td><code>fread</code></td><td>읽은 <strong>원소</strong> 수</td><td>요청보다 적으면 끝이거나 오류</td></tr></table><div class="dev misconception"><p class="dev-label">⚠ “<code>fgetc</code>의 결과는 <code>char</code>에 담으면 된다”</p><p>담으면 안 된다. <code>fgetc</code>는 <code>int</code>를 돌려주는데, 그 값은 <strong>0–255의 문자</strong>이거나 <strong><code>EOF</code></strong>(보통 −1)이다. <code>char</code>에 담는 순간 둘을 구별할 수 없게 된다 — <code>char</code>가 부호 있는 구현에서는 0xFF 바이트가 −1이 되어 <code>EOF</code>와 똑같아지고, 부호 없는 구현에서는 <code>EOF</code>가 255가 되어 영원히 끝나지 않는다. 그래서 <code>int c; while ((c = fgetc(f)) != EOF)</code>가 정석이다. 이 한 줄이 C 입문서에서 가장 자주 잘못 베껴지는 관용구이기도 하다.</p></div><h3>56.3 버퍼 크기보다 긴 줄</h3><p>예제의 마지막 부분이 보여 주는 것이다. <code>fgets</code>는 버퍼가 모자라면 <strong>거기까지만</strong> 읽고 멈춘다 — 오류가 아니다. 그래서 개행이 들어 있는지 확인하지 않으면 “한 줄”이라 믿은 것이 사실은 줄의 앞토막일 수 있다.</p><p>4바이트 버퍼로 <code>one\n</code>을 읽으면 <code>one</code>(개행 없음)과 <code>\n</code>(개행뿐)의 두 번으로 쪼개져 온다. 실무에서 긴 줄을 다루는 코드가 이 사실을 잊으면, 한 줄이 두 레코드로 처리되는 조용한 오류가 난다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>줄 길이를 모를 때는 어떻게 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>세 가지 길이 있다. 첫째, <strong>충분히 큰 버퍼 + 개행 확인</strong> — 개행이 없으면 남은 부분을 마저 읽어 버리거나 오류로 처리한다. 둘째, <strong>직접 늘려 가며 읽기</strong> — <code>fgetc</code>로 한 글자씩 모으며 필요할 때 버퍼를 키운다(41장의 동적 할당). 셋째, <strong>플랫폼이 주는 함수</strong> — POSIX의 <code>getline</code>이 알아서 늘려 주지만 표준이 아니다. 표준만으로 쓰려면 둘째가 정답이고, 그 코드를 매번 다시 짜지 않으려고 라이브러리를 쓰는 것이 제12부의 이야기다.</p></div></div><h3>56.4 텍스트 모드와 이진 모드</h3><p><code>fopen</code>의 두 번째 인자에 붙는 <code>b</code>가 그것이다. 유닉스 계열에서는 차이가 없지만 Windows에서는 다르다 — 텍스트 모드는 쓸 때 <code>\n</code>을 <code>\r\n</code>으로 바꾸고 읽을 때 되돌린다. 그래서 이진 파일을 텍스트 모드로 열면 바이트가 조용히 바뀐다.</p><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — Windows의 줄 끝 변환</p><p>이진 데이터(이미지·압축 파일·직렬화된 구조체)를 다룰 때는 반드시 <code>"rb"</code>·<code>"wb"</code>로 연다. 텍스트 모드로 열면 0x0A 바이트가 0x0D 0x0A로 늘어나고, 읽을 때는 반대로 줄어들어 <strong>파일 크기와 내용이 달라진다</strong>. 9장에서 본 CR/LF 이야기가 파일 API에서 재현되는 자리다.</p><p>반대로 텍스트 파일을 이진 모드로 열면 Windows에서 줄 끝에 <code>\r</code>이 남아, <code>fgets</code>로 읽은 줄이 보이지 않는 <code>\r</code>로 끝난다 — 비교가 실패하는 원인이 여기인 경우가 많다.</p></div><div class="dev antipattern"><p class="dev-label">✗ <code>fflush(stdin)</code></p><pre><code data-lang="c">scanf("%d", &amp;n);
+fflush(stdin);      /* 입력 버퍼를 비우려는 의도 — 계약 밖이다 */</code></pre><p><code>fflush</code>는 <strong>출력</strong> 스트림을 위한 함수다. 입력 스트림에 쓰는 것은 표준이 정의하지 않는 동작이며(일부 구현이 확장으로 지원할 뿐이다), 이식성 있는 코드에서는 쓸 수 없다. 남은 입력을 버리려면 직접 읽어 버려야 한다.</p><pre><code data-lang="c">int c;
+while ((c = getchar()) != '\n' &amp;&amp; c != EOF) { }</code></pre></div><h3>56.5 파일 위치와 크기</h3><p><code>fseek</code>·<code>ftell</code>은 위치를 다루지만 제약이 있다. 텍스트 스트림에서 <code>ftell</code>이 돌려주는 값은 <strong>바이트 오프셋이라는 보장이 없고</strong>, <code>fseek</code>은 그 값이나 <code>SEEK_SET</code>과 0의 조합으로만 안전하다. 큰 파일에서는 <code>long</code>이 모자랄 수도 있어, 표준 밖의 <code>fseeko</code>·<code>ftello</code>(POSIX)나 플랫폼 API가 필요해진다.</p><p>“파일 크기를 알아내려면 끝으로 가서 <code>ftell</code>”이라는 관용구도 이진 모드에서만 안전하고, 그마저도 파일이 바뀌는 중이면 의미가 없다.</p><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p><code>&lt;stdio.h></code> 스트림 요약.</p><table><tr><th><strong>자리</strong></th><th><strong>규칙</strong></th><th><strong>틀리면</strong></th></tr><tr><td><code>fopen</code></td><td>널 검사</td><td>널 역참조</td></tr><tr><td>쓰기</td><td>반환값 확인(선택), <code>fclose</code> 확인(필수)</td><td>조용한 데이터 손실</td></tr><tr><td>루프 제어</td><td>읽기 반환값으로</td><td><code>feof</code> 오용 — 마지막 값 중복</td></tr><tr><td><code>fgetc</code></td><td><code>int</code>에 담는다</td><td><code>EOF</code>와 0xFF 혼동</td></tr><tr><td><code>fgets</code></td><td>개행 유무 확인</td><td>긴 줄이 쪼개져 처리</td></tr><tr><td>이진 파일</td><td><code>"rb"</code>/<code>"wb"</code></td><td>Windows에서 바이트 변조</td></tr><tr><td>입력 비우기</td><td>직접 읽어 버린다</td><td><code>fflush(stdin)</code>은 계약 밖</td></tr><tr><td>위치</td><td>이진 모드에서만 바이트 의미</td><td>텍스트 모드에서 오해</td></tr></table></div><p>스트림의 뼈대를 보았다. 다음 장은 그 위에서 실제로 읽고 쓰는 함수들 — 그리고 표준에서 <strong>삭제된</strong> 함수의 이야기다.</p>
 <div class="nav"><a href="ch55.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch57.html">다음 →</a></div>
 </div></main></body></html>

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>44 오류와 계약 — Proven C Book</title><style>
+<title>44 공용체와 표현 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,38 +68,123 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>44 오류와 계약</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-72"></span><p>31장에서 심은 계약의 씨앗이 자란다 — 함수는 무엇을 요구하고 무엇을 약속하는가(전제조건·후조건), 실패를 어떻게 알리는가(C의 방식: 오류는 값이다), 그리고 그 값을 반드시 확인하게 만드는 장치들까지. 37장에서 본 proven의 설계 사상이 여기서 원리로 정리된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>31장 끝에서 <code>fact</code> 함수가 “암묵의 약속”(n은 0 이상, 13 이상이면 넘침) 위에 서 있다고 했다. 그런데 그 약속은 코드 어디에도 적혀 있지 않았다 — 그러면 그것은 존재하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>존재하지만, <strong>지켜지지 않는 상태로</strong> 존재한다 — 그것이 문제의 핵심이다. 모든 함수에는 암묵의 계약이 있다: 어떤 입력에 대해 제대로 동작하는가 (전제조건), 성공하면 무엇을 보장하는가(후조건). 그 계약이 문서와 코드 어디에도 없으면, 계약 위반은 조용히 지나가 나중에 엉뚱한 곳에서 터진다. 이 장은 계약을 <strong>드러내는</strong> 방법들의 이야기다.</p></div></div><h3>44.1 오류는 값이다 — C의 방식</h3><p>많은 현대 언어가 실패를 위한 별도 통로(예외)를 갖고 있지만, C에는 없다. C에서 실패는 <strong>반환값으로 알린다</strong> — 함수의 결과 자체가 “성공했는가”를 담고 나오는 것이다. 관행은 세 갈래다.</p><ul><li><strong>성공/실패 불리언</strong> + 결과는 포인터로 받기(32장의 <code>&amp;</code> 관용구).</li><li><strong>특별한 값</strong>으로 실패 표시 — <code>malloc</code>의 널(39장), <code>fgets</code>의 널, 음수 반환 등.</li><li><strong>오류 코드</strong>를 돌려주고 0을 성공으로 — 시스템 호출 계열의 전통.</li></ul><p>첫 갈래를 시연으로 본다. 26장에서 배운 “0 나누기는 계약 밖”이라는 사실을, 함수 계약으로 다스리는 모습이다.</p><div><div><p><code>examples/ch44/errval.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdlib.h>
+<h2>44 공용체와 표현</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-76"></span><p>같은 기억을 다른 눈으로 보는 장치 — 공용체다. 그리고 이 장은 표현의 장이기도 하다: 5장에서 예약한 엔디안 관찰 시연을 실행하고, 구조체의 숨은 빈틈(패딩)을 눈으로 확인한다. 표현과 추상의 분리라는 이 책의 후렴구가 마지막으로 크게 울리는 자리다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>13장에서 “float의 비트를 uint32의 눈으로 읽는” 옛 기법이 엄격한 앨리어싱 위반이며, 옳은 방법은 memcpy나 공용체라고 했다. 그러면 공용체란 정확히 무엇이길래 그 자리에 서는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>여러 멤버가 같은 기억을 공유하는 타입</strong>이다. 구조체가 멤버들을 나란히 놓는다면(42장), 공용체는 멤버들을 <strong>겹쳐</strong> 놓는다 — 크기는 가장 큰 멤버에 맞고, 어느 순간에든 실제로 담긴 것은 하나다. “같은 비트를 이 눈으로도 저 눈으로도 본다”는 5장의 관점이 문법이 된 것이다.</p></div></div><h3>44.1 공용체 — 겹쳐 놓기</h3><p>문법은 구조체와 쌍둥이다. <code>struct</code>를 <code>union</code>으로 바꾸면 된다:</p><pre><code data-lang="c">union bits32 {
+    uint32_t as_int;
+    float    as_float;
+};</code></pre><p>멤버 접근도 같다(<code>u.as_int</code>). 다른 것은 기억의 배치뿐이다 — 두 멤버가 같은 4바이트를 공유하므로, <code>as_float</code>에 쓰고 <code>as_int</code>로 읽으면 <strong>같은 비트를 다른 해석으로</strong> 보게 된다. C 표준은 이 “쓴 멤버와 다른 멤버로 읽기”(타입 퍼닝)를 공용체에 한해 허용한다 — 13장의 포인터 캐스트 방식과 달리 계약 안이라는 점이 결정적 차이다(다만 읽은 값이 그 타입의 유효한 값이 아닐 수 있다는 주의는 남는다).</p><h3>44.2 표현을 눈으로 — 엔디안과 패딩</h3><p>5장에서 “이 확인을 C로 실제로 해 보이는 것이 이 장의 시연”이라 예약해 두었다. 이제 갚는다. 여기서는 공용체 대신 가장 이식성 좋은 방법 — 36장에서 배운 바이트의 눈(<code>unsigned char</code>)과 <code>memcpy</code> — 을 쓴다.</p><div><div><p><code>examples/ch44/endian.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;stdint.h>
+#include &lt;string.h>
 
-/* 계약: divisor가 0이 아니어야 한다. 실패는 반환값으로 알린다. */
-[[nodiscard]] bool safe_div(int a, int b, int *out)
+int main(void)
 {
-    if (b == 0) {
-        return false;           /* 실패 — out은 건드리지 않는다 */
+    uint32_t value = 0x12345678u;
+    unsigned char bytes[4];
+
+    memcpy(bytes, &amp;value, sizeof value);   /* 표현을 바이트로 들여다본다 */
+
+    printf("value: 0x%08X\n", value);
+    printf("memory order: %02X %02X %02X %02X\n",
+           bytes[0], bytes[1], bytes[2], bytes[3]);
+    printf("this machine is %s-endian\n",
+           bytes[0] == 0x78 ? "little" : "big");
+
+    struct padded {
+        char  tag;      /* 1바이트 */
+        int   count;    /* 4바이트 — 정렬 때문에 앞에 빈틈이 생긴다 */
+    };
+    printf("1 + 4 = 5, but sizeof = %zu\n", sizeof(struct padded));
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>value: 0x12345678
+memory order: 78 56 34 12
+this machine is little-endian
+1 + 4 = 5, but sizeof = 8
+</code></pre></div></div><p>첫 부분이 5장의 그림 그대로다. <code>0x12345678</code>이 메모리에 <code>78 56 34 12</code> 순서로 놓였다 — 이 책의 검증 기계는 리틀 엔디안이라는 뜻이고, 5장의 도해가 실물로 확인된 것이다. (빅 엔디안 기계에서 이 예제를 돌리면 <code>12 34 56 78</code>이 찍히고 판정 문장도 바뀐다 — 코드는 그대로다.)</p><p>둘째 부분은 구조체의 숨은 사정이다. <code>char</code> 하나(1바이트)와 <code>int</code> 하나(4바이트)를 담은 구조체의 크기가 5가 아니라 8이다 — 6장의 정렬 규칙 때문에 <code>char</code> 뒤에 3바이트의 <strong>패딩</strong>(padding, 빈틈)이 끼워진 것이다. int 멤버가 4의 배수 자리에서 시작해야 기계가 한 움큼에 집을 수 있기 때문이다(6장). 그래서 실무 관행 하나가 나온다 — <strong>큰 멤버부터 배치하면 빈틈이 줄어든다.</strong> 구조체 수백만 개를 다루는 코드에서는 이 배치 하나가 메모리와 캐시 효율(11장)을 좌우한다. 배치 규칙과, 빈틈을 없애거나 정렬을 강제하는 방법(<code>pack</code>·<code>alignas</code>)은 43장에서 자세히 다뤘다 — 여기서는 그 빈틈이 <strong>실제로 존재한다</strong>는 사실을 눈으로 확인하는 것이 목적이다.</p><div class="dev realcase"><p class="dev-label">◉ 빈틈이 흘린 비밀 — 커널의 패딩 정보 유출</p><p>패딩은 아무도 쓰지 않는 빈칸이라 무해해 보이지만, 보안의 눈으로 보면 <strong>초기화되지 않은 기억</strong>이다. 운영체제 커널이 구조체를 사용자 프로그램 에게 통째로 복사해 줄 때 이 빈틈이 함께 건너가는데 — 멤버들은 전부 채워 넣었어도 빈틈에는 그 자리에 남아 있던 <strong>다른 데이터의 잔해</strong>가 들어 있다. 공격자는 이 부스러기를 모아 커널 메모리의 내용이나 주소 배치를 엿볼 수 있고, 그것이 다음 공격의 발판이 된다. 리눅스를 비롯한 주요 커널들이 이 부류의 정보 유출 취약점을 수십 건 고쳐 왔고, 오늘의 대응은 단순하다 — 사용자에게 넘기는 구조체는 <strong>멤버를 채우기 전에 통째로 0으로 지운다</strong>. 24장에서 “선언과 동시에 초기화한다”고 한 규칙이, 보이지 않는 빈칸에까지 적용되는 순간이다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “구조체를 그대로 파일에 쓰거나 네트워크로 보내면 된다”</p><p>솔깃한 생각이고, 실제로 많이 시도된 방법이다 — 구조체의 바이트를 통째로 저장하면 코드가 짧아지니까. 그러나 이 장이 방금 보인 두 사실이 그것을 가로막는다: 바이트 순서가 기계마다 다르고(엔디안), 빈틈의 크기와 위치도 컴파일러·플랫폼마다 다르다(패딩). 한 기계에서 쓴 파일이 다른 기계에서 깨지는 것이다 — 5장의 NUXI 사건이 파일 형식의 세계에서 재현되는 셈이다. 정답은 <strong>직렬화</strong>(serialization)다: 멤버를 하나씩, 약속된 크기와 바이트 순서로(네트워크 바이트 순서 — 5장) 적고 읽는 코드를 명시적으로 쓰는 것. 표현은 기계의 사정이고, 파일과 통신은 약속의 세계라는 것 — 두 세계를 잇는 다리는 손으로 놓아야 한다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>공용체는 그러면 언제 쓰는 것이 정석인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>두 가지 자리다. 첫째, 방금 본 <strong>표현 들여다보기</strong>(타입 퍼닝) — 부동 소수점 비트를 검사하거나 하드웨어 레지스터를 여러 눈으로 보는 저수준 코드다. 둘째, 더 흔한 쓰임인 <strong>태그된 공용체</strong>(tagged union): 구조체 안에 “지금 어느 멤버가 유효한가”를 알리는 표시(태그)와 공용체를 함께 넣어, “이 값은 정수이거나, 실수이거나, 문자열이다” 같은 선택형 데이터를 표현하는 것이다. 인터프리터의 값 표현, 설정 파일 파서 같은 곳의 기본 도구이고 — 6장에서 본 태그 포인터가 비트 차원의 같은 발상이었다. 현대 언어들의 열거형(Rust의 enum, Swift의 associated value)이 이 패턴을 언어 차원으로 끌어올린 것이다.</p></div></div><h3>44.3 비트 필드 — 한 워드를 쪼개 쓰기</h3><p>구조체 멤버 뒤에 콜론과 수를 적으면 <strong>비트 필드</strong>(bit field)가 된다 — 그 멤버가 차지할 비트 수를 직접 지정하는 것이다. 여기에 공용체를 겹치면 “통째로 한 워드로 보는 눈”과 “필드로 나눠 보는 눈”을 동시에 갖게 된다.</p><div><div><p><code>examples/ch44/bitfield.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;stdint.h>
+
+/* 실무에서 흔한 모양: 장치 레지스터 한 워드를 필드로 나눠 보고,
+   같은 기억을 통째로 32비트 정수로도 본다. */
+union control_reg {
+    uint32_t raw;                 /* 통째로 읽고 쓰는 눈 */
+    struct {
+        uint32_t enable   : 1;    /* 비트 1개 */
+        uint32_t mode     : 3;    /* 비트 3개 */
+        uint32_t priority : 4;
+        uint32_t reserved : 8;
+        uint32_t counter  : 16;
+    } f;                          /* 필드로 보는 눈 */
+};
+
+/* 구조체 안에 공용체를 넣는 실무 무늬: 태그 + 내용 */
+enum msg_kind { MSG_INT, MSG_TEXT, MSG_POINT };
+
+struct message {
+    enum msg_kind kind;           /* 어느 눈으로 볼지 알려 주는 태그 */
+    unsigned      flags : 4;      /* 작은 상태 몇 개 */
+    unsigned      urgent : 1;
+    union {                       /* 이름 없는 공용체 (C11) */
+        int  number;
+        char text[16];
+        struct { int x, y; } point;
+    };
+};
+
+static void show(const struct message *m)
+{
+    printf("kind=%d flags=%u urgent=%u -> ", (int)m->kind, m->flags, m->urgent);
+    switch (m->kind) {
+        case MSG_INT:   printf("number %d\n", m->number); break;
+        case MSG_TEXT:  printf("text \"%s\"\n", m->text); break;
+        case MSG_POINT: printf("point (%d, %d)\n", m->point.x, m->point.y); break;
     }
-    *out = a / b;
-    return true;
 }
 
 int main(void)
 {
-    int result = 0;
+    union control_reg r = { .raw = 0 };
+    r.f.enable = 1;
+    r.f.mode = 5;
+    r.f.priority = 9;
+    r.f.counter = 1000;
 
-    if (safe_div(7, 2, &amp;result)) {
-        printf("7 / 2 = %d\n", result);
-    } else {
-        printf("7 / 2: failed\n");
-    }
+    printf("raw   = 0x%08x\n", r.raw);
+    printf("fields: enable=%u mode=%u priority=%u counter=%u\n",
+           r.f.enable, r.f.mode, r.f.priority, r.f.counter);
 
-    if (safe_div(7, 0, &amp;result)) {
-        printf("7 / 0 = %d\n", result);
-    } else {
-        printf("7 / 0: cannot divide by zero (reported as a value)\n");
-    }
+    /* 통째로 쓰고 필드로 읽기 — 같은 기억을 두 눈으로 본다 */
+    r.raw = 0x000A0013u;
+    printf("after raw write: enable=%u mode=%u priority=%u counter=%u\n",
+           r.f.enable, r.f.mode, r.f.priority, r.f.counter);
+
+    printf("sizeof(union control_reg) = %zu\n", sizeof r);
+
+    struct message a = { .kind = MSG_INT, .flags = 3, .urgent = 1, .number = 42 };
+    struct message b = { .kind = MSG_TEXT, .flags = 0, .urgent = 0 };
+    for (int i = 0; i &lt; 5; i++) b.text[i] = "hello"[i];
+    b.text[5] = '\0';
+    struct message c = { .kind = MSG_POINT, .flags = 8, .urgent = 0,
+                         .point = { .x = 3, .y = -7 } };
+    show(&amp;a); show(&amp;b); show(&amp;c);
+    printf("sizeof(struct message) = %zu\n", sizeof(struct message));
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>7 / 2 = 3
-7 / 0: cannot divide by zero (reported as a value)
-</code></pre></div></div><p>읽을 점 셋. <strong>계약이 주석으로 적혀 있다</strong> — 무엇을 요구하는지가 코드 곁에 있다. <strong>실패해도 출력 인자를 건드리지 않는다</strong> — “실패 시 아무것도 바꾸지 않는다”는 것도 계약의 일부다. 그리고 <strong><code>[[nodiscard]]</code></strong> — C23의 표기로, 이 반환값을 버리는 호출이 있으면 컴파일러가 경고한다. 20장에서 “반환값을 버리는 것은 합법”이라 했던 그 자유에, “이 값만은 버리지 말라”는 제동을 거는 장치다. 37장의 proven 함수들이 이 표기를 두른 이유가 바로 이것이다.</p><div class="dev misconception"><p class="dev-label">⚠ “오류 처리는 코드를 지저분하게 만드는 부수적인 일이다”</p><p>입문자가 흔히 갖는 인상이고, 실제로 C의 오류 처리는 눈에 띄게 장황하다 — 호출마다 <code>if</code>가 붙으니까. 그러나 관점을 뒤집으면 정확히 반대다: <strong>오류 경로가 곧 프로그램의 절반이다.</strong> 파일이 없을 수 있고, 메모리가 부족할 수 있고, 입력이 엉터리일 수 있다는 것은 예외적 상황이 아니라 정상적인 현실이다. 실제 사고 분석에서 압도적으로 흔한 원인이 “반환값을 확인하지 않았다”인 것이 그 증거다 — 성공 경로만 적힌 코드는 절반만 쓰인 코드다. 장황함을 줄이는 법(공통 정리 지점으로 모으기, 실패를 감싸는 타입 쓰기)은 기술의 문제이고, <strong>확인한다</strong>는 원칙은 타협의 문제가 아니다.</p></div><h3>44.2 계약을 코드로 — assert와 방어</h3><span id="idx-entry-73"></span><p>전제조건을 문서가 아니라 <strong>코드</strong>로 적는 도구가 있다 — <code>&lt;assert.h></code>의 <code>assert(조건)</code>다. 조건이 거짓이면 프로그램을 즉시 세우고 위치를 알린다. 용도를 정확히 구별하는 것이 중요하다:</p><ul><li><strong><code>assert</code>는 프로그래머의 실수를 잡는 것이다</strong> — “여기까지 왔다면 이 조건은 반드시 참이어야 한다”는 내부 불변식(30장의 그 불변식과 같은 낱말이다). 배포 빌드에서는 꺼지는 것이 관행이다(<code>NDEBUG</code>).</li><li><strong>바깥에서 온 것은 assert가 아니라 검사로</strong> — 사용자 입력, 파일 내용, 네트워크 데이터는 “틀릴 수 있는 것이 정상”이므로 실행 중에 늘 확인 하고 오류 값으로 처리해야 한다. 입력 검증을 assert로 하면, 배포판 에서 검사가 통째로 사라지는 사고가 된다.</li></ul><p>이 구별이 곧 계약의 두 면이다 — 안쪽(내가 지켜야 할 불변식)은 assert로, 바깥(상대가 지킬지 모르는 약속)은 검사와 오류 값으로.</p><h3>44.3 const — 가장 값싼 계약</h3><p>계약을 코드로 적는 도구가 하나 더 있다. 22장에서 “바꾸지 않겠다는 문서”로 소개하고, 40장에서 “이 함수는 원본을 건드리지 않는다”는 표시로 <span id="idx-entry-74"></span>써 온 <code>const</code>다. 이 장의 관점에서 다시 보면, const는 <strong>가장 값싸게 적을 수 있는 계약 조항</strong>이다 — 함수 서명 한 곳에 한 낱말을 더하는 것으로, 호출하는 쪽에게 “당신의 데이터는 안전하다”를 약속하고 컴파일러에게 그 약속의 감시를 맡긴다.</p><p>효과는 세 층에 걸친다.</p><p><strong>① 사람에게 — 읽는 부담이 준다.</strong> <code>void render(const struct scene *s)</code> 라는 서명을 보는 순간, 이 함수가 scene을 바꾸지 않는다는 것이 확정 된다. 함수 몸통을 읽지 않아도 되는 것 — 큰 코드에서 이보다 값진 절약은 드물다. 22장에서 “바뀌지 않는 것이 많은 코드일수록 읽기 쉽다”고 한 것의 실체다.</p><p><strong>② 컴파일러에게 — 최적화의 근거가 된다.</strong> 11장에서 편집자가 값을 레지스터에 붙잡아 두는 장면을 보았고, 그 판단의 관건이 “이 값이 그 사이에 바뀔 수 있는가”였다. const는 그 판단을 돕는 신호다 — 다만 정확히 말해야 한다: <strong>const 자체가 마법의 최적화 스위치는 아니다.</strong> 포인터를 통해 들어온 데이터는 다른 경로로 바뀔 여지가 남아 있어서 (앨리어싱), const 하나로 컴파일러가 모든 걸 확신하지는 못한다. 확실한 이득은 <strong>const로 선언된 실제 객체</strong>(전역 상수, <code>static const</code> 테이블) 쪽이다 — 컴파일러가 값을 코드에 직접 심거나(상수 전파), 읽기 전용 구역에 배치해 아예 수정 불가로 만든다(36장의 문자열 리터럴이 그 자리에 살았다).</p><p><strong>③ 기억의 층에게 — 공유가 안전해진다.</strong> 바뀌지 않는 데이터는 <strong>복사할 이유가 없다.</strong> 여러 곳에서 같은 것을 함께 읽어도 되고, 9장의 캐시 관점에서는 여러 코어가 같은 캐시 라인을 나눠 읽어도 아무 다툼이 없다 — 10장에서 본 false sharing은 <strong>쓰기</strong>가 있어야 생기는 사고이기 때문 이다. 큰 데이터를 값 복사 대신 <code>const</code> 포인터로 넘기는 관행(40장)이 안전하면서 빠른 이유가 이것이다.</p><p>그래서 현대적 관행은 단순하다 — <strong>기본을 const로 두고, 바꿔야 하는 것만 예외로 푼다.</strong> 계약을 넓히는 데는 비용이 들지만, 좁히는 데는 낱말 하나면 된다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>37장의 proven은 이 원리를 어떻게 구현하고 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>세 가지가 이 장의 원리 그대로다. 첫째, <strong>실패가 타입에 드러난다</strong> — <code>{err, val}</code> 꾸러미를 돌려주므로 “성공했는지 묻지 않고 값을 꺼내는” 코드를 쓰기가 오히려 어색해진다. 둘째, <strong><code>[[nodiscard]]</code>로 확인을 강제한다</strong> — 버리면 컴파일러가 경고한다. 셋째, <strong>경계와 크기를 계약의 일부로 받는다</strong> — 33–36장에서 본 경계 침범의 뿌리를 API 차원에서 막는 것이다. 요약하면: 계약을 문서가 아니라 <strong>타입과 시그니처</strong>로 적는 설계다. 1장에서 본 Rust·Zig의 문제의식과 같은 방향을, C 안에서 부품으로 구현한 것이라 보면 된다.</p></div></div><p>계약과 오류를 다루는 법을 갖췄다. 그런데 이 책이 곳곳에서 “계약 밖”, “정의되지 않은 동작”이라 부르며 미뤄 온 세계가 아직 남아 있다. 다음 장에서 그 세계를 정면으로 본다 — C에서 가장 오해가 많고, 가장 값비싼 주제다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>raw   = 0x03e8009b
+fields: enable=1 mode=5 priority=9 counter=1000
+after raw write: enable=1 mode=1 priority=1 counter=10
+sizeof(union control_reg) = 4
+kind=0 flags=3 urgent=1 -> number 42
+kind=1 flags=0 urgent=0 -> text "hello"
+kind=2 flags=8 urgent=0 -> point (3, -7)
+sizeof(struct message) = 24
+</code></pre></div></div><p>앞부분이 하드웨어 레지스터를 다루는 전형적인 무늬다. <code>r.f.mode = 5</code>처럼 필드에 쓰면 라이브러리 도움 없이도 비트 자리에 값이 들어가고, <code>r.raw</code>로 읽으면 그 결과가 한 워드로 보인다. 반대로 <code>r.raw</code>에 통째로 쓰고 필드로 읽는 것도 된다 — 출력의 세 번째 줄이 그 확인이다.</p><p>편해 보이지만 <strong>이식성의 대가</strong>가 크다. 표준이 정해 주지 않는 것이 많기 때문이다.</p><ul><li><strong>비트가 놓이는 순서</strong> — 낮은 자리부터 채울지 높은 자리부터 채울지는 구현 정의(implementation-defined)다. 그래서 같은 선언이 컴파일러마다 다른 배치를 낼 수 있다.</li><li><strong>경계를 넘는 필드</strong> — 저장 단위를 걸치는 필드를 허용할지도 구현이 정한다. 패딩이 얼마나 끼는지도 마찬가지다.</li><li><strong>부호</strong> — 그냥 <code>int x : 1;</code>은 부호 있는 1비트라 값이 0과 −1이 된다. 의도한 것이 아니라면 <code>unsigned</code>를 명시해야 한다.</li><li><strong>주소를 얻을 수 없다</strong> — 비트 필드에는 <code>&amp;</code>를 쓸 수 없다. 배열로 만들 수도 없다.</li><li><strong>원자적이지 않다</strong> — 같은 워드에 놓인 두 필드를 서로 다른 스레드가 건드리면 12장의 거짓 공유와 같은 부류의 사고가 난다.</li></ul><div class="dev misconception"><p class="dev-label">⚠ “비트 필드로 파일·네트워크 형식을 그대로 표현할 수 있다”</p><p>가장 흔한 오해이고, 이식성 사고의 단골이다. 파일 형식이나 프로토콜은 <strong>바이트와 비트의 배치가 규격으로 정해져 있는데</strong>, 비트 필드의 배치는 구현이 정한다. 컴파일러를 바꾸거나 다른 기계로 옮기는 순간 필드가 엉뚱한 자리에서 읽힌다 — 엔디안(앞 절)까지 겹치면 더 나빠진다. 외부 형식을 다룰 때의 정공법은 <strong>바이트 배열을 놓고 시프트와 마스크로 직접 뽑아 쓰는 것</strong>이다(7장). 비트 필드는 어디까지나 <strong>한 프로그램 안에서 기억을 아끼는 용도</strong>로 본다.</p></div><p>오늘날 비트 필드를 권하지 않는 이유가 이것이다. 그럼에도 이 문법을 알아야 하는 이유는 분명하다 — 임베디드 SDK의 레지스터 정의, 오래된 코드베이스의 플래그 묶음, 커널 자료구조에서 여전히 만나기 때문이다. <strong>읽을 줄은 알되, 새로 쓸 때는 한 번 더 생각한다</strong>가 실무의 감각이다.</p><h3>44.4 구조체와 공용체를 섞는 실무 무늬</h3><p>예제의 뒷부분은 다른 이야기다. 구조체 안에 태그와 공용체를 함께 넣은 <strong>태그된 공용체</strong>(tagged union)로, 앞의 문답에서 이름만 나온 그 무늬다.</p><pre><code data-lang="c">struct message {
+    enum msg_kind kind;      /* 어느 눈으로 볼지 알려 주는 태그 */
+    unsigned      flags : 4; /* 작은 상태들 — 비트 필드가 여기서 쓰인다 */
+    unsigned      urgent : 1;
+    union {                  /* 이름 없는 공용체 (C11) */
+        int  number;
+        char text[16];
+        struct { int x, y; } point;
+    };
+};</code></pre><p>세 가지가 겹쳐 있다. 태그, 비트 필드로 아낀 상태 플래그, 그리고 <strong>이름 없는 공용체</strong>(anonymous union, C11)다. 이름이 없으면 멤버를 한 단계 덜 거쳐 <code>m->number</code>처럼 바로 쓸 수 있어서, 태그된 공용체가 훨씬 읽기 좋아 진다.</p><p>규율은 하나뿐이고, 그것이 전부다 — <strong>태그가 말하는 멤버만 읽는다.</strong> <code>kind</code>가 <code>MSG_TEXT</code>인데 <code>number</code>를 읽으면 44장 첫 절에서 본 “다른 눈으로 보기”가 되어 의미 없는 값이 나온다. 그래서 이런 자료를 다루는 코드는 거의 언제나 예제의 <code>show</code>처럼 <strong>태그로 분기하는 <code>switch</code> 하나</strong>를 통과 하도록 만든다. 접근을 한 곳에 모으면 규율을 지킬 자리도 한 곳이 된다.</p><p><code>sizeof(struct message)</code>가 24바이트로 나온 것도 읽어 둘 만하다 — 태그 4바이트 + 비트 필드가 든 워드 + 16바이트 공용체에, 정렬을 맞추는 패딩(앞 절)이 더해진 결과다. 표현은 언제나 이렇게 <strong>선언한 것보다 조금 더</strong> 차지한다.</p><h3>44.5 제8부를 닫으며</h3><p>타입을 만드는 두 문법을 얻었다 — 나란히 놓는 구조체(42장)와 겹쳐 놓는 공용체(44장). 그리고 그 과정에서 표현의 현실(엔디안·패딩)을 눈으로 확인했다. 제2부의 배경지식이 문법으로 완전히 회수된 것이다.</p><p>다음 부는 정밀의 부다 — 8장에서 배운 근사의 수학이 C의 실수 타입으로 내려오고(45장), 33장에서 씨앗을 심은 계약의 관점이 오류 처리로 자라며 (46장), 이 책이 곳곳에서 예고해 온 “계약 밖”의 세계 — 정의되지 않은 동작 — 를 정면으로 만난다(47장).</p>
 <div class="nav"><a href="ch43.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch45.html">다음 →</a></div>
 </div></main></body></html>

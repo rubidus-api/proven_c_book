@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>37 안전한 입력과 proven의 등장 — Proven C Book</title><style>
+<title>37 배열 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,29 +68,134 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>37 안전한 입력과 proven의 등장</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>24장에서 “안전한 입력은 왜 어려운가”를 예고했고, 33·36장에서 그 위험의 뿌리(경계, NUL 종단)를 배웠다. 이 장에서 사고의 해부를 완성하고 — 1장에서 약속한 손님, 이 책의 기반 라이브러리 <strong>proven</strong>이 드디어 등장한다. “필요가 스스로 증명된 시점에”라는 약속 그대로다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>36장의 gets는 그릇 크기를 안 받아서 퇴출됐고, 24장의 fgets는 크기를 받아서 안전하다 했다. 그러면 “크기를 받는다”는 것만으로 입력의 안전 문제가 다 풀리는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>절반만이다. 크기 전달은 <strong>넘침</strong>을 막지만, 입력에는 두 번째 문제가 있다 — <strong>내용을 믿을 수 없다</strong>는 것(24장). 수를 기대했는데 글자가 오고, 짧은 줄을 기대했는데 긴 줄이 오고, 악의적인 상대는 일부러 경계를 노린 입력을 만든다(21장의 서식 문자열 공격이 그 맛보기였다). 안전한 입력이란 [넘침 차단 + 실패의 명시적 처리]의 합이고, 이 장의 두 기둥이 그 둘이다.</p></div></div><h3>37.1 사고의 해부 — 경계 침범이라는 유행병</h3><p>35장의 경계 규칙과 36장의 NUL 종단을 합치면, C 역사상 가장 값비싼 사고 무늬가 조립된다. 그릇보다 긴 입력이 이웃 기억을 덮어쓴다(경계 침범) — 덮어써진 곳이 하필 <strong>함수 호출의 복귀 장부</strong>(다음 장에서 정체를 본다)라면, 공격자는 입력만으로 프로그램의 실행 흐름을 탈취한다. 이것이 버퍼 오버플로 공격의 골자이고, Morris worm(1988, 36장)부터 오늘의 보안 공지까지 면면히 이어지는 유행병이다. 통계적으로도 압도적이다 — 주요 보안 기관들의 “가장 위험한 소프트웨어 결함” 목록에서 경계 침범 계열은 수십 년째 최상위 단골이다.</p><p>C가 실행 중 경계 검사를 “하지 않기로” 했기 때문에(35장), 방어는 층층이 쌓는 수밖에 없다 — 크기를 받는 함수(fgets), 경고와 새니타이저(15장), 그리고 <strong>애초에 검사가 내장된 부품</strong>. 마지막 층이 이 장의 손님이다.</p><h3>37.2 proven — 검증된 기본기라는 부품</h3><p>proven은 이 책의 저자가 만든 C 라이브러리로(1장의 정직 공개 그대로), 설계 사상은 한 문장이다 — <strong>사고가 가장 잦은 기본기(문자열, 입력 해석, 수 변환)를, 실패가 값으로 드러나고 경계가 항상 검사되는 형태로 제공 한다.</strong> 7장에서 본 표현 방식의 언어로 말하면, NUL 종단의 세계 위에 길이·용량 명시 계열의 안전한 층을 세운 것이다.</p><p>첫 시연으로 24장의 숙제 — 입력 해석의 실패 처리 — 를 proven으로 풀어 본다. 성공 경로와 실패 경로를 <strong>둘 다</strong> 보인다:</p><div><div><p><code>examples/ch37/scan.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
-#include &lt;stdio.h>
+<h2>37 배열</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>연속된 기억 — 배열이다. 선언과 순회, 배열과 포인터의 진짜 관계 <span id="idx-entry-65"></span>(악명 높은 “무너짐”), 그리고 경계라는 생사의 규칙까지. 26장의 <code>char line[100]</code> 외상이 여기서 청산된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>11장에서 캐시 라인은 “이웃 예순네 칸을 상자째” 나른다고 했고, 배열을 차례로 훑는 코드가 빠른 이유가 그것이라 했다. 그러면 “배열”이란 기억의 눈으로 정확히 무엇인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>같은 타입의 칸들이 <strong>빈틈없이 이웃하여</strong> 늘어선 것 — 그것이 전부다. <code>int a[5]</code>는 int 다섯 개가 연속된 주소에 나란히 놓인 것이고, 그래서 첫 칸의 주소와 타입만 알면 나머지 위치가 전부 계산된다(<math><mi>𝑖</mi></math>번 원소 = 시작 주소 + <math><mi>𝑖</mi><mo form="infix" lspace="0.2222222222222222em" rspace="0em">×</mo></math> 칸 크기). 이 “계산 가능한 이웃”이라는 성질이 배열의 힘(즉시 접근, 캐시 친화)이자 위험(경계 계산 착오)의 뿌리다.</p></div></div><h3>37.1 선언, 접근, 순회</h3><div><div><p><code>examples/ch37/arr.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
 
-void try_parse(const char *text)
+int main(void)
 {
-    proven_scan_t sc = proven_scan_init(proven_u8str_view_from_cstr(text));
-    proven_result_i64_t r = proven_scan_i64(&amp;sc);
+    int a[5] = {3, 1, 4, 1, 5};
+    int sum = 0;
 
-    if (proven_is_ok(r.err)) {
-        printf("\"%s\" -> ok: %lld\n", text, (long long)r.val);
-    } else {
-        printf("\"%s\" -> failed (not a number)\n", text);
+    for (int i = 0; i &lt; 5; i += 1) {
+        sum += a[i];
     }
+    printf("sum: %d\n", sum);
+
+    printf("a[2] = %d, *(a + 2) = %d\n", a[2], *(a + 2));
+
+    int *p = a;                 /* 배열 이름이 첫 원소의 주소로 무너진다 */
+    printf("sizeof a = %zu, sizeof p = %zu\n", sizeof a, sizeof p);
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>sum: 14
+a[2] = 4, *(a + 2) = 4
+sizeof a = 20, sizeof p = 8
+</code></pre></div></div><p><code>int a[5] = {3, 1, 4, 1, 5};</code> — 타입, 이름, 칸 수, 그리고 중괄호 초기화. 접근은 <code>a[i]</code>이고 <strong>번호는 0부터</strong>다(첫 원소가 <code>a[0]</code>, 마지막이 <code>a[4]</code>). 0부터 세는 이유는 위의 deepqa가 이미 답했다 — <code>a[i]</code>의 정체가 “시작에서 <math><mi>𝑖</mi></math>칸 <strong>떨어진</strong> 곳”이라서, 첫 원소는 떨어진 거리가 0이다.</p><h3>37.2 배열과 포인터 — 무너짐의 진실</h3><p>시연의 뒷부분이 이 장의 심장이다. C에서 가장 많은 혼란을 낳은 관계 — 배열과 포인터 — 를 정확히 정리한다.</p><p><strong>규칙: 배열의 이름은 대부분의 문맥에서 “첫 원소의 주소”로 무너진다 (decay).</strong> <code>int *p = a;</code>가 합법인 이유다 — <code>a</code>가 <code>&amp;a[0]</code>이라는 포인터 값으로 읽힌 것이다. 그리고 <code>a[i]</code>라는 표기 자체가 사실 <code>*(a + i)</code>의 당의정이다 — 포인터에 정수를 더하면 “그 타입 크기만큼 <math><mi>𝑖</mi></math>칸 옆”의 주소가 되고(포인터 산술 — 36장의 규칙들이 여기 걸린다), 그것을 역참조한 것이 인덱스 접근이다. 시연의 <code>a[2] == *(a + 2)</code>가 그 확인이다.</p><div class="dev misconception"><p class="dev-label">⚠ “배열은 포인터다”</p><p>이 유명한 문장은 틀렸다 — 무너짐이 하도 자주 일어나서 생긴 착시다. 배열은 칸 다섯 개짜리 <strong>기억 그 자체</strong>이고, 포인터는 주소 하나를 담는 <strong>다른 변수</strong>다. 시연의 마지막 줄이 결정적 증거다: <code>sizeof a</code>는 20 (int 5칸의 총 크기), <code>sizeof p</code>는 8(주소 하나의 크기, 34장). 무너짐이 일어나지 않는 대표 문맥이 바로 <code>sizeof</code>라서 이 차이가 보인다 — 26장의 <code>fgets(line, sizeof line, stdin)</code>이 그릇 크기를 옳게 잰 것도 이 덕분 이다. 한 가지 파급이 중요하다: 배열을 함수에 “넘기면” 무너진 <strong>주소만</strong> 복사되므로(33장), 함수 쪽에서는 <code>sizeof</code>로 크기를 알 수 없다 — 그래서 C 함수는 배열과 <strong>길이를 별도 인자로</strong> 함께 받는 것이 관행이다. 9장에서 본 “길이를 데이터 곁에 두는” 표현 방식들의 문제의식이, C 함수 경계에서 이렇게 재현된다.</p></div><h3>37.3 매개변수의 배열은 배열이 아니다</h3><p>함수 매개변수 자리에서는 규칙이 하나 더 있다. <strong>배열로 선언해도 컴파일러가 포인터로 바꿔 버린다.</strong> 그래서 다음 셋은 컴파일러에게 완전히 같은 선언이다.</p><pre><code data-lang="c">void f(int *a);
+void f(int a[]);
+void f(int a[10]);   /* 10 은 문서일 뿐, 검사하지 않는다 */</code></pre><p>여러 겹 배열이라면 <strong>가장 바깥(왼쪽 첫) 차원만</strong> 벗겨진다. 안쪽 차원은 타입의 일부로 남는다.</p><pre><code data-lang="c">void g(int m[3][4]);   /*  실제 타입은  int (*m)[4]  */
+void h(int c[2][3][4]);/*  실제 타입은  int (*c)[3][4] */</code></pre><p>이 사실이 눈에 보이는 자리가 셋이다.</p><div><div><p><code>examples/ch37/param.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+/* 세 선언은 컴파일러에게 완전히 같은 것이다: 전부 int * 다.
+   (매개변수 이름에 직접 sizeof 를 쓰면 gcc 가 경고하므로,
+    같은 타입의 지역 변수로 한 번 받아 크기를 잰다) */
+static void by_ptr(int *a)     { int *p = a; printf("  int *a      : sizeof = %zu\n", sizeof p); }
+static void by_arr(int a[])    { int *p = a; printf("  int a[]     : sizeof = %zu\n", sizeof p); }
+static void by_size(int a[10]) { int *p = a; printf("  int a[10]   : sizeof = %zu\n", sizeof p); }
+
+/* 매개변수는 그냥 포인터 변수라서 다른 주소를 대입할 수도 있다 */
+static int second_of(int a[10])
+{
+    a = a + 1;          /* 배열이라면 불가능하다 — 배열 이름에는 대입할 수 없다 */
+    return a[0];
+}
+
+/* 2차원: 벗겨지는 것은 가장 바깥(왼쪽 첫) 차원뿐이다.
+   int m[3][4]  ->  int (*m)[4] */
+static void by_2d(int m[3][4])
+{
+    int (*p)[4] = m;    /* 매개변수의 진짜 타입이 이것이다 */
+    printf("  int m[3][4] : sizeof = %zu (포인터), sizeof p[0] = %zu (행 하나)\n",
+           sizeof p, sizeof p[0]);
+    printf("                m[1][2] = %d\n", m[1][2]);
 }
 
 int main(void)
 {
-    try_parse("  42 and some text");
-    try_parse("forty-two");
+    int arr[10] = {0,1,2,3,4,5,6,7,8,9};
+    int grid[3][4] = { {0,1,2,3}, {4,5,6,7}, {8,9,10,11} };
+
+    printf("호출자 쪽 (진짜 배열):\n");
+    printf("  int arr[10]    : sizeof = %zu\n", sizeof arr);
+    printf("  int grid[3][4] : sizeof = %zu, sizeof grid[0] = %zu\n",
+           sizeof grid, sizeof grid[0]);
+
+    printf("함수 안 (전부 포인터):\n");
+    by_ptr(arr);
+    by_arr(arr);
+    by_size(arr);
+    by_2d(grid);
+
+    printf("매개변수에 대입: second_of(arr) = %d\n", second_of(arr));
+    printf("원본은 그대로  : arr[0] = %d\n", arr[0]);
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>"  42 and some text" -> ok: 42
-"forty-two" -> failed (not a number)
-</code></pre></div></div><p>읽는 법 — <code>proven_scan_init</code>이 글자 열 위에 해석기(스캐너)를 세우고, <code>proven_scan_i64</code>가 정수 하나를 해석한다. 반환값이 이 설계의 심장이다: <strong>값이 아니라 <code>{err, val}</code> 꾸러미</strong>를 돌려주고, 쓰는 쪽은 <code>proven_is_ok</code> 로 성공을 확인한 뒤에만 값을 꺼낸다. sscanf(24장)와 비교하면 — “성공 개수”라는 관례적 신호 대신 <strong>실패가 타입으로 명시</strong>되고, 함수에는 <code>[[nodiscard]]</code>(C23 — “이 반환값을 버리면 경고하라”는 표기)가 붙어 있어 <strong>실패 확인을 잊는 실수를 컴파일러가 잡아 준다</strong>. 44장에서 정식으로 다룰 “오류는 값이다” 규율의 실물이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>표준 라이브러리로도 되는 일을 왜 라이브러리를 더해서 하는가 — 부품이 늘면 배울 것도 느는데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>이 책의 대답은 층의 구별이다. <strong>개념은 표준 C로 온전히 배웠다</strong> — 30–36장까지 proven 없이 온 것이 그 증거이고, proven을 걷어내도 이 책의 C 지식은 성립한다(1장의 약속). 그 위에서 <strong>실무의 기본기</strong>를 고를 때는, 표준 라이브러리의 역사적 함정(gets의 장례, scanf의 꼬임, 검사 없는 문자열 함수들)을 아는 채로 고르는 것이 현대적 선택이다 — Rust나 Zig가 언어 차원에서 내장한 안전을(1장), C에서는 부품 선택으로 얻는 것이다. proven은 그 선택지의 하나이자 이 책의 시연 재료이고, 같은 사상의 다른 라이브러리를 골라도 원리는 같다.</p></div></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>proven 함수들의 이름이 길다 — <code>proven_scan_i64</code>처럼. 왜 이렇게 짓는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>C에는 이름 공간이 없기 때문이다(23장의 스코프는 블록의 것이고, 파일 경계를 넘는 이름들은 한 마당에서 산다 — 46장). 라이브러리들이 같은 이름을 쓰면 링크 단계(14장)에서 충돌하므로, C 라이브러리의 관행은 <strong>접두어가 이름 공간을 대신</strong>하는 것이다 — <code>proven_</code>이 그 담장이다. 길지만, 어느 부품의 것인지 이름만 봐도 드러난다는 실속이 있다.</p></div></div><p>(이 장은 첫 만남이라 필요한 만큼만 쓴다 — 라이브러리의 설계 전모와 사용법은 제12부에서 세 장에 걸쳐 다룬다. 이 책이 C 입문서이면서 동시에 proven의 안내서이기도 한 이유다.)</p><p>입력의 안전을 갖췄다. 그런데 이 장에서 “함수 호출의 복귀 장부”라는 말이 설명 없이 지나갔다 — 기억의 어디에 무엇이 살고, 언제 태어나고 죽는가. 다음 장이 그 지도 — 수명과 저장 기간 — 다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>호출자 쪽 (진짜 배열):
+  int arr[10]    : sizeof = 40
+  int grid[3][4] : sizeof = 48, sizeof grid[0] = 16
+함수 안 (전부 포인터):
+  int *a      : sizeof = 8
+  int a[]     : sizeof = 8
+  int a[10]   : sizeof = 8
+  int m[3][4] : sizeof = 8 (포인터), sizeof p[0] = 16 (행 하나)
+                m[1][2] = 6
+매개변수에 대입: second_of(arr) = 1
+원본은 그대로  : arr[0] = 0
+</code></pre></div></div><p><strong>① <code>sizeof</code>의 값이 다르다.</strong> 호출자 쪽 <code>arr</code>는 진짜 배열이라 40바이트 (<code>int</code> 10개)이지만, 함수 안에서는 8바이트 — 포인터 하나의 크기다. 그래서 <code>sizeof a / sizeof a[0]</code>으로 원소 개수를 세는 관용구는 <strong>함수 안에서 통하지 않는다.</strong> 개수는 따로 받아야 한다.</p><p>gcc는 이 실수를 실제로 짚어 준다. 예제를 처음 쓸 때 받은 진단이다.</p><pre><code data-lang="text">error: ‘sizeof’ on array function parameter ‘a’ will return size of ‘int *’
+       [-Werror=sizeof-array-argument]
+note: declared here</code></pre><p><strong>② 대입할 수 있다.</strong> 배열 이름은 대입의 왼쪽에 올 수 없지만, 매개변수는 그냥 포인터 변수라 <code>a = a + 1</code>이 된다. 예제의 <code>second_of</code>가 그것으로, 매개변수를 옮겨 놓고 <code>a[0]</code>을 읽으니 원본의 둘째 원소가 나왔다 — 그리고 호출자의 <code>arr</code>는 아무 영향도 받지 않았다(33장의 값 복사 규칙 그대로다).</p><p><strong>③ 2차원에서 절반만 남는다.</strong> <code>sizeof p</code>는 8(포인터)인데 <code>sizeof p[0]</code>은 16 — 즉 “행 하나”의 크기는 살아 있다. 안쪽 차원이 타입에 남아 있기 때문이고, 그래서 <code>m[1][2]</code> 같은 접근이 제대로 계산된다. 반대로 말하면 <strong>안쪽 차원의 크기는 반드시 적어야 한다</strong> — <code>int m[][]</code>는 컴파일되지 않는다.</p><div class="dev misconception"><p class="dev-label">⚠ “매개변수에 <code>int a[10]</code>이라 적었으니 10개 미만을 넘기면 걸린다”</p><p>걸리지 않는다. 그 <code>10</code>은 컴파일러에게 아무 의미도 없는 주석에 가깝다 — 타입은 그냥 <code>int *</code>가 된다. 실제로 배열 크기를 계약으로 만들고 싶다면 두 가지 길이 있다. 하나는 크기를 <strong>따로 매개변수로 받는 것</strong>(가장 흔하고 확실한 방법), 다른 하나는 다음 절의 <code>[static 10]</code> 표기다. 후자는 최소 개수를 약속으로 못박아 컴파일러가 경고할 수 있게 해 준다.</p></div><h3>37.4 크기가 실행 중에 정해지는 배열 — VLA</h3><p>지금까지의 배열은 크기가 컴파일 시간에 정해졌다. C99는 여기에 하나를 보탰다 — <strong>가변 길이 배열</strong>(variable length array, VLA)이다. 크기 자리에 상수가 아닌 변수를 쓸 수 있다.</p><div><div><p><code>examples/ch37/vla.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+/* [static N]: "여기에 최소 N개짜리 배열이 온다"는 약속.
+   함수 매개변수의 배열 선언자에서만 쓸 수 있다. */
+static int sum3(const int a[static 3])
+{
+    return a[0] + a[1] + a[2];
+}
+
+/* 가변 길이 배열(VLA)을 매개변수로: 크기를 앞에서 받아 뒤에서 쓴다 */
+static int sum_n(size_t n, const int a[n])
+{
+    int s = 0;
+    for (size_t i = 0; i &lt; n; i++) s += a[i];
+    return s;
+}
+
+/* 2차원 VLA 매개변수 — 손으로 인덱스를 계산하지 않아도 된다 */
+static int trace(size_t n, const int m[n][n])
+{
+    int s = 0;
+    for (size_t i = 0; i &lt; n; i++) s += m[i][i];
+    return s;
+}
+
+int main(void)
+{
+    int fixed[3] = {1, 2, 3};
+    printf("sum3        = %d\n", sum3(fixed));
+
+    size_t n = 4;
+    int local[n];                    /* 지역 VLA: 크기가 실행 중에 정해진다 */
+    for (size_t i = 0; i &lt; n; i++) local[i] = (int)(i * i);
+
+    printf("sizeof local = %zu bytes (= %zu ints)\n", sizeof local, sizeof local / sizeof local[0]);
+    printf("sum_n       = %d\n", sum_n(n, local));
+
+    int grid[3][3] = { {1,2,3}, {4,5,6}, {7,8,9} };
+    printf("trace       = %d\n", trace(3, grid));
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>sum3        = 6
+sizeof local = 16 bytes (= 4 ints)
+sum_n       = 14
+trace       = 15
+</code></pre></div></div><p>두 가지 쓰임이 있다. 첫째는 <strong>지역 변수로서의 VLA</strong>(<code>int local[n];</code>)로, 크기가 실행 중에 정해지는 배열이 스택 위에 잡힌다. <code>sizeof</code>가 실행 중에 계산되는 것도 이때가 유일하다 — 예제에서 <code>sizeof local</code>이 16을 돌려준 것이 그 증거다. 둘째는 <strong>매개변수로서의 VLA</strong>(<code>const int a[n]</code>, <code>const int m[n][n]</code>)로, 이쪽이 훨씬 유용하다. 특히 2차원 이상에서 값이 크다 — <code>m[i][j]</code>를 그대로 쓸 수 있어, 손으로 <code>m[i * n + j]</code>를 계산하지 않아도 된다.</p><p>다만 지역 VLA는 실무에서 <strong>권하지 않는</strong> 쪽으로 굳어졌다.</p><ul><li><strong>크기를 통제하지 못하면 스택이 넘친다.</strong> 입력에서 온 수를 그대로 크기로 쓰면 공격자가 스택을 무너뜨릴 수 있고, 이 붕괴는 검사할 방법도 없다.</li><li><strong>실패를 알릴 방법이 없다.</strong> <code>malloc</code>은 널을 돌려주기라도 하지만(41장), VLA는 자리가 없으면 그냥 무너진다.</li><li><strong>표준에서도 지위가 흔들렸다.</strong> C99에서 필수였다가 C11에서 <strong>선택 기능</strong>이 되었다(<code>__STDC_NO_VLA__</code>가 정의되어 있으면 없는 구현이다). MSVC는 지원하지 않는다.</li><li>리눅스 커널은 2018년에 VLA를 코드베이스에서 전부 걷어냈다 — 스택 사용량 예측과 성능이 이유였다.</li></ul><p>정리하면 <strong>매개변수 자리의 VLA 표기는 쓸 만하고, 지역 VLA는 피한다.</strong> 크기가 실행 중에 정해지는 배열이 필요하면 41장의 동적 할당이 정공법이다.</p><h3>37.5 매개변수의 <code>[static N]</code> — “최소 이만큼은 온다”</h3><p>배열 매개변수에만 쓰는 특이한 문법이 하나 더 있다.</p><pre><code data-lang="c">int sum3(const int a[static 3]);   /* a 는 원소 3개 이상을 가리킨다 */</code></pre><p>여기서 <code>static</code>은 저장 기간(40장)과 아무 관계가 없다. 뜻은 <strong>“이 인자로 넘어오는 포인터는 적어도 N개의 원소를 가진 배열을 가리킨다”</strong>는 계약이다. 얻는 것은 둘이다 — 컴파일러가 그 전제로 최적화할 수 있고(미리 읽어 두기 같은), 널이나 짧은 배열을 넘기는 코드를 경고로 짚어 줄 수 있다.</p><p>두 가지를 기억하면 된다.</p><ul><li><strong>쓸 수 있는 자리는 함수 매개변수의 배열 선언자뿐이다.</strong> 지역 변수나 구조체 멤버 선언에는 쓸 수 없다. 그리고 여러 겹 배열이라면 가장 바깥 차원에만 붙는다.</li><li><strong>계약을 어기면 계약 밖이다.</strong> <code>sum3(nullptr)</code>이나 원소 2개짜리를 넘기는 것은 정의되지 않은 동작이다 — 검사가 아니라 <strong>약속</strong>이라는 뜻이다.</li></ul><p>같은 자리에 <code>const</code>나 <code>restrict</code> 같은 한정자도 넣을 수 있다 (<code>void f(int a[const 8])</code>). 자주 보이는 문법은 아니지만, 남의 코드에서 만났을 때 “저장 기간이 아니라 최소 개수 약속”임을 알아보면 된다.</p><h3>37.6 경계 — 생사의 규칙</h3><p>배열의 안전 수칙은 단 하나이고, 타협이 없다 — <strong>유효한 번호는 0부터 칸수−1까지다.</strong> <code>a[5]</code>(다섯 칸짜리에서)를 읽거나 쓰는 것은 계약 밖이고, 그 칸은 <strong>남의 기억</strong>이다 — 이웃 변수일 수도, 39장에서 볼 함수 호출의 장부일 수도 있다. 읽으면 쓰레기이고, 쓰면 남의 데이터가 조용히 부서진다 — 배열 경계 침범(buffer overrun)은 C 역사상 가장 많은 사고와 보안 취약점을 낳은 단일 원인이다(다음 두 장이 그 실화들이다).</p><p>경계에 관해 표준이 특별히 허락한 자리가 딱 하나 있다 — 36장에서 예고한 <strong>한 칸 지난 자리</strong>(<code>a + 5</code>)의 “주소를 만드는 것”까지는 합법이다(따라 가지만 않으면). 순회 관용구가 그 위에 서 있다:</p><pre><code data-lang="c">for (int *it = a; it != a + 5; it += 1) { /* *it 사용 */ }</code></pre><div><div class="dev qa-q"><p class="dev-label">문</p><p>경계를 어기면 컴파일러가 잡아 주지 않는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>일부만이다. <code>a[7]</code>처럼 상수로 뻔한 위반은 요즘 컴파일러 경고가 잘 잡지만, 번호가 계산 결과일 때는 컴파일 시점에 알 수 없다 — 경계 검사를 실행 중에 상시로 하는 것은 C가 성능을 위해 <strong>하지 않기로 한</strong> 일이기 때문이다(이 선택의 대가와 보완이 이 부의 남은 주제다). 실행 중 그물은 17장의 ASan이다 — 경계 침범을 일으키는 코드를 ASan 빌드로 돌리면 침범의 순간 파일·줄 번호와 함께 잡아 준다. 그리고 애초에 경계 검사가 내장된 부품을 쓰는 길이 있다 — 39장의 proven이 그 길이다.</p></div></div><p>연속된 기억을 다루게 됐다. 다음 장은 배열의 가장 유명한 사용처 — 문자열이다. 6·9장의 배경지식(문자=번호, NUL 종단이라는 선택)이 드디어 C 문법과 완전히 만난다.</p>
 <div class="nav"><a href="ch36.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch38.html">다음 →</a></div>
 </div></main></body></html>

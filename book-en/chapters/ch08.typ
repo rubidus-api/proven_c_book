@@ -1,182 +1,231 @@
 #import "../../book/lib.typ": *
 
-= The origin of streams - punched cards, line printers, printing terminals
+= Representing numbers - the contract called IEEE 754
 
 #organizer[
-  You will learn why a computer's input and output has the shape of "characters
-  flowing one line at a time." The answer lies in the age of paper — punched
-  cards, line printers, and the typewriter-like printing terminal. The origin of
-  the two characters `\n` and of the odd name `tty` unravels here too. By the
-  end of this chapter you will understand in advance what the `printf` of your
-  first program is talking to.
+  The next rung on the ladder of representation. You will be able to tell apart
+#idx("floating point")  the two ways of putting a number with a decimal point
+  into the lockers — fixed point and floating point — and you will meet
+#idx("IEEE 754")  IEEE 754, the contract that unified a chaos of floating-point
+  formats. One of the most important facts in this book — that a computer's
+  numbers are finite and approximate — takes its place here.
 ]
 
 #deepqa[
-  Chapter 7 said that the control characters — instructions to a device, such as
-  "advance the paper one line" — live in a corner of the character table. Why
-  are device commands mixed into a table of letters?
+  Chapter 5 got as far as signed integers in bits — including three competing
+  ways of holding negatives, settled on two's complement. But they are all
+  still integers. A number like 1.5 — how is that held in bits?
 ][
-  Because in the age that table was made, text *was* the movement of a device.
-  A letter was not drawn on a screen but physically struck onto paper, and
-  "next line" was an actual motion of mechanical parts. Look at the devices of
-  that era and everything about the shape of today's input and output unravels.
+  The bits themselves have no decimal point. So the decimal point too is made by
+  *agreement* — the same principle by which negative numbers were made by an
+  agreement (two's complement). The way of deciding "where shall we pretend the
+  point is when we read this?" splits into two: pinning the point down (fixed)
+  and carrying the point along in the data (floating). This chapter is the story
+  of those two branches.
 ]
 
-== Punched cards — one card is one line
+== Fixed point — pinning the decimal point down by agreement
 
-The input of early computing was the *punched card*. Holes punched in a stiff
-paper card record letters — a combination of holes is one letter, and one card
-holds *80 columns* of them. One line of a program is punched onto one card, and
-the whole program becomes a deck of cards. Feed the deck to the machine and the
-cards are drawn in and read one at a time.
+The first method is surprisingly simple. *Just use an integer, and change the
+unit.*
 
-Two legacies were born here. First, *the sense that "one card = one line."* The
-notion that text is a sequence of lines, now as obvious as air, came from a
-physical object. Second, *the number 80*. The card's 80 columns became the 80
-columns of later terminal screens and survived half a century into today's
-coding convention that "a line of code stays within 80 characters."
+Money is a good example. To store 1,500.25 won, agree that "our ledger is
+written entirely in units of 0.01 won" and store the integer 150025. The
+decimal point is stored nowhere — everyone reading and writing merely shares
+the agreement "pretend there is a point two digits from the end." This is
+*fixed point*: the position of the point is fixed by agreement.
+
+The virtue of fixed point is that it *is* an integer. Addition and subtraction
+are as fast and exact as integer operations, with no approximation. So it is
+still in active service for money calculations and on small embedded chips with
+no decimal hardware. Its weakness is stiffness — one agreement cannot cover both
+very large and very small numbers. You cannot write the mass of a galaxy and the
+mass of an atom in the same ledger of hundredths.
+
+== Floating point — carrying the point in the data
+
+The second method transfers *scientific notation*, learned in science class, to
+the machine. That is, writing a number as $6.02 times 10^23$ — split into "the
+meaningful digits" and "how many times ten was multiplied in." Store both the
+kernel (the significand) and the multiplication count (the exponent) as data,
+and the decimal point *floats* along with the exponent — hence *floating point*.
+The machine uses 2 instead of 10: it holds numbers in the form
+$"significand" times 2^"exponent"$.
+
+The power of this method is that it covers *an enormous range with the same
+number of bits*. Galaxy and atom fit in one format. The price is precision —
+the number of digits in the kernel is finite, so anything beyond them is
+*discarded by rounding*.
+
+#misconception[
+  "Computers are good at maths, so of course decimal arithmetic is exact"
+][
+  Plausible — you have never seen a calculator get it wrong. But the numbers
+  floating point can hold are only *finitely many*, and a number it cannot hold
+  is rounded to its nearest neighbour. Astonishingly, that includes 0.1 — 0.1 is
+  an infinite fraction in binary (see the box below), so the "0.1" inside the
+  machine is really a different number very close to 0.1. Small discrepancies
+  can accumulate through a calculation. This is not a defect of the computer but
+  a necessity of finite representation, and there are proper ways to handle it
+  (chapter 45). One thing to remember for now: *floating point is not an exact
+  number but a faithful approximation.*
+]
+
+#mathbox[
+  Why 0.1 does not terminate in binary
+][
+  A fraction terminates only when its denominator is made solely of factors of
+  the base. In decimal (base $10 = 2 times 5$), $1/10$ ends after one digit. But
+  binary's base is only 2, so $1/10$, with a 5 in the denominator, never
+  terminates:
+
+  $ 0.1_10 = 0.0001100110011..._2 $
+
+  It is the same as $1/3$ being the endless $0.333...$ in decimal. A finite
+  significand has to cut this infinity off somewhere, and that cut is the source
+  of the approximation.
+]
+
+== Three incidents caused by approximation
+
+Let us look ahead, numerically, at the faces "faithful approximation" wears in
+practice. (Shown here by calculation on the page; running it in C is
+chapter 45.)
+
+*Incident 1 — 0.1 + 0.2 ≠ 0.3.* The most famous non-equation in the programming
+world. As we just saw, 0.1, 0.2 and 0.3 are all infinite in binary, so the
+machine holds each one's "nearest neighbour" instead. And the sum of 0.1's
+neighbour and 0.2's neighbour happens to round the *other way* from 0.3's
+neighbour. Written out in the 64-bit format —
+
+- $0.1 + 0.2$ in the machine = `0.30000000000000004440...`
+- $0.3$ #h(2.4em) in the machine = `0.29999999999999998889...`
+
+Both are faithfully close to 0.3, but *they are not each other*. So when you
+ask "are they equal?" (`==`), the machine answers honestly: no.
+
+Look at the internal representation and the whole incident is visible at a
+glance. The 64-bit format splits into [1 sign bit | 11 exponent bits |
+52 significand bits], and writing these four numbers' 64 bits in hexadecimal —
+
+#dtable(
+  columns: 2,
+  [*number*], [*64-bit internal representation (hex)*],
+  [0.1], [`3FB9 9999 9999 999A`],
+  [0.2], [`3FC9 9999 9999 999A`],
+  [0.3], [`3FD3 3333 3333 3333`],
+  [0.1 + 0.2], [`3FD3 3333 3333 333`#text(fill: rgb("#b0483c"), weight: "bold", raw("4"))],
+)
+
+There are three layers to read here. First, the `9999...` in the significands
+of 0.1 and 0.2 is the repeating binary `0011` seen in hexadecimal, and the fact
+that *the last digit is `A` and not 9* is the trace of rounding up while cutting
+the infinity off at 52 bits — the "cut" of the maths box is stamped right into
+the bits. Second, 0.3's significand `3333...` is the same repetition at a
+different phase, and this one rounded down at the end. Third — the crux — 0.3
+and 0.1+0.2 differ by *exactly one final bit*. They are the immediate
+neighbours, one tick apart (1 ulp, in the jargon). `==` answers "different" even
+to that one-bit difference, so floating-point "equality" breaks under a
+discrepancy of a single tick.
+
+*Incident 2 — so how do you compare?* In the floating-point world the question
+of equality itself has to change — not "are they exactly equal?" but *"are they
+close enough?"* You settle on a tolerance (traditionally called *epsilon*,
+$epsilon$) and count the two numbers as equal if their difference falls inside
+it:
+
+$ |a - b| < epsilon quad "(e.g. " epsilon = 10^(-9) ")" $
+
+That is the basic form; in practice there is one more layer — as numbers grow,
+so does the gap between neighbours (incident 3 below), so instead of a fixed
+$epsilon$ it is safer to use a tolerance *proportional to the size of the
+numbers* (relative error). The concrete use of both, and their traps, is
+covered in C code in chapter 45. What to remember now is one sentence: *code
+that compares floating-point numbers with `==` is almost always suspect.*
+
+*Incident 3 — beside a large number, a small one disappears.* That the
+significant digits are finite also means that when two numbers of very
+different sizes meet in one container, the smaller one *vanishes entirely*.
+Demonstrated with the 32-bit `float` (about 7 significant decimal digits) —
+
+- The moment you store $8.000000001$: the tail beyond 7 significant digits is
+  cut and it simply becomes $8.0$. It vanished *in the storing, before any
+  addition*. The internal representation makes it starker — `float`'s $8.0$ is
+  `4100 0000`, and storing $8.000000001$ gives the *same* `4100 0000`, because
+  the nearest tick is $8.0$. Two different numbers in decimal notation are one
+  and the same number in bits.
+- $8.0 + 0.00000008$: the result is still $8.0$, and the bits are still
+  `4100 0000`. Why — compute the tick spacing (the distance between neighbours)
+  of `float` at the size of $8.0$ and you get
+  $2^3 times 2^(-23) = 2^(-20) approx 0.00000095$. The $0.00000008$ added does
+  not reach even half a tick, so rounding leaves it where it was. This is called
+  *absorption*.
+- Conversely, *subtracting two nearly equal numbers*, as in $8.000001 - 8.0$,
+  erases all the leading digits and leaves only the approximation in the last
+  ones — a calculation that started with 7 significant digits produces an answer
+  with one or two. This is called *cancellation*, and it is the chief culprit in
+  eroding precision in numerical work.
+
+The three incidents have a single root — the representable numbers are a
+*discrete set of ticks*, and the spacing between ticks widens as numbers grow.
+Near 0 the ticks are dense enough to distinguish something like $10^(-300)$, but
+around $10^16$ the spacing exceeds 1 and *even integers get skipped*. It is no
+exaggeration to say that a feel for "how many digits can I trust?" (significant
+digits) is the whole of using floating point.
+
+== The chaos, and the contract called IEEE 754
+
+The idea of floating point was old, but *how* to hold it — how many bits each
+for significand and exponent, which way to round — differed by company for a
+long time. IBM mainframes, DEC's VAX and Cray supercomputers each used a
+different format. The same program moved to another machine gave *different
+answers*, and numerical programmers had to learn each machine's arithmetic
+habits afresh.
+
+In 1985 a standard called IEEE 754 unified the chaos. It is a precise contract
+that pins down the format (1 sign bit + exponent + significand), the rounding
+rules, and the treatment of special values such as infinity and "not a number"
+(NaN). Today essentially every CPU and GPU follows this contract — the 32-bit
+format (C's `float`) and the 64-bit format (C's `double`) being the
+representatives.
+
+The dates are worth noticing. The contract for floating point (IEEE 754, 1985)
+and the contract for the C language (ANSI C, 1989) were born within a few years
+of each other. It was an era in which the industry, unable to bear
+vendor-by-vendor arbitrariness any longer, turned to "let us write contracts" —
+and we meet this "age of contracts" again in chapter 12.
 
 #qa[
-  What happens if you drop the deck?
+  How do you choose between the 32-bit `float` and the 64-bit `double` in
+  practice?
 ][
-  Catastrophe — several hundred cards out of order is a scrambled program. So
-  there was a trick of punching sequence numbers in a corner of the card and
-  re-sorting them by machine. Cutting one corner of the deck diagonally, so a
-  reversed card could be spotted by eye, was the same wisdom. It sounds like a
-  joke, but the idea that "data with sequence numbers can be recovered after
-  being scrambled" is still a fundamental of networking and database design.
-]
-
-== Line printers — output by the line
-
-The physical object on the output side was the *line printer*. As the name
-says, a printer that strikes *one whole line at a time* onto paper. Results
-came out not on a screen but line after line on continuous paper. Input one
-card (= one line) at a time, output one printer line at a time — a computer's
-input and output was *a flow of lines* from birth.
-
-== Printing terminals — a conversation on paper, and tty
-
-With the age of time-sharing (many people using one computer at once) came the
-need for a device in which human and computer could *converse*. The thing that
-took that place was the telegraphic typewriter — the *Teletype*. Strike a key
-on this typewriter-shaped machine and the letter goes to the computer; the
-computer's reply is printed on the same machine's paper. There is no screen.
-The entire conversation is printed on a roll of paper.
-
-Unix was born beside exactly these devices (chapter 2), and took the name for a
-terminal device from the abbreviation of Teletype — *tty*. The name is still
-alive at the bottom of today's terminal windows.
-
-There is another legacy from the typewriter's body. Changing lines on a
-typewriter is really two motions — *returning* the type carriage to the left
-end, and *advancing* the paper one line. The character table assigned a control
-character to each: carriage return (CR, written `\r` in C) and line feed (LF,
-`\n`). Changing one line needed two instructions because two mechanical parts
-actually moved.
-
-#realcase[
-  CRLF — the hundred-year homework a typewriter left behind
-][
-  The two characters remained after the physical reason vanished, and the world
-  never unified its line-ending notation. The Windows family writes both motions,
-  `\r\n` (CRLF); the Unix family takes the single `\n` as the end of a line. The
-  result is the everyday accidents of today — open a text file made on one side
-  on the other and ghost characters appear at line ends or the whole file looks
-  like one line, and version-control tools (git) print warnings about "CRLF will
-  be replaced by LF." The motion of typewriter parts is still raising warnings at
-  collaboration sites half a century after the parts disappeared.
-
-  And these two characters show their face in security too. Internet protocols
-  (HTTP, email) are text protocols that *separate fields by line breaks* — so if
-  CR and LF get mixed into a value supplied by a user, an attacker can *create
-  and insert a new field*. Put someone else's value straight into a response
-  header and the headers can be wholly manipulated (HTTP response splitting);
-  put it into a log line and fake log lines can be forged (log forging).
-  Chapter 7's refrain repeats here — *do not mix data into the frame*, and
-  filter control characters at the boundary.
-]
-
-== Screen terminals, and streams as the legacy
-
-In time paper became screen — but the new screen devices were built to
-*imitate* printing terminals. Today's terminal window, where letters are pushed
-up from the bottom, is the glass version of the Teletype whose paper was pushed
-upward. Only the appearance changed; the grammar of the conversation stayed.
-
-This whole physical lineage condensed into a single notion. Input and output is
-#idx("stream")*a band of characters flowing past in order, a line at a time* —
-this is the *stream*. Input flows in as cards were drawn in one at a time;
-output flows out as a printer struck one line at a time. C took this notion into
-the language as its input/output model. The two flows given by default to every
-program are *standard input* and *standard output*, and the `printf` we meet in
-the next part of this book is the function that lets letters flow onto the band
-called standard output.
-
-== Swapping the band — redirection and pipelines
-
-The notion of a stream hid an unexpected power. If a program *does not know
-where the end of its output is* — then that end can be swapped from outside.
-
-Unix turned this idea into an institution. A program merely reads and writes on
-the bands called standard input and standard output, and what the other side of
-those bands connects to is decided by *whoever runs the program*. Type
-`> file.txt` after a command in the terminal and the output band leads to a file
-#idx("redirection")instead of the screen (*redirection*); type `< input.txt`
-and the input band flows from a file instead of the keyboard. Not one letter of
-the program's code changes.
-
-One step further is the *pipeline*: joining one program's output band directly
-to another program's input band — the terminal's `|` symbol is that connection.
-
-```text
-$ list | filter | count
-```
-
-Three programs each work looking only at their own band, and joining the three
-makes a new tool. The principle left behind by Doug McIlroy, who invented this
-connection, and the Unix people became a maxim of software design ever after —
-*"Write small programs that do one thing well, and have them cooperate through
-text streams."* The grammar of assembling programs as components came out of
-just this simplicity of swapping bands.
-
-The price of that freedom is something the programmer must observe. You must
-not assume your program's output always goes to a human's screen — decorative
-characters or progress indicators can contaminate the input of the next program.
-So the Unix tradition provides one more channel: the real results go to standard
-output, and what is said to a human (warnings, errors) goes to a separate band
-called *standard error*. That is why a third band exists.
-
-#realcase[
-  This book's printed output is itself a product of redirection
-][
-  This is not an abstract story — the book you are reading is the proof. Every
-  code demonstration in this book is real output obtained by a machine running
-  the example, and that output was not transcribed by a person but obtained by
-  *turning the output band into a file* (redirection), which the typesetting tool
-  then read and printed. Examples that need input likewise have a file joined to
-  the standard input band — which is why the examples reproduce with no one
-  striking a keyboard. When chapter 24 breaks the misconception that "input comes
-  from the keyboard", the living proof is the making of this book.
+  The default is `double`. The 64-bit format handles about 15–16 significant
+  decimal digits, which leaves room in most calculations. `float` (about 7
+  digits) is chosen for its size advantage where memory and bandwidth matter —
+  large numbers of coordinates, graphics, machine learning. "double for
+  precision, float for volume" is roughly right. Actual use in C is covered in
+  chapter 45.
 ]
 
 #qa[
-  Programs these days communicate with windows and buttons — is the stream not
-  an old story?
+  Integer overflow in chapter 7 and rounding in this chapter are both problems
+  of "a finite container" — are they the same kind of problem?
 ][
-  Looking only at the front of the screen it seems so, but round the back the
-  stream is at its peak. The records (logs) of server programs are streams, so
-  are the pipelines joining program to program, and so is an AI chatbot "flowing"
-  its answer one character at a time. Above all, in the setting of learning to
-  program, the stream is the simplest and most honest channel of communication —
-  which is why every example in this book runs on top of one.
+  The root is the same, the symptoms differ. The integer container is finite in
+  *range*, so it overflows at the end (and is perfectly exact until it does);
+  the floating-point container is finite in *precision*, so it approximates a
+  little everywhere (but its range is enormous). An exact but narrow container
+  and a wide but approximating one — a feel for which container to use is a
+  fundamental of handling numbers, and choosing types in C (chapters 27 and 45)
+  is exactly that choosing.
 ]
 
-The ladder of representation is complete. How to put numbers in the lockers
-(chapter 6), how to put letters in (chapter 7), and how to let letters flow
-(chapter 8) — we can now put anything into the machine and get it out.
+To summarise this rung of the ladder: the decimal point is not in the bits but
+in an agreement. Pin the agreement down and you have fixed point; carry it in
+the data and you have floating point, whose agreement is unified by the
+contract IEEE 754. And numbers under that contract are not exact numbers but
+faithful approximations.
 
-From the next chapter comes this part's final climb. How bold a lie the simple
-picture of the machine has been so far — memory splitting apart (chapter 9),
-execution overlapping (chapter 10), the compiler stepping in (chapter 11), and
-therefore why C cannot help being "an abstract language" (chapter 12).
+The next rung is characters. What has to be agreed in order to put "hello" in
+the lockers — the world of characters and text, and the story of the scars left
+where those agreements failed to match.
