@@ -7,9 +7,9 @@ computer is actually built rather than with a list of syntax, takes today's
 standard (C23) as its default, and ends as a manual for the
 [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.2.0 — **draft**
-- Korean: [PDF](dist/proven_c_book-v0.2.0-ko.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/ko/)
-- English: [Web](https://rubidus-api.github.io/proven_c_book/en/) — *translation in progress* (preface and chapters 1–7; [PDF](dist/proven_c_book-v0.2.0-en.pdf))
+- **Current edition**: v0.3.0 — **draft**
+- Korean: [PDF](dist/proven_c_book-v0.3.0-ko.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/ko/)
+- English: [Web](https://rubidus-api.github.io/proven_c_book/en/) · [PDF](dist/proven_c_book-v0.3.0-en.pdf) — *complete*
 - 13 parts, 81 chapters, appendices A–F and an index; about 350 pages (repository head).
 
 ## What makes it different
@@ -34,16 +34,16 @@ the source. The English edition is translated from it chapter by chapter, with
 **chapter numbers identical to the original**, so a reference to "chapter 49"
 means the same chapter in both editions.
 
-Translated so far: preface, Part II introduction, chapter 1 and chapters 4–46
-(Parts II–IX complete), plus chapter 80.
-Per-chapter status: [TRANSLATION.md](TRANSLATION.md).
+The English edition is now **complete**: all 13 parts, 81 chapters, appendices
+A–F and the index. Per-chapter status: [TRANSLATION.md](TRANSLATION.md).
 
 The two editions are kept in step mechanically. `scripts/sync-status.py` records
 the hash of the Korean source each translated file was made from and classifies
 every file as synced / stale / pending; both book builds run it, so a change to
 a Korean chapter shows up immediately as a stale English chapter. Narrative
 device labels live in a single localized place, so editing a device changes both
-editions at once.
+editions at once. `scripts/check-xrefs.py` additionally compares the chapter
+cross-references of the two editions and reports any that have drifted apart.
 
 Contributions of translated chapters are not accepted (see below) — the
 translation is done by the author.
