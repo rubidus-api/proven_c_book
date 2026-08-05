@@ -65,21 +65,182 @@ the same shape must be stamped out per type (C having no generics), joining a
 prefix and a type name to produce names like `stack_int_push` and
 `stack_double_push` from one macro is the classic technique.
 
-== The double indirection — why one layer does not unfold
+== Double expansion — why one layer does not unfold
 
 There is a rule you must meet when using `#` and `##`. *A macro argument that
 becomes the operand of `#` or `##` is not expanded first.* The demonstration's
 last two lines are the contrast — `STR_RAW(WIDTH)` becomes `"WIDTH"`, while
 `STR(WIDTH)` becomes `"80"`.
 
-The reason lies in the order of substitution. A macro argument is normally
-*expanded fully first* and then put into the body, but when it is the operand of
-`#` or `##` the *unexpanded original token* is used. So when you want the value
-you add another layer — the outer macro (`STR`) takes the argument ordinarily and
-*after expanding it* passes it to the inner macro (`STR_RAW`), which makes the
-string there. `##` has the same circumstance, so keeping a `PASTE`/`PASTE_RAW`
-pair is idiom. It is the preprocessor trap that catches people most often, and
-also a problem solved in two lines once known.
+=== The names first — four rules
+
+What happens in this section is what the standard writes down in four clauses.
+Knowing the names makes it far easier to put the order together in your head.
+
+#dtable(
+  columns: 2,
+  [*the standard's name*], [*what the rule is*],
+  [argument substitution], [an argument is *fully expanded first* and then put into the body],
+  [the `#` operator (stringize)], [the operand argument is *not expanded* and becomes a string literally],
+  [the `##` operator (token pasting)], [the arguments on either side are pasted into one token *without expansion*],
+  [rescanning and further replacement], [the result of substitution is *scanned again* and the remaining macros expanded],
+)
+
+The heart of it is the *collision* between the first row and the middle two.
+Normally an argument is expanded first (argument substitution), but an argument that
+becomes the operand of `#` or `##` is the exception and the *unexpanded original
+token* is used. So when the value is wanted, one more layer is added so that the
+argument is expanded *before* it meets `#` or `##` — this is the idiom called
+*double expansion*, or an *indirection macro*.
+
+One more rule is needed. Its name is not the standard's but people's — the *blue
+paint rule*. If a macro's own name appears again while it is being expanded, *that
+name is not expanded again but left as it is* (the metaphor is that it is painted
+blue to mark it). It is the device that prevents infinite recursion, and the `LOW`
+of the standard example below turns on exactly this rule.
+
+=== Following the expansion by hand — a contrast of two lines
+
+What makes this hard to simulate in the head is that "when to expand and when not"
+differs from place to place. Let us put two lines side by side and follow them step
+by step. `WIDTH` is defined as `80`.
+
+*One layer — `STR_RAW(WIDTH)`*
+
+#dtable(
+  columns: 3,
+  [*step*], [*what is being done*], [*result*],
+  [1], [`WIDTH` goes into `STR_RAW`'s parameter `s`], [`s` ← `WIDTH`],
+  [2], [the body is `#s`, so it is *the exception to argument substitution* — not expanded], [`WIDTH` (as it is)],
+  [3], [it is stringized], [`"WIDTH"`],
+  [4], [rescanning — inside a string there are no tokens, so there is nothing more to see], [`"WIDTH"`],
+)
+
+*Two layers — `STR(WIDTH)`*
+
+#dtable(
+  columns: 3,
+  [*step*], [*what is being done*], [*result*],
+  [1], [`WIDTH` goes into `STR`'s parameter `x`], [`x` ← `WIDTH`],
+  [2], [the body is `STR_RAW(x)` — neither `#` nor `##`, so *argument substitution* expands it first], [`x` ← `80`],
+  [3], [it is put into the body], [`STR_RAW(80)`],
+  [4], [rescanning — `STR_RAW` is a macro, so it is expanded], [`#80`],
+  [5], [it is stringized], [`"80"`],
+)
+
+The only place a difference arises is *step 2*. Thanks to the extra layer outside,
+the argument was expanded once before meeting `#`, and so the token `#` saw was not
+`WIDTH` but `80`. `##` is in the same circumstance, so keeping a
+`PASTE`/`PASTE_RAW` pair is idiom.
+
+=== The standard's own example — `glue` and `xglue`
+
+This idiom is also one the standard document gives directly as an example (in C17
+it is the EXAMPLE of §6.10.3.5, "Scope of macro definitions"; C23 pushed the number
+along by one as `#embed` came in at 6.10.3). We run that example as it stands.
+
+#demo("examples/ch49/glue.c")
+
+The third and fourth lines of the output are this section's conclusion. Given the
+same arguments, `glue` produced `hello` and `xglue` produced `hello, world`. We
+follow why, a step at a time. Three definitions are involved.
+
+```c
+#define glue(a, b)   a ## b
+#define xglue(a, b)  glue(a, b)
+#define HIGHLOW      "hello"
+#define LOW          LOW ", world"
+```
+
+*`glue(HIGH, LOW)`*
+
+#dtable(
+  columns: 3,
+  [*step*], [*what is being done*], [*result*],
+  [1], [it takes the arguments], [`a` ← `HIGH`, `b` ← `LOW`],
+  [2], [the body is `a ## b` — both are operands of `##`, so they are *not expanded*], [`HIGH`, `LOW` (as they are)],
+  [3], [they are pasted], [`HIGHLOW` (one identifier token)],
+  [4], [rescanning — `HIGHLOW` is a macro], [`"hello"`],
+)
+
+Notice that a macro called `HIGH` was never defined. The reason no error arises is
+that `HIGH`, *before being used on its own*, was pasted with `LOW` and became a
+different name, `HIGHLOW`. This is what `##` does — it makes one name that exists out
+of two that do not.
+
+*`xglue(HIGH, LOW)`*
+
+#dtable(
+  columns: 3,
+  [*step*], [*what is being done*], [*result*],
+  [1], [it takes the arguments], [`a` ← `HIGH`, `b` ← `LOW`],
+  [2], [the body is `glue(a, b)` — no `#` or `##`, so *argument substitution* expands first], [2a and 2b below],
+  [2a], [`HIGH` is not a macro], [`HIGH` (as it is)],
+  [2b], [expanding `LOW` gives `LOW ", world"`, and the `LOW` inside is not expanded further, by the *blue paint rule*], [`LOW ", world"`],
+  [3], [it is put into the body], [`glue(HIGH, LOW ", world")`],
+  [4], [rescanning — `glue` is expanded. This time `a` is `HIGH` and `b` is `LOW ", world"`],
+      [`HIGH ## LOW ", world"`],
+  [5], [`##` pastes *only one token on each side* — `HIGH` and `LOW`], [`HIGHLOW ", world"`],
+  [6], [rescanning — `HIGHLOW` is a macro], [`"hello" ", world"`],
+  [7], [in translation phase 6 adjacent string literals are joined (this chapter's table)], [`"hello, world"`],
+)
+
+Step 5 is the place that confuses most. `##` is an operator that pastes *two tokens*,
+not "the whole of the right-hand argument". So even though `b` has expanded into
+several tokens (`LOW`, `", world"`), only the leading `LOW` is pasted and the rest
+follows after it as it stands.
+
+And it is worth pointing out that step 7 is the business not of the preprocessor but
+of *translation phase 6*. What the preprocessor produced was, after all, the two
+string literals `"hello" ", world"`, and their joining into one is the next stage.
+
+#qa[
+  How does `#include xstr(INCFILE(2).h)` become `"vers2.h"`?
+][
+  It is the same principle used on a header name. That the example really includes
+  that header and prints `VERS_TAG` confirms it.
+
+  + The argument is `INCFILE(2).h`. The outside is `xstr`, so it is *expanded first*.
+  + `INCFILE(2)` → `vers ## 2` → `vers2`. So the argument becomes `vers2 .h`.
+  + Put into `xstr`'s body `str(s)` and rescanned it is `str(vers2 .h)`.
+  + This time it is the operand of `#`, so it is stringized without further expansion
+    → `"vers2.h"`.
+  + `#include` takes that string as the header name.
+
+  Written with one layer as `str(INCFILE(2).h)` it would have become the useless name
+  `"INCFILE(2).h"`. Code that chooses a header by version number or platform name uses
+  this idiom.
+
+  How stringizing *treats white space* appears in this example too. White space
+  between tokens inside the argument shrinks to one space and the space at either end
+  vanishes — so there is no need to worry that `vers2 .h` might become `"vers2 .h"`
+  rather than `"vers2.h"`. In fact both the standard's result and this example's are
+  `vers2.h`.
+]
+
+#antipattern[
+  When you think it is two layers and it is one
+][
+  ```c
+  #define CONCAT(a, b) a ## b
+  #define VERSION 2
+  int CONCAT(api_v, VERSION)(void);   /* api_vVERSION — not what was wanted */
+  ```
+  `CONCAT` itself is the macro that uses `##` directly, so `VERSION` is not expanded.
+  One more layer must be wrapped round.
+  ```c
+  #define CONCAT_RAW(a, b) a ## b
+  #define CONCAT(a, b)     CONCAT_RAW(a, b)
+  int CONCAT(api_v, VERSION)(void);   /* api_v2 */
+  ```
+  There are two naming practices — attach `_RAW` or `_IMPL` to the inner one, or
+  attach an `x` to the outer one (the standard example's `xstr` and `xglue` are the
+  latter). Either way, only one rule need be kept: *the macro that uses `#` or `##`
+  directly goes on the inside, and the outside merely calls it.*
+]
+
+It is the preprocessor trap that catches people most often, and also a problem solved
+in two lines once known.
 
 #realcase[
   A language made by one macro — the X macro

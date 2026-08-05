@@ -77,6 +77,107 @@ and is hard to reproduce.*
   collapsed was the contract.
 ]
 
+== Before the computation even begins — the UB of a file's shape
+
+Undefined behaviour usually brings to mind an accident *during execution*, such as
+an overflow or a null dereference. Yet read the standard's list (annex J.2) from the
+top and something surprising appears — *the second entry is about the last character
+of a file*.
+
+#dtable(
+  columns: 2,
+  [*what the standard requires*], [*break it and*],
+  [a non-empty source file must end in a new-line character], [undefined behaviour],
+  [that new-line must not be one preceded by a backslash], [undefined behaviour],
+  [the file must not end in a partial preprocessing token or comment], [undefined behaviour],
+)
+
+That is, *a file whose last line has no new-line at the end* is outside the contract
+however perfect its grammar. This provision has been there since C89 and remains in
+C23 (ISO/IEC 9899:2024) — it is the second entry of annex J.2. C++, for reference,
+dropped the clause in 2011 (deciding that a missing new-line counts as one appended).
+It is a rare place where the two languages parted.
+
+Why should such a thing be UB? Recall the *translation phases* seen in chapter 49 and
+the answer appears. The preprocessor works by lines, and one directive is complete
+only when a new-line ends it. If the file ends with no new-line, the last line is left
+*unfinished*, and what happens next differs by implementation. The third row's
+"partial token" is the same circumstance — if the file ends with an unclosed string
+literal or a comment with no `*/`, the preprocessor has no ground on which to judge
+whether to keep reading into the next file.
+
+Today's compilers mostly append a new-line quietly (older GCC gave
+`warning: no newline at end of file`). So the place this clause makes trouble in
+practice is not the compiler but *the other tools that handle the file*.
+
+#realcase[
+  The practical noise one new-line makes — git and the Unix tools
+][
+  POSIX defines a *line* as "a string ending in a new-line". So a file missing the
+  final new-line becomes, in the eyes of the tools, "a file whose last line is
+  unfinished", and the following happens.
+
+  - *A mark is left in git's diff* — that famous `\ No newline at end of file` line.
+    If somebody later adds the new-line, a line whose content did not change is *caught
+    as a changed line*, making the diff dirty and making conflicts likely at that place
+    when branches are merged. The red mark on the last line in GitHub's web view is the
+    same thing.
+  - *Joining files runs lines together* — with `cat a.txt b.txt`, `a`'s last line and
+    `b`'s first line become one line. It is especially tiresome in builds that make
+    source or configuration by joining fragments.
+  - *Tools that count lines miss one* — `wc -l` counts new-lines, so an unfinished last
+    line is not counted.
+
+  So today's practice is one line — *end a text file with a new-line.* An editor
+  setting (add a final new-line automatically), `.editorconfig`'s
+  `insert_final_newline`, and the formatting tools seen in chapter 79 do that work for
+  you. The C standard's clause is, in effect, the oldest ground for that practice.
+]
+
+== Other curious pieces of UB
+
+The same list holds several entries that make one ask "even this?". They are things
+that happen in *the world of characters and names*, unrelated to computation at run
+time. A few, picked out.
+
+#dtable(
+  columns: 3,
+  [*this code*], [*what is wrong*], [*the standard's place*],
+  [`#include "dir\file.h"`], [a `\` inside a header name is UB — writing a Windows path as it stands hits this], [6.4.7],
+  [`#include <a//b.h>`], [`//`, `/*`, `'` and `"` likewise are UB], [6.4.7],
+  [`#define defined(x) …`], [using `defined` as a macro name], [6.10.9],
+  [using `assert` after `#undef assert`], [erasing a standard library macro and then using it], [7.1.3],
+  [`int _Value;`, `int __x;`], [trespassing on the reserved name space (chapter 66)], [7.1.3],
+  [`memcpy(p, q, 0)` with `p` null], [even at size 0 a null pointer is outside the contract], [7.26.2],
+  [`printf("%s", NULL)`], [passing null as a string], [7.23.6.1],
+)
+
+The first two rows are especially practical. Writing `#include "utils\str.h"` on
+Windows is *undefined behaviour as far as the standard goes* — in reality MSVC handles
+it for you, but it becomes a problem the moment you port. What the standard guarantees
+is `/` alone, and happily the Windows compilers accept `/` too. Hence the advice always
+to use `/` in header paths.
+
+The sixth row surprises people often too. "The size is 0 so nothing will happen — what
+does it matter whether the pointer is null?" one thinks, but the standard requires
+`memcpy`'s two pointers to be *valid* regardless of the size. Sanitizers (chapter 17)
+really do catch this, and the compiler gains the premise "this pointer is not null" and
+sometimes erases a null check that follows — exactly the pattern seen in chapter 13.
+
+#misconception[
+  "These are theoretical quibbles; nothing actually happens"
+][
+  In most places nothing really does happen. But that is precisely this chapter's
+  theme — *nothing happening is not a guarantee.* A file with no new-line is quiet at
+  the compiler and makes noise down the tool chain, and `memcpy(NULL, NULL, 0)` is fine
+  until the day the optimisation level is raised and the null check vanishes.
+
+  The practical attitude is this. *Keep the clauses that can be kept for free.* Put a
+  new-line at the end of a file, use `/` in header paths, do not begin a name with two
+  underscores — the cost of these is zero, and in exchange you gain one thing: "in this
+  place I need not suspect anything."
+]
+
 == How to avoid it — discipline, tools, and components
 
 Defence in practice is three layers.
