@@ -85,6 +85,42 @@ place. `default` is the branch for when no label matches — always keeping it, 
 *a net that catches unexpected values* ("there is no such month"), is the
 practice.
 
+#realcase[
+  A curious example the standard gives — a declaration nobody reaches
+][
+  Push the property that a `case` label is not a fence to its extreme and strange code
+  becomes possible. The following is one the C standard gives directly as an example in
+  its `switch` clause.
+
+  ```c
+  switch (expr) {
+      int i = 4;          /* ← nobody comes here */
+      f(i);               /* ← nor here */
+  case 0:
+      i = 17;
+      /* falls through */
+  default:
+      printf("%d\n", i);
+  }
+  ```
+
+  On entering a `switch`, execution *jumps straight to the matching label*. So the two
+  lines at the head of the block are executed for no value at all. And yet the variable
+  `i` *exists* — once the block has been entered, that block's local variables get their
+  places (chapter 39's automatic storage duration).
+
+  The result is curious. If `expr` is 0 it jumps to `case 0:`, `i = 17` runs and 17 is
+  printed; but *if it is not 0* it jumps straight to `default:` and `i` is read
+  *never having been initialised* — the reading of an indeterminate value learned in
+  chapter 46. And that with the initialising line sitting there in plain sight.
+
+  This example is in the standard not to say "write it this way" but to pin down *the
+  consequence of a `case` being merely a label*. The rules in practice are two — *do not
+  put a declaration at the head of a `switch` block*, and *if a variable must be declared
+  inside a `case`, make a block with braces* (otherwise the compiler may refuse it as an
+  initialisation jumped over by a case label).
+]
+
 #qa[
   An `if` ladder can do it all, so why is `switch` needed at all?
 ][

@@ -136,33 +136,79 @@ practice is not the compiler but *the other tools that handle the file*.
 
 == Other curious pieces of UB
 
-The same list holds several entries that make one ask "even this?". They are things
-that happen in *the world of characters and names*, unrelated to computation at run
-time. A few, picked out.
+As of C23, annex J.2 lists *218 kinds* of undefined behaviour. Most are things one will
+never meet in a lifetime, but among them are several entries that make one ask "even
+this?". We pick out those that happen in *the world of characters and names*, unrelated
+to computation at run time.
 
 #dtable(
   columns: 3,
   [*this code*], [*what is wrong*], [*the standard's place*],
+  [a file ending with no new-line], [the one seen in the previous section], [5.1.1.2],
+  [a `/*` comment left unclosed at end of file], [ending in a partial comment is the same entry], [5.1.1.2],
+  [a string with its quote unclosed at end of file], [a partial preprocessing token], [5.1.1.2],
   [`#include "dir\file.h"`], [a `\` inside a header name is UB — writing a Windows path as it stands hits this], [6.4.7],
   [`#include <a//b.h>`], [`//`, `/*`, `'` and `"` likewise are UB], [6.4.7],
   [`#define defined(x) …`], [using `defined` as a macro name], [6.10.9],
   [using `assert` after `#undef assert`], [erasing a standard library macro and then using it], [7.1.3],
   [`int _Value;`, `int __x;`], [trespassing on the reserved name space (chapter 66)], [7.1.3],
-  [`memcpy(p, q, 0)` with `p` null], [even at size 0 a null pointer is outside the contract], [7.26.2],
+  [`memcpy(p, q, 0)` with `p` null], [even at size 0 a null pointer is outside the contract (see below)], [7.26.2],
   [`printf("%s", NULL)`], [passing null as a string], [7.23.6.1],
+  [`short a[10]; short *p = &a[15];`], [*merely making* an out-of-range pointer is UB, without dereferencing], [6.5.7],
+  [`if (p > q)` on unrelated objects], [comparing with a relational operator (chapter 35)], [6.5.9],
+  [`towctrans` under another locale], [UB if `LC_CTYPE` differs from when `wctrans` was called], [7.31.3.2],
 )
 
-The first two rows are especially practical. Writing `#include "utils\str.h"` on
-Windows is *undefined behaviour as far as the standard goes* — in reality MSVC handles
-it for you, but it becomes a problem the moment you port. What the standard guarantees
-is `/` alone, and happily the Windows compilers accept `/` too. Hence the advice always
-to use `/` in header paths.
+The first three are the other faces of the "file shape" entry seen in the previous
+section. A file ending with an unclosed comment or string falls under the same clause —
+it looks as though it would fail to compile anyway, but in the standard's eyes it is a
+place where *not even a diagnosis is required*.
 
-The sixth row surprises people often too. "The size is 0 so nothing will happen — what
-does it matter whether the pointer is null?" one thinks, but the standard requires
-`memcpy`'s two pointers to be *valid* regardless of the size. Sanitizers (chapter 17)
-really do catch this, and the compiler gains the premise "this pointer is not null" and
-sometimes erases a null check that follows — exactly the pattern seen in chapter 13.
+The two rows in the middle are especially practical. Writing `#include "utils\str.h"`
+on Windows is *undefined behaviour as far as the standard goes* — in reality MSVC
+handles it for you, but it becomes a problem the moment you port. What the standard
+guarantees is `/` alone, and happily the Windows compilers accept `/` too. Hence the
+advice always to use `/` in header paths.
+
+The `short *p = &a[15];` row surprises people too. *Without reading or writing
+anything*, merely making the pointer is outside the contract (only up to one past the
+array's end is permitted). It is why "I only compute the address and never use it" does
+not hold, and the ground on which chapter 35 drew a boundary round pointer arithmetic.
+
+The last row shows this list's character well. One wide-character conversion function
+carries the condition that "the locale must be the same as when `wctrans` was called",
+and breaking it is UB. Most of the 218 are of this grain — very narrow, very specific,
+and never met in a lifetime.
+
+#realcase[
+  UB sometimes shrinks — the story of `memcpy(NULL, NULL, 0)`
+][
+  The ninth row of the table was long a matter of dispute. "The size is 0 so nothing
+  will happen — what does it matter whether the pointer is null?" one thinks, but the
+  standard required `memcpy`'s two pointers to be *valid* regardless of the size. So
+  code handling an empty array slipped outside the contract through no fault of its own.
+
+  ```c
+  void copy(int *dst, const int *src, size_t n) {
+      memcpy(dst, src, n * sizeof *dst);   /* UB if n == 0 and both are null */
+  }
+  ```
+
+  There was real damage too. The compiler gains the premise that `memcpy`'s arguments
+  are not null, and so can *erase a null check that follows* — the pattern seen in
+  chapter 13 and in this chapter. Sanitizers (chapter 17) catch it as well.
+
+  Yet this clause has been settled to *go away*. The committee accepted proposal N3322,
+  so in the next edition (C2y) giving null pointers to zero-length operations becomes
+  defined behaviour — `memcpy(NULL, NULL, 0)`, `memcmp(NULL, NULL, 0)`,
+  `(int *)NULL + 0` and `(int *)NULL - (int *)NULL` all become legal. The committee even
+  recommended that implementers apply the change retroactively to older standards.
+
+  This story leaves two lessons. First, *the UB list is not a fixed scripture* — clauses
+  that are useless for optimisation and merely torment people do get tidied away over
+  time. Second, even so, *whether the compiler you are using now reflects that change is
+  another matter.* For the time being, code that checks `n == 0` first is still right.
+]
 
 #misconception[
   "These are theoretical quibbles; nothing actually happens"

@@ -242,6 +242,109 @@ string literals `"hello" ", world"`, and their joining into one is the next stag
 It is the preprocessor trap that catches people most often, and also a problem solved
 in two lines once known.
 
+== The curious examples the standard gives
+
+The standard document's macro replacement clauses hold several examples that make one
+ask "was even this settled?". They are not things to use often in practice, but they
+show *what happens when the expansion rules are pushed to their limit*, so they are
+worth reading once. We pick three and really run them.
+
+#demo("examples/ch49/odd.c")
+
+The knack the example uses of printing the expansion as text is worth noticing too —
+wrap something in `xstr(…)` and "so what did it become" can be seen as a string. The
+double expansion just learned is, in effect, used as *a tool for debugging the
+preprocessor*.
+
+=== ① Placemarkers — pasting an empty argument
+
+```c
+#define t(x, y, z)  x ## y ## z
+int j[] = { t(1,2,3), t(,4,5), t(6,,7), t(8,9,),
+            t(10,,), t(,11,), t(,,12), t(,,) };
+```
+
+What happens if an argument is left empty and `##` is used? There being nothing to
+paste, it looks like an error, but the standard settles that in an empty argument's
+place there is an invisible token called a *placemarker*. This token leaves whatever it
+is pasted with as it is, and vanishes when the expansion ends.
+
+So `t(6,,7)` pastes `6` and `7` into `67`, and `t(,,)` *leaves no token at all*. It is
+why the example's array ends with seven elements — the eighth `t(,,)` vanished whole
+and left only a trailing comma (that comma being legal thanks to chapter 41's
+initialiser syntax).
+
+Where this rule pays in practice is in *a macro whose argument may or may not be
+there*. A code-generating macro that chooses with one argument whether to attach a
+prefix leans on this property.
+
+=== ② The expansion the standard declares "unspecified"
+
+```c
+#define f(a)  a*g
+#define g(a)  f(a)
+f(2)(9)
+```
+
+These two lines call each other. `f(2)` becomes `2*g`, and with `(9)` following it it
+could be read as `g(9)` — and expanding `g` gives `f(9)` again, whose `f` is already
+being expanded and so is caught by the *blue paint rule*.
+
+Here the standard did not settle on one answer. It writes into the example itself that
+*"the result is either `2*9*g` or `2*9*f(9)`, and which it is is unspecified"*. It is a
+textbook case of *unspecified behaviour*, one of the grey zones learned in chapter 46 —
+it is one of two, but which is settled by the implementation.
+
+The GCC on the machine that ran this example chose `2*9*g`. Another answer on another
+implementation would not be a bug. The practical lesson is one — *do not make macros
+call each other.*
+
+=== ③ `__VA_OPT__` — when is "empty" judged?
+
+The `__VA_OPT__` C23 brought in (chapter 66) puts something in "only when the variadic
+arguments are not empty". But *when* it looks to see whether they are empty is subtle.
+
+```c
+#define LOG(...)  log(0 __VA_OPT__(,) __VA_ARGS__)
+#define EMP                       /* a macro that expands to nothing */
+
+LOG(1,2)   →  log(0 , 1,2)
+LOG()      →  log(0 )
+LOG(EMP)   →  log(0 )             ← an argument was passed and yet there is no comma
+```
+
+`LOG(EMP)` is the heart of it. One argument was plainly passed, but `EMP` expands to no
+token at all. Because the judgement is made on the tokens *after* expansion rather than
+before, it counts as "empty" and no comma attaches.
+
+The `SDEF` side shows this property's practical use.
+
+```c
+#define SDEF(name, ...)  S name __VA_OPT__(= { __VA_ARGS__ })
+
+SDEF(foo)         →  S foo                 /* without initialisation */
+SDEF(bar, 1, 2)   →  S bar = { 1, 2 }      /* with it */
+```
+
+That a macro whose *very syntax changes* with the presence of arguments can be written
+with standard syntax alone is C23's contribution. Before it one had to lean on a GCC
+extension (`, ##__VA_ARGS__`).
+
+#qa[
+  I hear the standard has a worse example than these.
+][
+  It does. The last example of the clause on rescanning is the one — it puts down some
+  nine lines of definitions (including things like `#define z z[0]` and `#define h g(~`,
+  where *the parentheses do not even match*) and asks what the single line
+  `f(y+1) + f(f(z)) % t(t(g)(0) + t)(1);` becomes. The answer is
+  `f(2 * (y+1)) + f(2 * (f(2 * (z[0])))) % f(2 * (0)) + t(1);`.
+
+  That example's purpose is not to test people but *to test implementations*. It is put
+  together so that whoever writes a preprocessor and gets one rule wrong will have it
+  show up in this single line. We have no reason to memorise it; it serves only to
+  confirm where the boundary of the defined world lies.
+]
+
 #realcase[
   A language made by one macro — the X macro
 ][
