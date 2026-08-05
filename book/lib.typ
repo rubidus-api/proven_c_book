@@ -88,7 +88,8 @@
   below: 0pt,
   breakable: false,
 )[
-  #set par(first-line-indent: 0em, leading: 0.85em)
+  #set par(first-line-indent: 0em, leading: 0.85em, spacing: 0.55em)
+  #set block(spacing: 0.55em)
   #_open-label(label)
   #body
 ]
@@ -122,9 +123,9 @@
 // 3.2 심화 문답 (장 서두 회고 전용)
 // ② 인출 문답 — 선행 개념을 표시하는 데 그치지 않고 실제로 꺼내 보게 한다
 #let deepqa(q, a) = _open-block(_L.back)[
-  #block(below: 5pt, width: 100%)[#q]
-  #block(width: 100%, inset: (left: 10pt),
-    stroke: (left: 2.5pt + rgb("#555555")))[
+  #block(width: 100%)[#q]
+  #block(width: 100%, inset: (left: 9pt),
+    stroke: (left: 0.6pt + black))[
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
           size: 0.98em, fill: rgb("#3a3a3a"))[#_L.a.] #h(3pt) #a
   ]
@@ -243,7 +244,7 @@
 // ① 이 장이 기대는 것 — 항목당 한 줄로 압축한다(재평가 §7.3: 서두가 길다)
 #let prereq(..items) = _open-block(_L.prereq, first: true)[
   #for (where, what) in items.pos() {
-    block(below: 5pt, width: 100%)[
+    block(width: 100%)[
       #text(weight: "bold")[#where]
       #h(5pt) #text(fill: rgb("#555555"))[·] #h(5pt)
       #text(fill: rgb("#333333"))[#what]
@@ -265,7 +266,7 @@
   } else {
     _open-block(_L.questions)[
       #for (i, m) in qs.enumerate() {
-        block(below: 4pt, width: 100%, inset: (left: 14pt))[
+        block(width: 100%, inset: (left: 14pt))[
           #place(left, dx: -14pt, text(fill: rgb("#777777"), weight: "bold")[#(i + 1)])
           #m.value
         ]
@@ -346,7 +347,7 @@
 
 // ── 모드 인지 표 ─────────────────────────────────────
 // PDF 에서는 Typst table, HTML 에서는 진짜 <table> 로 나간다.
-#let dtable(columns: 2, caption: none, ..cells) = {
+#let dtable(columns: 2, caption: none, keycol: auto, ..cells) = {
   let items = cells.pos()
   if sys.inputs.at("mode", default: "paged") == "html" {
     let rows = ()
@@ -370,12 +371,20 @@
     // 굵은 테두리는 표를 감싸는 블록이 아니라 *표 자신의 바깥 선*이어야
     // 한다. 블록으로 감싸면 테두리만 단 너비를 차지하고 표는 제 너비만
     // 차지해 둘이 따로 논다 (저자 지시 2026-08-06).
+    //
+    // 머리행(1행)은 산세리프 굵은 글씨 + 옅은 음영으로 포인트를 준다.
+    // 열이 셋 이상이면 1열도 키 노릇을 하므로 같은 처리를 한다
+    // (`keycol: true|false` 로 강제할 수 있다).
     let rows = calc.ceil(items.len() / columns)
     let thick = 1.2pt + rgb("#111111")
     let thin = 0.4pt + rgb("#999999")
+    let key = if keycol == auto { columns >= 3 } else { keycol }
+    let sans = ("Noto Sans CJK KR", "Noto Sans")
     align(center, table(
       columns: columns,
       inset: 5pt,
+      fill: (col, row) => if row == 0 { rgb("#ececec") }
+        else if key and col == 0 { rgb("#f5f5f5") } else { none },
       stroke: (x, y) => (
         left: if x == 0 { thick } else { thin },
         right: if x == columns - 1 { thick } else { none },
@@ -383,7 +392,9 @@
         bottom: if y == rows - 1 { thick } else { none },
       ),
       ..items.enumerate().map(((i, c)) => if i < columns {
-        text(weight: "bold", c)
+        text(font: sans, weight: "bold", c)
+      } else if key and calc.rem(i, columns) == 0 {
+        text(font: sans, weight: "bold", size: 0.98em, c)
       } else { c }),
     ))
     _float-caption(_L.tbl, _tbl-no, caption)
