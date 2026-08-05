@@ -2,9 +2,9 @@
 #import "lib.typ": *
 
 // 이 책의 판 번호. 갱신할 때마다 여기만 고친다 (VERSION.md 와 함께).
-#let book-version = "v0.5.2"
+#let book-version = "v0.6.0"
 #let book-date = "2026년 8월"
-#let book-updated = "2026-08-05"          // 최종 수정일
+#let book-updated = "2026-08-06"          // 최종 수정일
 #let book-status = "초안(draft)"           // 판의 성격
 #let html-mode = sys.inputs.at("mode", default: "paged") == "html"
 #let book-repo = "https://github.com/rubidus-api"
