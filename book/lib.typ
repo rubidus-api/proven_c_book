@@ -46,6 +46,10 @@
 // 3.4 실제 사례 블록
 #let realcase(title, body) = _device(title, body, rgb("#3c7a4f"), "◉")
 
+// 반례 블록 (RFC-0004 §3): 독자의 생각이 아니라 *코드*가 틀린 경우.
+// 오개념 블록(⚠)과 구별한다.
+#let antipattern(title, body) = _device(title, body, rgb("#a0552c"), "✗")
+
 // 3.5 수학 기반 박스 (건너뛰어도 본문이 이어지게 쓴다)
 #let mathbox(title, body) = _device(title, body, rgb("#8a6d1a"), "∑")
 
