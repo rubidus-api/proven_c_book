@@ -11,25 +11,56 @@
        stdin: "표준 입력으로 준 것", output: "실행 결과",
        platform: "플랫폼 노트", organizer: "이 장이 끝나면",
        prereq: "이 장이 기대는 것", questions: "이 장에서 답할 질문",
-       misc: "흔한 오해"),
+       misc: "흔한 오해", tbl: "표", fig: "그림"),
   en: (q: "Q", a: "A", back: "Looking back", recap: "Recap",
        stdin: "Given on standard input", output: "Output",
        platform: "Platform note", organizer: "By the end of this chapter",
        prereq: "What this chapter builds on", questions: "The questions this chapter answers",
-       misc: "A common misconception"),
+       misc: "A common misconception", tbl: "Table", fig: "Figure"),
 ).at(_lang)
+
+// ── 표·그림 번호와 캡션 (저자 지시 2026-08-06) ─────────
+// 번호는 장마다 1부터 다시 센다(main.typ 의 show 규칙이 되돌린다).
+// 캡션은 언제나 대상 *아래*, 가운데 정렬로 붙는다. 캡션 글이 없으면
+// 번호만 인쇄한다 — 번호는 사람이 손으로 적지 않는다.
+#let _tbl-no = counter("proven-table")
+#let _fig-no = counter("proven-figure")
+#let reset-float-counters() = {
+  _tbl-no.update(0)
+  _fig-no.update(0)
+}
+#let _float-caption(kind, ctr, cap) = {
+  // step 과 get 은 같은 context 안에서 보면 안 된다 — 단계를 올린 뒤
+  // *새* context 에서 읽어야 갱신된 값이 나온다(안 그러면 0 이 찍힌다).
+  ctr.step()
+  context {
+    let chap = counter(heading.where(level: 1)).get()
+    let chap = if chap.len() > 0 { str(chap.first()) } else { "0" }
+    let label = kind + " " + chap + "." + str(ctr.get().first())
+    if _html {
+      html.elem("p", attrs: (class: "float-caption"),
+        if cap == none { label } else { [#label — #cap] })
+    } else {
+      block(width: 100%, above: 6pt, below: 1.1em)[
+        #align(center, text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em)[
+          #strong[#label]#if cap != none [ — #cap]])
+      ]
+    }
+  }
+}
 
 // 인쇄를 위해 채움(fill)을 쓰지 않는다 — 선의 굵기와 모양으로만 구분한다.
 #let _device(title, body, rule, icon) = block(
   width: 100%,
-  inset: (x: 11pt, y: 9pt),
-  above: 1.15em, below: 1.15em,
+  inset: (x: 10pt, y: 8pt),
+  above: 1.05em, below: 1.05em,
   stroke: rule,
   breakable: true,
 )[
   #set par(first-line-indent: 0em)
   #if title != none [
-    #text(weight: "bold", size: 0.96em)[#icon #title]
+    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
+          size: 0.98em, fill: black)[#icon #title]
     #v(4pt)
   ]
   #body
@@ -43,10 +74,10 @@
 // 서두 라벨은 본문(명조)과 확실히 갈라 보이도록 고딕·크게·굵게 쓴다.
 // 밑선은 두지 않는다 — 고딕 굵은 글씨만으로 충분히 구별된다
 // (저자 지시 2026-08-06).
-#let _open-label(t) = block(below: 6pt, width: 100%)[
+#let _open-label(t) = block(below: 7pt, width: 100%)[
   #text(
     font: ("Noto Sans CJK KR", "Noto Sans"),
-    weight: "bold", size: 1.02em, fill: rgb("#111111"), tracking: 0.02em, t,
+    weight: "bold", size: 1.15em, fill: black, tracking: 0.01em, t,
   )
 ]
 #let _open-block(label, body, first: false) = block(
@@ -57,7 +88,7 @@
   below: 0pt,
   breakable: false,
 )[
-  #set par(first-line-indent: 0em, leading: 0.78em)
+  #set par(first-line-indent: 0em, leading: 0.85em)
   #_open-label(label)
   #body
 ]
@@ -68,17 +99,21 @@
 #let _qa_rail = 2.5pt + rgb("#111111")
 #let _qa(label_q, label_a, q, a) = block(
   width: 100%, above: 1.25em, below: 1.25em, breakable: true,
-  stroke: (left: _qa_rail), inset: (left: 10pt),
+  stroke: (left: _qa_rail), inset: (left: 0pt),
 )[
   #set par(first-line-indent: 0em)
-  #block(width: 100%, fill: rgb("#f0f0f0"), inset: (x: 9pt, y: 7pt), below: 0pt)[
+  // 문과 답은 하나의 덩어리다 — 사이에 빈칸을 두지 않고, 왼쪽 굵은 선
+  // 하나가 둘을 통째로 잇는다 (저자 지시 2026-08-06).
+  #block(width: 100%, inset: (x: 9pt, top: 6pt, bottom: 6pt),
+         above: 0pt, below: 0pt,
+         stroke: (bottom: 0.5pt + rgb("#999999")))[
     #metadata(q)<qa-q>
-    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 0.95em)[
+    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 1em)[
       #label_q. #h(2pt) #q]
   ]
   #block(width: 100%, inset: (x: 9pt, top: 7pt, bottom: 2pt), above: 0pt)[
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
-          size: 0.9em, fill: rgb("#555555"))[#label_a.]
+          size: 0.98em, fill: rgb("#444444"))[#label_a.]
     #h(3pt) #a
   ]
 ]
@@ -89,9 +124,9 @@
 #let deepqa(q, a) = _open-block(_L.back)[
   #block(below: 5pt, width: 100%)[#q]
   #block(width: 100%, inset: (left: 10pt),
-    stroke: (left: 2pt + rgb("#999999")))[
+    stroke: (left: 2.5pt + rgb("#555555")))[
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
-          size: 0.92em, fill: rgb("#3a3a3a"))[#_L.a.] #h(3pt) #a
+          size: 0.98em, fill: rgb("#3a3a3a"))[#_L.a.] #h(3pt) #a
   ]
 ]
 
@@ -104,10 +139,10 @@
   inset: 0pt,
 )[
   #set par(first-line-indent: 0em)
-  #block(width: 100%, fill: rgb("#f2f2f2"), inset: (x: 11pt, y: 8pt), below: 0pt,
+  #block(width: 100%, inset: (x: 11pt, y: 8pt), below: 0pt,
          stroke: (bottom: 0.5pt + rgb("#111111")))[
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
-          size: 0.95em, fill: rgb("#111111"))[#_L.misc.]
+          size: 1em, fill: black)[#_L.misc.]
     #h(4pt)
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 1.0em)[#title]
   ]
@@ -147,21 +182,21 @@
   #if stdin [
     #block(width: 100%, inset: 8pt,
       stroke: (left: 2pt + black, rest: 0.5pt + black))[
-      #text(size: 0.96em, weight: "bold")[#_L.stdin]
+      #text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em, weight: "bold")[#_L.stdin]
       #raw(read("/" + path.replace(".c", ".in")), block: true)
     ]
   ]
   #if show-output [
     #block(width: 100%, inset: 8pt,
       stroke: (left: 2pt + black, rest: 0.5pt + black))[
-      #text(size: 0.96em, weight: "bold")[#_L.output]
+      #text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em, weight: "bold")[#_L.output]
       #raw(read(_out-dir(path) + _rel(path) + ".out"), block: true)
     ]
   ]
 ]
 
 // 메모리 사물함 도해: 주소 라벨 + 내용 셀 (+ 강조 칸 인덱스)
-#let memrow(start, cells, highlight: ()) = {
+#let memrow(start, cells, highlight: (), caption: none) = {
   align(center, block(inset: (y: 6pt))[
     #grid(
       columns: cells.len(),
@@ -172,11 +207,12 @@
           box(width: 3.2em, inset: 4pt, stroke: w + black,
             align(center, raw(c))),
           box(width: 3.2em, inset: (top: 3pt),
-            align(center, text(size: 0.9em, raw(str(start + i))))),
+            align(center, text(size: 0.96em, raw(str(start + i))))),
         )
       })
     )
   ])
+  _float-caption(_L.fig, _fig-no, caption)
 }
 
 // 플랫폼 의존 격리 절: 특정 OS/도구에 묶인 내용은 반드시 이 상자 안에 둔다.
@@ -188,7 +224,8 @@
   breakable: true,
 )[
   #set par(first-line-indent: 0em)
-  #text(weight: "bold", size: 0.96em)[⊞ #_L.platform — #title]
+  #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
+        size: 0.98em, fill: black)[⊞ #_L.platform — #title]
   #v(2pt)
   #body
 ]
@@ -246,15 +283,12 @@
     // 그림 파일은 wrap-html.py 가 docs/<판>/figures/ 로 복사한다.
     html.elem("figure", attrs: (class: "fig"), {
       html.elem("img", attrs: (src: "figures/" + name + ".svg", alt: name, loading: "lazy"))
-      if caption != none { html.elem("figcaption", caption) }
+      _float-caption(_L.fig, _fig-no, caption)
     })
   } else {
     block(width: 100%, above: 1.3em, below: 1.3em, breakable: false)[
       #align(center, image("/book/figures/" + _lang + "/" + name + ".svg", width: width))
-      #if caption != none {
-        v(4pt)
-        align(center, text(size: 0.92em, fill: rgb("#444444"), caption))
-      }
+      #_float-caption(_L.fig, _fig-no, caption)
     ]
   }
 }
@@ -309,9 +343,10 @@
   })
 }
 
+
 // ── 모드 인지 표 ─────────────────────────────────────
 // PDF 에서는 Typst table, HTML 에서는 진짜 <table> 로 나간다.
-#let dtable(columns: 2, ..cells) = {
+#let dtable(columns: 2, caption: none, ..cells) = {
   let items = cells.pos()
   if sys.inputs.at("mode", default: "paged") == "html" {
     let rows = ()
@@ -320,27 +355,37 @@
       rows.push(items.slice(i, calc.min(i + columns, items.len())))
       i = i + columns
     }
-    html.elem("table", {
-      let first = true
-      for r in rows {
-        let tag = if first { "th" } else { "td" }
-        html.elem("tr", { for c in r { html.elem(tag, c) } })
-        first = false
-      }
+    html.elem("figure", attrs: (class: "tbl"), {
+      html.elem("table", {
+        let first = true
+        for r in rows {
+          let tag = if first { "th" } else { "td" }
+          html.elem("tr", { for c in r { html.elem(tag, c) } })
+          first = false
+        }
+      })
+      _float-caption(_L.tbl, _tbl-no, caption)
     })
   } else {
-    align(center, block(
-      stroke: 1.2pt + rgb("#111111"),
-      inset: 0pt,
-      table(
-        columns: columns,
-        stroke: 0.4pt + rgb("#999999"),
-        inset: 5pt,
-        fill: (_, row) => if row == 0 { rgb("#eeeeee") } else { none },
-        ..items.enumerate().map(((i, c)) => if i < columns {
-          text(weight: "bold", c)
-        } else { c }),
+    // 굵은 테두리는 표를 감싸는 블록이 아니라 *표 자신의 바깥 선*이어야
+    // 한다. 블록으로 감싸면 테두리만 단 너비를 차지하고 표는 제 너비만
+    // 차지해 둘이 따로 논다 (저자 지시 2026-08-06).
+    let rows = calc.ceil(items.len() / columns)
+    let thick = 1.2pt + rgb("#111111")
+    let thin = 0.4pt + rgb("#999999")
+    align(center, table(
+      columns: columns,
+      inset: 5pt,
+      stroke: (x, y) => (
+        left: if x == 0 { thick } else { thin },
+        right: if x == columns - 1 { thick } else { none },
+        top: if y == 0 { thick } else if y == 1 { 0.9pt + rgb("#111111") } else { thin },
+        bottom: if y == rows - 1 { thick } else { none },
       ),
+      ..items.enumerate().map(((i, c)) => if i < columns {
+        text(weight: "bold", c)
+      } else { c }),
     ))
+    _float-caption(_L.tbl, _tbl-no, caption)
   }
 }

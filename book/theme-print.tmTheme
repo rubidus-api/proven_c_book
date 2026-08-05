@@ -5,13 +5,18 @@
   <key>name</key>
   <string>Proven C Book — print</string>
   <!--
-    인쇄와 화면을 함께 견디는 절제된 강조.
-    색을 잃어도(흑백 인쇄·색각) 굵기와 기울임으로 구분이 남게 짰다.
-      주석      회색 + 기울임
-      키워드    검정 + 굵게
-      문자열·수 짙은 남색
-      전처리기  짙은 자주
-      타입      검정 + 굵게(키워드와 같은 무게)
+    절제된 색. 흑백으로 변환해도 전부 어둡게 남도록 명도를 낮은 쪽으로
+    묶었다(모든 색의 상대 명도 < 0.35) — 색을 잃어도 흐려지지 않는다.
+    구분은 색 + 굵기 + 기울임 셋으로 준다 (저자 지시 2026-08-06).
+      주석        짙은 녹회색 + 기울임
+      키워드      짙은 파랑 + 굵게
+      타입 이름   짙은 청록 + 굵게
+      문자열·문자 짙은 갈색
+      수·상수     짙은 붉은색
+      전처리기    짙은 자주
+      함수 이름   먹색 + 굵게
+      구두점·연산 중간 먹색
+      식별자      먹색(기본)
   -->
   <key>settings</key>
   <array>
@@ -28,17 +33,17 @@
       <key>scope</key><string>comment, punctuation.definition.comment</string>
       <key>settings</key>
       <dict>
-        <key>foreground</key><string>#5F5F5F</string>
+        <key>foreground</key><string>#3F5B4A</string>
         <key>fontStyle</key><string>italic</string>
       </dict>
     </dict>
 
     <dict>
       <key>name</key><string>Keyword</string>
-      <key>scope</key><string>keyword, keyword.control, keyword.operator.word, storage, storage.type, storage.modifier</string>
+      <key>scope</key><string>keyword, keyword.control, keyword.operator.word, storage, storage.modifier</string>
       <key>settings</key>
       <dict>
-        <key>foreground</key><string>#141414</string>
+        <key>foreground</key><string>#123C87</string>
         <key>fontStyle</key><string>bold</string>
       </dict>
     </dict>
@@ -48,7 +53,7 @@
       <key>scope</key><string>string, string.quoted, punctuation.definition.string</string>
       <key>settings</key>
       <dict>
-        <key>foreground</key><string>#1F4D7A</string>
+        <key>foreground</key><string>#7A3B0A</string>
       </dict>
     </dict>
 
@@ -57,7 +62,7 @@
       <key>scope</key><string>constant.numeric, constant.character, constant.language</string>
       <key>settings</key>
       <dict>
-        <key>foreground</key><string>#1F4D7A</string>
+        <key>foreground</key><string>#8A2222</string>
       </dict>
     </dict>
 
@@ -72,11 +77,39 @@
 
     <dict>
       <key>name</key><string>Type name</string>
-      <key>scope</key><string>entity.name.type, support.type, storage.type.built-in</string>
+      <key>scope</key><string>entity.name.type, support.type, storage.type, storage.type.built-in</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key><string>#0F5B63</string>
+        <key>fontStyle</key><string>bold</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key><string>Function name</string>
+      <key>scope</key><string>entity.name.function, support.function, meta.function-call</string>
       <key>settings</key>
       <dict>
         <key>foreground</key><string>#141414</string>
         <key>fontStyle</key><string>bold</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key><string>Punctuation and operators</string>
+      <key>scope</key><string>punctuation, punctuation.separator, punctuation.terminator, punctuation.section, keyword.operator, meta.brace</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key><string>#555555</string>
+      </dict>
+    </dict>
+
+    <dict>
+      <key>name</key><string>Variables and identifiers</string>
+      <key>scope</key><string>variable, variable.other, variable.parameter, meta.definition.variable</string>
+      <key>settings</key>
+      <dict>
+        <key>foreground</key><string>#141414</string>
       </dict>
     </dict>
   </array>

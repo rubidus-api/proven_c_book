@@ -1,7 +1,7 @@
 // Proven C Book — English edition. Build: scripts/build-book-en.sh
 #import "../book/lib.typ": *
 
-#let book-version = "v0.10.1"
+#let book-version = "v0.10.2"
 #let book-updated = "2026-08-06"
 #let book-status = "draft"
 #let book-repo = "https://github.com/rubidus-api/proven_c_book"
@@ -24,6 +24,9 @@
 // 인쇄를 위해 구문 강조 색을 쓰지 않는다 (잉크·토너 절약)
 // 회색조에서도 구분되는 절제된 구문 강조 (RFC-0006 §7.2)
 #set raw(theme: "/book/theme-print.tmTheme")
+// 표·그림 번호는 장마다 1부터 다시 센다 (lib.typ 의 float 카운터)
+#show heading.where(level: 1): it => { reset-float-counters(); it }
+
 #set heading(numbering: none)
 
 #page(numbering: none)[
@@ -160,13 +163,13 @@
   let page-of = h => counter(page).at(h.location()).first()
   let front-extra = plain.filter(h => page-of(h) < first-ch)
   let back-extra = plain.filter(h => page-of(h) > last-ch)
-  let row = (label, h) => block(width: 100%, inset: (left: 1.2em), below: 0.5em,
+  let row = (label, h) => block(width: 100%, inset: (left: 1.2em), below: 0.72em,
     grid(columns: (1fr, auto), column-gutter: 0.6em, align: (left, right),
       link(h.location())[#label],
       link(h.location())[#page-of(h)]))
 
   block(width: 100%)[
-    #set par(leading: 0.9em)
+    #set par(leading: 1.0em)
     #text(font: ("Noto Sans", "Noto Sans CJK KR"), size: 15pt, weight: "bold")[Contents]
     #v(0.9em)
     #for h in front-extra { row(h.body, h) }
