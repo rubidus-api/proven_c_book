@@ -129,6 +129,7 @@
 #include "appendix/a2-formats.typ"
 #include "appendix/a3-conversions.typ"
 #include "appendix/a4-reading.typ"
+#include "appendix/a5-bibliography.typ"
 
 // ── 찾아보기 ─────────────────────────────────────────
 #pagebreak(weak: true)

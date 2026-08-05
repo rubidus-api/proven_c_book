@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.1.0] - 2026-08-05
+
+첫 공개 판. 12부 58장 + 부록 A~E + 찾아보기, 약 570쪽.
+
+### Added
+- 제11부 proven 매뉴얼부(47~56장) — 다섯 가지 버그 제기부터 프리스탠딩까지.
+- 부록 A~C 확장(연산자·서식 문자열 완전 정리·암묵 변환), 부록 D(더 읽을거리와
+  표준 문서), 부록 E(참고 문헌), 그리고 쪽 번호가 붙는 찾아보기.
+- 15장 디버거(빌드 옵션·맹점·릴리스 전용 버그), 46장 printf/scanf 해부,
+  45장 가변 인자 승격과 `_Generic`·`PROVEN_ARG` 구조, 23장 기본 자료형 지도,
+  33장 VLA·`[static N]`·배열 매개변수, 39장 비트 필드, 44장 X 매크로,
+  57장 C와 C++의 관계.
+- 수록 예제 60여 종, 전부 실제 빌드·실행 검증(GCC 14 기준, Clang 교차 확인).
+
 ## [Unreleased]
 
 ### Added
