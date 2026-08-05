@@ -85,20 +85,61 @@ argument-handling code.
   Must the code that interprets arguments be written by hand? Things like `-v`
   and `--help`.
 ][
-  Standard C has no argument parser. So there are three roads.
+  Two things must be divided first — *receiving the arguments* and *interpreting
+  them* are different jobs.
+
+  *Receiving them is in the standard.* The `argc` and `argv` just seen are that, and
+  on any platform the arguments come in through these two parameters. Nothing is
+  lacking in that place.
+
+  *It is the parser that is absent.* Rules for *interpreting* — "`-v` means verbose,
+  `--out FILE` is an option with a value attached, the rest are file names" — are not
+  provided by standard C at all. It means there is no function like `getopt` in
+  `<stdlib.h>`. So that work divides into three roads.
 
   *Write it yourself* — for a short program this is enough. Scan `argv`,
   distinguish with `strcmp`, and for arguments with an attached value read the next
   slot. To convert to a number use `strtol`, not `atoi` (chapter 55).
 
-  *Platform tools* — POSIX's `getopt` and GNU's `getopt_long` are widely used but
-  not standard (Windows has neither).
+  *Platform tools* — the Unix family has POSIX's `getopt` (`<unistd.h>`) and GNU's
+  `getopt_long` (which handles the `--name` form), and glibc has `argp`, which even
+  builds the help text. All of them belong to the platform, not the standard.
+  Windows' C runtime has no `getopt`, so porting projects mostly put one `getopt`
+  implementation into the repository or use a parser of their own.
 
-  *A library* — as the scale grows, use a library dedicated to argument parsing.
+  *A library* — as the scale grows (subcommands, generated help, merging with a
+  configuration file), use a library dedicated to argument parsing.
 
   Whichever road, keep one rule: *arguments are input from outside.* Chapter 39's
   rules for handling input — do not trust lengths, check the failure of numeric
   conversion, do not concatenate paths blindly — apply just the same.
+]
+
+#platform[
+  How the arguments reach the program — Unix and Windows
+][
+  That `argv` is standard does not mean *the way it is made* is the same. The two
+  worlds are opposites.
+
+  *The Unix family* — the side launching the program passes *an array of strings* in
+  the first place (chapter 3's `execve`). The shell handles quotes and wildcards
+  first and cuts them into pieces, so the `argv` a program receives is already
+  divided. The kernel carries that array over to the new process as it is.
+
+  *Windows* — `CreateProcess` passes *one string* (chapter 3). That is, the dividing
+  is the receiving side's part. So the C runtime, in its startup code, cuts that one
+  line by rule and makes the `argv` it hands to `main` — `argc` and `argv` arriving as
+  the standard says is because the runtime does that work for you.
+
+  This difference leaves two things in practice. First, on Windows the *original
+  command line* can be seen directly and cut by hand if needed — `GetCommandLineW`
+  returns that one line and `CommandLineToArgvW` cuts it by the standard rules. To
+  receive Unicode arguments intact, using `wmain` (or those two functions) is the
+  practice. Second, *the cutting rules differ by platform* — the handling of quotes
+  and backslashes especially. Hence the advice, when launching another program and
+  building its arguments, to use APIs that *pass the arguments as an array rather than
+  joining a string by hand* (`posix_spawn`, and `CreateProcess`'s argument-assembly
+  rules) — the same grain as chapter 58's `system` counterexample.
 ]
 
 == The value returned — three notations, one meaning
