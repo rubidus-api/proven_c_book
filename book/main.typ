@@ -27,7 +27,7 @@
   #align(center)[
     #text(font: ("Noto Sans CJK KR",), size: 26pt, weight: "bold")[Proven C Book]
     #v(0.6cm)
-    #text(size: 13pt)[proven 라이브러리에 기반한 모던 C 입문]
+    #text(size: 13pt)[프로븐 C 라이브러리와 함께하는 현대적 C 입문]
     #v(0.9cm)
     #box(inset: (x: 10pt, y: 5pt), stroke: 1pt + black)[
       #text(size: 10pt, weight: "bold")[#book-status]
@@ -69,7 +69,7 @@
       Proven C Book
     ]
     #linebreak()
-    #text(size: 9.5pt)[proven 라이브러리에 기반한 모던 C 입문]
+    #text(size: 9.5pt)[프로븐 C 라이브러리와 함께하는 현대적 C 입문]
   ]
 
   #v(0.45cm)

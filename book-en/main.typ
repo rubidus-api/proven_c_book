@@ -21,7 +21,7 @@
   #align(center)[
     #text(font: ("Noto Sans CJK KR",), size: 26pt, weight: "bold")[Proven C Book]
     #v(0.6cm)
-    #text(size: 13pt)[Modern C, built on the proven library]
+    #text(size: 13pt)[An Introduction to Modern C with the Proven C Library]
     #v(0.9cm)
     #box(inset: (x: 10pt, y: 5pt), stroke: 1pt + black)[
       #text(size: 10pt, weight: "bold")[#book-status]
