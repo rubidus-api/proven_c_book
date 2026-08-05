@@ -39,9 +39,14 @@ dist/       배포 PDF
 
 ## 라이선스
 
-- **본문**(`book/`, 생성된 PDF): CC BY-NC-SA 4.0 — [LICENSE-BOOK](LICENSE-BOOK)
-- **예제 코드**(`examples/`, `scripts/`): MIT — [LICENSE-CODE](LICENSE-CODE)
+- **본문**(`book/`, 생성된 PDF): **CC BY-NC-SA 4.0** — 저장소의
+  [LICENSE](LICENSE)가 정본이다. 출처를 밝히면 공유·개작할 수 있으나
+  영리 이용은 불가하며, 개작물에도 같은 라이선스를 적용해야 한다.
+- **예제 코드**(`examples/`, `scripts/`): **MIT** — [LICENSE-CODE](LICENSE-CODE).
+  책에서 배운 코드는 제약 없이 가져다 쓸 수 있다.
 - `vendor/proven/`: 원저작물의 라이선스를 따른다.
+
+자세한 안내는 [LICENSE-NOTICE.md](LICENSE-NOTICE.md)에 있다.
 
 ## 오류 신고와 제안
 
