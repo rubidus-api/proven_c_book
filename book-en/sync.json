@@ -1,4 +1,7 @@
 {
+  "book-en/main.typ": {
+    "ko": "fd8b86081e07dcb3"
+  },
   "book/appendix/a1-operators.typ": {
     "ko": "481eb282f59184d1"
   },
@@ -273,7 +276,7 @@
     "ko": "d956755948511fb3"
   },
   "book/main.typ": {
-    "ko": "52b22001a72cf4a0"
+    "ko": "98dcc9446e4721c6"
   },
   "book/parts/part02.typ": {
     "ko": "fe80a25ed1550b5b"
