@@ -174,6 +174,68 @@ wrong, but *reading each other's letters verbatim causes accidents*.
   storage through different eyes.
 ]
 
+== Is this number a real address?
+
+One thing has to be shaken loose here in advance. The picture drawn so far — one
+number attached to each locker, and that number *being* the place in memory — is
+*a good picture to learn from*, not an exact drawing of today's computers.
+
+The numbers a program sees today are mostly *virtual addresses*: numbers made
+separately for each program by the operating system and the translation unit
+inside the CPU (the MMU). Which slot of real DRAM such a number lands on is not
+something the program knows. Two programs may use the same number at the same
+time and reach different physical slots. The structure of that translation is
+looked at properly in chapter 11. What is needed here is one sentence — *a
+number is not the substance but an agreement.*
+
+There were times when a number was not even one number. In the 8086's segmented
+scheme an address was two pieces, "segment:offset", and several notations named
+the same physical slot (`0x0000:0x0010` and `0x0001:0x0000` are the same place).
+Some machines put program memory and data memory in altogether separate address
+spaces (the Harvard architecture — the small chips of chapter 80 still do).
+
+And sometimes what rides inside the number is not a number at all.
+
+#realcase("What travels inside an address value")[
+  *The spare low bits.* Thanks to alignment (chapter 6), the low bits of an
+  address are always zero. Slipping a small mark into that space is a widely used
+  trick — the tagged pointers of the next chapter.
+
+  *The spare high bits.* No machine uses all 64 bits of an address. x86-64
+  really uses 48 (57 on recent parts), with the remaining high bits tied down by
+  a sign-extension rule. AArch64's TBI has the top byte ignored outright, so a
+  tag can be carried there (memory tagging, MTE, uses this).
+
+  *A number and a pointer in one container.* JavaScript engines hide pointers
+  inside the spare bit patterns of a floating-point NaN (NaN boxing). One 64-bit
+  value is a number at one moment and an address at another.
+
+  *Machines where an address is not a number at all.* On CHERI and Arm Morello a
+  pointer is a 128-bit bundle (a capability) carrying bounds and permissions
+  along with the address. The hardware checks those bounds, so a value converted
+  to an integer, played with and converted back has lost its permissions and
+  cannot be used.
+]
+
+This is why C did not define an address as "just an integer". It made it a
+*value* that can be copied and compared, but one that drags along what type it
+points at and where it came from. Why that decision was necessary becomes clear
+once pointers arrive in chapter 33 and provenance in chapter 35.
+
+#qa[
+  So is the locker picture we have learned so far wrong?
+][
+  Not wrong — it is *the picture with one layer folded away for now*. Through the
+  program's eyes memory is still a run of numbered slots, neighbouring numbers
+  are neighbouring slots, and C's arrays and pointer arithmetic work exactly on
+  top of that. Virtual or physical, that property is built to hold.
+
+  The moments for unfolding what was folded come separately: when measuring
+  performance and reasoning about caches (chapter 11), when asking why programs
+  cannot touch one another (chapters 3 and 11), and when asking "may I turn an
+  address into an integer and make what I like of it" (chapter 35).
+]
+
 == The archetype of C is here
 
 This chapter's corridor picture is also the blueprint of the C language. In the

@@ -173,6 +173,114 @@ large part by "on which rung of the ladder the thing you need is found."
   difference we just saw.
 ]
 
+== Another ladder — virtual memory
+
+The ladder so far was a ladder of *speed*. But there is one more layer between a
+program and DRAM, and its work is not speed: it is *swapping the numbers
+themselves*.
+
+We are back where chapter 5 asked "is this number a real address?". The addresses
+today's programs handle are *virtual addresses*, and the device that turns them
+into the real *physical addresses* of DRAM is the MMU (Memory Management Unit)
+inside the CPU.
+
+=== From segments to paging
+
+The early answer was the *segment*: hold a program's memory as one lump and
+manage it as "start address plus length". Simple, but with a problem — put
+lumps of assorted sizes in and out and unusable gaps appear between them
+(external fragmentation). The 8086's segment:offset is a trace of that lineage.
+
+Today's answer is *paging*. Memory is cut into pieces of one size — usually
+4 KiB — and such a piece is called a *page*. The virtual address space is cut
+the same way, and the two are paired page by page. Since the pieces are all the
+same size any free slot will take any page, and external fragmentation
+disappears. In exchange a correspondence table is needed: the *page table*.
+
+x86-64 stacks that table four deep (five on recent parts). A 48-bit address is
+split into four nine-bit pieces and a twelve-bit offset; the walk descends
+through the tables and arrives at a physical page number. Which also means four
+memory reads for one translation.
+
+=== The TLB — the translation gets a cache too
+
+If reading memory once required reading tables four times, nothing would be
+gained. So the MMU keeps recent translations in a small cache — the *TLB*
+(Translation Lookaside Buffer). It holds from tens to a few thousand entries,
+and on a hit the translation is essentially free.
+
+Here we meet the previous section again. *Locality is good not only for the
+cache but for the translation.* While the work stays inside one page (4 KiB) a
+single TLB entry suffices; jump about widely scattered addresses and TLB misses
+follow, each paying for a walk of the tables. That is why programs handling
+large data use *huge pages* (2 MiB, 1 GiB) — the same amount of memory covered
+by far fewer entries.
+
+=== Page faults, and lazy memory
+
+A page table entry can be marked "this page is not in physical memory now".
+Touch such a page and the CPU raises a *page fault* and hands it to the
+operating system, which fills in what is needed and lets the instruction run
+again. That one device makes several things possible.
+
+- *Demand paging.* An executable is not read whole; only the pages actually
+  executed are fetched as they are reached. This is why programs start quickly.
+- *Swapping.* Pages long unused are pushed out to disk and fetched back later.
+- *Copy-on-write.* `fork` copies only the page tables rather than the memory,
+  and a page is really copied only when someone tries to write to it.
+- *Lazy allocation.* When `malloc` hands over a large block, physical memory is
+  not attached yet; the first touch raises a page fault and attaches it then
+  (we meet this again in chapter 40).
+
+=== Protection — why a null dereference usually dies at once
+
+Each page carries permission bits: read, write, execute. Three things follow.
+
+- Programs cannot touch one another's memory (chapter 3's isolation is
+  implemented right here).
+- The code region is read and execute only, the data region read and write only
+  — which blocks attacks that execute data as code (W^X).
+- *The pages around address zero are not mapped at all.* So following a null
+  pointer makes the hardware raise a page fault on the spot and the operating
+  system kills the program. This is the real implementation of chapter 6's
+  practice of "leaving address zero empty".
+
+#qa[
+  Then is the wide gap in chapter 39's "map of addresses" not a waste?
+][
+  No — because *virtual* address space is close to free. A region with no
+  mapping in the page table uses not one byte of physical memory. That is why
+  today's programs place the stack and the heap far apart and let them grow
+  freely. When chapter 39's demonstration shows terabytes between stack and heap,
+  it does not mean that much memory is in use: it means *that many numbers have
+  been left between them*.
+]
+
+#misconception[
+  "If a program takes a lot of memory, that much RAM is gone"
+][
+  Taking and using are different. An allocation is mostly *a reservation of
+  virtual address space*, and physical memory attaches only to pages that are
+  touched. So `malloc(1 GiB)` can succeed with RAM usage almost unchanged, and
+  conversely sweeping through that whole region is when RAM disappears. This is
+  why VIRT and RES differ so widely in Linux's `top` — the first is numbers
+  reserved, the second pages actually attached.
+]
+
+#platform("The world without any of this")[
+  Virtual memory is a story about *having an operating system and an MMU*. The
+  small microcontrollers of chapter 80 have no MMU. An address is a physical
+  address, one program owns the whole machine, and a null dereference does not
+  die but quietly damages whatever sits at address zero. That the same C code
+  travels between these two worlds is this language's difficulty and its use
+  (we meet it again in chapter 78).
+]
+
+What a C programmer should take from this layer is three sentences. *Numbers are
+translated.* *The translation has a cache too, and locality helps it.* *And all
+of this is a matter of the implementation, not a promise of the standard* — the
+standard mentions neither pages, nor swapping, nor even an operating system.
+
 The first half of the repair is done — memory is not one thing but a ladder from
 register to warehouse. But that is only half. The CPU was not content with
 reducing waiting; it also evolved towards *overlapping execution itself* —
