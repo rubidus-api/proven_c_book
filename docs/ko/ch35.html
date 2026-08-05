@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>35 안전한 입력과 proven의 등장 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-173">35 안전한 입력과 proven의 등장</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>22장에서 “안전한 입력은 왜 어려운가”를 예고했고, 33·34장에서 그 위험의 뿌리(경계, NUL 종단)를 배웠다. 이 장에서 사고의 해부를 완성하고 — 1장에서 약속한 손님, 이 책의 기반 라이브러리 <strong>proven</strong>이 드디어 등장한다. “필요가 스스로 증명된 시점에”라는 약속 그대로다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>34장의 gets는 그릇 크기를 안 받아서 퇴출됐고, 22장의 fgets는 크기를 받아서 안전하다 했다. 그러면 “크기를 받는다”는 것만으로 입력의 안전 문제가 다 풀리는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>절반만이다. 크기 전달은 <strong>넘침</strong>을 막지만, 입력에는 두 번째 문제가 있다 — <strong>내용을 믿을 수 없다</strong>는 것(22장). 수를 기대했는데 글자가 오고, 짧은 줄을 기대했는데 긴 줄이 오고, 악의적인 상대는 일부러 경계를 노린 입력을 만든다(19장의 서식 문자열 공격이 그 맛보기였다). 안전한 입력이란 [넘침 차단 + 실패의 명시적 처리]의 합이고, 이 장의 두 기둥이 그 둘이다.</p></div></div><h3 id="loc-174">35.1 사고의 해부 — 경계 침범이라는 유행병</h3><p>33장의 경계 규칙과 34장의 NUL 종단을 합치면, C 역사상 가장 값비싼 사고 무늬가 조립된다. 그릇보다 긴 입력이 이웃 기억을 덮어쓴다(경계 침범) — 덮어써진 곳이 하필 <strong>함수 호출의 복귀 장부</strong>(다음 장에서 정체를 본다)라면, 공격자는 입력만으로 프로그램의 실행 흐름을 탈취한다. 이것이 버퍼 오버플로 공격의 골자이고, Morris worm(1988, 34장)부터 오늘의 보안 공지까지 면면히 이어지는 유행병이다. 통계적으로도 압도적이다 — 주요 보안 기관들의 “가장 위험한 소프트웨어 결함” 목록에서 경계 침범 계열은 수십 년째 최상위 단골이다.</p><p>C가 실행 중 경계 검사를 “하지 않기로” 했기 때문에(33장), 방어는 층층이 쌓는 수밖에 없다 — 크기를 받는 함수(fgets), 경고와 새니타이저(15장), 그리고 <strong>애초에 검사가 내장된 부품</strong>. 마지막 층이 이 장의 손님이다.</p><h3 id="loc-175">35.2 proven — 검증된 기본기라는 부품</h3><p>proven은 이 책의 저자가 만든 C 라이브러리로(1장의 정직 공개 그대로), 설계 사상은 한 문장이다 — <strong>사고가 가장 잦은 기본기(문자열, 입력 해석, 수 변환)를, 실패가 값으로 드러나고 경계가 항상 검사되는 형태로 제공 한다.</strong> 7장에서 본 표현 방식의 언어로 말하면, NUL 종단의 세계 위에 길이·용량 명시 계열의 안전한 층을 세운 것이다.</p><p>첫 시연으로 22장의 숙제 — 입력 해석의 실패 처리 — 를 proven으로 풀어 본다. 성공 경로와 실패 경로를 <strong>둘 다</strong> 보인다:</p><div><div><p><code>examples/ch35/scan.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+void try_parse(const char *text)
+{
+    proven_scan_t sc = proven_scan_init(proven_u8str_view_from_cstr(text));
+    proven_result_i64_t r = proven_scan_i64(&amp;sc);
+
+    if (proven_is_ok(r.err)) {
+        printf("\"%s\" -> ok: %lld\n", text, (long long)r.val);
+    } else {
+        printf("\"%s\" -> failed (not a number)\n", text);
+    }
+}
+
+int main(void)
+{
+    try_parse("  42 and some text");
+    try_parse("forty-two");
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>"  42 and some text" -> ok: 42
+"forty-two" -> failed (not a number)
+</code></pre></div></div><p>읽는 법 — <code>proven_scan_init</code>이 글자 열 위에 해석기(스캐너)를 세우고, <code>proven_scan_i64</code>가 정수 하나를 해석한다. 반환값이 이 설계의 심장이다: <strong>값이 아니라 <code>{err, val}</code> 꾸러미</strong>를 돌려주고, 쓰는 쪽은 <code>proven_is_ok</code> 로 성공을 확인한 뒤에만 값을 꺼낸다. sscanf(22장)와 비교하면 — “성공 개수”라는 관례적 신호 대신 <strong>실패가 타입으로 명시</strong>되고, 함수에는 <code>[[nodiscard]]</code>(C23 — “이 반환값을 버리면 경고하라”는 표기)가 붙어 있어 <strong>실패 확인을 잊는 실수를 컴파일러가 잡아 준다</strong>. 41장에서 정식으로 다룰 “오류는 값이다” 규율의 실물이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>표준 라이브러리로도 되는 일을 왜 라이브러리를 더해서 하는가 — 부품이 늘면 배울 것도 느는데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>이 책의 대답은 층의 구별이다. <strong>개념은 표준 C로 온전히 배웠다</strong> — 30–34장까지 proven 없이 온 것이 그 증거이고, proven을 걷어내도 이 책의 C 지식은 성립한다(1장의 약속). 그 위에서 <strong>실무의 기본기</strong>를 고를 때는, 표준 라이브러리의 역사적 함정(gets의 장례, scanf의 꼬임, 검사 없는 문자열 함수들)을 아는 채로 고르는 것이 현대적 선택이다 — Rust나 Zig가 언어 차원에서 내장한 안전을(1장), C에서는 부품 선택으로 얻는 것이다. proven은 그 선택지의 하나이자 이 책의 시연 재료이고, 같은 사상의 다른 라이브러리를 골라도 원리는 같다.</p></div></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>proven 함수들의 이름이 길다 — <code>proven_scan_i64</code>처럼. 왜 이렇게 짓는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>C에는 이름 공간이 없기 때문이다(21장의 스코프는 블록의 것이고, 파일 경계를 넘는 이름들은 한 마당에서 산다 — 43장). 라이브러리들이 같은 이름을 쓰면 링크 단계(14장)에서 충돌하므로, C 라이브러리의 관행은 <strong>접두어가 이름 공간을 대신</strong>하는 것이다 — <code>proven_</code>이 그 담장이다. 길지만, 어느 부품의 것인지 이름만 봐도 드러난다는 실속이 있다.</p></div></div><p>(이 장은 첫 만남이라 필요한 만큼만 쓴다 — 라이브러리의 설계 전모와 사용법은 제12부에서 세 장에 걸쳐 다룬다. 이 책이 C 입문서이면서 동시에 proven의 안내서이기도 한 이유다.)</p><p>입력의 안전을 갖췄다. 그런데 이 장에서 “함수 호출의 복귀 장부”라는 말이 설명 없이 지나갔다 — 기억의 어디에 무엇이 살고, 언제 태어나고 죽는가. 다음 장이 그 지도 — 수명과 저장 기간 — 다.</p>
+<div class="nav"><a href="ch34.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch36.html">다음 →</a></div>
+</div></main></body></html>

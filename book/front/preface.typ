@@ -7,7 +7,7 @@ proven이 다루는 문제들은 C의 미묘한 자리에 있다 — 표현의 �
 규칙, 기억의 수명, 표준이 약속하지 않은 영역. 이 자리들을 모르는
 사람에게 proven은 불필요한 물건으로 보인다. 그래서 라이브러리를 소개하기
 전에, 그 문제들을 먼저 설명하기로 했다. 이 책의 대부분이 표준 C만으로
-쓰인 이유이고, proven이 뒤늦게(제11부) 등장하는 이유다. 앞의 이야기를
+쓰인 이유이고, proven이 뒤늦게(제12부) 등장하는 이유다. 앞의 이야기를
 읽고 나면 proven이 필요 없다고 판단할 수도 있다. 그것도 좋은 결말이다.
 
 다른 한편으로 이 책에는 C를 좋아하는 사람의 마음도 얼마간 들어가 있다.
@@ -47,5 +47,5 @@ proven이 다루는 문제들은 C의 미묘한 자리에 있다 — 표현의 �
 편이 낫다고 보았고, 저작권 관계를 단순하게 두려는 뜻도 있다.
 
 #v(0.2cm)
-rubidus\@gmail.com \
-https://github.com/rubidus-api
+#link("mailto:rubidus@gmail.com")[rubidus\@gmail.com] \
+#link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]

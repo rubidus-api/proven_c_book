@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>34 문자열 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-170">34 문자열</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-60"></span><p>C의 문자열을 정면으로 다룬다 — char 배열 + NUL 종단이라는 정체, 문자열 리터럴의 특별한 사정, 길이 재기의 진짜 비용, 그리고 한글이 드러내는 “글자 수 ≠ 바이트 수”의 실전까지. 널 삼형제의 마지막(NUL 문자)이 여기서 정식 취급된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>7장에서 C가 택한 문자열 표현은 “끝에 표지를 세우는” NUL 종단이라 했고, 그 대가 세 가지(길이는 세어야 안다, NUL을 내용에 못 담는다, 표지를 잃으면 폭주)를 예고했다. 이제 배열(33장)을 배웠으니 — C 문자열의 정확한 정체를 스스로 정의해 보면?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>char 배열인데, 어딘가에 값 0인 바이트(NUL 문자, <code>'\0'</code>)가 있고, “문자열”이란 시작부터 그 표지 직전까지를 뜻한다는 약속</strong> — 이것이 전부다. 별도의 문자열 타입은 없다. 배열, 그리고 약속. 이 장은 그 약속의 사용법과 비용을 다룬다.</p></div></div><h3 id="loc-171">34.1 정체 — 배열, 그리고 약속</h3><p><code>char greet[] = "안녕";</code> — 문자열 리터럴로 배열을 초기화하면, 컴파일러가 글자들의 바이트 <strong>뒤에 <code>'\0'</code>을 붙여</strong> 배열을 만든다. 시연으로 해부한다.</p><div><div><p><code>examples/ch34/str.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;string.h>
+
+int main(void)
+{
+    char greet[] = "안녕";      /* 글자 2개 — 그러나 바이트는? */
+
+    printf("strlen(\"안녕\") = %zu\n", strlen(greet));
+
+    for (size_t i = 0; i &lt; strlen(greet); i += 1) {
+        printf("%02X ", (unsigned char)greet[i]);
+    }
+    printf("\n");
+
+    printf("sizeof greet = %zu (NUL 종단 포함)\n", sizeof greet);
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>strlen("안녕") = 6
+EC 95 88 EB 85 95 
+sizeof greet = 7 (NUL 종단 포함)
+</code></pre></div></div><p>읽을거리가 겹겹이다. <code>strlen</code>(표준 <code>&lt;string.h></code>의 길이 재기)이 6을 답했다 — “안녕”은 <strong>글자 둘, 바이트 여섯</strong>이다(7장 UTF-8 표의 그대로: 한글 음절은 3바이트 구간). 바이트 덤프 <code>EC 95 88 EB 85 95</code>가 그 여섯 바이트의 민낯이고, <code>sizeof greet</code>는 7 — NUL 표지까지 담은 그릇의 크기다. 6장의 오개념(“한 글자=1바이트”)이 실행 결과로 반증되는 순간 이다.</p><p><code>strlen</code>의 <strong>비용</strong>도 이제 정확히 말할 수 있다 — 7장의 예고대로, NUL 종단에는 길이가 적혀 있지 않으므로 strlen은 <strong>표지를 만날 때까지 한 칸씩 산책</strong>한다. 문자열이 길수록 오래 걸리고(칸 수에 비례), 루프 조건 에서 매번 strlen을 부르는 코드가 고전적인 성능 함정이 되는 이유다 (시연의 루프가 사실 그 무늬다 — 짧은 문자열이라 무해하지만, 긴 문자열이라면 길이를 변수에 받아 두는 것이 관행이다).</p><h3 id="loc-172">34.2 문자열 리터럴 — 읽기 전용의 땅</h3><p>배열 초기화가 아니라 포인터에 리터럴을 담을 수도 있다 — 그리고 여기에 중요한 차이가 있다:</p><pre><code data-lang="c">char buf[] = "고칠 수 있다";   /* 내 배열로 복사됨 — 수정 가능 */
+const char *msg = "고치면 안 된다";  /* 리터럴 원본을 가리킴 */</code></pre><p>문자열 리터럴 자체는 프로그램에 구워진 <strong>읽기 전용 데이터</strong>다 — 수정을 시도하는 것은 계약 밖이고, 현대 환경에서는 대개 그 자리에서 붕괴한다 (리터럴이 쓰기 금지 구역에 배치되므로 — 4장의 보호 구역이 또 하나의 친절을 베푸는 셈이다). 그래서 리터럴을 가리키는 포인터는 <code>const char*</code> 로 선언하는 것이 규칙이다 — 20장의 <code>const</code>가 “바꾸지 않겠다”는 문서 였다면, 여기서는 “바꾸면 안 되는 것을 바꾸려는 실수”를 컴파일 시점에 막아 주는 자물쇠로 일한다.</p><div class="dev realcase"><p class="dev-label">◉ gets — 표준에서 퇴출당한 함수</p><p>NUL 종단의 세 번째 대가(표지를 잃으면 폭주)에 얽힌, C 표준 역사상 가장 유명한 장례식이 있다. 초창기 표준 라이브러리의 <code>gets</code>는 “한 줄을 읽어 배열에 담는” 함수였는데 — <strong>그릇의 크기를 받지 않았다</strong>. 입력이 그릇보다 길면 그대로 이웃 기억을 덮어쓰는, 경계 침범(33장)이 설계에 내장된 함수였던 것이다. 1988년 인터넷 최초의 대규모 웜(Morris worm)이 이 부류의 결함을 뚫고 퍼졌고, 수십 년의 사고 끝에 C11 표준이 <code>gets</code>를 <strong>삭제</strong>했다 — 표준이 자기 함수를 공식적으로 장례 치른 드문 사례다. 22장에서 이 책이 처음부터 <code>fgets</code>(그릇 크기를 받는 후계자)를 가르친 사연이 이것이고 — 다음 장에서 이 사고 부류 전체를 정면으로 본다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>한글 처리를 제대로 하려면 — 글자 단위로 다루려면 — 어떻게 해야 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>두 층을 구별하는 것이 출발점이다. <strong>바이트 층</strong>(C 문자열의 세계)에서는 UTF-8을 그냥 바이트 열로 다루면 되고 — 복사·연결·저장·전송은 글자 경계를 몰라도 안전하다(UTF-8의 자기 동기화 설계 덕이다, 7장). <strong>글자 층</strong>이 필요한 일(글자 수 세기, 자르기, 대소문자)은 UTF-8 해독이 필요 하고, 표준 라이브러리의 지원이 빈약한 지점이라 라이브러리를 쓰는 것이 실무다 — proven의 u8str 계열이 정확히 이 자리를 맡는다(다음 장에서 첫 만남, 47장에서 본격). 수칙 하나만 명심하면 사고의 대부분이 예방된다: <strong>바이트 번호로 문자열을 자르지 말 것</strong> — 한글 음절의 허리를 자르면 깨진 바이트 열이 된다.</p></div></div><p>문자열의 정체와 비용을 알았다. 다음 장은 이 부의 전환점이다 — 경계 침범이라는 사고 부류의 해부, 그리고 이 책의 기반 기술 proven의 등장 이다. 22장에서 심은 “안전한 입력” 씨앗이 드디어 회수된다.</p>
+<div class="nav"><a href="ch33.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch35.html">다음 →</a></div>
+</div></main></body></html>

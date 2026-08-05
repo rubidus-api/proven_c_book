@@ -59,6 +59,9 @@ for src in $(find "$root/examples" -name '*.c' | sort); do
     fi
 
     extra=""
+    if grep -q '#include <math.h>' "$src"; then
+        extra="-lm"
+    fi
     if grep -q '#include <proven' "$src"; then
         if ! build_vendor; then
             echo "FAIL vendor build (needed by $rel)"

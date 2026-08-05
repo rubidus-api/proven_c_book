@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>41 오류와 계약 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-195">41 오류와 계약</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-69"></span><p>29장에서 심은 계약의 씨앗이 자란다 — 함수는 무엇을 요구하고 무엇을 약속하는가(전제조건·후조건), 실패를 어떻게 알리는가(C의 방식: 오류는 값이다), 그리고 그 값을 반드시 확인하게 만드는 장치들까지. 35장에서 본 proven의 설계 사상이 여기서 원리로 정리된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>29장 끝에서 <code>fact</code> 함수가 “암묵의 약속”(n은 0 이상, 13 이상이면 넘침) 위에 서 있다고 했다. 그런데 그 약속은 코드 어디에도 적혀 있지 않았다 — 그러면 그것은 존재하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>존재하지만, <strong>지켜지지 않는 상태로</strong> 존재한다 — 그것이 문제의 핵심이다. 모든 함수에는 암묵의 계약이 있다: 어떤 입력에 대해 제대로 동작하는가 (전제조건), 성공하면 무엇을 보장하는가(후조건). 그 계약이 문서와 코드 어디에도 없으면, 계약 위반은 조용히 지나가 나중에 엉뚱한 곳에서 터진다. 이 장은 계약을 <strong>드러내는</strong> 방법들의 이야기다.</p></div></div><h3 id="loc-196">41.1 오류는 값이다 — C의 방식</h3><p>많은 현대 언어가 실패를 위한 별도 통로(예외)를 갖고 있지만, C에는 없다. C에서 실패는 <strong>반환값으로 알린다</strong> — 함수의 결과 자체가 “성공했는가”를 담고 나오는 것이다. 관행은 세 갈래다.</p><ul><li><strong>성공/실패 불리언</strong> + 결과는 포인터로 받기(30장의 <code>&amp;</code> 관용구).</li><li><strong>특별한 값</strong>으로 실패 표시 — <code>malloc</code>의 널(37장), <code>fgets</code>의 널, 음수 반환 등.</li><li><strong>오류 코드</strong>를 돌려주고 0을 성공으로 — 시스템 호출 계열의 전통.</li></ul><p>첫 갈래를 시연으로 본다. 24장에서 배운 “0 나누기는 계약 밖”이라는 사실을, 함수 계약으로 다스리는 모습이다.</p><div><div><p><code>examples/ch41/errval.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;stdlib.h>
+
+/* 계약: divisor가 0이 아니어야 한다. 실패는 반환값으로 알린다. */
+[[nodiscard]] bool safe_div(int a, int b, int *out)
+{
+    if (b == 0) {
+        return false;           /* 실패 — out은 건드리지 않는다 */
+    }
+    *out = a / b;
+    return true;
+}
+
+int main(void)
+{
+    int result = 0;
+
+    if (safe_div(7, 2, &amp;result)) {
+        printf("7 / 2 = %d\n", result);
+    } else {
+        printf("7 / 2: failed\n");
+    }
+
+    if (safe_div(7, 0, &amp;result)) {
+        printf("7 / 0 = %d\n", result);
+    } else {
+        printf("7 / 0: cannot divide by zero (reported as a value)\n");
+    }
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>7 / 2 = 3
+7 / 0: cannot divide by zero (reported as a value)
+</code></pre></div></div><p>읽을 점 셋. <strong>계약이 주석으로 적혀 있다</strong> — 무엇을 요구하는지가 코드 곁에 있다. <strong>실패해도 출력 인자를 건드리지 않는다</strong> — “실패 시 아무것도 바꾸지 않는다”는 것도 계약의 일부다. 그리고 <strong><code>[[nodiscard]]</code></strong> — C23의 표기로, 이 반환값을 버리는 호출이 있으면 컴파일러가 경고한다. 18장에서 “반환값을 버리는 것은 합법”이라 했던 그 자유에, “이 값만은 버리지 말라”는 제동을 거는 장치다. 35장의 proven 함수들이 이 표기를 두른 이유가 바로 이것이다.</p><div class="dev misconception"><p class="dev-label">⚠ “오류 처리는 코드를 지저분하게 만드는 부수적인 일이다”</p><p>입문자가 흔히 갖는 인상이고, 실제로 C의 오류 처리는 눈에 띄게 장황하다 — 호출마다 <code>if</code>가 붙으니까. 그러나 관점을 뒤집으면 정확히 반대다: <strong>오류 경로가 곧 프로그램의 절반이다.</strong> 파일이 없을 수 있고, 메모리가 부족할 수 있고, 입력이 엉터리일 수 있다는 것은 예외적 상황이 아니라 정상적인 현실이다. 실제 사고 분석에서 압도적으로 흔한 원인이 “반환값을 확인하지 않았다”인 것이 그 증거다 — 성공 경로만 적힌 코드는 절반만 쓰인 코드다. 장황함을 줄이는 법(공통 정리 지점으로 모으기, 실패를 감싸는 타입 쓰기)은 기술의 문제이고, <strong>확인한다</strong>는 원칙은 타협의 문제가 아니다.</p></div><h3 id="loc-197">41.2 계약을 코드로 — assert와 방어</h3><span id="idx-entry-70"></span><p>전제조건을 문서가 아니라 <strong>코드</strong>로 적는 도구가 있다 — <code>&lt;assert.h></code>의 <code>assert(조건)</code>다. 조건이 거짓이면 프로그램을 즉시 세우고 위치를 알린다. 용도를 정확히 구별하는 것이 중요하다:</p><ul><li><strong><code>assert</code>는 프로그래머의 실수를 잡는 것이다</strong> — “여기까지 왔다면 이 조건은 반드시 참이어야 한다”는 내부 불변식(28장의 그 불변식과 같은 낱말이다). 배포 빌드에서는 꺼지는 것이 관행이다(<code>NDEBUG</code>).</li><li><strong>바깥에서 온 것은 assert가 아니라 검사로</strong> — 사용자 입력, 파일 내용, 네트워크 데이터는 “틀릴 수 있는 것이 정상”이므로 실행 중에 늘 확인 하고 오류 값으로 처리해야 한다. 입력 검증을 assert로 하면, 배포판 에서 검사가 통째로 사라지는 사고가 된다.</li></ul><p>이 구별이 곧 계약의 두 면이다 — 안쪽(내가 지켜야 할 불변식)은 assert로, 바깥(상대가 지킬지 모르는 약속)은 검사와 오류 값으로.</p><h3 id="loc-198">41.3 const — 가장 값싼 계약</h3><p>계약을 코드로 적는 도구가 하나 더 있다. 20장에서 “바꾸지 않겠다는 문서”로 소개하고, 38장에서 “이 함수는 원본을 건드리지 않는다”는 표시로 <span id="idx-entry-71"></span>써 온 <code>const</code>다. 이 장의 관점에서 다시 보면, const는 <strong>가장 값싸게 적을 수 있는 계약 조항</strong>이다 — 함수 서명 한 곳에 한 낱말을 더하는 것으로, 호출하는 쪽에게 “당신의 데이터는 안전하다”를 약속하고 컴파일러에게 그 약속의 감시를 맡긴다.</p><p>효과는 세 층에 걸친다.</p><p><strong>① 사람에게 — 읽는 부담이 준다.</strong> <code>void render(const struct scene *s)</code> 라는 서명을 보는 순간, 이 함수가 scene을 바꾸지 않는다는 것이 확정 된다. 함수 몸통을 읽지 않아도 되는 것 — 큰 코드에서 이보다 값진 절약은 드물다. 20장에서 “바뀌지 않는 것이 많은 코드일수록 읽기 쉽다”고 한 것의 실체다.</p><p><strong>② 컴파일러에게 — 최적화의 근거가 된다.</strong> 11장에서 편집자가 값을 레지스터에 붙잡아 두는 장면을 보았고, 그 판단의 관건이 “이 값이 그 사이에 바뀔 수 있는가”였다. const는 그 판단을 돕는 신호다 — 다만 정확히 말해야 한다: <strong>const 자체가 마법의 최적화 스위치는 아니다.</strong> 포인터를 통해 들어온 데이터는 다른 경로로 바뀔 여지가 남아 있어서 (앨리어싱), const 하나로 컴파일러가 모든 걸 확신하지는 못한다. 확실한 이득은 <strong>const로 선언된 실제 객체</strong>(전역 상수, <code>static const</code> 테이블) 쪽이다 — 컴파일러가 값을 코드에 직접 심거나(상수 전파), 읽기 전용 구역에 배치해 아예 수정 불가로 만든다(34장의 문자열 리터럴이 그 자리에 살았다).</p><p><strong>③ 기억의 층에게 — 공유가 안전해진다.</strong> 바뀌지 않는 데이터는 <strong>복사할 이유가 없다.</strong> 여러 곳에서 같은 것을 함께 읽어도 되고, 9장의 캐시 관점에서는 여러 코어가 같은 캐시 라인을 나눠 읽어도 아무 다툼이 없다 — 10장에서 본 false sharing은 <strong>쓰기</strong>가 있어야 생기는 사고이기 때문 이다. 큰 데이터를 값 복사 대신 <code>const</code> 포인터로 넘기는 관행(38장)이 안전하면서 빠른 이유가 이것이다.</p><p>그래서 현대적 관행은 단순하다 — <strong>기본을 const로 두고, 바꿔야 하는 것만 예외로 푼다.</strong> 계약을 넓히는 데는 비용이 들지만, 좁히는 데는 낱말 하나면 된다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>35장의 proven은 이 원리를 어떻게 구현하고 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>세 가지가 이 장의 원리 그대로다. 첫째, <strong>실패가 타입에 드러난다</strong> — <code>{err, val}</code> 꾸러미를 돌려주므로 “성공했는지 묻지 않고 값을 꺼내는” 코드를 쓰기가 오히려 어색해진다. 둘째, <strong><code>[[nodiscard]]</code>로 확인을 강제한다</strong> — 버리면 컴파일러가 경고한다. 셋째, <strong>경계와 크기를 계약의 일부로 받는다</strong> — 33–34장에서 본 경계 침범의 뿌리를 API 차원에서 막는 것이다. 요약하면: 계약을 문서가 아니라 <strong>타입과 시그니처</strong>로 적는 설계다. 1장에서 본 Rust·Zig의 문제의식과 같은 방향을, C 안에서 부품으로 구현한 것이라 보면 된다.</p></div></div><p>계약과 오류를 다루는 법을 갖췄다. 그런데 이 책이 곳곳에서 “계약 밖”, “정의되지 않은 동작”이라 부르며 미뤄 온 세계가 아직 남아 있다. 다음 장에서 그 세계를 정면으로 본다 — C에서 가장 오해가 많고, 가장 값비싼 주제다.</p>
+<div class="nav"><a href="ch40.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch42.html">다음 →</a></div>
+</div></main></body></html>

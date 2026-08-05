@@ -1,56 +1,69 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Proven C Book — Modern C, built on the proven library</title>
-<style>
-:root { color-scheme: light dark; --fg:#1a1a1a; --bg:#fdfdfc; --muted:#666;
-        --rule:#ddd; --code-bg:#f5f5f3; --accent:#3b6ea5; }
-@media (prefers-color-scheme: dark) {
-  :root { --fg:#e6e6e6; --bg:#16181a; --muted:#9aa0a6; --rule:#333;
-          --code-bg:#1f2225; --accent:#7aa9d6; }
-}
-* { box-sizing: border-box; }
-body { margin:0; background:var(--bg); color:var(--fg);
-       font-family: "Noto Serif CJK KR","Noto Serif KR",Georgia,serif;
-       line-height:1.7; }
-.topbar { position:sticky; top:0; z-index:10; background:var(--bg);
-          border-bottom:1px solid var(--rule); padding:.6rem 1rem;
-          display:flex; gap:1rem; align-items:center; font-size:.9rem; }
-.topbar strong { font-family: "Noto Sans CJK KR",system-ui,sans-serif; }
-.topbar .spacer { flex:1 1 auto; }
-main { max-width: 46rem; margin: 0 auto; padding: 1.5rem 1.1rem 6rem; }
-.note { border-left:3px solid var(--accent); background:var(--code-bg);
-        padding:.7rem .9rem; margin:1.2rem 0; font-size:.92rem; }
-h1,h2,h3 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:1.7rem; margin:2.4rem 0 1rem; padding-top:1rem;
-     border-top:2px solid var(--rule); }
-h2 { font-size:1.25rem; margin:2rem 0 .6rem; }
-h3 { font-size:1.05rem; margin:1.4rem 0 .4rem; }
-p { margin:.7rem 0; }
-pre, code { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.1em .3em; border-radius:3px;
-       font-size:.92em; }
-pre { background:var(--code-bg); padding:.8rem 1rem; border-radius:6px;
-      overflow-x:auto; line-height:1.5; }
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proven C Book — Modern C, built on the proven library</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; width:100%; margin:1rem 0; font-size:.93rem;
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
         display:block; overflow-x:auto; }
-th,td { border:1px solid var(--rule); padding:.4rem .55rem; text-align:left;
-        vertical-align:top; }
-th { background:var(--code-bg); }
-a { color:var(--accent); }
-figure { margin:1rem 0; }
-</style>
-</head>
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
 <body>
-<div class="topbar"><strong>Proven C Book</strong>
-  <span class="spacer"></span><a href="../ko/">한국어</a>
-  <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
-<main>
-<div class="note">This edition is a <strong>draft</strong>. For the paginated index and exact typesetting, see the <a href="../../dist/">PDF</a>.</div>
-<h2>Translation status</h2><p>This English edition is being translated from the Korean original, which is complete (12 parts, 58 chapters, appendices A–E and an index, about 570 pages). The translation is <strong>in progress</strong>: this volume currently carries the front matter, and chapters are added as they are translated.</p><p>Until then, the complete text is the Korean edition:</p><ul><li>PDF — <code>dist/proven_c_book-v0.1.0.pdf</code></li><li>Web — <a href="https://rubidus-api.github.io/proven_c_book/ko/">rubidus-api.github.io/proven_c_book/ko/</a></li></ul><p>Chapter-level progress is tracked in the repository (<code>TRANSLATION.md</code>).</p><h2>Preface</h2><p>This book is an introduction to <strong>proven</strong>, a C library I wrote — and, honestly, a piece of promotion for it.</p><p>But to argue that something is worth using, you first have to show why it is needed. The problems proven addresses live in the subtle corners of C: the limits of representation, the rules of conversion, the lifetime of memory, the regions the standard declines to define. To someone who has not met those corners, proven looks like an unnecessary contraption. So I decided to explain the problems first. That is why most of this book is plain standard C, and why proven does not appear in earnest until Part XI. If, after the earlier chapters, you conclude that you do not need proven — that is a good outcome too.</p><p>There is also, in these pages, some measure of affection for the language. Try explaining why a fifty-year-old language is still here, and what its design gave up in order to get what it got, and affection follows on its own. I have not hidden that part.</p><p>Every listing in this book is really compiled and really run. The printed output was not transcribed by hand: it is what the machine produced when the book was built, cross-checked with two compilers (gcc and clang).</p><p>One more disclosure. <strong>This book was written with AI as an assisting tool.</strong> What to cover, in what order, under which principles, and what to leave out — all of that I decided, and the draft was written to those instructions and then reviewed by me. Technical claims were checked against the standard and primary sources, and the examples are verified by machine on every build: whoever wrote it, <strong>code that does not run does not go into this book</strong>.</p><p>Errors will remain nonetheless. Those are mine, not the tool’s. If you find one, please tell me.</p><h3>Copyright and contact</h3><p>The text of this book (prose and figures) is licensed under <strong>CC BY-NC-SA 4.0</strong>. You may share and adapt it with attribution; commercial use is not permitted, and adaptations must carry the same license.</p><p>The example code is licensed under the <strong>MIT license</strong>. Anything you learn here can go into your own programs without restriction.</p><p>Contact is by email. Corrections are best filed through the GitHub repository — they stay on the record and other readers can see them.</p><p><strong>Only error reports are accepted as contributions.</strong> Wrong statements, listings that do not behave as printed, typos and stale information are all welcome. Manuscript contributions — new chapters or sections — are not.</p><p>rubidus@gmail.com<br>https://github.com/rubidus-api/proven_c_book</p>
-</main>
-</body>
-</html>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<div class="note">This edition is a <strong>draft</strong>. For the paginated index and exact typesetting, see the <a href="https://github.com/rubidus-api/proven_c_book/tree/main/dist">PDF</a>.</div><h1>Proven C Book — Modern C, built on the proven library</h1><h3>Contents</h3><div class="toc"><a href="sec01.html">Contents</a><a href="sec02.html">Preface</a><a href="sec03.html">A note on this translation</a><a href="ch01.html">1 Setting the scene</a><a href="ch02.html">2 A simple model of the machine - the birth of C</a><a href="ch03.html">3 Words and addresses - the archetype of C</a><a href="ch04.html">4 Special knowledge about addresses — address 0, alignment, low bits</a></div><hr style="border:none;border-top:1px solid var(--rule);margin:2.4rem 0"><nav role="doc-toc">
+
+</div></main></body></html>

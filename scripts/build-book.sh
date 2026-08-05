@@ -18,5 +18,8 @@ fontargs=""
 if [ -n "${FONT_PATH:-}" ]; then
     fontargs="--font-path $FONT_PATH"
 fi
-"$typst" compile --root "$root" $fontargs "$root/book/main.typ" "$root/build/book.pdf"
+"$typst" compile --no-pdf-tags --root "$root" $fontargs "$root/book/main.typ" "$root/build/book.pdf"
 echo "build-book: build/book.pdf"
+
+# 한국어판이 바뀌면 영어판이 어긋난다 — 그 사실을 즉시 알린다
+python3 "$root/scripts/sync-status.py" || true

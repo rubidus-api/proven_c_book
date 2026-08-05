@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>45 가변 인자 함수 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-215">45 가변 인자 함수</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p><code>printf</code>가 인자를 몇 개든 받을 수 있었던 비밀을 연다. <code>&lt;stdarg.h></code>의 네 도구, 이 장치가 왜 타입 안전하지 않은지, 그 역사(K&amp;R의 <code>varargs</code> 에서 C89의 <code>stdarg</code>, C23의 정리까지), 그리고 오늘의 대안까지. 19장의 “서식은 계약”이 왜 그토록 엄격한 계약이었는지가 여기서 밝혀진다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p><span id="idx-entry-78"></span>25장에서 가변 인자로 넘어가는 값에는 기본 진급(float→double, 작은 정수→int)이 적용된다고 배웠다. 그런데 왜 하필 그 자리에만 특별한 진급 규칙이 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>받는 쪽이 <strong>타입을 모르기 때문이다.</strong> 보통의 함수는 원형(21장)에 인자 타입이 적혀 있어 컴파일러가 양쪽을 맞춰 준다. 그러나 가변 인자 자리는 원형에 <code>...</code>뿐이라 맞출 상대가 없다 — 그래서 “일단 다들 큰 타입으로 통일해서 보내자”는 약속으로 혼란을 줄인 것이다. 이 장은 그 “타입을 모르는 자리”에서 어떻게 값을 꺼내는지, 그리고 그 대가가 무엇인지의 이야기다.</p></div></div><h3 id="loc-216">45.1 네 개의 도구</h3><p><code>&lt;stdarg.h></code>가 주는 것은 타입 하나와 매크로 셋이다 — <code>va_list</code>(읽개), <code>va_start</code>(시작), <code>va_arg</code>(하나 꺼내기), <code>va_end</code>(닫기). 시연으로 본다.</p><div><div><p><code>examples/ch45/va.c</code></p><pre><code data-lang="c">#include &lt;stdarg.h>
+#include &lt;stdio.h>
+
+/* 개수를 첫 인자로 받는 방식 — 스스로는 개수를 알 길이 없다 */
+int sum_n(int count, ...)
+{
+    va_list ap;
+    int total = 0;
+
+    va_start(ap, count);            /* count 다음부터 읽겠다 */
+    for (int i = 0; i &lt; count; i += 1) {
+        total += va_arg(ap, int);   /* 타입을 '내가' 알려 준다 */
+    }
+    va_end(ap);                     /* 반드시 닫는다 */
+    return total;
+}
+
+/* 끝 표지(sentinel)로 개수를 대신하는 방식 */
+int sum_until_zero(int first, ...)
+{
+    va_list ap;
+    int total = first;
+
+    va_start(ap, first);
+    for (;;) {
+        int v = va_arg(ap, int);
+        if (v == 0) { break; }
+        total += v;
+    }
+    va_end(ap);
+    return total;
+}
+
+int main(void)
+{
+    printf("sum_n(4, 1,2,3,4)        = %d\n", sum_n(4, 1, 2, 3, 4));
+    printf("sum_until_zero(1,2,3,0)  = %d\n", sum_until_zero(1, 2, 3, 0));
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>sum_n(4, 1,2,3,4)        = 10
+sum_until_zero(1,2,3,0)  = 6
+</code></pre></div></div><p>핵심은 <code>va_arg(ap, int)</code>의 둘째 인자다 — <strong>꺼낼 값의 타입을 프로그래머가 알려 준다.</strong> 함수는 무엇이 왔는지 모르므로, “지금 꺼낼 것은 int다”라고 말해 주는 사람이 필요하고 그 사람이 호출자와 약속을 공유한 작성자다. 이 약속이 어긋나면 — 실제로는 double이 왔는데 int로 꺼내면 — 계약 밖이다(42장). 기억의 잘못된 자리를 읽는 것이니 값이 쓰레기가 되거나 그 뒤의 꺼내기가 전부 어긋난다.</p><p>그리고 함수는 <strong>인자가 몇 개인지도</strong> 모른다. 그래서 개수를 알아내는 길을 호출 규약으로 만들어야 하는데, 시연이 두 관행을 보인다 — 첫 인자로 개수를 받거나(<code>sum_n</code>), 끝을 알리는 표지 값을 약속하거나 (<code>sum_until_zero</code>). <code>printf</code>는 세 번째 길을 쓴다: <strong>서식 문자열이 개수와 타입을 동시에 알려 주는 명세</strong>인 것이다. 19장에서 “서식은 계약”이라 한 말의 정확한 무게가 이것이다 — 그 계약이 깨지면 printf는 있지도 않은 인자를 꺼내며 메모리를 뒤진다(19장의 서식 문자열 취약점이 바로 이 메커니즘이었다).</p><h3 id="loc-217">45.2 기본 인자 승격 — <code>...</code>을 건너는 값은 굵어진다</h3><p><code>va_arg</code>가 타입을 물어보는 이유가 하나 더 있다. <code>...</code>을 건너는 인자는 <strong>원래 타입 그대로 가지 않기</strong> 때문이다. 25장에서 본 기본 인자 승격(default argument promotion)이 여기서 실제로 일어난다.</p><table><tr><th><strong>넘긴 것</strong></th><th><strong>실제로 도착하는 것</strong></th><th><strong>그래서</strong></th></tr><tr><td><code>char</code>, <code>signed char</code>, <code>unsigned char</code></td><td><code>int</code></td><td><code>va_arg(ap, char)</code>는 틀렸다</td></tr><tr><td><code>short</code>, <code>unsigned short</code></td><td><code>int</code></td><td><code>va_arg(ap, int)</code>로 꺼낸다</td></tr><tr><td><code>bool</code></td><td><code>int</code></td><td>같음</td></tr><tr><td><code>float</code></td><td><code>double</code></td><td><code>va_arg(ap, float)</code>는 틀렸다</td></tr><tr><td><code>int</code> 이상의 정수</td><td>그대로</td><td>—</td></tr><tr><td>포인터</td><td>그대로</td><td>단 널 상수는 캐스트가 필요하다</td></tr></table><p>규칙을 한 줄로 줄이면 이렇다 — <strong><code>int</code>보다 좁은 정수는 <code>int</code>가 되고, <code>float</code>은 <code>double</code>이 된다.</strong> 그래서 <code>printf</code>에 <code>float</code> 전용 서식이 없고 (47장), <code>va_arg(ap, float)</code>라고 쓰면 도착하지도 않은 타입을 꺼내는 계약 위반이 된다.</p><p>널 포인터를 넘길 때의 함정도 여기서 나온다. <code>NULL</code>이 정수 <code>0</code>으로 정의된 구현에서는 <code>...</code> 자리에 정수 0이 실려 가서, 받는 쪽이 <code>va_arg(ap, char*)</code>로 꺼내면 폭이 어긋난다. C23의 <code>nullptr</code>(31장)이나 명시적 캐스트(<code>(char *)0</code>)를 쓰는 이유다.</p><h3 id="loc-218">45.3 근본적 한계 — 함수는 아무것도 모른다</h3><p>가변 인자 함수는 <strong>넘어온 인자의 개수도, 타입도 알지 못한다.</strong> 스택에 값이 놓여 있을 뿐, 그것을 설명하는 정보가 함께 오지 않기 때문이다. 그래서 모든 가변 인자 함수는 그 정보를 <strong>바깥에서</strong> 얻어야 하고, 방법은 결국 셋뿐이다.</p><table><tr><th><strong>방식</strong></th><th><strong>예</strong></th><th><strong>깨지는 방식</strong></th></tr><tr><td>명세 문자열이 알려 준다</td><td><code>printf("%d %s", ...)</code></td><td>서식과 인자가 어긋나면 UB. 서식이 변수면 검사도 불가</td></tr><tr><td>개수·타입을 인자로 받는다</td><td><code>sum_n(3, a, b, c)</code></td><td>개수를 잘못 세면 없는 인자를 꺼낸다</td></tr><tr><td>끝 표지를 약속한다</td><td><code>execl(..., (char *)NULL)</code></td><td>표지를 빠뜨리면 멈추지 않는다</td></tr></table><p>세 방식 모두 <strong>사람이 약속을 지켜야</strong> 성립한다는 공통점이 있다. 컴파일러가 검사해 줄 정보가 애초에 존재하지 않기 때문이다. 58장에서 이것을 “C가 50년째 출하하는 다섯 가지 버그” 중 하나로 꼽는 이유가 여기 있다.</p><h3 id="loc-219">45.4 <code>_Generic</code> — 타입을 컴파일 시간에 붙잡기</h3><p>C11이 이 문제에 도구 하나를 보탰다. <code>_Generic</code>은 <strong>표현식의 타입에 따라 여러 선택지 중 하나를 컴파일 시간에 고르는</strong> 문법이다.</p><pre><code data-lang="c">#define TYPE_NAME(x) _Generic((x), \
+    int:          "int",           \
+    double:       "double",        \
+    const char *: "string",        \
+    default:      "other")</code></pre><p>주의할 점 셋이 있다. 첫째, 고르는 기준은 <strong>타입</strong>이지 값이 아니다. 둘째, 고르지 않은 가지는 <strong>컴파일되지도 않는다</strong> — 그래서 서로 다른 타입에만 맞는 코드를 나란히 둘 수 있다. 셋째, 목록에 없는 타입을 주면 <code>default</code>가 없는 한 <strong>컴파일 오류</strong>가 난다 — 이 성질이 다음 절의 핵심이다.</p><div><div><p><code>examples/ch45/generic.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+/* C11 _Generic: 표현식의 *타입*에 따라 컴파일 시간에 하나를 고른다.
+   실행 시간 비용이 0인 것이 핵심이다. */
+#define TYPE_NAME(x) _Generic((x),      \
+    _Bool:        "bool",               \
+    char:         "char",               \
+    int:          "int",                \
+    unsigned:     "unsigned",           \
+    long:         "long",               \
+    double:       "double",             \
+    float:        "float",              \
+    const char *: "string",             \
+    char *:       "string",             \
+    default:      "other")
+
+/* 값과 타입 꼬리표를 한 꾸러미로 묶는다 — proven 의 PROVEN_ARG 와 같은 착상 */
+enum arg_kind { A_INT, A_DOUBLE, A_STR };
+
+struct arg {
+    enum arg_kind kind;
+    union { long i; double d; const char *s; } v;
+};
+
+static struct arg arg_from_int(long v)        { return (struct arg){ A_INT,    { .i = v } }; }
+static struct arg arg_from_double(double v)   { return (struct arg){ A_DOUBLE, { .d = v } }; }
+static struct arg arg_from_str(const char *v) { return (struct arg){ A_STR,    { .s = v } }; }
+
+#define ARG(x) _Generic((x),            \
+    int:          arg_from_int,         \
+    long:         arg_from_int,         \
+    double:       arg_from_double,      \
+    float:        arg_from_double,      \
+    const char *: arg_from_str,         \
+    char *:       arg_from_str)(x)
+
+/* 인자의 타입을 함수가 *알고 받는다* — 서식 문자열을 믿지 않는다 */
+static void print_args(const struct arg *a, size_t n)
+{
+    for (size_t i = 0; i &lt; n; i++) {
+        switch (a[i].kind) {
+            case A_INT:    printf("  [%zu] int    %ld\n", i, a[i].v.i); break;
+            case A_DOUBLE: printf("  [%zu] double %.3f\n", i, a[i].v.d); break;
+            case A_STR:    printf("  [%zu] string %s\n", i, a[i].v.s); break;
+        }
+    }
+}
+
+/* 배열 리터럴로 개수까지 함께 넘긴다 — 가변 인자가 아니다 */
+#define PRINT(...) do {                                       \
+    struct arg _args[] = { __VA_ARGS__ };                     \
+    print_args(_args, sizeof _args / sizeof _args[0]);        \
+} while (0)
+
+int main(void)
+{
+    int         n = 42;
+    double      x = 3.14159;
+    const char *s = "hello";
+    char        c = 'A';
+    bool        b = true;
+
+    printf("TYPE_NAME: %s %s %s %s %s\n",
+           TYPE_NAME(n), TYPE_NAME(x), TYPE_NAME(s), TYPE_NAME(c), TYPE_NAME(b));
+
+    printf("typed arguments:\n");
+    PRINT(ARG(n), ARG(x), ARG(s));
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>TYPE_NAME: int double string char bool
+typed arguments:
+  [0] int    42
+  [1] double 3.142
+  [2] string hello
+</code></pre></div></div><p>예제의 뒷부분이 이 장의 결론이다. <code>ARG(x)</code>는 <code>_Generic</code>으로 값의 타입을 알아내, <strong>값과 타입 꼬리표를 함께 담은 구조체</strong>를 만든다. 그리고 그것들을 배열에 담아 넘기므로 함수는 개수까지 알게 된다 — 가변 인자를 아예 쓰지 않는 것이다. 서식 문자열이 없으니 서식과 인자가 어긋날 자리도 없다.</p><h3 id="loc-220">45.5 proven의 <code>PROVEN_ARG</code> — 실물의 구조</h3><p>64장에서 쓴 <code>proven_println("{}", PROVEN_ARG(x))</code>가 정확히 이 구조다. 실제 구현을 뜯어보면 세 조각으로 되어 있다.</p><p><strong>① 타입 꼬리표와 값을 담는 꾸러미.</strong> 라이브러리는 인자 하나를 이렇게 표현한다 — 어떤 종류인지 알려 주는 열거값과, 값 자체를 담는 공용체 (39장의 태그된 공용체 그대로다).</p><pre><code data-lang="c">typedef enum {
+    PROVEN_ARG_NONE, PROVEN_ARG_I32, PROVEN_ARG_U32,
+    PROVEN_ARG_I64,  PROVEN_ARG_U64, PROVEN_ARG_F64,
+    PROVEN_ARG_CSTR, PROVEN_ARG_STR_VIEW, PROVEN_ARG_PTR,
+    PROVEN_ARG_CHAR, PROVEN_ARG_BOOL, PROVEN_ARG_CUSTOM, /* ... */
+} proven_arg_type_t;</code></pre><p><strong>② 타입마다 하나씩 있는 생성 함수.</strong> <code>proven_arg_i32(int v)</code>처럼, 값을 받아 꼬리표를 붙여 돌려주는 작은 함수들이다. 전부 <code>static inline</code>이라 호출 비용이 없다.</p><p><strong>③ <code>_Generic</code>으로 그 함수들을 고르는 매크로.</strong> 실제 헤더의 모습이다.</p><pre><code data-lang="c">#define PROVEN_ARG(x) _Generic((x),          \
+    _Bool:              proven_arg_bool,     \
+    char:               proven_arg_char,     \
+    signed char:        proven_arg_i32,      \
+    unsigned char:      proven_arg_u32,      \
+    short:              proven_arg_i32,      \
+    unsigned short:     proven_arg_u32,      \
+    int:                proven_arg_i32,      \
+    unsigned int:       proven_arg_u32,      \
+    long:               proven_arg_i64,      \
+    unsigned long:      proven_arg_u64,      \
+    long long:          proven_arg_i64,      \
+    unsigned long long: proven_arg_u64,      \
+    double:             proven_arg_f64,      \
+    float:              proven_arg_f64,      \
+    const char*:        proven_arg_cstr,     \
+    char*:              proven_arg_cstr,     \
+    void*:              proven_arg_ptr,      \
+    proven_u8str_view_t: proven_arg_str_view,\
+    proven_arg_t:       proven_arg_identity  \
+)(x)</code></pre><p>읽는 요령은 마지막 줄의 <code>(x)</code>다. <code>_Generic</code>이 <strong>함수 이름 하나</strong>로 값이 정해지고, 그 뒤의 <code>(x)</code>가 그 함수를 호출한다. 즉 <code>PROVEN_ARG(n)</code>은 <code>n</code>이 <code>int</code>면 <code>proven_arg_i32(n)</code>으로, <code>double</code>이면 <code>proven_arg_f64(n)</code> 으로 컴파일된다.</p><p>설계의 세부 몇 가지가 눈에 띈다.</p><ul><li><strong>좁은 정수를 굵은 쪽으로 모은다</strong> — <code>short</code>와 <code>signed char</code>가 모두 <code>proven_arg_i32</code>로 간다. 앞 절의 기본 인자 승격과 같은 방향이지만, 이쪽은 <strong>컴파일러가 아니라 라이브러리가 명시적으로</strong> 정한 것이다.</li><li><strong><code>float</code>을 <code>double</code>로 모은다</strong> — 같은 이유다.</li><li><strong><code>char</code>만 따로 둔다</strong> — <code>proven_arg_char</code>가 따로 있어서 <code>char c = 'Z'</code>가 숫자 90이 아니라 글자 <code>Z</code>로 찍힌다. 다만 <code>PROVEN_ARG('Z')</code>는 <code>'Z'</code>가 <code>int</code>인 C의 규칙 때문에 여전히 90으로 간다 — 헤더가 이 한계를 주석에 정직하게 적어 두었다.</li><li><strong><code>proven_arg_t</code> 자기 자신도 목록에 있다</strong> — 이미 꾸러미로 만든 값을 다시 감쌀 때 그대로 통과시키기 위한 항등 가지다.</li><li><strong>목록에 없는 타입은 컴파일 오류</strong> — <code>default</code> 가지가 없다. 구조체를 실수로 넘기면 빌드가 실패한다. <code>printf</code>가 무엇이든 받아 주고 실행 중에 무너지던 것과 정반대의 선택이다.</li></ul><p>그다음은 단순하다. <code>proven_println("...", PROVEN_ARG(a), PROVEN_ARG(b))</code>는 꾸러미들을 <strong>배열 리터럴</strong>로 묶어 개수와 함께 실제 함수에 넘긴다. 가변 인자 자리를 통과하지 않으므로 승격도, 개수 추측도, 서식-인자 불일치도 없다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>그러면 <code>_Generic</code>으로 C에 제네릭이 생긴 것인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>아니다. <code>_Generic</code>은 <strong>이미 존재하는 함수들 중에서 고르는</strong> 장치이지, 타입에 따라 코드를 새로 만들어 주지 않는다. 타입마다 함수를 하나씩 손으로 써 두어야 하고, 목록도 손으로 유지해야 한다. 그래서 표준 라이브러리의 <code>&lt;tgmath.h></code>(수학 함수의 타입별 선택)나 이 절의 <code>PROVEN_ARG</code>처럼 <strong>유한하고 잘 알려진 타입 집합</strong>에 쓰인다. 진짜 제네릭이 필요하면 C에서는 여전히 매크로로 코드를 찍어 내거나(65장의 컨테이너 매크로), <code>void *</code>와 크기를 넘기는 방식(58장의 <code>qsort</code>)을 쓴다.</p></div></div><h3 id="loc-221">45.6 역사 — varargs에서 stdarg로</h3><p>이 장치의 역사는 C가 계약의 언어로 자란 과정의 축소판이다.</p><p><strong>표준 이전(K&amp;R 시절).</strong> 원형이 없던 시절(10장)의 C에서는 사실상 모든 함수가 인자 개수를 검사받지 않았다 — <code>printf</code> 같은 함수가 특별할 것도 없었다. 인자를 꺼내는 방법도 이식성이 없었다: 첫 인자의 주소에서 스택을 따라 훑는 식의 요령을 각자 썼는데, 인자를 스택이 아니라 레지스터로 넘기는 기계가 나오면서 이 요령이 깨졌다. 그래서 나온 것이 Unix 계열의 <code>&lt;varargs.h></code>였다 — 요령을 매크로로 감싸 기계 차이를 숨긴 첫 시도다.</p><p><strong>C89 — <code>&lt;stdarg.h></code>.</strong> 표준화 위원회가 원형을 도입하면서(10·21장) 가변 인자도 정식 문법을 얻었다: 원형에 <code>...</code>을 적고, 값 꺼내기는 <code>va_*</code> 매크로로 한다. 옛 <code>varargs</code>와의 결정적 차이는 <strong>이름 있는 인자가 최소 하나 필요하다</strong>는 것이다(<code>va_start</code>가 그 인자를 기준점으로 삼는다) — 그래서 <code>printf(const char *fmt, ...)</code>처럼 서식이 앞에 오는 서명이 표준이 됐다.</p><p><strong>C23 — 다듬기.</strong> 기준점 인자가 필요하다는 제약이 완화되어(<code>va_start</code>의 둘째 인자가 선택적) 인자 없는 가변 함수도 적을 수 있게 됐고, 옛 <code>varargs.h</code>는 역사 속으로 완전히 사라졌다. 반세기에 걸쳐 “이식성 없는 요령 → 표준 매크로 → 군더더기 제거”로 다듬어 온 것이다.</p><div class="dev misconception"><p class="dev-label">⚠ “가변 인자 함수는 편리하니 자주 쓰면 좋다”</p><p>편리해 보이지만, C에서 가변 인자는 <strong>타입 안전이 사라지는 자리</strong>다. 컴파일러는 <code>...</code> 자리의 인자를 검사하지 않고, 받는 쪽은 타입을 추측할 방법이 없다. <code>printf</code> 계열이 그나마 안전한 것은 컴파일러가 <strong>특별히</strong> 서식 문자열을 읽어 검사해 주기 때문이지(15장의 경고), 언어의 일반 규칙 덕분이 아니다 — 직접 만든 가변 인자 함수에는 그 그물이 없다. 실무 권고는 분명하다: <strong>꼭 필요하지 않으면 만들지 않는다.</strong> 대안이 대개 더 낫다 — 개수가 정해졌으면 그냥 인자를 나열하고, 여럿 이면 배열과 길이를 받고(33장의 관행), 종류가 다양하면 39장의 태그된 공용체로 명시적인 값 목록을 받는다. C 라이브러리 설계의 현대적 취향은 “가변 인자는 로깅·서식처럼 도구의 검사가 붙는 자리에만”이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>printf</code> 같은 서식 함수를 감싸는 내 함수를 만들려면 어떻게 하는가 — 예컨대 로그 함수?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>그 자리를 위해 <code>v</code> 붙은 짝이 표준에 준비되어 있다 — <code>vprintf</code>, <code>vfprintf</code>, <code>vsnprintf</code>처럼 <strong><code>va_list</code>를 그대로 받는</strong> 판들이다. 내 함수가 <code>...</code>으로 받아 <code>va_start</code>로 읽개를 만든 뒤, 그 읽개를 통째로 넘겨주면 된다. 서식 검사 경고를 내 함수에서도 받고 싶다면 컴파일러 확장 표기(gcc·clang의 <code>format</code> 속성)를 붙이는 것이 관행이다 — 언어가 못 주는 안전을 도구가 메우는, 이 책에 여러 번 나온 무늬다.</p></div></div><p>가변 인자의 정체를 알았다 — 함수에 <strong>값</strong>을 여럿 넘기는 법이었다. 다음 장은 그 거울상이다. 함수 자체를 값으로 다루는 법, 즉 함수 포인터다.</p>
+<div class="nav"><a href="ch44.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch46.html">다음 →</a></div>
+</div></main></body></html>

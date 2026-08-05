@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>53 문자와 로케일 — &lt;ctype.h&gt;·&lt;locale.h&gt;·&lt;wchar.h&gt; — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-261">53 문자와 로케일 — <code>&lt;ctype.h></code>·<code>&lt;locale.h></code>·<code>&lt;wchar.h></code></h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>한 글자를 다루는 함수들을 본다. 겉보기에 가장 단순한 헤더인데, C에서 가장 미묘한 함정 두 개가 여기 있다 — <strong><code>char</code>를 그대로 넘기면 계약 밖</strong> 이라는 것과, <strong>답이 로케일이라는 전역 상태에 달렸다</strong>는 것. 7장의 인코딩 이야기가 함수 차원에서 되돌아온다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>7장에서 문자는 코드표의 번호이고 인코딩은 그 번호를 바이트로 적는 방식 이라 했다. 그러면 <code>isalpha('가')</code> 같은 호출은 무엇을 묻는 것인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>잘못 던진 물음이다. <code>&lt;ctype.h></code>의 함수들은 <strong>한 바이트</strong>를 판정한다. UTF-8에서 “가”는 세 바이트이므로 애초에 인자로 들어갈 수 없고, 넣더라도 각 바이트를 따로 볼 뿐이다. 이 헤더는 아스키 시절의 도구이고, 여러 바이트 문자를 다루려면 와이드 문자 계열(<code>&lt;wctype.h></code>)이나 인코딩을 직접 다루는 코드가 필요하다.</p></div></div><h3 id="loc-262">53.1 첫 번째 함정 — <code>char</code>를 그대로 넘기지 않는다</h3><div><div><p><code>examples/ch53/ctype.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;ctype.h>
+#include &lt;limits.h>
+#include &lt;string.h>
+
+/* ctype 함수는 int 를 받는다 — 그런데 그 int 는 char 가 아니다 */
+int main(void)
+{
+    printf("CHAR_MIN = %d (이 기계의 char 는 %s)\n",
+           CHAR_MIN, CHAR_MIN &lt; 0 ? "부호 있음" : "부호 없음");
+
+    /* 아스키 범위는 문제가 없다 */
+    printf("isalpha('A') = %d, isdigit('7') = %d, isspace(' ') = %d\n",
+           isalpha('A') != 0, isdigit('7') != 0, isspace(' ') != 0);
+
+    /* 128 이상의 바이트가 문제다: char 로 넘기면 음수가 된다 */
+    char bytes[] = { (char)0xC7, (char)0x41, 'A', '\0' };   /* CP949 '가' 의 첫 바이트 */
+    printf("바이트 0xC7 을 char 로 담으면: %d\n", bytes[0]);
+
+    /* 올바른 관용구: unsigned char 로 바꿔서 넘긴다 */
+    printf("올바른 호출: isalpha((unsigned char)b) = %d\n",
+           isalpha((unsigned char)bytes[0]) != 0);
+
+    /* toupper/tolower 도 같은 규칙 */
+    const char *s = "Hello, World!";
+    char up[32];
+    size_t i = 0;
+    for (; s[i] &amp;&amp; i + 1 &lt; sizeof up; i++)
+        up[i] = (char)toupper((unsigned char)s[i]);
+    up[i] = '\0';
+    printf("toupper 적용: [%s]\n", up);
+
+    /* EOF 도 유효한 인자다 — 그래서 인자 타입이 int 다 */
+    printf("isalpha(EOF) = %d (EOF 는 허용된 인자)\n", isalpha(EOF) != 0);
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>CHAR_MIN = -128 (이 기계의 char 는 부호 있음)
+isalpha('A') = 1, isdigit('7') = 1, isspace(' ') = 1
+바이트 0xC7 을 char 로 담으면: -57
+올바른 호출: isalpha((unsigned char)b) = 0
+toupper 적용: [HELLO, WORLD!]
+isalpha(EOF) = 0 (EOF 는 허용된 인자)
+</code></pre></div></div><p><code>&lt;ctype.h></code>의 모든 함수는 <code>int</code>를 받는다. 그리고 표준이 요구하는 인자의 값은 <strong><code>unsigned char</code>로 표현되는 값이거나 <code>EOF</code></strong>다.</p><p>문제는 <code>char</code>가 부호 있는 구현이 흔하다는 데 있다(23장). 예제의 출력처럼 0xC7 바이트를 <code>char</code>에 담으면 −57이 되고, 그것을 그대로 <code>isalpha</code>에 넘기면 <strong>허용되지 않은 값</strong>을 넘기는 것이 된다 — 계약 밖이다. 실제 구현들이 대개 배열 색인으로 만들어져 있어서, 음수 인덱스로 배열 앞을 읽는 사고가 난다.</p><p>관용구는 하나다.</p><pre><code data-lang="c">isalpha((unsigned char)c)
+toupper((unsigned char)c)</code></pre><p><code>EOF</code>가 유효한 인자라는 점도 기억할 만하다 — 그래서 인자 타입이 <code>char</code>가 아니라 <code>int</code>인 것이다(49장의 <code>fgetc</code> 이야기와 같은 뿌리다).</p><div class="dev antipattern"><p class="dev-label">✗ <code>char</code>를 그대로 넘기기</p><pre><code data-lang="c">char *p = line;
+while (*p) { if (isspace(*p)) ... ; p++; }   /* 0x80 이상 바이트에서 계약 밖 */</code></pre><p>아스키만 들어온다는 보장이 없으면 반드시 변환한다.</p><pre><code data-lang="c">while (*p) { if (isspace((unsigned char)*p)) ... ; p++; }</code></pre><p>한글·일본어·유럽어 텍스트를 다루는 프로그램에서 이 한 줄이 실제 사고와 무사고를 가른다.</p></div><h3 id="loc-263">53.2 두 번째 함정 — 로케일</h3><p><code>&lt;ctype.h></code>의 판정은 <strong>현재 로케일</strong>에 달렸다. 기본은 <code>"C"</code> 로케일이고, <code>setlocale(LC_ALL, "")</code>을 부르면 환경 변수가 정한 로케일로 바뀐다. 그 순간부터 <code>isalpha</code>가 참을 돌려주는 바이트의 집합이 달라질 수 있다.</p><p>로케일이 바꾸는 것은 문자 분류만이 아니다.</p><table><tr><th><strong>범주</strong></th><th><strong>무엇이 바뀌나</strong></th><th><strong>조심할 자리</strong></th></tr><tr><td><code>LC_CTYPE</code></td><td>문자 분류·대소문자 변환</td><td><code>isalpha</code>, <code>toupper</code></td></tr><tr><td><code>LC_NUMERIC</code></td><td>소수점 문자</td><td>★ <code>printf("%f")</code>, <code>strtod</code></td></tr><tr><td><code>LC_COLLATE</code></td><td>문자열 정렬 순서</td><td><code>strcoll</code>, <code>strxfrm</code></td></tr><tr><td><code>LC_TIME</code></td><td>날짜·시각 표기</td><td><code>strftime</code>(55장)</td></tr><tr><td><code>LC_MONETARY</code></td><td>통화 표기</td><td><code>localeconv</code></td></tr></table><p><code>LC_NUMERIC</code>이 특히 위험하다. 독일·프랑스 로케일에서는 소수점이 쉼표라, <code>printf("%f", 3.14)</code>가 <code>3,140000</code>을 찍고 <code>strtod("3.14", …)</code>는 3에서 멈춘다. <strong>사람에게 보여 줄 숫자</strong>와 <strong>파일·프로토콜에 적을 숫자</strong>는 다른 규칙을 따라야 한다는 뜻이다.</p><div class="dev realcase"><p class="dev-label">◉ 로케일이 데이터를 망가뜨린 무늬</p><p>같은 프로그램이 개발자의 기계(영어 로케일)에서는 <code>3.14</code>를 쓰고, 사용자의 기계(독일어 로케일)에서는 <code>3,14</code>를 쓰는 일이 실제로 반복해서 일어났다. CSV 파일이 열에 따라 파싱되지 않거나, 설정 파일을 저장한 뒤 다시 읽지 못하거나, 두 나라의 서버가 주고받는 JSON이 어긋나는 식이다.</p><p>처방은 분명하다. <strong>기계가 읽을 숫자는 로케일에 의존하지 않는 경로로 다룬다</strong> — <code>"C"</code> 로케일을 유지하거나, 직접 자리 표기법을 다루거나, 로케일 독립 함수를 쓴다. C11의 <code>&lt;uchar.h></code>와 여러 라이브러리가 이 문제를 피하려고 별도 경로를 두는 이유이기도 하다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “<code>setlocale</code>을 부르지 않으면 로케일 문제는 없다”</p><p>대체로 맞지만 예외가 있다. 프로그램이 쓰는 <strong>다른 라이브러리</strong>가 <code>setlocale</code>을 부를 수 있고(GUI 툴킷이 흔히 그런다), 그 순간부터 내 코드의 <code>printf("%f")</code>도 영향을 받는다. 게다가 로케일은 <strong>프로세스 전역</strong>이라 여러 갈래로 도는 프로그램에서는 경쟁이 된다. POSIX의 <code>uselocale</code>이나 <code>newlocale</code> 같은 스레드 지역 로케일이 그래서 생겼지만, 표준 C에는 없다.</p></div><h3 id="loc-264">53.3 와이드 문자 — <code>&lt;wchar.h></code>·<code>&lt;wctype.h></code>·<code>&lt;uchar.h></code></h3><p>C95가 <code>wchar_t</code>와 그 함수들을 들여왔다. 발상은 “한 글자를 한 단위로”였지만, 현실은 그 발상을 배신했다.</p><ul><li><code>wchar_t</code>의 <strong>크기가 구현마다 다르다.</strong> 리눅스는 4바이트(UTF-32에 가깝다), Windows는 2바이트(UTF-16이라 보조 평면 문자가 두 단위가 된다). 즉 “한 글자 = 한 <code>wchar_t</code>”가 어디서나 성립하지 않는다.</li><li>변환 함수(<code>mbstowcs</code> 등)는 <strong>로케일에 의존한다.</strong> UTF-8 문자열을 다루려면 로케일이 UTF-8이어야 한다.</li><li>그래서 이식성 있는 프로그램은 와이드 문자 대신 <strong>UTF-8 바이트열을 그대로 다루는</strong> 쪽을 택하는 경우가 많다.</li></ul><p>C11이 보탠 <code>&lt;uchar.h></code>의 <code>char16_t</code>·<code>char32_t</code>는 크기가 고정이라 이 문제를 피한다. 다만 라이브러리 지원이 얇아, 실무에서는 여전히 전용 유니코드 라이브러리를 쓰거나 직접 다룬다.</p><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — Windows와 UTF-16</p><p>Windows API의 “W” 계열 함수는 UTF-16(<code>wchar_t</code>)을 받는다. 그래서 Windows 프로그램은 경계에서 UTF-8과 UTF-16을 오가야 하고, 이 변환이 실패할 수 있다는 사실(짝이 맞지 않는 서러게이트)을 잊으면 안 된다. 15장의 인코딩 사슬 이야기가 API 층에서 재현되는 자리이며, 제12부의 문자열 장에서 다루는 <code>u16</code> 계열이 정확히 이 다리를 놓는 도구다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>문자와 로케일 요약.</p><table><tr><th><strong>상황</strong></th><th><strong>규칙</strong></th><th><strong>틀리면</strong></th></tr><tr><td><code>&lt;ctype.h></code> 호출</td><td><code>(unsigned char)</code>로 변환</td><td>음수 인자 — 계약 밖</td></tr><tr><td><code>EOF</code> 처리</td><td>인자 타입은 <code>int</code></td><td>0xFF와 혼동</td></tr><tr><td>여러 바이트 문자</td><td>바이트 단위 판정은 무의미</td><td>글자가 쪼개진 판정</td></tr><tr><td>숫자 입출력</td><td>기계용은 로케일 독립 경로</td><td>소수점이 바뀌어 파싱 실패</td></tr><tr><td>정렬</td><td>사람용은 <code>strcoll</code></td><td><code>strcmp</code>는 사전순이 아니다</td></tr><tr><td><code>wchar_t</code></td><td>크기가 구현마다 다르다</td><td>Windows에서 글자 수 오산</td></tr><tr><td>권장</td><td>UTF-8 바이트열 + 경계에서만 변환</td><td>—</td></tr></table></div><p>한 글자의 세계를 지났다. 다음 장은 수의 세계 — 실수 계산이 표준 라이브러리에서 어떻게 실패를 알리는지 본다.</p>
+<div class="nav"><a href="ch52.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch54.html">다음 →</a></div>
+</div></main></body></html>

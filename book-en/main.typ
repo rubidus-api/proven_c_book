@@ -1,7 +1,7 @@
 // Proven C Book — English edition (in progress). Build: scripts/build-book-en.sh
 #import "../book/lib.typ": *
 
-#let book-version = "v0.1.0"
+#let book-version = "v0.1.1"
 #let book-updated = "2026-08-05"
 #let book-status = "draft — translation in progress"
 #let book-repo = "https://github.com/rubidus-api/proven_c_book"
@@ -12,6 +12,8 @@
 #set par(justify: true, leading: 0.78em, first-line-indent: (amount: 1em, all: true))
 #show heading: set text(font: ("Noto Sans CJK KR",))
 #show raw: set text(font: "D2Coding", size: 0.92em, ligatures: false)
+// 인쇄를 위해 구문 강조 색을 쓰지 않는다 (잉크·토너 절약)
+#set raw(theme: none)
 #set heading(numbering: none)
 
 #page(numbering: none)[
@@ -21,17 +23,16 @@
     #v(0.6cm)
     #text(size: 13pt)[Modern C, built on the proven library]
     #v(0.9cm)
-    #box(inset: (x: 10pt, y: 5pt), radius: 3pt, fill: rgb("#f3e9e6"),
-      stroke: 0.7pt + rgb("#b0483c"))[
-      #text(size: 10pt, fill: rgb("#8a3226"), weight: "bold")[#book-status]
+    #box(inset: (x: 10pt, y: 5pt), stroke: 1pt + black)[
+      #text(size: 10pt, weight: "bold")[#book-status]
     ]
     #v(0.5cm)
     #text(size: 10.5pt)[#book-version · last updated #book-updated]
     #v(1.0cm)
     #text(size: 11pt)[rubidus]
     #v(0.25cm)
-    #text(size: 9.5pt, fill: rgb("#555555"))[
-      rubidus\@gmail.com #h(0.8em) #book-repo
+    #text(size: 9.5pt)[
+      #link("mailto:rubidus@gmail.com")[rubidus\@gmail.com] #h(0.8em) #link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]
     ]
   ]
 
@@ -48,72 +49,83 @@
   ])
 ]
 
-= Translation status
+#outline(depth: 2)
+#pagebreak()
 
-This English edition is being translated from the Korean original, which is
-complete (12 parts, 58 chapters, appendices A–E and an index, about 570 pages).
-The translation is *in progress*: this volume currently carries the front
-matter, and chapters are added as they are translated.
+#set heading(numbering: none)
+#include "front/preface.typ"
 
-Until then, the complete text is the Korean edition:
+= A note on this translation
 
-- PDF — `dist/proven_c_book-v0.1.0.pdf`
+The Korean edition is the original and is complete — 13 parts, 69 chapters,
+appendices A–E and an index, about 287 pages. This English edition is
+translated from it chapter by chapter, and *chapter numbers are kept identical
+to the original*, so a cross-reference to "chapter 49" means the same chapter
+in both editions. Chapters not yet translated are listed where they belong,
+and the parts they sit in are marked accordingly.
+
+The two editions are kept in step mechanically: `scripts/sync-status.py`
+records the hash of the Korean source each translated file was made from, and
+every build reports any chapter whose original has changed since. Per-chapter
+status is in `TRANSLATION.md` in the repository.
+
+Until a chapter arrives here, the complete text is the Korean edition:
+
 - Web — #link("https://rubidus-api.github.io/proven_c_book/ko/")[rubidus-api.github.io/proven_c_book/ko/]
+- PDF — the `ko` asset of the current release
 
-#v(0.4cm)
+#pagebreak(weak: true)
+#set heading(numbering: "1.1")
+#counter(heading).update(0)
 
-Chapter-level progress is tracked in the repository (`TRANSLATION.md`).
+// ── Body ────────────────────────────────────────────
+// Same skeleton as the Korean edition. Only translated chapters are included;
+// the heading counter is set per chapter so numbering matches the original.
+#let translated = (1, 2, 3, 4)
 
-= Preface
+#let parts = (
+  ("Part I — Ground", none, (1,)),
+  ("Part II — How computing works", "parts/part02.typ", (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)),
+  ("Part III — The first program", none, (13, 14, 15)),
+  ("Part IV — A minimal toolbox", none, (16, 17, 18, 19)),
+  ("Part V — Declarations: how names are made", none, (20, 21, 22)),
+  ("Part VI — Values and flow", none, (23, 24, 25, 26, 27, 28, 29)),
+  ("Part VII — Memory", none, (30, 31, 32, 33, 34, 35, 36, 37)),
+  ("Part VIII — The shape of data", none, (38, 39)),
+  ("Part IX — Precision", none, (40, 41, 42)),
+  ("Part X — Structure", none, (43, 44, 45, 46, 47)),
+  ("Part XI — Reading the standard library", "parts/part11s.typ", (48, 49, 50, 51, 52, 53, 54, 55, 56, 57)),
+  ("Part XII — proven — fundamentals, verified", "parts/part12.typ", (58, 59, 60, 61, 62, 63, 64, 65, 66, 67)),
+  ("Part XIII — Closing", none, (68, 69)),
+)
 
-This book is an introduction to *proven*, a C library I wrote — and, honestly,
-a piece of promotion for it.
-
-But to argue that something is worth using, you first have to show why it is
-needed. The problems proven addresses live in the subtle corners of C: the
-limits of representation, the rules of conversion, the lifetime of memory, the
-regions the standard declines to define. To someone who has not met those
-corners, proven looks like an unnecessary contraption. So I decided to explain
-the problems first. That is why most of this book is plain standard C, and why
-proven does not appear in earnest until Part XI. If, after the earlier
-chapters, you conclude that you do not need proven — that is a good outcome
-too.
-
-There is also, in these pages, some measure of affection for the language. Try
-explaining why a fifty-year-old language is still here, and what its design gave
-up in order to get what it got, and affection follows on its own. I have not
-hidden that part.
-
-Every listing in this book is really compiled and really run. The printed output
-was not transcribed by hand: it is what the machine produced when the book was
-built, cross-checked with two compilers (gcc and clang).
-
-One more disclosure. *This book was written with AI as an assisting tool.* What
-to cover, in what order, under which principles, and what to leave out — all of
-that I decided, and the draft was written to those instructions and then
-reviewed by me. Technical claims were checked against the standard and primary
-sources, and the examples are verified by machine on every build: whoever wrote
-it, *code that does not run does not go into this book*.
-
-Errors will remain nonetheless. Those are mine, not the tool's. If you find one,
-please tell me.
-
-== Copyright and contact
-
-The text of this book (prose and figures) is licensed under
-*CC BY-NC-SA 4.0*. You may share and adapt it with attribution; commercial use
-is not permitted, and adaptations must carry the same license.
-
-The example code is licensed under the *MIT license*. Anything you learn here
-can go into your own programs without restriction.
-
-Contact is by email. Corrections are best filed through the GitHub repository —
-they stay on the record and other readers can see them.
-
-*Only error reports are accepted as contributions.* Wrong statements, listings
-that do not behave as printed, typos and stale information are all welcome.
-Manuscript contributions — new chapters or sections — are not.
-
-#v(0.2cm)
-rubidus\@gmail.com \
-#book-repo
+#for (part-title, intro, chs) in parts {
+  let have = chs.filter(c => c in translated)
+  pagebreak(weak: true)
+  align(center + horizon)[
+    #text(font: ("Noto Sans CJK KR",), size: 20pt, weight: "bold", part-title)
+    #if intro != none and have.len() > 0 {
+      v(1.2cm)
+      block(width: 80%, align(left, include intro))
+    }
+    #if have.len() < chs.len() {
+      v(1.0cm)
+      block(width: 70%)[
+        #set text(size: 9.5pt)
+        #set par(justify: false, first-line-indent: 0em)
+        #align(center)[
+          Not yet translated:
+          #chs.filter(c => c not in translated).map(str).join(", ")
+          #linebreak()
+          (read these in the Korean edition)
+        ]
+      ]
+    }
+  ]
+  pagebreak(weak: true)
+  for i in have {
+    counter(heading).update(i - 1)
+    let n = if i < 10 { "0" + str(i) } else { str(i) }
+    include "chapters/ch" + n + ".typ"
+  }
+}

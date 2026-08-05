@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부록 A — 연산자 우선순위와 결합 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-352">부록 A — 연산자 우선순위와 결합</h2><p>본문(17장)은 “표를 외우지 말고 괄호를 쓰라”고 권했다. 이 표는 외우기 위한 것이 아니라, 남의 코드를 읽다 막혔을 때 찾아보기 위한 것이다. 위쪽이 더 강하게 묶는다.</p><table><tr><th><strong>묶음</strong></th><th><strong>연산자</strong></th><th><strong>결합</strong></th></tr><tr><td>후위</td><td><code>() [] . -> ++(후위) --(후위)</code>, 복합 리터럴</td><td>왼→오</td></tr><tr><td>단항</td><td><code>++(전위) --(전위) + - ! ~ (타입) * &amp; sizeof alignof</code></td><td>오→왼</td></tr><tr><td>곱셈류</td><td><code>* / %</code></td><td>왼→오</td></tr><tr><td>덧셈류</td><td><code>+ -</code></td><td>왼→오</td></tr><tr><td>시프트</td><td><code>&lt;&lt; >></code></td><td>왼→오</td></tr><tr><td>관계</td><td><code>&lt; &lt;= > >=</code></td><td>왼→오</td></tr><tr><td>상등</td><td><code>== !=</code></td><td>왼→오</td></tr><tr><td>비트 AND</td><td><code>&amp;</code></td><td>왼→오</td></tr><tr><td>비트 XOR</td><td><code>^</code></td><td>왼→오</td></tr><tr><td>비트 OR</td><td><code>|</code></td><td>왼→오</td></tr><tr><td>논리 AND</td><td><code>&amp;&amp;</code></td><td>왼→오</td></tr><tr><td>논리 OR</td><td><code>||</code></td><td>왼→오</td></tr><tr><td>조건</td><td><code>?:</code></td><td>오→왼</td></tr><tr><td>대입</td><td><code>= += -= *= /= %= &amp;= ^= |= &lt;&lt;= >>=</code></td><td>오→왼</td></tr><tr><td>쉼표</td><td><code>,</code></td><td>왼→오</td></tr></table><h3 id="loc-353">자주 미끄러지는 자리들</h3><table><tr><th><strong>쓴 것</strong></th><th><strong>실제로 묶이는 방식</strong></th><th><strong>의도한 것이라면</strong></th></tr><tr><td><code>a &amp; b == c</code></td><td><code>a &amp; (b == c)</code></td><td><code>(a &amp; b) == c</code></td></tr><tr><td><code>a &lt;&lt; 1 + 2</code></td><td><code>a &lt;&lt; (1 + 2)</code></td><td><code>(a &lt;&lt; 1) + 2</code></td></tr><tr><td><code>*p++</code></td><td><code>*(p++)</code></td><td><code>(*p)++</code></td></tr><tr><td><code>*p.x</code></td><td><code>*(p.x)</code></td><td><code>(*p).x</code> 또는 <code>p->x</code></td></tr><tr><td><code>(int)x + y</code></td><td><code>((int)x) + y</code></td><td><code>(int)(x + y)</code></td></tr><tr><td><code>a = b = 0</code></td><td><code>a = (b = 0)</code></td><td>(그대로다 — 오른쪽 결합)</td></tr><tr><td><code>x &lt; y &lt; z</code></td><td><code>(x &lt; y) &lt; z</code></td><td><code>x &lt; y &amp;&amp; y &lt; z</code></td></tr><tr><td><code>!x &amp; y</code></td><td><code>(!x) &amp; y</code></td><td><code>!(x &amp; y)</code></td></tr><tr><td><code>sizeof a + 1</code></td><td><code>(sizeof a) + 1</code></td><td><code>sizeof(a + 1)</code></td></tr><tr><td><code>a ? b : c = d</code></td><td><code>(a ? b : c) = d</code>(대개 오류)</td><td><code>a ? b : (c = d)</code></td></tr></table><p>특히 첫 두 줄은 C의 유명한 설계 흠으로 꼽힌다 — 비트 연산자가 비교 연산자보다 <strong>약하게</strong> 묶이는 것은 초기 C가 <code>&amp;&amp;</code>·<code>||</code>를 갖기 전의 흔적이다. 그래서 비트 검사에는 괄호가 사실상 필수다.</p><h3 id="loc-354">우선순위가 답하지 못하는 것</h3><p>우선순위는 <strong>묶는 규칙</strong>일 뿐 평가의 시간 순서가 아니다(17·29장). 아래 셋은 표를 아무리 봐도 답이 나오지 않는다.</p><ul><li><strong>부분식의 평가 순서</strong> — <code>f() + g()</code>에서 어느 쪽이 먼저 불리는지는 미지정이다.</li><li><strong>같은 객체를 두 번 건드리는 수식</strong> — <code>i = i++</code>처럼 한 시퀀스 포인트 사이에 같은 객체를 두 번 바꾸면 계약 밖이다.</li><li><strong>인자의 평가 순서</strong> — <code>h(f(), g())</code>도 마찬가지로 미지정이다.</li></ul><p>읽는 요령은 하나다: <strong>묶임이 헷갈리면 괄호를, 순서가 걸리면 문장을 쪼갠다.</strong></p>
+<div class="nav"><a href="ch69.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec73.html">다음 →</a></div>
+</div></main></body></html>

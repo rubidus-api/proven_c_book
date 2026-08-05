@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>18 함수 사용 — 부르는 법 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-103">18 함수 사용 — 부르는 법</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>함수를 <strong>만드는</strong> 법은 아직 멀었다(21장). 이 장은 <strong>부르는</strong> 법이다 — 호출, 인자, 반환값이라는 세 낱말을 익히고 나면, 헬로 월드의 심장 <code>printf("안녕, 세상!\n");</code> 이 완전한 문장으로 읽힌다. 남이 만든 일꾼을 부려 쓰는 것 — 프로그래밍의 절반은 사실 이것이다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>17장 끝에서 “함수를 부르는 것 자체가 수식이고, 따라서 값이 된다”고 했다. 그러면 <code>printf("%d\n", 2 + 3 * 4)</code> 안의 수식 <code>2 + 3 * 4</code>가 계산된 값 14는 — 정확히 어디로 가는 것인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>함수의 입으로 들어간다. 함수를 부를 때 괄호 안에 적는 수식들의 값이 그 함수에게 <strong>재료</strong>로 전달되고, 함수는 그 재료로 제 일을 한 뒤 <strong>결과 값</strong>을 내놓는다. 재료를 인자, 결과를 반환값이라 부른다 — 이 두 낱말이 이 장의 전부다.</p></div></div><h3 id="loc-104">18.1 호출 — 이름을 부르면 일꾼이 뛴다</h3><p>함수는 <strong>이름 붙은 일꾼</strong>이다. 어딘가에 일하는 방법(몸통)이 만들어져 있고, 우리는 이름만 부르면 된다. 부르는 문법은 이미 눈에 익었다:</p><pre><code data-lang="c">이름(재료1, 재료2, ...)</code></pre><p>이것이 <strong>호출</strong>(call)이다. 호출이 실행되는 순서는 이렇다 — ① 괄호 안의 수식들이 먼저 평가되어 값이 되고, ② 그 값들이 함수에게 전달되며, ③ 함수의 몸통이 실행되고, ④ 함수가 내놓은 <strong>반환값</strong>이 호출 자리의 값이 된다. 마지막 항목이 17장의 복선 회수다: <strong>호출은 수식이다</strong> — 호출이 적힌 자리는, 실행이 끝나면 반환값 하나로 바뀐다고 읽으면 된다.</p><p>호출이 수식이므로, 호출을 호출의 재료로 넣을 수도 있다. 시연한다 — <code>abs</code>는 표준 라이브러리의 일꾼으로, 정수 하나를 받아 그 절댓값을 돌려준다(<code>&lt;stdlib.h></code> 도구 상자에 산다 — 그래서 <code>#include</code>가 하나 더 붙었다).</p><div><div><p><code>examples/ch18/call.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;stdlib.h>
+
+int main(void)
+{
+    printf("%d\n", abs(2 - 10));  /* 호출의 결과가 다시 호출의 재료가 된다 */
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>8
+</code></pre></div></div><p>읽는 순서 그대로다 — 안쪽 수식 <code>2 - 10</code>이 먼저 <math><mo>−</mo><mn>8</mn></math>이 되고, 그것이 <code>abs</code>의 재료로 들어가 반환값 <math><mn>8</mn></math>이 되고, 그 <math><mn>8</mn></math>이 다시 <code>printf</code>의 재료가 되어 찍혔다. <strong>안에서 바깥으로, 값이 릴레이된다</strong> — 수식과 호출이 겹겹이 쌓이는 C 코드를 읽는 기본 독법이다.</p><h3 id="loc-105">18.2 반환값 — 쓰거나, 버리거나</h3><p>모든 호출은 값이 된다고 했다. 그러면 헬로 월드의 <code>printf("안녕, 세상!\n");</code> 에서 반환값은 어디로 갔는가.</p><p><strong>버려졌다</strong> — 그리고 그것은 합법이다. 수식 뒤에 세미콜론을 찍으면 “수식을 평가하고, 값은 버리는” 문장(수식문)이 된다. <code>printf</code>도 반환값이 있다(찍은 글자 수를 돌려준다). 다만 우리는 대개 찍는 <strong>부수 효과</strong>가 목적이고 글자 수는 관심 밖이라, 값을 버리는 것이다. “함수를 부르는 문장”이란 사실 “호출 수식 + 값 버리기”였던 셈이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>버려도 되는 값이라면 애초에 왜 돌려주는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>쓰는 사람이 따로 있기 때문이다. 같은 일꾼이라도 부르는 쪽의 사정에 따라 결과가 필요할 수도, 부수 효과만 필요할 수도 있다 — 함수는 일단 결과를 내놓고, 쓸지 버릴지는 부르는 쪽이 정한다는 것이 C의 분업이다. 다만 이 관대함에는 그림자가 있다 — 반환값이 “성공했는지” 를 알리는 함수라면, 버리는 순간 실패를 놓친다. 오류를 값으로 알리는 C의 방식과 “버리면 안 되는 반환값”의 이야기는 41장의 주제다.</p></div></div><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>abs</code>는 항상 양수를 돌려주는가? 절댓값이니 당연할 것 같은데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>거의 항상 — 그런데 정확히 한 곳에 함정이 있다. 5장에서 2의 보수의 유일한 비대칭을 배웠다: 가장 작은 음수(-128, 32비트라면 약 −21억)의 짝이 되는 양수가 <strong>없다</strong>. 그러면 그 수의 절댓값을 물으면 어떻게 되는가 — 담을 그릇이 없으므로, 계약 밖(정의되지 않은 동작)이다. “당연히 되겠지”의 딱 한 칸 바깥에 함정이 있는 것 — 5장의 비대칭이 실제 함수의 사용 설명서에까지 흔적을 남긴 사례다. 이런 경계 사냥은 42장의 주특기가 된다.</p></div></div><h3 id="loc-106">18.3 표준 라이브러리 — 미리 만들어진 일꾼들</h3><p><code>printf</code>도 <code>abs</code>도 우리가 만들지 않았다. C를 설치하면 따라오는 <strong>표준 라이브러리</strong> — 14장의 링크 단계에서 우리 프로그램에 이어지던 바로 그 꾸러미 — 의 일꾼들이다. 도구 상자(<code>&lt;stdio.h></code>, <code>&lt;stdlib.h></code> 등)마다 쓸 수 있는 일꾼의 명단(선언)이 들어 있고, <code>#include</code>로 명단을 가져오면 그 상자의 일꾼들을 부를 수 있게 된다.</p><p>표준 라이브러리에 어떤 상자가 있고 무엇이 들었는지는 43장에서 지도를 펴고 훑는다. 지금 챙길 것은 감각 하나다 — <strong>프로그래밍의 절반은 남이 만든 함수를 부르는 일이다.</strong> 잘 만들어진 일꾼을 알아보고 바르게 부리는 것이 코드의 절반을 결정하고, 그래서 이 책의 후반(35장)에서 “어떤 일꾼을 쓸 것인가”가 다시 큰 주제가 된다.</p><p>이제 헬로 월드에서 남은 칸은 둘뿐이다 — <code>printf</code>의 따옴표 안 서식이 정확히 어떻게 동작하는지(다음 장), 그리고 <code>int main(void)</code>와 <code>return 0</code>의 정체(제5부). 다음 장에서 출력을 정면으로 다루며 제4부의 목표에 바짝 다가선다.</p>
+<div class="nav"><a href="ch17.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch19.html">다음 →</a></div>
+</div></main></body></html>

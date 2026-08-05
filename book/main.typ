@@ -2,7 +2,7 @@
 #import "lib.typ": *
 
 // 이 책의 판 번호. 갱신할 때마다 여기만 고친다 (VERSION.md 와 함께).
-#let book-version = "v0.1.0"
+#let book-version = "v0.1.1"
 #let book-date = "2026년 8월"
 #let book-updated = "2026-08-05"          // 최종 수정일
 #let book-status = "초안(draft)"           // 판의 성격
@@ -16,6 +16,8 @@
 #show heading: set text(font: ("Noto Sans CJK KR",))
 // 코드 글꼴 = D2Coding (비리가처판, 리가처도 명시적으로 끔)
 #show raw: set text(font: "D2Coding", size: 0.92em, ligatures: false)
+// 인쇄를 위해 구문 강조 색을 쓰지 않는다 (잉크·토너 절약)
+#set raw(theme: none)
 #set heading(numbering: "1.1")
 #show heading.where(level: 1): it => pagebreak(weak: true) + it
 
@@ -27,17 +29,16 @@
     #v(0.6cm)
     #text(size: 13pt)[proven 라이브러리에 기반한 모던 C 입문]
     #v(0.9cm)
-    #box(inset: (x: 10pt, y: 5pt), radius: 3pt, fill: rgb("#f3e9e6"),
-      stroke: 0.7pt + rgb("#b0483c"))[
-      #text(size: 10pt, fill: rgb("#8a3226"), weight: "bold")[#book-status]
+    #box(inset: (x: 10pt, y: 5pt), stroke: 1pt + black)[
+      #text(size: 10pt, weight: "bold")[#book-status]
     ]
     #v(0.5cm)
     #text(size: 10.5pt)[#book-version · 최종 수정 #book-updated]
     #v(1.0cm)
     #text(size: 11pt)[rubidus]
     #v(0.25cm)
-    #text(size: 9.5pt, fill: rgb("#555555"))[
-      rubidus\@gmail.com #h(0.8em) #book-repo
+    #text(size: 9.5pt)[
+      #link("mailto:rubidus@gmail.com")[rubidus\@gmail.com] #h(0.8em) #link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]
     ]
   ]
 
@@ -63,7 +64,7 @@
   *Proven C Book — proven 라이브러리에 기반한 모던 C 입문*
 
   지은이 rubidus \
-  rubidus\@gmail.com · #book-repo
+  #link("mailto:rubidus@gmail.com")[rubidus\@gmail.com] · #link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]
 
   #v(0.5cm)
 
@@ -97,7 +98,7 @@
   변경 내역은 저자의 GitHub에 있다* — 오래된 사본을 들고 있다면 그쪽을
   먼저 확인하는 편이 좋다. 오류 신고와 수정 제안도 같은 자리에서 받는다.
 
-  #h(0.8em) #book-repo
+  #h(0.8em) #link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]
 ]
 
 #outline(depth: 2)
@@ -121,9 +122,10 @@
   ("제7부 — 기억", none, (30, 31, 32, 33, 34, 35, 36, 37)),
   ("제8부 — 자료의 모양", none, (38, 39)),
   ("제9부 — 정밀", none, (40, 41, 42)),
-  ("제10부 — 구성", none, (43, 44, 45, 46)),
-  ("제11부 — proven — 검증된 기본기", "parts/part11.typ", (47, 48, 49, 50, 51, 52, 53, 54, 55, 56)),
-  ("제12부 — 닫으며", none, (57, 58)),
+  ("제10부 — 구성", none, (43, 44, 45, 46, 47)),
+  ("제11부 — 표준 라이브러리 정독", "parts/part11s.typ", (48, 49, 50, 51, 52, 53, 54, 55, 56, 57)),
+  ("제12부 — proven — 검증된 기본기", "parts/part12.typ", (58, 59, 60, 61, 62, 63, 64, 65, 66, 67)),
+  ("제13부 — 닫으며", none, (68, 69)),
 )
 #for (part-title, intro, chs) in parts {
   pagebreak(weak: true)

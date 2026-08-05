@@ -1,0 +1,192 @@
+#import "../../book/lib.typ": *
+
+= Words and addresses - the archetype of C
+
+#organizer[
+  You will be able to draw memory as a long corridor of numbered lockers. That
+#idx("word")  number is the address, and how many slots the machine handles at
+#idx("endianness")  once is the word. You will learn to tell apart, in
+  pictures, the two orders for storing a number that spans several slots —
+  little-endian and big-endian.
+]
+
+#deepqa[
+  Chapter 2 said that a single byte distinguishes only 256 cases, and that
+  larger numbers are held by joining several bytes together. So how does the
+  machine know that the joined bytes are "one lump"?
+][
+  It does not — and that is where this chapter starts. Memory itself records
+  nothing about which slot belongs with which. What knows about the lump is not
+  the memory but *the side doing the reading*. The program simply decides "from
+  here I shall read four slots as one number." Chapter 2's misconception — the
+  separation of what is stored from how it is read — gets its first real
+  workout here.
+]
+
+== The locker corridor
+
+Drawn as a picture, memory looks like this. Along a long corridor, lockers of
+identical size run in an endless row, and every locker carries a number. One
+#idx("memory address")locker holds 1 byte. The numbers start at 0 and go up by one. That number is
+the *address*.
+
+#memrow(100, ("01001000", "01101001", "00100001", "00000000", "11111111"))
+
+What is inside a slot is always just eight bits. Whether those eight bits are a
+number, a character, or a fragment of something larger is known neither to the
+slot nor to the corridor — the interpretation of the reader decides.
+
+There is one important fact about addresses that is not visible at first
+glance. *An address is itself a number.* A locker number is just an integer,
+and being an integer, it can be put inside another locker. "In slot 347, write
+the number 512" — nothing strange about it. This ordinary idea later becomes
+C's most famous concept, the *pointer* (chapter 30). For now it is enough to
+take away "an address is a number too, so it can be written down anywhere."
+
+#qa[
+  How long is the corridor — how many lockers are there?
+][
+  The number of bits used to write an address decides. If an address is an
+  $n$-bit number, at most $2^n$ lockers can be distinguished (chapter 2's $2^n$
+  is back already). In the days of 32-bit addresses the corridor was at most
+  about 4.3 billion slots — 4 GiB — and today's 64-bit addresses make a
+  corridor longer than anyone can practically fill. This is what phrases like
+  "the 4 GB memory limit on 32-bit systems" really refer to.
+]
+
+== The word — the machine's natural handful
+
+Lockers come one slot at a time, but if the machine picked up one slot at a
+time as it worked it would be far too slow. So a CPU is built to grab several
+slots in *one handful*. The size of that handful — the number of bits the
+machine handles at once, most naturally — is called the *word*.
+
+This is exactly what "a 64-bit computer" means: that machine's word is 64 bits,
+that is, 8 bytes. The temporary holders inside the CPU (registers) are that
+size, the passage to and from memory (the bus) is matched to that width, and
+addresses are usually handled as numbers of that size too. You might call the
+word the machine's "hand size" — a machine with a big hand grabs a bigger
+number at once.
+
+#qa[
+  So on a 64-bit machine, is everything stored in 8-byte units?
+][
+  No. Storage is still free at byte granularity — a one-byte character and a
+  four-byte number live in the same corridor. The word is "the size the machine
+  picks up most comfortably", not "the size of everything." C really does have
+  several number types of different sizes (chapter 22), and the question of
+  where it is convenient to place data of a given size comes back in chapter 4
+  (alignment).
+]
+
+== Endianness — two orders for putting a number in several slots
+
+Now the highlight of the chapter. A four-byte number has to go into four
+lockers. Say the number splits, in hexadecimal, into the four byte-pieces
+`12 34 56 78` (two hex digits are one byte). If it starts at slot 100 — which
+piece goes into slot 100?
+
+There are two schools. *Big-endian* puts the big end first: exactly the order a
+human writes a number on paper.
+
+#memrow(100, ("12", "34", "56", "78"), highlight: (0,))
+
+*Little-endian* puts the little end first. It looks reversed, but it is an
+orderly rule in its own right: "the $i$-th slot holds the $i$-th least
+significant piece."
+
+#memrow(100, ("78", "56", "34", "12"), highlight: (0,))
+
+The computer or phone you are reading this on is almost certainly little-endian
+(Intel, AMD, and most ARM deployments). It is precisely the situation of date
+notation — some countries write 2026-08-04 and others 04-08-2026, neither is
+wrong, but *reading each other's letters verbatim causes accidents*.
+
+#qa[
+  Big-endian looks natural to the human eye, so why did most machines choose
+  the "reversed" little-endian? What is the advantage?
+][
+  Two practical ones.
+
+  First, *the starting slot does not move.* In little-endian the least
+  significant piece of a number is always in the slot at the starting address.
+  Whether you read the number above as "all four bytes" or narrow it to "only
+  the low two bytes" or "only the low byte", the slot you start reading at is
+  the same 100. In big-endian you must shift the starting slot and recompute
+  every time you change the width you read. For a machine that often reads the
+  same value through eyes of different sizes, "the start address is invariant"
+  is a considerable simplification.
+
+  Second, *it matches the direction of the arithmetic.* Think of adding by
+  hand: you add from the ones place and carry upward. A machine adding
+  multi-byte numbers likewise processes from the least significant end, and in
+  little-endian that lines up exactly with "in increasing address order." Early
+  small CPUs could start adding as soon as the first byte arrived, and this
+  advantage soaked into early designs (the ancestors of the Intel line) and has
+  carried through to today.
+
+  To be fair to big-endian: a dump reads directly to the human eye, and
+  comparing bytes whole from the front agrees with the numeric ordering. So
+  big-endian survives where "humans and machines look at the same place",
+  such as communication protocols. Neither is superior — they simply do
+  different things often.
+]
+
+#misconception[
+  "Read memory from the front and you see the number in the order it was
+  written"
+][
+  Plausible — that is how a number on paper is read. But on a little-endian
+  machine the number `12 34 56 78` sits in memory in the order
+  `78 56 34 12`. Look at memory in slot order (which is exactly how a debugger
+  or file dump shows it) and the number appears "reversed". It is not reversed;
+  the convention for the order of storing is simply different. Remember: a
+  memory dump is not a number written on paper.
+]
+
+#realcase[
+  NUXI — the ghost born of ordering
+][
+  Engineers porting early Unix to another company's computer saw something odd
+  on screen. Where `UNIX` should have been printed, `NUXI` appeared. The two
+  machines differed in endianness, so the order of the characters within each
+  two-byte bundle came out wholly reversed. The episode became known as "the
+  NUXI problem", the byword for endianness accidents. The same class of accident
+  still happens — saving a file on one machine and reading it on another, or
+  passing numbers over a network, breaks the numbers unless the endianness is
+  agreed. Which is why internet protocols settled on *network byte order*:
+  "send big-endian on the wire."
+]
+
+#qa[
+  Can I check with a program that my computer is little-endian?
+][
+  You can — put a multi-byte number in memory and read just its first slot as a
+  single byte. If the first slot holds the least significant piece, it is
+  little-endian. Actually doing this check in C is the demonstration in
+  chapter 39 (unions) — that is where we get the tool for reading the same
+  storage through different eyes.
+]
+
+== The archetype of C is here
+
+This chapter's corridor picture is also the blueprint of the C language. In the
+days when C was born (chapter 2), the people designing the language did not
+hide this shape of the machine but lifted it, as it was, into the concepts of
+the language. Memory is a sequence of bytes — every piece of data in C has a
+size in bytes. Every slot has an address — in C you can ask for the address of
+almost anything. An address is a number too — the type that holds that number
+(the pointer) sits at the centre of the language. This contrasts with the many
+languages that seal the "locker corridor" away from the programmer.
+
+This honesty cuts both ways. It is the power to work while seeing right through
+the machine, and it is the danger that getting lost in the corridor is an
+accident on the spot. Part VII of this book faces that power and that danger
+head on.
+
+The next chapter tours the interesting special cases in the corners of this
+corridor. What is in locker 0, why a two-slot piece of luggage cannot go into
+just any number (alignment), and even the trick of hiding information in the
+fact that the last digit of a number is always 0 (tagged pointers) — you will
+see that the world of addresses is far more like an inhabited neighbourhood
+than you would expect.

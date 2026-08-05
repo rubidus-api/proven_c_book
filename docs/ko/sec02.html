@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>머리말 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-1">머리말</h2><p>이 책은 내가 만든 C 라이브러리 proven의 입문서이자, 그 홍보물이다.</p><p>그러나 무엇을 쓰라고 권하려면 먼저 그것이 왜 필요한지를 보여야 한다. proven이 다루는 문제들은 C의 미묘한 자리에 있다 — 표현의 한계, 변환의 규칙, 기억의 수명, 표준이 약속하지 않은 영역. 이 자리들을 모르는 사람에게 proven은 불필요한 물건으로 보인다. 그래서 라이브러리를 소개하기 전에, 그 문제들을 먼저 설명하기로 했다. 이 책의 대부분이 표준 C만으로 쓰인 이유이고, proven이 뒤늦게(제12부) 등장하는 이유다. 앞의 이야기를 읽고 나면 proven이 필요 없다고 판단할 수도 있다. 그것도 좋은 결말이다.</p><p>다른 한편으로 이 책에는 C를 좋아하는 사람의 마음도 얼마간 들어가 있다. 쉰 해를 넘긴 언어가 왜 아직 남아 있는지, 그 설계가 무엇을 포기하고 무엇을 얻었는지를 설명하다 보면 자연히 그렇게 된다. 그 부분은 감추지 않았다.</p><p>이 책에 실린 모든 코드는 실제로 컴파일되고 실행된 것이다. 인쇄된 실행 결과는 사람이 옮겨 적은 것이 아니라 책을 만들 때마다 기계가 예제를 돌려 얻은 출력이며, 두 컴파일러(gcc와 clang)로 교차 검증했다.</p><p>밝혀 둘 것이 하나 더 있다. <strong>이 책은 AI를 보조 도구로 삼아 집필했다.</strong> 무엇을 어떤 순서로 다룰지, 어떤 원칙으로 서술할지, 무엇을 싣고 무엇을 뺄지는 전부 내가 정했고, 원고는 그 지시에 따라 쓰인 뒤 내 검토를 거쳤다. 기술적 서술은 표준 문서와 1차 자료로 확인했으며, 앞 문단에서 말한 대로 예제는 사람이 아니라 기계가 매번 실제로 돌려 검증한다 — AI가 썼든 사람이 썼든 <strong>돌지 않는 코드는 이 책에 실리지 않는다</strong>는 뜻이다.</p><p>그럼에도 오류는 남아 있을 것이다. 그것은 도구의 몫이 아니라 내 몫이다. 발견하면 알려 주시기 바란다.</p><h3 id="loc-2">저작권과 연락</h3><p>본문(이 책의 글과 그림)은 <strong>CC BY-NC-SA 4.0</strong>을 따른다. 출처를 밝히면 자유롭게 공유하고 고칠 수 있으나, 영리 목적으로는 이용할 수 없고, 고친 결과물에도 같은 라이선스를 적용해야 한다.</p><p>예제 코드는 <strong>MIT 라이선스</strong>를 따른다. 이 책에서 배운 코드는 아무 제약 없이 자기 프로그램에 가져다 쓸 수 있다.</p><p>연락은 이메일로 받는다. 오류 신고와 수정 요청은 GitHub 저장소를 통해 하는 편이 낫다 — 기록이 남고, 다른 독자에게도 보인다.</p><p>받는 것은 <strong>오류 신고뿐이다.</strong> 틀린 서술, 어긋난 예제, 오탈자, 낡은 정보를 알려 주시면 고맙게 반영한다. 반면 새 장이나 새 절을 써 보내는 식의 원고 기여는 받지 않는다 — 이 책의 구성과 서술은 한 사람의 판단으로 유지하는 편이 낫다고 보았고, 저작권 관계를 단순하게 두려는 뜻도 있다.</p><p><a href="mailto:rubidus@gmail.com">rubidus@gmail.com</a><br><a href="https://github.com/rubidus-api/proven_c_book">github.com/rubidus-api/proven_c_book</a></p>
+<div class="nav"><a href="sec01.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch01.html">다음 →</a></div>
+</div></main></body></html>

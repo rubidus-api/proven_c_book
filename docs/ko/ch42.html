@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>42 정의되지 않은 동작 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-199">42 정의되지 않은 동작</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>이 책이 곳곳에서 “계약 밖”이라 부르며 미뤄 온 세계를 정면으로 다룬다. UB란 정확히 무엇이고 왜 존재하며, 왜 “조금 위험함”이 아니라 “무엇이든 가능함”인지 — 그리고 실무에서 어떻게 피하고 잡아내는지까지. 제2부의 계약 서사가 여기서 완결된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>11장에서 엄격한 앨리어싱 위반이 “컴파일러에게 사실이 아닌 것을 사실 이라고 알리는 행위”라 했다. 그러면 표준이 어떤 동작을 “정의되지 않음” 으로 두었다는 것은 — 구현에게 무엇을 허락한 것인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>아무것도 요구하지 않기로</strong> 한 것이다. 표준의 문장은 냉정하다 — 정의 되지 않은 동작에 대해 표준은 “어떤 요구도 부과하지 않는다”. 즉 그런 프로그램에는 옳은 실행 결과라는 것이 아예 없다. 흔한 오해가 “위험한 동작이지만 대개 예상대로 돌아간다”인데, 계약의 눈으로는 그 프로그램 전체가 <strong>의미를 잃는다</strong>. 이 차이가 이 장의 전부다.</p></div></div><h3 id="loc-200">42.1 세 가지 회색지대 — UB, 미지정, 구현 정의</h3><span id="idx-entry-72"></span><span id="idx-entry-73"></span><span id="idx-entry-74"></span><p>혼동되는 세 낱말을 먼저 갈라 둔다. 이 책이 여기까지 만난 사례들로 정리하면 이렇다.</p><table><tr><th><strong>종류</strong></th><th><strong>표준의 태도</strong></th><th><strong>이 책에서 만난 예</strong></th></tr><tr><td>구현 정의 (implementation-defined)</td><td>구현이 정하고 <strong>문서화한다</strong></td><td><code>int</code>의 크기(23장), <code>char</code>의 부호</td></tr><tr><td>미지정(unspecified)</td><td>정해진 선택지 중 하나이나 문서화 의무 없음</td><td>한 수식 안 부분식의 평가 순서(29장)</td></tr><tr><td>정의되지 않음 (undefined behavior, UB)</td><td>아무 요구도 하지 않는다</td><td>부호 있는 오버플로(5장), 경계 침범(33장), 널 역참조(31장)</td></tr></table><p>앞의 둘은 “답이 여럿이지만 어쨌든 답은 있는” 세계다. UB만이 답 자체가 없는 세계다.</p><h3 id="loc-201">42.2 왜 존재하는가</h3><p>계약 밖을 남겨 둔 이유는 두 가지다. 첫째, <strong>기계들이 서로 다르기 때문이다</strong> — 5장의 폭 이상 시프트가 대표다. x86과 옛 ARM이 다르게 대응하는데 표준이 한쪽을 택하면 다른 쪽 기계는 매번 보정 코드를 넣어야 한다. 어느 편도 들지 않는 대신 “그 코드를 쓰지 말라”고 한 것이다. 둘째, <strong>최적화의 전제를 얻기 위해서다</strong> — 5장에서 본 대로 “부호 있는 정수는 넘치지 않는다”는 전제가 있어야 컴파일러가 루프를 분석하고 재배열할 수 있다(11장). C가 반세기 동안 속도의 언어로 남은 대가가 이 조항들이다.</p><h3 id="loc-202">42.3 “무엇이든 가능함”의 실제 얼굴</h3><p>UB의 결과는 붕괴만이 아니다. 11장에서 본 무늬가 더 무섭다 — <strong>컴파일러가 UB를 “일어날 리 없는 일”로 읽고 코드를 지워 버리는</strong> 것이다. 널 검사가 통째로 사라지거나(포인터를 이미 역참조한 뒤라면 “널일 리 없다”고 추론한다), 오버플로 검사가 사라지거나(부호 있는 넘침은 없다고 전제 하므로), 루프가 무한이 되거나 아예 없어진다. 그래서 UB의 대표적 증상은 “그 자리에서 죽는 것”이 아니라 <strong>엉뚱한 곳에서, 최적화 수준을 바꾸면 사라지는, 재현이 어려운 버그</strong>다.</p><div class="dev realcase"><p class="dev-label">◉ 사라진 널 검사 — 리눅스 커널 CVE-2009-1897</p><p>이 무늬가 커널에서 실제로 터진 사건이 있다. 코드는 대략 이랬다 — 포인터 <code>tun</code>을 먼저 역참조해 값을 꺼내고, 그 아래에서 <code>if (!tun)<br><span style="white-space: pre-wrap">&#x20;&#x20;</span>return ...;</code>으로 널을 검사했다. 순서가 뒤집힌 실수이지만, 사람 눈에는 “그래도 검사는 있으니 널이면 걸리겠지”로 보인다. 컴파일러의 추론은 달랐다: <strong>이미 역참조했다 → 널이었다면 그 순간 UB → UB는 일어나지 않는다고 전제 → 따라서 tun은 널이 아니다 → 아래의 널 검사는 죽은 코드다.</strong> 검사가 통째로 최적화로 제거됐고, 널 페이지를 매핑할 수 있던 당시 환경과 결합해 권한 상승 취약점이 됐다. 컴파일러는 규칙대로 일했고, 무너진 것은 계약이었다.</p></div><h3 id="loc-203">42.4 피하는 법 — 규율, 도구, 그리고 부품</h3><p>실무의 방어는 세 겹이다.</p><p><strong>규율</strong> — 이 책이 지나온 수칙들이 그 목록이다: 초기화하고 쓴다(20장), 경계를 지킨다(33장), 널을 확인한다(31장), 한 문장에서 한 변수는 한 번만 바꾼다(29장), 계약 밖의 지름길(포인터 캐스트, 표현 가정)을 쓰지 않는다(11·32장).</p><p><strong>도구</strong> — 15장에서 장만한 그물이다. 컴파일러 경고는 컴파일 시점에, UBSan·ASan은 실행 시점에 잡는다. C23이 들여온 <strong>검사 산술</strong>도 이 층의 도구다 — 넘침을 UB로 만들지 않고 값으로 알려 주는 함수들이다:</p><div><div><p><code>examples/ch42/checked.c</code></p><pre><code data-lang="c">#include &lt;stdckdint.h>
+#include &lt;stdio.h>
+
+/* C23의 검사 산술: 넘치면 true를 돌려주고, 결과는 감아 돈 값이 담긴다. */
+int main(void)
+{
+    int a = 2000000000;
+    int b = 2000000000;
+    int sum = 0;
+
+    if (ckd_add(&amp;sum, a, b)) {
+        printf("%d + %d overflows int (we stayed inside the contract)\n", a, b);
+    } else {
+        printf("sum: %d\n", sum);
+    }
+
+    int small = 0;
+    if (ckd_add(&amp;small, 20, 22)) {
+        printf("overflow\n");
+    } else {
+        printf("20 + 22 = %d\n", small);
+    }
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>2000000000 + 2000000000 overflows int (we stayed inside the contract)
+20 + 22 = 42
+</code></pre></div></div><p><code>ckd_add</code>는 “넘쳤는가”를 반환값으로 돌려준다 — 5장에서 배운 “부호 있는 넘침은 계약 밖”이라는 함정을, 41장에서 배운 “오류는 값이다”라는 규율로 다스리는 표준의 답이다.</p><p><strong>부품</strong> — 애초에 계약 위반이 어려운 API를 쓰는 것이다(35장의 proven이 그 층이다). 도구가 그물이라면 좋은 부품은 발판이라는 15장의 비유가 여기서 완성된다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>UB를 전부 외워야 하는가? 표준에 수백 가지가 있다고 들었는데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>외우는 것이 목표가 아니다 — 목록은 방대하고 계속 다듬어진다. 실무에서 통하는 것은 <strong>감각</strong>이다: “이 코드가 옳다고 말하는 근거가 계약서에 있는가, 아니면 ‘내 컴퓨터에서 돌아서’인가”를 묻는 습관. 그리고 그 감각을 도구로 뒷받침하는 것 — 경고를 켜고, 새니타이저로 시험 실행 하고, 두 컴파일러로 교차 검증하는 것(15장). 이 책이 제2부부터 “추상 기계 위에서 옳은가”를 되풀이한 이유가 바로 이 감각을 심기 위해서다.</p></div></div><h3 id="loc-204">42.5 제9부를 닫으며</h3><p>정밀의 부가 끝났다 — 근사를 다루는 법(40장), 실패를 다루는 법(41장), 그리고 계약 밖의 세계를 아는 법(42장). 세 장의 공통 주제는 하나다: <strong>C는 프로그래머에게 많은 것을 맡기는 언어이고, 맡겨진 것을 아는 사람이 안전한 코드를 쓴다.</strong></p><p>마지막 부가 남았다. 지금까지의 프로그램은 파일 하나짜리였다 — 이제 여러 파일로 자라고(43장), 전처리와 번역의 층을 정면으로 보고(44장), 표준 라이브러리의 지형을 익히고(47장), proven을 정면으로 다루며(제12부), 모던 C의 관행으로 책을 닫는다(69장).</p>
+<div class="nav"><a href="ch41.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch43.html">다음 →</a></div>
+</div></main></body></html>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부록 D — 더 읽을거리와 표준 문서 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-373">부록 D — 더 읽을거리와 표준 문서</h2><p>이 책 다음에 무엇을 읽을 것인가. 답하기 전에 이 언어의 사정을 하나 짚어 두어야 한다. <strong>C는 입문서 다음 칸이 유난히 비어 있는 언어다.</strong></p><p>C++ 쪽은 사정이 다르다. 게임 엔진을 비롯해 큰 응용을 C++로 짜는 자리가 많다 보니 입문서 위로 중급서·설계서·관용구 모음이 층층이 쌓여 있다. 반면 C는 여전히 중요한 곳(운영체제, 펌웨어, 인프라)에서 쓰이지만, 그 자리에서 일하는 사람들은 대개 이미 숙련자다. 그래서 시장에는 “처음 배우는 C”와 “표준 문서·소스 코드”만 남고, 그 사이를 이어 주는 책이 드물었다. 이 책이 굳이 컴퓨터 이야기부터 시작해 계약과 라이브러리 설계 까지 온 것도 그 빈칸을 의식했기 때문이다.</p><p>다행히 최근 몇 해 사이 이 칸을 메우는 책들이 나오고 있다. C11 이후의 변화와 C23의 확정이 새 책을 쓸 이유를 만들어 준 덕이다. 아래는 그중 읽어 볼 만한 것들이다.</p><h3 id="loc-374">옌스 구스테트, 『모던 C』 — 표준을 기준으로 삼는 교재</h3><p>저자 옌스 구스테트(Jens Gustedt)는 프랑스 INRIA의 연구책임자이자 C 표준 위원회(ISO WG14)의 위원으로, C17(ISO/IEC 9899:2018)의 공동 편집자로 참여한 사람이다. 즉 <strong>표준 문서를 만드는 쪽에서 쓴 교재</strong>다.</p><p>내용은 난이도를 0에서 3까지 층으로 나누어, 기초부터 시작해 스레드와 원자적 연산, 메모리 일관성 모형까지 올라간다. 오래된 관행 대신 오늘의 표준을 기본값으로 삼는다는 점에서 이 책과 방향이 같고, 깊이는 훨씬 깊다. “C의 바이블”이라는 자리는 전통적으로 K&amp;R의 것이지만, <strong>오늘의 표준을 기준으로 한 단권 교재</strong>로는 현재 이만한 것이 없다.</p><p>두 가지를 함께 알아 두면 좋다. 첫째, 한국어판(길벗, 2022)은 원서 2판을 옮긴 것이라 C17까지를 다룬다. C23을 다루는 것은 2024년에 나온 원서 <strong>3판</strong>이다. 둘째, 저자가 이 책의 전자판을 무료로 공개해 두었다 — INRIA의 공개 저장소(HAL)에서 받을 수 있다. 번역서를 읽다가 표현이 걸리거나 C23의 최신 내용이 필요하면 원서를 함께 펴 보는 방법이 있다는 뜻이다.</p><h3 id="loc-375">K. N. 킹, <span style="display: inline-block">C Programming: A Modern Approach</span> — 정통 교과서</h3><p>이 목록에서 유일하게 정식 한국어판이 없는 책인데도 넣는 이유는, 영어권 에서 C 교재의 표준으로 통할 만큼 널리 쓰여 왔기 때문이다. 대학 교재로 자리 잡은 책이고, 개념을 한 번에 쏟지 않고 여러 번에 걸쳐 조금씩 깊게 되돌아오는 <strong>나선형</strong> 구성이 특징이다(이 책이 택한 방식과 같다). 설명이 차분하고 예제가 정직해서, 입문서를 뗀 뒤 기초를 다시 탄탄히 다지고 싶을 때 좋은 선택이다.</p><p>2판(2008)이 C89와 C99를 기준으로 삼는다는 점은 알고 읽어야 한다. 다만 이 “오래됨”은 상황에 따라 장점이 되기도 한다 — 실무에서 C99까지만 허용하는 오래된 코드베이스나 임베디드 도구 체인을 다뤄야 한다면, 그 세계를 정확히 기준으로 삼은 책이 오히려 맞다.</p><h3 id="loc-376">크리스토퍼 프레셰른, 『우아한 C언어 코딩 패턴』 — 설계와 패턴</h3><p>원서는 오라일리에서 2022년에 나온 <span style="display: inline-block">Fluent C: Principles, Practices, and Patterns</span>다. 이 책이 다루는 것은 문법이 아니라 <strong>구조에 대한 결정</strong>이다 — 에러를 어떻게 돌려줄 것인가, 소유권과 수명을 어떻게 표시할 것인가, 유연한 인터페이스와 반복자를 어떻게 설계할 것인가. 이 책 제12부에서 계약이라는 이름으로 다룬 문제들이, 거기서는 패턴 목록의 형태로 정리되어 있다.</p><p>C를 배운 뒤 “이제 이걸로 뭘 어떻게 짜야 하지”라는 자리에서 막히는 독자 에게 특히 맞다. 다만 평가가 갈리는 지점도 있다. 영어권 서평들은 공통적으로 <strong>입문자용이 아니라는 점</strong>을 강조한다 — 비자명한 프로그램을 하나쯤 써 본 뒤에 읽어야 값이 나온다는 것이다. 개발자 단체 ACCU의 서평은 “조건부 추천”을 주면서, 에러 처리에 두 장을 쓰면서도 시험(test)을 다루지 않는 점과 일부 패턴(지연 정리 같은)의 적절성에 의문을 제기했다. 패턴 목록을 규범이 아니라 <strong>선택지의 목록</strong>으로 읽으면 그 지적을 감안하고도 얻을 것이 많다.</p><h3 id="loc-377">온라인 참고서</h3><p><span style="display: inline-block">cppreference.com</span>의 C 항목이 사실상의 표준 레퍼런스다. 함수마다 어느 표준판에서 들어왔고 무엇이 바뀌었는지가 표시되어 있어, 이 책이 강조한 “판이 여럿인 언어”를 다루기에 알맞다. 컴파일러별 지원 현황과 경고 옵션은 GCC·Clang의 공식 문서가 가장 정확하다.</p><h3 id="loc-378">표준 문서를 구하는 법</h3><p>이 책은 표준을 “계약서”라 불러 왔다. 그 계약서는 실제로 살 수 있는 물건이고, 사지 않고 읽을 수 있는 길도 따로 있다.</p><p><strong>정식 표준을 사는 길.</strong> C의 현재 표준은 <strong>ISO/IEC 9899:2024</strong>(C23)이고, 2024년 10월에 발행됐다. ISO 온라인 스토어에서 PDF로 즉시 구매할 수 있으며 가격은 200 스위스 프랑대다(개정판이 나오면 문서 번호와 가격이 바뀐다). 각국 표준화 기관을 통해 사는 방법도 있는데, 한국에서는 한국표준협회가 운영하는 한국표준정보망(KSSN)에서 ISO·IEC 표준을 검색해 구매할 수 있다. 미국은 ANSI 웹스토어가 같은 역할을 한다. 어느 경로로 사든 내용은 같다.</p><p>이전 판들도 각각의 번호로 팔린다 — C17은 ISO/IEC 9899:2018, C11은 9899:2011, C99는 9899:1999다. 오래된 코드베이스의 기준 판을 확인해야 할 때 쓸모가 있다.</p><p><strong>무료 초안을 받는 길.</strong> 실무에서 훨씬 자주 쓰이는 쪽이 이것이다. 표준 위원회(ISO/IEC JTC1/SC22/WG14)는 작업 문서를 공개 저장소에 올려 두는데, <strong>발행 직전의 마지막 작업 초안</strong>은 최종 표준과 사실상 같은 내용이다. 편집상 차이가 있을 뿐이라, 인용을 표준 문서 자체로 해야 하는 경우가 아니라면 초안으로 충분하다.</p><p>찾아 둘 만한 문서 번호는 이렇다.</p><table><tr><th><strong>표준판</strong></th><th><strong>정식 번호</strong></th><th><strong>무료 초안</strong></th></tr><tr><td>C23</td><td>ISO/IEC 9899:2024</td><td>N3220</td></tr><tr><td>C17</td><td>ISO/IEC 9899:2018</td><td>N2176</td></tr><tr><td>C11</td><td>ISO/IEC 9899:2011</td><td>N1570</td></tr><tr><td>C99</td><td>ISO/IEC 9899:1999</td><td>N1256 (정오표 반영판)</td></tr></table><p>받는 곳은 WG14의 문서 목록이다 — <code>open-std.org</code> 아래 <code>jtc1/sc22/wg14/www/docs/</code>에 문서 번호 그대로 올라와 있다(예를 들어 C23 초안은 <code>n3220.pdf</code>다). 같은 자리에 결함 보고서와 제안서들도 쌓여 있어서, “이 조항이 왜 이렇게 되었나”를 추적할 때 요긴하다.</p><p><strong>읽는 요령.</strong> 표준 문서는 앞에서부터 읽는 책이 아니라 찾아보는 책이다. 목차와 색인으로 조항을 찾고, 그 조항의 문장만 정확히 읽는 것이 정석이다. 읽을 때 도움이 되는 규약이 몇 가지 있다.</p><ul><li>“shall”은 요구, “shall not”은 금지다. <strong>제약 조항의 shall을 어기면 진단(diagnostic)이 나오고, 제약 밖의 shall을 어기면 정의되지 않은 동작</strong>이다(42장).</li><li>부록 J에 정의되지 않은 동작·미지정 동작·구현 정의 동작의 <strong>목록</strong>이 모여 있다. 42장에서 다룬 세 회색지대를 한꺼번에 훑어보기 좋은 자리다.</li><li>각 조항 끝의 “EXAMPLE”과 각주는 규범이 아니라 설명이다. 다투는 자리 에서는 본문 문장이 기준이다.</li></ul>
+<div class="nav"><a href="sec74.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec76.html">다음 →</a></div>
+</div></main></body></html>
