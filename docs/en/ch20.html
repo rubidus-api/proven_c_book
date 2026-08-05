@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>20 Expressions — the things that become values — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>20 Expressions — the things that become values</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We go inside the statement. How to write values in source code (literals), how to weave values into calculations (operators and expressions), and the order of calculation (precedence and parentheses) — but, following this book’s principle, only the minimal set: addition, subtraction, multiplication and parentheses. That alone takes us surprisingly far.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapters 7 and 8 taught how to hold numbers <strong>in the machine</strong> (two’s complement, IEEE 754). So when a number is written <strong>in source code</strong> — when you write <code>12</code>, say — when does it become the machine’s bits?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>At compile time. The <code>12</code> in the source is just two characters (in the terms of chapter 9, the characters <code>1</code> and <code>2</code>), and the compiler reads it, translates it into a two’s-complement bit pattern and plants it in the executable. A notation for a value written in source is called a <strong>literal</strong> — meaning “as the letters say.” That the bridge between the world of letters and the world of bits is the compiler — chapter 16′s relay is at work here too.</p></div></div><h3>20.1 Literals — values written in source</h3><p>We have met literals several times already. The <code>0</code> of hello world is an integer literal, and <code>"Hello, world!\n"</code> is a <strong>string literal</strong> — the characters inside the quotation marks become a value “as they are.” Add a decimal point to an integer literal (<code>3.5</code>) and it becomes a floating-point value from chapter 8.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then if I write <code>0.1</code> in the source, does the machine hold exactly 0.1?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>It does not — exactly as chapter 8 taught. The compiler translates the literal <code>0.1</code> into its <strong>nearest neighbour</strong> (<code>3FB9 9999 9999 999A</code>). A literal is “a notation writing the value as it is”, but if that value is not on the grid of representable numbers, the approximation has already happened at translation. Writing it in the source does not make it exact — chapter 8′s lesson holds in the world of source code too.</p></div></div><h3>20.2 Expressions — the things that are evaluated into values</h3><p>Weave literals together with operators and you have an <strong>expression</strong>, as in <code>2 + 3 * 4</code>. The definition takes one sentence — <strong>that which is calculated (evaluated) into a value.</strong> This property of “becoming a value” is the whole of an expression, and half of the eye for reading C from here on. Wherever a value is needed in code, an expression may go there — a single literal is the simplest expression of all.</p><p>This chapter has only four operators — plus <code>+</code>, minus <code>-</code>, times <code>*</code>, and parentheses <code>( )</code>. Following this book’s spiral principle, the remaining operators join in the chapters where they become necessary (comparison in chapter 29, division in chapter 27 — why division was put off, in a moment).</p><p>Here is the demonstration. The <code>%d</code> in the example below is a mark meaning “print an integer value here in decimal”; its formal explanation is in chapter 22 — for now it is only a window for seeing results.</p><div><div><p><code>examples/ch20/expr.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+int main(void)
+{
+    printf("%d\n", 2 + 3 * 4);    /* 곱셈이 먼저 계산된다 */
+    printf("%d\n", (2 + 3) * 4);  /* 괄호가 순서를 명시한다 */
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>14
+20
+</code></pre></div></div><h3>20.3 Order — precedence, and the practice of parentheses</h3><p>The first line of the demonstration is 14 because the multiplication was calculated <strong>before</strong> the addition. Exactly the convention of the mathematics lesson, and C has fixed such a ranking of “who goes first” — <strong>precedence</strong> — for every operator.</p><p>Here we state this book’s recommendation in advance. <strong>Do not memorise the precedence table; use parentheses.</strong> C has dozens of operators and the ranking table runs to more than fifteen rows — even people who have memorised it all get confused and cause accidents. Make the order explicit with parentheses, as in the second line, and there is nothing to memorise and nothing to misread. The full table is in the appendix as reference material; the text goes with “arithmetic by the mathematical convention, parentheses everywhere else.”</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Why was division put off? Leaving one of the four operations out feels odd.</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because integer division <strong>differs from division in mathematics</strong>. In C <code>7 / 2</code> is not 3.5 but 3 — division between integers is the quotient with the fractional part discarded, and it only makes sense understood as a set with its partner operator <code>%</code> (remainder). Including the exact rule of that discarding (which way it goes for negative numbers), it is a subject worth treating properly on top of chapter 7′s world of integers, so it has been given a place in chapter 27. Better to treat it squarely, all at once, than to introduce it half-heartedly now and create the misconception “I thought 7/2 was 3.5.”</p></div></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Is <code>printf("hello")</code> a value too? A function call is written in the position of an expression.</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Good eye — it is. Calling a function is itself an expression, and therefore becomes a value. What that value is and where it goes is exactly the next chapter’s subject. That one question has already half-opened the next chapter’s door.</p></div></div><h3>20.4 One caution planted early — the order in time may differ</h3><p>About precedence there is one caution to plant as a seed. Precedence is a rule of <strong>binding</strong> — who is whose <strong>material</strong> — not of <strong>what the machine calculates first in time</strong>. Which of the left and right materials of an addition is calculated first, for instance, is not fixed by the standard and <strong>may differ between compilers</strong>. In an expression like <code>2 + 3</code> it does not matter at all, but when calculating a material leaves a trace such as output, the order of those traces may differ.</p><p>Be reassured on one point, though — the order <strong>between statements</strong> is guaranteed absolutely. Chapter 19′s “one statement at a time, top to bottom” is a contract. What can waver is only the inside of a single statement, and the exact rules there (side effects, the notion of sequence points) are faced head on in chapter 32, once more material is in place. For now one practical rule suffices: <strong>do not cram order-sensitive work into one statement; split the statements.</strong></p><p>To summarise — a notation writing a value in source is a literal, that which is evaluated into a value is an expression, and the order of binding is governed by arithmetic convention and parentheses, while the order in time inside one statement may differ. In the next chapter we learn the most important device that <strong>consumes and produces</strong> values — how to call a function. Hello world’s heart, <code>printf(...)</code>, is finally treated head on.</p>
+<div class="nav"><a href="ch19.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch21.html">Next →</a></div>
+</div></main></body></html>

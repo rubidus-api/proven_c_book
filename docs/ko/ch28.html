@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>28 정수의 연산 — 나눗셈, 비트 — Proven C Book</title><style>
+<title>28 암묵적 변환 — 승격과 통상 산술 변환 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,23 +68,38 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>28 정수의 연산 — 나눗셈, 비트</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-51"></span><p>21장에서 미뤄 둔 약속을 지킨다 — 정수 나눗셈 <code>/</code>와 나머지 <code>%</code>의 진실, 특히 음수에서의 규칙까지. 그리고 7장에서 개념으로 배운 비트 연산들이 C의 연산자로 합류한다. 형변환의 첫걸음도 여기서 뗀다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>21장에서 “7 / 2는 3.5가 아니다”라고 예고만 했다. 7장의 지식으로 스스로 답해 보면 — 정수 그릇끼리의 나눗셈 결과가 3.5일 수 <strong>없는</strong> 이유는 무엇인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>3.5를 담을 자리가 없기 때문이다. 정수 타입의 값 집합에는 3과 4만 있고 그 사이가 없다 — 그래서 정수끼리의 나눗셈은 결과도 정수여야 하고, 소수 부분을 어느 쪽으로든 <strong>버려야</strong> 한다. 문제는 “어느 쪽으로”다 — 그 규칙이 이 장의 첫 절이다.</p></div></div><h3>28.1 나눗셈과 나머지 — 버림의 방향</h3><p>시연부터 본다.</p><div><div><p><code>examples/ch28/divmod.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+<h2>28 암묵적 변환 — 승격과 통상 산술 변환</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>C는 타입이 다른 값들을 만나게 하면 <strong>말없이</strong> 변환한다. 이 장은 그 <span id="idx-entry-52"></span>보이지 않는 변환들을 한자리에 모은다 — 정수 승격, 통상 산술 변환, 그리고 가변 인자의 기본 진급까지. 흩어 놓으면 각각이 수수께끼지만, 모아 놓으면 하나의 규칙 체계다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>7장에서 부호 확장(8→16비트 넓히기)을 배웠고, 27장 끝에서 “작은 그릇의 값은 계산 전에 자동으로 넓혀진다”고 스쳤다. 그러면 <code>char + char</code>의 결과 타입은 char인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>아니다 — int다. 그리고 이 사실이 이 장의 출발점이다. C의 산술 연산은 <strong>작은 정수 타입 위에서 일어나지 않는다</strong>. 계산 전에 모두 int(또는 더 큰 타입)로 넓힌 뒤 계산하고, 결과도 그 넓은 타입이다. 왜 그런지, 어디까지 그런지가 이 장의 내용이다.</p></div></div><h3>28.1 규칙 1 — 정수 승격</h3><p><strong>정수 승격</strong>(integer promotion): <code>char</code>, <code>short</code>, <code>bool</code>, 비트 필드처럼 int보다 작은 정수 타입의 값이 산술 연산에 참여하면, 계산 전에 <strong>int로 넓혀진다</strong>(int가 그 값들을 다 담을 수 있으면 int로, 아니면 unsigned int).</p><div><div><p><code>examples/ch28/conv.c</code></p><pre><code data-lang="c">#include &lt;stdint.h>
+#include &lt;stdio.h>
 
 int main(void)
 {
-    printf(" 7 / 2 = %d,  7 %% 2 = %d\n", 7 / 2, 7 % 2);
-    printf("-7 / 2 = %d, -7 %% 2 = %d\n", -7 / 2, -7 % 2);
-    printf("invariant: (7/2)*2 + 7%%2 = %d\n", (7 / 2) * 2 + 7 % 2);
+    /* 정수 승격: char·short는 계산 전에 int로 넓혀진다 */
+    signed char a = 100;
+    signed char b = 100;
+    printf("100 + 100 (as chars) = %d\n", a + b);   /* 200 — char에는 안 담기는 값 */
 
-    printf("5 &amp; 3 = %d, 5 | 3 = %d, 5 ^ 3 = %d\n", 5 &amp; 3, 5 | 3, 5 ^ 3);
-    printf("1 &lt;&lt; 4 = %d\n", 1 &lt;&lt; 4);
+    /* 통상 산술 변환: 부호 없는 쪽이 이긴다 —
+       -1을 unsigned의 눈으로 읽으면 거대한 양수가 된다 */
+    int neg = -1;
+    printf("(unsigned)(-1)   = %u\n", (unsigned)neg);
+    printf("so -1 &lt; 1u is false\n");
+
+    /* 정수 나눗셈 vs 실수 나눗셈 — 캐스트로 의도를 밝힌다 */
+    int total = 7, count = 2;
+    printf("7 / 2        = %d\n", total / count);
+    printf("(double)7/2  = %.1f\n", (double)total / count);
+
+    /* 가변 인자의 기본 진급: float는 double로, char/short는 int로 */
+    float f = 1.5f;
+    printf("float 1.5f via %%f = %f  (promoted to double)\n", f);
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code> 7 / 2 = 3,  7 % 2 = 1
--7 / 2 = -3, -7 % 2 = -1
-invariant: (7/2)*2 + 7%2 = 7
-5 &amp; 3 = 1, 5 | 3 = 7, 5 ^ 3 = 6
-1 &lt;&lt; 4 = 16
-</code></pre></div></div><p>양수는 직관대로다 — <code>7 / 2</code>는 3, 나머지는 1. 규칙이 필요한 곳은 음수다. C는 <strong>0을 향해 버린다</strong>(truncation toward zero) — <code>-7 / 2</code>는 <math><mo>−</mo><mn>3.5</mn></math>에서 0 쪽으로 버린 <math><mo>−</mo><mn>3</mn></math>이고, 나머지는 그에 맞춰 <math><mo>−</mo><mn>1</mn></math>이다. “수학의 몫·나머지(나머지는 항상 0 이상)”와 다른 선택이라서, 음수 나머지를 쓰는 코드는 이 차이를 모르면 사고가 난다.</p><div class="dev mathbox"><p class="dev-label">∑ 나눗셈-나머지 복원 불변식</p><p>방향이 무엇이든, C가 반드시 지키는 등식이 하나 있다:</p><math display="block"><mrow><mo>(</mo><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mo>)</mo></mrow><mo lspace="0.2222222222222222em" rspace="0.2222222222222222em">×</mo><mi>𝑏</mi><mo>+</mo><mrow><mo>(</mo><mrow><mi>𝑎</mi><mi>%</mi><mi>𝑏</mi></mrow><mo>)</mo></mrow><mo>=</mo><mi>𝑎</mi></math><p>몫과 나머지는 이 등식을 만족하도록 <strong>한 쌍으로</strong> 정의된다 — 시연의 마지막 줄이 이 등식의 확인이다. 0을 향한 버림을 택하면 나머지의 부호가 피제수(<math><mi>𝑎</mi></math>)를 따르게 되는 것도 이 등식의 귀결이다. 덧붙여 역사 한 줄 — C89까지는 버림의 방향이 구현마다 달라도 됐고, C99가 “0을 향해”로 못박았다. 7장에서 본 “기계들이 갈리면 표준은 비워 둔다”가, 기계들이 수렴하자 약속으로 승격된 또 하나의 사례다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>0으로 나누면 어떻게 되는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>계약 밖 — 정의되지 않은 동작이다. 수학에서 정의되지 않은 것이 C 에서도 정의되지 않은 드문 일치 사례인데, 결과는 수학처럼 얌전하지 않다: 많은 기계에서 프로그램이 그 자리에서 붕괴하고, 어떤 최적화 아래서는 더 기묘한 일도 벌어진다(47장). 나누기 전에 0인지 확인하는 것은 프로그래머의 몫이고 — 31장에서 분기를 배웠으니 이제 그 확인을 코드로 적을 수 있게 된다.</p></div></div><h3>28.2 비트 연산 — 7장의 세계, C의 문법</h3><p>7장에서 개념으로 배운 비트 다루기가 연산자로 합류한다 — AND <code>&amp;</code>, OR <code>|</code>, XOR <code>^</code>, 반전 <code>~</code>, 그리고 시프트 <code>&lt;&lt;</code> <code>>></code>. 시연의 뒷부분이 그 맛보기다: <code>5 &amp; 3</code>은 <code>101 &amp; 011 = 001</code>이라 1, <code>5 | 3</code>은 <code>111</code>이라 7, <code>1 &lt;&lt; 4</code>는 7장의 약속대로 <math><msup><mn>2</mn><mn>4</mn></msup><mo>=</mo><mn>16</mn></math>이다.</p><p>실무의 기본 무늬는 7장에서 예고한 그대로 <strong>시프트+마스크</strong>다 — 원하는 자리로 밀고(<code>&lt;&lt;</code>, <code>>></code>), 필요한 비트만 남긴다(<code>&amp;</code>). 다만 두 가지 수칙을 함께 챙긴다. 첫째, <strong>비트 연산은 부호 없는 타입에서 한다</strong> — 부호 있는 수의 시프트에는 7장에서 본 함정들(폭 이상, 음수 왼쪽 시프트=계약 밖)이 있어서, <code>unsigned</code>나 <code>uint32_t</code> 위에서 노는 것이 안전 관행이다. 둘째, <code>&amp;</code>(비트 AND)와 <code>&amp;&amp;</code>(논리 AND, 다음 장)는 완전히 다른 연산자다 — 한 글자 차이가 값 전체를 바꾼다.</p><h3>28.3 형변환 — 그릇 사이를 건너다</h3><p>타입 가족(27장)이 생기니 새 질문이 따라온다 — 다른 그릇끼리 섞어 계산하면 무슨 일이 일어나는가. C의 답은 <strong>암묵 변환</strong>이다: 작은 그릇의 <span id="idx-entry-52"></span>값은 계산 전에 자동으로 더 큰 그릇으로 넓혀지고(7장의 부호 확장이 바로 이때 일어나는 일이다), 정수와 실수가 만나면 정수가 실수로 승격된다. 대부분은 뜻대로 되지만, 자동이라는 것은 <strong>안 보인다</strong>는 뜻이기도 하다 — 특히 부호 있는 것과 없는 것이 섞이는 비교는 고전적 함정이라(음수가 거대한 양수로 둔갑한다), 컴파일러 경고(-Wall)가 지켜 주는 대표 지점이다.</p><p>변환을 <strong>명시</strong>하고 싶으면 캐스트 표기를 쓴다 — <code>(double)7 / 2</code>는 “7을 실수 그릇으로 옮긴 뒤 나눠라”이므로 3.5가 된다. 규칙의 전모 (정수 승격, 통상 산술 변환)는 부록 참조 자료로 두고, 본문 수칙은 둘이다: <strong>섞이는 계산은 의도를 캐스트로 명시하고, 부호 섞인 비교는 피한다.</strong></p><p>정수의 그릇(27장)과 연산(28장)을 갖췄다. 다음 장부터는 <strong>흐름</strong>이다 — 비교하고 판단하는 값, 불리언부터.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>100 + 100 (as chars) = 200
+(unsigned)(-1)   = 4294967295
+so -1 &lt; 1u is false
+7 / 2        = 3
+(double)7/2  = 3.5
+float 1.5f via %f = 1.500000  (promoted to double)
+</code></pre></div></div><p>첫 줄이 그 확인이다 — <code>signed char</code> 100끼리 더했는데 결과가 200이다. char에는 담기지 않는 값인데도 넘치지 않은 이유는, 덧셈이 char의 세계가 아니라 int의 세계에서 일어났기 때문이다.</p><p>이유는 기계에 있다(11장). CPU의 계산 회로와 레지스터는 워드 크기 근처의 정수를 다루도록 만들어져 있어서, 작은 타입만을 위한 별도 산술을 두는 것이 오히려 비효율이다. C는 그 현실을 언어 규칙으로 받아들였다 — 작은 타입은 <strong>저장의 단위</strong>이지 계산의 단위가 아니다.</p><h3>28.2 규칙 2 — 통상 산술 변환</h3><span id="idx-entry-53"></span><p>승격 뒤에도 두 피연산자의 타입이 다르면, <strong>통상 산술 변환</strong>(usual arithmetic conversions)이 공통 타입 하나를 정한다. 실무에서 기억할 순서는 이렇다.</p><ul><li>한쪽이 실수면 실수 쪽으로 (<code>long double</code> > <code>double</code> > <code>float</code>).</li><li>둘 다 정수면 — 더 넓은 쪽으로. 폭이 같으면 <strong>부호 없는 쪽이 이긴다</strong>.</li></ul><p>마지막 줄이 함정의 원천이다. 시연의 둘째 부분이 그 실물이다 — <code>-1</code>을 unsigned의 눈으로 읽으면 42억이 넘는 거대한 양수가 된다(7장의 모듈러 세계 그대로다). 그래서 <code>-1 &lt; 1u</code> 같은 비교는 직관과 반대로 <strong>거짓</strong>이 된다. 배열 인덱스나 크기 계산(<code>sizeof</code>의 결과는 부호 없는 <code>size_t</code>다!) 에서 부호 있는 값과 섞이면 조용히 사고가 나는 이유가 이것이다.</p><p>다행히 이 함정은 컴파일러가 잘 지킨다 — 17장에서 켜 둔 경고가 부호 섞인 비교를 지목해 준다(이 책의 예제 하나도 그 경고에 걸려 다시 쓰였다). 수칙으로 줄이면: <strong>부호 있는 것과 없는 것을 한 비교에 섞지 않는다.</strong> 크기·인덱스는 <code>size_t</code> 계열로 일관되게 쓰거나, 명시적 캐스트로 의도를 드러낸다.</p><h3>28.3 규칙 3 — 가변 인자의 기본 진급</h3><p>세 번째 변환은 인자 개수가 정해지지 않은 함수 — <code>printf</code> 같은 <strong>가변 인자 함수</strong> — 에서 일어난다. 원형에 타입이 적혀 있지 않은 자리로 넘어 가는 인자에는 <strong>기본 진급</strong>(default argument promotions)이 적용된다: <code>float</code>는 <strong><code>double</code>로</strong>, 작은 정수 타입은 <strong>int로</strong> 넓혀진다.</p><p>시연의 마지막 줄이 그 확인이다 — <code>float</code> 값을 <code>%f</code>로 찍었는데 잘 나온다. 서식 <code>%f</code>는 사실 double을 기대하는데, float 인자가 진급해 double이 되어 도착했기 때문이다(그래서 printf에는 float 전용 서식이 아예 없다). 22장에서 배운 “서식과 재료의 계약”에 이 진급 규칙이 숨은 조항으로 들어 있는 셈이다 — 이 계약의 전모와 가변 인자 함수를 직접 만드는 법은 50장에서 정면으로 다룬다.</p><div class="dev realcase"><p class="dev-label">◉ 변환 하나가 날린 로켓 — 아리안 5, 1996</p><p>암묵·명시 변환이 얼마나 무거울 수 있는지 보여 주는 사건이 있다. 1996년 유럽우주국의 아리안 5 로켓이 첫 발사 37초 만에 폭발했다. 조사 결과의 핵심은 한 줄의 변환이었다 — 관성 항법 장치가 수평 속도를 64비트 부동소수점으로 계산해 두고, 그 값을 <strong>16비트 부호 있는 정수로</strong> 옮겨 담는 코드가 있었다. 전작 아리안 4에서는 그 속도가 16비트 범위를 넘을 일이 없어 안전했지만, 더 빠른 아리안 5에서는 값이 그릇을 넘쳤다. 축소 변환의 실패(7장의 잘림)가 예외를 일으켰고, 그 예외가 처리되지 않은 채 항법 컴퓨터가 멈추자 로켓은 자세를 잃고 자폭했다. 손실은 수억 달러 규모였다. 재사용된 코드가 <strong>새로운 값의 범위</strong>를 만나는 순간 계약이 깨진 것 — “변환은 값을 바꾼다”는 이 장의 문장이 가장 비싸게 확인된 사례다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “캐스트는 값을 바꾸지 않고 해석만 바꾼다”</p><p>포인터 캐스트(35장)에서는 대체로 맞는 말이지만, <strong>산술 타입 사이의 캐스트는 값 자체를 바꾼다</strong>. <code>(int)3.9</code>는 3이 되고(소수부 버림), <code>(char)300</code>은 그릇에 안 들어가 잘리며(7장의 축소), <code>(unsigned)-1</code>은 거대한 양수가 된다. C의 캐스트는 “이 비트를 저 타입으로 읽어라”가 아니라 “이 값을 저 타입의 값으로 <strong>변환하라</strong>”는 뜻이다 — 비트를 그대로 두고 눈만 바꾸고 싶다면 43장의 공용체나 <code>memcpy</code>가 그 통로다. 두 요구를 같은 문법으로 쓰지 않는 것이 C의 몇 안 되는 친절이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>이 규칙들을 다 외워야 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>세 줄이면 충분하다 — <strong>작은 정수는 int로 승격된다, 섞이면 넓은 쪽· 부호 없는 쪽으로 간다, 가변 인자에서는 float가 double이 된다.</strong> 나머지 세부는 부록의 표에 두고, 실무에서는 두 습관이 규칙 암기를 대신한다: 경고를 켜 두는 것(17장), 그리고 <strong>의도가 있는 변환은 캐스트로 명시하는 것</strong>. 암묵 변환의 위험은 규칙의 복잡함이 아니라 그것이 <strong>보이지 않는다</strong>는 데 있으므로, 보이게 만드는 것이 최선의 방어다.</p></div></div><p>변환의 지도를 갖췄다. 다음 장부터 흐름의 도구다 — 판단을 값으로 만드는 불리언과 비교부터.</p>
 <div class="nav"><a href="ch27.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch29.html">다음 →</a></div>
 </div></main></body></html>

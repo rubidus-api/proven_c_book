@@ -1,197 +1,120 @@
 #import "../../book/lib.typ": *
 
-= The embedded toolbox — compilers and the tools beside them
+= The structure of a program
 
 #organizer[
-#idx("embedded")  What people who write C that runs on chips carry with them.
-  The compilers that differ by vendor (IAR, Arm, TI, Microchip, Renesas, SDCC
-  and others), and the tools that sit beside make and git — build tools, debug
-  probes and on-chip debugging, how to see a log on a machine with no screen,
-  simulators, static analysis and unit testing, and the tools that measure size.
-  There is no need to install any of it now. The point is *to know the names and
-  what they are for.*
+  Part IV has one goal — to read one piece of chapter 15's hello world
+  *completely*. The first step is the skeleton of a program: comments,
+  statements, blocks, and why the `#include` line is not a statement. By the
+  end of this chapter the outward appearance of C source is no longer strange.
 ]
 
 #deepqa[
-  Chapter 16 said that numerically the largest branch of the world's C compilers
-  is embedded. Why is that — cannot gcc alone target them all?
+  Chapter 4 said the machine is a repetition of "fetching the next thing to do
+  from memory and doing it." Then what, on the source-code side, corresponds to
+  one of those things to do?
 ][
-  Three reasons. First, *there are chips gcc does not know* — when a company
-  invents its own instruction set, the compiler that knows that chip is made by
-  that company. Second, *certification*. The safety standards of automotive,
-  aerospace and medical devices demand evidence that "this compiler has been
-  qualified against the standard", and selling that qualification together with
-  the responsibility is the business of specialist firms. Third, *code size*. On
-  a chip with tens of KiB of memory, a few per cent of size decides whether a
-  product exists.
+  The *statement*. The body of a C program is a list of statements, and
+  execution is working through that list from top to bottom, one statement at a
+  time — chapter 4's model of computation reflected directly in source code. Of
+  course, as chapter 13 taught, the compiler may rearrange the inner business;
+  but the *observable result* is guaranteed to be the same as "one statement at
+  a time, top to bottom." So the reader may safely read with this picture.
 ]
 
-== The embedded compilers
+== Comments — writing only humans read
 
-Only those currently in service. Since the point is recognising names, a table
-will do.
+Before looking at the skeleton, let us clear away what is *not* skeleton. Source
+code may contain text the compiler entirely ignores — *comments*. There are two
+notations:
 
-#dtable(
-  columns: 3,
-  [*compiler*], [*chips targeted*], [*character*],
-  [IAR Embedded Workbench], [Arm, RISC-V, 8051, MSP430, AVR, RX, RL78, RH850 and many more], [commercial. known for certification (automotive, medical) and code size],
-  [Arm Compiler for Embedded (`armclang`)], [the Arm Cortex family], [commercial (included in Keil MDK). Clang-based],
-  [TI Arm Clang (`tiarmclang`)], [TI's Arm cores], [free. Clang-based, with TI extensions],
-  [MPLAB XC8 / XC-DSC / XC32], [Microchip PIC, AVR, SAM], [usable free of charge. XC32 covers Arm and MIPS],
-  [Renesas CC-RX / CC-RL], [Renesas RX, RL78], [commercial. Renesas chips only],
-  [Green Hills Optimizing Compilers], [Arm, PowerPC, RISC-V and others], [commercial. a long-standing power in the safety market],
-  [Wind River Diab], [Arm, PowerPC and others], [commercial. aerospace and automotive certification],
-  [SDCC], [8051, STM8, Z80, 6502, PDK and other 8-bit], [free software. the standard for small chips],
-  [`arm-none-eabi-gcc` and other GCC ports], [Arm, RISC-V, AVR, MSP430 …], [free software. the default inside vendor SDKs],
-  [Clang/LLVM embedded builds], [Arm, RISC-V], [the common base of the vendor compilers],
-)
+```c
+// this notation makes the rest of the line a comment
+/* this notation makes everything between the opening and closing a comment —
+   it can span several lines */
+```
 
-Two currents show. One is the same as in chapter 18 — *nearly every new compiler
-is LLVM-based* (Arm's `armclang`, TI's `tiarmclang`, Microchip's new XC32). The
-other is *becoming free*. Compilers that required a paid key to enable
-optimisation used to be common; Microchip removed that restriction in recent
-editions.
+To the machine a comment does not exist; to a human it is documentation. The
+examples in this book carry their explanations as comments — read them along
+with the code.
 
-#platform[
-  Look at the chip vendor's SDK first
-][
-  In practice the starting point is often not choosing a compiler but getting
-  *the development bundle the chip company provides* (its SDK) — ST's
-  STM32Cube, NXP's MCUXpresso, Espressif's ESP-IDF, Nordic's nRF Connect SDK and
-  the like. Inside them a compiler (usually GCC or Clang), a linker script,
-  startup code, peripheral libraries and debugging configuration already come
-  paired. Choosing tools one by one from scratch is something you do after
-  learning why that bundle looks the way it does.
-]
+== Statements — one step, and the semicolon
 
-== The tools beside make and git
+A *statement* is one step of a program. The `printf(...)` line and the
+`return 0` line of chapter 15 are each one statement. And in C the end of a
+statement is marked by a *semicolon* `;` — the full stop of our writing.
 
-Now for the tools. On an embedded developer's desk there are several beyond make
-and git. Grouped by what they do:
-
-*① Assembling the build.* `make` is still the base, but today's practice puts a
-*generator* on top. `CMake` is the de facto standard (it produces build files
-and is commonly paired with `Ninja`, a fast executor, behind it), and `Meson` is
-used too. Higher-level tools that manage libraries, boards and toolchains
-wholesale include `PlatformIO` (many boards with one command), the Zephyr
-project's `west`, and Espressif's `idf.py`. Projects with many configuration
-options, like a kernel, switch features on and off with `Kconfig` and describe
-the hardware layout in a *device tree*.
-
-*② Burning it onto the chip and stopping it.* To flash a program onto a chip and
-halt it mid-execution to look inside, you need a small piece of hardware called
-a *debug probe*. SEGGER's `J-Link`, ST's `ST-Link` and the standard
-`CMSIS-DAP` family are common. The software joining probe to computer is
-`OpenOCD`, `pyOCD` or the vendor's own server, and on top of that chapter 17's
-`gdb` works just as before — except that this is remote debugging, with the
-program running *on another machine*. Chip and probe are connected by a few
-wires called JTAG or SWD.
-
-*③ Seeing a log on a machine with no screen.* Embedded boards usually have no
-screen, so where `printf` output goes becomes a question. The traditional answer
-is to send it out of a *serial port* (UART) and receive it on a computer with a
-terminal program (`picocom`, `minicom`, `screen`, `PuTTY`). The Arm family has
-two faster routes — `ITM`/`SWO`, which floats characters out over the debug
-line, and SEGGER's `RTT`, in which the probe peeks at a memory buffer. There is
-also *semihosting*, where the debugger performs host I/O on the target's behalf,
-but it is slow and used only for testing.
-
-#antipattern[
-  Using `printf` anywhere in embedded code
-][
-  The `printf` debugging habit formed on a host (chapter 17) brings three
-  problems in embedded work. *Size* — the whole format interpreter is linked in
-  and eats tens of KiB. *Speed* — pushing one character at a time over a UART
-  costs milliseconds. *Timing* — that delay changes the real-time behaviour, so
-  the bug disappears the moment you print: the classic situation.
-
-  So practice uses lighter alternatives: a reduced `printf` handling integers
-  only, a scheme that sends *only a number* instead of putting the format string
-  on the chip, or a nearly free channel such as the RTT above. It is also why
-  chapter 17's "learn the debugger" is especially valuable in embedded work.
-]
-
-*④ Running it without the machine.* When the hardware does not exist yet, or
-many boards must be tested automatically, you use a *simulator*. `QEMU` imitates
-various boards, and `Renode` can imitate several devices and even a network
-together, which makes it common in test automation (CI). Vendor IDEs often ship
-an instruction-level simulator too.
-
-*⑤ Having the code read for you.* Embedded software is hard to fix once shipped
-(the product leaves your hands), so *static analysis* has great value. Free
-tools include `cppcheck` and `clang-tidy` (and the compiler's own
-`-Wall -Wextra`); commercial ones commonly used are `PC-lint Plus`,
-`PVS-Studio`, `Polyspace` and `Coverity`. In the automotive industry the ability
-to check conformance to a set of coding rules called `MISRA C` is especially
-important — an approach of "using only the subset of C that has been decided as
-allowed."
-
-*⑥ Testing.* Code that runs on a chip is unit-tested too. For C, `Unity` (with
-its build tool `Ceedling`) and `CppUTest` are widely used, and it is the practice
-to compile logic that does not touch hardware *on the host* and test it there —
-where you can turn on checkers like `-fsanitize=address,undefined`
-(chapter 17), receiving in place of the chip the checks it cannot give you.
-
-*⑦ Measuring size and layout.* Memory is small, so "how much went in" is
-measured constantly. Binary tools such as `size`, `nm`, `objdump` and `readelf`
-are the basics, and you read the *map file* the linker leaves to see what
-occupies the space. Tools such as `bloaty` and `puncover` present that analysis
-nicely. To convert into a format for the chip you use `objcopy`
-(ELF → bin/hex) or `srec_cat`.
-
-*⑧ Seeing the signals with your eyes.* A moment comes when software tools alone
-will not do. When you must see what signal is leaving a pin, out come the
-*logic analyser* (the free software `sigrok`/PulseView supports inexpensive
-hardware) and the oscilloscope. That half of the "the code is right but it does
-not work" problems are wiring and power is an old proverb of this world.
-
-#realcase[
-  Compiler Explorer — a museum of compilers opened in a browser
-][
-  One tool that needs no installation. The website `godbolt.org` (Compiler
-  Explorer) lets you write C on the left and shows, immediately on the right,
-  *what machine code that code becomes*. You can compare across compilers and
-  versions (from gcc 4 to the newest, clang, MSVC, embedded arm targets —
-  hundreds of them) and optimisation options.
-
-  It is the easiest way to *see with your own eyes* what chapter 13 (compiler
-  optimisation) called "the editor rewriting the code" — `x * 2` becoming a
-  shift, the outputs of `-O0` and `-O2` being utterly different, a loop
-  disappearing entirely, all visible in seconds. In embedded work it is also
-  used to check "how many bytes of instruction does this code become."
-]
+One important rule here. *In C a line break is not the end of a statement.*
+Where a statement ends is decided solely by the semicolon; line breaks and
+indentation are entirely tidiness for human eyes. A language like this is called
+*free-form*.
 
 #qa[
-  Must all of this be learned before starting embedded work?
+  Why not take the end of a line as the end of a statement? Typing a semicolon
+  every time is a nuisance.
 ][
-  No. The minimum bundle to start is four things — *the chip company's SDK*, *a
-  compiler* (usually inside the SDK), *one debug probe*, and *a serial
-  terminal*. The rest grows one at a time as the need arises. The purpose of
-  this chapter is not to make you memorise a list but to let you recognise, when
-  you later meet those names, *which slot the tool sits in*.
+  Because of long statements. When one statement grows long and you want to
+  write it over several lines, a language in which "end of line = end of
+  statement" needs an exception device such as a continuation marker. C took the
+  other side — mark the end explicitly with a semicolon and leave line breaks
+  entirely free. Remember chapter 10's punched cards and the flavour deepens:
+  passing through an era whose physical constraint was "one card = one line",
+  languages evolved towards making meaning independent of the line as a form.
 ]
 
-#recap[
-  #dtable(
-    columns: 2,
-    [*what it does*], [*tools*],
-    [assembling the build], [CMake, Ninja, Meson; PlatformIO, west, idf.py; Kconfig],
-    [burning and halting], [J-Link, ST-Link, CMSIS-DAP + OpenOCD, pyOCD + gdb],
-    [seeing logs], [UART + terminal, ITM/SWO, RTT, (slow) semihosting],
-    [running without hardware], [QEMU, Renode, vendor simulators],
-    [having code read], [cppcheck, clang-tidy; PC-lint Plus, PVS-Studio; MISRA],
-    [testing], [Unity, Ceedling, CppUTest; sanitizers on the host],
-    [measuring size], [size, nm, objdump, readelf; map files; bloaty, puncover],
-    [seeing signals], [logic analyser (sigrok), oscilloscope],
-    [inspecting machine code], [Compiler Explorer (godbolt.org)],
-  )
+#misconception[
+  "Writing one statement per line is a rule of C"
+][
+  Plausible — well-written code mostly looks like that. But that is *practice*,
+  not a rule. Grammatically you may crowd several statements onto one line, or
+  spread one statement over five. To the compiler they are all the same program.
+  And yet the practice of "one statement per line, indent inside a block" has
+  survived half a century for a simple reason — code is read far more often by
+  humans than by machines. This book's examples follow that practice too:
+  distinguishing the freedom the grammar allows from the restraint the practice
+  advises is itself part of studying C.
 ]
 
-The part on the first program is over. We wrote hello world (chapter 15), saw
-the steps by which it becomes an executable (chapter 16), installed the tools
-(chapter 17), and spread out a map of the world's compilers and tools
-(chapters 18 and 19).
+== Blocks — a bundle of statements
 
-From the next part the real study of the language begins — in this book's way.
-The goal of Part IV is *reading one piece of chapter 15's hello world
-completely.*
+Several statements wrapped in braces `{ }` are a *block*. The fence after `main`
+in chapter 15 was exactly that — the list of things `main` does, bound into one.
+A block is a grammatical bracket meaning "from here to here is one bundle", and
+nearly every structure we meet from now on (conditions, loops, functions) uses
+blocks as a component. For now "the packaging unit of a statement list" is
+enough.
+
+== Lines that are not statements — the world of `#`
+
+Now the last secret of chapter 15's first line. There is *no* semicolon at the
+end of `#include <stdio.h>`. If it were a statement there ought to be a full
+stop — and the reason there is none is simple. *It is not a statement.*
+
+Recall the relay of chapter 16. A line beginning with `#` is speech addressed to
+the first runner, the *preprocessor*, and the preprocessor is a text tool that
+works not by C's grammar but by *lines*. So the grammar of a `#` line is
+entirely different from C's statement rules — the end of the line, not a
+semicolon, ends the directive, and by convention they live gathered at the top
+of the file. There are in fact *two languages* inside one source file (the
+language of preprocessing directives, and C). Strange, but for us who know the
+history the reason is visible — the preprocessor was born as a separate worker
+and has remained one.
+
+== Putting it together — a two-statement program
+
+Here is a variation containing all this chapter's material. Only one thing
+changed from chapter 15's hello world — there are now two statements.
+
+#demo("examples/ch19/two.c")
+
+Notice that the output is one line. There are two statements and two steps —
+but since the first statement has no `\n`, on the band of output (chapter 10)
+the letters simply join up. *What breaks a line is not a statement but `\n`* —
+the boundaries of statements and the line boundaries of output are unrelated.
+That is the lesson of this demonstration.
+
+The skeleton of hello world's six lines is now readable — `#include` (a
+preprocessing directive), `main` and its fence (a block), statements and
+semicolons, and comments. What remains is the substance *inside* the fence:
+what exactly happens inside the statement `printf("...")`. The next chapter
+enters that inner world — the things that become values, *expressions*.

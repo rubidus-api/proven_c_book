@@ -11,14 +11,14 @@
 ]
 
 #deepqa[
-  Chapter 2 said that a single byte distinguishes only 256 cases, and that
+  Chapter 4 said that a single byte distinguishes only 256 cases, and that
   larger numbers are held by joining several bytes together. So how does the
   machine know that the joined bytes are "one lump"?
 ][
   It does not — and that is where this chapter starts. Memory itself records
   nothing about which slot belongs with which. What knows about the lump is not
   the memory but *the side doing the reading*. The program simply decides "from
-  here I shall read four slots as one number." Chapter 2's misconception — the
+  here I shall read four slots as one number." Chapter 4's misconception — the
   separation of what is stored from how it is read — gets its first real
   workout here.
 ]
@@ -40,7 +40,7 @@ There is one important fact about addresses that is not visible at first
 glance. *An address is itself a number.* A locker number is just an integer,
 and being an integer, it can be put inside another locker. "In slot 347, write
 the number 512" — nothing strange about it. This ordinary idea later becomes
-C's most famous concept, the *pointer* (chapter 34). For now it is enough to
+C's most famous concept, the *pointer* (chapter 33). For now it is enough to
 take away "an address is a number too, so it can be written down anywhere."
 
 #qa[
@@ -74,7 +74,7 @@ number at once.
   No. Storage is still free at byte granularity — a one-byte character and a
   four-byte number live in the same corridor. The word is "the size the machine
   picks up most comfortably", not "the size of everything." C really does have
-  several number types of different sizes (chapter 26), and the question of
+  several number types of different sizes (chapter 25), and the question of
   where it is convenient to place data of a given size comes back in chapter 6
   (alignment).
 ]
@@ -164,7 +164,7 @@ wrong, but *reading each other's letters verbatim causes accidents*.
   You can — put a multi-byte number in memory and read just its first slot as a
   single byte. If the first slot holds the least significant piece, it is
   little-endian. Actually doing this check in C is the demonstration in
-  chapter 44 (unions) — that is where we get the tool for reading the same
+  chapter 43 (unions) — that is where we get the tool for reading the same
   storage through different eyes.
 ]
 

@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>65 쪼개지지 않는 연산 — &lt;stdatomic.h&gt; — Proven C Book</title><style>
+<title>65 넘침을 묻는 법 — &lt;stdckdint.h&gt; — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,56 +68,76 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>65 쪼개지지 않는 연산 — <code>&lt;stdatomic.h></code></h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-93"></span><p>여러 갈래가 같은 기억을 동시에 만질 때 무슨 일이 일어나는지 보고, C11이 그 자리에 들여온 도구 — 원자적 타입과 연산 — 을 익힌다. 왜 <span id="idx-entry-94"></span>데이터 경쟁이 “느려짐”이 아니라 <strong>계약 밖</strong>인지, <code>volatile</code>이 왜 답이 아닌지, 그리고 메모리 순서(memory order)라는 어려운 손잡이를 언제 건드리고 언제 두어야 하는지까지.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>12장에서 CPU가 한 박자에 여러 일을 하고 순서까지 바꿔 실행한다고 했고, 11장에서는 코어마다 자기 캐시를 들고 있다고 했다. 그러면 두 갈래가 같은 변수를 동시에 1씩 늘리면 — 결과는 2인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>아닐 수 있다. <code>x = x + 1</code>은 기계에게 한 걸음이 아니라 <strong>세 걸음</strong>(읽고, 더하고, 쓰고)이고, 두 갈래가 이 세 걸음을 서로 끼워 넣으면 둘이 같은 값을 읽어 같은 값을 쓴다 — 하나가 통째로 사라진다. 게다가 코어마다 캐시가 달라서 “썼는데 상대에게 안 보이는” 시차까지 겹친다. 이 장의 첫 예제가 그 손실을 실제로 세어 보인다.</p></div></div><h3>65.1 잃어버린 갱신 — 눈으로 확인한다</h3><div><div><p><code>examples/ch65/atomic.c</code></p><pre><code data-lang="c">/* 경쟁 상태와 원자적 연산 — 같은 프로그램을 두 번 돌린다. */
-#include &lt;stdatomic.h>
+<h2>65 넘침을 묻는 법 — <code>&lt;stdckdint.h></code></h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-94"></span><p>C23이 들여온 검사 산술(checked arithmetic)을 익힌다. 왜 “계산한 뒤에 넘쳤는지 확인하는” 손수 짠 코드가 위험한지, <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code>이 정확히 무엇을 약속하는지, 그리고 기존 코드의 크기 계산을 어떻게 이 도구로 옮기는지까지 본다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>7장에서 부호 없는 넘침은 정의된 감아 돌기이고 부호 있는 넘침은 계약 밖이라 했고, 58장에서는 <code>calloc</code>이 원소 수와 크기의 곱을 검사한다고 했다. 그러면 곱셈이 넘치는지 우리가 직접 확인하려면 어떻게 적는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>바로 그 “직접 확인”이 반세기 동안 틀리게 적혀 온 코드다. 부호 있는 값에서는 <strong>넘친 뒤에 검사하는 것 자체가 이미 계약 밖</strong>이라 컴파일러가 검사 코드를 지워 버릴 수 있고(13장의 편집자), 부호 없는 값에서도 나눗셈을 끼운 관용구는 읽기 어렵고 틀리기 쉽다. C23은 이 자리를 언어 차원에서 정리했다.</p></div></div><h3>65.1 사후 검사라는 함정</h3><p>가장 흔한 손수 짠 검사부터 본다.</p><div class="dev antipattern"><p class="dev-label">✗ 더한 다음에 넘쳤는지 보기</p><pre><code data-lang="c">int sum = a + b;
+if (sum &lt; a) { /* 넘쳤다 */ }        /* ← 이 검사가 사라질 수 있다 */</code></pre><p><code>a</code>와 <code>b</code>가 부호 있는 정수라면 <code>a + b</code>가 넘치는 순간 이미 정의되지 않은 동작이다. 그 뒤의 검사는 “넘치지 않았다면”이라는 전제 위에서만 뜻이 있으므로, 컴파일러는 <code>sum &lt; a</code>가 결코 참이 될 수 없다고 판단해 <strong>조건문을 통째로 지운다.</strong> 실제로 이 무늬 때문에 여러 프로젝트에서 검사가 조용히 사라졌고, 그중에는 보안 검사도 있었다.</p><p>부호 없는 값이라면 감아 돌기가 정의되어 있으므로 위 검사는 <strong>동작한다.</strong> 다만 곱셈으로 가면 그마저 까다로워진다.</p><pre><code data-lang="c">if (n != 0 &amp;&amp; bytes / n != sz) { /* 넘쳤다 */ }   /* 맞지만 읽기 어렵다 */</code></pre></div><p>그래서 컴파일러들이 저마다 확장을 내놓았다 — GCC와 Clang의 <code>__builtin_add_overflow</code> 계열, MSVC의 <code>SafeInt</code>, 여러 프로젝트의 자체 매크로. 잘 동작했지만 <strong>이식성이 없었고</strong>, 이식성을 확보하려면 프로젝트마다 같은 껍데기를 다시 짜야 했다. 57장의 <code>strlcpy</code> 이야기와 같은 무늬다 — 현실이 먼저 답을 찾고 표준이 뒤늦게 추인한다.</p><h3>65.2 C23의 답 — <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code></h3><div><div><p><code>examples/ch65/ckdint.c</code></p><pre><code data-lang="c">/* 넘침을 값이 아니라 "일어났는가"로 받는다 — C23 &lt;stdckdint.h> */
+#include &lt;limits.h>
+#include &lt;stdckdint.h>
+#include &lt;stdint.h>
 #include &lt;stdio.h>
-#include &lt;threads.h>
+#include &lt;stdlib.h>
 
-#define THREADS 4
-#define BUMPS   200000
-
-static long        plain;   /* 그냥 long — 보호 없음 */
-static atomic_long safe;    /* 원자적 long        */
-
-static int worker(void *unused)
+/* 흔한 할당 계산: 원소 n 개 x 크기 sz. 곱셈이 넘치면 그릇이 작아진다. */
+static void *alloc_array(size_t n, size_t sz)
 {
-    (void)unused;
-    for (int i = 0; i &lt; BUMPS; i++) {
-        plain = plain + 1;                    /* 읽고-더하고-쓰기: 쪼개진다 */
-        atomic_fetch_add(&amp;safe, 1);           /* 한 덩어리로 일어난다      */
+    size_t bytes;
+    if (ckd_mul(&amp;bytes, n, sz)) {       /* 참이면 넘쳤다 */
+        printf("  크기 계산이 넘쳤다 - 할당하지 않는다\n");
+        return NULL;
     }
-    return 0;
+    return malloc(bytes);
 }
 
 int main(void)
 {
-    thrd_t t[THREADS];
+    /* 판정과 결과 읽기를 반드시 갈라 적는다 (한 표현식에 섞으면 순서가 없다) */
+    int r;
+    bool over = ckd_add(&amp;r, INT_MAX, 1);
+    printf("INT_MAX = %d\n", INT_MAX);
+    printf("ckd_add(INT_MAX, 1)  넘침? %s   r = %d (감아 돈 값)\n", over ? "예" : "아니오", r);
 
-    for (int i = 0; i &lt; THREADS; i++)
-        thrd_create(&amp;t[i], worker, NULL);
-    for (int i = 0; i &lt; THREADS; i++)
-        thrd_join(t[i], NULL);
+    over = ckd_add(&amp;r, 1, 2);
+    printf("ckd_add(1, 2)        넘침? %s   r = %d\n", over ? "예" : "아니오", r);
 
-    long expected = (long)THREADS * BUMPS;
-    printf("기대한 값 : %ld\n", expected);
-    printf("보호 없음 : %ld%s\n", plain, plain == expected ? "" : "  &lt;- 잃어버렸다");
-    printf("원자적    : %ld\n", (long)safe);
+    /* 타입이 섞여도 수학적 값으로 판정한다 */
+    signed char c;
+    over = ckd_add(&amp;c, 200, 100);
+    printf("signed char &lt;- 300   넘침? %s   c = %d\n", over ? "예" : "아니오", c);
 
-    printf("\natomic_long 은 잠금 없이 되는가? %s\n",
-           atomic_is_lock_free(&amp;safe) ? "예" : "아니오");
+    /* 부호 없는 뺄셈: 감아 도는 것은 정의된 동작이지만, 여기서도 "넘쳤다"고 알린다 */
+    unsigned u;
+    over = ckd_sub(&amp;u, 3u, 5u);
+    printf("unsigned  &lt;- 3 - 5   넘침? %s   u = %u\n", over ? "예" : "아니오", u);
+
+    printf("\n할당 계산\n");
+    void *ok = alloc_array(1000, sizeof(int));
+    printf("  1000 x %zu -> %s\n", sizeof(int), ok ? "할당됨" : "거부됨");
+    free(ok);
+    void *bad = alloc_array(SIZE_MAX / 2, sizeof(int));
+    printf("  SIZE_MAX/2 x %zu -> %s\n", sizeof(int), bad ? "할당됨" : "거부됨");
+    free(bad);
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>기대한 값 : 800000
-보호 없음 : 266808  &lt;- 잃어버렸다
-원자적    : 800000
+</code></pre></div><div><p>실행 결과</p><pre><code>INT_MAX = 2147483647
+ckd_add(INT_MAX, 1)  넘침? 예   r = -2147483648 (감아 돈 값)
+ckd_add(1, 2)        넘침? 아니오   r = 3
+signed char &lt;- 300   넘침? 예   c = 44
+unsigned  &lt;- 3 - 5   넘침? 예   u = 4294967294
 
-atomic_long 은 잠금 없이 되는가? 예
-</code></pre></div></div><p>같은 루프를 네 갈래가 20만 번씩 돌았다. 기대한 값은 80만인데, 보호 없는 <code>long</code>은 그 근처에도 못 갔다. 사라진 몫은 실행할 때마다 다르다 — 이 비결정성이야말로 이 부류 버그의 성격이다. <strong>재현되지 않는 손실</strong>.</p><p>원자적(atomic) 변수 쪽은 언제나 정확히 80만이다. <code>atomic_fetch_add</code>가 “읽고-더하고-쓰기”를 <strong>쪼개질 수 없는 한 덩어리</strong>로 수행하기 때문이다. 원자(原子)라는 이름이 그 뜻이다 — 더 이상 쪼개지지 않는 것.</p><div class="dev misconception"><p class="dev-label">⚠ “경쟁 상태는 값이 가끔 어긋나는, 확률적인 성능 문제다”</p><p>두 겹으로 틀렸다. 첫째, 값이 어긋나는 것이 아니라 <strong>계약이 깨진다</strong>. C11 이후의 표준은 이렇게 정한다 — 두 갈래가 같은 기억을 동시에 만지고 그중 하나라도 쓰기이며 원자적이지도 순서 지어지지도 않았다면, 그것은 <strong>데이터 경쟁</strong>이고 프로그램 전체가 정의되지 않은 동작이다(47장). “값이 하나 틀리는” 정도로 끝난다는 보장이 없다는 뜻이다.</p><p>둘째, 컴파일러가 이 전제 위에서 최적화한다. 경쟁이 없다고 가정하고 변수를 레지스터에 올려 두면, 상대가 아무리 값을 바꿔도 이쪽 루프는 <strong>영원히 옛 값만 본다</strong>. 실제로 “디버그 빌드에서는 되는데 릴리스에서 멈추는” 무한 루프의 흔한 정체가 이것이다(17장의 릴리스 전용 버그가 여기서 재현된다).</p></div><h3>65.2 <code>volatile</code>은 왜 답이 아닌가</h3><p>C를 오래 쓴 코드에서 <code>volatile int flag;</code>로 갈래 사이 신호를 주고받는 관행을 자주 본다. 지금은 틀린 관행이다. <code>volatile</code>이 약속하는 것은 하나 뿐이다 — <strong>컴파일러가 이 접근을 없애거나 합치지 않는다</strong>. 47장에서 볼 대로 그 목적은 하드웨어 레지스터(값이 바깥에서 바뀌는 자리)였다.</p><p><code>volatile</code>이 약속하지 않는 것이 둘이다. <strong>원자성</strong> — <code>volatile long x;</code>의 <code>x++</code>도 여전히 세 걸음이라 쪼개진다. 그리고 <strong>순서와 가시성</strong> — CPU가 쓰기 순서를 바꾸거나 다른 코어에 늦게 보이는 것을 막지 못한다.</p><table><tr><th></th><th><strong>쪼개지지 않음</strong></th><th><strong>코어 사이 가시성</strong></th><th><strong>재배열 차단</strong></th></tr><tr><td><code>volatile</code></td><td>아니오</td><td>아니오</td><td>아니오(다른 접근 대비)</td></tr><tr><td><code>_Atomic</code></td><td>예</td><td>예</td><td>예(선택한 순서만큼)</td></tr><tr><td>뮤텍스</td><td>예(구간 전체)</td><td>예</td><td>예</td></tr></table><p>정리하면 이렇다. <strong>하드웨어 레지스터에는 <code>volatile</code>, 갈래 사이 공유에는 원자적 타입이나 뮤텍스.</strong> 자바나 C#의 <code>volatile</code>은 이름만 같고 의미가 달라서(그쪽은 실제로 가시성을 보장한다), 그 언어의 습관을 C로 들여오는 것이 흔한 사고의 통로다.</p><h3>65.3 원자적 타입과 연산</h3><p>쓰는 법은 단순하다. 타입 앞에 <code>_Atomic</code>을 붙이거나, 헤더가 주는 이름 (<code>atomic_int</code>, <code>atomic_long</code>, <code>atomic_bool</code>, <code>atomic_size_t</code> …)을 쓴다.</p><pre><code data-lang="c">#include &lt;stdatomic.h>
-atomic_int  counter = 0;      /* = _Atomic int */
-_Atomic long total;</code></pre><p>연산은 함수(또는 그 이름의 매크로)로 부른다. 평범한 연산자(<code>++</code>, <code>+=</code>)를 써도 원자적으로 동작하지만, <strong>원자적이라는 사실이 코드에 보이지 않아</strong> 읽는 사람이 놓치기 쉬우므로 명시적 함수를 권한다.</p><table><tr><th><strong>연산</strong></th><th><strong>하는 일</strong></th><th><strong>쓰는 자리</strong></th></tr><tr><td><code>atomic_load</code></td><td>읽기</td><td>현재 값 보기</td></tr><tr><td><code>atomic_store</code></td><td>쓰기</td><td>값 설정</td></tr><tr><td><code>atomic_fetch_add</code>·<code>_sub</code></td><td>더하고 <strong>이전 값</strong> 반환</td><td>카운터·통계</td></tr><tr><td><code>atomic_fetch_or</code>·<code>_and</code>·<code>_xor</code></td><td>비트 조작</td><td>플래그 집합</td></tr><tr><td><code>atomic_exchange</code></td><td>바꾸고 이전 값 반환</td><td>자리 교체</td></tr><tr><td><code>atomic_compare_exchange_strong</code></td><td>기대값과 같을 때만 바꾼다(CAS)</td><td>잠금 없는 자료구조</td></tr><tr><td><code>atomic_compare_exchange_weak</code></td><td>같지만 헛되이 실패할 수 있다</td><td>루프 안에서</td></tr><tr><td><code>atomic_flag_test_and_set</code></td><td>가장 원시적인 시험-설정</td><td>스핀락</td></tr></table><p><code>fetch_add</code>가 <strong>이전 값</strong>을 돌려준다는 점이 자주 헷갈리는 자리다. “몇 번째 인지”를 얻고 싶으면 반환값을 쓰고, “지금 얼마인지”를 알고 싶으면 반환값에 더한 값이거나 별도의 <code>atomic_load</code>다 — 그런데 후자는 그사이 또 바뀔 수 있다.</p><div class="dev antipattern"><p class="dev-label">✗ 원자적 연산을 여러 번 부르면 그 묶음도 원자적이라고 믿기</p><pre><code data-lang="c">if (atomic_load(&amp;count) &lt; LIMIT)      /* ① 읽고 */
-    atomic_fetch_add(&amp;count, 1);      /* ② 더한다 — 그사이 남이 끼어든다 */</code></pre><p>①과 ② 사이에 다른 갈래가 값을 올리면 한도를 넘긴다. <strong>원자성은 연산 하나의 성질이지 구간의 성질이 아니다.</strong> 구간을 지키려면 CAS 루프로 묶거나 뮤텍스를 쓴다.</p><pre><code data-lang="c">int cur = atomic_load(&amp;count);
-do {
-    if (cur >= LIMIT) break;                 /* 한도 검사와 갱신을 한 덩어리로 */
-} while (!atomic_compare_exchange_weak(&amp;count, &amp;cur, cur + 1));</code></pre><p>실패하면 <code>cur</code>에 <strong>현재 값이 담겨 돌아온다</strong>는 것이 이 관용구의 핵심이다. 그래서 루프 안에서 다시 읽을 필요가 없다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>compare_exchange</code>의 strong과 weak은 무엇이 다른가? 왜 “헛되이 실패” 하는 판이 따로 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답 일부 CPU(ARM 계열 등)는 CAS를 “예약하고-나중에-조건부로 쓰기”라는 두 명령 쌍으로 구현한다. 그사이 인터럽트나 캐시 사정으로 예약이 풀리면, 값이 기대와 같았는데도 실패로 돌아온다 — 이것이 <strong>가짜 실패</strong>(spurious failure)다. <code>weak</code>은 이 실패를 그대로 노출하는 대신 더 빠르고, <code>strong</code>은 내부에서 다시 시도해 “값이 달랐을 때만 실패”를 보장하는 대신 조금 느리다.</p><p>규칙은 간단하다. <strong>루프 안에서는 <code>weak</code>, 루프 없이 한 번만 시도할 때는 <code>strong</code>.</strong> 어차피 루프가 다시 돌 것이므로 가짜 실패가 해롭지 않고, 그 대가로 이득만 남는다.</p></div></div><h3>65.4 메모리 순서 — 건드리지 않는 것이 기본</h3><p><code>atomic_fetch_add(&amp;x, 1)</code>처럼 순서를 지정하지 않으면 가장 강한 순서인 <strong>순차 일관성</strong>(<code>memory_order_seq_cst</code>)이 쓰인다. 모든 갈래가 원자적 연산의 순서를 하나의 일관된 이야기로 본다는 뜻이고, 사람이 추론하기 가장 쉬운 모형이다. 대신 가장 비싸다.</p><p>C는 여섯 가지 순서를 제공한다. 표로 얼굴만 익힌다 — <strong>대부분의 프로그램은 기본값만 쓰면 된다.</strong></p><table><tr><th><strong>순서</strong></th><th><strong>보장</strong></th><th><strong>쓰는 자리</strong></th></tr><tr><td><code>seq_cst</code></td><td>전역적으로 하나의 순서</td><td>기본값. 의심스러우면 이것</td></tr><tr><td><code>acquire</code></td><td>이후의 접근이 위로 못 올라감</td><td>잠금 얻기·소비자 쪽 읽기</td></tr><tr><td><code>release</code></td><td>이전의 접근이 아래로 못 내려감</td><td>잠금 놓기·생산자 쪽 쓰기</td></tr><tr><td><code>acq_rel</code></td><td>읽고-쓰기 연산에서 둘 다</td><td>CAS 로 상태 전이</td></tr><tr><td><code>relaxed</code></td><td>원자성만. 순서 보장 없음</td><td>순수 카운터·통계</td></tr><tr><td><code>consume</code></td><td>사실상 폐기(구현이 acquire 로 격상)</td><td>쓰지 않는다</td></tr></table><p>가장 흔한 실전 쓰임은 두 가지다. 첫째, <strong>생산자-소비자의 깃발</strong>: 데이터를 채운 뒤 <code>release</code>로 깃발을 세우고, 소비자는 <code>acquire</code>로 깃발을 본 뒤 데이터를 읽는다. 이 짝이 “깃발이 보이면 데이터도 보인다”를 보장 한다. 둘째, <strong>순수 통계 카운터</strong>: 값의 최종 합만 맞으면 되고 다른 데이터와 순서를 맞출 필요가 없으므로 <code>relaxed</code>가 정확히 맞는 도구다.</p><div class="dev antipattern"><p class="dev-label">✗ 성능을 위해 일단 <code>relaxed</code>로 바꿔 보기</p><pre><code data-lang="c">atomic_store_explicit(&amp;ready, 1, memory_order_relaxed);   /* 깃발 */</code></pre><p><code>relaxed</code>는 <strong>이 변수의 원자성만</strong> 보장한다. 앞에서 채운 데이터가 상대에게 보인다는 보장이 없으므로, 소비자는 깃발이 선 것을 보고도 <strong>채워지기 전의 데이터</strong>를 읽을 수 있다. 이런 코드는 x86에서는 대개 멀쩡히 돌다가 ARM 기기에서 재현 불가능한 버그로 나타난다 — 하드웨어마다 허용하는 재배열이 다르기 때문이다.</p><p>규칙: <strong>깃발과 데이터가 짝을 이루면 <code>release</code>/<code>acquire</code>.</strong> 그 짝을 이해하기 전에는 기본값을 그대로 둔다. 여기서 아끼는 나노초보다 잃는 시간이 훨씬 크다.</p></div><h3>65.5 잠금 없음(lock-free)이라는 말</h3><p>예제 마지막 줄이 <code>atomic_is_lock_free</code>로 물은 것이 그것이다. 원자적 타입이 CPU 명령 하나로 처리되면 <strong>잠금 없음</strong>이고, 그렇지 않으면 라이브러리가 뒤에서 숨은 잠금을 쓴다. 오늘의 주류 기계에서 포인터 크기 이하의 정수는 대개 잠금 없이 된다. 반면 큰 구조체를 <code>_Atomic</code>으로 감싸면 — 문법은 통과하지만 — 숨은 잠금이 붙어 성능이 뜻밖에 나빠질 수 있다.</p><div class="dev misconception"><p class="dev-label">⚠ “원자적 연산은 뮤텍스보다 항상 빠르다”</p><p>경합이 낮을 때는 대개 맞지만, 경합이 심하면 뒤집힌다. 여러 코어가 같은 캐시 라인을 두고 다투면 그 라인이 코어 사이를 계속 오간다(11장의 거짓 공유가 여기서 재현된다). CAS 루프는 실패할 때마다 다시 도는데, 경합이 심하면 이 재시도가 통째로 낭비다 — 뮤텍스는 실패한 갈래를 재우지만 스핀은 코어를 태운다.</p><p>그리고 잠금 없는 자료구조를 <strong>직접 짜는 것</strong>은 난도가 다른 일이다. ABA 문제(값이 A에서 B로 갔다 A로 돌아와 CAS가 속는 것), 메모리 회수 시점, 진행 보장 — 논문 한 편짜리 주제들이다. 실무의 정답은 대개 이렇다: <strong>카운터와 깃발에는 원자적 타입, 자료구조에는 검증된 라이브러리나 뮤텍스.</strong></p></div><h3>65.6 쓸 자리와 쓰지 않을 자리</h3><table><tr><th><strong>상황</strong></th><th><strong>권하는 도구</strong></th><th><strong>이유</strong></th></tr><tr><td>통계 카운터</td><td><code>atomic_fetch_add</code>(<code>relaxed</code>)</td><td>순서가 필요 없다</td></tr><tr><td>종료 요청 깃발</td><td><code>atomic_bool</code> + <code>release</code>/<code>acquire</code></td><td>데이터와 짝을 이룬다</td></tr><tr><td>한 번만 초기화</td><td><code>call_once</code>(<code>&lt;threads.h></code>) 또는 CAS</td><td>이중 검사 잠금은 손으로 짜지 않는다</td></tr><tr><td>여러 값의 불변식</td><td>뮤텍스</td><td>원자성은 변수 하나 단위다</td></tr><tr><td>큰 구조체 공유</td><td>뮤텍스</td><td><code>_Atomic</code> 구조체는 숨은 잠금</td></tr><tr><td>신호 처리기와의 공유</td><td><code>sig_atomic_t</code> 또는 잠금 없는 원자적 타입</td><td>63장의 제약</td></tr><tr><td>하드웨어 레지스터</td><td><code>volatile</code></td><td>갈래 사이 공유가 아니다</td></tr></table><div class="dev realcase"><p class="dev-label">◉ C11이 메모리 모델을 들여온 이유</p><p>C11 이전의 표준에는 <strong>갈래가 여럿이라는 개념 자체가 없었다.</strong> 스레드는 라이브러리(POSIX 스레드 등)의 일이었고, 언어는 “프로그램이 한 줄기로 흐른다”는 전제 위에서 최적화를 정의했다. 그 틈에서 오랫동안 아무도 정확히 답할 수 없는 질문들이 쌓였다 — 컴파일러가 이 쓰기를 다른 갈래가 본다고 가정해야 하는가, 이 재배열은 합법인가, 뮤텍스 없는 이 코드는 틀린 것인가.</p><p>2004년경 자바가 먼저 메모리 모델을 정비했고, C++11과 C11이 그 흐름을 이어 <strong>언어 차원의 메모리 모델</strong>을 도입했다. 이때 들어온 것이 데이터 경쟁의 정의, 원자적 타입, 그리고 여섯 가지 메모리 순서다. 오늘 우리가 “데이터 경쟁은 정의되지 않은 동작”이라고 한 줄로 말할 수 있는 것은 이 정비 덕분이다 — 그 전에는 그 문장을 적을 언어조차 없었다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>데이터 경쟁</td><td>느림이 아니라 <strong>계약 밖</strong>. 최적화가 코드를 바꾼다</td></tr><tr><td><code>volatile</code></td><td>갈래 사이 공유의 도구가 아니다. 하드웨어용</td></tr><tr><td>기본 순서</td><td><code>seq_cst</code>. 대부분 그대로 두는 것이 정답</td></tr><tr><td><code>fetch_add</code></td><td><strong>이전 값</strong>을 돌려준다</td></tr><tr><td>연산 두 번</td><td>묶어도 원자적이 아니다 — CAS 루프나 뮤텍스</td></tr><tr><td><code>weak</code>/<code>strong</code></td><td>루프 안이면 <code>weak</code></td></tr><tr><td>잠금 없음</td><td>작은 정수는 대개 예. 큰 구조체는 숨은 잠금</td></tr><tr><td>자료구조</td><td>직접 짜지 않는다</td></tr></table></div><p>쪼개지지 않는 연산을 보았다. 다음 장은 정반대 방향의 도구다 — 연산이 <strong>그릇을 넘쳤는지</strong>를 계약대로 물어보는, C23의 검사 산술이다.</p>
+할당 계산
+  1000 x 4 -> 할당됨
+  크기 계산이 넘쳤다 - 할당하지 않는다
+  SIZE_MAX/2 x 4 -> 거부됨
+</code></pre></div></div><p>읽는 법은 이렇다. 세 매크로 모두 모양이 같다.</p><pre><code data-lang="c">bool 넘쳤는가 = ckd_add(&amp;결과, 왼쪽, 오른쪽);</code></pre><p>약속이 네 가지다.</p><ol><li><strong>무한 정밀도로 계산한 뒤 그릇에 넣는다.</strong> 판정은 “수학적 결과가 결과 타입에 들어가는가”이고, 중간 계산에서 넘치는 일이 없다. 그래서 인자의 타입이 서로 달라도, 심지어 인자보다 결과 타입이 좁아도 정확히 판정한다 — 예제의 <code>signed char &lt;- 300</code>이 그 확인이다.</li><li><strong>결과 타입은 첫 인자(포인터)가 정한다.</strong> 인자들의 승격 규칙(27장)이 결과를 좌우하지 않는다는 뜻이라, “어느 타입으로 계산되는가”를 두고 고민할 일이 없다.</li><li><strong>넘쳐도 결과는 저장된다.</strong> 그 값은 결과 타입으로 감아 돈 값이다. 예제의 <code>INT_MAX + 1</code>이 <code>-2147483648</code>로 남은 것이 그것이다 — 부호 있는 값이라도 <strong>이 자리에서는 정의된 동작</strong>이라는 점이 중요하다.</li><li><strong>부호 없는 감아 돌기도 “넘쳤다”고 알린다.</strong> 예제의 <code>3u - 5u</code>가 그 확인이다. 값 자체는 정의된 결과(<code>4294967294</code>)지만, 검사 산술은 <strong>수학적 값과 달라졌음</strong>을 알린다. 크기 계산에서 이것이 필요한 성질이다.</li></ol><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>ckd_*</code>는 함수인가 매크로인가? 인자를 여러 번 평가하지는 않는가?</p></div><div class="dev qa-a"><p class="dev-label">답 표준이 정한 것은 매크로이지만, 인자를 여러 번 평가하지 않도록 못박혀 있다(구현은 대개 컴파일러 내장 기능으로 확장한다). 그래서 <code>ckd_add(&amp;r, i++, j)</code> 같은 코드도 안전하다.</p><p>다만 <strong>다른</strong> 함정이 있다. 판정과 결과를 한 표현식 안에 섞으면 안 된다.</p><pre><code data-lang="c">printf("%s %d", ckd_add(&amp;r, a, b) ? "넘침" : "정상", r);   /* 위험 */</code></pre><p><code>r</code>을 읽는 시점과 <code>ckd_add</code>가 <code>r</code>에 쓰는 시점 사이에 순서가 정해져 있지 않아, 옛 값을 찍을 수 있다(20장의 순서 이야기다). 실제로 이 장의 예제를 처음 쓸 때 이 실수로 엉뚱한 값이 찍혔다. <strong>판정을 변수에 받고, 그다음 줄에서 결과를 쓴다</strong> — 이 한 줄 규율이면 끝난다.</p></div></div><h3>65.3 어디에 쓰는가 — 크기 계산이 첫 번째다</h3><p>예제 뒷부분의 <code>alloc_array</code>가 전형이다. 할당 크기 계산은 검사 산술이 가장 절실한 자리다. <code>n * sz</code>가 넘치면 <strong>작은 그릇을 얻고 큰 줄 알고 쓰는</strong> 상태가 되어, 곧바로 버퍼 넘침 사고로 이어진다. 유명한 취약점 여럿이 정확히 이 경로였다.</p><table><tr><th><strong>자리</strong></th><th><strong>예전 관용구</strong></th><th><strong>지금</strong></th></tr><tr><td>배열 할당</td><td><code>n &amp;&amp; SIZE_MAX/n &lt; sz</code> 검사</td><td><code>ckd_mul(&amp;bytes, n, sz)</code></td></tr><tr><td>버퍼 확장</td><td><code>cap * 2</code> 그냥 계산</td><td><code>ckd_mul(&amp;cap2, cap, 2)</code></td></tr><tr><td>길이 합치기</td><td><code>len1 + len2 + 1</code></td><td><code>ckd_add</code> 두 번</td></tr><tr><td>인덱스 계산</td><td><code>base + off</code> 그냥</td><td><code>ckd_add</code>(부호 있는 값이면 필수)</td></tr><tr><td>입력에서 온 수</td><td><code>atoi</code> 뒤 그냥 사용</td><td><code>strtol</code>(58장) + 범위 검사</td></tr></table><p>마지막 줄이 중요하다. 검사 산술은 <strong>계산</strong>의 넘침을 잡을 뿐, 애초에 값이 너무 큰 것을 걸러 주지는 않는다. 입력 해석 단계의 검사(58장)와 계산 단계의 검사는 서로를 대신하지 못한다.</p><div class="dev misconception"><p class="dev-label">⚠ “<code>ckd_*</code>를 쓰면 정수 넘침 걱정이 끝난다”</p><p>세 가지가 남는다. 첫째, <strong>나눗셈</strong>은 이 헤더에 없다 — <code>INT_MIN / -1</code>은 여전히 스스로 막아야 하는 계약 밖이다. 둘째, <strong>변환</strong>은 검사하지 않는다. 넓은 타입에서 좁은 타입으로 대입하는 것은 산술이 아니라 변환이라(7장의 잘림), 여기서 값이 망가지는 것은 <code>ckd_*</code>의 소관이 아니다. 셋째, <strong>부동소수점</strong>은 대상이 아니다(60장).</p><p>요약하면 검사 산술은 “덧셈·뺄셈·곱셈이 그릇을 넘겼는가”라는 좁고 분명한 질문에 답하는 도구다. 좁아서 좋은 도구이기도 하다.</p></div><h3>65.4 이 도구가 없는 곳에서</h3><p>C23 헤더를 아직 못 쓰는 환경이라면 두 단계로 대비한다.</p><pre><code data-lang="c">#if defined(__has_include)
+#  if __has_include(&lt;stdckdint.h>)
+#    include &lt;stdckdint.h>
+#    define HAVE_CKDINT 1
+#  endif
+#endif
+
+#ifndef HAVE_CKDINT                      /* GCC·Clang 확장으로 메운다 */
+#  define ckd_add(r, a, b) __builtin_add_overflow((a), (b), (r))
+#  define ckd_sub(r, a, b) __builtin_sub_overflow((a), (b), (r))
+#  define ckd_mul(r, a, b) __builtin_mul_overflow((a), (b), (r))
+#endif</code></pre><p>인자 순서가 다르다는 점만 주의하면 된다 — 표준은 결과 포인터가 앞, 컴파일러 내장은 뒤다. 이런 껍데기를 한 자리에 모아 두는 것이 49장에서 말한 이식성 층의 실제 모습이고, 제12부의 라이브러리도 같은 일을 한다.</p><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — 검사를 도구에 맡기는 길</p><p>코드를 고치지 않고 넘침을 잡는 방법도 있다. GCC와 Clang의 <code>-fsanitize=signed-integer-overflow</code>(UBSan)는 실행 중에 넘침을 잡아 보고하고, <code>-ftrapv</code>는 넘침에서 프로그램을 세운다. 둘 다 <strong>시험용</strong>이다 — 넘침이 실제로 일어난 실행에서만 드러나므로, 검사 산술처럼 “일어날 수 있는 자리를 코드로 막는” 것과는 성격이 다르다. 17장의 디버거 이야기와 같은 결론이다: 도구는 관찰을 돕지만 계약을 대신하지 않는다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>사후 검사</td><td>부호 있는 값에서는 검사 자체가 계약 밖 — 지워질 수 있다</td></tr><tr><td>모양</td><td><code>bool 넘침 = ckd_add(&amp;결과, a, b)</code></td></tr><tr><td>판정 기준</td><td>수학적 결과가 <strong>결과 타입</strong>에 들어가는가</td></tr><tr><td>결과 타입</td><td>첫 인자가 정한다. 승격 규칙에 휘둘리지 않는다</td></tr><tr><td>넘쳐도</td><td>감아 돈 값이 저장된다(정의된 동작)</td></tr><tr><td>부호 없는 값</td><td>감아 돌기도 “넘침”으로 알린다</td></tr><tr><td>한 표현식</td><td>판정과 결과를 섞지 않는다</td></tr><tr><td>적용 1순위</td><td>할당 크기 계산</td></tr><tr><td>없는 곳</td><td><code>__builtin_*_overflow</code> 로 껍데기를 만든다</td></tr></table></div><p>넘침을 계약대로 묻는 법을 익혔다. 다음 장은 이 부의 마지막이자, C23이 언어에 손댄 가장 눈에 띄는 변화다 — 매크로였던 것들이 키워드가 된 이야기다.</p>
 <div class="nav"><a href="ch64.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch66.html">다음 →</a></div>
 </div></main></body></html>

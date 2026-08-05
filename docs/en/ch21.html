@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>21 Using functions — how to call — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>21 Using functions — how to call</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>How to <strong>make</strong> a function is still some way off (chapter 24). This chapter is how to <strong>call</strong> one — learn the three words call, argument and return value, and hello world’s heart, <code>printf("Hello, world!\n");</code>, reads as a complete sentence. Employing workers other people made — half of programming is really this.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>At the end of chapter 20 we said “calling a function is itself an expression, and therefore becomes a value.” Then the value 14, calculated from the expression <code>2 + 3 * 4</code> inside <code>printf("%d\n", 2 + 3 * 4)</code> — where exactly does it go?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Into the function’s mouth. When a function is called, the values of the expressions written inside the parentheses are passed to it as <strong>materials</strong>, and the function does its work with them and puts out a <strong>result value</strong>. The materials are called arguments, the result the return value — those two words are the whole of this chapter.</p></div></div><h3>21.1 The call — say the name and a worker runs</h3><p>A function is <strong>a worker with a name</strong>. Somewhere a way of working (a body) has been made, and we need only say the name. The syntax of calling is already familiar to the eye:</p><pre><code data-lang="c">name(material1, material2, ...)</code></pre><p>This is a <strong>call</strong>. The order in which a call executes is: ① the expressions inside the parentheses are evaluated into values first, ② those values are passed to the function, ③ the function’s body executes, and ④ the <strong>return value</strong> the function puts out becomes the value at the call site. That last item collects chapter 20′s foreshadowing: <strong>a call is an expression</strong> — read the place where a call is written as turning into a single return value once execution finishes.</p><p>Since a call is an expression, a call can be put in as the material of another call. Here is a demonstration — <code>abs</code> is a worker from the standard library that takes one integer and returns its absolute value (it lives in the <code>&lt;stdlib.h></code> toolbox, which is why one more <code>#include</code> has appeared).</p><div><div><p><code>examples/ch21/call.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;stdlib.h>
+
+int main(void)
+{
+    printf("%d\n", abs(2 - 10));  /* 호출의 결과가 다시 호출의 재료가 된다 */
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>8
+</code></pre></div></div><p>The order is exactly as it reads — the inner expression <code>2 - 10</code> first becomes <math><mo>−</mo><mn>8</mn></math>, that enters <code>abs</code> as material and becomes the return value <math><mn>8</mn></math>, and that <math><mn>8</mn></math> becomes <code>printf</code>’s material and is printed. <strong>From the inside out, values are relayed</strong> — this is the basic reading of C code in which expressions and calls are stacked layer upon layer.</p><h3>21.2 The return value — used, or discarded</h3><p>Every call becomes a value, we said. Then in hello world’s <code>printf("Hello, world!\n");</code>, where did the return value go?</p><p><strong>It was discarded</strong> — and that is legal. Put a semicolon after an expression and you get a statement (an expression statement) that “evaluates the expression and throws the value away.” <code>printf</code> has a return value too (it returns the number of characters printed). But usually the printing <strong>side effect</strong> is the point and the character count is of no interest, so the value is discarded. “A statement that calls a function” was in fact “a call expression + throwing the value away.”</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>If the value may be discarded, why return it in the first place?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because someone else uses it. For the same worker, the caller’s circumstances may require the result or only the side effect — the function puts out a result regardless, and whether to use or discard it is the caller’s decision. That is C’s division of labour. But this generosity has a shadow: if the return value is what reports “did it succeed?”, discarding it means missing the failure. C’s way of reporting errors as values, and the story of “return values you must not discard”, is the subject of chapter 45.</p></div></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Does <code>abs</code> always return a positive number? Being an absolute value, it seems obvious.</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Almost always — and yet there is a trap in exactly one place. Chapter 7 taught the one asymmetry of two’s complement: the most negative number (−128, or about −2.1 billion in 32 bits) has <strong>no</strong> positive partner. So what happens when you ask for that number’s absolute value — there is no container to hold it, so it is outside the contract (undefined behaviour). The trap sits exactly one step outside “surely this just works” — a case where chapter 7′s asymmetry left its trace even in a function’s manual. This kind of boundary hunting becomes chapter 46′s speciality.</p></div></div><h3>21.3 The standard library — workers made in advance</h3><p>Neither <code>printf</code> nor <code>abs</code> was made by us. They are workers of the <strong>standard library</strong> that comes with a C installation — the very bundle joined to our program at chapter 16′s linking stage. Each toolbox (<code>&lt;stdio.h></code>, <code>&lt;stdlib.h></code> and so on) contains a roster (declarations) of the workers you may use, and <code>#include</code> fetches the roster so that box’s workers can be called.</p><p>Which boxes the standard library has and what is in them is surveyed with a map in chapter 48. What to take away now is one instinct — <strong>half of programming is calling functions other people made.</strong> Recognising a well-made worker and employing it correctly decides half of your code, which is why “which worker shall I use?” becomes a large subject again in the later part of this book (chapter 38).</p><p>Only two slots of hello world remain — exactly how the format inside <code>printf</code>’s quotation marks works (next chapter), and the identity of <code>int main(void)</code> and <code>return 0</code> (Part V). The next chapter faces output head on and brings us close to Part IV’s goal.</p>
+<div class="nav"><a href="ch20.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch22.html">Next →</a></div>
+</div></main></body></html>

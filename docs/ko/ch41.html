@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>41 동적 메모리 — Proven C Book</title><style>
+<title>41 구조체 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,116 +68,36 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>41 동적 메모리</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>제7부의 마지막 자리 — 실행 중에 크기를 정하고, 원하는 때까지 살려 <span id="idx-entry-71"></span>두는 기억이다. <code>malloc</code>과 <code>free</code>, 소유라는 개념, 그리고 이 세계의 세 가지 대표 사고(누수·이중 해제·해제 후 사용)까지. 기억의 지도가 여기서 완성된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>40장에서 자동 수명(함수와 함께 죽는다)과 정적 수명(프로그램 내내 산다)을 배웠다. 그러면 “입력에 따라 크기가 정해지고, 필요한 동안만 살아야 하는” 기억은 — 둘 중 어디에 두는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>어느 쪽도 맞지 않는다. 크기가 실행 중에 정해지고 수명이 프로그램의 논리에 따라 갈리는 기억이 필요하다 — 그래서 세 번째 자리가 있다: <span id="idx-entry-72"></span><strong>동적 저장 기간</strong>, 흔히 <strong>힙</strong>(heap)이라 부르는 창고다. 이 자리의 규칙은 앞의 둘과 결정적으로 다르다 — <strong>태어남과 죽음을 프로그래머가 직접 지시한다.</strong></p></div></div><h3>41.1 빌리고, 돌려준다</h3><p>문법은 함수 두 개다. <code>malloc(바이트 수)</code>는 창고에서 그만큼의 연속된 칸을 빌려 그 시작 주소를 돌려주고, <code>free(주소)</code>는 빌린 것을 돌려준다.</p><div><div><p><code>examples/ch41/dyn.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdlib.h>
+<h2>41 구조체</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>제5부에서 “타입을 만드는 선언은 메모리 모델을 갖춘 뒤”라며 미뤄 둔 <span id="idx-entry-72"></span>약속을 지킨다. 여러 값을 하나로 묶는 타입 — 구조체다. 선언과 초기화, 두 가지 접근 표기(<code>.</code>와 <code>-></code>), 그리고 구조체가 값으로 오가는 방식까지.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>23장에서 “타입은 값의 집합 + 연산의 약속”이라 했고, 지금까지 쓴 타입은 전부 미리 있는 것들(int, double, char, 포인터)이었다. 그러면 프로그래머가 <strong>새 타입을 만든다</strong>는 것은 무슨 뜻인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>기억의 모양을 새로 정하고 이름을 붙이는 일이다. “정수 둘이 나란히 있는 덩어리를 점(point)이라 부르겠다”고 선언하면, 그 순간부터 point는 변수를 만들고 함수에 넘기고 배열로 늘어놓을 수 있는 어엿한 타입이 된다. 36장의 배열이 <strong>같은 타입의 반복</strong>이었다면, 구조체는 <strong>다른 타입의 묶음</strong>이다 — 그리고 그 묶음에 이름이 붙는 순간, 프로그램의 어휘가 늘어난다.</p></div></div><h3>41.1 선언, 초기화, 접근</h3><div><div><p><code>examples/ch41/point.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+struct point {
+    int x;
+    int y;
+};
+
+struct point moved(struct point p, int dx, int dy)
+{
+    return (struct point){ .x = p.x + dx, .y = p.y + dy };  /* 복합 리터럴 */
+}
 
 int main(void)
 {
-    int count = 5;
-    int *scores = malloc(count * sizeof *scores);   /* 창고에서 빌린다 */
+    struct point a = { .x = 3, .y = 4 };     /* 지정 초기화 */
+    struct point b = moved(a, 10, -1);
 
-    if (scores == nullptr) {                        /* 빌리기는 실패할 수 있다 */
-        printf("allocation failed\n");
-        return 1;
-    }
+    printf("a = (%d, %d)\n", a.x, a.y);       /* 값으로 접근: . */
+    printf("b = (%d, %d)\n", b.x, b.y);
 
-    int sum = 0;
-    for (int i = 0; i &lt; count; i += 1) {
-        scores[i] = (i + 1) * 10;
-        sum += scores[i];
-    }
-    printf("total: %d\n", sum);
+    struct point *p = &amp;b;
+    printf("p->x = %d\n", p->x);              /* 포인터로 접근: -> */
 
-    free(scores);                                   /* 빌린 것은 돌려준다 */
+    printf("sizeof(struct point) = %zu\n", sizeof(struct point));
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>total: 150
-</code></pre></div></div><p>세 가지 관행이 시연에 박혀 있다.</p><p><strong>크기 계산은 <code>sizeof *포인터</code>로.</strong> <code>count * sizeof *scores</code>는 “원소 하나의 크기 × 개수”인데, 타입 이름 대신 <strong>대상</strong>으로 크기를 물었다 — 나중에 타입이 바뀌어도 이 줄은 고칠 필요가 없다.</p><p><strong>빌리기는 실패할 수 있다.</strong> <code>malloc</code>은 창고가 부족하면 널 포인터를 돌려준다 — 그래서 <strong>쓰기 전에 확인한다</strong>(35장의 수칙이 여기서 실전이 된다). 확인 없이 쓰면 널 역참조로 붕괴다.</p><p><strong>빌린 것은 돌려준다.</strong> <code>free</code>를 잊으면 그 칸은 프로그램이 끝날 때까지 묶여 있다 — <strong>메모리 누수</strong>(leak)다. 짧은 프로그램에서는 티가 안 나지만, 오래 도는 서버에서는 조금씩 새어 나가 결국 기계를 잡아먹는다.</p><h3>41.2 돌려받은 주소의 정렬 — 무엇을 담을지 모르므로</h3><div><div><p><code>examples/ch41/alloc_cost.c</code></p><pre><code data-lang="c">/* malloc 이 돌려주는 주소의 정렬, 그리고 빌리고 돌려주는 값 */
-#include &lt;stdint.h>
-#include &lt;stddef.h>
-#include &lt;stdio.h>
-#include &lt;stdlib.h>
-#include &lt;time.h>
-
-#define N 300000
-
-static double seconds_since(struct timespec t0)
-{
-    struct timespec t1;
-    timespec_get(&amp;t1, TIME_UTC);
-    return (double)(t1.tv_sec - t0.tv_sec) + (double)(t1.tv_nsec - t0.tv_nsec) / 1e9;
-}
-
-static void *volatile sink;      /* 최적화가 할당을 지우지 못하게 붙잡는다 */
-
-int main(void)
-{
-    /* ── ① 정렬: 무엇을 담을지 모르므로 가장 엄격한 정렬로 준다 ── */
-    printf("max_align_t 의 정렬  = %zu 바이트\n", alignof(max_align_t));
-
-    size_t misaligned = 0;
-    void *p[8];
-    for (int i = 0; i &lt; 8; i++) {
-        p[i] = malloc(1);                    /* 1바이트만 요청해도 */
-        if ((uintptr_t)p[i] % alignof(max_align_t) != 0) misaligned++;
-    }
-    printf("1바이트 요청 8회 중 기본 정렬을 어긴 것: %zu 개\n", misaligned);
-    printf("이웃한 두 블록의 주소 간격: %td 바이트 (1을 요청했는데도)\n",
-           (char *)p[1] - (char *)p[0]);
-    for (int i = 0; i &lt; 8; i++) free(p[i]);
-
-    /* ── ② 값: 같은 일을 세 방식으로 ── */
-    struct timespec t0;
-    unsigned long long acc = 0;
-
-    timespec_get(&amp;t0, TIME_UTC);
-    for (int i = 0; i &lt; N; i++) {           /* 매번 빌리고 돌려준다 */
-        char *b = malloc(64);
-        if (!b) return 1;
-        b[0] = (char)i;
-        acc += (unsigned char)b[0];
-        sink = b;
-        free(b);
-    }
-    double t_alloc = seconds_since(t0);
-
-    char *reused = malloc(64);
-    if (!reused) return 1;
-    timespec_get(&amp;t0, TIME_UTC);
-    for (int i = 0; i &lt; N; i++) {           /* 한 번 빌려 계속 쓴다 */
-        reused[0] = (char)i;
-        acc += (unsigned char)reused[0];
-        sink = reused;
-    }
-    double t_reuse = seconds_since(t0);
-    free(reused);
-
-    timespec_get(&amp;t0, TIME_UTC);
-    for (int i = 0; i &lt; N; i++) {           /* 아예 스택에 둔다 */
-        char b[64];
-        b[0] = (char)i;
-        acc += (unsigned char)b[0];
-        sink = b;
-    }
-    double t_stack = seconds_since(t0);
-
-    printf("\n%d 회 반복\n", N);
-    printf("  매번 malloc + free : %7.4f 초  (회당 %5.1f ns)\n", t_alloc, t_alloc / N * 1e9);
-    printf("  한 번 빌려 재사용   : %7.4f 초  (회당 %5.1f ns)\n", t_reuse, t_reuse / N * 1e9);
-    printf("  스택 배열           : %7.4f 초  (회당 %5.1f ns)\n", t_stack, t_stack / N * 1e9);
-    printf("\n(합계 %llu — 계산이 지워지지 않게 쓰는 값)\n", acc);
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>max_align_t 의 정렬  = 16 바이트
-1바이트 요청 8회 중 기본 정렬을 어긴 것: 0 개
-이웃한 두 블록의 주소 간격: 32 바이트 (1을 요청했는데도)
-
-300000 회 반복
-  매번 malloc + free :  0.0038 초  (회당  12.7 ns)
-  한 번 빌려 재사용   :  0.0007 초  (회당   2.2 ns)
-  스택 배열           :  0.0007 초  (회당   2.3 ns)
-
-(합계 114739248 — 계산이 지워지지 않게 쓰는 값)
-</code></pre></div></div><p>예제의 첫 부분이 답하는 질문은 이것이다. <code>malloc(1)</code>이라고 겨우 1바이트를 빌렸는데, 그 주소는 아무 데나 놓여도 되는가?</p><p>안 된다. <code>malloc</code>은 <strong>무엇을 담을지 모른 채</strong> 자리를 내주기 때문이다. 돌려준 자리에 <code>double</code>을 놓을 수도, 포인터를 놓을 수도, 큰 구조체를 놓을 수도 있다. 그래서 표준은 이렇게 약속한다 — <strong><code>malloc</code> 계열이 돌려주는 주소는 어떤 기본 타입에도 맞는 정렬을 만족한다.</strong> 그 “가장 엄격한 기본 정렬”에 붙은 이름이 <code>max_align_t</code>이고, 이 기계에서는 16바이트다(6장의 정렬 규칙이 여기서 실물이 된다).</p><p>두 가지가 따라 나온다.</p><p><strong>첫째, 작게 빌려도 자리는 그만큼 작지 않다.</strong> 예제에서 1바이트씩 여덟 번 빌렸는데 이웃 블록의 주소 간격이 32바이트였다. 정렬을 맞추느라 남는 자리와, 할당자가 블록마다 붙이는 관리 정보(크기·상태) 때문이다. <strong>작은 조각을 수없이 많이 빌리는 프로그램은 요청한 것보다 훨씬 많은 기억을 쓴다</strong>는 뜻이고, 이것이 뒤에서 볼 아레나·풀 같은 방식이 태어난 이유다(73장).</p><p><strong>둘째, 더 엄격한 정렬이 필요하면 따로 요청해야 한다.</strong> SIMD 명령이나 하드웨어 DMA가 64바이트·4096바이트 정렬을 요구하는 경우가 있는데, 이때 쓰는 것이 C11의 <code>aligned_alloc(정렬, 크기)</code>이다. 규칙 두 가지를 지켜야 한다 — 정렬은 2의 거듭제곱이어야 하고, C11에서는 <strong>크기가 정렬의 배수</strong>여야 했다(C23에서 이 제약이 풀렸다). 돌려주는 것은 여전히 <code>free</code>로 반납한다.</p><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — 정렬 할당의 이름은 플랫폼마다 다르다</p><p>표준의 <code>aligned_alloc</code>은 비교적 최근(C11)에 들어왔고, 그 전에는 플랫폼마다 다른 함수를 썼다 — POSIX의 <code>posix_memalign</code>, 윈도우의 <code>_aligned_malloc</code> (그리고 짝이 되는 <code>_aligned_free</code>. 윈도우에서는 이것을 <code>free</code>로 반납하면 안 된다). 옛 코드에서 이 이름들을 만나면 “정렬을 지정한 할당이구나”로 읽으면 된다.</p></div><h3>41.3 값싸 보이는 두 줄의 값 — 할당은 왜 비싼가</h3><p>예제의 뒷부분은 같은 일을 세 방식으로 30만 번 반복해 시간을 잰다. 매번 빌리고 돌려주는 쪽이 재사용이나 스택보다 눈에 띄게 느리다 — 이 기계에서 회당 열 나노초 남짓이다. 값 자체는 기계와 할당자에 따라 다르지만, <strong>두 자릿수 배의 차이</strong>가 난다는 사실은 어디서나 같다.</p><p>왜 비싼가. <code>malloc</code>은 “칸을 준다”는 한 줄로 보이지만 실제로는 <strong>창고 관리 사무소</strong>를 한 번 다녀오는 일이다.</p><ol><li><strong>맞는 크기의 빈 조각을 찾는다.</strong> 할당자는 반납된 조각들을 크기별 목록으로 관리하고, 요청이 오면 그중 맞는 것을 고른다. 목록을 뒤지고, 필요하면 큰 조각을 잘라 쓰고, 남은 조각을 다시 목록에 넣는다 — 전부 자료구조 조작이다.</li><li><strong>관리 정보를 쓴다.</strong> 블록마다 크기와 상태를 적어 두어야 나중에 <code>free</code>가 “이게 몇 바이트였는지” 알 수 있다. 그래서 할당은 <strong>쓰기</strong>를 동반한다.</li><li><strong>모자라면 운영체제에 손을 벌린다.</strong> 창고가 비면 시스템 호출(<code>brk</code>나 <code>mmap</code>)로 주소 공간을 더 받아 온다. 이것은 커널로 들어갔다 나오는 일이라 훨씬 비싸다. 다행히 자주 일어나지는 않는다 — 할당자가 넉넉히 받아 두고 잘라 쓰기 때문이다.</li><li><strong>여러 갈래가 있으면 잠금이 걸린다.</strong> 창고 장부는 공유 자원이라 갈래마다 다투면 느려진다(65장의 경쟁 이야기다). 현대 할당자들이 갈래마다 작은 캐시를 따로 두는 이유가 이것이다.</li><li><strong>캐시가 식는다.</strong> 갓 받은 주소는 대개 캐시에 없어서 첫 접근이 느리다 (11장의 사다리). 반대로 재사용한 버퍼는 이미 캐시에 올라와 있다 — 예제에서 재사용 쪽이 빠른 이유의 절반은 여기에 있다.</li></ol><p>그래서 실무 규칙이 나온다. <strong>뜨거운 루프 안에서 할당하지 않는다.</strong> 미리 한 번 빌려 재사용하거나, 크기를 아는 것은 스택에 두거나, 여러 개를 한꺼번에 빌려 잘라 쓴다. 마지막 방식이 아레나이고, 69장과 제12부가 그 이야기다.</p><div class="dev misconception"><p class="dev-label">⚠ “<code>free</code>는 운영체제에 메모리를 돌려주는 것이다”</p><p>대개 아니다. <code>free</code>는 <strong>할당자의 장부에 “이 조각은 다시 쓸 수 있다”고 적는 것</strong>이지, 운영체제에 반납하는 것이 아니다. 그래서 큰 데이터를 해제한 뒤에도 작업 관리자에서 프로그램의 메모리 사용량이 그대로인 것이 정상이다 — 할당자가 다음 요청에 쓰려고 들고 있는 것이다(큰 블록은 반납되기도 한다).</p><p>이 사실이 두 가지를 설명한다. 첫째, “메모리를 해제했는데 왜 안 줄어드느냐” 는 흔한 오해. 둘째, 오래 도는 서버가 <strong>누수가 없는데도</strong> 메모리를 계속 붙들고 있는 현상 — 조각들이 흩어져 큰 덩어리를 만들지 못하는 <strong>단편화</strong> (fragmentation)다. 69장에서 정면으로 다룬다.</p></div><h3>41.4 소유 — 누가 돌려줄 책임을 지는가</h3><p><code>malloc</code>이 준 주소는 여러 변수에 복사될 수 있고, 함수 사이를 오갈 수도 있다. 그런데 <code>free</code>는 <strong>정확히 한 번</strong> 불려야 한다 — 여기서 C 프로그래밍 의 핵심 규율이 나온다: 어느 시점에든 그 기억을 해제할 책임을 지는 주체 하나를 정해 두는 것, <strong>소유</strong>(ownership)라는 관념이다. C에는 소유를 강제하는 문법이 없다 — 그래서 소유는 <strong>주석과 이름과 규약</strong>으로 표현 된다(“이 함수는 반환한 포인터의 소유권을 넘긴다”처럼). 현대 언어들이 소유를 타입 체계로 끌어올린 것(Rust의 소유권, C++의 스마트 포인터)은 이 규율을 기계가 강제하게 만든 결과다 — 1장에서 본 이웃 언어들의 문제의식이 바로 이 자리에서 나왔다.</p><div class="dev realcase"><p class="dev-label">◉ 세 가지 대표 사고 — 누수, 이중 해제, 해제 후 사용</p><p>동적 메모리의 사고는 세 얼굴로 온다. <strong>누수</strong>는 돌려주기를 잊는 것 — 느리게 죽는 병이다. <strong>이중 해제</strong>(double free)는 같은 주소를 두 번 <code>free</code>하는 것으로, 창고 관리 장부를 망가뜨려 그 뒤의 모든 할당이 오염된다. 가장 위험한 것은 <strong>해제 후 사용</strong>(use-after-free) — 돌려준 칸의 주소를 계속 쓰는 것이다. 40장의 댕글링 포인터가 힙에서 재현되는 것인데, 창고는 그 칸을 곧 다른 요청에 내주므로 <strong>공격자가 그 자리에 자기 데이터를 놓을</strong> 수 있다. 브라우저와 커널의 심각한 취약점 목록에서 use-after-free는 오늘도 최상위 단골이고, 그래서 현대 시스템 프로그래밍 전체가 “소유를 언어가 강제하게 하자”는 방향으로 움직여 왔다. C에서의 방어는 규율 + 도구다 — <code>free</code> 직후 포인터에 <code>nullptr</code>를 대입하는 관행, 그리고 17장의 ASan(이 세 사고를 모두 잡아내는 것이 ASan의 주특기다).</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>그러면 동적 메모리를 되도록 피하는 것이 상책인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>실제로 그것이 첫 번째 전략이고, 이 책이 여기까지 <code>malloc</code> 없이 온 이유이기도 하다 — 크기를 아는 데이터는 자동 변수(스택)로 두는 것이 가장 빠르고 가장 안전하다(해제할 것이 없으니 세 사고가 원천 봉쇄된다). 임베디드나 안전 필수 분야에서는 아예 동적 할당을 금지하는 규약도 흔하다. 그러나 실행 중에 크기가 정해지는 데이터(사용자가 준 목록, 파일 내용)는 결국 창고가 필요하고 — 그때는 소유를 명확히 하고, 도구로 검사하고, 잘 만들어진 부품(39장의 proven처럼 할당과 경계를 함께 관리하는 계열)을 쓰는 것이 실무의 답이다.</p></div></div><h3>41.5 제7부를 닫으며</h3><p>기억의 지도가 완성됐다 — 레지스터와 캐시라는 사다리(11장) 위에, C의 세 저장 기간(자동·정적·동적)이 놓이고, 그 위를 포인터가 다닌다. 34장에서 개념을 얻고, 35–36장에서 규칙을, 37–38장에서 연속된 기억과 문자열을, 39장에서 안전한 부품을, 40–41장에서 수명과 창고를 배웠다. C의 힘과 위험이 함께 사는 자리를 한 바퀴 돈 것이다.</p><p>동적 메모리의 문법과 규율, 그리고 값까지 보았다. 할당자가 창고를 실제로 어떻게 관리하는지, 요즘 널리 쓰이는 대안 할당자와 대안 표준 라이브러리는 무엇인지, 그리고 프로그램의 기억이 운영체제와 임베디드 칩에서 각각 어떤 지도로 놓이는지는 제11부의 끝에서 두 장을 들여 다룬다(65·69장).</p><p>다음 부는 짧지만 오래 미뤄 온 곳이다 — 제5부에서 “타입을 만드는 선언은 메모리 모델을 갖춘 뒤”라며 미뤄 두었던 구조체와 공용체. 이제 그 조건이 갖춰졌다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>a = (3, 4)
+b = (13, 3)
+p->x = 13
+sizeof(struct point) = 8
+</code></pre></div></div><p><strong>선언</strong>은 <code>struct point { int x; int y; };</code> — 중괄호 안의 각 항목을 <strong>멤버</strong>(member)라 부른다. 이 선언 자체는 기억을 잡지 않는다. “이런 모양의 타입이 있다”는 정의일 뿐이고, <code>struct point a;</code>처럼 써야 변수가 생긴다.</p><p><strong>초기화</strong>는 시연처럼 멤버 이름을 적는 <strong>지정 초기화</strong>(designated initializer, C99)를 권한다 — <code>{ .x = 3, .y = 4 }</code>. 순서에 기대는 <code>{3, 4}</code>보다 읽기 좋고, 멤버가 늘거나 순서가 바뀌어도 안전하다. 적지 않은 멤버는 0으로 채워진다.</p><p><strong>접근</strong>은 두 표기다 — 값에는 점(<code>a.x</code>), 포인터에는 화살표(<code>p->x</code>). 화살표는 사실 <code>(*p).x</code>의 줄임이다(33장의 역참조 + 점). 포인터로 구조체를 다루는 일이 압도적으로 흔해서 전용 표기를 둔 것이다.</p><p><strong>복합 리터럴</strong> — 시연의 <code>(struct point){ .x = ..., .y = ... }</code>는 “그 자리에서 이름 없는 구조체 값을 하나 만드는” 표기다(C99). 반환값이나 인자로 구조체를 즉석에서 넘길 때 요긴하다.</p><h3>41.2 구조체는 값이다</h3><p>C에서 구조체는 <strong>값처럼</strong> 다뤄진다 — 대입하면 통째로 복사되고, 함수에 넘기면 32장의 규칙 그대로 복사되어 건너가며, <code>return</code>으로 통째로 돌려 줄 수도 있다. 시연의 <code>moved(a, 10, -1)</code>이 그 확인이다: a는 그대로이고 새 값 b가 나왔다.</p><p>이 복사는 멤버를 그대로 옮겨 적는 <strong>얕은 복사</strong>(shallow copy)다. 멤버가 전부 수라면 문제가 없지만, 멤버 중에 포인터가 있으면 주소가 그대로 복제되어 원본과 사본이 같은 곳을 가리키게 된다 — 이 사실이 뒤에서 자기를 가리키는 자료를 다룰 때 결정적인 함정이 된다.</p><p>다만 실무에서는 큰 구조체를 값으로 주고받는 대신 <strong>포인터로 넘기는</strong> 관행이 흔하다 — 복사 비용을 아끼기 위해서다(11장의 기억 사다리를 떠올리면 큰 덩어리의 복사가 공짜가 아님이 보인다). 읽기만 할 때는 <code>const struct<br>point *p</code>처럼 const 포인터로 받는 것이 관행이다 — 23장의 <code>const</code>가 “이 함수는 원본을 건드리지 않는다”는 계약 표시로 일하는 것이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>struct point</code>라고 매번 <code>struct</code>를 붙이는 것이 번거롭다 — 줄일 수 없는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>전통적으로는 <code>typedef</code>로 별명을 만들어 왔다 — <code>typedef struct point<br><span style="white-space: pre-wrap">&#x20;&#x20;</span>point_t;</code>처럼. 다만 취향과 유파가 갈리는 지점이라(별명이 “이것이 구조체”라는 정보를 감춘다는 반론이 있다), 이 책은 지면에서 정체가 보이도록 <code>struct</code>를 붙여 쓴다. 어느 쪽이든 일관성이 중요하다.</p></div></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>구조체 안에 자기 자신을 멤버로 넣을 수 있는가 — 리스트 같은 것을 만들려면 필요할 것 같은데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>자기 자신을 <strong>값으로</strong> 담을 수는 없다(무한한 크기가 되므로). 그러나 <strong>자신을 가리키는 포인터</strong>는 담을 수 있고, 바로 그것이 연결 자료구조의 씨앗이다: <code>struct node { int value; struct node *next; };</code> 이 한 줄에 33장의 포인터와 40장의 동적 메모리가 만나면 연결 리스트·트리 같은 구조가 열린다 — 이 책의 범위를 넘는 자료구조의 세계이지만, 문을 여는 열쇠가 여기 있다는 것은 알아 둘 만하다.</p></div></div><p>값들을 묶는 법을 얻었다. 다음 장은 그것을 <strong>부리는</strong> 법이다 — 그 자리에서 만들어 넘기는 임시 구조체, 그것으로 얻는 순서 없는 이름 붙은 인자, 그리고 멤버 사이에 끼는 빈자리(패딩)를 다루는 법.</p>
 <div class="nav"><a href="ch40.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch42.html">다음 →</a></div>
 </div></main></body></html>

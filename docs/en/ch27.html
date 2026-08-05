@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>27 Integer operations — division, bits — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>27 Integer operations — division, bits</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We keep the promise deferred in chapter 20 — the truth about integer division <code>/</code> and remainder <code>%</code>, including the rule for negative numbers. And the bit operations learned as concepts in chapter 7 join as C operators. The first step into conversions is taken here too.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 20 only announced that “7 / 2 is not 3.5.” Answering for yourself with chapter 7′s knowledge — why <strong>can</strong> the result of dividing integer containers not be 3.5?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because there is nowhere to hold 3.5. The value set of an integer type has 3 and 4 and nothing in between — so division between integers must give an integer, and the fractional part must be <strong>discarded</strong> one way or the other. The question is “which way”, and that rule is this chapter’s first section.</p></div></div><h3>27.1 Division and remainder — the direction of discarding</h3><p>The demonstration first.</p><div><div><p><code>examples/ch27/divmod.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+int main(void)
+{
+    printf(" 7 / 2 = %d,  7 %% 2 = %d\n", 7 / 2, 7 % 2);
+    printf("-7 / 2 = %d, -7 %% 2 = %d\n", -7 / 2, -7 % 2);
+    printf("invariant: (7/2)*2 + 7%%2 = %d\n", (7 / 2) * 2 + 7 % 2);
+
+    printf("5 &amp; 3 = %d, 5 | 3 = %d, 5 ^ 3 = %d\n", 5 &amp; 3, 5 | 3, 5 ^ 3);
+    printf("1 &lt;&lt; 4 = %d\n", 1 &lt;&lt; 4);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code> 7 / 2 = 3,  7 % 2 = 1
+-7 / 2 = -3, -7 % 2 = -1
+invariant: (7/2)*2 + 7%2 = 7
+5 &amp; 3 = 1, 5 | 3 = 7, 5 ^ 3 = 6
+1 &lt;&lt; 4 = 16
+</code></pre></div></div><p>For positive numbers it is as intuition says — <code>7 / 2</code> is 3, remainder 1. Where a rule is needed is negatives. C <strong>truncates toward zero</strong> — <code>-7 / 2</code> is <math><mo>−</mo><mn>3.5</mn></math> discarded towards zero, giving <math><mo>−</mo><mn>3</mn></math>, and the remainder is correspondingly <math><mo>−</mo><mn>1</mn></math>. That is a different choice from “the quotient and remainder of mathematics” (where the remainder is always non-negative), so code using negative remainders causes accidents if it does not know the difference.</p><div class="dev mathbox"><p class="dev-label">∑ The division-remainder recovery invariant</p><p>Whatever the direction, there is one equation C always keeps:</p><math display="block"><mrow><mo>(</mo><mfrac><mi>𝑎</mi><mi>𝑏</mi></mfrac><mo>)</mo></mrow><mo lspace="0.2222222222222222em" rspace="0.2222222222222222em">×</mo><mi>𝑏</mi><mo>+</mo><mrow><mo>(</mo><mrow><mi>𝑎</mi><mi>%</mi><mi>𝑏</mi></mrow><mo>)</mo></mrow><mo>=</mo><mi>𝑎</mi></math><p>Quotient and remainder are defined <strong>as a pair</strong> so as to satisfy this equation — the demonstration’s last line is a check of it. That truncating toward zero makes the remainder’s sign follow the dividend (<math><mi>𝑎</mi></math>) is also a consequence of this equation. A line of history in addition — up to C89 the direction of discarding was allowed to differ by implementation, and C99 pinned it to “toward zero.” Chapter 7′s “where machines diverge the standard leaves a blank” is here another case of practice promoted to promise once the machines converged.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What happens if you divide by zero?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Outside the contract — undefined behaviour. It is one of the rare cases where what is undefined in mathematics is undefined in C too, but the result is not as well-behaved as in mathematics: on many machines the program collapses on the spot, and under some optimisations stranger things happen (chapter 46). Checking for zero before dividing is the programmer’s job — and having learned branching in chapter 30, we will be able to write that check in code.</p></div></div><h3>27.2 Bit operations — chapter 7′s world, in C’s syntax</h3><p>The bit handling learned as concepts in chapter 7 joins as operators — AND <code>&amp;</code>, OR <code>|</code>, XOR <code>^</code>, complement <code>~</code>, and the shifts <code>&lt;&lt;</code> and <code>>></code>. The latter part of the demonstration is a taste: <code>5 &amp; 3</code> is <code>101 &amp; 011 = 001</code>, so 1; <code>5 | 3</code> is <code>111</code>, so 7; and <code>1 &lt;&lt; 4</code> is <math><msup><mn>2</mn><mn>4</mn></msup><mo>=</mo><mn>16</mn></math>, exactly as chapter 7 promised.</p><p>The basic pattern in practice is exactly the <strong>shift plus mask</strong> foreshadowed in chapter 7 — push to the position you want (<code>&lt;&lt;</code>, <code>>></code>) and keep only the bits you need (<code>&amp;</code>). But take two rules along with it. First, <strong>do bit operations on unsigned types</strong> — shifts of signed numbers carry the traps seen in chapter 7 (at least the width, left-shifting a negative = outside the contract), so playing on <code>unsigned</code> or <code>uint32_t</code> is the safe practice. Second, <code>&amp;</code> (bitwise AND) and <code>&amp;&amp;</code> (logical AND, next chapter) are completely different operators — one character changes the entire value.</p><h3>27.3 Conversion — crossing between containers</h3><p>With a family of types (chapter 26) comes a new question — what happens when containers of different kinds are mixed in a calculation? C’s answer is <strong>implicit conversion</strong>: the value in a smaller container is automatically widened into a larger one before the calculation (chapter 7′s sign extension is exactly what happens then), and when an integer meets a floating-point number the integer is promoted to floating point. Mostly this does what you meant, but automatic also means <strong>invisible</strong> — comparisons mixing signed with unsigned in particular are a classic trap (a negative number turns into an enormous positive one), and a representative place where compiler warnings (<code>-Wall</code>) protect you.</p><p>When you want the conversion <strong>stated</strong>, use the cast notation — <code>(double)7 / 2</code> means “move 7 into a floating container and then divide”, giving 3.5. The full rules (integer promotion, the usual arithmetic conversions) are left as reference material in the appendix; the text’s rules are two: <strong>state the intent of a mixed calculation with a cast, and avoid comparisons that mix signs.</strong></p><p>We have the containers of integers (chapter 26) and their operations (chapter 27). From the next chapter it is <strong>flow</strong> — starting with the values that compare and decide, the booleans.</p>
+<div class="nav"><a href="ch26.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch28.html">Next →</a></div>
+</div></main></body></html>

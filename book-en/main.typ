@@ -52,17 +52,17 @@
 #let parts = (
   ("Part I — Ground", none, (1, 2, 3)),
   ("Part II — How computing works", "parts/part02.typ", (4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)),
-  ("Part III — The first program", none, (15, 16, 17, 18, 19)),
-  ("Part IV — A minimal toolbox", none, (20, 21, 22, 23)),
-  ("Part V — Declarations: how names are made", none, (24, 25, 26)),
-  ("Part VI — Values and flow", none, (27, 28, 29, 30, 31, 32, 33)),
-  ("Part VII — Memory", none, (34, 35, 36, 37, 38, 39, 40, 41)),
-  ("Part VIII — The shape of data", none, (42, 43, 44)),
-  ("Part IX — Deep corners", none, (45, 46, 47)),
-  ("Part X — Structure", none, (48, 49, 50, 51, 52, 53, 54)),
-  ("Part XI — Reading the standard library", "parts/part11s.typ", (55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69)),
-  ("Part XII — proven — fundamentals, verified", "parts/part12.typ", (70, 71, 72, 73, 74, 75, 76, 77, 78, 79)),
-  ("Part XIII — Closing", none, (80, 81)),
+  ("Part III — The first program", none, (15, 16, 17, 18)),
+  ("Part IV — A minimal toolbox", none, (19, 20, 21, 22)),
+  ("Part V — Declarations: how names are made", none, (23, 24, 25)),
+  ("Part VI — Values and flow", none, (26, 27, 28, 29, 30, 31, 32)),
+  ("Part VII — Memory", none, (33, 34, 35, 36, 37, 38, 39, 40)),
+  ("Part VIII — The shape of data", none, (41, 42, 43)),
+  ("Part IX — Deep corners", none, (44, 45, 46)),
+  ("Part X — Structure", none, (47, 48, 49, 50, 51, 52, 53)),
+  ("Part XI — Reading the standard library", "parts/part11s.typ", (54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68)),
+  ("Part XII — proven — fundamentals, verified", "parts/part12.typ", (69, 70, 71, 72, 73, 74, 75, 76, 77, 78)),
+  ("Part XIII — Closing", none, (79, 80, 81)),
 )
 
 // 목차: 장만 나열하면 길어지므로 *부 단위로 묶어* 낸다.
@@ -104,7 +104,7 @@
 The Korean edition is the original and is complete — 13 parts, 69 chapters,
 appendices A–E and an index, about 287 pages. This English edition is
 translated from it chapter by chapter, and *chapter numbers are kept identical
-to the original*, so a cross-reference to "chapter 55" means the same chapter
+to the original*, so a cross-reference to "chapter 54" means the same chapter
 in both editions. Chapters not yet translated are listed where they belong,
 and the parts they sit in are marked accordingly.
 
@@ -125,7 +125,7 @@ Until a chapter arrives here, the complete text is the Korean edition:
 // ── Body ────────────────────────────────────────────
 // Same skeleton as the Korean edition. Only translated chapters are included;
 // the heading counter is set per chapter so numbering matches the original.
-#let translated = (1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19)
+#let translated = (1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 80)
 
 
 #for (part-title, intro, chs) in parts {

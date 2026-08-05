@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>46 오류와 계약 — Proven C Book</title><style>
+<title>46 정의되지 않은 동작 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,38 +68,32 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>46 오류와 계약</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-78"></span><p>33장에서 심은 계약의 씨앗이 자란다 — 함수는 무엇을 요구하고 무엇을 약속하는가(전제조건·후조건), 실패를 어떻게 알리는가(C의 방식: 오류는 값이다), 그리고 그 값을 반드시 확인하게 만드는 장치들까지. 39장에서 본 proven의 설계 사상이 여기서 원리로 정리된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>33장 끝에서 <code>fact</code> 함수가 “암묵의 약속”(n은 0 이상, 13 이상이면 넘침) 위에 서 있다고 했다. 그런데 그 약속은 코드 어디에도 적혀 있지 않았다 — 그러면 그것은 존재하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>존재하지만, <strong>지켜지지 않는 상태로</strong> 존재한다 — 그것이 문제의 핵심이다. 모든 함수에는 암묵의 계약이 있다: 어떤 입력에 대해 제대로 동작하는가 (전제조건), 성공하면 무엇을 보장하는가(후조건). 그 계약이 문서와 코드 어디에도 없으면, 계약 위반은 조용히 지나가 나중에 엉뚱한 곳에서 터진다. 이 장은 계약을 <strong>드러내는</strong> 방법들의 이야기다.</p></div></div><h3>46.1 오류는 값이다 — C의 방식</h3><p>많은 현대 언어가 실패를 위한 별도 통로(예외)를 갖고 있지만, C에는 없다. C에서 실패는 <strong>반환값으로 알린다</strong> — 함수의 결과 자체가 “성공했는가”를 담고 나오는 것이다. 관행은 세 갈래다.</p><ul><li><strong>성공/실패 불리언</strong> + 결과는 포인터로 받기(34장의 <code>&amp;</code> 관용구).</li><li><strong>특별한 값</strong>으로 실패 표시 — <code>malloc</code>의 널(41장), <code>fgets</code>의 널, 음수 반환 등.</li><li><strong>오류 코드</strong>를 돌려주고 0을 성공으로 — 시스템 호출 계열의 전통.</li></ul><p>첫 갈래를 시연으로 본다. 28장에서 배운 “0 나누기는 계약 밖”이라는 사실을, 함수 계약으로 다스리는 모습이다.</p><div><div><p><code>examples/ch46/errval.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdlib.h>
+<h2>46 정의되지 않은 동작</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>이 책이 곳곳에서 “계약 밖”이라 부르며 미뤄 온 세계를 정면으로 다룬다. UB란 정확히 무엇이고 왜 존재하며, 왜 “조금 위험함”이 아니라 “무엇이든 가능함”인지 — 그리고 실무에서 어떻게 피하고 잡아내는지까지. 제2부의 계약 서사가 여기서 완결된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>13장에서 엄격한 앨리어싱 위반이 “컴파일러에게 사실이 아닌 것을 사실 이라고 알리는 행위”라 했다. 그러면 표준이 어떤 동작을 “정의되지 않음” 으로 두었다는 것은 — 구현에게 무엇을 허락한 것인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>아무것도 요구하지 않기로</strong> 한 것이다. 표준의 문장은 냉정하다 — 정의 되지 않은 동작에 대해 표준은 “어떤 요구도 부과하지 않는다”. 즉 그런 프로그램에는 옳은 실행 결과라는 것이 아예 없다. 흔한 오해가 “위험한 동작이지만 대개 예상대로 돌아간다”인데, 계약의 눈으로는 그 프로그램 전체가 <strong>의미를 잃는다</strong>. 이 차이가 이 장의 전부다.</p></div></div><h3>46.1 세 가지 회색지대 — UB, 미지정, 구현 정의</h3><span id="idx-entry-80"></span><span id="idx-entry-81"></span><span id="idx-entry-82"></span><p>혼동되는 세 낱말을 먼저 갈라 둔다. 이 책이 여기까지 만난 사례들로 정리하면 이렇다.</p><table><tr><th><strong>종류</strong></th><th><strong>표준의 태도</strong></th><th><strong>이 책에서 만난 예</strong></th></tr><tr><td>구현 정의 (implementation-defined)</td><td>구현이 정하고 <strong>문서화한다</strong></td><td><code>int</code>의 크기(26장), <code>char</code>의 부호</td></tr><tr><td>미지정(unspecified)</td><td>정해진 선택지 중 하나이나 문서화 의무 없음</td><td>한 수식 안 부분식의 평가 순서(32장)</td></tr><tr><td>정의되지 않음 (undefined behavior, UB)</td><td>아무 요구도 하지 않는다</td><td>부호 있는 오버플로(7장), 경계 침범(36장), 널 역참조(34장)</td></tr></table><p>앞의 둘은 “답이 여럿이지만 어쨌든 답은 있는” 세계다. UB만이 답 자체가 없는 세계다.</p><h3>46.2 왜 존재하는가</h3><p>계약 밖을 남겨 둔 이유는 두 가지다. 첫째, <strong>기계들이 서로 다르기 때문이다</strong> — 7장의 폭 이상 시프트가 대표다. x86과 옛 ARM이 다르게 대응하는데 표준이 한쪽을 택하면 다른 쪽 기계는 매번 보정 코드를 넣어야 한다. 어느 편도 들지 않는 대신 “그 코드를 쓰지 말라”고 한 것이다. 둘째, <strong>최적화의 전제를 얻기 위해서다</strong> — 7장에서 본 대로 “부호 있는 정수는 넘치지 않는다”는 전제가 있어야 컴파일러가 루프를 분석하고 재배열할 수 있다(13장). C가 반세기 동안 속도의 언어로 남은 대가가 이 조항들이다.</p><h3>46.3 “무엇이든 가능함”의 실제 얼굴</h3><p>UB의 결과는 붕괴만이 아니다. 13장에서 본 무늬가 더 무섭다 — <strong>컴파일러가 UB를 “일어날 리 없는 일”로 읽고 코드를 지워 버리는</strong> 것이다. 널 검사가 통째로 사라지거나(포인터를 이미 역참조한 뒤라면 “널일 리 없다”고 추론한다), 오버플로 검사가 사라지거나(부호 있는 넘침은 없다고 전제 하므로), 루프가 무한이 되거나 아예 없어진다. 그래서 UB의 대표적 증상은 “그 자리에서 죽는 것”이 아니라 <strong>엉뚱한 곳에서, 최적화 수준을 바꾸면 사라지는, 재현이 어려운 버그</strong>다.</p><div class="dev realcase"><p class="dev-label">◉ 사라진 널 검사 — 리눅스 커널 CVE-2009-1897</p><p>이 무늬가 커널에서 실제로 터진 사건이 있다. 코드는 대략 이랬다 — 포인터 <code>tun</code>을 먼저 역참조해 값을 꺼내고, 그 아래에서 <code>if (!tun)<br><span style="white-space: pre-wrap">&#x20;&#x20;</span>return ...;</code>으로 널을 검사했다. 순서가 뒤집힌 실수이지만, 사람 눈에는 “그래도 검사는 있으니 널이면 걸리겠지”로 보인다. 컴파일러의 추론은 달랐다: <strong>이미 역참조했다 → 널이었다면 그 순간 UB → UB는 일어나지 않는다고 전제 → 따라서 tun은 널이 아니다 → 아래의 널 검사는 죽은 코드다.</strong> 검사가 통째로 최적화로 제거됐고, 널 페이지를 매핑할 수 있던 당시 환경과 결합해 권한 상승 취약점이 됐다. 컴파일러는 규칙대로 일했고, 무너진 것은 계약이었다.</p></div><h3>46.4 피하는 법 — 규율, 도구, 그리고 부품</h3><p>실무의 방어는 세 겹이다.</p><p><strong>규율</strong> — 이 책이 지나온 수칙들이 그 목록이다: 초기화하고 쓴다(23장), 경계를 지킨다(36장), 널을 확인한다(34장), 한 문장에서 한 변수는 한 번만 바꾼다(32장), 계약 밖의 지름길(포인터 캐스트, 표현 가정)을 쓰지 않는다(11·35장).</p><p><strong>도구</strong> — 17장에서 장만한 그물이다. 컴파일러 경고는 컴파일 시점에, UBSan·ASan은 실행 시점에 잡는다. C23이 들여온 <strong>검사 산술</strong>도 이 층의 도구다 — 넘침을 UB로 만들지 않고 값으로 알려 주는 함수들이다:</p><div><div><p><code>examples/ch46/checked.c</code></p><pre><code data-lang="c">#include &lt;stdckdint.h>
+#include &lt;stdio.h>
 
-/* 계약: divisor가 0이 아니어야 한다. 실패는 반환값으로 알린다. */
-[[nodiscard]] bool safe_div(int a, int b, int *out)
-{
-    if (b == 0) {
-        return false;           /* 실패 — out은 건드리지 않는다 */
-    }
-    *out = a / b;
-    return true;
-}
-
+/* C23의 검사 산술: 넘치면 true를 돌려주고, 결과는 감아 돈 값이 담긴다. */
 int main(void)
 {
-    int result = 0;
+    int a = 2000000000;
+    int b = 2000000000;
+    int sum = 0;
 
-    if (safe_div(7, 2, &amp;result)) {
-        printf("7 / 2 = %d\n", result);
+    if (ckd_add(&amp;sum, a, b)) {
+        printf("%d + %d overflows int (we stayed inside the contract)\n", a, b);
     } else {
-        printf("7 / 2: failed\n");
+        printf("sum: %d\n", sum);
     }
 
-    if (safe_div(7, 0, &amp;result)) {
-        printf("7 / 0 = %d\n", result);
+    int small = 0;
+    if (ckd_add(&amp;small, 20, 22)) {
+        printf("overflow\n");
     } else {
-        printf("7 / 0: cannot divide by zero (reported as a value)\n");
+        printf("20 + 22 = %d\n", small);
     }
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>7 / 2 = 3
-7 / 0: cannot divide by zero (reported as a value)
-</code></pre></div></div><p>읽을 점 셋. <strong>계약이 주석으로 적혀 있다</strong> — 무엇을 요구하는지가 코드 곁에 있다. <strong>실패해도 출력 인자를 건드리지 않는다</strong> — “실패 시 아무것도 바꾸지 않는다”는 것도 계약의 일부다. 그리고 <strong><code>[[nodiscard]]</code></strong> — C23의 표기로, 이 반환값을 버리는 호출이 있으면 컴파일러가 경고한다. 22장에서 “반환값을 버리는 것은 합법”이라 했던 그 자유에, “이 값만은 버리지 말라”는 제동을 거는 장치다. 39장의 proven 함수들이 이 표기를 두른 이유가 바로 이것이다.</p><div class="dev misconception"><p class="dev-label">⚠ “오류 처리는 코드를 지저분하게 만드는 부수적인 일이다”</p><p>입문자가 흔히 갖는 인상이고, 실제로 C의 오류 처리는 눈에 띄게 장황하다 — 호출마다 <code>if</code>가 붙으니까. 그러나 관점을 뒤집으면 정확히 반대다: <strong>오류 경로가 곧 프로그램의 절반이다.</strong> 파일이 없을 수 있고, 메모리가 부족할 수 있고, 입력이 엉터리일 수 있다는 것은 예외적 상황이 아니라 정상적인 현실이다. 실제 사고 분석에서 압도적으로 흔한 원인이 “반환값을 확인하지 않았다”인 것이 그 증거다 — 성공 경로만 적힌 코드는 절반만 쓰인 코드다. 장황함을 줄이는 법(공통 정리 지점으로 모으기, 실패를 감싸는 타입 쓰기)은 기술의 문제이고, <strong>확인한다</strong>는 원칙은 타협의 문제가 아니다.</p></div><h3>46.2 계약을 코드로 — assert와 방어</h3><span id="idx-entry-79"></span><p>전제조건을 문서가 아니라 <strong>코드</strong>로 적는 도구가 있다 — <code>&lt;assert.h></code>의 <code>assert(조건)</code>다. 조건이 거짓이면 프로그램을 즉시 세우고 위치를 알린다. 용도를 정확히 구별하는 것이 중요하다:</p><ul><li><strong><code>assert</code>는 프로그래머의 실수를 잡는 것이다</strong> — “여기까지 왔다면 이 조건은 반드시 참이어야 한다”는 내부 불변식(32장의 그 불변식과 같은 낱말이다). 배포 빌드에서는 꺼지는 것이 관행이다(<code>NDEBUG</code>).</li><li><strong>바깥에서 온 것은 assert가 아니라 검사로</strong> — 사용자 입력, 파일 내용, 네트워크 데이터는 “틀릴 수 있는 것이 정상”이므로 실행 중에 늘 확인 하고 오류 값으로 처리해야 한다. 입력 검증을 assert로 하면, 배포판 에서 검사가 통째로 사라지는 사고가 된다.</li></ul><p>이 구별이 곧 계약의 두 면이다 — 안쪽(내가 지켜야 할 불변식)은 assert로, 바깥(상대가 지킬지 모르는 약속)은 검사와 오류 값으로.</p><h3>46.3 const — 가장 값싼 계약</h3><p>계약을 코드로 적는 도구가 하나 더 있다. 24장에서 “바꾸지 않겠다는 문서”로 소개하고, 42장에서 “이 함수는 원본을 건드리지 않는다”는 표시로 <span id="idx-entry-80"></span>써 온 <code>const</code>다. 이 장의 관점에서 다시 보면, const는 <strong>가장 값싸게 적을 수 있는 계약 조항</strong>이다 — 함수 서명 한 곳에 한 낱말을 더하는 것으로, 호출하는 쪽에게 “당신의 데이터는 안전하다”를 약속하고 컴파일러에게 그 약속의 감시를 맡긴다.</p><p>효과는 세 층에 걸친다.</p><p><strong>① 사람에게 — 읽는 부담이 준다.</strong> <code>void render(const struct scene *s)</code> 라는 서명을 보는 순간, 이 함수가 scene을 바꾸지 않는다는 것이 확정 된다. 함수 몸통을 읽지 않아도 되는 것 — 큰 코드에서 이보다 값진 절약은 드물다. 24장에서 “바뀌지 않는 것이 많은 코드일수록 읽기 쉽다”고 한 것의 실체다.</p><p><strong>② 컴파일러에게 — 최적화의 근거가 된다.</strong> 13장에서 편집자가 값을 레지스터에 붙잡아 두는 장면을 보았고, 그 판단의 관건이 “이 값이 그 사이에 바뀔 수 있는가”였다. const는 그 판단을 돕는 신호다 — 다만 정확히 말해야 한다: <strong>const 자체가 마법의 최적화 스위치는 아니다.</strong> 포인터를 통해 들어온 데이터는 다른 경로로 바뀔 여지가 남아 있어서 (앨리어싱), const 하나로 컴파일러가 모든 걸 확신하지는 못한다. 확실한 이득은 <strong>const로 선언된 실제 객체</strong>(전역 상수, <code>static const</code> 테이블) 쪽이다 — 컴파일러가 값을 코드에 직접 심거나(상수 전파), 읽기 전용 구역에 배치해 아예 수정 불가로 만든다(38장의 문자열 리터럴이 그 자리에 살았다).</p><p><strong>③ 기억의 층에게 — 공유가 안전해진다.</strong> 바뀌지 않는 데이터는 <strong>복사할 이유가 없다.</strong> 여러 곳에서 같은 것을 함께 읽어도 되고, 11장의 캐시 관점에서는 여러 코어가 같은 캐시 라인을 나눠 읽어도 아무 다툼이 없다 — 12장에서 본 false sharing은 <strong>쓰기</strong>가 있어야 생기는 사고이기 때문 이다. 큰 데이터를 값 복사 대신 <code>const</code> 포인터로 넘기는 관행(42장)이 안전하면서 빠른 이유가 이것이다.</p><p>그래서 현대적 관행은 단순하다 — <strong>기본을 const로 두고, 바꿔야 하는 것만 예외로 푼다.</strong> 계약을 넓히는 데는 비용이 들지만, 좁히는 데는 낱말 하나면 된다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>39장의 proven은 이 원리를 어떻게 구현하고 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>세 가지가 이 장의 원리 그대로다. 첫째, <strong>실패가 타입에 드러난다</strong> — <code>{err, val}</code> 꾸러미를 돌려주므로 “성공했는지 묻지 않고 값을 꺼내는” 코드를 쓰기가 오히려 어색해진다. 둘째, <strong><code>[[nodiscard]]</code>로 확인을 강제한다</strong> — 버리면 컴파일러가 경고한다. 셋째, <strong>경계와 크기를 계약의 일부로 받는다</strong> — 37–38장에서 본 경계 침범의 뿌리를 API 차원에서 막는 것이다. 요약하면: 계약을 문서가 아니라 <strong>타입과 시그니처</strong>로 적는 설계다. 1장에서 본 Rust·Zig의 문제의식과 같은 방향을, C 안에서 부품으로 구현한 것이라 보면 된다.</p></div></div><p>계약과 오류를 다루는 법을 갖췄다. 그런데 이 책이 곳곳에서 “계약 밖”, “정의되지 않은 동작”이라 부르며 미뤄 온 세계가 아직 남아 있다. 다음 장에서 그 세계를 정면으로 본다 — C에서 가장 오해가 많고, 가장 값비싼 주제다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>2000000000 + 2000000000 overflows int (we stayed inside the contract)
+20 + 22 = 42
+</code></pre></div></div><p><code>ckd_add</code>는 “넘쳤는가”를 반환값으로 돌려준다 — 7장에서 배운 “부호 있는 넘침은 계약 밖”이라는 함정을, 45장에서 배운 “오류는 값이다”라는 규율로 다스리는 표준의 답이다.</p><p><strong>부품</strong> — 애초에 계약 위반이 어려운 API를 쓰는 것이다(38장의 proven이 그 층이다). 도구가 그물이라면 좋은 부품은 발판이라는 17장의 비유가 여기서 완성된다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>UB를 전부 외워야 하는가? 표준에 수백 가지가 있다고 들었는데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>외우는 것이 목표가 아니다 — 목록은 방대하고 계속 다듬어진다. 실무에서 통하는 것은 <strong>감각</strong>이다: “이 코드가 옳다고 말하는 근거가 계약서에 있는가, 아니면 ‘내 컴퓨터에서 돌아서’인가”를 묻는 습관. 그리고 그 감각을 도구로 뒷받침하는 것 — 경고를 켜고, 새니타이저로 시험 실행 하고, 두 컴파일러로 교차 검증하는 것(17장). 이 책이 제2부부터 “추상 기계 위에서 옳은가”를 되풀이한 이유가 바로 이 감각을 심기 위해서다.</p></div></div><h3>46.5 제9부를 닫으며</h3><p>정밀의 부가 끝났다 — 근사를 다루는 법(44장), 실패를 다루는 법(45장), 그리고 계약 밖의 세계를 아는 법(46장). 세 장의 공통 주제는 하나다: <strong>C는 프로그래머에게 많은 것을 맡기는 언어이고, 맡겨진 것을 아는 사람이 안전한 코드를 쓴다.</strong></p><p>마지막 부가 남았다. 지금까지의 프로그램은 파일 하나짜리였다 — 이제 여러 파일로 자라고(48장), 전처리와 번역의 층을 정면으로 보고(49장), 표준 라이브러리의 지형을 익히고(53장), proven을 정면으로 다루며(제12부), 모던 C의 관행으로 책을 닫는다(81장).</p><p>다음 부는 프로그램을 <strong>구성하는</strong> 이야기다. 그 첫 장은 지금까지 여섯 줄짜리 관례로만 써 온 자리 — <code>main</code> 자신이다. 세 가지 형태와, 돌려주는 값이 어디로 가는지를 본다.</p>
 <div class="nav"><a href="ch45.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch47.html">다음 →</a></div>
 </div></main></body></html>

@@ -6,13 +6,14 @@
 #idx("compiler")  A map of which C compilers exist besides the gcc and clang
   installed in chapter 17, and where each is used. The big three of desktops and
   servers, the small tidy alternative on Windows (Pelles C), the vendor
-  compilers that sell performance, and the doorway to the embedded world covered
-  in detail next chapter. Only what is *currently in service* is listed — and
+  compilers that sell performance, the doorway to the embedded world covered at
+  the end of the book, and, as an aside, the tidy Windows alternative
+  (Pelles C). Only what is *currently in service* is listed — and
   the names that have retired, or are retiring, are named as such.
 ]
 
 #deepqa[
-  Chapter 14 said compilation is a four-step relay of preprocessing,
+  Chapter 16 said compilation is a four-step relay of preprocessing,
   translation, assembling and linking, and chapter 17 installed gcc or clang as
   the tool that walks those steps for us. So what changes when the compiler
   changes — it is the same standard C, is it not?
@@ -35,7 +36,7 @@ Today most desktop and server C runs on these three.
 number of CPUs it can target — x86, Arm and RISC-V of course, but also embedded
 chips such as AVR, MSP430, SuperH and PowerPC, all in one lineage. It is why
 embedded vendors so often fill the inside of their own tools with gcc
-(chapter 19).
+(chapter 80).
 
 *Clang/LLVM*. A later arrival from the 2000s, built on LLVM, which was designed
 so that a compiler could be *used as components*. It made its name with friendly
@@ -59,28 +60,6 @@ reason for existing is that it meshes best with the Windows API.
   and easy to install, so keep gcc and clang together on Linux and macOS, and
   MSVC and clang together on Windows.
 ]
-
-== The tidy alternative on Windows — Pelles C
-
-When you want to work in C on Windows without a heavy development environment,
-a long-loved tool is *Pelles C*. Freeware carried on single-handedly by Pelle
-Orinius of Sweden, it bundles an editor, compiler, linker, resource editor,
-debugger and even an installer builder in one package. One download and you are
-done, and it is small.
-
-Notably its standard support is diligent — the latest edition at the time of
-writing (14.50, July 2026) states support from C99 through *C23*. There have
-been periods in which it followed new standards faster than much larger tools.
-Its targets are limited to Windows (32-bit and 64-bit, including ARM64 Windows
-hosts).
-
-#dtable(
-  columns: 2,
-  [*where it fits*], [*where it does not*],
-  [starting C lightly on Windows], [code to be ported off Windows],
-  [small utilities and learning], [integration with huge build systems],
-  [trying the newest standard syntax], [targeting Linux or macOS],
-)
 
 == The compilers that sell performance — vendor compilers
 
@@ -119,7 +98,7 @@ scene of that current.
   chapter 11.
 ]
 
-== Embedded — the doorway to the next chapter
+== Embedded — the doorway to the last chapter
 
 Numerically, the largest branch of the world's C compilers is the embedded side.
 Every company that makes chips has its own compiler, and where safety
@@ -127,7 +106,51 @@ certification is at stake (automotive, aerospace, medical) there are specialist
 firms that sell that certification along with the tools. IAR, Arm's Keil family,
 TI, Microchip, Renesas, Green Hills, Wind River — and the free-software SDCC for
 8-bit chips. This terrain only makes sense together with the whole toolset (debug
-probes, on-chip debugging, static analysis), so it gets its own chapter next.
+probes, on-chip debugging, static analysis), so it gets its own chapter at the
+end of the book (chapter 80).
+
+== An aside — Pelles C, the tidy alternative on Windows
+
+If the names so far were "what is widely used", this section is a little
+different. It holds no large share of the market, but its character is
+distinct enough to be worth introducing.
+
+*Pelles C* is Windows-only freeware carried on single-handedly by Pelle Orinius
+of Sweden. Editor, compiler, assembler, linker, resource editor, debugger and
+even an installer builder come in one package, and one download is the whole
+setup. The name comes from its author's.
+
+Its standard support is notably diligent: the latest edition at the time of
+writing (14.50, July 2026) states support for C99, C11, C17 and C23. There have
+been periods in which it followed new standards faster than far larger tools.
+
+Gathering users' assessments, they divide roughly like this.
+
+#dtable(
+  columns: 2,
+  [*frequently praised*], [*frequently noted limits*],
+  [installs in one go and is small], [Windows only — not for code you will port],
+  [compiles fast], [essentially no C++ support (treat it as a C-only tool)],
+  [good standards conformance, follows new editions], [not as full-featured as a large IDE (Visual Studio)],
+  [Windows API and resource editing fit smoothly], [a thin user base, so fewer materials turn up in a search],
+  [a low barrier for beginners], [weak integration with build systems and outside tools],
+)
+
+In short: it suits *working on Windows, in pure C, lightly*. Good for learning,
+for small Windows utilities, and for testing whether some new standard
+construct really works. Conversely, for code to be ported across platforms, or
+a project to sit on CMake and CI, the big three above are the fit.
+
+#qa[
+  Can this book's examples be followed with Pelles C?
+][
+  They can — the examples use standard C only, so any compiler supporting C23
+  gives the same results. Two things are worth knowing. First, the commands and
+  option spellings this book uses in the text (`cc -Wall -Wextra …`) belong to
+  the gcc/clang family, so you must find the corresponding settings in Pelles
+  C's IDE. Second, the sanitizers of chapter 17 are not here — for the passages
+  that need checking tools, having clang or a Linux environment alongside helps.
+]
 
 == Others, and the retired names
 
@@ -136,11 +159,26 @@ KiB, still used for compiling C source on the spot and running it immediately.
 Small compilers such as `cproc` and `chibicc` have value as "teaching material
 for compilers". They are not the workhorses of practice.
 
-*Famous names no longer in service* — the Borland/Turbo C family of old
-Windows, Watcom, and Intel's classic `icc` above. When you meet these names in
-old textbooks or web posts, *read them with their era in mind.* In particular
-the practices of the Turbo C days (`conio.h`, `void main()`) are not today's
-standard C.
+*Famous names no longer in service.* When you meet these in old textbooks or
+web posts, *read them with their era in mind.*
+
+#dtable(
+  columns: 2,
+  [*name*], [*situation*],
+  [Borland/Turbo C], [the power of the DOS and early Windows years. its practices (`conio.h`, `void main()`) are not today's standard C],
+  [Watcom], [a power in DOS and game development. an open-source edition (Open Watcom) survives but is effectively stalled],
+  [Intel `icc`], [removed in oneAPI 2024.0. succeeded by `icx`],
+  [Dev-C++], [Bloodshed (stopped around 2005) → the Orwell fork → an Embarcadero fork in 2020, but updates are very sparse],
+  [TDM-GCC], [a Windows GCC distribution long paired with Dev-C++; its versions stopped advancing, and MSYS2/MinGW-w64 or LLVM is used now],
+)
+
+The *Dev-C++ with TDM-GCC* combination in particular was used for years in
+schools and academies, so material about it is still plentiful. The problem is
+that the combination carries a compiler several versions behind — syntax from
+C11 onwards, and the C23 keywords (chapter 63), often do not work. If you are
+starting now, the two routes of chapter 17 (LLVM clang, or gcc from MSYS2) are
+what to take. A good share of the walls met while following an old textbook —
+"why does this syntax not work?" — are the age of the tool.
 
 #realcase[
   Why this book verifies its examples with two compilers
@@ -174,13 +212,34 @@ standard C.
     [GCC], [free software. targets the most chips],
     [Clang/LLVM], [a compiler used as components. the base of the tool ecosystem],
     [MSVC], [the Windows standard. C11 and C17, C23 in progress],
-    [Pelles C], [a Windows-only freeware bundle. supports up to C23],
     [`icx`, AOCC, `nvc`, Open XL], [vendors' performance compilers. mostly LLVM-based],
-    [`icc`], [retired (removed in oneAPI 2024.0)],
-    [the embedded family], [the next chapter],
+    [the embedded family], [chapter 80],
+    [Pelles C], [a Windows-only freeware bundle, up to C23. an aside],
+    [retired names], [`icc`, Turbo C, Watcom, Dev-C++, TDM-GCC],
   )
 ]
 
-The map of compilers is spread out. The next chapter enters its widest region —
-embedded — and looks at its compilers together with the tools that sit beside
-make and git.
+One last word for the learner. *Any of the compilers in active service in this
+chapter will do for study.* This book's examples use standard C only, so gcc,
+clang, MSVC and Pelles C all give the same results. Choose by what is to hand,
+what installs easily, what your school or workplace uses — what you learn does
+not change.
+
+One thing, though, is not recommended. *Dev-C++ is still widely used because it
+installs easily, but the compiler it carries is too old.* Syntax from C11
+onwards and the C23 keywords do not work, which makes it easy to hit the wall of
+"I wrote it as the book says, so why does it not work?" For the same reason it
+is better not to follow the Turbo C screens of old textbooks. If ease of
+installation is the appeal, the two routes of chapter 17 (a one-line LLVM clang
+install, or gcc from MSYS2) are easy enough — and they come with the newest
+standard and the checking tools.
+
+The map of compilers is spread out. Its widest region — the compilers of
+embedded work and the tools beside them — only makes sense together with the
+whole toolset, so it gets its own chapter at the end of the book (chapter 80).
+
+Part III is over. We read the first program (chapter 15), watched the relay that
+turns it into an executable (chapter 16), equipped the tools (chapter 17) and
+spread out the world's map of compilers (chapter 18). From the next part the
+real study of the language begins — not a list of new syntax, but the goal of
+Part IV: reading one piece of chapter 15's hello world completely.

@@ -12,7 +12,7 @@
 ]
 
 #deepqa[
-  Chapter 5 got as far as signed integers in bits — including three competing
+  Chapter 7 got as far as signed integers in bits — including three competing
   ways of holding negatives, settled on two's complement. But they are all
   still integers. A number like 1.5 — how is that held in bits?
 ][
@@ -67,7 +67,7 @@ the number of digits in the kernel is finite, so anything beyond them is
   machine is really a different number very close to 0.1. Small discrepancies
   can accumulate through a calculation. This is not a defect of the computer but
   a necessity of finite representation, and there are proper ways to handle it
-  (chapter 45). One thing to remember for now: *floating point is not an exact
+  (chapter 44). One thing to remember for now: *floating point is not an exact
   number but a faithful approximation.*
 ]
 
@@ -90,7 +90,7 @@ the number of digits in the kernel is finite, so anything beyond them is
 
 Let us look ahead, numerically, at the faces "faithful approximation" wears in
 practice. (Shown here by calculation on the page; running it in C is
-chapter 45.)
+chapter 44.)
 
 *Incident 1 — 0.1 + 0.2 ≠ 0.3.* The most famous non-equation in the programming
 world. As we just saw, 0.1, 0.2 and 0.3 are all infinite in binary, so the
@@ -140,36 +140,39 @@ That is the basic form; in practice there is one more layer — as numbers grow,
 so does the gap between neighbours (incident 3 below), so instead of a fixed
 $epsilon$ it is safer to use a tolerance *proportional to the size of the
 numbers* (relative error). The concrete use of both, and their traps, is
-covered in C code in chapter 45. What to remember now is one sentence: *code
+covered in C code in chapter 44. What to remember now is one sentence: *code
 that compares floating-point numbers with `==` is almost always suspect.*
 
 *Incident 3 — beside a large number, a small one disappears.* That the
-significant digits are finite also means that when two numbers of very
-different sizes meet in one container, the smaller one *vanishes entirely*.
-Demonstrated with the 32-bit `float` (about 7 significant decimal digits) —
+significant digits are finite also means that when two numbers of very different
+sizes meet in one container, the smaller one *vanishes entirely*. The place
+where this shows most cleanly in the 64-bit `double` (about 15–16 significant
+decimal digits) is around $10^16$.
 
-- The moment you store $8.000000001$: the tail beyond 7 significant digits is
-  cut and it simply becomes $8.0$. It vanished *in the storing, before any
-  addition*. The internal representation makes it starker — `float`'s $8.0$ is
-  `4100 0000`, and storing $8.000000001$ gives the *same* `4100 0000`, because
-  the nearest tick is $8.0$. Two different numbers in decimal notation are one
-  and the same number in bits.
-- $8.0 + 0.00000008$: the result is still $8.0$, and the bits are still
-  `4100 0000`. Why — compute the tick spacing (the distance between neighbours)
-  of `float` at the size of $8.0$ and you get
-  $2^3 times 2^(-23) = 2^(-20) approx 0.00000095$. The $0.00000008$ added does
-  not reach even half a tick, so rounding leaves it where it was. This is called
+- $10^16 + 1$ is *$10^16$ again.* The 1 that was added simply disappears. And
+  yet $10^16 + 2$ becomes $10000000000000002$ and grows properly. There is one
+  reason for this strange contrast — at that magnitude the gap between
+  representable neighbours is exactly *2*. With ticks 2 apart, 1 is half a tick
+  and is swallowed by rounding, while 2 is exactly one tick and survives. This
+  phenomenon of a small value being eaten by a large one is called
   *absorption*.
-- Conversely, *subtracting two nearly equal numbers*, as in $8.000001 - 8.0$,
-  erases all the leading digits and leaves only the approximation in the last
-  ones — a calculation that started with 7 significant digits produces an answer
-  with one or two. This is called *cancellation*, and it is the chief culprit in
-  eroding precision in numerical work.
+- So the limit up to which a `double` can hold *every* integer without omission
+  is $2^53 = 9007199254740992$. Above that the tick spacing exceeds 1 and even
+  integers begin to be skipped — try to hold $2^53 + 1$ and you get $2^53$
+  again. The practical rule "do not put money or identifiers in floating point"
+  comes from here (JavaScript, which handles integers as `double`, hit this same
+  wall and brought in `BigInt` for the same reason).
+- There is an accident in the opposite direction too. *Subtracting two nearly
+  equal numbers* erases all the leading digits and leaves only the approximation
+  in the last ones — a calculation that started with sixteen significant digits
+  produces an answer with two or three. This is called *cancellation*, and it is
+  the chief culprit in eroding precision in numerical work.
 
 The three incidents have a single root — the representable numbers are a
 *discrete set of ticks*, and the spacing between ticks widens as numbers grow.
 Near 0 the ticks are dense enough to distinguish something like $10^(-300)$, but
-around $10^16$ the spacing exceeds 1 and *even integers get skipped*. It is no
+as we just saw, around $10^16$ the spacing exceeds 1 and *even integers get
+skipped*. It is no
 exaggeration to say that a feel for "how many digits can I trust?" (significant
 digits) is the whole of using floating point.
 
@@ -204,7 +207,7 @@ and we meet this "age of contracts" again in chapter 12.
   digits) is chosen for its size advantage where memory and bandwidth matter —
   large numbers of coordinates, graphics, machine learning. "double for
   precision, float for volume" is roughly right. Actual use in C is covered in
-  chapter 45.
+  chapter 44.
 ]
 
 #qa[
@@ -216,7 +219,7 @@ and we meet this "age of contracts" again in chapter 12.
   the floating-point container is finite in *precision*, so it approximates a
   little everywhere (but its range is enormous). An exact but narrow container
   and a wide but approximating one — a feel for which container to use is a
-  fundamental of handling numbers, and choosing types in C (chapters 27 and 45)
+  fundamental of handling numbers, and choosing types in C (chapters 26 and 44)
   is exactly that choosing.
 ]
 

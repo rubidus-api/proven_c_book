@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>51 가변 인자 함수 — Proven C Book</title><style>
+<title>51 함수를 값으로 — 함수 포인터 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,150 +68,132 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>51 가변 인자 함수</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p><code>printf</code>가 인자를 몇 개든 받을 수 있었던 비밀을 연다. <code>&lt;stdarg.h></code>의 네 도구, 이 장치가 왜 타입 안전하지 않은지, 그 역사(K&amp;R의 <code>varargs</code> 에서 C89의 <code>stdarg</code>, C23의 정리까지), 그리고 오늘의 대안까지. 23장의 “서식은 계약”이 왜 그토록 엄격한 계약이었는지가 여기서 밝혀진다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p><span id="idx-entry-89"></span>29장에서 가변 인자로 넘어가는 값에는 기본 진급(float→double, 작은 정수→int)이 적용된다고 배웠다. 그런데 왜 하필 그 자리에만 특별한 진급 규칙이 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>받는 쪽이 <strong>타입을 모르기 때문이다.</strong> 보통의 함수는 원형(25장)에 인자 타입이 적혀 있어 컴파일러가 양쪽을 맞춰 준다. 그러나 가변 인자 자리는 원형에 <code>...</code>뿐이라 맞출 상대가 없다 — 그래서 “일단 다들 큰 타입으로 통일해서 보내자”는 약속으로 혼란을 줄인 것이다. 이 장은 그 “타입을 모르는 자리”에서 어떻게 값을 꺼내는지, 그리고 그 대가가 무엇인지의 이야기다.</p></div></div><h3>51.1 네 개의 도구</h3><p><code>&lt;stdarg.h></code>가 주는 것은 타입 하나와 매크로 셋이다 — <code>va_list</code>(읽개), <code>va_start</code>(시작), <code>va_arg</code>(하나 꺼내기), <code>va_end</code>(닫기). 시연으로 본다.</p><div><div><p><code>examples/ch51/va.c</code></p><pre><code data-lang="c">#include &lt;stdarg.h>
-#include &lt;stdio.h>
+<h2>51 함수를 값으로 — 함수 포인터</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>지금까지 함수는 “부르는 것”이었다. 이 장에서는 함수를 <strong>값으로</strong> 다룬다 — 변수에 담고, 인자로 넘기고, 배열에 늘어놓는다. 그 과정에서 C의 오래된 규칙 하나(<strong>함수 이름은 포인터로 무너진다</strong>)와, 그 규칙이 만드는 기묘한 문법, 그리고 이 도구로 객체지향을 손수 짓는 방법까지 본다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>36장에서 배열 이름이 첫 원소의 주소로 무너진다고 했고, 50장에서는 가변 인자 함수가 타입 정보를 잃는다고 했다. 그러면 <strong>함수 이름</strong>은 수식에서 무엇으로 평가되는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>함수를 가리키는 포인터</strong>로 평가된다 — 배열과 같은 무너짐(decay)이 함수에도 있다. 예외는 <code>sizeof</code>와 <code>&amp;</code>의 피연산자일 때뿐인데, 함수에 <code>sizeof</code>를 쓰는 것은 애초에 금지이므로 사실상 <code>&amp;</code>만 예외다. 그리고 <code>&amp;함수</code>도 결국 같은 포인터를 준다. 그래서 <code>f</code>, <code>&amp;f</code>, <code>*f</code>가 전부 같은 값이 되는 기묘한 상황이 벌어진다 — 이 장의 첫 예제가 그것이다.</p></div></div><h3>51.1 이름은 포인터로 무너진다</h3><div><div><p><code>examples/ch51/funcptr.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include &lt;string.h>
 
-/* 개수를 첫 인자로 받는 방식 — 스스로는 개수를 알 길이 없다 */
-int sum_n(int count, ...)
-{
-    va_list ap;
-    int total = 0;
+static int add(int a, int b) { return a + b; }
+static int mul(int a, int b) { return a * b; }
 
-    va_start(ap, count);            /* count 다음부터 읽겠다 */
-    for (int i = 0; i &lt; count; i += 1) {
-        total += va_arg(ap, int);   /* 타입을 '내가' 알려 준다 */
-    }
-    va_end(ap);                     /* 반드시 닫는다 */
-    return total;
-}
-
-/* 끝 표지(sentinel)로 개수를 대신하는 방식 */
-int sum_until_zero(int first, ...)
-{
-    va_list ap;
-    int total = first;
-
-    va_start(ap, first);
-    for (;;) {
-        int v = va_arg(ap, int);
-        if (v == 0) { break; }
-        total += v;
-    }
-    va_end(ap);
-    return total;
-}
+/* 함수 포인터를 받는 함수 — 콜백의 기본형 */
+static int apply(int (*op)(int, int), int a, int b) { return op(a, b); }
 
 int main(void)
 {
-    printf("sum_n(4, 1,2,3,4)        = %d\n", sum_n(4, 1, 2, 3, 4));
-    printf("sum_until_zero(1,2,3,0)  = %d\n", sum_until_zero(1, 2, 3, 0));
+    /* ① 함수 이름은 값으로 쓰이는 순간 포인터로 무너진다 */
+    int (*p)(int, int) = add;     /* &amp; 없이도 된다 */
+    int (*q)(int, int) = &amp;add;    /* &amp; 를 붙여도 같다 */
+    printf("add == &amp;add : %s\n", p == q ? "같다" : "다르다");
+
+    /* ② 별표를 아무리 붙여도 결과는 같다 — 역참조가 다시 무너지기 때문 */
+    printf("p(2,3)=%d  (*p)(2,3)=%d  (***p)(2,3)=%d  (*******p)(2,3)=%d\n",
+           p(2, 3), (*p)(2, 3), (***p)(2, 3), (*******p)(2, 3));
+
+    /* ③ 반면 &amp; 는 한 번만 쓸 수 있다: &amp;&amp;add 는 문법 오류다
+          (&amp;add 는 값일 뿐, 그 값의 주소를 다시 얻을 수는 없다) */
+
+    /* ④ 디스패치 표 — switch 대신 배열로 고르기 */
+    struct { const char *name; int (*fn)(int, int); } table[] = {
+        { "add", add }, { "mul", mul },
+    };
+    for (size_t i = 0; i &lt; sizeof table / sizeof table[0]; i++)
+        printf("%s(6,7) = %d\n", table[i].name, apply(table[i].fn, 6, 7));
+
+    /* ⑤ 함수 포인터의 크기는 데이터 포인터와 같다는 보장이 없다 */
+    printf("sizeof(void*)=%zu, sizeof(int(*)(int,int))=%zu\n",
+           sizeof(void *), sizeof(int (*)(int, int)));
+
+    /* ⑥ qsort 의 비교자도 함수 포인터다 */
+    int v[] = { 5, 2, 9, 1 };
+    int cmp(const void *a, const void *b);   /* 아래에 정의 */
+    qsort(v, 4, sizeof v[0], cmp);
+    printf("정렬: %d %d %d %d\n", v[0], v[1], v[2], v[3]);
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>sum_n(4, 1,2,3,4)        = 10
-sum_until_zero(1,2,3,0)  = 6
-</code></pre></div></div><p>핵심은 <code>va_arg(ap, int)</code>의 둘째 인자다 — <strong>꺼낼 값의 타입을 프로그래머가 알려 준다.</strong> 함수는 무엇이 왔는지 모르므로, “지금 꺼낼 것은 int다”라고 말해 주는 사람이 필요하고 그 사람이 호출자와 약속을 공유한 작성자다. 이 약속이 어긋나면 — 실제로는 double이 왔는데 int로 꺼내면 — 계약 밖이다(47장). 기억의 잘못된 자리를 읽는 것이니 값이 쓰레기가 되거나 그 뒤의 꺼내기가 전부 어긋난다.</p><p>그리고 함수는 <strong>인자가 몇 개인지도</strong> 모른다. 그래서 개수를 알아내는 길을 호출 규약으로 만들어야 하는데, 시연이 두 관행을 보인다 — 첫 인자로 개수를 받거나(<code>sum_n</code>), 끝을 알리는 표지 값을 약속하거나 (<code>sum_until_zero</code>). <code>printf</code>는 세 번째 길을 쓴다: <strong>서식 문자열이 개수와 타입을 동시에 알려 주는 명세</strong>인 것이다. 23장에서 “서식은 계약”이라 한 말의 정확한 무게가 이것이다 — 그 계약이 깨지면 printf는 있지도 않은 인자를 꺼내며 메모리를 뒤진다(23장의 서식 문자열 취약점이 바로 이 메커니즘이었다).</p><h3>51.2 기본 인자 승격 — <code>...</code>을 건너는 값은 굵어진다</h3><p><code>va_arg</code>가 타입을 물어보는 이유가 하나 더 있다. <code>...</code>을 건너는 인자는 <strong>원래 타입 그대로 가지 않기</strong> 때문이다. 29장에서 본 기본 인자 승격(default argument promotion)이 여기서 실제로 일어난다.</p><table><tr><th><strong>넘긴 것</strong></th><th><strong>실제로 도착하는 것</strong></th><th><strong>그래서</strong></th></tr><tr><td><code>char</code>, <code>signed char</code>, <code>unsigned char</code></td><td><code>int</code></td><td><code>va_arg(ap, char)</code>는 틀렸다</td></tr><tr><td><code>short</code>, <code>unsigned short</code></td><td><code>int</code></td><td><code>va_arg(ap, int)</code>로 꺼낸다</td></tr><tr><td><code>bool</code></td><td><code>int</code></td><td>같음</td></tr><tr><td><code>float</code></td><td><code>double</code></td><td><code>va_arg(ap, float)</code>는 틀렸다</td></tr><tr><td><code>int</code> 이상의 정수</td><td>그대로</td><td>—</td></tr><tr><td>포인터</td><td>그대로</td><td>단 널 상수는 캐스트가 필요하다</td></tr></table><p>규칙을 한 줄로 줄이면 이렇다 — <strong><code>int</code>보다 좁은 정수는 <code>int</code>가 되고, <code>float</code>은 <code>double</code>이 된다.</strong> 그래서 <code>printf</code>에 <code>float</code> 전용 서식이 없고 (54장), <code>va_arg(ap, float)</code>라고 쓰면 도착하지도 않은 타입을 꺼내는 계약 위반이 된다.</p><p>널 포인터를 넘길 때의 함정도 여기서 나온다. <code>NULL</code>이 정수 <code>0</code>으로 정의된 구현에서는 <code>...</code> 자리에 정수 0이 실려 가서, 받는 쪽이 <code>va_arg(ap, char*)</code>로 꺼내면 폭이 어긋난다. C23의 <code>nullptr</code>(35장)이나 명시적 캐스트(<code>(char *)0</code>)를 쓰는 이유다.</p><h3>51.3 근본적 한계 — 함수는 아무것도 모른다</h3><p>가변 인자 함수는 <strong>넘어온 인자의 개수도, 타입도 알지 못한다.</strong> 스택에 값이 놓여 있을 뿐, 그것을 설명하는 정보가 함께 오지 않기 때문이다. 그래서 모든 가변 인자 함수는 그 정보를 <strong>바깥에서</strong> 얻어야 하고, 방법은 결국 셋뿐이다.</p><table><tr><th><strong>방식</strong></th><th><strong>예</strong></th><th><strong>깨지는 방식</strong></th></tr><tr><td>명세 문자열이 알려 준다</td><td><code>printf("%d %s", ...)</code></td><td>서식과 인자가 어긋나면 UB. 서식이 변수면 검사도 불가</td></tr><tr><td>개수·타입을 인자로 받는다</td><td><code>sum_n(3, a, b, c)</code></td><td>개수를 잘못 세면 없는 인자를 꺼낸다</td></tr><tr><td>끝 표지를 약속한다</td><td><code>execl(..., (char *)NULL)</code></td><td>표지를 빠뜨리면 멈추지 않는다</td></tr></table><p>세 방식 모두 <strong>사람이 약속을 지켜야</strong> 성립한다는 공통점이 있다. 컴파일러가 검사해 줄 정보가 애초에 존재하지 않기 때문이다. 70장에서 이것을 “C가 50년째 출하하는 다섯 가지 버그” 중 하나로 꼽는 이유가 여기 있다.</p><h3>51.4 <code>_Generic</code> — 타입을 컴파일 시간에 붙잡기</h3><p>C11이 이 문제에 도구 하나를 보탰다. <code>_Generic</code>은 <strong>표현식의 타입에 따라 여러 선택지 중 하나를 컴파일 시간에 고르는</strong> 문법이다.</p><pre><code data-lang="c">#define TYPE_NAME(x) _Generic((x), \
-    int:          "int",           \
-    double:       "double",        \
-    const char *: "string",        \
-    default:      "other")</code></pre><p>주의할 점 셋이 있다. 첫째, 고르는 기준은 <strong>타입</strong>이지 값이 아니다. 둘째, 고르지 않은 가지는 <strong>컴파일되지도 않는다</strong> — 그래서 서로 다른 타입에만 맞는 코드를 나란히 둘 수 있다. 셋째, 목록에 없는 타입을 주면 <code>default</code>가 없는 한 <strong>컴파일 오류</strong>가 난다 — 이 성질이 다음 절의 핵심이다.</p><div><div><p><code>examples/ch51/generic.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
 
-/* C11 _Generic: 표현식의 *타입*에 따라 컴파일 시간에 하나를 고른다.
-   실행 시간 비용이 0인 것이 핵심이다. */
-#define TYPE_NAME(x) _Generic((x),      \
-    _Bool:        "bool",               \
-    char:         "char",               \
-    int:          "int",                \
-    unsigned:     "unsigned",           \
-    long:         "long",               \
-    double:       "double",             \
-    float:        "float",              \
-    const char *: "string",             \
-    char *:       "string",             \
-    default:      "other")
+int cmp(const void *a, const void *b)
+{
+    int x = *(const int *)a, y = *(const int *)b;
+    return (x > y) - (x &lt; y);
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>add == &amp;add : 같다
+p(2,3)=5  (*p)(2,3)=5  (***p)(2,3)=5  (*******p)(2,3)=5
+add(6,7) = 13
+mul(6,7) = 42
+sizeof(void*)=8, sizeof(int(*)(int,int))=8
+정렬: 1 2 5 9
+</code></pre></div></div><p>출력의 첫 두 줄이 이 장의 핵심이다.</p><p><strong><code>add == &amp;add</code></strong> — 함수 이름은 포인터로 무너지고, <code>&amp;</code>를 붙여도 같은 포인터를 얻는다. 그래서 둘은 같다.</p><p><strong><code>(*******p)(2,3)</code>이 컴파일된다</strong> — 별표를 아무리 붙여도 결과가 같은 이유는 이렇다. <code>*p</code>는 포인터를 역참조해 <strong>함수 지시자</strong>를 얻는데, 그 지시자가 값으로 쓰이는 순간 <strong>다시 포인터로 무너진다.</strong> 즉 <code>*</code> 하나가 붙을 때마다 “포인터 → 함수 → 포인터”를 한 바퀴 돌 뿐, 제자리다.</p><p>반대 방향은 성립하지 않는다. <code>&amp;&amp;add</code>는 문법 오류다 — <code>&amp;add</code>는 이미 <strong>값</strong> (포인터)이고, C에서 값의 주소는 얻을 수 없기 때문이다(주소를 얻으려면 이름이 붙은 자리, 즉 lvalue여야 한다). <code>**add</code>는 되는데 <code>&amp;&amp;add</code>는 안 되는 비대칭이 여기서 나온다.</p><div class="dev misconception"><p class="dev-label">⚠ “함수 포인터를 호출하려면 <code>(*p)(x)</code>처럼 역참조해야 한다”</p><p>옛 관행이다. <code>p(x)</code>와 <code>(*p)(x)</code>는 완전히 같고, 표준은 둘 다 허용한다. <code>(*p)(x)</code>를 선호하는 코드베이스가 있는 이유는 <strong>읽는 사람에게 이것이 함수 포인터임을 알리려는</strong> 문서 목적이지 문법 요구가 아니다. 어느 쪽이든 일관되게 쓰면 된다.</p></div><h3>51.2 타입이 곧 계약이다</h3><p>함수 포인터의 타입은 반환형과 매개변수 목록으로 정해진다.</p><pre><code data-lang="c">int  (*p)(int, int);       /* int 둘을 받아 int 를 주는 함수의 포인터 */
+void (*q)(void);           /* 인자도 반환도 없는 함수의 포인터 */
+int  (*r[4])(int);         /* 그런 포인터 네 개의 배열 */
+int  (*(*s)(void))(int);   /* 읽기 어렵다 — typedef 를 쓴다 */</code></pre><p>마지막 줄이 보여 주듯 선언이 금세 험해진다. 실무의 관행은 <code>typedef</code>다.</p><pre><code data-lang="c">typedef int (*binop_fn)(int, int);
+binop_fn table[] = { add, mul };</code></pre><p><strong>다른 타입의 함수 포인터로 캐스트해 호출하는 것은 계약 밖이다.</strong> 예를 들어 <code>void (*)(void)</code>로 캐스트해 둔 것을 <code>int (*)(int)</code>로 되돌려 부르면 안 된다. 저장했다가 <strong>원래 타입으로 되돌려</strong> 부르는 것만 보장된다.</p><div class="dev antipattern"><p class="dev-label">✗ 비교자 시그니처를 캐스트로 맞추기</p><pre><code data-lang="c">int cmp_int(const int *a, const int *b);            /* 편해 보이지만 */
+qsort(v, n, sizeof v[0], (int (*)(const void *, const void *))cmp_int);</code></pre><p><code>qsort</code>는 <code>const void *</code> 두 개를 넘기는데, 실제 함수는 <code>const int *</code>를 기대한다. 두 타입이 같은 표현을 갖는 것이 <strong>보장되지 않으므로</strong> 이 호출은 계약 밖이다. 옳은 방법은 시그니처를 그대로 맞추고 안에서 캐스트하는 것이다 — 예제의 <code>cmp</code>가 그렇게 했다.</p></div><h3>51.3 <code>void *</code>와 함수 포인터는 다른 세계다</h3><p>33장에서 <code>void *</code>가 “어떤 데이터 포인터든 담는 그릇”이라고 배웠다. 그런데 <strong>함수 포인터는 그 그릇에 담기지 않는다.</strong> 표준은 데이터 포인터와 함수 포인터 사이의 변환을 정의하지 않는다.</p><p>이유는 역사와 하드웨어에 있다. <strong>하버드 구조</strong>(Harvard architecture)를 쓰는 기계에서는 코드와 데이터가 서로 다른 주소 공간에 있다 — AVR 마이크로 컨트롤러가 대표적이고, 여기서는 “0번지”가 코드 영역에도 데이터 영역에도 따로 존재한다. 주소의 폭조차 다를 수 있다. 그런 기계에서 두 포인터를 같은 그릇에 담는 것은 애초에 불가능하다.</p><p>그래서 예제가 두 크기를 함께 찍은 것이다. 이 기계에서는 우연히 같았지만, <strong>같다는 보장은 어디에도 없다</strong>.</p><div class="dev realcase"><p class="dev-label">◉ POSIX가 표준과 어긋난 자리 — <code>dlsym</code></p><p>동적 라이브러리에서 함수를 찾아오는 POSIX 함수 <code>dlsym</code>은 <code>void *</code>를 돌려준다. 그런데 우리가 원하는 것은 함수 포인터다. 즉 이 API는 <strong>표준 C가 정의하지 않은 변환</strong>을 요구한다.</p><p>POSIX는 이 모순을 인정하고, 2008년 판에서 “구현은 이 변환을 지원해야 한다”고 따로 못박았다. 그래도 컴파일러는 경고를 내므로, 실무에서는 다음 관용구가 굳었다.</p><pre><code data-lang="c">void (*fn)(void);
+*(void **)&amp;fn = dlsym(handle, "do_work");   /* 표준의 틈을 우회하는 관용구 */</code></pre><p>“표준이 금지한 것을 플랫폼이 요구하는” 드문 사례이고, C의 이식성이 어디서 갈라지는지 보여 주는 좋은 표본이다.</p></div><h3>51.4 디스패치 표 — <code>switch</code> 대신 배열</h3><p>예제의 ④가 그것이다. 이름과 함수를 짝지어 배열에 늘어놓으면, 분기 대신 <strong>자료</strong>로 고르게 된다. 항목을 늘릴 때 코드가 아니라 표만 고치면 되고, 50장의 X 매크로와 결합하면 목록 하나에서 표까지 만들어 낼 수 있다.</p><p>이 무늬가 커지면 상태 기계, 명령 해석기, 플러그인 구조가 된다. 그리고 더 커지면 — 다음 절의 이야기다.</p><h3>51.5 가상 함수 표 — C로 짓는 객체지향</h3><p>C에는 클래스가 없다. 그러나 <strong>구조체의 첫 멤버에 함수 포인터들의 표를 가리키는 포인터를 두면</strong> 객체지향의 핵심인 다형성을 얻을 수 있다.</p><div><div><p><code>examples/ch51/vtable.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;string.h>
 
-/* 값과 타입 꼬리표를 한 꾸러미로 묶는다 — proven 의 PROVEN_ARG 와 같은 착상 */
-enum arg_kind { A_INT, A_DOUBLE, A_STR };
+/* C 에서 손으로 만드는 객체지향: 가상 함수 표(vtable)를 자료와 분리한다.
+   GTK 의 GObject 가 쓰는 방식과 같은 뼈대다. */
 
-struct arg {
-    enum arg_kind kind;
-    union { long i; double d; const char *s; } v;
+struct shape;                       /* 앞선 선언 */
+
+/* ① 가상 함수 표 — 타입마다 하나만 존재한다 (인스턴스마다가 아니다) */
+struct shape_vtable {
+    const char *name;
+    double (*area)(const struct shape *self);
+    void   (*describe)(const struct shape *self);
 };
 
-static struct arg arg_from_int(long v)        { return (struct arg){ A_INT,    { .i = v } }; }
-static struct arg arg_from_double(double v)   { return (struct arg){ A_DOUBLE, { .d = v } }; }
-static struct arg arg_from_str(const char *v) { return (struct arg){ A_STR,    { .s = v } }; }
+/* ② 기반 "클래스": 모든 객체의 첫 멤버가 표를 가리킨다 */
+struct shape {
+    const struct shape_vtable *vt;
+};
 
-#define ARG(x) _Generic((x),            \
-    int:          arg_from_int,         \
-    long:         arg_from_int,         \
-    double:       arg_from_double,      \
-    float:        arg_from_double,      \
-    const char *: arg_from_str,         \
-    char *:       arg_from_str)(x)
+/* ③ 파생 "클래스": 기반을 첫 멤버로 두면 포인터를 서로 변환할 수 있다 */
+struct circle { struct shape base; double r; };
+struct rect   { struct shape base; double w, h; };
 
-/* 인자의 타입을 함수가 *알고 받는다* — 서식 문자열을 믿지 않는다 */
-static void print_args(const struct arg *a, size_t n)
+static double circle_area(const struct shape *s)
 {
-    for (size_t i = 0; i &lt; n; i++) {
-        switch (a[i].kind) {
-            case A_INT:    printf("  [%zu] int    %ld\n", i, a[i].v.i); break;
-            case A_DOUBLE: printf("  [%zu] double %.3f\n", i, a[i].v.d); break;
-            case A_STR:    printf("  [%zu] string %s\n", i, a[i].v.s); break;
-        }
-    }
+    const struct circle *c = (const struct circle *)s;   /* 첫 멤버라 주소가 같다 */
+    return 3.14159265358979 * c->r * c->r;
+}
+static double rect_area(const struct shape *s)
+{
+    const struct rect *r = (const struct rect *)s;
+    return r->w * r->h;
+}
+static void generic_describe(const struct shape *s)
+{
+    printf("  %-6s 넓이 %.2f\n", s->vt->name, s->vt->area(s));
 }
 
-/* 배열 리터럴로 개수까지 함께 넘긴다 — 가변 인자가 아니다 */
-#define PRINT(...) do {                                       \
-    struct arg _args[] = { __VA_ARGS__ };                     \
-    print_args(_args, sizeof _args / sizeof _args[0]);        \
-} while (0)
+/* ④ 표는 상수이고 타입마다 하나 — 인스턴스는 포인터만 갖는다 */
+static const struct shape_vtable circle_vt = { "원",   circle_area, generic_describe };
+static const struct shape_vtable rect_vt   = { "사각", rect_area,   generic_describe };
+
+static struct circle make_circle(double r) { return (struct circle){ { &amp;circle_vt }, r }; }
+static struct rect   make_rect(double w, double h) { return (struct rect){ { &amp;rect_vt }, w, h }; }
 
 int main(void)
 {
-    int         n = 42;
-    double      x = 3.14159;
-    const char *s = "hello";
-    char        c = 'A';
-    bool        b = true;
+    struct circle c = make_circle(2.0);
+    struct rect   r = make_rect(3.0, 4.0);
 
-    printf("TYPE_NAME: %s %s %s %s %s\n",
-           TYPE_NAME(n), TYPE_NAME(x), TYPE_NAME(s), TYPE_NAME(c), TYPE_NAME(b));
+    /* ⑤ 같은 코드가 서로 다른 타입을 다룬다 — 다형성 */
+    const struct shape *objs[] = { &amp;c.base, &amp;r.base };
+    for (size_t i = 0; i &lt; sizeof objs / sizeof objs[0]; i++)
+        objs[i]->vt->describe(objs[i]);
 
-    printf("typed arguments:\n");
-    PRINT(ARG(n), ARG(x), ARG(s));
+    /* ⑥ 비용을 눈으로 본다 */
+    printf("객체 크기: circle=%zu, rect=%zu (표 포인터 %zu 바이트 포함)\n",
+           sizeof(struct circle), sizeof(struct rect), sizeof(void *));
+    printf("표 크기  : %zu (타입마다 하나만 존재)\n", sizeof(struct shape_vtable));
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>TYPE_NAME: int double string char bool
-typed arguments:
-  [0] int    42
-  [1] double 3.142
-  [2] string hello
-</code></pre></div></div><p>예제의 뒷부분이 이 장의 결론이다. <code>ARG(x)</code>는 <code>_Generic</code>으로 값의 타입을 알아내, <strong>값과 타입 꼬리표를 함께 담은 구조체</strong>를 만든다. 그리고 그것들을 배열에 담아 넘기므로 함수는 개수까지 알게 된다 — 가변 인자를 아예 쓰지 않는 것이다. 서식 문자열이 없으니 서식과 인자가 어긋날 자리도 없다.</p><h3>51.5 proven의 <code>PROVEN_ARG</code> — 실물의 구조</h3><p>76장에서 쓴 <code>proven_println("{}", PROVEN_ARG(x))</code>가 정확히 이 구조다. 실제 구현을 뜯어보면 세 조각으로 되어 있다.</p><p><strong>① 타입 꼬리표와 값을 담는 꾸러미.</strong> 라이브러리는 인자 하나를 이렇게 표현한다 — 어떤 종류인지 알려 주는 열거값과, 값 자체를 담는 공용체 (44장의 태그된 공용체 그대로다).</p><pre><code data-lang="c">typedef enum {
-    PROVEN_ARG_NONE, PROVEN_ARG_I32, PROVEN_ARG_U32,
-    PROVEN_ARG_I64,  PROVEN_ARG_U64, PROVEN_ARG_F64,
-    PROVEN_ARG_CSTR, PROVEN_ARG_STR_VIEW, PROVEN_ARG_PTR,
-    PROVEN_ARG_CHAR, PROVEN_ARG_BOOL, PROVEN_ARG_CUSTOM, /* ... */
-} proven_arg_type_t;</code></pre><p><strong>② 타입마다 하나씩 있는 생성 함수.</strong> <code>proven_arg_i32(int v)</code>처럼, 값을 받아 꼬리표를 붙여 돌려주는 작은 함수들이다. 전부 <code>static inline</code>이라 호출 비용이 없다.</p><p><strong>③ <code>_Generic</code>으로 그 함수들을 고르는 매크로.</strong> 실제 헤더의 모습이다.</p><pre><code data-lang="c">#define PROVEN_ARG(x) _Generic((x),          \
-    _Bool:              proven_arg_bool,     \
-    char:               proven_arg_char,     \
-    signed char:        proven_arg_i32,      \
-    unsigned char:      proven_arg_u32,      \
-    short:              proven_arg_i32,      \
-    unsigned short:     proven_arg_u32,      \
-    int:                proven_arg_i32,      \
-    unsigned int:       proven_arg_u32,      \
-    long:               proven_arg_i64,      \
-    unsigned long:      proven_arg_u64,      \
-    long long:          proven_arg_i64,      \
-    unsigned long long: proven_arg_u64,      \
-    double:             proven_arg_f64,      \
-    float:              proven_arg_f64,      \
-    const char*:        proven_arg_cstr,     \
-    char*:              proven_arg_cstr,     \
-    void*:              proven_arg_ptr,      \
-    proven_u8str_view_t: proven_arg_str_view,\
-    proven_arg_t:       proven_arg_identity  \
-)(x)</code></pre><p>읽는 요령은 마지막 줄의 <code>(x)</code>다. <code>_Generic</code>이 <strong>함수 이름 하나</strong>로 값이 정해지고, 그 뒤의 <code>(x)</code>가 그 함수를 호출한다. 즉 <code>PROVEN_ARG(n)</code>은 <code>n</code>이 <code>int</code>면 <code>proven_arg_i32(n)</code>으로, <code>double</code>이면 <code>proven_arg_f64(n)</code> 으로 컴파일된다.</p><p>설계의 세부 몇 가지가 눈에 띈다.</p><ul><li><strong>좁은 정수를 굵은 쪽으로 모은다</strong> — <code>short</code>와 <code>signed char</code>가 모두 <code>proven_arg_i32</code>로 간다. 앞 절의 기본 인자 승격과 같은 방향이지만, 이쪽은 <strong>컴파일러가 아니라 라이브러리가 명시적으로</strong> 정한 것이다.</li><li><strong><code>float</code>을 <code>double</code>로 모은다</strong> — 같은 이유다.</li><li><strong><code>char</code>만 따로 둔다</strong> — <code>proven_arg_char</code>가 따로 있어서 <code>char c = 'Z'</code>가 숫자 90이 아니라 글자 <code>Z</code>로 찍힌다. 다만 <code>PROVEN_ARG('Z')</code>는 <code>'Z'</code>가 <code>int</code>인 C의 규칙 때문에 여전히 90으로 간다 — 헤더가 이 한계를 주석에 정직하게 적어 두었다.</li><li><strong><code>proven_arg_t</code> 자기 자신도 목록에 있다</strong> — 이미 꾸러미로 만든 값을 다시 감쌀 때 그대로 통과시키기 위한 항등 가지다.</li><li><strong>목록에 없는 타입은 컴파일 오류</strong> — <code>default</code> 가지가 없다. 구조체를 실수로 넘기면 빌드가 실패한다. <code>printf</code>가 무엇이든 받아 주고 실행 중에 무너지던 것과 정반대의 선택이다.</li></ul><p>그다음은 단순하다. <code>proven_println("...", PROVEN_ARG(a), PROVEN_ARG(b))</code>는 꾸러미들을 <strong>배열 리터럴</strong>로 묶어 개수와 함께 실제 함수에 넘긴다. 가변 인자 자리를 통과하지 않으므로 승격도, 개수 추측도, 서식-인자 불일치도 없다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>그러면 <code>_Generic</code>으로 C에 제네릭이 생긴 것인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>아니다. <code>_Generic</code>은 <strong>이미 존재하는 함수들 중에서 고르는</strong> 장치이지, 타입에 따라 코드를 새로 만들어 주지 않는다. 타입마다 함수를 하나씩 손으로 써 두어야 하고, 목록도 손으로 유지해야 한다. 그래서 표준 라이브러리의 <code>&lt;tgmath.h></code>(수학 함수의 타입별 선택)나 이 절의 <code>PROVEN_ARG</code>처럼 <strong>유한하고 잘 알려진 타입 집합</strong>에 쓰인다. 진짜 제네릭이 필요하면 C에서는 여전히 매크로로 코드를 찍어 내거나(77장의 컨테이너 매크로), <code>void *</code>와 크기를 넘기는 방식(70장의 <code>qsort</code>)을 쓴다.</p></div></div><h3>51.6 역사 — varargs에서 stdarg로</h3><p>이 장치의 역사는 C가 계약의 언어로 자란 과정의 축소판이다.</p><p><strong>표준 이전(K&amp;R 시절).</strong> 원형이 없던 시절(12장)의 C에서는 사실상 모든 함수가 인자 개수를 검사받지 않았다 — <code>printf</code> 같은 함수가 특별할 것도 없었다. 인자를 꺼내는 방법도 이식성이 없었다: 첫 인자의 주소에서 스택을 따라 훑는 식의 요령을 각자 썼는데, 인자를 스택이 아니라 레지스터로 넘기는 기계가 나오면서 이 요령이 깨졌다. 그래서 나온 것이 Unix 계열의 <code>&lt;varargs.h></code>였다 — 요령을 매크로로 감싸 기계 차이를 숨긴 첫 시도다.</p><p><strong>C89 — <code>&lt;stdarg.h></code>.</strong> 표준화 위원회가 원형을 도입하면서(10·25장) 가변 인자도 정식 문법을 얻었다: 원형에 <code>...</code>을 적고, 값 꺼내기는 <code>va_*</code> 매크로로 한다. 옛 <code>varargs</code>와의 결정적 차이는 <strong>이름 있는 인자가 최소 하나 필요하다</strong>는 것이다(<code>va_start</code>가 그 인자를 기준점으로 삼는다) — 그래서 <code>printf(const char *fmt, ...)</code>처럼 서식이 앞에 오는 서명이 표준이 됐다.</p><p><strong>C23 — 다듬기.</strong> 기준점 인자가 필요하다는 제약이 완화되어(<code>va_start</code>의 둘째 인자가 선택적) 인자 없는 가변 함수도 적을 수 있게 됐고, 옛 <code>varargs.h</code>는 역사 속으로 완전히 사라졌다. 반세기에 걸쳐 “이식성 없는 요령 → 표준 매크로 → 군더더기 제거”로 다듬어 온 것이다.</p><div class="dev misconception"><p class="dev-label">⚠ “가변 인자 함수는 편리하니 자주 쓰면 좋다”</p><p>편리해 보이지만, C에서 가변 인자는 <strong>타입 안전이 사라지는 자리</strong>다. 컴파일러는 <code>...</code> 자리의 인자를 검사하지 않고, 받는 쪽은 타입을 추측할 방법이 없다. <code>printf</code> 계열이 그나마 안전한 것은 컴파일러가 <strong>특별히</strong> 서식 문자열을 읽어 검사해 주기 때문이지(17장의 경고), 언어의 일반 규칙 덕분이 아니다 — 직접 만든 가변 인자 함수에는 그 그물이 없다. 실무 권고는 분명하다: <strong>꼭 필요하지 않으면 만들지 않는다.</strong> 대안이 대개 더 낫다 — 개수가 정해졌으면 그냥 인자를 나열하고, 여럿 이면 배열과 길이를 받고(37장의 관행), 종류가 다양하면 44장의 태그된 공용체로 명시적인 값 목록을 받는다. C 라이브러리 설계의 현대적 취향은 “가변 인자는 로깅·서식처럼 도구의 검사가 붙는 자리에만”이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>printf</code> 같은 서식 함수를 감싸는 내 함수를 만들려면 어떻게 하는가 — 예컨대 로그 함수?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>그 자리를 위해 <code>v</code> 붙은 짝이 표준에 준비되어 있다 — <code>vprintf</code>, <code>vfprintf</code>, <code>vsnprintf</code>처럼 <strong><code>va_list</code>를 그대로 받는</strong> 판들이다. 내 함수가 <code>...</code>으로 받아 <code>va_start</code>로 읽개를 만든 뒤, 그 읽개를 통째로 넘겨주면 된다. 서식 검사 경고를 내 함수에서도 받고 싶다면 컴파일러 확장 표기(gcc·clang의 <code>format</code> 속성)를 붙이는 것이 관행이다 — 언어가 못 주는 안전을 도구가 메우는, 이 책에 여러 번 나온 무늬다.</p></div></div><p>가변 인자의 정체를 알았다 — 함수에 <strong>값</strong>을 여럿 넘기는 법이었다. 다음 장은 그 거울상이다. 함수 자체를 값으로 다루는 법, 즉 함수 포인터다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>  원    넓이 12.57
+  사각 넓이 12.00
+객체 크기: circle=16, rect=24 (표 포인터 8 바이트 포함)
+표 크기  : 24 (타입마다 하나만 존재)
+</code></pre></div></div><p>설계의 뼈대는 넷이다.</p><ol><li><strong>표는 타입마다 하나</strong>다(<code>static const</code>). 인스턴스마다 함수 포인터를 복사해 두면 객체가 커지고 캐시가 나빠진다 — 그래서 표는 분리해서 한 벌만 두고, 객체는 그 표를 가리키는 포인터 하나만 갖는다.</li><li><strong>기반 구조체를 첫 멤버로 둔다.</strong> 표준이 “구조체의 첫 멤버는 구조체 자신과 같은 주소에서 시작한다”고 보장하므로, <code>struct circle *</code>와 <code>struct shape *</code>를 안전하게 오갈 수 있다(41장).</li><li><strong>호출은 표를 통해</strong> 한다 — <code>s->vt->area(s)</code>. 이 한 줄이 C++의 가상 함수 호출이 하는 일과 정확히 같다.</li><li><strong>자기 자신을 첫 인자로</strong> 넘긴다. C++이 감춰 주는 <code>this</code>를 손으로 적는 것이다.</li></ol><p>출력의 마지막 두 줄이 비용을 보여 준다. 객체마다 늘어나는 것은 포인터 하나(8바이트)뿐이고, 표는 타입당 한 번만 존재한다.</p><div class="dev realcase"><p class="dev-label">◉ GTK의 GObject — 실제로 쓰이는 손수 지은 객체 체계</p><p>이 방식이 장난감이 아니라는 증거가 GTK다. 리눅스 데스크톱의 주요 툴킷인 GTK는 순수 C로 쓰였고, 그 밑에 <strong>GObject</strong>라는 객체 체계를 두고 있다. 구조는 방금 본 것과 같은 뼈대 위에 서 있다.</p><ul><li>인스턴스 구조체의 첫 멤버가 <strong>클래스 구조체</strong>(우리의 vtable)를 가리킨다.</li><li>클래스 구조체에는 함수 포인터들이 늘어서 있고, 파생 클래스는 그중 일부를 자기 함수로 덮어써서 “재정의”한다.</li><li>상속은 기반 구조체를 첫 멤버로 두는 것으로 표현하고, 타입 변환은 검사를 곁들인 매크로(<code>GTK_WIDGET(x)</code> 같은)로 감싼다.</li><li>여기에 참조 계수, 시그널(관찰자 패턴), 속성 체계가 얹힌다.</li></ul><p>같은 설계를 다른 곳에서도 볼 수 있다. 리눅스 커널의 <code>struct file_operations</code> —파일 시스템마다 다른 <code>read</code>·<code>write</code> 함수를 담은 표— 가 정확히 vtable이고, Windows의 COM은 아예 이 규약을 ABI 수준에서 못박은 것이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>그러면 C++의 가상 함수와 무엇이 다른가?</p></div><div class="dev qa-a"><p class="dev-label">답 개념은 같고 <strong>자동화의 정도</strong>가 다르다. C++은 컴파일러가 표를 만들고, 포인터를 심고, 생성자에서 연결하고, 타입 변환을 검사해 준다. C에서는 그 전부가 손일이고, 그래서 실수할 자리도 많다 — 표를 연결하지 않은 객체, 첫 멤버 규칙을 어긴 구조체, 파생 타입을 잘못 캐스트하는 코드.</p><p>대신 얻는 것도 분명하다. <strong>무엇이 어디에 있는지 전부 보인다.</strong> 표가 몇 개인지, 호출 한 번에 포인터를 몇 번 따라가는지, 객체가 몇 바이트인지 세어 볼 수 있다. 이 책이 내내 말해 온 “비용이 보이는 언어”의 성격이 객체지향에서도 그대로 나타나는 자리다.</p><p>덧붙여, C++의 가상 함수 표 배치는 <strong>표준이 정하지 않는다</strong>(ABI가 정한다). 그래서 C와 C++을 섞을 때 클래스 객체를 경계 너머로 넘기지 않고 <code>extern "C"</code> 함수와 단순 구조체만 주고받는 것이다(79장).</p></div></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>함수 포인터 요약.</p><table><tr><th><strong>규칙</strong></th><th><strong>내용</strong></th></tr><tr><td>무너짐</td><td>함수 이름은 값으로 쓰이면 포인터가 된다</td></tr><tr><td><code>f</code>·<code>&amp;f</code>·<code>*f</code></td><td>모두 같은 포인터. <code>&amp;&amp;f</code>는 문법 오류</td></tr><tr><td>호출 표기</td><td><code>p(x)</code>와 <code>(*p)(x)</code>는 동일</td></tr><tr><td>타입</td><td>반환형+매개변수. 다른 타입으로 캐스트해 호출하면 계약 밖</td></tr><tr><td><code>void *</code></td><td>함수 포인터와 서로 변환된다는 보장이 없다(하버드 구조)</td></tr><tr><td><code>dlsym</code></td><td>POSIX가 따로 보장. <code>*(void **)&amp;fn</code> 관용구</td></tr><tr><td>디스패치 표</td><td>분기 대신 자료로 고르기</td></tr><tr><td>vtable</td><td>표는 타입당 하나, 객체는 포인터 하나. 첫 멤버 규칙이 근거</td></tr><tr><td>실물</td><td>GObject(GTK), 커널의 <code>file_operations</code>, COM</td></tr></table></div><p>함수를 값으로 다루는 법까지 갖췄다. 그런데 이 장에서 몇 번, 선언 자체가 읽기 어려워 <code>typedef</code>로 도망친 자리가 있었다 — <code>int (*(*s)(void))(int);</code> 같은 것들이다. 다음 장이 그 빚을 갚는다: C에서 가장 악명 높은 자리인 <strong>선언 읽기</strong>를, 두 가지 독법과 <code>typedef</code>로 정면 돌파한다.</p>
 <div class="nav"><a href="ch50.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch52.html">다음 →</a></div>
 </div></main></body></html>

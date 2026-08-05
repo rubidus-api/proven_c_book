@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>75 문자열과 텍스트 — Proven C Book</title><style>
+<title>75 형식화와 파싱 — 타입을 두 번 적지 않기 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,71 +68,89 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>75 문자열과 텍스트</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>70장의 첫째 버그 — 그릇의 크기를 모르는 문자열 함수 — 에 대한 답이다. 길이를 지니고 다니는 문자열, 소유와 빌림의 구분, 그리고 이 라이브러리 에서 가장 논쟁적인 결정인 <strong>거부하되 자르지 않는다</strong>까지. 9장의 인코딩 이야기와 38장의 경계 이야기가 여기서 하나로 모인다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>38장에서 C 문자열은 “NUL을 만날 때까지”가 곧 길이라, 길이를 알려면 매번 세어야 한다고 했다. 그러면 길이를 함께 들고 다니면 무엇이 좋아지는가 — 그리고 무엇을 잃는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>얻는 것이 셋이다. 길이를 세는 비용이 사라지고(<math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math>이 <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math>이 된다), 중간에 0바이트가 들어 있는 자료도 다룰 수 있으며, 무엇보다 <strong>경계를 검사할 수 있다</strong> — 길이를 모르면 검사할 것 자체가 없다. 잃는 것은 둘이다. 문자열 하나가 한 워드가 아니라 두 워드가 되고, <code>printf("%s")</code> 처럼 NUL 종단을 기대하는 세상과 만날 때 변환이 필요해진다. 이 라이브러리는 그 변환 비용을 없애려고 내부적으로 NUL도 함께 유지한다 — 둘 다 가지는 절충이다.</p></div></div><h3>75.1 두 개의 타입, 하나의 규칙</h3><p>문자열 어휘는 둘뿐이다.</p><ul><li><code>proven_u8str_t</code> — <strong>소유하는</strong> 문자열. 버퍼와 길이와 용량을 가진다.</li><li><code>proven_u8str_view_t</code> — <strong>빌린</strong> 문자열. 포인터와 길이뿐이다.</li></ul><p>이름에 <code>view</code>가 있으면 빌린 것이고, 빌린 것은 파괴하지 않는다. 74장에서 세운 규칙이 문자열에 그대로 적용된 것이다. <code>u8</code>은 UTF-8을 뜻한다 — 9장에서 본 그 인코딩이 이 라이브러리의 기본 텍스트 표현이다.</p><p>소유하는 문자열을 얻는 길은 둘이다. 할당자에게 받거나(<code>_create</code>), 남의 버퍼를 빌려 쓰거나(<code>_borrow</code>).</p><div><div><p><code>examples/ch75/ops.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>75 형식화와 파싱 — 타입을 두 번 적지 않기</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>69장의 셋째 버그 — 서식과 인자의 불일치 — 에 대한 답이다. <code>{}</code>라는 타입 없는 자리표시자가 어떻게 타입 안전을 얻는지, 그 밑에서 <code>_Generic</code>이 무엇을 하는지, 그리고 반대 방향인 파싱에서 실패가 어떻게 값으로 드러나는지를 본다. 53장에서 뜯어본 <code>printf</code>·<code>scanf</code>의 대안이다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>50장에서 가변 인자에는 타입 정보가 실려 가지 않는다고 했고, 53장에서는 그래서 서식 문자열이 “스택을 어떻게 읽을지”를 혼자 정한다고 했다. 그러면 인자에서 타입을 가져오려면 무엇이 필요한가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>호출 자리에서</strong> 타입을 붙잡아 값과 함께 실어 보내면 된다. 즉 인자를 그대로 넘기지 않고 <code>{타입 꼬리표, 값}</code> 꾸러미로 감싸는 것이다. 남은 문제는 “타입 꼬리표를 어떻게 자동으로 붙이는가”인데, 그 답이 C11의 <code>_Generic</code>이다 — 표현식의 타입에 따라 컴파일 시간에 서로 다른 코드를 <span id="idx-entry-107"></span>고르는 장치. 실행 시간 비용은 0이고, 28장에서 배운 암묵적 변환 규칙과 달리 여기서는 타입이 <strong>보존된다</strong>.</p></div></div><h3>75.1 <code>{}</code> — 타입이 없는 자리표시자</h3><p>규칙은 셋뿐이다.</p><ul><li><code>{}</code> — 여기에 다음 인자를 넣는다. 타입은 적지 않는다.</li><li><code>{:...}</code> — 콜론 뒤에 서식 지정(폭·정렬·자릿수)을 적는다.</li><li><code>{{</code> <code>}}</code> — 중괄호 글자 자체.</li></ul><p><code>%d</code>가 없으니 <code>%d</code>와 <code>double</code>이 어긋날 자리도 없다. 53장에서 본 불일치의 가능성이 문법 차원에서 제거된 것이다.</p><div><div><p><code>examples/ch75/fmt.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
-static void show(const char *label, proven_u8str_view_t v)
+int main(void)
 {
-    printf("%-12s [%.*s] (%zu bytes)\n", label, (int)v.size, (const char *)v.ptr, v.size);
+    /* 화면이 아니라 문자열로 형식화한다 — 버퍼는 스택에서 빌린다 */
+    proven_byte_t buf[64];
+    proven_u8str_t out = proven_u8str_borrow(buf, sizeof buf);
+
+    int      port = 8080;
+    double   load = 0.4237;
+    const char *host = "example.org";
+
+    proven_fmt_result_t r = proven_u8str_append_fmt(&amp;out, "{}:{} load={:.2}",
+                                                   PROVEN_ARG(host), PROVEN_ARG(port),
+                                                   PROVEN_ARG(load));
+    if (proven_is_ok(r.err)) {
+        proven_u8str_view_t v = proven_u8str_as_view(&amp;out);
+        printf("formatted : %.*s\n", (int)v.size, (const char *)v.ptr);
+    }
+
+    /* 그릇이 모자라면? 자르지 않고 거부한다 */
+    proven_byte_t small_buf[8];
+    proven_u8str_t small = proven_u8str_borrow(small_buf, sizeof small_buf);
+    proven_fmt_result_t r2 = proven_u8str_append_fmt(&amp;small, "{}:{}",
+                                                    PROVEN_ARG(host), PROVEN_ARG(port));
+    printf("into 8 bytes: %s (err=%d)\n",
+           proven_is_ok(r2.err) ? "ok" : "refused", (int)r2.err);
+
+    /* 정렬과 자릿수 — 46장의 폭/정밀도에 해당한다 */
+    proven_u8str_t line = proven_u8str_borrow(buf, sizeof buf);
+    (void)proven_u8str_reset(&amp;line);
+    proven_fmt_result_t r3 = proven_u8str_append_fmt(&amp;line, "|{:>10}|{:&lt;10}|{:.3}|",
+                                                    PROVEN_ARG(host), PROVEN_ARG(host),
+                                                    PROVEN_ARG(load));
+    if (proven_is_ok(r3.err)) {
+        proven_u8str_view_t v = proven_u8str_as_view(&amp;line);
+        printf("aligned   : %.*s\n", (int)v.size, (const char *)v.ptr);
+    }
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>formatted : example.org:8080 load=0.42
+into 8 bytes: refused (err=2)
+aligned   : |example.org|example.org|0.424|
+</code></pre></div></div><p>이 예제는 화면이 아니라 <strong>문자열로</strong> 형식화한다 — 70장에서 본 <code>proven_println</code>이 이 기계를 표준 출력에 연결한 판이다. 세 가지를 짚을 수 있다.</p><p><strong>첫째, 서식화도 실패할 수 있다.</strong> 8바이트 그릇에 <code>example.org:8080</code>을 넣을 수 없으므로 거부됐다. 74장의 원칙이 여기서도 그대로다 — 자르느니 실패를 돌려준다. <code>snprintf</code>와 정반대의 기본값이다.</p><p><strong>둘째, 서식 지정 문법이 조금 다르다.</strong> <code>{:>10}</code>의 <code>></code>는 오른쪽 정렬, <code>{:&lt;10}</code>은 왼쪽 정렬, <code>{:.3}</code>은 소수 셋째 자리다. 53장의 <code>%10s</code>·<code>%-10s</code>·<code>%.3f</code>와 대응하지만, <strong>타입 글자가 없다</strong>는 점이 다르다.</p><p><strong>셋째, 반올림은 하되 자릿수는 지킨다.</strong> <code>load=0.42</code>는 <code>{:.2}</code>가 만든 것이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>PROVEN_ARG</code>가 정확히 무엇을 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답 <code>_Generic</code>으로 인자의 타입을 골라, 그 타입에 맞는 꼬리표를 붙인 작은 구조체를 만든다. 개념만 옮기면 이런 모양이다.</p><pre><code data-lang="c">#define PROVEN_ARG(x) _Generic((x),          \
+    int:          proven_arg_i32,            \
+    double:       proven_arg_f64,            \
+    const char *: proven_arg_cstr,           \
+    bool:         proven_arg_bool            \
+    /* ... */ )(x)</code></pre><p><code>_Generic</code>은 <strong>컴파일 시간에</strong> 가지를 고르므로 실행 시간에 타입을 판별하는 비용이 없다. 그리고 목록에 없는 타입을 넘기면 <strong>컴파일 오류</strong>가 난다 — 53장의 <code>printf</code>가 무엇이든 받아 주던 것과 정반대다.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ <code>PROVEN_ARG</code> 없이 값을 그냥 넘기기</p><pre><code data-lang="c">proven_println("count={}", count);        /* 컴파일되지 않는다 */</code></pre><p>꾸러미가 아닌 날값을 넘겼으므로 타입이 맞지 않아 빌드가 실패한다. 성가시게 느껴질 수 있지만 이것이 설계의 요점이다 — <strong>감싸는 일을 잊으면 프로그램이 만들어지지 않는다.</strong> 잊어도 컴파일되고 실행 중에 이상해지는 <code>printf</code>와의 차이가 여기에 있다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “자리표시자에 타입이 없으니 느릴 것이다”</p><p>반대다. <code>printf</code>는 <strong>실행 중에</strong> 서식 문자열을 한 글자씩 해석하며 다음에 무엇을 꺼낼지 결정한다. <code>{}</code>도 서식을 훑는 것은 같지만, 각 인자의 타입은 이미 꼬리표로 정해져 있어 추측이 없다. 무엇보다 타입 불일치로 인한 UB가 없으므로 방어 코드도 필요 없다. 비용의 차이는 대개 무시할 만하고, 이 라이브러리의 실수 형식화는 정확성 쪽에 더 신경을 쓴 편이다 — 53장에서 본 <code>%f</code>의 반올림 규칙을 그대로 재현하는 것이 오히려 까다로운 일이다.</p></div><h3>75.2 반대 방향 — 스캐너</h3><p>파싱은 형식화의 거울이지만, 실패의 성격이 다르다. 형식화는 그릇이 모자랄 때만 실패하는데, 파싱은 <strong>입력이 기대와 다를 때마다</strong> 실패한다. 그리고 53장에서 본 대로 <code>sscanf</code>는 “몇 개나 성공했는가”만 알려 준다 — 어디서 왜 멈췄는지는 말해 주지 않는다.</p><span id="idx-entry-108"></span><p>proven의 스캐너는 커서를 가진 객체다. 뷰 위에 놓고, 하나씩 읽어 나간다. 읽을 때마다 결과가 꾸러미로 온다.</p><div><div><p><code>examples/ch75/lines.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+/* 한 줄에서 "이름 나이" 꼴을 해석한다 — 실패는 값으로 드러난다. */
+static void parse_line(const char *line)
+{
+    proven_scan_t sc = proven_scan_init(proven_u8str_view_from_cstr(line));
+
+    proven_result_u8str_view_t name = proven_scan_str(&amp;sc);
+    if (!proven_is_ok(name.err)) {
+        printf("[%s] -> no name found\n", line);
+        return;
+    }
+
+    proven_result_i64_t age = proven_scan_i64(&amp;sc);
+    if (!proven_is_ok(age.err)) {
+        printf("[%s] -> age is not a number\n", line);
+        return;
+    }
+
+    printf("[%s] -> name %.*s, age %lld\n", line,
+           (int)name.val.size, (const char *)name.val.ptr, (long long)age.val);
 }
 
 int main(void)
 {
-    /* ① 할당 없는 문자열: 스택 버퍼를 빌려 쓴다.
-          allocator 가 없는 시그니처 = 할당하지 않는다 */
-    proven_byte_t buf[16];
-    proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
-
-    proven_err_t e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hello"));
-    printf("append 'hello' : %s\n", proven_is_ok(e) ? "ok" : "refused");
-    show("content", proven_u8str_as_view(&amp;s));
-
-    /* ② 자리가 모자라면 거부한다 — 자르지 않는다 */
-    e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr(" world, and more"));
-    printf("append long    : %s (err=%d)\n",
-           proven_is_ok(e) ? "ok" : "refused", (int)e);
-    show("unchanged", proven_u8str_as_view(&amp;s));   /* 실패 원자성 */
-
-    /* ③ 찾기와 자르기 — 전부 view 위에서, 복사 없이 */
-    proven_u8str_view_t csv = proven_u8str_view_from_cstr("name,age,city");
-    proven_u8str_view_t comma = proven_u8str_view_from_cstr(",");
-
-    proven_size_t at = proven_u8str_view_find(csv, 0, comma);
-    printf("first comma at : %zu\n", at);
-    show("field 1", proven_u8str_view_slice(csv, 0, at));
-
-    /* ④ 구분자로 훑기: 못 찾으면 센티널(PROVEN_INDEX_NOT_FOUND)이 온다 */
-    proven_size_t start = 0;
-    int n = 0;
-    for (;;) {
-        proven_size_t hit = proven_u8str_view_find(csv, start, comma);
-        proven_size_t end = (hit == PROVEN_INDEX_NOT_FOUND) ? csv.size : hit;
-        char label[24];
-        snprintf(label, sizeof label, "field %d", ++n % 100);
-        show(label, proven_u8str_view_slice(csv, start, end - start));
-        if (hit == PROVEN_INDEX_NOT_FOUND) break;
-        start = hit + 1;
-    }
-
-    /* ⑤ 비교와 접두사 검사 */
-    printf("eq 'name,age,city' : %d\n",
-           proven_u8str_view_eq(csv, proven_u8str_view_from_cstr("name,age,city")));
-    printf("starts with 'name' : %d\n",
-           proven_u8str_view_starts_with(csv, proven_u8str_view_from_cstr("name")));
+    parse_line("alice 33");
+    parse_line("bob thirty");
+    parse_line("   ");
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>append 'hello' : ok
-content      [hello] (5 bytes)
-append long    : refused (err=2)
-unchanged    [hello] (5 bytes)
-first comma at : 4
-field 1      [name] (4 bytes)
-field 1      [name] (4 bytes)
-field 2      [age] (3 bytes)
-field 3      [city] (4 bytes)
-eq 'name,age,city' : 1
-starts with 'name' : 1
-</code></pre></div></div><p>첫 줄이 74장의 규칙을 다시 보여 준다. <code>proven_u8str_borrow</code>에는 할당자가 없다 — 그러므로 할당하지 않는다. 스택에 잡은 16바이트 배열 위에서 문자열 연산을 하는 것이고, 임베디드에서 힙 없이 문자열을 다루는 방식이 정확히 이것이다.</p><h3>75.2 거부하되, 자르지 않는다</h3><p>두 번째 <code>append</code>가 이 부에서 가장 중요한 한 줄이다. 16바이트 그릇에 <code>"hello"</code> 다음으로 <code>" world, and more"</code>를 붙이려 하자 라이브러리는 <strong>아무것도 쓰지 않고</strong> <code>PROVEN_ERR_OUT_OF_BOUNDS</code>를 돌려주었다. 그리고 그다음 줄이 보여 주듯 원래 내용 <code>hello</code>는 그대로다 — 72장에서 배운 실패 원자성이다.</p><p>70장에서 본 <code>snprintf</code>의 선택과 정반대다. 왜 자르지 않는가?</p><p><strong>잘린 값은 짧은 값이 아니라 다른 값이기 때문이다.</strong> 잘린 경로는 다른 파일을 가리키고, 잘린 명령은 다른 명령이며, 잘린 사용자 이름은 다른 사람이다. 자르고 성공을 말하면 호출자는 자기가 받은 것이 요청한 것인지 알 수 없다. 그래서 이 라이브러리는 <strong>결정을 호출자에게 되돌려준다</strong> — “자리가 모자랍니다. 어떻게 할까요?”</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>그래도 로그 한 줄처럼 잘려도 괜찮은 자리가 있지 않은가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>있다. 그래서 <strong>명시적으로 부분만 쓰는</strong> 함수가 따로 있다 — <code>proven_u8str_append_partial</code>은 들어간 바이트 수를 돌려준다. 이름이 길고 반환값이 다르다는 점이 핵심이다. 자르기는 여전히 가능하지만, 그것을 하려면 <strong>그렇게 적어야</strong> 한다. 기본값은 언제나 안전한 쪽이고 위험한 선택은 눈에 보이는 이름으로만 할 수 있다는 원칙(73장의 <code>_unchecked</code>와 같다)이 여기서도 지켜진다.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ 성장과 고정 용량을 헷갈리기</p><pre><code data-lang="c">proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
-proven_err_t e = proven_u8str_append_grow(alloc, &amp;s, view);  /* 위험 */</code></pre><p><code>_append</code>는 용량 안에서만 쓰고, <code>_append_grow</code>는 모자라면 할당자에게 더 달라고 한다 — 그래서 후자에만 할당자 인자가 있다. 문제는 빌린 버퍼(<code>_borrow</code>) 위에서 성장을 요구하는 경우다. 스택 배열은 자랄 수 없으므로 이것은 설계 오류다. 시그니처를 읽는 습관이 여기서 그대로 방어가 된다 — <strong>할당자가 있으면 자랄 수 있고, 없으면 자랄 수 없다.</strong></p></div><h3>75.3 찾기와 자르기 — 복사 없는 텍스트 처리</h3><p>예제의 ③·④가 뷰의 진짜 쓸모다. 부분 문자열을 얻는 데 복사가 필요 없다 — 원본을 가리키는 포인터와 길이를 새로 계산할 뿐이다. CSV 한 줄을 세 필드로 가르는 동안 할당은 한 번도 일어나지 않았다.</p><p>이 무늬는 파서에서 특히 강력하다. 26장에서 <code>sscanf</code>로 줄을 해석할 때는 결과를 담을 버퍼를 미리 준비해야 했지만, 뷰로 자르면 <strong>원본 위에 표시만</strong> 남긴다. 대신 지켜야 할 것이 하나 늘어난다 — 73장에서 본 대로 <strong>원본이 살아 있는 동안만 유효하다</strong>.</p><p><code>find</code>가 못 찾았을 때 돌려주는 값에도 규약이 있다. 0이나 음수가 아니라 <code>PROVEN_INDEX_NOT_FOUND</code>라는 이름의 센티널이다. 70장에서 센티널 값의 위험을 이야기했는데, 여기서는 <strong>이름이 붙어 있고 문서화되어 있다</strong>는 점이 다르다 — 이름 없는 마법의 수와 이름 붙은 계약은 다른 물건이다.</p><div class="dev misconception"><p class="dev-label">⚠ “길이를 들고 다니면 글자 수를 아는 것이다”</p><p>아니다. 길이는 <strong>바이트 수</strong>다. 9장에서 배운 대로 UTF-8에서 한 글자는 1~4바이트이므로, 한글 “가”는 3바이트이고 이모지는 4바이트다. 예제의 출력이 굳이 “(5 bytes)”라고 밝히는 이유다. 그래서 “n번째 글자”를 다루는 일은 여전히 조심스럽고, <strong>바이트 경계에서 아무 데나 자르면</strong> 9장에서 본 깨진 글자가 나온다. 문자열 라이브러리가 해결해 주는 것은 경계 침범이지 인코딩의 본질적 난이도가 아니다.</p></div><h3>75.4 두 세계의 경계 — NUL 종단과 UTF-16</h3><p>바깥 세계와 만나는 자리마다 변환이 필요하다.</p><ul><li><code>proven_u8str_as_cstr</code> — 소유 문자열에서 NUL 종단 포인터를 얻는다. 내부에 NUL을 유지해 두므로 복사도 할당도 없다. <code>printf("%s")</code>나 파일 API에 넘길 때 쓴다.</li><li><code>proven_u8str_view_to_cstr</code> — 뷰에서 NUL 종단 문자열을 만든다. 이쪽은 <strong>할당자를 받는다</strong> — 뷰는 원본 중간을 가리킬 수 있어 그 자리에 NUL을 쓸 수 없기 때문이다. 시그니처가 다시 한번 사실을 말해 준다.</li><li><code>proven_u16str_t</code> / <code>proven_u16str_view_t</code> — UTF-16 세계와의 다리다. Windows API가 이 인코딩을 쓰므로 변환이 필요하고, 변환은 실패할 수 있다(짝이 맞지 않는 서러게이트 같은 것). 그래서 결과는 꾸러미로 온다.</li></ul><div class="dev realcase"><p class="dev-label">◉ “추측하지 말고 거부하라” — 인코딩 처리의 원칙</p><p>9장에서 본 텍스트 보안 문제들의 뿌리는 대개 <strong>너그러운 디코더</strong>다. 잘못된 UTF-8을 만났을 때 “비슷한 것으로 고쳐 읽는” 구현은 과거 여러 번 보안 사고의 통로가 됐다 — 특히 지나치게 긴 인코딩(overlong)을 허용한 디코더들이 검사를 우회당했다. 그래서 오늘의 규범은 한 문장이다. <strong>유효하지 않은 입력은 고쳐 읽지 말고 거부하라.</strong> proven의 인코딩 변환이 <code>PROVEN_ERR_INVALID_ENCODING</code>을 돌려주며 멈추는 것이 그 규범의 구현이고, 이 원칙은 이 장 전체의 “자르지 않는다”와 정확히 같은 정신이다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>문자열 어휘 요약.</p><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>실패·소유</strong></th></tr><tr><td><code>u8str_create(alloc, cap)</code></td><td>소유 문자열 생성</td><td>꾸러미 반환, <code>_destroy</code> 필요</td></tr><tr><td><code>u8str_borrow(buf, cap)</code></td><td>남의 버퍼 위에 문자열</td><td>할당 없음, 파괴 없음</td></tr><tr><td><code>u8str_append(&amp;s, v)</code></td><td>용량 안에서 덧붙임</td><td>모자라면 거부(원본 보존)</td></tr><tr><td><code>u8str_append_partial</code></td><td>들어가는 만큼</td><td>넣은 바이트 수 반환</td></tr><tr><td><code>u8str_append_grow(alloc,…)</code></td><td>모자라면 늘려서</td><td>할당 실패 가능</td></tr><tr><td><code>u8str_view_find</code></td><td>부분 문자열 위치</td><td>없으면 <code>PROVEN_INDEX_NOT_FOUND</code></td></tr><tr><td><code>u8str_view_slice</code></td><td>부분 뷰</td><td>복사 없음 — 원본 수명에 묶임</td></tr><tr><td><code>u8str_as_cstr</code></td><td>NUL 종단 포인터</td><td>복사 없음</td></tr><tr><td><code>u8str_view_to_cstr</code></td><td>뷰 → C 문자열</td><td>할당자 필요</td></tr></table></div><p>문자열을 안전하게 담고 자를 수 있게 됐다. 그런데 아직 <strong>만드는</strong> 일이 남았다 — 수와 값을 글자로 바꾸고, 글자를 다시 수로 되돌리는 일. 70장의 셋째 버그가 기다리는 자리이자, 이 라이브러리에서 가장 눈에 띄게 다른 문법이 나오는 자리다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>[alice 33] -> name alice, age 33
+[bob thirty] -> age is not a number
+[   ] -> no name found
+</code></pre></div></div><p>세 입력이 세 갈래로 갈린 것이 핵심이다. <code>bob thirty</code>는 이름은 읽혔지만 나이에서 멈췄고, 공백뿐인 줄은 이름부터 실패했다. <code>sscanf</code>라면 둘 다 “항목 하나 성공” 또는 “0”으로 뭉뚱그려졌을 것이다.</p><p>커서를 가진다는 것에는 또 다른 이점이 있다. <strong>어디까지 읽었는지</strong>를 알 수 있어서, 남은 부분을 다른 방식으로 처리하거나 오류 메시지에 위치를 실을 수 있다. 25장에서 <code>sscanf</code>로 줄을 해석할 때 “몇 글자를 소비했는지 알 수 없다”고 했던 문제의 답이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>스캐너에도 서식 문자열이 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>있다 — <code>proven_scan_fmt_cursor(&amp;sc, "{}:{}", PROVEN_SCAN_ARG(&amp;host),<br><span style="white-space: pre-wrap">&#x20;&#x20;</span>PROVEN_SCAN_ARG(&amp;port))</code>처럼 쓴다. 형식화와 대칭이고, 인자는 담을 곳의 주소를 감싼 것이다. 다만 헤더가 정직하게 밝혀 두는 주의사항이 하나 있다 — 서식 중간에서 실패하면 <strong>그 전까지 채워진 값은 이미 바뀌어 있다</strong>는 것이다. 71장에서 배운 실패 원자성이 여기서는 보장되지 않으므로, 꼭 필요하면 커서와 목적지를 미리 저장해 두었다가 되돌려야 한다. 계약을 숨기지 않고 문서에 적어 두는 것이 이 라이브러리의 방식이다.</p></div></div><div class="dev realcase"><p class="dev-label">◉ 파서가 관대하면 무슨 일이 생기는가</p><p>HTTP 요청 처리에서 반복적으로 드러난 문제가 있다. 서버와 프록시가 같은 요청을 <strong>조금씩 다르게</strong> 해석하면, 공격자가 그 틈으로 두 번째 요청을 몰래 끼워 넣을 수 있다(request smuggling). 한쪽은 헤더의 이상한 공백을 너그럽게 넘기고 다른 쪽은 엄격히 거부하는 식의 차이가 원인이었다. 교훈은 74장의 인코딩 이야기와 정확히 같다 — <strong>애매한 입력은 고쳐 읽지 말고 거부하라.</strong> 실패를 값으로 돌려주는 파서는 그 거부를 표현할 수단을 갖춘 파서이기도 하다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>형식화·파싱 요약.</p><table><tr><th><strong>하는 일</strong></th><th><strong>API</strong></th><th><strong>메모</strong></th></tr><tr><td>화면에 한 줄</td><td><code>proven_println(fmt, ARG…)</code></td><td>에러 반환하되 강요 안 함</td></tr><tr><td>문자열로 형식화</td><td><code>proven_u8str_append_fmt(&amp;s, …)</code></td><td>모자라면 거부</td></tr><tr><td>자를 것을 허용</td><td><code>…_append_fmt_trunc</code></td><td>이름으로 의도를 밝힘</td></tr><tr><td>늘려 가며</td><td><code>…_append_fmt_grow(alloc, …)</code></td><td>할당자 필요</td></tr><tr><td>인자 감싸기</td><td><code>PROVEN_ARG(x)</code></td><td><code>_Generic</code> — 없는 타입은 컴파일 오류</td></tr><tr><td>스캐너 시작</td><td><code>proven_scan_init(view)</code></td><td>커서를 가진 객체</td></tr><tr><td>하나씩 읽기</td><td><code>proven_scan_i64/f64/str</code></td><td>꾸러미로 결과와 실패</td></tr><tr><td>서식으로 읽기</td><td><code>proven_scan_fmt_cursor(…)</code></td><td>중간 실패 시 부분 변경 주의</td></tr></table></div><p>문자열을 담고, 만들고, 되읽는 어휘가 갖춰졌다. 다음은 <strong>여럿을 담는</strong> 도구 들이다 — 자라는 배열, 리스트, 링 버퍼, 해시 맵, 그리고 69장에서 예고한 “최악에도 보장이 있는” 알고리즘들.</p>
 <div class="nav"><a href="ch74.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch76.html">다음 →</a></div>
 </div></main></body></html>

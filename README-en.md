@@ -34,7 +34,8 @@ the source. The English edition is translated from it chapter by chapter, with
 **chapter numbers identical to the original**, so a reference to "chapter 49"
 means the same chapter in both editions.
 
-Translated so far: preface, Part II introduction, chapter 1 and chapters 4–19.
+Translated so far: preface, Part II introduction, chapter 1 and chapters 4–46
+(Parts II–IX complete), plus chapter 80.
 Per-chapter status: [TRANSLATION.md](TRANSLATION.md).
 
 The two editions are kept in step mechanically. `scripts/sync-status.py` records

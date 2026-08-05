@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>30 Deciding — if and switch — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>30 Deciding — if and switch</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The program meets a fork. <code>if</code>, which takes a different road according to a condition, and <code>switch</code>, which spreads several branches at once — we learn both branching devices. This is the chapter in which chapter 4′s model of computation (“if the result is zero, jump over there”) finally appears with the face of C syntax.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 12 foreshadowed the instinct that “an <code>if</code> is not free” — a mispredicted branch pays the penalty of flushing the pipeline. Should a programmer then avoid branches?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>No — branches are the skeleton of a program, and the predictor is right well over 90% of the time in everyday code. The use of that instinct is not “do not use branches” but <strong>knowing that the cost of a branch is not constant</strong> — a regular fork is cheap, a random one expensive (the sorted-array episode). It is knowledge to be taken out only in the very small amount of code where performance matters; the branching learned today may be used freely.</p></div></div><h3>30.1 if — when the condition is true</h3><p>The syntax is as it reads:</p><pre><code data-lang="c">if (condition) {
+    statements when the condition is true
+} else {
+    statements when it is false   /* the else part may be omitted */
+}</code></pre><p>In the condition’s place goes an expression that becomes a bool (chapter 29), and each branch takes a block (chapter 19). When there are several branches you build a ladder with <code>else if</code> — the demonstration is that shape. Notice too that chapter 25′s input practice (fgets + sscanf) appears again.</p><div><div><p><code>examples/ch30/grade.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+int main(void)
+{
+    char line[100];
+    int score = 0;
+
+    fgets(line, sizeof line, stdin);
+    sscanf(line, "%d", &amp;score);
+
+    if (score >= 90) {
+        printf("%d: excellent\n", score);
+    } else if (score >= 80) {
+        printf("%d: good\n", score);
+    } else if (score >= 70) {
+        printf("%d: fair\n", score);
+    } else {
+        printf("%d: needs work\n", score);
+    }
+    return 0;
+}
+</code></pre></div><div><p>Given on standard input</p><pre><code>87
+</code></pre></div><div><p>Output</p><pre><code>87: good
+</code></pre></div></div><p>The ladder is checked <strong>in order from the top</strong>, and only the first branch that becomes true is executed — that 87 stops at “우” and does not fall further down is that guarantee. So the order of the ladder is the logic itself: narrow conditions above, broad conditions below, is the standard.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>I hear the braces may be omitted when a branch has only one statement — may they be?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Grammatically they may — and this book recommends not doing it. A brace-less branch takes “only the next single statement” into the branch, and adding a line later while forgetting the missing braces is a classic path to accident. It really happened in Apple’s SSL library, where this pattern pushed verification code outside the branch and the security check was skipped entirely (the “goto fail” incident, 2014) — the day it was expensively proved that indentation is visible only to human eyes and not to the compiler (chapter 19). Always braces on a branch — the rule every example in this book follows.</p></div></div><h3>30.2 switch — a board that forks by value</h3><p>When the fork is not “which range” but “which <strong>value</strong>”, there is a dedicated device — <code>switch</code>.</p><div><div><p><code>examples/ch30/season.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+int main(void)
+{
+    char line[100];
+    int month = 0;
+
+    fgets(line, sizeof line, stdin);
+    sscanf(line, "%d", &amp;month);
+
+    switch (month) {
+    case 12:
+    case 1:
+    case 2:                     /* 세 case가 하나의 답을 공유한다(폴스루) */
+        printf("month %d: winter\n", month);
+        break;
+    case 3:
+    case 4:
+    case 5:
+        printf("month %d: spring\n", month);
+        break;
+    case 6:
+    case 7:
+    case 8:
+        printf("month %d: summer\n", month);
+        break;
+    case 9:
+    case 10:
+    case 11:
+        printf("month %d: autumn\n", month);
+        break;
+    default:
+        printf("month %d: no such month\n", month);
+        break;
+    }
+    return 0;
+}
+</code></pre></div><div><p>Given on standard input</p><pre><code>12
+</code></pre></div><div><p>Output</p><pre><code>month 12: winter
+</code></pre></div></div><p>How to read it — when <code>switch (month)</code> steps onto the board holding one value, execution <strong>jumps</strong> to the <code>case</code> label matching that value. And here is switch’s most important property: a <code>case</code> is not a fence but a <strong>label</strong>, so once jumped to it <strong>keeps flowing downward</strong>, past the next <code>case</code>. This flow is called <strong>fall-through</strong>, and where you want to stop you write <code>break</code> (leave the board) explicitly.</p><p>Fall-through cuts both ways. It is ideal for binding several values to one answer as in the demonstration (December, January and February into a single winter), but <strong>forget</strong> the <code>break</code> and it becomes the classic accident of flowing into an unintended branch — so compiler warnings and C23′s explicit notation (<code>[[fallthrough]]</code> — documentation saying “this flow is intended”) guard this place. <code>default</code> is the branch for when no label matches — always keeping it, as <strong>a net that catches unexpected values</strong> (“there is no such month”), is the practice.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>An <code>if</code> ladder can do it all, so why is <code>switch</code> needed at all?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>The difference between them is not expressive power but <strong>conveying intent</strong>. switch pins down in syntax the intent of “matching one value against several constants”, so the structure is visible both to the reader and to the compiler — the compiler may use that structure to produce fast code such as a jump table (a shape chapter 13′s editor likes), and the warning features can point out “a case missing from an enumeration”. Fork on a single value, use switch; on ranges or compound conditions, an if ladder — fitting the tool to the intent. And in the next chapter we finally meet the legendary code that abused (?) this fall-through property to its limit.</p></div></div><p>We have learned the fork — but a program’s real power comes not from forking but from <strong>repeating</strong>. The repetition of which chapter 4 said “even simple steps, taken billions of times”, is taken into our hands in the next chapter.</p>
+<div class="nav"><a href="ch29.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch31.html">Next →</a></div>
+</div></main></body></html>

@@ -9,7 +9,7 @@
 ]
 
 #deepqa[
-  Chapter 8 said a computer's input and output is "a band of characters flowing
+  Chapter 10 said a computer's input and output is "a band of characters flowing
   a line at a time" (a stream), and that every program is given the flow called
   standard output by default. So what exactly is a program doing when it puts
   letters on the screen?
@@ -68,8 +68,8 @@ system, meaning "finished without trouble."
   now: that a program starts at `main`, and that `printf` lets letters flow onto
   standard output. All the rest is *deliberate credit* — Part IV takes as its
   goal the dissection of this one piece from beginning to end, and the debt is
-  repaid for statements and blocks in chapter 20, for `printf` and calls in
-  chapters 22–23, and for `int` and `(void)` in chapters 24–26. Not explaining
+  repaid for statements and blocks in chapter 19, for `printf` and calls in
+  chapters 21–22, and for `int` and `(void)` in chapters 23–25. Not explaining
   everything now is not laziness but order.
 ]
 

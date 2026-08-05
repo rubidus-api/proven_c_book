@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>29 Booleans and comparison — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>29 Booleans and comparison</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The world of true and false as values — C23′s <code>bool</code>, the comparison operators, and the logical operators with their special property (short-circuit evaluation). The “condition” the next chapter’s branching will ask about is made here.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 23 announced that <code>=</code> (putting) and <code>==</code> (comparing) use separate symbols. Then what is the <strong>result</strong> of a comparison like <code>3 &lt; 5</code> — an expression becomes a value (chapter 20), so if a comparison is an expression, what value does it become?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>True or false — it becomes a value holding only those two. In C23 that type is named <code>bool</code> and its values <code>true</code> and <code>false</code>. That a comparison is not a “question” but <strong>an expression computing a bool value</strong> — that perspective is this chapter’s centre, and in the next chapter branching consumes that value.</p></div></div><h3>29.1 bool — a type with two values</h3><p><code>bool</code> is a type whose value set is just {<code>false</code>, <code>true</code>}. It is the smallest container beside chapter 26′s family of integers. One line of history unravels its odd corners — early C had <strong>no</strong> boolean type, and the practice of counting 0 as false and every nonzero value as true stood in its place. C99 brought one in through the back door (via the <code>&lt;stdbool.h></code> box), and <strong>only with C23</strong> did <code>bool</code>, <code>true</code> and <code>false</code> become proper keywords usable without the box. A formal adoption half a century late — and as a trace of that practice, printing a <code>bool</code> with <code>%d</code> gives 1 and 0 (confirmed in the demonstration).</p><h3>29.2 Comparison — expressions that make bools</h3><p>There are six comparison operators — <code>==</code> (equal), <code>!=</code> (not equal), <code>&lt;</code>, <code>&lt;=</code>, <code>></code>, <code>>=</code>. All take two values as material and put out a bool.</p><div><div><p><code>examples/ch29/cmp.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+int main(void)
+{
+    bool tall = 10 > 3;                 /* 비교의 결과는 bool 값이다 */
+    printf("%d\n", tall);
+    printf("%d\n", 3 &lt; 5 &amp;&amp; 2 + 2 == 4);
+
+    /* 단락 평가: 왼쪽이 0(거짓)이면 오른쪽은 아예 평가되지 않는다 */
+    printf("%d\n", 0 &amp;&amp; printf("this line is never printed\n"));
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>1
+1
+0
+</code></pre></div></div><p>The first line is the check — the value of the expression <code>10 > 3</code> (true) was held in a variable and printed as 1 with <code>%d</code>. The instinct that judgement is not the property of branching alone but <strong>something that can be stored and passed as a value</strong> — the more complex conditions get, the more this instinct keeps code clean (the practice of naming a judgement, as in <code>bool is_leap = ...</code>).</p><div class="dev misconception"><p class="dev-label">⚠ “Writing <code>x = 3</code> instead of <code>x == 3</code> will behave about the same anyway”</p><p>Here chapter 23′s warning is collected head on — they are entirely different expressions, and the worst of it is that <strong>both are legal</strong>. <code>x = 3</code> is a putting expression, so it changes x to 3, and that expression’s value 3 is read as “nonzero, therefore true” — slipped into a condition by mistake it becomes a double accident that is <strong>always true and wrecks the variable as well</strong>. So many accidents piled up on this trap historically that compiler warnings (<code>-Wall</code>) point specially at an <code>=</code> in a condition — the representative case for why chapter 17 said to keep warnings on.</p></div><h3>29.3 Logical operators — weaving judgements together</h3><p>Three operators weave judgements: AND <code>&amp;&amp;</code> (both true), OR <code>||</code> (at least one true), NOT <code>!</code> (invert). The demonstration’s second line is an example of <code>&amp;&amp;</code> — <code>3 &lt; 5 &amp;&amp; 2 + 2 == 4</code>, both judgements true, so 1.</p><p>And these operators have a property of particular importance in C — <strong>short-circuit evaluation</strong>. If <code>&amp;&amp;</code>‘s left side is false it puts out false <strong>without evaluating the right side at all</strong> (<code>||</code> skips the right side if the left is true). The demonstration’s third line is the proof — the <code>printf</code> on the right is an expression with a side effect (output), and because the left was 0 (false) <strong>the call itself never happened</strong>.</p><p>This is not an optimisation but a <strong>guarantee</strong> — and a precious exception to chapter 20′s “the order of evaluation is mostly unspecified”: <code>&amp;&amp;</code> and <code>||</code> evaluate the left first and fix even whether the right is evaluated as part of the contract. So C programmers use this guarantee as a <strong>gatekeeper</strong> — writing “divide only if it is not zero” as <code>b != 0 &amp;&amp; a / b > 10</code>, with the left-hand judgement standing in front of the right-hand danger (chapter 27′s division by zero), is idiom.</p><p>Let us record the rule’s name exactly — <strong>short-circuit evaluation</strong>. In the standard’s terms there is a <strong>sequence point</strong> (chapter 32) after the evaluation of <code>&amp;&amp;</code>‘s and <code>||</code>’s left operand, and the right is evaluated only when needed. So these two are among the few operators in C that guarantee both the order and the fact of evaluation (the conditional operator <code>?:</code> has the same property — the branch not chosen is not evaluated).</p><p>The idioms of practice have hardened into three shapes.</p><ul><li><strong>Gatekeeper</strong> — <code>if (p != nullptr &amp;&amp; p->count > 0)</code>. If the left is false the dereference on the right never happens at all (this one line blocks chapter 34′s null dereference).</li><li><strong>Filling a default</strong> — <code>ok = load(&amp;cfg) || load_default(&amp;cfg);</code> If the left succeeds the right is not even attempted.</li><li><strong>Deferring an expensive check</strong> — <code>if (cheap_check(x) &amp;&amp; expensive_check(x))</code>. Swap the order and the result is the same while only the cost grows.</li></ul><p>The trap is the inverted face of this. <strong>Put a side effect on the right and it may not be executed.</strong> In <code>if (init() &amp;&amp; start())</code>, if <code>init()</code> returns false then <code>start()</code> is never called — good code if intended, a hard-to-find bug if written without thinking. And the bitwise operators <code>&amp;</code> and <code>|</code> do <strong>not</strong> have this guarantee — both sides are evaluated.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>How do <code>&amp;</code> (chapter 27) and <code>&amp;&amp;</code> really differ — both are called AND.</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>They live on different layers. <code>&amp;</code> is an arithmetic operator doing AND <strong>bit by bit</strong> — <code>5 &amp; 3</code> puts the bits together and gets 1. <code>&amp;&amp;</code> is AND of <strong>whole judgements</strong> — it looks only at whether a value is zero or not, and it has the short-circuit guarantee. Swapping them by mistake is the more dangerous for often giving the same answer by accident — <code>2 &amp;&amp; 4</code> is 1 (neither is zero) but <code>2 &amp; 4</code> is 0 (no bits overlap). <code>&amp;&amp;</code> for judgement, <code>&amp;</code> for bits — the rule is not to mix their places.</p></div></div><p>We can now make conditions. In the next chapter the program at last <strong>forks</strong> — taking different roads according to a condition’s value. The homework of “checking input”, deferred in chapter 25, can be done then too.</p>
+<div class="nav"><a href="ch28.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch30.html">Next →</a></div>
+</div></main></body></html>

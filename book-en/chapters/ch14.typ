@@ -13,7 +13,7 @@
 ]
 
 #deepqa[
-  Chapter 11 said "what a C programmer deals with is not the real machine."
+  Chapter 13 said "what a C programmer deals with is not the real machine."
   Then was it wasted labour to look so closely at the real machine — clocks,
   lockers, words — all through chapters 4 and 5?
 ][
@@ -30,11 +30,11 @@
 
 Reduced to one line each, the pieces this part has stacked up:
 
-- Chapter 9 — memory is not one lump but a *ladder* from register to warehouse,
+- Chapter 11 — memory is not one lump but a *ladder* from register to warehouse,
   and the source code does not say which rung your variable is on right now.
-- Chapter 10 — execution is not one step at a time but *overlap and guesswork*,
+- Chapter 12 — execution is not one step at a time but *overlap and guesswork*,
   and the real progress of instructions differs from the order of lines.
-- Chapter 11 — above that stands an *editor* that rewrites the code wholesale,
+- Chapter 13 — above that stands an *editor* that rewrites the code wholesale,
   keeping only the apparent results.
 
 The thought that each line of source is "what the machine will do, as written"
@@ -58,7 +58,7 @@ to cultivate in every chapter that follows.
   between today's C code and the hardware stand an editor (the compiler) and a
   contract (the standard), and code written with a naive "direct manipulation"
   instinct — a shortcut outside the contract, say — breaks in the face of the
-  editor's discretion (chapter 13's vanished eraser, and chapter 47). The
+  editor's discretion (chapter 13's vanished eraser, and chapter 46). The
   accurate sentence is this: C is not a language that manipulates hardware
   directly but *a language that lets you meet the hardware through the contract
   called the abstract machine*.
@@ -69,7 +69,7 @@ to cultivate in every chapter that follows.
 The representative trend showing where this perspective is heading is the
 refinement of the rules about pointers.
 
-Chapter 3 said "an address is a number too." In the naive picture a pointer is
+Chapter 5 said "an address is a number too." In the naive picture a pointer is
 just a number — the same number is the same place, and if the number is right
 you should be able to touch that place however you obtained it. But in the
 editor's world this picture cannot hold. The compiler's optimisation stands on
@@ -85,8 +85,8 @@ into the text. The direction is consistent: the rules for pointers grow more
 explicit and stricter, that is, the clauses of the contract grow more precise.
 At an introductory stage there is no need to know the details of the clauses —
 plant only the instinct that "a pointer is not just a number; it has a
-lineage." The practical rules come in chapter 36, and the consequences of
-violating the contract in chapter 47.
+lineage." The practical rules come in chapter 35, and the consequences of
+violating the contract in chapter 46.
 
 #qa[
   Does chapter 6's tagged pointer — the trick of tucking a tag into the free

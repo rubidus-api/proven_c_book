@@ -12,7 +12,7 @@
 ]
 
 #deepqa[
-  Chapter 2 said "the CPU fetches the next thing to do from memory and does it."
+  Chapter 4 said "the CPU fetches the next thing to do from memory and does it."
   So does the calculation itself happen on memory — does the sum of slot 100 and
   slot 104 go straight into slot 108?
 ][
@@ -151,7 +151,7 @@ large part by "on which rung of the ladder the thing you need is found."
   the difference runs from several-fold to tens of times. The gap produced by the
   order of two lines of code cannot be explained without knowing that memory is a
   ladder — and you will see such a measurement as an example in this book
-  (chapter 32).
+  (chapter 31).
 ]
 
 #qa[

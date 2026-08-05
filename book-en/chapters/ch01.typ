@@ -182,6 +182,11 @@ spiral-fashion, a little deeper each time. Not everything is said in one
 chapter, so if you are left curious about something, that is usually
 deliberate — you will meet that curiosity again a few chapters later.
 
-Now we begin. The first step is not C but the computer itself — why C looks
-the way it does only makes sense once you have seen the machine it was born
-on. The next part starts by drawing the computer as a very simple picture.
+Now we begin. The two remaining chapters of this part lay down two sketches
+that will be used throughout — how a program divides the memory it uses
+(chapter 2), and what it means for a program to be *run* (chapter 3). Neither
+contains any C syntax; they only draw pictures.
+
+The first step of the part after that is not C but the computer itself — why C
+looks the way it does only makes sense once you have seen the machine it was
+born on.

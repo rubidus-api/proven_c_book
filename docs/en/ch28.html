@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>28 Implicit conversions — promotion and the usual arithmetic conversions — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>28 Implicit conversions — promotion and the usual arithmetic conversions</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>When C makes values of different types meet, it converts them <strong>silently</strong>. This chapter gathers those invisible conversions in one place — integer promotion, the usual arithmetic conversions, and the default promotions of variadic arguments. Scattered, each is a riddle; gathered, they are one system of rules.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 7 taught sign extension (widening 8 bits to 16), and the end of chapter 27 brushed past “the value in a smaller container is automatically widened before the calculation.” Then is the result type of <code>char + char</code> char?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>No — it is int. And that fact is this chapter’s starting point. C’s arithmetic <strong>does not happen on small integer types</strong>. Everything is widened to int (or something larger) before the calculation, and the result is that wider type. Why that is, and how far it goes, is this chapter.</p></div></div><h3>28.1 Rule 1 — integer promotion</h3><p><strong>Integer promotion</strong>: when a value of an integer type smaller than int — <code>char</code>, <code>short</code>, <code>bool</code>, a bit-field — takes part in an arithmetic operation, it is <strong>widened to int</strong> before the calculation (to int if int can hold all its values, otherwise to unsigned int).</p><div><div><p><code>examples/ch28/conv.c</code></p><pre><code data-lang="c">#include &lt;stdint.h>
+#include &lt;stdio.h>
+
+int main(void)
+{
+    /* 정수 승격: char·short는 계산 전에 int로 넓혀진다 */
+    signed char a = 100;
+    signed char b = 100;
+    printf("100 + 100 (as chars) = %d\n", a + b);   /* 200 — char에는 안 담기는 값 */
+
+    /* 통상 산술 변환: 부호 없는 쪽이 이긴다 —
+       -1을 unsigned의 눈으로 읽으면 거대한 양수가 된다 */
+    int neg = -1;
+    printf("(unsigned)(-1)   = %u\n", (unsigned)neg);
+    printf("so -1 &lt; 1u is false\n");
+
+    /* 정수 나눗셈 vs 실수 나눗셈 — 캐스트로 의도를 밝힌다 */
+    int total = 7, count = 2;
+    printf("7 / 2        = %d\n", total / count);
+    printf("(double)7/2  = %.1f\n", (double)total / count);
+
+    /* 가변 인자의 기본 진급: float는 double로, char/short는 int로 */
+    float f = 1.5f;
+    printf("float 1.5f via %%f = %f  (promoted to double)\n", f);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>100 + 100 (as chars) = 200
+(unsigned)(-1)   = 4294967295
+so -1 &lt; 1u is false
+7 / 2        = 3
+(double)7/2  = 3.5
+float 1.5f via %f = 1.500000  (promoted to double)
+</code></pre></div></div><p>The first line is the check — two <code>signed char</code> values of 100 were added and the result is 200. The reason a value that does not fit in a char did not overflow is that the addition happened not in char’s world but in int’s.</p><p>The reason lies in the machine (chapter 11). A CPU’s arithmetic circuits and registers are built to handle integers around the word size, so having separate arithmetic just for small types would be inefficient. C took that reality into the language as a rule — small types are <strong>units of storage</strong>, not units of calculation.</p><h3>28.2 Rule 2 — the usual arithmetic conversions</h3><p>If the two operands still differ in type after promotion, the <strong>usual arithmetic conversions</strong> settle on one common type. The order to remember in practice:</p><ul><li>If one side is floating, go to the floating side (<code>long double</code> > <code>double</code> > <code>float</code>).</li><li>If both are integers — go to the wider one. At equal width, <strong>the unsigned side wins</strong>.</li></ul><p>That last line is the source of the trap. The second part of the demonstration is it in the flesh — read <code>-1</code> through unsigned eyes and it becomes an enormous positive number over four billion (exactly chapter 7′s modular world). So a comparison like <code>-1 &lt; 1u</code> comes out <strong>false</strong>, against intuition. That is why mixing signed values into array indices or size calculations (the result of <code>sizeof</code> is the unsigned <code>size_t</code>!) causes silent accidents.</p><p>Fortunately the compiler guards this trap well — the warnings switched on in chapter 17 point at sign-mixed comparisons (one example in this book was caught by that warning and rewritten). Reduced to a rule: <strong>do not mix signed and unsigned in one comparison.</strong> Use the <code>size_t</code> family consistently for sizes and indices, or state the intent with an explicit cast.</p><h3>28.3 Rule 3 — default promotions for variadic arguments</h3><p>The third conversion happens in functions whose argument count is not fixed — <strong>variadic functions</strong> such as <code>printf</code>. Arguments passed into a position where the prototype states no type undergo <strong>default argument promotions</strong>: <code>float</code> becomes <strong><code>double</code></strong>, and small integer types become <strong>int</strong>.</p><p>The demonstration’s last line is the check — a <code>float</code> value printed with <code>%f</code> comes out fine. The format <code>%f</code> in fact expects a double, and the float argument arrived as a double after promotion (which is why printf has no float-specific format at all). The “contract between format and materials” learned in chapter 22 has this promotion rule as a hidden clause — the full contract, and how to write variadic functions yourself, is faced head on in chapter 50.</p><div class="dev realcase"><p class="dev-label">◉ The conversion that destroyed a rocket — Ariane 5, 1996</p><p>There is an event that shows how heavy implicit and explicit conversions can be. In 1996 the European Space Agency’s Ariane 5 rocket exploded 37 seconds after its first launch. The heart of the investigation’s finding was one line of conversion — the inertial navigation unit computed horizontal velocity as a 64-bit floating-point number, and there was code moving that value into a <strong>16-bit signed integer</strong>. On the predecessor Ariane 4 that velocity never exceeded the 16-bit range and it was safe, but on the faster Ariane 5 the value overflowed its container. The failure of the narrowing conversion (chapter 7′s truncation) raised an exception, and with that exception unhandled the navigation computer stopped, whereupon the rocket lost attitude and self-destructed. The loss ran to hundreds of millions of dollars. Reused code meeting <strong>a new range of values</strong> broke the contract — the most expensive confirmation of this chapter’s sentence, that a conversion changes the value.</p></div><div class="dev misconception"><p class="dev-label">⚠ “A cast does not change the value, only the interpretation”</p><p>For pointer casts (chapter 35) that is broadly true, but <strong>a cast between arithmetic types changes the value itself</strong>. <code>(int)3.9</code> becomes 3 (the fractional part discarded), <code>(char)300</code> does not fit the container and is truncated (chapter 7′s narrowing), and <code>(unsigned)-1</code> becomes an enormous positive number. C’s cast means not “read these bits as that type” but “<strong>convert</strong> this value into a value of that type” — if you want to leave the bits alone and change only the eye, chapter 43′s union or <code>memcpy</code> is that channel. Not writing the two demands with the same syntax is one of C’s few kindnesses.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Must all these rules be memorised?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Three lines are enough — <strong>small integers are promoted to int; when mixed, the wider and the unsigned side wins; in variadic arguments float becomes double.</strong> Leave the rest of the detail to the appendix’s tables, and in practice two habits stand in for memorising rules: keeping warnings on (chapter 17), and <strong>stating a deliberate conversion with a cast</strong>. The danger of implicit conversion lies not in the complexity of the rules but in their being <strong>invisible</strong>, so making them visible is the best defence.</p></div></div><p>We have the map of conversions. From the next chapter come the tools of flow — beginning with the booleans and comparisons that turn judgement into a value.</p>
+<div class="nav"><a href="ch27.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch29.html">Next →</a></div>
+</div></main></body></html>

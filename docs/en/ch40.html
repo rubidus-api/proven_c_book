@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>40 Dynamic memory — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>40 Dynamic memory</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>Part VII’s last place — memory whose size is settled at run time and which is kept alive as long as you wish. <code>malloc</code> and <code>free</code>, the notion of ownership, and this world’s three representative accidents (leak, double free, use after free). The map of memory is completed here.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 39 taught automatic lifetime (dies with the function) and static lifetime (lives for the whole program). Then memory that is “sized according to input and must live only as long as needed” — in which of the two does it go?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Neither fits. We need memory whose size is settled at run time and whose lifetime is decided by the program’s logic — so there is a third place: <strong>allocated storage duration</strong>, the warehouse commonly called the <strong>heap</strong>. The rule of this place differs decisively from the other two — <strong>the programmer directly orders its birth and its death.</strong></p></div></div><h3>40.1 Borrowing, and giving back</h3><p>The syntax is two functions. <code>malloc(number of bytes)</code> borrows that many contiguous slots from the warehouse and returns their starting address, and <code>free(address)</code> gives back what was borrowed.</p><div><div><p><code>examples/ch40/dyn.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;stdlib.h>
+
+int main(void)
+{
+    int count = 5;
+    int *scores = malloc(count * sizeof *scores);   /* 창고에서 빌린다 */
+
+    if (scores == nullptr) {                        /* 빌리기는 실패할 수 있다 */
+        printf("allocation failed\n");
+        return 1;
+    }
+
+    int sum = 0;
+    for (int i = 0; i &lt; count; i += 1) {
+        scores[i] = (i + 1) * 10;
+        sum += scores[i];
+    }
+    printf("total: %d\n", sum);
+
+    free(scores);                                   /* 빌린 것은 돌려준다 */
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>total: 150
+</code></pre></div></div><p>Three practices are stamped into the demonstration.</p><p><strong>Compute the size as <code>sizeof *pointer</code>.</strong> <code>count * sizeof *scores</code> is “the size of one element × the count”, asking for the size through <strong>the target</strong> rather than a type name — so the line needs no fixing later if the type changes.</p><p><strong>Borrowing can fail.</strong> <code>malloc</code> returns a null pointer when the warehouse is short — so <strong>check before writing</strong> (chapter 34′s rule becomes practice here). Write without checking and it is a null dereference and collapse.</p><p><strong>Give back what you borrowed.</strong> Forget <code>free</code> and those slots stay tied up until the program ends — a <strong>memory leak</strong>. It does not show in a short program, but in a long-running server it seeps away little by little and eventually eats the machine.</p><h3>40.2 The alignment of the address returned — because it does not know what will go in</h3><div><div><p><code>examples/ch40/alloc_cost.c</code></p><pre><code data-lang="c">/* malloc 이 돌려주는 주소의 정렬, 그리고 빌리고 돌려주는 값 */
+#include &lt;stdint.h>
+#include &lt;stddef.h>
+#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include &lt;time.h>
+
+#define N 300000
+
+static double seconds_since(struct timespec t0)
+{
+    struct timespec t1;
+    timespec_get(&amp;t1, TIME_UTC);
+    return (double)(t1.tv_sec - t0.tv_sec) + (double)(t1.tv_nsec - t0.tv_nsec) / 1e9;
+}
+
+static void *volatile sink;      /* 최적화가 할당을 지우지 못하게 붙잡는다 */
+
+int main(void)
+{
+    /* ── ① 정렬: 무엇을 담을지 모르므로 가장 엄격한 정렬로 준다 ── */
+    printf("max_align_t 의 정렬  = %zu 바이트\n", alignof(max_align_t));
+
+    size_t misaligned = 0;
+    void *p[8];
+    for (int i = 0; i &lt; 8; i++) {
+        p[i] = malloc(1);                    /* 1바이트만 요청해도 */
+        if ((uintptr_t)p[i] % alignof(max_align_t) != 0) misaligned++;
+    }
+    printf("1바이트 요청 8회 중 기본 정렬을 어긴 것: %zu 개\n", misaligned);
+    printf("이웃한 두 블록의 주소 간격: %td 바이트 (1을 요청했는데도)\n",
+           (char *)p[1] - (char *)p[0]);
+    for (int i = 0; i &lt; 8; i++) free(p[i]);
+
+    /* ── ② 값: 같은 일을 세 방식으로 ── */
+    struct timespec t0;
+    unsigned long long acc = 0;
+
+    timespec_get(&amp;t0, TIME_UTC);
+    for (int i = 0; i &lt; N; i++) {           /* 매번 빌리고 돌려준다 */
+        char *b = malloc(64);
+        if (!b) return 1;
+        b[0] = (char)i;
+        acc += (unsigned char)b[0];
+        sink = b;
+        free(b);
+    }
+    double t_alloc = seconds_since(t0);
+
+    char *reused = malloc(64);
+    if (!reused) return 1;
+    timespec_get(&amp;t0, TIME_UTC);
+    for (int i = 0; i &lt; N; i++) {           /* 한 번 빌려 계속 쓴다 */
+        reused[0] = (char)i;
+        acc += (unsigned char)reused[0];
+        sink = reused;
+    }
+    double t_reuse = seconds_since(t0);
+    free(reused);
+
+    timespec_get(&amp;t0, TIME_UTC);
+    for (int i = 0; i &lt; N; i++) {           /* 아예 스택에 둔다 */
+        char b[64];
+        b[0] = (char)i;
+        acc += (unsigned char)b[0];
+        sink = b;
+    }
+    double t_stack = seconds_since(t0);
+
+    printf("\n%d 회 반복\n", N);
+    printf("  매번 malloc + free : %7.4f 초  (회당 %5.1f ns)\n", t_alloc, t_alloc / N * 1e9);
+    printf("  한 번 빌려 재사용   : %7.4f 초  (회당 %5.1f ns)\n", t_reuse, t_reuse / N * 1e9);
+    printf("  스택 배열           : %7.4f 초  (회당 %5.1f ns)\n", t_stack, t_stack / N * 1e9);
+    printf("\n(합계 %llu — 계산이 지워지지 않게 쓰는 값)\n", acc);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>max_align_t 의 정렬  = 16 바이트
+1바이트 요청 8회 중 기본 정렬을 어긴 것: 0 개
+이웃한 두 블록의 주소 간격: 32 바이트 (1을 요청했는데도)
+
+300000 회 반복
+  매번 malloc + free :  0.0038 초  (회당  12.6 ns)
+  한 번 빌려 재사용   :  0.0006 초  (회당   2.0 ns)
+  스택 배열           :  0.0007 초  (회당   2.2 ns)
+
+(합계 114739248 — 계산이 지워지지 않게 쓰는 값)
+</code></pre></div></div><p>The question the first part of the example answers is this. You borrowed a mere one byte with <code>malloc(1)</code> — may that address sit just anywhere?</p><p>It may not. Because <code>malloc</code> hands out the place <strong>without knowing what will go in</strong>. A <code>double</code> may be placed there, or a pointer, or a large struct. So the standard promises this — <strong>an address returned by the <code>malloc</code> family satisfies the alignment suitable for any basic type.</strong> The name given to that “strictest basic alignment” is <code>max_align_t</code>, and on this machine it is 16 bytes (chapter 6′s alignment rule made flesh).</p><p>Two things follow.</p><p><strong>First, borrowing small does not mean the place is small.</strong> In the example eight one-byte borrowings gave neighbouring blocks 32 bytes apart. It is because of the space left over to satisfy alignment and the management information (size, status) the allocator attaches to each block. It means <strong>a program that borrows countless small pieces uses far more memory than it asked for</strong>, and that is why the arena and pool approaches we see later were born (chapter 68).</p><p><strong>Second, stricter alignment must be requested separately.</strong> SIMD instructions or hardware DMA sometimes require 64-byte or 4096-byte alignment, and for that there is C11′s <code>aligned_alloc(alignment, size)</code>. Two rules must be kept — the alignment must be a power of two, and in C11 <strong>the size had to be a multiple of the alignment</strong> (C23 lifted that restriction). What it returns is still given back with <code>free</code>.</p><div class="dev platform"><p class="dev-label">⊞ Platform note — The name of aligned allocation differs by platform</p><p>The standard’s <code>aligned_alloc</code> came in relatively recently (C11), and before that each platform used a different function — POSIX’s <code>posix_memalign</code>, Windows’s <code>_aligned_malloc</code> (and its partner <code>_aligned_free</code>; on Windows this must not be given back with <code>free</code>). When you meet these names in old code, read them as “an allocation with a stated alignment.”</p></div><h3>40.3 The price of two cheap-looking lines — why allocation is expensive</h3><p>The latter part of the example repeats the same work three ways, 300,000 times, and measures the time. Borrowing and giving back every time is noticeably slower than reuse or the stack — a little over ten nanoseconds per round on this machine. The value itself differs by machine and allocator, but the fact of a <strong>two-orders-of-magnitude difference</strong> is the same everywhere.</p><p>Why is it expensive? <code>malloc</code> looks like the one line “give me slots” but is in fact one round trip to <strong>the warehouse management office</strong>.</p><ol><li><strong>Find a free piece of the right size.</strong> The allocator manages returned pieces in lists by size and picks a suitable one when a request comes. Searching the list, cutting a large piece when needed, putting the remainder back in the list — all of it is data-structure manipulation.</li><li><strong>Write management information.</strong> The size and status must be written per block so that <code>free</code> can later know “how many bytes this was.” So allocation involves <strong>writing</strong>.</li><li><strong>Ask the operating system when short.</strong> When the warehouse is empty it obtains more address space with a system call (<code>brk</code> or <code>mmap</code>). That means going into the kernel and back, which is far more expensive. Fortunately it does not happen often — the allocator takes plenty and cuts it up.</li><li><strong>With several threads, locks appear.</strong> The warehouse ledger is a shared resource, so contention between threads slows it (chapter 64′s story of races). That is why modern allocators keep a small cache per thread.</li><li><strong>The cache is cold.</strong> A freshly obtained address is usually not in the cache, so the first access is slow (chapter 11′s ladder). Conversely a reused buffer is already up in the cache — half the reason the reuse side is fast in the example is here.</li></ol><p>So a practical rule follows. <strong>Do not allocate inside a hot loop.</strong> Borrow once in advance and reuse, put what has a known size on the stack, or borrow many at once and cut them up. The last is the arena, and chapter 68 and Part XII are that story.</p><div class="dev misconception"><p class="dev-label">⚠ “<code>free</code> gives memory back to the operating system”</p><p>Mostly it does not. <code>free</code> is <strong>writing in the allocator’s ledger that “this piece may be used again”</strong>, not returning it to the operating system. So it is normal for a program’s memory usage in the task manager to stay the same after releasing a large piece of data — the allocator is holding it for the next request (large blocks are sometimes returned).</p><p>This fact explains two things. First, the common misunderstanding of “I freed the memory, so why does it not go down?” Second, the phenomenon of a long-running server holding memory <strong>even with no leak</strong> — pieces scattered so that a large lump cannot be formed: <strong>fragmentation</strong>. Chapter 68 faces it head on.</p></div><h3>40.4 Ownership — who is responsible for giving it back</h3><p>The address <code>malloc</code> gave can be copied into several variables and can travel between functions. And yet <code>free</code> must be called <strong>exactly once</strong> — from which comes a core discipline of C programming: fixing one subject that at any moment holds the responsibility for releasing that memory, the notion of <strong>ownership</strong>. C has no syntax that enforces ownership — so ownership is expressed <strong>in comments, names and conventions</strong> (“this function transfers ownership of the returned pointer”, and so on). That modern languages lifted ownership into the type system (Rust’s ownership, C++‘s smart pointers) is the result of making the machine enforce this discipline — the concern of the neighbouring languages seen in chapter 1 arose exactly here.</p><div class="dev realcase"><p class="dev-label">◉ The three representative accidents — leak, double free, use after free</p><p>Accidents with dynamic memory come with three faces. A <strong>leak</strong> is forgetting to give back — a slowly fatal disease. A <strong>double free</strong> is calling <code>free</code> twice on the same address, which wrecks the warehouse ledger so that every allocation after it is contaminated. The most dangerous is <strong>use after free</strong> — continuing to use the address of a slot that was given back. It is chapter 39′s dangling pointer reproduced in the heap, and since the warehouse soon hands that slot to another request, <strong>an attacker can put their own data in that place</strong>. In the lists of severe vulnerabilities of browsers and kernels, use-after-free is a top fixture even today, which is why systems programming as a whole has moved in the direction of “let the language enforce ownership.” The defence in C is discipline plus tools — the practice of assigning <code>nullptr</code> to a pointer right after <code>free</code>, and chapter 17′s ASan (catching all three of these accidents is ASan’s speciality).</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Is it then best to avoid dynamic memory as far as possible?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>That really is the first strategy, and the reason this book has come this far without <code>malloc</code> — data of known size is fastest and safest kept in automatic variables (the stack), where there is nothing to release and the three accidents are sealed off at the source. In embedded and safety-critical fields, conventions banning dynamic allocation outright are common. But data whose size is settled at run time (a list the user gave, the contents of a file) needs the warehouse in the end — and then the practical answer is to make ownership clear, check with tools, and use well-made components (of the family that manages allocation and boundaries together, like chapter 38′s proven).</p></div></div><h3>40.5 Closing Part VII</h3><p>The map of memory is complete — on the ladder of registers and caches (chapter 11) sit C’s three storage durations (automatic, static, dynamic), and pointers travel over them. We got the concept in chapter 33, the rules in chapters 34–35, contiguous memory and strings in chapters 36–37, a safe component in chapter 38, and lifetime and the warehouse in chapters 39–40. We have gone once round the place where C’s power and its danger live together.</p><p>We have seen dynamic memory’s syntax, discipline and price. How an allocator actually manages the warehouse, what alternative allocators and alternative standard libraries are widely used today, and what map a program’s memory is laid out on in an operating system and in an embedded chip are treated in two chapters at the end of Part XI (chapters 67 and 68).</p><p>The next part is short but long deferred — the structs and unions put off in Part V with “declarations that make types come after we have a memory model.” That condition is now met.</p>
+<div class="nav"><a href="ch39.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch41.html">Next →</a></div>
+</div></main></body></html>

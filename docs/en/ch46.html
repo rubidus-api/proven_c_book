@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>46 Undefined behaviour — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>46 Undefined behaviour</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We face head on the world this book has kept deferring under the name “outside the contract”. What UB exactly is and why it exists, why it is not “a little dangerous” but “anything at all is possible” — and how to avoid and catch it in practice. The contract narrative begun in Part II is completed here.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 13 said that violating strict aliasing is “the act of telling the compiler something untrue as if it were true.” Then what has the standard permitted the implementation by leaving some behaviour “undefined”?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>It decided <strong>to demand nothing at all.</strong> The standard’s sentence is cold — for undefined behaviour the standard “imposes no requirements”. That is, such a program has no correct execution result whatever. The common misunderstanding is “dangerous behaviour, but it mostly works as expected”, whereas in the eye of the contract the whole program <strong>loses its meaning</strong>. That difference is this chapter entire.</p></div></div><h3>46.1 Three grey zones — UB, unspecified, implementation-defined</h3><p>Let us first separate three confusable words. Organised through the cases this book has met so far:</p><table><tr><th><strong>kind</strong></th><th><strong>the standard’s attitude</strong></th><th><strong>examples met in this book</strong></th></tr><tr><td>implementation-defined</td><td>the implementation decides and <strong>documents it</strong></td><td>the size of <code>int</code> (chapter 26), the signedness of <code>char</code></td></tr><tr><td>unspecified</td><td>one of a fixed set of choices, with no duty to document</td><td>the order of evaluating subexpressions in one expression (chapter 32)</td></tr><tr><td>undefined behaviour (UB)</td><td>it imposes no requirements at all</td><td>signed overflow (chapter 7), boundary violation (chapter 36), null dereference (chapter 34)</td></tr></table><p>The first two are worlds where “there are several answers but there is an answer.” Only UB is a world where there is no answer at all.</p><h3>46.2 Why it exists</h3><p>There are two reasons for leaving an outside-the-contract region. First, <strong>because machines differ</strong> — chapter 7′s shift of at least the width is the representative case. x86 and older ARM respond differently, and had the standard chosen one side the other machine would have to insert correction code every time. Instead of taking sides it said “do not write that code.” Second, <strong>to obtain premises for optimisation</strong> — as chapter 7 showed, the premise that “signed integers do not overflow” is what lets the compiler analyse and reorder loops (chapter 13). These clauses are the price of C remaining the language of speed for half a century.</p><h3>46.3 The real face of “anything at all”</h3><p>UB’s result is not only a collapse. The pattern seen in chapter 13 is more frightening — <strong>the compiler reads UB as “a thing that cannot happen” and deletes code.</strong> A null check disappears entirely (if the pointer was already dereferenced, it infers “it cannot be null”), an overflow check disappears (since signed overflow is premised not to happen), a loop becomes infinite or vanishes altogether. So UB’s representative symptom is not “dying on the spot” but <strong>a bug that appears somewhere unrelated, disappears when the optimisation level changes, and is hard to reproduce.</strong></p><div class="dev realcase"><p class="dev-label">◉ The vanished null check — Linux kernel CVE-2009-1897</p><p>There was an incident in which this pattern really went off in the kernel. The code went roughly like this — the pointer <code>tun</code> was dereferenced first to take a value out, and below that a null check <code>if (!tun) return ...;</code>. The order was a mistake, but to a human eye it looks like “the check is still there, so a null will be caught.” The compiler’s inference was different: <strong>it was already dereferenced → had it been null that would have been UB at that moment → UB is premised not to happen → therefore tun is not null → the null check below is dead code.</strong> The check was removed entirely by optimisation and, combined with an environment in which the null page could be mapped, became a privilege-escalation vulnerability. The compiler worked by the rules; what collapsed was the contract.</p></div><h3>46.4 How to avoid it — discipline, tools, and components</h3><p>Defence in practice is three layers.</p><p><strong>Discipline</strong> — the rules this book has passed through are the list: initialise before use (chapter 23), keep boundaries (chapter 36), check for null (chapter 34), change one variable only once in one statement (chapter 32), do not take shortcuts outside the contract (pointer casts, assumptions about representation) (chapters 11 and 35).</p><p><strong>Tools</strong> — the nets equipped in chapter 17. Compiler warnings catch at compile time; UBSan and ASan catch at run time. The <strong>checked arithmetic</strong> brought in by C23 is a tool of this layer too — functions that report overflow as a value instead of making it UB:</p><div><div><p><code>examples/ch46/checked.c</code></p><pre><code data-lang="c">#include &lt;stdckdint.h>
+#include &lt;stdio.h>
+
+/* C23의 검사 산술: 넘치면 true를 돌려주고, 결과는 감아 돈 값이 담긴다. */
+int main(void)
+{
+    int a = 2000000000;
+    int b = 2000000000;
+    int sum = 0;
+
+    if (ckd_add(&amp;sum, a, b)) {
+        printf("%d + %d overflows int (we stayed inside the contract)\n", a, b);
+    } else {
+        printf("sum: %d\n", sum);
+    }
+
+    int small = 0;
+    if (ckd_add(&amp;small, 20, 22)) {
+        printf("overflow\n");
+    } else {
+        printf("20 + 22 = %d\n", small);
+    }
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>2000000000 + 2000000000 overflows int (we stayed inside the contract)
+20 + 22 = 42
+</code></pre></div></div><p><code>ckd_add</code> returns “did it overflow?” as its return value — the standard’s answer to the trap learned in chapter 7 (“signed overflow is outside the contract”), governed by the discipline learned in chapter 45 (“errors are values”).</p><p><strong>Components</strong> — using an API in which violating the contract is difficult to begin with (chapter 38′s proven is that layer). Chapter 17′s metaphor — tools are nets, good components are footholds — is completed here.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Must all the UB be memorised? I hear the standard has hundreds of them.</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Memorising is not the goal — the list is vast and continually refined. What works in practice is <strong>an instinct</strong>: the habit of asking “are my grounds for saying this code is correct in the contract, or is it that it ran on my computer?” And backing that instinct with tools — turning warnings on, running tests under sanitizers, cross-checking with two compilers (chapter 17). The reason this book has repeated “is it correct on the abstract machine” since Part II is precisely to plant that instinct.</p></div></div><h3>46.5 Closing Part IX</h3><p>The part of precision is over — how to handle approximation (chapter 44), how to handle failure (chapter 45), and how to know the world outside the contract (chapter 46). The three chapters share one theme: <strong>C is a language that entrusts much to the programmer, and the person who knows what has been entrusted writes safe code.</strong></p><p>The last parts remain. Every program so far has been a single file — now it grows into several files (chapter 48), we face the layer of preprocessing and translation (chapter 49), we learn the terrain of the standard library (chapter 53), we treat proven head on (Part XII), and we close the book with the practices of modern C (chapter 81).</p><p>The next part is the story of <strong>composing</strong> a program. Its first chapter is the place we have used only as a six-line convention until now — <code>main</code> itself. We see its three forms, and where the value it returns goes.</p>
+<div class="nav"><a href="ch45.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch80.html">Next →</a></div>
+</div></main></body></html>

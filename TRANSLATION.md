@@ -4,22 +4,22 @@
 `scripts/sync-status.py --write` 가 자동으로 갱신한다.
 The Korean edition is the source; this table is generated.
 
-- **synced** 10 · **stale** 10 · **pending** 73
+- **synced** 51 · **stale** 0 · **pending** 42
 
 | 원본 / source | 상태 / state |
 |---|---|
-| `book/chapters/ch01.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch01.typ` | ✅ synced |
 | `book/chapters/ch02.typ` | ⏳ pending |
 | `book/chapters/ch03.typ` | ⏳ pending |
-| `book/chapters/ch04.typ` | ⚠️ stale (원본이 바뀜) |
-| `book/chapters/ch05.typ` | ⚠️ stale (원본이 바뀜) |
-| `book/chapters/ch06.typ` | ⚠️ stale (원본이 바뀜) |
-| `book/chapters/ch07.typ` | ⚠️ stale (원본이 바뀜) |
-| `book/chapters/ch08.typ` | ⚠️ stale (원본이 바뀜) |
-| `book/chapters/ch09.typ` | ⚠️ stale (원본이 바뀜) |
-| `book/chapters/ch10.typ` | ⚠️ stale (원본이 바뀜) |
-| `book/chapters/ch11.typ` | ⚠️ stale (원본이 바뀜) |
-| `book/chapters/ch12.typ` | ⚠️ stale (원본이 바뀜) |
+| `book/chapters/ch04.typ` | ✅ synced |
+| `book/chapters/ch05.typ` | ✅ synced |
+| `book/chapters/ch06.typ` | ✅ synced |
+| `book/chapters/ch07.typ` | ✅ synced |
+| `book/chapters/ch08.typ` | ✅ synced |
+| `book/chapters/ch09.typ` | ✅ synced |
+| `book/chapters/ch10.typ` | ✅ synced |
+| `book/chapters/ch11.typ` | ✅ synced |
+| `book/chapters/ch12.typ` | ✅ synced |
 | `book/chapters/ch13.typ` | ✅ synced |
 | `book/chapters/ch14.typ` | ✅ synced |
 | `book/chapters/ch15.typ` | ✅ synced |
@@ -27,36 +27,36 @@ The Korean edition is the source; this table is generated.
 | `book/chapters/ch17.typ` | ✅ synced |
 | `book/chapters/ch18.typ` | ✅ synced |
 | `book/chapters/ch19.typ` | ✅ synced |
-| `book/chapters/ch20.typ` | ⏳ pending |
-| `book/chapters/ch21.typ` | ⏳ pending |
-| `book/chapters/ch22.typ` | ⏳ pending |
-| `book/chapters/ch23.typ` | ⏳ pending |
-| `book/chapters/ch24.typ` | ⏳ pending |
-| `book/chapters/ch25.typ` | ⏳ pending |
-| `book/chapters/ch26.typ` | ⏳ pending |
-| `book/chapters/ch27.typ` | ⏳ pending |
-| `book/chapters/ch28.typ` | ⏳ pending |
-| `book/chapters/ch29.typ` | ⏳ pending |
-| `book/chapters/ch30.typ` | ⏳ pending |
-| `book/chapters/ch31.typ` | ⏳ pending |
-| `book/chapters/ch32.typ` | ⏳ pending |
-| `book/chapters/ch33.typ` | ⏳ pending |
-| `book/chapters/ch34.typ` | ⏳ pending |
-| `book/chapters/ch35.typ` | ⏳ pending |
-| `book/chapters/ch36.typ` | ⏳ pending |
-| `book/chapters/ch37.typ` | ⏳ pending |
-| `book/chapters/ch38.typ` | ⏳ pending |
-| `book/chapters/ch39.typ` | ⏳ pending |
-| `book/chapters/ch40.typ` | ⏳ pending |
-| `book/chapters/ch41.typ` | ⏳ pending |
-| `book/chapters/ch42.typ` | ⏳ pending |
-| `book/chapters/ch43.typ` | ⏳ pending |
-| `book/chapters/ch44.typ` | ⏳ pending |
-| `book/chapters/ch45.typ` | ⏳ pending |
-| `book/chapters/ch46.typ` | ⏳ pending |
-| `book/chapters/ch47.typ` | ⏳ pending |
-| `book/chapters/ch48.typ` | ⏳ pending |
-| `book/chapters/ch49.typ` | ⏳ pending |
+| `book/chapters/ch20.typ` | ✅ synced |
+| `book/chapters/ch21.typ` | ✅ synced |
+| `book/chapters/ch22.typ` | ✅ synced |
+| `book/chapters/ch23.typ` | ✅ synced |
+| `book/chapters/ch24.typ` | ✅ synced |
+| `book/chapters/ch25.typ` | ✅ synced |
+| `book/chapters/ch26.typ` | ✅ synced |
+| `book/chapters/ch27.typ` | ✅ synced |
+| `book/chapters/ch28.typ` | ✅ synced |
+| `book/chapters/ch29.typ` | ✅ synced |
+| `book/chapters/ch30.typ` | ✅ synced |
+| `book/chapters/ch31.typ` | ✅ synced |
+| `book/chapters/ch32.typ` | ✅ synced |
+| `book/chapters/ch33.typ` | ✅ synced |
+| `book/chapters/ch34.typ` | ✅ synced |
+| `book/chapters/ch35.typ` | ✅ synced |
+| `book/chapters/ch36.typ` | ✅ synced |
+| `book/chapters/ch37.typ` | ✅ synced |
+| `book/chapters/ch38.typ` | ✅ synced |
+| `book/chapters/ch39.typ` | ✅ synced |
+| `book/chapters/ch40.typ` | ✅ synced |
+| `book/chapters/ch41.typ` | ✅ synced |
+| `book/chapters/ch42.typ` | ✅ synced |
+| `book/chapters/ch43.typ` | ✅ synced |
+| `book/chapters/ch44.typ` | ✅ synced |
+| `book/chapters/ch45.typ` | ✅ synced |
+| `book/chapters/ch46.typ` | ✅ synced |
+| `book/chapters/ch47.typ` | ✅ synced |
+| `book/chapters/ch48.typ` | ✅ synced |
+| `book/chapters/ch49.typ` | ✅ synced |
 | `book/chapters/ch50.typ` | ⏳ pending |
 | `book/chapters/ch51.typ` | ⏳ pending |
 | `book/chapters/ch52.typ` | ⏳ pending |
@@ -87,7 +87,7 @@ The Korean edition is the source; this table is generated.
 | `book/chapters/ch77.typ` | ⏳ pending |
 | `book/chapters/ch78.typ` | ⏳ pending |
 | `book/chapters/ch79.typ` | ⏳ pending |
-| `book/chapters/ch80.typ` | ⏳ pending |
+| `book/chapters/ch80.typ` | ✅ synced |
 | `book/chapters/ch81.typ` | ⏳ pending |
 | `book/parts/part02.typ` | ✅ synced |
 | `book/parts/part11s.typ` | ⏳ pending |

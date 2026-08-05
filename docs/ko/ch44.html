@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>44 공용체와 표현 — Proven C Book</title><style>
+<title>44 실수 — 근사의 수학 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,123 +68,42 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>44 공용체와 표현</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-76"></span><p>같은 기억을 다른 눈으로 보는 장치 — 공용체다. 그리고 이 장은 표현의 장이기도 하다: 5장에서 예약한 엔디안 관찰 시연을 실행하고, 구조체의 숨은 빈틈(패딩)을 눈으로 확인한다. 표현과 추상의 분리라는 이 책의 후렴구가 마지막으로 크게 울리는 자리다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>13장에서 “float의 비트를 uint32의 눈으로 읽는” 옛 기법이 엄격한 앨리어싱 위반이며, 옳은 방법은 memcpy나 공용체라고 했다. 그러면 공용체란 정확히 무엇이길래 그 자리에 서는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>여러 멤버가 같은 기억을 공유하는 타입</strong>이다. 구조체가 멤버들을 나란히 놓는다면(42장), 공용체는 멤버들을 <strong>겹쳐</strong> 놓는다 — 크기는 가장 큰 멤버에 맞고, 어느 순간에든 실제로 담긴 것은 하나다. “같은 비트를 이 눈으로도 저 눈으로도 본다”는 5장의 관점이 문법이 된 것이다.</p></div></div><h3>44.1 공용체 — 겹쳐 놓기</h3><p>문법은 구조체와 쌍둥이다. <code>struct</code>를 <code>union</code>으로 바꾸면 된다:</p><pre><code data-lang="c">union bits32 {
-    uint32_t as_int;
-    float    as_float;
-};</code></pre><p>멤버 접근도 같다(<code>u.as_int</code>). 다른 것은 기억의 배치뿐이다 — 두 멤버가 같은 4바이트를 공유하므로, <code>as_float</code>에 쓰고 <code>as_int</code>로 읽으면 <strong>같은 비트를 다른 해석으로</strong> 보게 된다. C 표준은 이 “쓴 멤버와 다른 멤버로 읽기”(타입 퍼닝)를 공용체에 한해 허용한다 — 13장의 포인터 캐스트 방식과 달리 계약 안이라는 점이 결정적 차이다(다만 읽은 값이 그 타입의 유효한 값이 아닐 수 있다는 주의는 남는다).</p><h3>44.2 표현을 눈으로 — 엔디안과 패딩</h3><p>5장에서 “이 확인을 C로 실제로 해 보이는 것이 이 장의 시연”이라 예약해 두었다. 이제 갚는다. 여기서는 공용체 대신 가장 이식성 좋은 방법 — 36장에서 배운 바이트의 눈(<code>unsigned char</code>)과 <code>memcpy</code> — 을 쓴다.</p><div><div><p><code>examples/ch44/endian.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdint.h>
-#include &lt;string.h>
+<h2>44 실수 — 근사의 수학</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>8장에서 지면으로 배운 근사의 세계가 드디어 C 코드로 내려온다. <code>float</code> <span id="idx-entry-76"></span>와 <code>double</code>의 선택, 비교의 올바른 방법(엡실론 — 절대와 상대), 그리고 특수값(무한대·NaN)까지. 8장의 세 사건이 실행 결과로 확인된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>8장에서 <code>0.1 + 0.2</code>와 <code>0.3</code>은 마지막 비트 하나(1 ulp) 차이의 이웃이라 했고, 비교는 “충분히 가까운가”로 바꿔야 한다고 했다. 그러면 그 “충분히”의 기준 — 엡실론 — 은 어떻게 정하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>값의 크기에 따라 달라져야 한다는 것이 8장 셋째 사건의 교훈이다. 0 근처에서는 눈금이 촘촘하니 작은 고정값이면 되지만, <math><msup><mn>10</mn><mn>16</mn></msup></math>쯤에서는 눈금 간격 자체가 1을 넘으므로 같은 기준이 무의미해진다. 그래서 실무는 두 가지를 갖춘다 — <strong>절대 오차</strong>(0 근처용)와 <strong>상대 오차</strong>(크기에 비례). 이 장의 시연이 둘을 나란히 보인다.</p></div></div><h3>44.1 타입 선택과 비교</h3><div><div><p><code>examples/ch44/eps.c</code></p><pre><code data-lang="c">#include &lt;math.h>
+#include &lt;stdio.h>
 
-int main(void)
+/* 절대 오차: 0 근처의 비교에 쓴다 */
+bool near_abs(double a, double b, double eps)
 {
-    uint32_t value = 0x12345678u;
-    unsigned char bytes[4];
-
-    memcpy(bytes, &amp;value, sizeof value);   /* 표현을 바이트로 들여다본다 */
-
-    printf("value: 0x%08X\n", value);
-    printf("memory order: %02X %02X %02X %02X\n",
-           bytes[0], bytes[1], bytes[2], bytes[3]);
-    printf("this machine is %s-endian\n",
-           bytes[0] == 0x78 ? "little" : "big");
-
-    struct padded {
-        char  tag;      /* 1바이트 */
-        int   count;    /* 4바이트 — 정렬 때문에 앞에 빈틈이 생긴다 */
-    };
-    printf("1 + 4 = 5, but sizeof = %zu\n", sizeof(struct padded));
-    return 0;
+    return fabs(a - b) &lt; eps;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>value: 0x12345678
-memory order: 78 56 34 12
-this machine is little-endian
-1 + 4 = 5, but sizeof = 8
-</code></pre></div></div><p>첫 부분이 5장의 그림 그대로다. <code>0x12345678</code>이 메모리에 <code>78 56 34 12</code> 순서로 놓였다 — 이 책의 검증 기계는 리틀 엔디안이라는 뜻이고, 5장의 도해가 실물로 확인된 것이다. (빅 엔디안 기계에서 이 예제를 돌리면 <code>12 34 56 78</code>이 찍히고 판정 문장도 바뀐다 — 코드는 그대로다.)</p><p>둘째 부분은 구조체의 숨은 사정이다. <code>char</code> 하나(1바이트)와 <code>int</code> 하나(4바이트)를 담은 구조체의 크기가 5가 아니라 8이다 — 6장의 정렬 규칙 때문에 <code>char</code> 뒤에 3바이트의 <strong>패딩</strong>(padding, 빈틈)이 끼워진 것이다. int 멤버가 4의 배수 자리에서 시작해야 기계가 한 움큼에 집을 수 있기 때문이다(6장). 그래서 실무 관행 하나가 나온다 — <strong>큰 멤버부터 배치하면 빈틈이 줄어든다.</strong> 구조체 수백만 개를 다루는 코드에서는 이 배치 하나가 메모리와 캐시 효율(11장)을 좌우한다. 배치 규칙과, 빈틈을 없애거나 정렬을 강제하는 방법(<code>pack</code>·<code>alignas</code>)은 43장에서 자세히 다뤘다 — 여기서는 그 빈틈이 <strong>실제로 존재한다</strong>는 사실을 눈으로 확인하는 것이 목적이다.</p><div class="dev realcase"><p class="dev-label">◉ 빈틈이 흘린 비밀 — 커널의 패딩 정보 유출</p><p>패딩은 아무도 쓰지 않는 빈칸이라 무해해 보이지만, 보안의 눈으로 보면 <strong>초기화되지 않은 기억</strong>이다. 운영체제 커널이 구조체를 사용자 프로그램 에게 통째로 복사해 줄 때 이 빈틈이 함께 건너가는데 — 멤버들은 전부 채워 넣었어도 빈틈에는 그 자리에 남아 있던 <strong>다른 데이터의 잔해</strong>가 들어 있다. 공격자는 이 부스러기를 모아 커널 메모리의 내용이나 주소 배치를 엿볼 수 있고, 그것이 다음 공격의 발판이 된다. 리눅스를 비롯한 주요 커널들이 이 부류의 정보 유출 취약점을 수십 건 고쳐 왔고, 오늘의 대응은 단순하다 — 사용자에게 넘기는 구조체는 <strong>멤버를 채우기 전에 통째로 0으로 지운다</strong>. 24장에서 “선언과 동시에 초기화한다”고 한 규칙이, 보이지 않는 빈칸에까지 적용되는 순간이다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “구조체를 그대로 파일에 쓰거나 네트워크로 보내면 된다”</p><p>솔깃한 생각이고, 실제로 많이 시도된 방법이다 — 구조체의 바이트를 통째로 저장하면 코드가 짧아지니까. 그러나 이 장이 방금 보인 두 사실이 그것을 가로막는다: 바이트 순서가 기계마다 다르고(엔디안), 빈틈의 크기와 위치도 컴파일러·플랫폼마다 다르다(패딩). 한 기계에서 쓴 파일이 다른 기계에서 깨지는 것이다 — 5장의 NUXI 사건이 파일 형식의 세계에서 재현되는 셈이다. 정답은 <strong>직렬화</strong>(serialization)다: 멤버를 하나씩, 약속된 크기와 바이트 순서로(네트워크 바이트 순서 — 5장) 적고 읽는 코드를 명시적으로 쓰는 것. 표현은 기계의 사정이고, 파일과 통신은 약속의 세계라는 것 — 두 세계를 잇는 다리는 손으로 놓아야 한다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>공용체는 그러면 언제 쓰는 것이 정석인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>두 가지 자리다. 첫째, 방금 본 <strong>표현 들여다보기</strong>(타입 퍼닝) — 부동 소수점 비트를 검사하거나 하드웨어 레지스터를 여러 눈으로 보는 저수준 코드다. 둘째, 더 흔한 쓰임인 <strong>태그된 공용체</strong>(tagged union): 구조체 안에 “지금 어느 멤버가 유효한가”를 알리는 표시(태그)와 공용체를 함께 넣어, “이 값은 정수이거나, 실수이거나, 문자열이다” 같은 선택형 데이터를 표현하는 것이다. 인터프리터의 값 표현, 설정 파일 파서 같은 곳의 기본 도구이고 — 6장에서 본 태그 포인터가 비트 차원의 같은 발상이었다. 현대 언어들의 열거형(Rust의 enum, Swift의 associated value)이 이 패턴을 언어 차원으로 끌어올린 것이다.</p></div></div><h3>44.3 비트 필드 — 한 워드를 쪼개 쓰기</h3><p>구조체 멤버 뒤에 콜론과 수를 적으면 <strong>비트 필드</strong>(bit field)가 된다 — 그 멤버가 차지할 비트 수를 직접 지정하는 것이다. 여기에 공용체를 겹치면 “통째로 한 워드로 보는 눈”과 “필드로 나눠 보는 눈”을 동시에 갖게 된다.</p><div><div><p><code>examples/ch44/bitfield.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdint.h>
 
-/* 실무에서 흔한 모양: 장치 레지스터 한 워드를 필드로 나눠 보고,
-   같은 기억을 통째로 32비트 정수로도 본다. */
-union control_reg {
-    uint32_t raw;                 /* 통째로 읽고 쓰는 눈 */
-    struct {
-        uint32_t enable   : 1;    /* 비트 1개 */
-        uint32_t mode     : 3;    /* 비트 3개 */
-        uint32_t priority : 4;
-        uint32_t reserved : 8;
-        uint32_t counter  : 16;
-    } f;                          /* 필드로 보는 눈 */
-};
-
-/* 구조체 안에 공용체를 넣는 실무 무늬: 태그 + 내용 */
-enum msg_kind { MSG_INT, MSG_TEXT, MSG_POINT };
-
-struct message {
-    enum msg_kind kind;           /* 어느 눈으로 볼지 알려 주는 태그 */
-    unsigned      flags : 4;      /* 작은 상태 몇 개 */
-    unsigned      urgent : 1;
-    union {                       /* 이름 없는 공용체 (C11) */
-        int  number;
-        char text[16];
-        struct { int x, y; } point;
-    };
-};
-
-static void show(const struct message *m)
+/* 상대 오차: 값이 커지면 눈금도 커지므로 크기에 비례한 허용치를 쓴다 */
+bool near_rel(double a, double b, double rel)
 {
-    printf("kind=%d flags=%u urgent=%u -> ", (int)m->kind, m->flags, m->urgent);
-    switch (m->kind) {
-        case MSG_INT:   printf("number %d\n", m->number); break;
-        case MSG_TEXT:  printf("text \"%s\"\n", m->text); break;
-        case MSG_POINT: printf("point (%d, %d)\n", m->point.x, m->point.y); break;
-    }
+    double scale = fabs(a) > fabs(b) ? fabs(a) : fabs(b);
+    return fabs(a - b) &lt;= rel * scale;
 }
 
 int main(void)
 {
-    union control_reg r = { .raw = 0 };
-    r.f.enable = 1;
-    r.f.mode = 5;
-    r.f.priority = 9;
-    r.f.counter = 1000;
+    double sum = 0.1 + 0.2;
 
-    printf("raw   = 0x%08x\n", r.raw);
-    printf("fields: enable=%u mode=%u priority=%u counter=%u\n",
-           r.f.enable, r.f.mode, r.f.priority, r.f.counter);
+    printf("0.1 + 0.2 == 0.3 ?      %d\n", sum == 0.3);
+    printf("compare with absolute eps? %d\n", near_abs(sum, 0.3, 1e-9));
+    printf("%.20f\n", sum);
+    printf("%.20f\n", 0.3);
 
-    /* 통째로 쓰고 필드로 읽기 — 같은 기억을 두 눈으로 본다 */
-    r.raw = 0x000A0013u;
-    printf("after raw write: enable=%u mode=%u priority=%u counter=%u\n",
-           r.f.enable, r.f.mode, r.f.priority, r.f.counter);
-
-    printf("sizeof(union control_reg) = %zu\n", sizeof r);
-
-    struct message a = { .kind = MSG_INT, .flags = 3, .urgent = 1, .number = 42 };
-    struct message b = { .kind = MSG_TEXT, .flags = 0, .urgent = 0 };
-    for (int i = 0; i &lt; 5; i++) b.text[i] = "hello"[i];
-    b.text[5] = '\0';
-    struct message c = { .kind = MSG_POINT, .flags = 8, .urgent = 0,
-                         .point = { .x = 3, .y = -7 } };
-    show(&amp;a); show(&amp;b); show(&amp;c);
-    printf("sizeof(struct message) = %zu\n", sizeof(struct message));
+    double big = 1e16;
+    printf("1e16 + 1 == 1e16 ?      %d  (gap wider than 1)\n", big + 1 == big);
+    printf("compare with relative eps? %d\n", near_rel(big + 1, big, 1e-12));
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>raw   = 0x03e8009b
-fields: enable=1 mode=5 priority=9 counter=1000
-after raw write: enable=1 mode=1 priority=1 counter=10
-sizeof(union control_reg) = 4
-kind=0 flags=3 urgent=1 -> number 42
-kind=1 flags=0 urgent=0 -> text "hello"
-kind=2 flags=8 urgent=0 -> point (3, -7)
-sizeof(struct message) = 24
-</code></pre></div></div><p>앞부분이 하드웨어 레지스터를 다루는 전형적인 무늬다. <code>r.f.mode = 5</code>처럼 필드에 쓰면 라이브러리 도움 없이도 비트 자리에 값이 들어가고, <code>r.raw</code>로 읽으면 그 결과가 한 워드로 보인다. 반대로 <code>r.raw</code>에 통째로 쓰고 필드로 읽는 것도 된다 — 출력의 세 번째 줄이 그 확인이다.</p><p>편해 보이지만 <strong>이식성의 대가</strong>가 크다. 표준이 정해 주지 않는 것이 많기 때문이다.</p><ul><li><strong>비트가 놓이는 순서</strong> — 낮은 자리부터 채울지 높은 자리부터 채울지는 구현 정의(implementation-defined)다. 그래서 같은 선언이 컴파일러마다 다른 배치를 낼 수 있다.</li><li><strong>경계를 넘는 필드</strong> — 저장 단위를 걸치는 필드를 허용할지도 구현이 정한다. 패딩이 얼마나 끼는지도 마찬가지다.</li><li><strong>부호</strong> — 그냥 <code>int x : 1;</code>은 부호 있는 1비트라 값이 0과 −1이 된다. 의도한 것이 아니라면 <code>unsigned</code>를 명시해야 한다.</li><li><strong>주소를 얻을 수 없다</strong> — 비트 필드에는 <code>&amp;</code>를 쓸 수 없다. 배열로 만들 수도 없다.</li><li><strong>원자적이지 않다</strong> — 같은 워드에 놓인 두 필드를 서로 다른 스레드가 건드리면 12장의 거짓 공유와 같은 부류의 사고가 난다.</li></ul><div class="dev misconception"><p class="dev-label">⚠ “비트 필드로 파일·네트워크 형식을 그대로 표현할 수 있다”</p><p>가장 흔한 오해이고, 이식성 사고의 단골이다. 파일 형식이나 프로토콜은 <strong>바이트와 비트의 배치가 규격으로 정해져 있는데</strong>, 비트 필드의 배치는 구현이 정한다. 컴파일러를 바꾸거나 다른 기계로 옮기는 순간 필드가 엉뚱한 자리에서 읽힌다 — 엔디안(앞 절)까지 겹치면 더 나빠진다. 외부 형식을 다룰 때의 정공법은 <strong>바이트 배열을 놓고 시프트와 마스크로 직접 뽑아 쓰는 것</strong>이다(7장). 비트 필드는 어디까지나 <strong>한 프로그램 안에서 기억을 아끼는 용도</strong>로 본다.</p></div><p>오늘날 비트 필드를 권하지 않는 이유가 이것이다. 그럼에도 이 문법을 알아야 하는 이유는 분명하다 — 임베디드 SDK의 레지스터 정의, 오래된 코드베이스의 플래그 묶음, 커널 자료구조에서 여전히 만나기 때문이다. <strong>읽을 줄은 알되, 새로 쓸 때는 한 번 더 생각한다</strong>가 실무의 감각이다.</p><h3>44.4 구조체와 공용체를 섞는 실무 무늬</h3><p>예제의 뒷부분은 다른 이야기다. 구조체 안에 태그와 공용체를 함께 넣은 <strong>태그된 공용체</strong>(tagged union)로, 앞의 문답에서 이름만 나온 그 무늬다.</p><pre><code data-lang="c">struct message {
-    enum msg_kind kind;      /* 어느 눈으로 볼지 알려 주는 태그 */
-    unsigned      flags : 4; /* 작은 상태들 — 비트 필드가 여기서 쓰인다 */
-    unsigned      urgent : 1;
-    union {                  /* 이름 없는 공용체 (C11) */
-        int  number;
-        char text[16];
-        struct { int x, y; } point;
-    };
-};</code></pre><p>세 가지가 겹쳐 있다. 태그, 비트 필드로 아낀 상태 플래그, 그리고 <strong>이름 없는 공용체</strong>(anonymous union, C11)다. 이름이 없으면 멤버를 한 단계 덜 거쳐 <code>m->number</code>처럼 바로 쓸 수 있어서, 태그된 공용체가 훨씬 읽기 좋아 진다.</p><p>규율은 하나뿐이고, 그것이 전부다 — <strong>태그가 말하는 멤버만 읽는다.</strong> <code>kind</code>가 <code>MSG_TEXT</code>인데 <code>number</code>를 읽으면 44장 첫 절에서 본 “다른 눈으로 보기”가 되어 의미 없는 값이 나온다. 그래서 이런 자료를 다루는 코드는 거의 언제나 예제의 <code>show</code>처럼 <strong>태그로 분기하는 <code>switch</code> 하나</strong>를 통과 하도록 만든다. 접근을 한 곳에 모으면 규율을 지킬 자리도 한 곳이 된다.</p><p><code>sizeof(struct message)</code>가 24바이트로 나온 것도 읽어 둘 만하다 — 태그 4바이트 + 비트 필드가 든 워드 + 16바이트 공용체에, 정렬을 맞추는 패딩(앞 절)이 더해진 결과다. 표현은 언제나 이렇게 <strong>선언한 것보다 조금 더</strong> 차지한다.</p><h3>44.5 제8부를 닫으며</h3><p>타입을 만드는 두 문법을 얻었다 — 나란히 놓는 구조체(42장)와 겹쳐 놓는 공용체(44장). 그리고 그 과정에서 표현의 현실(엔디안·패딩)을 눈으로 확인했다. 제2부의 배경지식이 문법으로 완전히 회수된 것이다.</p><p>다음 부는 정밀의 부다 — 8장에서 배운 근사의 수학이 C의 실수 타입으로 내려오고(45장), 33장에서 씨앗을 심은 계약의 관점이 오류 처리로 자라며 (46장), 이 책이 곳곳에서 예고해 온 “계약 밖”의 세계 — 정의되지 않은 동작 — 를 정면으로 만난다(47장).</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>0.1 + 0.2 == 0.3 ?      0
+compare with absolute eps? 1
+0.30000000000000004441
+0.29999999999999998890
+1e16 + 1 == 1e16 ?      1  (gap wider than 1)
+compare with relative eps? 1
+</code></pre></div></div><p>첫 세 줄이 8장 첫 사건의 실행 확인이다 — <code>==</code>는 거짓이고, 20자리까지 찍어 보면 두 수가 마지막에서 갈린다. <code>near_abs</code>(절대 오차)를 쓰면 참이 된다.</p><p>뒷부분이 셋째 사건(흡수)의 확인이다 — <math><msup><mn>10</mn><mn>16</mn></msup></math>에 1을 더해도 값이 그대로 다. 그 크기에서는 표현 가능한 이웃 사이의 간격이 이미 1보다 넓기 때문이다(8장의 눈금 계산). 여기서는 절대 오차가 아니라 <code>near_rel</code>(상대 오차)이 옳은 도구다.</p><p>실무 수칙으로 줄이면 셋이다. <strong>기본은 <code>double</code></strong> — 8장에서 본 대로 정밀도의 여유가 다르고, <code>float</code>는 메모리·대역폭이 아쉬운 곳에서만 고른다. <strong><code>==</code>는 쓰지 않는다</strong> — 두 실수가 같은지 묻는 코드는 거의 언제나 의심 대상이다(정수와 비교할 때, 0과 비교할 때 등 예외는 있지만 의식 적으로 판단해야 한다). <strong>허용치는 문제에서 나온다</strong> — 계산의 성격과 값의 크기를 보고 정하는 것이지 마법 상수가 있는 것이 아니다.</p><h3>44.2 특수값 — 무한대와 NaN</h3><p>IEEE 754(8장)는 평범한 수 말고도 특별한 값을 정의해 두었다. <strong>무한대</strong> (양·음)는 넘침이나 0으로 나누기의 결과로 나오고, <strong>NaN</strong>(Not a Number)은 “수가 아님” — <math><mfrac><mn>0</mn><mn>0</mn></mfrac></math>이나 음수의 제곱근 같은 정의 불가 연산의 결과다. 정수의 0 나누기가 계약 밖(27장)인 것과 대조적으로, <strong>부동소수점의 0 나누기는 정의된 동작</strong>(무한대)이라는 점이 흥미롭다 — IEEE 754가 계산을 멈추는 대신 특별한 값으로 흘려보내는 설계를 택했기 때문이다.</p><p>NaN에는 유명한 성질이 하나 있다 — <strong>자기 자신과도 같지 않다.</strong> <code>x != x</code>가 참이면 x는 NaN이라는 뜻이고, 이것이 NaN을 판별하는 고전적 관용구다(오늘은 <code>isnan()</code>을 쓴다). “같음”이라는 관계의 기본 성질이 깨지는 값이라, 정렬이나 검색 알고리즘에 NaN이 섞여 들면 기묘한 일이 벌어진다 — 실수 데이터를 다룰 때 NaN 검사를 경계에 두는 것이 관행인 이유다.</p><div class="dev realcase"><p class="dev-label">◉ 0.1초의 누적 — 패트리어트 미사일 사고</p><p>8장에서 배운 “작은 어긋남이 쌓인다”가 실제로 사람의 목숨과 이어진 사건이 있다. 1991년 걸프전에서 패트리어트 방공 시스템이 날아오는 미사일을 요격하지 못해 28명이 사망한 사고인데, 원인 분석의 핵심이 부동소수점 오차였다. 시스템은 시간을 0.1초 단위로 세었는데 — 8장에서 본 대로 0.1은 2진법으로 무한소수라 담을 때마다 미세한 오차가 생긴다. 그 시스템이 24비트 그릇을 쓴 탓에 오차가 상대적으로 컸고, 재부팅 없이 100시간을 연속 가동하자 누적 오차가 약 0.34초에 이르렀다. 그 0.34초 동안 목표는 500미터 넘게 이동하고, 추적 창은 엉뚱한 하늘을 보게 된 것이다. “근사는 성실하지만 무해하지는 않다” — 8장의 교훈이 가장 무겁게 확인된 사례다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>그러면 돈 계산 같은 곳에는 실수를 쓰면 안 되는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>쓰지 않는 것이 정석이다 — 8장에서 배운 고정소수점의 자리가 바로 여기다. 금액을 원 단위 실수로 다루면 0.1원 단위의 어긋남이 쌓여 장부가 맞지 않게 되므로, <strong>전 단위 정수</strong>로 계산하고 표시할 때만 소수점을 찍는 것이 금융 소프트웨어의 관행이다. 규칙으로 줄이면 — <strong>정확한 십진 값이 중요한 곳에는 정수(고정소수점), 물리량과 과학 계산에는 부동 소수점.</strong> 도구를 문제에 맞추는 것이고, 그 판단의 근거가 8장과 이 장에서 배운 표현의 성격이다.</p></div></div><p>근사의 세계를 C에서 다루는 법을 익혔다. 다음 장은 이 부의 중심 주제 — 계산이 실패할 수 있다는 사실을 프로그램이 어떻게 다루는가, 오류와 계약의 이야기다.</p>
 <div class="nav"><a href="ch43.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch45.html">다음 →</a></div>
 </div></main></body></html>

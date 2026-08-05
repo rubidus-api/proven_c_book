@@ -36,7 +36,7 @@ way — fetch, decode, execute, write back. Making an assembly line of those
 stages is the *pipeline*. Individual instructions do not get faster — what
 increases is *the number of instructions completed per unit of time.* Modern
 CPU pipelines run to more than ten stages, and go further by having several
-lines so that multiple instructions complete per beat. Chapter 2's "one step per
+lines so that multiple instructions complete per beat. Chapter 4's "one step per
 beat" collapses like this — the apparent order is kept, but inside things
 overlap.
 
@@ -46,7 +46,7 @@ turn of a loop (counting, judging the fork), there is a technique of handling
 pushed this technique to its limit by grotesquely overlapping two pieces of C
 syntax, and the code became a legend under the name *Duff's device*. The code
 itself cannot be shown yet — this book has not introduced those constructs. A
-reunion is booked (chapter 32). One sentence suffices for now: in those days
+reunion is booked (chapter 31). One sentence suffices for now: in those days
 people squeezed the machine's beats with acrobatics like this, and today the
 acrobatics are the compiler's job (chapter 13).
 
@@ -76,7 +76,7 @@ and hit rates in everyday code run well past 90%.
   half the time and pays the line-flush penalty each time. In a sorted array the
   answer at the fork stays on one side for a long stretch and the predictions are
   almost all right. An invisible guessing circuit split the speed of the same
-  code several-fold (we use this feel again in chapter 31 — "an `if` is not
+  code several-fold (we use this feel again in chapter 30 — "an `if` is not
   free").
 ]
 
@@ -135,7 +135,7 @@ and porting was an adventure every time.
 Unable to bear it, the industry formed a standards committee (ANSI X3J11) in
 1983, and after six years of heated argument *C89* — the first official C
 standard — appeared in 1989. It brought in function *prototypes* (declarations
-that state argument types too, chapter 25) so compilers could catch mistakes at
+that state argument types too, chapter 24) so compilers could catch mistakes at
 call sites, tightened the loose corners, and above all pinned down *in a
 document*, for the first time, "what the programmer is promised and how far the
 implementation is free." It is within a few years of chapter 8's IEEE 754

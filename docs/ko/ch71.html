@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>71 시작하기 — 설치할 것이 없다 — Proven C Book</title><style>
+<title>71 에러는 값이다 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,34 +68,68 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>71 시작하기 — 설치할 것이 없다</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>proven을 실제로 쓰는 첫 장이다. 이 라이브러리에 <code>configure</code>도, 패키지 관리자도, 링크할 공유 라이브러리도 없는 이유 — 그리고 그 선택이 무엇을 주고 무엇을 앗아가는지 — 를 먼저 보고, 첫 프로그램을 돌린다. 70장에서 본 세 번째 버그(서식 불일치)가 이 첫 프로그램에서 이미 사라진다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>49장에서 여러 파일 프로그램을 만들며 헤더와 목적 파일, 링크를 배웠고, <span id="idx-entry-101"></span>16장에서는 컴파일 릴레이의 네 주자를 보았다. 그러면 “라이브러리를 쓴다”는 것은 그 그림에서 정확히 무엇을 하는 일인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>둘 중 하나다. <strong>함께 컴파일하거나</strong>, <strong>따로 컴파일된 것을 링크하거나</strong>. 앞의 길은 남의 소스를 내 소스와 같이 컴파일러에 넘기는 것이고, 뒤의 길은 이미 목적 코드가 된 덩어리(정적 <code>.a</code>나 공유 <code>.so</code>·<code>.dll</code>)를 링커에게 넘기는 것이다. 어느 쪽이든 컴파일러는 <strong>선언</strong>(헤더)을 보고 호출을 만들고, 링커가 <strong>정의</strong>를 찾아 잇는다 — 49장의 그림 그대로다. proven은 앞의 길을 택했고, 다음 절이 그 이유다.</p></div></div><h3>71.1 설치할 것이 없다는 선택</h3><p>proven에는 설치 절차가 없다. 받아 둔 소스를 프로그램과 함께 컴파일하면 그만이다. 중요한 디렉터리는 둘뿐이다.</p><ul><li><code>src/proven/</code> — 이식 가능한 본체. 여기서는 운영체제를 부르지 않는다.</li><li><code>platform/</code> — 시스템 호출을 하는 얇은 층. 새 기계로 옮길 때 바꿔야 할 유일한 부분이다.</li></ul><p>운영체제가 없는 환경(임베디드)에서는 <code>platform/</code>을 빼고 빌드한다. 이 분리가 라이브러리 전체의 모양을 결정했다 — “어디서나 돌아야 한다”는 요구가 곧 “숨은 할당도, 숨은 전역 상태도 두지 않는다”는 규율이 된다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>왜 패키지로 배포하지 않는가? 설치가 더 편할 텐데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>대가와 이득을 맞바꾼 것이다. 잃는 것은 편의다 — 시스템 패키지로 받을 수 없고, 갱신은 “버전을 올리는 일”이 아니라 “새 소스를 받아오는 일”이 된다. 얻는 것은 통제권이다. 라이브러리가 지금 보고 있는 소스와 다를 수 없고, 내가 고르지 않은 컴파일 선택지가 딸려 오지 않으며, 배포판이 다른 설정으로 빌드했다는 이유로 링크가 깨지는 일이 없다. 무엇보다 <strong>호스트 환경과 베어메탈 양쪽에서 통하는 유일한 모델</strong>이다 — 임베디드에는 애초에 패키지 관리자가 없다.</p></div></div><h3>71.2 이 책의 예제는 어떻게 빌드되는가</h3><p>정직하게 밝혀 두면, 이 책의 proven 예제들은 다음과 같이 컴파일된다. 라이브러리 소스를 한 번 목적 파일로 만들어 두고, 예제와 함께 링크한다.</p><pre><code data-lang="text">$ cc -std=c23 -O1 -Ivendor/proven/include -c vendor/proven/src/proven/*.c
-$ cc -std=c23 -Wall -Wextra -Werror -Ivendor/proven/include \
-     hello.c vendor-obj/*.o -lm -o hello</code></pre><p>첫 줄이 본체를, 둘째 줄이 내 프로그램을 다룬다. <code>-I</code>는 헤더를 찾을 자리를 알려 주는 것(49장), <code>-lm</code>은 수학 함수를 잇는 것이다. 이 두 줄이 이 책의 검증 스크립트가 실제로 매번 돌리는 명령이고, 지면에 인쇄된 모든 실행 결과는 그렇게 만들어진 프로그램의 출력이다.</p><h3>71.3 첫 프로그램</h3><p><code>#include &lt;proven.h></code> 하나면 라이브러리 전체가 열린다.</p><div><div><p><code>examples/ch71/hello.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>71 에러는 값이다</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>69장의 둘째 버그 — 확인되지 않는 실패 — 에 대한 답을 본다. 실패를 값으로 돌려주는 방식, 값과 에러를 함께 담는 꾸러미, 그리고 에러를 버리면 컴파일러가 항의하게 만드는 장치까지. 45장에서 세운 “오류는 값이다”라는 규율이 여기서 타입으로 굳는다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>45장에서 C의 오류 통보 방식이 반환값·전역 상태·프로그램 중단 셋뿐이라 했고, 그중 반환값이 가장 정직하다고 했다. 그러면 반환값 하나로 “실패 했다”와 “결과는 이것이다”를 동시에 말하려면 어떻게 해야 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>방법은 셋이다. 결과 자리에 <strong>불가능한 값</strong>을 섞어 쓰거나(널, <code>-1</code> — 69장에서 본 그 함정이다), 결과를 <strong>출력 매개변수</strong>로 빼고 반환값을 상태 전용으로 쓰거나, 둘을 <strong>하나의 구조체에 담아</strong> 함께 돌려주거나. proven은 둘째와 셋째를 함께 쓴다 — 그리고 셋째가 가능한 이유는 41장에서 배운 대로 C의 구조체가 값으로 반환될 수 있기 때문이다.</p></div></div><h3>71.1 두 가지 반환 모양</h3><p>규칙은 단순하다. <strong>실패할 수 있는 함수는 반드시 실패를 값으로 돌려준다.</strong></p><ul><li>돌려줄 결과가 없으면 <code>proven_err_t</code> 하나를 돌려준다.</li><li>돌려줄 결과가 있으면 <code>{err, value}</code> 꾸러미를 돌려준다 — <code>proven_result_u8str_t</code>, <code>proven_result_size_t</code>처럼 타입마다 이름이 있다.</li></ul><p><code>proven_err_t</code>는 열거형이고 성공은 <code>PROVEN_OK</code>(0)다. 실패는 종류마다 이름이 있다 — <code>PROVEN_ERR_NOMEM</code>(기억 부족), <code>PROVEN_ERR_OUT_OF_BOUNDS</code>(자리 부족), <code>PROVEN_ERR_NOT_FOUND</code>, <code>PROVEN_ERR_INVALID_ARG</code>, <code>PROVEN_ERR_IO</code>, <code>PROVEN_ERR_EOF</code> 등. 확인은 언제나 <code>proven_is_ok(err)</code> 하나로 한다.</p><div><div><p><code>examples/ch71/errval.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+/* 실패할 수 있는 일을 한다: 정해진 용량의 문자열에 두 조각을 붙인다.
+   에러는 값으로 돌아오고, 호출자는 그것을 그대로 위로 전달한다. */
+static proven_err_t make_greeting(proven_allocator_t alloc,
+                                  const char *who,
+                                  proven_size_t cap,
+                                  proven_u8str_t *out)
+{
+    proven_result_u8str_t made = proven_u8str_create(alloc, cap);
+    if (!proven_is_ok(made.err))
+        return made.err;                 /* 실패를 위로 넘긴다 */
+
+    proven_u8str_t s = made.value;       /* 확인한 뒤에야 value 를 쓴다 */
+
+    proven_err_t e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("Hello, "));
+    if (proven_is_ok(e))
+        e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr(who));
+    if (!proven_is_ok(e)) {
+        proven_u8str_destroy(alloc, &amp;s); /* 실패했으면 뒷정리도 우리 몫 */
+        return e;
+    }
+
+    *out = s;
+    return PROVEN_OK;
+}
+
+static void try(proven_allocator_t alloc, const char *who, proven_size_t cap)
+{
+    proven_u8str_t s;
+    proven_err_t e = make_greeting(alloc, who, cap, &amp;s);
+
+    if (!proven_is_ok(e)) {
+        printf("cap=%2zu who=%-8s -> failed with error code %d\n",
+               cap, who, (int)e);
+        return;
+    }
+    proven_u8str_view_t v = proven_u8str_as_view(&amp;s);
+    printf("cap=%2zu who=%-8s -> \"%.*s\"\n",
+           cap, who, (int)v.size, (const char *)v.ptr);
+    proven_u8str_destroy(alloc, &amp;s);
+}
 
 int main(void)
 {
-    const char *name = "world";
-    int         count = 3;
-    double      ratio = 0.75;
-    bool        ready = true;
-    char        grade = 'A';
+    proven_allocator_t alloc = proven_heap_allocator();
 
-    /* {} 는 자리표시자일 뿐 타입이 없다. 타입은 인자에서 온다 */
-    proven_println("Hello, {}! You have {} messages.",
-                   PROVEN_ARG(name), PROVEN_ARG(count));
+    try(alloc, "world", 32);   /* 넉넉하다 */
+    try(alloc, "world", 8);    /* 자리가 모자란다 — 자르지 않고 거부한다 */
 
-    /* 어떤 타입이든 같은 자리표시자로 간다 */
-    proven_println("ratio={} ready={} grade={}",
-                   PROVEN_ARG(ratio), PROVEN_ARG(ready), PROVEN_ARG(grade));
-
-    /* 서식 지정은 콜론 뒤에 붙인다 — 폭, 정렬, 자릿수 */
-    proven_println("|{:>8}|{:&lt;8}|{:.3}|",
-                   PROVEN_ARG(name), PROVEN_ARG(name), PROVEN_ARG(ratio));
+    printf("PROVEN_OK is %d, and every failure is non-zero\n", (int)PROVEN_OK);
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>Hello, world! You have 3 messages.
-ratio=0.750000 ready=true grade=A
-|   world|world   |0.750|
-</code></pre></div></div><p>한 줄씩 읽는다. <code>proven_println</code>은 서식과 인자를 받아 표준 출력에 한 줄을 찍는다 — 여기까지는 <code>printf</code>와 같다. 다른 것은 <strong>자리표시자</strong>다.</p><ul><li><code>{}</code>에는 타입이 들어 있지 않다. <code>%d</code>도 <code>%s</code>도 아니고 그냥 <code>{}</code>다.</li><li>타입은 <strong>인자에서</strong> 온다. <code>PROVEN_ARG(x)</code>가 <code>x</code>의 타입을 보고 알맞은 꼬리표를 붙여 값을 감싼다.</li><li>그래서 70장의 셋째 버그 — 서식과 인자의 불일치 — 가 <strong>구조적으로</strong> 일어날 수 없다. 타입을 두 번 적지 않으니 어긋날 자리가 없다.</li></ul><p><code>{:>8}</code>처럼 콜론 뒤에 적는 것은 54장에서 본 폭·정렬·정밀도에 해당한다. <code>></code>는 오른쪽 정렬, <code>&lt;</code>는 왼쪽 정렬, <code>.3</code>은 소수 셋째 자리까지다. 정렬 기호가 앞에 오는 것이 <code>printf</code>와 다른 점이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>PROVEN_ARG</code>는 어떻게 타입을 알아내는가? C에는 함수 오버로딩이 없지 않은가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>C11에 들어온 <code>_Generic</code>이라는 장치를 쓴다 — 표현식의 타입에 따라 여러 가지 중 하나를 <strong>컴파일 시간에</strong> 고르는 문법이다. <code>PROVEN_ARG(x)</code>는 <code>x</code>가 <code>int</code>면 정수 꼬리표를, <code>double</code>이면 실수 꼬리표를, <code>const char *</code> 면 문자열 꼬리표를 붙인 작은 구조체를 만든다. 실행 시간에 타입을 판별하는 것이 아니라 <strong>컴파일러가 이미 아는 것을 그대로 쓰는</strong> 것이라 비용이 없다. 문법과 전체 서식 규칙은 76장에서 정면으로 다룬다.</p></div></div><div class="dev misconception"><p class="dev-label">⚠ “라이브러리를 쓰면 프로그램이 무거워진다”</p><p>자주 듣는 걱정이고, 언어와 라이브러리의 성격에 따라 다르다. C에서 소스로 함께 컴파일하는 라이브러리는 <strong>쓰지 않은 것이 실행 파일에 남지 않는다</strong> — 링커가 참조되지 않은 목적 파일을 아예 넣지 않기 때문이다 (16장의 링크 단계). 게다가 proven에는 시작할 때 도는 초기화 코드도, 등록되는 전역 상태도, 몰래 뜨는 스레드도 없다. 무거워지는 것은 라이브러리를 쓴 대가가 아니라, 프레임워크가 프로그램의 구조를 가져갈 때 생기는 일이다.</p></div><div class="dev realcase"><p class="dev-label">◉ 소스로 배포하는 관행 — 한 파일짜리 SQLite</p><p>이 배포 모델은 proven만의 별난 선택이 아니다. 세계에서 가장 널리 쓰이는 데이터베이스 엔진 SQLite는 수십 개 소스 파일을 하나의 거대한 <code>.c</code> 파일로 합친 <strong>amalgamation</strong>을 공식 배포 형태로 제공한다 — 받아서 프로그램과 함께 컴파일하면 끝이다. 이미지·폰트 처리로 유명한 <code>stb</code> 계열 라이브러리는 아예 헤더 파일 하나가 전부다. 이유는 모두 같다. 빌드 환경이 제각각인 세상에서 <strong>가장 이식성 높은 배포 단위는 소스</strong>이기 때문이다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>이 장의 요약.</p><table><tr><th><strong>무엇</strong></th><th><strong>어떻게</strong></th></tr><tr><td>헤더</td><td><code>#include &lt;proven.h></code> 하나</td></tr><tr><td>빌드</td><td><code>src/proven/*.c</code>를 프로그램과 함께 컴파일</td></tr><tr><td>OS 의존</td><td><code>platform/</code>에만 있다 (없으면 빼고 빌드)</td></tr><tr><td>출력</td><td><code>proven_println("... {} ...", PROVEN_ARG(x))</code></td></tr><tr><td>서식 지정</td><td><code>{:>8}</code> <code>{:&lt;8}</code> <code>{:.3}</code> — 콜론 뒤</td></tr><tr><td>대가</td><td>인자마다 <code>PROVEN_ARG</code>, 익숙한 <code>%d</code>와 다른 문법</td></tr></table></div><p>첫 프로그램이 돌았다. 그런데 방금 쓴 <code>proven_println</code>도 사실은 실패할 수 있다 — 화면으로 가는 띠가 끊길 수 있기 때문이다(10장). 이 함수는 에러를 돌려주되 <strong>확인을 강요하지는 않는데</strong>, 그 선택 자체가 이 라이브러리의 에러 모델을 이해하는 좋은 입구다. 다음 장이 그것이다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>cap=32 who=world    -> "Hello, world"
+cap= 8 who=world    -> failed with error code 2
+PROVEN_OK is 0, and every failure is non-zero
+</code></pre></div></div><p>이 예제에 이 장의 문법이 다 들어 있다. <code>make_greeting</code>은 결과를 출력 매개변수(<code>out</code>)로 내보내고 반환값은 상태 전용으로 썼다 — 실패하면 위로 그대로 넘긴다. 그리고 <code>proven_u8str_create</code>는 꾸러미를 돌려주므로, <strong>확인한 뒤에야</strong> <code>made.value</code>를 꺼낸다. 순서가 뒤바뀌면 안 된다.</p><div class="dev antipattern"><p class="dev-label">✗ 확인하기 전에 <code>value</code>를 꺼내기</p><pre><code data-lang="c">proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* 위험 */</code></pre><p>한 줄로 끝나서 깔끔해 보이지만, 실패했을 때 손에 들어오는 것은 <strong>의미 없는 값</strong>이다. 꾸러미의 계약은 “<code>err</code>가 <code>PROVEN_OK</code>일 때만 <code>value</code>가 뜻을 가진다”이므로, 이 코드는 계약을 건너뛴 것이다. 실패해도 대개 0으로 채워진 구조체가 와서 당장은 죽지 않는다는 점이 오히려 위험하다 — 사고가 한참 뒤로 미뤄진다(69장의 그 무늬다).</p></div><p>두 번째 호출의 출력이 이 부의 주제를 압축한다. 용량 8바이트에 <code>"Hello, world"</code>를 넣으려 하자 라이브러리는 <strong>들어가는 만큼만 넣고 성공을 말하는</strong> 대신, 아무것도 쓰지 않고 실패를 돌려주었다. 69장에서 본 <code>snprintf</code>의 조용한 잘림과 정확히 반대되는 선택이다.</p><h3>71.2 버리면 컴파일러가 항의한다</h3><p>에러를 값으로 돌려주는 것만으로는 부족하다. 69장에서 본 대로 반환값은 <strong>버릴 수 있기</strong> 때문이다. 그래서 실패가 의미 있는 함수에는 C23의 <span id="idx-entry-101"></span><code>[[nodiscard]]</code>가 붙어 있다(45장에서 이름을 보았다). 결과를 버리면 컴파일러가 실제로 이렇게 말한다.</p><pre><code data-lang="text">warning: ignoring return value of ‘proven_u8str_append’,
+         declared with attribute ‘nodiscard’ [-Wunused-result]
+    5 |     proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hi"));
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+note: declared here
+  123 | [[nodiscard]] proven_err_t proven_u8str_append(...);</code></pre><p>17장에서 권한 <code>-Werror</code>를 켜 두었다면 이것은 경고가 아니라 <strong>빌드 실패</strong>가 된다. “확인은 선택”이던 것이 “확인하지 않으면 컴파일되지 않음”으로 바뀐 것이다.</p><p>물론 정말로 무시하고 싶을 때가 있다. 그때는 <code>(void)</code>를 앞에 붙인다.</p><pre><code data-lang="c">(void)proven_u8str_append(&amp;s, view);   /* 알고도 무시한다 */</code></pre><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>(void)</code>로 무시할 수 있으면 강제가 아니지 않은가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>강제의 목적이 “무시를 막는 것”이 아니라 <strong>“무시를 눈에 보이게 만드는 것”</strong>이기 때문이다. 아무 표시 없이 버려진 에러는 코드 검토에서 보이지 않지만, <code>(void)</code>가 붙은 줄은 “이 실패는 의도적으로 무시한다”는 선언이 된다. 타이핑해야 한다는 사실 자체가 핵심이다 — 실수로는 못 하고, 일부러만 할 수 있다.</p></div></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>그런데 70장의 <code>proven_println</code>에는 그 표시가 없었다. 왜 화면 출력만 예외인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>계약에도 등급이 있기 때문이다. 콘솔로 나가는 쓰기의 실패는 관례적으로 무시되어 왔고(<code>printf</code>의 반환값을 확인하는 코드를 본 적이 있는가?), 모든 출력 한 줄마다 <code>(void)</code>를 붙이게 만들면 코드가 소음으로 뒤덮인다. 그래서 이 라이브러리는 <strong>에러는 돌려주되 확인을 강요하지는 않는</strong> 등급을 출력에 두었다. 반대로 <strong>입력</strong> 쪽 함수들에는 표시가 붙어 있다 — 읽기의 실패를 무시하면 “읽지 않은 데이터”를 읽은 것처럼 다루게 되어, 69장의 둘째 버그가 그대로 재현되기 때문이다. 어디에 표시를 붙일지가 곧 설계 판단이다.</p></div></div><h3>71.3 실패했을 때 남는 것 — 실패 원자성</h3><p>에러를 돌려받은 뒤 자연스럽게 드는 물음이 있다. <strong>실패한 함수가 건드리던 객체는 지금 어떤 상태인가?</strong></p><span id="idx-entry-102"></span><p>라이브러리의 답은 <strong>실패 원자성</strong>(failure atomicity)이다 — 문서에 달리 적지 않은 한, 실패한 연산은 대상을 손대기 전 상태로 남긴다. 배열을 늘리다 기억이 모자라면 기존 원소는 그대로 살아 있고, 문자열에 덧붙이다 자리가 모자라면 원래 내용이 그대로다. 방금 예제의 두 번째 호출이 그 예다 — 실패했지만 반쯤 쓰인 문자열이 남지는 않았다.</p><p>이것이 왜 중요한가. 실패 원자성이 없으면 호출자는 실패한 뒤 <strong>객체를 버리는 것 말고는</strong> 할 수 있는 일이 없다. 있으면 “이번 추가는 포기하고 지금까지 모은 것으로 계속 간다”가 가능해진다.</p><div class="dev misconception"><p class="dev-label">⚠ “실패하면 어차피 프로그램을 끝낼 텐데 상태가 무슨 상관인가”</p><p>짧게 도는 명령줄 도구라면 그럴 수 있다. 그러나 오래 도는 프로그램 — 서버, 편집기, 게임, 펌웨어 — 은 실패 하나로 죽으면 안 된다. 한 요청의 처리가 기억 부족으로 실패했다고 서버 전체가 내려간다면 그것이 더 큰 사고다. 실패 원자성은 “이 요청만 버리고 다음 요청을 받는” 복구를 가능하게 하는 최소 조건이다.</p></div><h3>71.4 돌려줄 상대가 없을 때 — 패닉</h3><p>에러를 값으로 돌려주려면 <strong>돌려줄 상대</strong>가 있어야 한다. 그런데 계약 자체가 깨진 자리에서는 그 상대가 없다 — 예를 들어 널 포인터를 넘겨야 할 이유가 전혀 없는 자리에 널이 왔다면, 그것은 실패가 아니라 <strong>프로그램의 논리가 이미 틀렸다</strong>는 뜻이다.</p><p>이런 자리를 위해 라이브러리에는 패닉(panic) 경로가 있다. 45장의 <code>assert</code>와 같은 정신이고, 다른 점은 임베디드에서도 쓸 수 있도록 처리 방식을 갈아 끼울 수 있다는 것이다(78장). 구분은 이렇게 기억하면 된다.</p><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><table><tr><th><strong>상황</strong></th><th><strong>예</strong></th><th><strong>라이브러리의 처리</strong></th></tr><tr><td>바깥 세계의 실패</td><td>기억 부족, 파일 없음, 자리 부족</td><td>에러를 값으로 반환</td></tr><tr><td>호출자의 계약 위반</td><td>있어서는 안 될 널, 파괴한 객체 재사용</td><td>패닉 (또는 미정의)</td></tr><tr><td>무시해도 좋은 실패</td><td>콘솔 출력 실패</td><td>에러를 반환하되 강요하지 않음</td></tr></table></div><div class="dev realcase"><p class="dev-label">◉ 값으로 오는 에러를 택한 다른 언어들</p><p>이 설계는 C만의 발명이 아니라 최근 시스템 언어들의 공통된 흐름이다. Go는 함수가 결과와 에러를 나란히 돌려주고, Rust는 <code>Result</code> 타입 하나로 성공과 실패를 감싸며 무시하면 경고한다. 둘 다 예외(exception)를 쓰지 않기로 한 언어이고, 이유도 같다 — <strong>에러 경로가 코드의 모양에 드러나야 한다</strong>는 것. 예외는 편리하지만 “여기서 어떤 실패가 어디로 튀는가”를 시그니처에서 지운다. 69장 표의 둘째 줄에 대한 답을, 서로 다른 세 언어가 같은 방향에서 찾은 셈이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>이 방식의 대가는 무엇인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><code>if</code>가 늘어난다. 예외처럼 깊은 곳의 실패를 한 번에 걷어 올려 주는 장치가 없으므로, 실패를 만나는 자리마다 확인하고 위로 넘기는 코드가 붙는다. 방금 예제의 <code>make_greeting</code>이 스무 줄 남짓 되는 이유의 절반이 그것이다. 그 대신 얻는 것이 하나 있다 — <strong>어디서 무엇이 실패할 수 있는지가 코드에 그대로 보인다.</strong> 감춰진 실패가 없다는 것, 그것이 이 라이브러리가 파는 물건이다.</p></div></div><p>에러의 모양을 알았으니, 이제 그 에러들이 지키는 대상 — 기억 그 자체 — 으로 내려간다. 다음 장은 바이트와 뷰, 그리고 넘치지 않는 크기 계산이다.</p>
 <div class="nav"><a href="ch70.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch72.html">다음 →</a></div>
 </div></main></body></html>

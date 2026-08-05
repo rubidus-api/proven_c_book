@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>42 Using structs — temporary values, named arguments, layout — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>42 Using structs — temporary values, named arguments, layout</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>If chapter 41 was the syntax of the struct, this chapter is <strong>how to use it</strong>. The notation for referring to a struct inside a struct, the temporary struct made and handed over on the spot (the compound literal), the idiom of “order-free named arguments” built from it, and the padding that gets in between members and how to remove it or force it. Finally we measure the only road for passing an array by value, and its price.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 41 said a struct is a value, so assigning copies it whole and passing it to a function sends a copy. But chapter 36 said that passing an array to a function makes it decay into a pointer so that <strong>the original is touched</strong>. Do the two not collide — which is it when a struct contains an array?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>The struct wins. An array decaying into a pointer is the rule for <strong>when the array itself is written as an argument</strong>; an array that has gone in as a struct member is part of the value that is the struct and is therefore copied. So the only way in C to pass an array truly <strong>like a value</strong> is “wrapping it in a struct.” This chapter’s second example shows that contrast by measurement — the side passed by value leaves the original untouched, and the side that decayed into a pointer changes it.</p></div></div><h3>42.1 Nesting and access — reading dots and arrows mixed</h3><p>A struct’s member may itself be a struct. The notation is simply layered.</p><pre><code data-lang="c">struct point { int x, y; };
+struct rect  { struct point origin; struct point size; };
+struct scene { struct rect *frame; const char *name; };
+
+struct rect  r  = { .origin = { .x = 1, .y = 2 }, .size = { .x = 30, .y = 40 } };
+struct scene s  = { .frame = &amp;r, .name = "main" };
+
+r.origin.x        /* value inside value        : dot + dot */
+s.frame->size.y   /* pointer inside value      : dot + arrow + dot */
+(&amp;r)->origin.y    /* the arrow is only an abbreviation of (*p). */</code></pre><p>There is only one rule. <strong>If the left is a value, a dot; if a pointer, an arrow.</strong> <code>p->x</code> is an abbreviation of <code>(*p).x</code> (chapter 41), and the abbreviation exists because handling structs through pointers is overwhelmingly common. Indeed, code written as <code>(*p).x</code> is usually old code or a place explaining operator precedence.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Where do you break a long chain like <code>s.frame->size.y</code> when reading it?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Left to right, one step down at a time. <code>s</code> (the scene) → <code>.frame</code> (the pointer inside it) → <code>->size</code> (the size of the rectangle pointed at) → <code>.y</code> (that point’s y). Each arrow is a mark that <strong>one dereference happens</strong>, so it also means there are as many pointers needing a null check as there are arrows. If <code>s.frame</code> is null this notation collapses on the spot — a long chain, as easy as it is to read, also hides the checks.</p></div></div><h3>42.2 The temporary struct — the compound literal</h3><p>The notation for making one struct value <strong>on the spot</strong>, without making a named variable, is the compound literal (C99).</p><pre><code data-lang="c">draw_((struct draw_opts){ .width = 40, .title = "chart" });   /* straight as an argument */
+return (struct point){ .x = a.x + dx, .y = a.y + dy };        /* as a return value */</code></pre><p>Take away three properties.</p><p><strong>First, it is an lvalue.</strong> It merely has no name; it is a real object, so its address can be taken and its members assigned to. The example’s <code>&amp;(struct draw_opts){ … }</code> is the check. It is easy to think “being a temporary (an rvalue) its address cannot be taken”, but C’s compound literal is not like that — a difference from C++‘s temporary objects.</p><p><strong>Second, its lifetime is the end of the block, not of the statement.</strong> A compound literal written inside a block lives until that block ends (automatic storage duration). So within the same block it is safe to carry its address about.</p><p><strong>Third, therefore, sending its address out of the function is a dangling pointer.</strong></p><div class="dev antipattern"><p class="dev-label">✗ Returning the address of a compound literal</p><pre><code data-lang="c">struct point *make(int x, int y)
+{
+    return &amp;(struct point){ .x = x, .y = y };   /* it vanishes when the function ends */
+}</code></pre><p>Exactly the same accident as returning the address of a local variable in chapter 35. To return a value, return it <strong>by value</strong> (<code>struct point make(...)</code>), fill a place the caller provided, or use dynamic allocation (chapter 40). A compound literal written at file scope has static storage duration and does not have this problem, but in that place it is usually better to give it a name.</p></div><h3>42.3 Named arguments — passing one struct</h3><div><div><p><code>examples/ch42/opts.c</code></p><pre><code data-lang="c">/* 임시 구조체(복합 리터럴)로 "이름 붙은 매개변수"를 만들고,
+   구조체 복사가 배열 멤버까지 옮긴다는 사실을 확인한다. */
+#include &lt;stdio.h>
+
+/* ── ① 이름으로 넘기는 매개변수 ─────────────────────────── */
+struct draw_opts {
+    int         width;     /* 0 이면 기본값 80 */
+    int         height;    /* 0 이면 기본값 24 */
+    bool        grid;
+    const char *title;
+};
+
+static void draw_(struct draw_opts o)
+{
+    int w = o.width  ? o.width  : 80;
+    int h = o.height ? o.height : 24;
+    printf("  %3dx%-3d grid=%-5s title=%s\n", w, h,
+           o.grid ? "true" : "false", o.title ? o.title : "(없음)");
+}
+/* 호출자가 중괄호를 적지 않아도 되게 감싼다 */
+#define draw(...) draw_((struct draw_opts){ __VA_ARGS__ })
+
+/* ── ② 배열을 값으로 넘기기 ─────────────────────────────── */
+struct row { int cell[8]; };          /* 배열을 구조체로 감싸면 값이 된다 */
+
+static int total(struct row r)        /* 사본이 통째로 건너온다 */
+{
+    int t = 0;
+    for (int i = 0; i &lt; 8; i++) t += r.cell[i];
+    r.cell[0] = 999;                  /* 사본만 바뀐다 */
+    return t;
+}
+
+static int total_raw(int cell[8])     /* 배열 매개변수는 포인터로 무너진다 */
+{
+    int t = 0;
+    for (int i = 0; i &lt; 8; i++) t += cell[i];
+    cell[0] = 999;                    /* 원본이 바뀐다 */
+    return t;
+}
+
+int main(void)
+{
+    puts("이름으로 넘기기 (순서 무관, 빠뜨려도 됨)");
+    draw(.title = "차트", .height = 20, .width = 40);
+    draw(.grid = true);
+    draw();                                     /* 전부 기본값 */
+
+    /* 복합 리터럴은 주소를 얻을 수 있고, 수명은 이 블록의 끝까지다 */
+    struct draw_opts *p = &amp;(struct draw_opts){ .width = 5, .title = "임시" };
+    printf("  임시 구조체의 주소로 접근: width=%d title=%s\n", p->width, p->title);
+
+    puts("\n배열을 값으로 / 포인터로");
+    struct row r = { .cell = { 1, 2, 3, 4, 5, 6, 7, 8 } };
+
+    /* 호출과 원본 읽기를 반드시 갈라 적는다 - 한 표현식에 섞으면 순서가 없다 */
+    int t1 = total(r);
+    printf("  값으로  : 합 %2d,  호출 뒤 원본 cell[0] = %d\n", t1, r.cell[0]);
+    int t2 = total_raw(r.cell);
+    printf("  포인터로: 합 %2d,  호출 뒤 원본 cell[0] = %d\n", t2, r.cell[0]);
+
+    /* 구조체 대입도 통째 복사다 — 배열 멤버까지 */
+    struct row copy = r;
+    copy.cell[1] = -1;
+    printf("  대입 사본 수정 뒤 원본 cell[1] = %d, 사본 cell[1] = %d\n",
+           r.cell[1], copy.cell[1]);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>이름으로 넘기기 (순서 무관, 빠뜨려도 됨)
+   40x20  grid=false title=차트
+   80x24  grid=true  title=(없음)
+   80x24  grid=false title=(없음)
+  임시 구조체의 주소로 접근: width=5 title=임시
+
+배열을 값으로 / 포인터로
+  값으로  : 합 36,  호출 뒤 원본 cell[0] = 1
+  포인터로: 합 36,  호출 뒤 원본 cell[0] = 999
+  대입 사본 수정 뒤 원본 cell[1] = 2, 사본 cell[1] = -1
+</code></pre></div></div><p>From here comes the idiom that changes code most in practice. Consider a function with five or six arguments.</p><pre><code data-lang="c">draw(40, 20, false, true, 3, "chart");    /* what is the third true? */</code></pre><p>C has neither other languages’ named arguments nor default values. But overlay <strong>designated initialisers with a compound literal</strong> and you effectively get the same thing.</p><pre><code data-lang="c">struct draw_opts { int width; int height; bool grid; const char *title; };
+static void draw_(struct draw_opts o);
+#define draw(...) draw_((struct draw_opts){ __VA_ARGS__ })
+
+draw(.title = "chart", .height = 20, .width = 40);   /* order-free */
+draw(.grid = true);                                   /* the rest are defaults */
+draw();                                               /* all defaults */</code></pre><p>Four things are gained.</p><ol><li><strong>Freedom from order.</strong> A designated initialiser fixes the slot by name, so the caller writes in whatever order suits.</li><li><strong>What is left out is 0.</strong> The standard’s promise that unwritten members are filled with 0 (null for pointers) becomes the “default value”. So the knack is to design the fields <strong>so that 0 makes sense as the default</strong> — the example reading <code>width == 0</code> as “the default 80” is that.</li><li><strong>The call site is self-explanatory.</strong> You need not ask what the <code>false, true, 3</code> above are.</li><li><strong>Adding a field later does not break existing calls.</strong> Change an argument list and every call site must be fixed, but adding one member to a struct has no effect on existing calls at all (that member becomes 0). In an API maintained for a long time this property is especially valuable.</li></ol><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Are there no traps in this idiom?</p></div><div class="dev qa-a"><p class="dev-label">A Beware of three.</p><p>First, <strong>the order of evaluation between initialiser items is not fixed.</strong> Mix in side effects, as in <code>draw(.width = i++, .height = i)</code>, and the result is unpredictable (chapter 20). Write only values in the arguments.</p><p>Second, if there is <strong>a field for which 0 is a valid value</strong>, “left out” cannot be told from “0 was specified”. Design such a field with its meaning inverted (<code>grid</code> rather than <code>no_grid</code>), or add a separate presence field.</p><p>Third, <strong>the cost of building and passing a large struct every time</strong>. Option structs are usually small enough not to matter, but when they grow, use the variant of receiving <code>const struct opts *</code> and passing <code>&amp;(struct opts){ … }</code> at the call site — the property above, that an address can be taken, works here.</p></div></div><div class="dev realcase"><p class="dev-label">◉ Named arguments as met in practice</p><p>This pattern is widespread. Various initialisation functions in the Linux kernel, the way standard and POSIX APIs take options as a struct (such as <code>struct sigaction</code>, chapter 62, or <code>struct timespec</code>), and the <code>..._desc</code> structs of graphics libraries (the <code>..._DESC</code> of several GPU APIs, say) are all the same idea. “When arguments grow numerous, bind them into a struct” is practically an idiom in C, and C99′s designated initialisers made it read well.</p></div><h3>42.4 Padding — the empty space between members</h3><div><div><p><code>examples/ch42/layout.c</code></p><pre><code data-lang="c">/* 구조체의 배치 - 패딩, 재배열, 강제 정렬 */
+#include &lt;stddef.h>
+#include &lt;stdio.h>
+
+struct loose  { char  a; int b; char c; };   /* 작은 것 사이에 큰 것 */
+struct tight  { int   b; char a; char c; };  /* 큰 것부터 늘어놓기   */
+
+#pragma pack(push, 1)                         /* 여기서부터 패딩 금지 */
+struct packed { char  a; int b; char c; };
+#pragma pack(pop)                             /* 원래 규칙으로 복귀   */
+
+struct cacheline { alignas(64) int counter; };  /* 강제로 넓게 정렬 */
+
+struct nested { struct loose inner; int tag; };
+
+static void report(const char *name, size_t size, size_t align,
+                   size_t oa, size_t ob, size_t oc)
+{
+    printf("%-8s 크기 %2zu  정렬 %2zu   오프셋 a=%zu b=%zu c=%zu\n",
+           name, size, align, oa, ob, oc);
+}
+
+int main(void)
+{
+    report("loose",  sizeof(struct loose),  alignof(struct loose),
+           offsetof(struct loose, a), offsetof(struct loose, b), offsetof(struct loose, c));
+    report("tight",  sizeof(struct tight),  alignof(struct tight),
+           offsetof(struct tight, a), offsetof(struct tight, b), offsetof(struct tight, c));
+    report("packed", sizeof(struct packed), alignof(struct packed),
+           offsetof(struct packed, a), offsetof(struct packed, b), offsetof(struct packed, c));
+
+    printf("\ncacheline 크기 %zu  정렬 %zu\n",
+           sizeof(struct cacheline), alignof(struct cacheline));
+    printf("nested    크기 %zu  inner 오프셋 %zu  tag 오프셋 %zu\n",
+           sizeof(struct nested), offsetof(struct nested, inner),
+           offsetof(struct nested, tag));
+
+    /* 멤버 세 개의 크기 합과 구조체 크기의 차이 = 패딩 바이트 수 */
+    size_t members = sizeof(char) + sizeof(int) + sizeof(char);
+    printf("\nloose: 멤버 합 %zu, 실제 %zu -> 패딩 %zu 바이트\n",
+           members, sizeof(struct loose), sizeof(struct loose) - members);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>loose    크기 12  정렬  4   오프셋 a=0 b=4 c=8
+tight    크기  8  정렬  4   오프셋 a=4 b=0 c=5
+packed   크기  6  정렬  1   오프셋 a=0 b=1 c=5
+
+cacheline 크기 64  정렬 64
+nested    크기 16  inner 오프셋 0  tag 오프셋 12
+
+loose: 멤버 합 6, 실제 12 -> 패딩 6 바이트
+</code></pre></div></div><p>The sizes of the three members <code>char</code>, <code>int</code>, <code>char</code> sum to 6, and yet the struct is 12 bytes. Six bytes went in as <strong>padding</strong>. The reason is chapter 6′s alignment — <code>int</code> must sit at an address that is a multiple of 4, so three bytes are left empty after the first <code>char</code> to push <code>b</code> to offset 4. And three bytes attach after the last <code>char</code> too (<strong>trailing padding</strong>): because when this struct is laid out as an array, the next element’s <code>int</code> must keep its alignment as well.</p><p>It comes down to three rules.</p><ol><li>Each member sits at <strong>an offset that is a multiple of its own alignment</strong>.</li><li>The whole struct’s alignment is <strong>the maximum of its members’ alignments</strong>.</li><li>The struct’s size is <strong>rounded up to a multiple</strong> of that alignment (trailing padding).</li></ol><p>So <strong>merely changing the order of members shrinks the size.</strong> The example’s <code>tight</code> lays the large one first and reduces 12 bytes to 8. In a program laying out millions of structs, this one line of reordering changes both memory and cache hit rate (chapter 11).</p><div class="dev misconception"><p class="dev-label">⚠ “Padding bytes contain 0”</p><p>They do not. The value of padding is <strong>unspecified</strong>. Initialisation may put 0 there, or whatever previously used that place may remain. Three practical traps come from this.</p><ul><li><strong>Do not compare structs with <code>memcmp</code></strong> (chapter 57) — equal values may come out “different” because the padding differs. Compare member by member.</li><li><strong>Do not hash a struct whole</strong> — for the same reason, the same value gives different hashes.</li><li><strong>Do not send a struct as it is to a file or a network</strong> — the rubbish in the padding goes with it (and can be an information leak), and if the receiving side’s layout differs the interpretation goes wrong too.</li></ul><p>Whether struct assignment (<code>b = a;</code>) copies the padding as well is not promised by the standard either. Remember that <strong>only the members are meaningful</strong> and it is all explained.</p></div><h3>42.5 How to remove padding, how to force alignment</h3><p>There are certainly places where padding is inconvenient — when <strong>the byte layout is fixed from outside</strong>, as in a file format or a communication protocol. So implementations provide devices for turning padding off.</p><div class="dev platform"><p class="dev-label">⊞ Platform note — packed and pragma pack — not standard</p><pre><code data-lang="c">#pragma pack(push, 1)          /* widely used, common to MSVC, GCC and Clang */
+struct header { char kind; int length; };
+#pragma pack(pop)              /* always put it back */
+
+struct header2 { char kind; int length; } __attribute__((packed));  /* GCC and Clang */</code></pre><p>Neither is <strong>standard C</strong>. In the example <code>#pragma pack(1)</code> made a struct of 6 bytes with alignment 1. Fail to pair <code>push</code> with <code>pop</code> and the layout of structs in headers included afterwards changes too, giving the nasty bug of a layout that disagrees with a library — leaving pack open inside a header without closing it is the representative accident.</p></div><div class="dev antipattern"><p class="dev-label">✗ Passing the address of a packed struct’s member</p><pre><code data-lang="c">struct __attribute__((packed)) h { char k; int len; };
+void take(int *p);
+take(&amp;s.len);          /* an unaligned address — outside the contract */</code></pre><p>A packed struct’s member may sit at a misaligned place. Pass its address as an ordinary <code>int *</code> and the receiving side accesses it assuming alignment — on a tolerant machine (x86) merely slower, on a strict machine dead on the spot (chapter 6). GCC and Clang issue the warning <code>-Waddress-of-packed-member</code> here.</p><p>Reading the value (<code>int n = s.len;</code>) is safe, because the compiler gathers the bytes for you. It is <strong>leaking the address</strong> that is the problem.</p></div><p>There is a tool in the opposite direction, <strong>forcing alignment</strong>, and this one is a standard word of C23 (chapter 66).</p><pre><code data-lang="c">struct cacheline { alignas(64) int counter; };   /* on a 64-byte boundary */</code></pre><p>In the example this struct became size 64, alignment 64. Its uses are clear — putting each thread’s counter on a different cache line to avoid the <strong>false sharing</strong> seen in chapter 11, or meeting a hardware requirement such as DMA or SIMD. It is not free, though: the struct above uses 64 bytes to hold one <code>int</code>.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>So when handling a file format or a communication protocol, is a packed struct the right answer?</p></div><div class="dev qa-a"><p class="dev-label">A There is a safer right answer: <strong>moving between the byte sequence and the struct by hand.</strong></p><pre><code data-lang="c">/* reading: take the fields out of the buffer one at a time */
+uint32_t len;
+memcpy(&amp;len, buf + 1, sizeof len);
+len = le32toh(len);            /* state the endianness too (chapter 5) */</code></pre><p>Laying a packed struct over a buffer (<code>struct h *p = (struct h *)buf;</code>) assumes three things at once — no padding, correct alignment, matching endianness. Get one of them wrong and it breaks silently, and besides, access through a swapped type runs into the aliasing rules (chapter 46). Field-by-field <code>memcpy</code> is longer but exposes all three assumptions in the code. What Part XII’s library does is exactly to gather this tedious work into one place.</p></div></div><h3>42.6 Passing an array by value — can it be done, and should it?</h3><p>The latter part of the example is that contrast. <code>total(struct row r)</code> received a copy and changed it, and the original was untouched (<code>cell[0] = 1</code>). <code>total_raw(int cell[8])</code> decayed into a pointer and changed the original (<code>cell[0] = 999</code>). The assignment <code>struct row copy = r;</code> likewise copies the array member whole.</p><p>So it comes to this. <strong>If you want to handle an array with value semantics in C, wrap it in a struct.</strong> It is the only way, and there are places where it is really used.</p><table><tr><th><strong>where it is worthwhile</strong></th><th><strong>why</strong></th></tr><tr><td>small fixed-size vectors and matrices (<code>struct vec3</code>, <code>struct mat4</code>)</td><td>calculating with them like values is natural</td></tr><tr><td>fixed-size identifiers and keys (<code>struct uuid { unsigned char b[16]; }</code>)</td><td>copying is cheap and leaves no room for mistakes</td></tr><tr><td>when an array must be <strong>returned</strong></td><td>an array cannot be returned but a struct can</td></tr><tr><td>when you want to pass it immutably</td><td>being a copy, the callee cannot touch the original</td></tr></table><p>The price is clear too.</p><p><strong>Stack usage.</strong> The copy is usually placed in the called function’s stack frame. Pass a 16 KiB struct by value and that much more is piled on per call — measure it and the stack position before and after the call really does widen by the struct’s size. The stack is usually about 8 MiB (chapter 35), and can be far smaller in recursion or on a per-thread stack (chapter 63). Recursion passing large structs by value is the shortest road to stack overflow.</p><p><strong>The cost of copying.</strong> But saying “a copy always happens” would be inaccurate. The calling convention decides — a small struct (usually up to two words) crosses <strong>in registers</strong> with nothing worth calling a copy, and for a large struct it is common for the caller to build it in memory and pass its address hidden. Moreover, if the function is inlined the compiler may remove the copy itself. So the accurate sentence is: <strong>the meaning is always a copy, and the real cost is decided by size, calling convention and optimisation.</strong></p><div class="dev misconception"><p class="dev-label">⚠ “Passing a struct by value is always slow”</p><p>It depends on size. Something small like <code>struct point { int x, y; }</code> is if anything faster passed by value, and reads better too — pass a pointer and a dereference appears, and the compiler must suspect “someone may change the value through this pointer”, which reduces optimisation.</p><p>The rough practical rule: <strong>up to a couple of words by value, larger than that by <code>const</code> pointer.</strong> And this choice is a matter not only of performance but of contract — receive by value and “the original is not touched” is guaranteed by the syntax; receive by pointer and it is only promised with <code>const</code>.</p></div><div class="dev recap"><p class="dev-label">☰ Recap</p><table><tr><th><strong>to remember</strong></th><th><strong>the point</strong></th></tr><tr><td>access</td><td>dot if the left is a value, <code>-></code> if a pointer (= <code>(*p).</code>)</td></tr><tr><td>compound literal</td><td><code>(struct T){…}</code> — an lvalue whose lifetime is <strong>the block’s end</strong></td></tr><tr><td>returning an address</td><td>do not send a compound literal’s address out of the function</td></tr><tr><td>named arguments</td><td>an options struct + designated initialisers. omitted members are 0</td></tr><tr><td>designing defaults</td><td>fix the fields so that <strong>0 makes sense as the default</strong></td></tr><tr><td>padding</td><td>it arises from alignment. its value is unspecified</td></tr><tr><td>member order</td><td>lay the large ones first and the size shrinks</td></tr><tr><td><code>memcmp</code>, hashing, serialising</td><td>do not handle a struct whole</td></tr><tr><td><code>pack</code></td><td>not standard. pair <code>push</code>/<code>pop</code>, do not leak member addresses</td></tr><tr><td><code>alignas</code></td><td>standard. avoiding false sharing, hardware requirements</td></tr><tr><td>array by value</td><td>wrap it in a struct. watch the stack and the size together</td></tr></table></div><p>We have learned how to use structs. The next chapter is the device for seeing the same memory <strong>through a different eye</strong> — the world of unions and representation. The endianness demonstration booked in chapter 5 finally opens.</p>
+<div class="nav"><a href="ch41.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch43.html">Next →</a></div>
+</div></main></body></html>

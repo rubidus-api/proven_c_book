@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>25 Input — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>25 Input</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We complete chapter 22′s promise — with somewhere to store a value (a variable), we take input. The way this book teaches from the start is exactly modern practice: <strong>read a whole line, then interpret that line.</strong> Separating reading from interpreting — that two-stage structure is the source of both convenience and safety. Part V is completed here.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 10 said input, like output, is “a band of characters flowing a line at a time”, and that human input naturally comes in lines ending with Enter (line buffering). Then is the natural unit in which a program takes input also — the line?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Exactly so — and that is this chapter’s design principle. A person writes a line and presses Enter. So it follows the grain of the flow for a program to receive <strong>a whole line</strong> and then find the values it needs inside it. Lifting a line out of the band of characters, and interpreting the lifted line — split those two and each becomes simple.</p></div></div><h3>25.1 Two stages — read, then interpret</h3><p>The demonstration first. A program that takes one integer from standard input and reports its square. (What was given on standard input for this run is shown in the middle box.)</p><div><div><p><code>examples/ch25/read.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+int main(void)
+{
+    char line[100];   /* 글자 100칸짜리 공간 — 정식 설명은 32장 */
+    int n = 0;
+
+    fgets(line, sizeof line, stdin);   /* 1단계: 한 줄을 통째로 읽는다 */
+    sscanf(line, "%d", &amp;n);            /* 2단계: 그 줄에서 정수를 해석한다 */
+
+    printf("%d squared is %d.\n", n, n * n);
+    return 0;
+}
+</code></pre></div><div><p>Given on standard input</p><pre><code>7
+</code></pre></div><div><p>Output</p><pre><code>7 squared is 49.
+</code></pre></div></div><p>There are two new faces — one per stage.</p><p><strong>Stage 1, <code>fgets</code> — read a whole line.</strong> <code>fgets(line, sizeof line, stdin)</code> reads one line from standard input (<code>stdin</code> is its name) and holds it in a space called <code>line</code>. The first line’s <code>char line[100];</code> is a declaration meaning “take a space of 100 character slots and call it line” — but the formal syntax of a multi-slot space (an array) belongs to chapter 36, so for now know it only as “a container for a line” (a deliberate credit). The second material, <code>sizeof line</code>, is “the number of slots in the container” — a safety device telling fgets the container’s size so that <strong>nothing is ever put in past its edge</strong> (formal treatment of the <code>sizeof</code> operator is chapter 33).</p><p><strong>Stage 2, <code>sscanf</code> — interpret the line we fetched.</strong> <code>sscanf(line, "%d", &amp;n)</code> is the partner of chapter 22′s <code>printf</code> — it uses the same format language in <strong>the opposite direction</strong>. Where <code>printf</code> turned values into characters and sent them out, <code>sscanf</code> finds in the characters (the <code>"7"</code> inside <code>line</code>) a value matching the format (<code>%d</code>) and <strong>puts it into a variable</strong>. The <code>&amp;</code> before the name is “a mark telling it the <strong>place</strong> of the variable to put the value in” — the moment addresses, learned in chapter 5, first show their face in the grammar; formal treatment is in chapter 33 (this is Part V’s last deliberate credit).</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Why split into two stages? I hear there is also a function (<code>scanf</code>) that reads <code>%d</code> straight from the input.</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>There is, and many primers teach it first — this book takes a different road for two reasons. First, <strong>the aftermath of failure is clean.</strong> Even if interpretation fails (something that is not a number arrives), the line is already in our own container, so the input band never stops half-way and gets tangled — read directly from the band and fail, and the leftover characters stay caught on the band and contaminate the next read, which is the classic headache of using <code>scanf</code> directly. Second, <strong>the grain of safety is the same.</strong> Reading a line is a structure in which you tell the container’s size as you read, so overflow is blocked at the source — what accidents the old ways that do not state a size caused, and how this two-stage practice seals them off, is the story of chapter 37. Getting the safe grain into your hands from the start — that is this book’s choice.</p></div></div><h3>25.2 Interpretation can fail</h3><p>Unlike output, input has one essentially new problem — <strong>you do not know what the other side will send.</strong> You expected <code>7</code> and <code>seven</code> may arrive. So <code>sscanf</code>’s return value is <strong>the number of values successfully interpreted</strong> — in the example above, 1 on success and 0 on failure.</p><p>As we are now, we have no syntax — branching — for checking that return value and taking one road on success and another on failure. So the example above discarded the return value and laid a floor for the failing case by initialising <code>n</code> to 0 (chapter 23′s habit). The fork appears in the next part (chapter 29), and the discipline of “report failure as a value and always check it” is established formally in chapter 45 — checking input will be that discipline’s first real exercise.</p><div class="dev misconception"><p class="dev-label">⚠ “Input comes from the keyboard”</p><p>Mostly it does, but that is not its essence — input comes from the <strong>standard input stream</strong> (chapter 10). In fact the demonstration just given is the proof: there is nobody striking a keyboard at this book’s example-verification machine — the input <code>7</code> above was held in a file and flowed onto the band of standard input (redirection). Just as chapter 22′s output is not screen-bound, input is not keyboard-bound, so the same program serves conversation with a person, file processing, and joining programs together, unchanged. The power of the stream design repeats on the input side too.</p></div><h3>25.3 Closing Part V</h3><p>We have learned all of how to make names — the name of a value (chapter 23), the name of work (chapter 24), and how to take a value from the outside world and hold it in a name (chapter 25). Chapter 15′s credit ledger is settled, and the credit newly taken is exactly two — the line container (<code>char line[100]</code>, in chapter 36) and the place marker (<code>&amp;</code>, in chapter 33) — and both have their due dates written down.</p><p>Above all, a program can now <strong>converse</strong>. Take in, calculate, answer — in the next part we forge the calculation itself: facing the world of integers (chapters 26 and 27), comparing and deciding (chapters 29 and 30), repeating (chapter 31), and completing the meaning of functions (chapter 32). It is the part of values and flow.</p>
+<div class="nav"><a href="ch24.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch26.html">Next →</a></div>
+</div></main></body></html>

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>33 Objects, addresses, pointers — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>33 Objects, addresses, pointers</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>Part VII is this book’s second mountain — memory. We walk chapter 5′s locker corridor again, this time in C’s syntax. The first chapter faces head on the type that handles addresses as values, the <strong>pointer</strong> — <code>&amp;</code>, <code>*</code> and <code>sizeof</code>, settling every credit carried since chapter 25.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 32 said “the proper method for a function to change a variable outside is to copy and pass the variable’s <strong>address</strong> as a value.” Unfolding that with chapter 5′s knowledge — on what grounds can an address be “copied as a value”?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>On the ground that an address is just a number (chapter 5) — a locker number is an integer, and being an integer it can be written down in another locker and copied and handed over. In C the type of that “variable holding an address” is the pointer. What we learn today is not a new concept but dressing chapter 5′s idea in syntax.</p></div></div><h3>33.1 Three notations — declaration, &amp;, *</h3><p>Pointer syntax is three pieces and no more.</p><p><strong>Declaration</strong> — <code>int *p;</code> declares “a variable p holding the address of an int.” The knack of reading it is from the back: “p is a pointer (<code>*p</code>), and at the place it points there is an int.”</p><p><strong>Taking an address</strong> — <code>&amp;n</code> is the value “n’s address.” The <code>&amp;</code> brushed past in chapter 25′s <code>sscanf(..., &amp;n)</code> has finally got its formal name — the operator that detaches the number tag of the locker called n.</p><p><strong>Dereference</strong> — <code>*p</code> means “go to the address written in p and <strong>that slot</strong>.” In a reading position it reads that slot’s value; on the left of an assignment it writes to that slot. That the <code>*</code> of a declaration, the <code>*</code> of an expression (dereference) and the <code>*</code> of multiplication use the same character is C’s notorious thrift — position is the only way to tell them apart.</p><p>The demonstration shows all three at once, including chapter 32′s homework — the proper method by which a function changes an original.</p><div><div><p><code>examples/ch33/ptr.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+void set_to(int *target, int value)
+{
+    *target = value;            /* 주소를 따라가 원본에 쓴다 */
+}
+
+int main(void)
+{
+    int n = 1;
+    int *p = &amp;n;                /* p는 n의 주소를 담는다 */
+
+    printf("n at first: %d\n", n);
+    printf("p == &amp;n ? %d\n", p == &amp;n);
+
+    *p = 55;                    /* 역참조: p가 가리키는 곳(= n)에 쓴다 */
+    printf("n after *p = 55: %d\n", n);
+
+    set_to(&amp;n, 99);             /* 28장의 숙제 — 함수가 원본을 바꾼다 */
+    printf("n after set_to: %d\n", n);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>n at first: 1
+p == &amp;n ? 1
+n after *p = 55: 55
+n after set_to: 99
+</code></pre></div></div><p>Read the route of <code>set_to(&amp;n, 99)</code> exactly and half of pointers is done — ① <code>&amp;n</code> (the value that is an address) is <strong>copied</strong> into the parameter <code>target</code> (chapter 32′s copy-by-value rule is untouched!), and ② inside the function <code>*target = value</code> goes to that address and writes into the original slot. The world of copying values was not broken at all — <strong>what was copied happened to be an address.</strong></p><h3>33.2 sizeof — asking the size of a container</h3><p>The last deferred credit — <code>sizeof</code> is the operator that puts out the <strong>size in bytes</strong> of a type or an object (its value is of type <code>size_t</code>, an unsigned integer just for sizes, printed with <code>%zu</code>). Chapter 25′s <code>fgets(line, sizeof line, stdin)</code> now reads completely: “tell fgets the number of bytes in the container called line.” Being an operator rather than a function, its value is mostly settled at compile time, and it works on a type (<code>sizeof(int)</code>) as well as on an object (<code>sizeof line</code>).</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>How large is a pointer variable itself — what is <code>sizeof p</code>?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Being a container holding one address, it is exactly chapter 5′s answer: the <strong>word size</strong> — 8 bytes in today’s 64-bit environments. Whatever it points at (<code>int*</code> or <code>double*</code>) a pointer’s size is the same — because what it holds is always one “number that is an address.” Then why distinguish the types? Because when dereferencing, the type decides “how many bytes at that address, and through what eye, to read.” Chapter 5′s refrain (what knows the lump is the reading side) is the reason pointer types exist.</p></div></div><div class="dev misconception"><p class="dev-label">⚠ “Pointers are a difficult and dangerous advanced feature”</p><p>The notoriety is real but half of it is misunderstanding. The concept itself is as we just saw — “write down a number and go by the number” — an ordinary story for anyone who knows the locker corridor. The real source of the notoriety is not the concept but <strong>the price of breaking the rules</strong>: code that follows an empty pointer (next chapter), or invents a number in someone else’s land (chapters 35 and 36), or keeps the number of a slot that has vanished (chapters 39 and 40), causes accidents quietly, late and largely. That is why all the remaining chapters of this part are chapters of “rules” — the concept ended today, and now we learn the safety code.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Printing a variable’s address would be interesting — why did the demonstration not print address values?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>It can be done — <code>printf("%p", (void *)&amp;n)</code> is the format. It was left out for honesty’s sake: address values <strong>differ on every run</strong>. Modern operating systems place a program at a different position each time for security (address space layout randomisation, ASLR — a defence so that an attacker cannot know addresses in advance). Every result printed in this book is a real capture, and putting in a value that changes every time would make “the same result” impossible to guarantee. The <strong>value</strong> of an address does not matter; the <strong>relations</strong> between addresses (same, different, adjacent) do — which is why the demonstration printed <code>p == &amp;n</code>.</p></div></div><p>The concept of the pointer is in place. The next chapter is this part’s first safety rule — how to handle “points nowhere.” The three nulls whose faces we learned in chapter 6 get their formal treatment, this time in syntax and practical rules.</p>
+<div class="nav"><a href="ch32.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch34.html">Next →</a></div>
+</div></main></body></html>

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>37 Strings — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>37 Strings</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>C’s string faced head on — its identity as a char array plus NUL termination, the special circumstances of string literals, the real cost of measuring length, and the practical matter of “character count ≠ byte count” that Hangul brings out. The last of the three nulls (the NUL character) gets its formal treatment here.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 9 said the string representation C chose is NUL termination, “planting a marker at the end”, and foreshadowed its three prices (the length must be counted, a NUL cannot be held as content, lose the marker and it runs away). Now that you have learned arrays (chapter 36) — how would you define a C string exactly, yourself?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p><strong>A char array, somewhere in which there is a byte of value 0 (the NUL character, <code>'\0'</code>), plus the agreement that “the string” means from the start to just before that marker</strong> — that is all. There is no separate string type. An array, and an agreement. This chapter treats the use and the cost of that agreement.</p></div></div><h3>37.1 The identity — an array, and an agreement</h3><p><code>char greet[] = "안녕";</code> — initialise an array with a string literal and the compiler builds the array by <strong>appending <code>'\0'</code> after</strong> the bytes of the characters. The demonstration dissects it.</p><div><div><p><code>examples/ch37/str.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;string.h>
+
+int main(void)
+{
+    char greet[] = "안녕";      /* 글자 2개 — 그러나 바이트는? */
+
+    printf("strlen(\"안녕\") = %zu\n", strlen(greet));
+
+    for (size_t i = 0; i &lt; strlen(greet); i += 1) {
+        printf("%02X ", (unsigned char)greet[i]);
+    }
+    printf("\n");
+
+    printf("sizeof greet = %zu (NUL 종단 포함)\n", sizeof greet);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>strlen("안녕") = 6
+EC 95 88 EB 85 95 
+sizeof greet = 7 (NUL 종단 포함)
+</code></pre></div></div><p>There are layers to read. <code>strlen</code> (the length measurement of the standard <code>&lt;string.h></code>) answered 6 — “안녕” is <strong>two characters, six bytes</strong> (exactly chapter 9′s UTF-8 table: Hangul syllables live in the 3-byte range). The byte dump <code>EC 95 88 EB 85 95</code> is the bare face of those six bytes, and <code>sizeof greet</code> is 7 — the size of a container that also holds the NUL marker. This is the moment chapter 8′s misconception (“one character = one byte”) is disproved by an execution result.</p><p><code>strlen</code>’s <strong>cost</strong> can now be stated exactly too — as chapter 9 foretold, NUL termination does not write the length down, so strlen <strong>walks one slot at a time until it meets the marker</strong>. The longer the string the longer it takes (proportional to the slot count), which is why code calling strlen in a loop condition every time is a classic performance trap (the demonstration’s loop is in fact that pattern — harmless for a short string, but for a long one the practice is to take the length into a variable first).</p><h3>37.2 String literals — read-only ground</h3><p>Instead of initialising an array you may hold a literal in a pointer — and here lies an important difference:</p><pre><code data-lang="c">char buf[] = "you may change this";      /* copied into my array — modifiable */
+const char *msg = "you must not change this";  /* points at the literal itself */</code></pre><p>A string literal is itself <strong>read-only data</strong> baked into the program — attempting to modify it is outside the contract, and in a modern environment it usually collapses on the spot (literals being placed in a write-forbidden region — chapter 6′s protected zone doing another kindness). So the rule is to declare pointers to literals as <code>const char*</code> — where chapter 23′s <code>const</code> was documentation saying “I will not change this”, here it works as a lock that stops, at compile time, the mistake of trying to change what must not be changed.</p><div class="dev realcase"><p class="dev-label">◉ gets — the function expelled from the standard</p><p>Attached to the third price of NUL termination (lose the marker and it runs away) is the most famous funeral in the history of the C standard. <code>gets</code> in the early standard library was a function that “reads a line and puts it into an array” — and <strong>it did not take the container’s size</strong>. If the input was longer than the container it overwrote the neighbouring memory as it went: a function with the boundary violation of chapter 36 built into its design. In 1988 the internet’s first large-scale worm (the Morris worm) spread through defects of this class, and after decades of accidents the C11 standard <strong>deleted</strong> <code>gets</code> — a rare case of a standard formally burying one of its own functions. That is the reason this book taught <code>fgets</code> (the successor that takes the container’s size) from the start in chapter 25 — and the next chapter faces this whole class of accident head on.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>To handle Hangul properly — to work in units of characters — what must be done?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Distinguishing two layers is the starting point. At the <strong>byte layer</strong> (the world of C strings) you may treat UTF-8 simply as a byte sequence — copying, joining, storing and transmitting are safe without knowing character boundaries (thanks to UTF-8′s self-synchronising design, chapter 9). Work that needs the <strong>character layer</strong> (counting characters, cutting, case conversion) requires UTF-8 decoding, and since the standard library’s support is thin there, using a library is the practice — proven’s u8str family takes exactly this place (first met in the next chapter, in earnest in chapter 53). Keep one rule in mind and most accidents are prevented: <strong>do not cut a string by byte index</strong> — cut through the waist of a Hangul syllable and you get a broken byte sequence.</p></div></div><p>We know the string’s identity and cost. The next chapter is this part’s turning point — a dissection of the class of accident called the boundary violation, and the appearance of this book’s underlying technology, proven. The “safe input” seed planted in chapter 25 is finally collected.</p>
+<div class="nav"><a href="ch36.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch38.html">Next →</a></div>
+</div></main></body></html>

@@ -11,7 +11,7 @@
 ]
 
 #deepqa[
-  Chapter 2 spoke of the staircase of abstraction — layers stacked from
+  Chapter 4 spoke of the staircase of abstraction — layers stacked from
   transistors up to languages. Then from which floor to which floor is the
   compiler's translation?
 ][
@@ -50,11 +50,11 @@ its contents in at this spot."* That is all. Ask for preprocessing only
 (`cc -E hello.c`) and the six-line hello.c comes out swollen to *tens of
 thousands of lines* — the *declarations* of the standard tools including
 `printf` (the announcement that a function of this name exists — formally in
-chapter 27) have all been pasted in.
+chapter 24) have all been pasted in.
 
 The preprocessor also does other text work: substituting text (macros), and
 including or excluding parts of the code by condition. Expanding the trigraphs
-we met in chapter 9 was (in those days) this stage too — the preprocessor is
+we met in chapter 8 was (in those days) this stage too — the preprocessor is
 both the first runner of C compilation and a place where the scars of history
 collect.
 
@@ -112,7 +112,7 @@ The C standard divides tokens into six kinds.
   [keyword], [`int` `if` `return` `sizeof` `struct`], [cannot be used as a name],
   [identifier], [`x` `main` `buffer_len`], [a name. the first character is not a digit],
   [constant], [`42` `0x1f` `3.14` `'a'`], [character constants belong here too],
-  [string literal], [`"hello"`], [an array, not a constant (chapter 38)],
+  [string literal], [`"hello"`], [an array, not a constant (chapter 37)],
   [punctuator], [`+` `;` `{` `->` `<<=`], [operators, brackets, semicolons],
   [header name], [`<stdio.h>`], [used only in the preprocessing stage],
 )
@@ -131,7 +131,7 @@ C compiler solves this by passing information between the parser and the name
 table (the symbol table). One root of C's reputation for hard-to-read
 declaration syntax is here.
 
-The *translation phases* covered in chapter 50 are the front half of this
+The *translation phases* covered in chapter 49 are the front half of this
 picture pinned down in the standard's language — what remains after
 preprocessing is the token stream above, and the compiler starts work from
 there.
@@ -169,7 +169,7 @@ linking stage.*
   announcement); actually finding and joining the body is the linker's job. When
   a different worker raises the error, the kind of error differs too — the habit
   of first asking "which of the four runners fell over?" is half of problem
-  solving (formally, chapter 49).
+  solving (formally, chapter 48).
 ]
 
 #misconception[
@@ -181,8 +181,8 @@ linking stage.*
   (assembling), joining pieces (linking). This distinction is the root of
   practical instinct: you learn to read which stage an error came from, the
   build style of large projects — making object files separately and relinking
-  only (chapter 49) — becomes natural, and you understand why the language rule
-  of "declaration versus definition" (chapter 27) exists at all: because the
+  only (chapter 48) — becomes natural, and you understand why the language rule
+  of "declaration versus definition" (chapter 24) exists at all: because the
   compiler works from announcements and the linker joins the real things.
 ]
 
@@ -194,7 +194,7 @@ linking stage.*
   learning and diagnosis. In large projects, though, it becomes standard practice
   to run only up to the third runner per file (each into a `.o`) and redo just
   the final link — there is no reason to retranslate everything because one file
-  changed. That world opens in chapter 49.
+  changed. That world opens in chapter 48.
 ]
 
 We now have a map from source to execution. What remains is to equip the tools

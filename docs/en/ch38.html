@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>38 Safe input, and the appearance of proven — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>38 Safe input, and the appearance of proven</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>Chapter 25 foreshadowed “why safe input is difficult”, and chapters 33 and 37 taught the roots of that danger (the boundary, NUL termination). This chapter completes the dissection of the accident — and the guest promised in chapter 1, this book’s underlying library <strong>proven</strong>, finally appears. Exactly as promised: “at the point where the need has proved itself.”</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 37′s gets was expelled for not taking the container’s size, and chapter 25′s fgets is safe because it takes one. Then does “taking the size” alone solve the whole safety problem of input?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Only half of it. Passing the size blocks <strong>overflow</strong>, but input has a second problem — <strong>the content cannot be trusted</strong> (chapter 25). You expect a number and letters arrive; you expect a short line and a long one arrives; and a malicious counterpart deliberately crafts input aimed at the boundary (chapter 22′s format-string attack was a taste). Safe input is the sum of [blocking overflow + handling failure explicitly], and this chapter’s two pillars are those two.</p></div></div><h3>38.1 Dissecting the accident — the epidemic called the boundary violation</h3><p>Combine chapter 36′s boundary rule with chapter 37′s NUL termination and the most expensive accident pattern in C’s history assembles itself. Input longer than the container overwrites neighbouring memory (a boundary violation) — and if what was overwritten happens to be <strong>the return ledger of a function call</strong> (whose identity we see in the next chapter), an attacker seizes the program’s flow of execution with input alone. That is the substance of the buffer overflow attack, an epidemic running unbroken from the Morris worm (1988, chapter 37) to today’s security advisories. It is overwhelming statistically too — in the “most dangerous software weaknesses” lists of major security bodies, the boundary-violation family has been a top fixture for decades.</p><p>Because C chose <strong>not</strong> to do run-time boundary checking (chapter 36), defence must be stacked in layers — functions that take a size (fgets), warnings and sanitizers (chapter 17), and <strong>components with checking built in from the start</strong>. That last layer is this chapter’s guest.</p><h3>38.2 proven — fundamentals, verified, as a component</h3><p>proven is a C library made by this book’s author (exactly as disclosed in chapter 1), and its design idea is one sentence — <strong>provide the fundamentals where accidents are commonest (strings, interpreting input, converting numbers) in a form where failure shows up as a value and boundaries are always checked.</strong> In the language of chapter 9′s representations, it builds a safe layer of the length-and-capacity family on top of the NUL-terminated world.</p><p>For a first demonstration, chapter 25′s homework — handling the failure of interpreting input — solved with proven. <strong>Both</strong> the success path and the failure path are shown:</p><div><div><p><code>examples/ch38/scan.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+void try_parse(const char *text)
+{
+    proven_scan_t sc = proven_scan_init(proven_u8str_view_from_cstr(text));
+    proven_result_i64_t r = proven_scan_i64(&amp;sc);
+
+    if (proven_is_ok(r.err)) {
+        printf("\"%s\" -> ok: %lld\n", text, (long long)r.val);
+    } else {
+        printf("\"%s\" -> failed (not a number)\n", text);
+    }
+}
+
+int main(void)
+{
+    try_parse("  42 and some text");
+    try_parse("forty-two");
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>"  42 and some text" -> ok: 42
+"forty-two" -> failed (not a number)
+</code></pre></div></div><p>How to read it — <code>proven_scan_init</code> sets a scanner over a sequence of characters, and <code>proven_scan_i64</code> interprets one integer. The return value is the heart of this design: it returns <strong>not a value but an <code>{err, val}</code> bundle</strong>, and the caller takes the value out only after confirming success with <code>proven_is_ok</code>. Compared with sscanf (chapter 25) — instead of the conventional signal “the number of successes”, <strong>failure is stated in the type</strong>, and the function carries <code>[[nodiscard]]</code> (C23 — the notation “warn if this return value is discarded”), so <strong>the compiler catches the mistake of forgetting to check for failure</strong>. It is the flesh of the “errors are values” discipline treated formally in chapter 45.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Why add a library for work the standard library can do — more components means more to learn.</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>This book’s answer is the distinction of layers. <strong>The concepts were learned fully in standard C</strong> — coming this far, through chapter 36, without proven is the evidence, and take proven away and this book’s C knowledge still stands (chapter 1′s promise). On top of that, when choosing <strong>the fundamentals for real work</strong>, choosing while knowing the standard library’s historical traps (gets’s funeral, scanf’s tangles, unchecked string functions) is the modern choice — the safety Rust and Zig build into the language (chapter 1) is obtained in C by choosing components. proven is one of those options and this book’s demonstration material; choose another library of the same philosophy and the principle is the same.</p></div></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>proven’s function names are long — <code>proven_scan_i64</code> and the like. Why name them this way?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because C has no namespaces (chapter 24′s scope belongs to blocks, and names that cross file boundaries live in one yard — chapter 48). If libraries use the same name they collide at the linking stage (chapter 16), so the practice of C libraries is for <strong>a prefix to stand in for a namespace</strong> — <code>proven_</code> is that fence. Long, but with the practical benefit that the name alone reveals which component it belongs to.</p></div></div><p>(This chapter, being a first meeting, writes only as much as is needed — the library’s whole design and use are treated across three chapters in Part XII. That is why this book is at once an introduction to C and a guide to proven.)</p><p>We have safe input. But a phrase went past in this chapter without explanation — “the return ledger of a function call”. Where in memory does what live, and when is it born and when does it die? The next chapter is that map — lifetime and storage duration.</p>
+<div class="nav"><a href="ch37.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch39.html">Next →</a></div>
+</div></main></body></html>

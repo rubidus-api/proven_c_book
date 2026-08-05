@@ -12,7 +12,7 @@
 ]
 
 #deepqa[
-  Chapter 7 said that the control characters — instructions to a device, such as
+  Chapter 9 said that the control characters — instructions to a device, such as
   "advance the paper one line" — live in a corner of the character table. Why
   are device commands mixed into a table of letters?
 ][
@@ -93,7 +93,7 @@ actually moved.
   and insert a new field*. Put someone else's value straight into a response
   header and the headers can be wholly manipulated (HTTP response splitting);
   put it into a log line and fake log lines can be forged (log forging).
-  Chapter 7's refrain repeats here — *do not mix data into the frame*, and
+  Chapter 9's refrain repeats here — *do not mix data into the frame*, and
   filter control characters at the boundary.
 ]
 
@@ -156,7 +156,7 @@ called *standard error*. That is why a third band exists.
   *turning the output band into a file* (redirection), which the typesetting tool
   then read and printed. Examples that need input likewise have a file joined to
   the standard input band — which is why the examples reproduce with no one
-  striking a keyboard. When chapter 26 breaks the misconception that "input comes
+  striking a keyboard. When chapter 25 breaks the misconception that "input comes
   from the keyboard", the living proof is the making of this book.
 ]
 

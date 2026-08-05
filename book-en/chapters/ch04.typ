@@ -221,7 +221,7 @@ machines of its day*. One C operation corresponded to one or two machine
 instructions, and a programmer writing C could see clearly what the machine was
 going to do. C's reputation as "a language close to the machine" comes from
 here — and the story of how that reputation became only half true is in the
-later chapters of this part (9–12).
+later chapters of this part (chapters 11–14).
 
 #realcase[
   The portability revolution — rewriting Unix in C

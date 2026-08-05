@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>76 형식화와 파싱 — 타입을 두 번 적지 않기 — Proven C Book</title><style>
+<title>76 컨테이너와 알고리즘 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -68,89 +68,118 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>76 형식화와 파싱 — 타입을 두 번 적지 않기</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>70장의 셋째 버그 — 서식과 인자의 불일치 — 에 대한 답이다. <code>{}</code>라는 타입 없는 자리표시자가 어떻게 타입 안전을 얻는지, 그 밑에서 <code>_Generic</code>이 무엇을 하는지, 그리고 반대 방향인 파싱에서 실패가 어떻게 값으로 드러나는지를 본다. 54장에서 뜯어본 <code>printf</code>·<code>scanf</code>의 대안이다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>51장에서 가변 인자에는 타입 정보가 실려 가지 않는다고 했고, 54장에서는 그래서 서식 문자열이 “스택을 어떻게 읽을지”를 혼자 정한다고 했다. 그러면 인자에서 타입을 가져오려면 무엇이 필요한가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>호출 자리에서</strong> 타입을 붙잡아 값과 함께 실어 보내면 된다. 즉 인자를 그대로 넘기지 않고 <code>{타입 꼬리표, 값}</code> 꾸러미로 감싸는 것이다. 남은 문제는 “타입 꼬리표를 어떻게 자동으로 붙이는가”인데, 그 답이 C11의 <code>_Generic</code>이다 — 표현식의 타입에 따라 컴파일 시간에 서로 다른 코드를 <span id="idx-entry-108"></span>고르는 장치. 실행 시간 비용은 0이고, 29장에서 배운 암묵적 변환 규칙과 달리 여기서는 타입이 <strong>보존된다</strong>.</p></div></div><h3>76.1 <code>{}</code> — 타입이 없는 자리표시자</h3><p>규칙은 셋뿐이다.</p><ul><li><code>{}</code> — 여기에 다음 인자를 넣는다. 타입은 적지 않는다.</li><li><code>{:...}</code> — 콜론 뒤에 서식 지정(폭·정렬·자릿수)을 적는다.</li><li><code>{{</code> <code>}}</code> — 중괄호 글자 자체.</li></ul><p><code>%d</code>가 없으니 <code>%d</code>와 <code>double</code>이 어긋날 자리도 없다. 54장에서 본 불일치의 가능성이 문법 차원에서 제거된 것이다.</p><div><div><p><code>examples/ch76/fmt.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>76 컨테이너와 알고리즘</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-109"></span><p>여럿을 담는 도구들이다 — 자라는 배열, 침습적 리스트, 링 버퍼, 해시 맵. 그리고 69장의 다섯째 버그(검사되지 않는 콜백)와 그 자리에 딸린 성능 함정에 대한 답으로, <strong>최악에도 보장이 있는</strong> 정렬과 <strong>공격을 견디는</strong> 해시를 본다. 35장의 배열과 41장의 구조체가 여기서 실전 부품이 된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>35장에서 C의 배열은 크기가 컴파일 시간에 정해지고, 40장에서 <code>realloc</code> 으로 늘릴 수 있다고 배웠다. 그러면 “자라는 배열”을 직접 만들 때 가장 틀리기 쉬운 자리는 어디인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>세 곳이다. 첫째, <strong>늘릴 크기 계산</strong> — 72장에서 본 곱셈 감김이 여기서 일어난다. 둘째, <strong>실패했을 때의 상태</strong> — <code>realloc</code>이 실패하면 원본 포인터는 그대로 유효한데, 반환값을 곧바로 원본 변수에 대입하는 흔한 코드는 그 원본을 잃어버린다(누수다). 셋째, <strong>늘어난 뒤의 포인터</strong> — 원소를 가리키던 포인터는 재할당 후 무효가 된다. 컨테이너를 직접 만들 때마다 이 셋을 다시 맞히는 것보다, 한 번 제대로 만든 것을 쓰는 편이 낫다.</p></div></div><h3>76.1 자라는 배열</h3><p><code>proven_array_t</code>는 원소 크기와 정렬을 알고 있는 바이트 버퍼다. C에는 제네릭이 없으므로 타입은 매크로가 채워 준다.</p><div><div><p><code>examples/ch76/arr.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
 int main(void)
 {
-    /* 화면이 아니라 문자열로 형식화한다 — 버퍼는 스택에서 빌린다 */
-    proven_byte_t buf[64];
-    proven_u8str_t out = proven_u8str_borrow(buf, sizeof buf);
+    proven_allocator_t alloc = proven_heap_allocator();
 
-    int      port = 8080;
-    double   load = 0.4237;
-    const char *host = "example.org";
+    proven_result_array_t made = PROVEN_ARRAY_INIT(alloc, int, 4);
+    if (!proven_is_ok(made.err)) {
+        printf("array creation failed\n");
+        return 1;
+    }
+    proven_array_t arr = made.value;
 
-    proven_fmt_result_t r = proven_u8str_append_fmt(&amp;out, "{}:{} load={:.2}",
-                                                   PROVEN_ARG(host), PROVEN_ARG(port),
-                                                   PROVEN_ARG(load));
-    if (proven_is_ok(r.err)) {
-        proven_u8str_view_t v = proven_u8str_as_view(&amp;out);
-        printf("formatted : %.*s\n", (int)v.size, (const char *)v.ptr);
+    for (int i = 1; i &lt;= 6; i += 1) {          /* 용량 4를 넘겨 자동으로 자란다 */
+        if (!proven_is_ok(PROVEN_ARRAY_PUSH(&amp;arr, int, i * i))) {
+            printf("push failed\n");
+            PROVEN_ARRAY_DESTROY(&amp;arr);
+            return 1;
+        }
     }
 
-    /* 그릇이 모자라면? 자르지 않고 거부한다 */
-    proven_byte_t small_buf[8];
-    proven_u8str_t small = proven_u8str_borrow(small_buf, sizeof small_buf);
-    proven_fmt_result_t r2 = proven_u8str_append_fmt(&amp;small, "{}:{}",
-                                                    PROVEN_ARG(host), PROVEN_ARG(port));
-    printf("into 8 bytes: %s (err=%d)\n",
-           proven_is_ok(r2.err) ? "ok" : "refused", (int)r2.err);
-
-    /* 정렬과 자릿수 — 46장의 폭/정밀도에 해당한다 */
-    proven_u8str_t line = proven_u8str_borrow(buf, sizeof buf);
-    (void)proven_u8str_reset(&amp;line);
-    proven_fmt_result_t r3 = proven_u8str_append_fmt(&amp;line, "|{:>10}|{:&lt;10}|{:.3}|",
-                                                    PROVEN_ARG(host), PROVEN_ARG(host),
-                                                    PROVEN_ARG(load));
-    if (proven_is_ok(r3.err)) {
-        proven_u8str_view_t v = proven_u8str_as_view(&amp;line);
-        printf("aligned   : %.*s\n", (int)v.size, (const char *)v.ptr);
+    printf("count: %zu\n", arr.len);
+    for (size_t i = 0; i &lt; arr.len; i += 1) {
+        printf("%d ", *PROVEN_ARRAY_GET(&amp;arr, int, i));
     }
+    printf("\n");
+
+    PROVEN_ARRAY_DESTROY(&amp;arr);
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>formatted : example.org:8080 load=0.42
-into 8 bytes: refused (err=2)
-aligned   : |example.org|example.org|0.424|
-</code></pre></div></div><p>이 예제는 화면이 아니라 <strong>문자열로</strong> 형식화한다 — 71장에서 본 <code>proven_println</code>이 이 기계를 표준 출력에 연결한 판이다. 세 가지를 짚을 수 있다.</p><p><strong>첫째, 서식화도 실패할 수 있다.</strong> 8바이트 그릇에 <code>example.org:8080</code>을 넣을 수 없으므로 거부됐다. 75장의 원칙이 여기서도 그대로다 — 자르느니 실패를 돌려준다. <code>snprintf</code>와 정반대의 기본값이다.</p><p><strong>둘째, 서식 지정 문법이 조금 다르다.</strong> <code>{:>10}</code>의 <code>></code>는 오른쪽 정렬, <code>{:&lt;10}</code>은 왼쪽 정렬, <code>{:.3}</code>은 소수 셋째 자리다. 54장의 <code>%10s</code>·<code>%-10s</code>·<code>%.3f</code>와 대응하지만, <strong>타입 글자가 없다</strong>는 점이 다르다.</p><p><strong>셋째, 반올림은 하되 자릿수는 지킨다.</strong> <code>load=0.42</code>는 <code>{:.2}</code>가 만든 것이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>PROVEN_ARG</code>가 정확히 무엇을 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답 <code>_Generic</code>으로 인자의 타입을 골라, 그 타입에 맞는 꼬리표를 붙인 작은 구조체를 만든다. 개념만 옮기면 이런 모양이다.</p><pre><code data-lang="c">#define PROVEN_ARG(x) _Generic((x),          \
-    int:          proven_arg_i32,            \
-    double:       proven_arg_f64,            \
-    const char *: proven_arg_cstr,           \
-    bool:         proven_arg_bool            \
-    /* ... */ )(x)</code></pre><p><code>_Generic</code>은 <strong>컴파일 시간에</strong> 가지를 고르므로 실행 시간에 타입을 판별하는 비용이 없다. 그리고 목록에 없는 타입을 넘기면 <strong>컴파일 오류</strong>가 난다 — 54장의 <code>printf</code>가 무엇이든 받아 주던 것과 정반대다.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ <code>PROVEN_ARG</code> 없이 값을 그냥 넘기기</p><pre><code data-lang="c">proven_println("count={}", count);        /* 컴파일되지 않는다 */</code></pre><p>꾸러미가 아닌 날값을 넘겼으므로 타입이 맞지 않아 빌드가 실패한다. 성가시게 느껴질 수 있지만 이것이 설계의 요점이다 — <strong>감싸는 일을 잊으면 프로그램이 만들어지지 않는다.</strong> 잊어도 컴파일되고 실행 중에 이상해지는 <code>printf</code>와의 차이가 여기에 있다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “자리표시자에 타입이 없으니 느릴 것이다”</p><p>반대다. <code>printf</code>는 <strong>실행 중에</strong> 서식 문자열을 한 글자씩 해석하며 다음에 무엇을 꺼낼지 결정한다. <code>{}</code>도 서식을 훑는 것은 같지만, 각 인자의 타입은 이미 꼬리표로 정해져 있어 추측이 없다. 무엇보다 타입 불일치로 인한 UB가 없으므로 방어 코드도 필요 없다. 비용의 차이는 대개 무시할 만하고, 이 라이브러리의 실수 형식화는 정확성 쪽에 더 신경을 쓴 편이다 — 54장에서 본 <code>%f</code>의 반올림 규칙을 그대로 재현하는 것이 오히려 까다로운 일이다.</p></div><h3>76.2 반대 방향 — 스캐너</h3><p>파싱은 형식화의 거울이지만, 실패의 성격이 다르다. 형식화는 그릇이 모자랄 때만 실패하는데, 파싱은 <strong>입력이 기대와 다를 때마다</strong> 실패한다. 그리고 54장에서 본 대로 <code>sscanf</code>는 “몇 개나 성공했는가”만 알려 준다 — 어디서 왜 멈췄는지는 말해 주지 않는다.</p><span id="idx-entry-109"></span><p>proven의 스캐너는 커서를 가진 객체다. 뷰 위에 놓고, 하나씩 읽어 나간다. 읽을 때마다 결과가 꾸러미로 온다.</p><div><div><p><code>examples/ch76/lines.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+</code></pre></div><div><p>실행 결과</p><pre><code>count: 6
+1 4 9 16 25 36 
+</code></pre></div></div><p><code>PROVEN_ARRAY_INIT(alloc, int, 4)</code>는 “int를 담을 배열, 초기 용량 4”라는 뜻이고, <code>PROVEN_ARRAY_PUSH</code>는 타입을 다시 적어 <strong>컴파일 시간에 맞는지 확인한다</strong>. 용량 4를 넘긴 다섯째 원소에서 배열은 스스로 늘어났다 — 그리고 그 성장은 할당자를 통해 일어난다(73장의 규칙 그대로, 배열이 자기가 만들어질 때 받은 할당자를 기억한다).</p><div class="dev antipattern"><p class="dev-label">✗ 원소 포인터를 들고 있다가 push 하기</p><pre><code data-lang="c">int *first = PROVEN_ARRAY_GET_MUT(&amp;arr, int, 0);
+(void)PROVEN_ARRAY_PUSH(&amp;arr, int, 42);   /* 여기서 버퍼가 옮겨갈 수 있다 */
+*first = 7;                               /* 옛 주소에 쓴다 — 사용 후 해제 */</code></pre><p>배열이 자라면 내용이 새 버퍼로 옮겨가고, 옛 주소를 가리키던 포인터는 무효가 된다. 40장에서 배운 사용 후 해제가 컨테이너 위에서 나타나는 형태다. 규칙은 하나다 — <strong>컨테이너를 바꾼 뒤에는 인덱스로 다시 얻는다.</strong> 포인터가 아니라 인덱스를 들고 다니는 습관이 여기서 방어가 된다.</p></div><h3>76.2 침습적 리스트와 링 버퍼</h3><p><code>proven_list_t</code>는 <strong>침습적</strong>(intrusive) 연결 리스트다 — 노드가 자료를 품는 것이 아니라, 자료 구조체 안에 링크 필드를 심는다. 41장에서 만든 <code>struct</code> 안에 <code>proven_list_node_t link;</code>를 한 칸 두는 식이다.</p><p>무엇이 좋은가. 리스트에 넣기 위해 <strong>따로 할당할 것이 없다</strong> — 노드가 곧 자료이기 때문이다. 힙이 없는 환경에서도 리스트를 쓸 수 있고(78장), 같은 객체를 두 리스트에 동시에 매다는 것도 링크 필드를 둘 두면 된다. 대가는 자료 구조체가 리스트를 알아야 한다는 것이다.</p><p><code>proven_ring_t</code>는 고정 크기 원형 버퍼다. 생산자와 소비자가 오가는 자리, 로그의 최근 N개, 오디오·센서 샘플처럼 <strong>지나간 것은 버려도 되는</strong> 흐름에 쓴다. 크기가 고정이므로 가득 차면 어떻게 할지가 계약의 일부다 — 여기서도 기본은 조용히 덮지 않고 알리는 쪽이다.</p><h3>76.3 해시 맵, 그리고 공격받는 자료구조</h3><p><code>proven_map_t</code>는 열린 주소 방식(open addressing) 해시 맵이다. 키는 정수나 바이트열이고, 문자열 키는 두 가지 모드가 있다 — <strong>빌린 키</strong>(호출자가 바이트를 살려 둔다)와 <strong>소유한 키</strong>(맵이 복사해 들고 있다). 73장의 소유·빌림 구분이 여기서도 그대로 나타난다.</p><div><div><p><code>examples/ch76/wordcount.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
-/* 한 줄에서 "이름 나이" 꼴을 해석한다 — 실패는 값으로 드러난다. */
-static void parse_line(const char *line)
+/* 낱말을 세어 정렬해 찍는다 — 맵과 배열과 정렬을 한 번에 */
+typedef struct { proven_u8str_view_t word; int count; } entry_t;
+
+/* 비교자는 전순서여야 한다: 동점도 일관되게 갈라 준다 (47장의 반례를 피한다) */
+static int by_count_desc(const void *a, const void *b)
 {
-    proven_scan_t sc = proven_scan_init(proven_u8str_view_from_cstr(line));
+    const entry_t *x = a, *y = b;
+    if (x->count != y->count) return (x->count &lt; y->count) - (x->count > y->count);
 
-    proven_result_u8str_view_t name = proven_scan_str(&amp;sc);
-    if (!proven_is_ok(name.err)) {
-        printf("[%s] -> no name found\n", line);
-        return;
-    }
-
-    proven_result_i64_t age = proven_scan_i64(&amp;sc);
-    if (!proven_is_ok(age.err)) {
-        printf("[%s] -> age is not a number\n", line);
-        return;
-    }
-
-    printf("[%s] -> name %.*s, age %lld\n", line,
-           (int)name.val.size, (const char *)name.val.ptr, (long long)age.val);
+    proven_size_t n = x->word.size &lt; y->word.size ? x->word.size : y->word.size;
+    int c = proven_memcmp(x->word.ptr, y->word.ptr, n);
+    if (c != 0) return c;
+    return (x->word.size > y->word.size) - (x->word.size &lt; y->word.size);
 }
 
 int main(void)
 {
-    parse_line("alice 33");
-    parse_line("bob thirty");
-    parse_line("   ");
+    proven_allocator_t alloc = proven_heap_allocator();
+    const char *text = "the quick fox the lazy dog the fox";
+
+    /* 문자열 키 맵: 기본은 HashDoS 에 견디는 키드 해시를 쓴다 */
+    proven_result_map_t made_map =
+        proven_map_create(alloc, 16, PROVEN_KEY_TYPE_U8_OWNED, sizeof(int), alignof(int));
+    if (!proven_is_ok(made_map.err)) return 1;
+    proven_map_t counts = made_map.value;
+
+    proven_u8str_view_t all = proven_u8str_view_from_cstr(text);
+    proven_u8str_view_t space = proven_u8str_view_from_cstr(" ");
+    proven_size_t start = 0;
+
+    for (;;) {
+        proven_size_t hit = proven_u8str_view_find(all, start, space);
+        proven_size_t end = (hit == PROVEN_INDEX_NOT_FOUND) ? all.size : hit;
+        proven_u8str_view_t w = proven_u8str_view_slice(all, start, end - start);
+
+        const int *seen = proven_map_get(&amp;counts, (proven_map_key_t){ .str = w });
+        int next = seen ? *seen + 1 : 1;
+        if (!proven_is_ok(proven_map_set(&amp;counts, (proven_map_key_t){ .str = w }, &amp;next)))
+            break;
+
+        if (hit == PROVEN_INDEX_NOT_FOUND) break;
+        start = hit + 1;
+    }
+    printf("distinct words: %zu\n", counts.len);
+
+    /* 세어 둔 것을 배열에 모아 정렬한다 */
+    proven_result_array_t made_arr = PROVEN_ARRAY_INIT(alloc, entry_t, 8);
+    if (!proven_is_ok(made_arr.err)) return 1;
+    proven_array_t list = made_arr.value;
+
+    const char *words[] = {"the", "quick", "fox", "lazy", "dog"};
+    for (size_t i = 0; i &lt; sizeof words / sizeof words[0]; i++) {
+        proven_u8str_view_t w = proven_u8str_view_from_cstr(words[i]);
+        const int *c = proven_map_get(&amp;counts, (proven_map_key_t){ .str = w });
+        entry_t e = { .word = w, .count = c ? *c : 0 };
+        if (!proven_is_ok(PROVEN_ARRAY_PUSH(&amp;list, entry_t, e))) break;
+    }
+
+    proven_array_sort(&amp;list, by_count_desc);   /* 최악에도 O(n log n) 보장 */
+    for (size_t i = 0; i &lt; list.len; i++) {
+        const entry_t *e = PROVEN_ARRAY_GET(&amp;list, entry_t, i);
+        printf("  %.*s = %d\n", (int)e->word.size, (const char *)e->word.ptr, e->count);
+    }
+
+    PROVEN_ARRAY_DESTROY(&amp;list);
+    proven_map_destroy(&amp;counts);
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>[alice 33] -> name alice, age 33
-[bob thirty] -> age is not a number
-[   ] -> no name found
-</code></pre></div></div><p>세 입력이 세 갈래로 갈린 것이 핵심이다. <code>bob thirty</code>는 이름은 읽혔지만 나이에서 멈췄고, 공백뿐인 줄은 이름부터 실패했다. <code>sscanf</code>라면 둘 다 “항목 하나 성공” 또는 “0”으로 뭉뚱그려졌을 것이다.</p><p>커서를 가진다는 것에는 또 다른 이점이 있다. <strong>어디까지 읽었는지</strong>를 알 수 있어서, 남은 부분을 다른 방식으로 처리하거나 오류 메시지에 위치를 실을 수 있다. 26장에서 <code>sscanf</code>로 줄을 해석할 때 “몇 글자를 소비했는지 알 수 없다”고 했던 문제의 답이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>스캐너에도 서식 문자열이 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>있다 — <code>proven_scan_fmt_cursor(&amp;sc, "{}:{}", PROVEN_SCAN_ARG(&amp;host),<br><span style="white-space: pre-wrap">&#x20;&#x20;</span>PROVEN_SCAN_ARG(&amp;port))</code>처럼 쓴다. 형식화와 대칭이고, 인자는 담을 곳의 주소를 감싼 것이다. 다만 헤더가 정직하게 밝혀 두는 주의사항이 하나 있다 — 서식 중간에서 실패하면 <strong>그 전까지 채워진 값은 이미 바뀌어 있다</strong>는 것이다. 72장에서 배운 실패 원자성이 여기서는 보장되지 않으므로, 꼭 필요하면 커서와 목적지를 미리 저장해 두었다가 되돌려야 한다. 계약을 숨기지 않고 문서에 적어 두는 것이 이 라이브러리의 방식이다.</p></div></div><div class="dev realcase"><p class="dev-label">◉ 파서가 관대하면 무슨 일이 생기는가</p><p>HTTP 요청 처리에서 반복적으로 드러난 문제가 있다. 서버와 프록시가 같은 요청을 <strong>조금씩 다르게</strong> 해석하면, 공격자가 그 틈으로 두 번째 요청을 몰래 끼워 넣을 수 있다(request smuggling). 한쪽은 헤더의 이상한 공백을 너그럽게 넘기고 다른 쪽은 엄격히 거부하는 식의 차이가 원인이었다. 교훈은 75장의 인코딩 이야기와 정확히 같다 — <strong>애매한 입력은 고쳐 읽지 말고 거부하라.</strong> 실패를 값으로 돌려주는 파서는 그 거부를 표현할 수단을 갖춘 파서이기도 하다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>형식화·파싱 요약.</p><table><tr><th><strong>하는 일</strong></th><th><strong>API</strong></th><th><strong>메모</strong></th></tr><tr><td>화면에 한 줄</td><td><code>proven_println(fmt, ARG…)</code></td><td>에러 반환하되 강요 안 함</td></tr><tr><td>문자열로 형식화</td><td><code>proven_u8str_append_fmt(&amp;s, …)</code></td><td>모자라면 거부</td></tr><tr><td>자를 것을 허용</td><td><code>…_append_fmt_trunc</code></td><td>이름으로 의도를 밝힘</td></tr><tr><td>늘려 가며</td><td><code>…_append_fmt_grow(alloc, …)</code></td><td>할당자 필요</td></tr><tr><td>인자 감싸기</td><td><code>PROVEN_ARG(x)</code></td><td><code>_Generic</code> — 없는 타입은 컴파일 오류</td></tr><tr><td>스캐너 시작</td><td><code>proven_scan_init(view)</code></td><td>커서를 가진 객체</td></tr><tr><td>하나씩 읽기</td><td><code>proven_scan_i64/f64/str</code></td><td>꾸러미로 결과와 실패</td></tr><tr><td>서식으로 읽기</td><td><code>proven_scan_fmt_cursor(…)</code></td><td>중간 실패 시 부분 변경 주의</td></tr></table></div><p>문자열을 담고, 만들고, 되읽는 어휘가 갖춰졌다. 다음은 <strong>여럿을 담는</strong> 도구 들이다 — 자라는 배열, 리스트, 링 버퍼, 해시 맵, 그리고 70장에서 예고한 “최악에도 보장이 있는” 알고리즘들.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>distinct words: 5
+  the = 3
+  fox = 2
+  dog = 1
+  lazy = 1
+  quick = 1
+</code></pre></div></div><p>이 예제 하나에 이 장의 도구가 다 들어 있다 — 맵으로 세고, 배열에 모으고, 정렬해서 찍는다. 낱말을 자르는 데는 74장의 뷰를 썼으므로 문자열 복사는 맵이 키를 소유할 때 한 번뿐이다.</p><div class="dev realcase"><p class="dev-label">◉ HashDoS — 해시 맵이 공격 대상이 된 사건</p><p>2011년, 여러 웹 프레임워크가 동시에 같은 취약점으로 무너졌다. 공격자가 <strong>같은 버킷으로 몰리는 키들</strong>을 골라 요청 하나에 수천 개의 매개변수로 실어 보내면, 평균 <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math>이던 삽입이 <math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math>이 되고 전체가 <math><mi>𝑂</mi><mrow><mo>(</mo><msup><mi>𝑛</mi><mn>2</mn></msup><mo>)</mo></mrow></math>으로 퇴화해 서버 한 대가 요청 몇 개로 멎었다. 해시 함수가 공개되어 있어 충돌을 <strong>계산할 수 있었다</strong>는 것이 원인이었다.</p><p>오늘의 처방은 <strong>키드 해시</strong>(keyed hash)다 — 프로세스마다 무작위 비밀을 뽑아 해시에 섞으면 공격자가 충돌을 미리 계산할 수 없다. proven의 <code>proven_map_create</code>가 문자열 키에 SipHash-2-4와 무작위 씨앗을 기본으로 쓰는 이유이고, 반대로 키가 전부 내 코드에서 오는 경우를 위해 더 빠른 FNV-1a를 쓰는 <code>proven_map_create_trusted</code>를 따로 둔 이유다. <strong>기본값은 안전한 쪽, 빠른 쪽은 이름을 밝혀서</strong> — 이 부에서 반복해 만난 원칙이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>키드 해시를 쓰면 얼마나 느려지는가? 그리고 OS가 없으면 무작위 비밀은 어디서 오는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>SipHash는 FNV-1a보다 느리지만 문자열 길이에 비례하는 정도이고, 맵 연산 전체에서 해시 계산이 차지하는 몫은 대개 크지 않다. 무작위 비밀은 운영체제의 난수원에서 한 번 뽑는다 — 그리고 OS가 없는 환경(78장)에서는 뽑을 곳이 없으므로 FNV-1a로 물러난다. 라이브러리는 이 사실을 숨기지 않고 문서에 적어 두는데, 근거가 분명하다: <strong>공격자가 없는 곳에는 공격자 모델도 필요 없다.</strong> 펌웨어 안에서 키를 고르는 외부인은 존재하지 않는다.</p></div></div><h3>76.4 최악을 보장하는 정렬</h3><p>69장에서 본 두 가지 문제 — 검사되지 않는 비교자, 그리고 최악에서 무너지는 알고리즘 — 을 여기서 함께 다룬다.</p><span id="idx-entry-110"></span><p><code>proven_array_sort</code>는 <strong>introsort</strong>다. 빠른 퀵소트로 시작하되, 재귀가 너무 깊어지면 힙소트로 갈아탄다. 그래서 평균은 퀵소트만큼 빠르고 최악에도 <math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math>이 <strong>보장</strong>된다 — 69장에서 본 복잡도 공격이 통하지 않는다. 헤더의 문구를 그대로 옮기면 “<math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math>은 평균이 아니라 보장”이다.</p><p>비교자 쪽은 언어가 도와줄 수 없으므로 계약을 문서와 예제로 밝힌다. 예제의 <code>by_count_desc</code>가 그 본보기다 — 개수로 내림차순, <strong>동점이면 낱말로</strong> 가른다. 69장의 반례(첫 글자만 보는 비교자)와 정확히 대비된다.</p><div class="dev misconception"><p class="dev-label">⚠ “동점은 어떻게 처리해도 상관없다”</p><p>상관있다. 비교자는 <strong>전순서</strong>(total order)를 이뤄야 한다 — 같으면 0, 일관되게 크고 작아야 하며, <code>cmp(a,b)</code>와 <code>cmp(b,a)</code>의 부호가 반대여야 한다. 이것을 어기면 결과가 뒤죽박죽이 되는 정도가 아니라, 구현에 따라 <strong>배열 밖을 침범</strong>할 수도 있다(파티션 알고리즘이 경계를 비교 결과로 판단하기 때문이다). “동점을 아무렇게나” 돌려주는 비교자는 그래서 버그이지 취향이 아니다.</p></div><h3>76.5 바이트를 글자로 — 해시와 인코딩</h3><p>같은 상자 안에 든 나머지 도구들도 짚어 둔다.</p><ul><li><strong>용도별 해시</strong> — 맵의 내부용(빠른 혼합), 무결성 확인용(CRC-32), 암호학적 용도(SHA-256), 그리고 앞서 본 키드 해시(SipHash). 라이브러리가 이들을 구분해 두는 이유는 <strong>같은 “해시”라는 낱말이 전혀 다른 요구를 뜻하기</strong> 때문이다 — 빠르기만 하면 되는 자리에 SHA-256을 쓰면 낭비이고, 적대적 입력이 오는 자리에 FNV-1a를 쓰면 위험하다.</li><li><strong>hex와 Base64</strong> — 바이트를 텍스트로 옮기는 두 표준. 여기서도 원칙은 같다. 잘못된 입력(홀수 길이 hex, 잘못된 패딩)은 <strong>추측해 고치지 않고</strong> <code>PROVEN_ERR_INVALID_ENCODING</code>으로 거부한다(74장의 그 규범이다).</li></ul><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>컨테이너 요약.</p><table><tr><th><strong>도구</strong></th><th><strong>모양</strong></th><th><strong>맞는 자리</strong></th><th><strong>주의</strong></th></tr><tr><td><code>array</code></td><td>자라는 연속 배열</td><td>순서 있는 목록</td><td>자라면 포인터 무효</td></tr><tr><td><code>list</code></td><td>침습적 연결 리스트</td><td>할당 없이 잇기</td><td>자료가 링크를 품는다</td></tr><tr><td><code>ring</code></td><td>고정 크기 원형</td><td>흐름·최근 N개</td><td>가득 찼을 때의 계약</td></tr><tr><td><code>map</code></td><td>열린 주소 해시</td><td>키로 찾기</td><td>키 소유 여부를 고른다</td></tr><tr><td><code>array_sort</code></td><td>introsort</td><td>무엇이든 정렬</td><td>비교자는 전순서</td></tr><tr><td>해시 4종</td><td>용도별</td><td>맵·무결성·암호·반공격</td><td>용도를 섞지 않는다</td></tr></table></div><p>여기까지가 순수한 계산의 세계다 — 운영체제가 없어도 전부 돈다. 다음 장에서는 바깥으로 나간다. 파일, 스트림, 시간, 난수 — OS와 닿는 자리다.</p>
 <div class="nav"><a href="ch75.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch77.html">다음 →</a></div>
 </div></main></body></html>
