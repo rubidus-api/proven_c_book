@@ -4,13 +4,13 @@
 `scripts/sync-status.py --write` 가 자동으로 갱신한다.
 The Korean edition is the source; this table is generated.
 
-- **synced** 82 · **stale** 0 · **pending** 11
+- **synced** 93 · **stale** 0 · **pending** 0
 
 | 원본 / source | 상태 / state |
 |---|---|
 | `book/chapters/ch01.typ` | ✅ synced |
-| `book/chapters/ch02.typ` | ⏳ pending |
-| `book/chapters/ch03.typ` | ⏳ pending |
+| `book/chapters/ch02.typ` | ✅ synced |
+| `book/chapters/ch03.typ` | ✅ synced |
 | `book/chapters/ch04.typ` | ✅ synced |
 | `book/chapters/ch05.typ` | ✅ synced |
 | `book/chapters/ch06.typ` | ✅ synced |
@@ -86,20 +86,20 @@ The Korean edition is the source; this table is generated.
 | `book/chapters/ch76.typ` | ✅ synced |
 | `book/chapters/ch77.typ` | ✅ synced |
 | `book/chapters/ch78.typ` | ✅ synced |
-| `book/chapters/ch79.typ` | ⏳ pending |
+| `book/chapters/ch79.typ` | ✅ synced |
 | `book/chapters/ch80.typ` | ✅ synced |
-| `book/chapters/ch81.typ` | ⏳ pending |
+| `book/chapters/ch81.typ` | ✅ synced |
 | `book/parts/part02.typ` | ✅ synced |
 | `book/parts/part11s.typ` | ✅ synced |
 | `book/parts/part12.typ` | ✅ synced |
 | `book/front/preface.typ` | ✅ synced |
-| `book/appendix/a1-operators.typ` | ⏳ pending |
-| `book/appendix/a2-formats.typ` | ⏳ pending |
-| `book/appendix/a3-conversions.typ` | ⏳ pending |
-| `book/appendix/a4-reading.typ` | ⏳ pending |
-| `book/appendix/a5-bibliography.typ` | ⏳ pending |
-| `book/appendix/a6-grammar.typ` | ⏳ pending |
-| `book/back/index.typ` | ⏳ pending |
+| `book/appendix/a1-operators.typ` | ✅ synced |
+| `book/appendix/a2-formats.typ` | ✅ synced |
+| `book/appendix/a3-conversions.typ` | ✅ synced |
+| `book/appendix/a4-reading.typ` | ✅ synced |
+| `book/appendix/a5-bibliography.typ` | ✅ synced |
+| `book/appendix/a6-grammar.typ` | ✅ synced |
+| `book/back/index.typ` | ✅ synced |
 | `book/main.typ` | ✅ synced |
 
 - ✅ 번역이 현재 원본과 일치한다.

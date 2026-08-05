@@ -92,8 +92,9 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
 .bar .sp { flex:1 1 auto; }
-main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
-.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
 h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
 h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
@@ -128,7 +129,7 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
