@@ -10,7 +10,7 @@ standard (C23) as its default, and ends as a manual for the
 - **Current edition**: v0.2.0 — **draft**
 - Korean: [PDF](dist/proven_c_book-v0.2.0-ko.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/ko/)
 - English: [Web](https://rubidus-api.github.io/proven_c_book/en/) — *translation in progress* (preface and chapters 1–7; [PDF](dist/proven_c_book-v0.2.0-en.pdf))
-- 13 parts, 73 chapters, appendices A–E and an index; about 310 pages.
+- 13 parts, 78 chapters, appendices A–E and an index; about 329 pages (repository head).
 
 ## What makes it different
 
@@ -29,12 +29,12 @@ standard (C23) as its default, and ends as a manual for the
 
 ## Translation status
 
-The Korean edition is complete (13 parts, 73 chapters, about 310 pages) and is
+The Korean edition is complete (13 parts, 78 chapters, about 329 pages) and is
 the source. The English edition is translated from it chapter by chapter, with
 **chapter numbers identical to the original**, so a reference to "chapter 49"
 means the same chapter in both editions.
 
-Translated so far: preface, Part II introduction, chapters 1–7.
+Translated so far: preface, Part II introduction, chapters 1–11.
 Per-chapter status: [TRANSLATION.md](TRANSLATION.md).
 
 The two editions are kept in step mechanically. `scripts/sync-status.py` records

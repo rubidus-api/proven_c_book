@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>58 새 표준이 보탠 것과 *_s 논쟁 — Proven C Book</title><style>
+<title>58 수 — &lt;math.h&gt;·&lt;fenv.h&gt;·&lt;tgmath.h&gt; — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,56 +68,67 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-287">58 새 표준이 보탠 것과 <code>*_s</code> 논쟁</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>이 부의 마지막 장이다. C99·C11·C23이 표준 라이브러리에 보탠 헤더들을 훑고, 그다음 이 언어의 가장 유명한 실패한 시도 — “안전한 함수”를 표준에 들이려던 부속서 K — 의 전말을 본다. <code>gets_s</code>·<code>strcpy_s</code>가 왜 널리 쓰이지 않는지, Microsoft의 같은 이름 함수들은 무엇이 다른지까지.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>49장에서 헤더가 늘어나는 속도가 언어의 변화 속도와 같다고 했고, 51장에서는 <code>gets</code>의 장례가 20년 걸렸다고 했다. 그러면 그 자리를 메우려고 표준이 들여온 “안전한 함수”들은 지금 어디에 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>대부분 <strong>어디에도 없다</strong>. C11이 부속서 K(Annex K)로 <code>gets_s</code>·<code>strcpy_s</code> 같은 함수 수십 개를 들였지만, 그것은 <strong>선택 사항</strong>이었고 주요 구현들이 채택을 거부했다. 이 책을 만든 기계에서 확인한 결과도 그렇다 — 예제가 찍은 “부속서 K: 이 구현에는 없다”가 그것이다. 이 장의 뒷부분이 그 이야기다.</p></div></div><h3 id="loc-288">58.1 C99가 보탠 것</h3><table><tr><th><strong>헤더</strong></th><th><strong>무엇</strong></th><th><strong>오늘의 위치</strong></th></tr><tr><td><code>&lt;stdint.h></code></td><td>고정 폭 정수(<code>int32_t</code> 등)</td><td>사실상 필수. 23장</td></tr><tr><td><code>&lt;inttypes.h></code></td><td>그 타입들의 서식 매크로</td><td><code>PRId32</code> 계열. 부록 B</td></tr><tr><td><code>&lt;stdbool.h></code></td><td><code>bool</code>·<code>true</code>·<code>false</code></td><td>C23에서 키워드가 되어 불필요</td></tr><tr><td><code>&lt;complex.h></code></td><td>복소수</td><td>선택 사항. 지원이 고르지 않다</td></tr><tr><td><code>&lt;fenv.h></code></td><td>부동소수점 환경</td><td>55장</td></tr><tr><td><code>&lt;tgmath.h></code></td><td>타입 제네릭 수학</td><td>55장</td></tr></table><p><code>&lt;stdint.h></code>가 이 목록의 승자다. “정확히 32비트”를 표준적으로 표현할 방법이 드디어 생겼고, 그 전까지 프로젝트마다 자기 <code>typedef</code>를 두던 관행이 정리됐다.</p><h3 id="loc-289">58.2 C11이 보탠 것</h3><table><tr><th><strong>헤더</strong></th><th><strong>무엇</strong></th><th><strong>오늘의 위치</strong></th></tr><tr><td><code>&lt;stdatomic.h></code></td><td>원자적 연산·메모리 순서</td><td>동시성의 토대. 10장의 그 이야기</td></tr><tr><td><code>&lt;threads.h></code></td><td>스레드·뮤텍스·조건 변수</td><td>★ 채택이 더디다 — 대개 pthread를 쓴다</td></tr><tr><td><code>&lt;stdalign.h></code></td><td><code>alignas</code>·<code>alignof</code></td><td>C23에서 키워드로</td></tr><tr><td><code>&lt;stdnoreturn.h></code></td><td><code>noreturn</code></td><td>C23에서 폐기 예정. <code>[[noreturn]]</code>으로</td></tr><tr><td><code>&lt;uchar.h></code></td><td><code>char16_t</code>·<code>char32_t</code></td><td>54장</td></tr></table><p><code>&lt;threads.h></code>의 사정이 흥미롭다. 표준에 있는데도 오랫동안 glibc가 제공하지 않아, 이식성 있는 코드는 여전히 POSIX 스레드를 쓴다. <strong>표준에 들어가는 것과 쓸 수 있게 되는 것은 다른 일</strong>이라는 사실을 보여 주는 사례다.</p><h3 id="loc-290">58.3 C23이 보탠 것</h3><div><div><p><code>examples/ch58/newheaders.c</code></p><pre><code data-lang="c">#define __STDC_WANT_LIB_EXT1__ 1
-#include &lt;stdio.h>
+<h2>58 수 — <code>&lt;math.h></code>·<code>&lt;fenv.h></code>·<code>&lt;tgmath.h></code></h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>실수 계산이 실패를 알리는 방식을 본다. 6장과 43장에서 배운 근사의 수학이 여기서 함수의 계약이 된다 — 정의역 밖 호출, 범위를 넘는 결과, NaN과 무한대의 성질, 그리고 반올림 모드라는 숨은 전역 상태까지.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>43장에서 실수를 <code>==</code>로 비교하지 말라고 했고, 6장에서는 0.1이 정확히 표현되지 않는다고 했다. 그러면 수학 함수가 “계산할 수 없는 입력”을 받으면 어떻게 알려 주는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>두 경로가 있다. <strong>반환값</strong>으로 NaN이나 무한대를 주고, 동시에 <strong><code>errno</code></strong>에 이유를 남긴다 — 정의역 밖이면 <code>EDOM</code>, 결과가 표현 범위를 넘으면 <code>ERANGE</code>. 다만 구현이 <code>errno</code> 대신 부동소수점 예외 플래그(<code>&lt;fenv.h></code>)로 알리도록 선택할 수도 있어서, 이식성 있게 확인하려면 둘 다 볼 준비를 해야 한다. 실무에서는 대개 반환값을 <code>isnan</code>·<code>isinf</code>로 검사하는 쪽이 간단하다.</p></div></div><h3>58.1 NaN과 무한대의 성질</h3><div><div><p><code>examples/ch58/math.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;math.h>
+#include &lt;errno.h>
 #include &lt;string.h>
-#include &lt;stdint.h>
-#include &lt;stdckdint.h>
-#include &lt;stdalign.h>
-#include &lt;stddef.h>
 
 int main(void)
 {
-    /* ① 부속서 K 가 실제로 있는가 — 구현이 알려 준다 */
-#ifdef __STDC_LIB_EXT1__
-    printf("부속서 K: 있음 (__STDC_LIB_EXT1__)\n");
-#else
-    printf("부속서 K: 이 구현에는 없다\n");
-#endif
+    /* ① NaN 은 자기 자신과도 같지 않다 */
+    double nan_v = nan("");
+    printf("NaN == NaN : %s\n", nan_v == nan_v ? "참" : "거짓");
+    printf("isnan(NaN) : %s\n", isnan(nan_v) ? "참" : "거짓");
 
-    /* ② C23 의 검사 산술 — 넘침을 값으로 알려 준다 */
-    int a = 2000000000, b = 2000000000, sum;
-    if (ckd_add(&amp;sum, a, b))
-        printf("ckd_add: 넘쳤다 (int 로는 담을 수 없다)\n");
-    else
-        printf("ckd_add: %d\n", sum);
+    /* ② 무한대와 0 나누기(실수는 UB 가 아니다) */
+    double inf_v = 1.0 / 0.0;
+    printf("1.0/0.0    : %f (isinf: %d)\n", inf_v, isinf(inf_v));
+    printf("0.0/0.0    : %s\n", isnan(0.0 / 0.0) ? "NaN" : "수");
 
-    size_t count = (size_t)-1 / 2, elem = 8, bytes;
-    if (ckd_mul(&amp;bytes, count, elem))
-        printf("ckd_mul: 넘쳤다 — 할당을 시도하지 않는다\n");
+    /* ③ 정의역 밖 호출은 errno 와 NaN 으로 알려 온다 */
+    errno = 0;
+    double r = sqrt(-1.0);
+    printf("sqrt(-1)   : %s, errno=%s\n",
+           isnan(r) ? "NaN" : "수", errno == EDOM ? "EDOM" : "0");
 
-    /* ③ 고정 폭 정수와 정렬 */
-    printf("int32_t=%zu bytes, alignof(max_align_t)=%zu\n",
-           sizeof(int32_t), alignof(max_align_t));
+    /* ④ 범위를 넘으면 ERANGE 와 무한대 */
+    errno = 0;
+    double big = exp(1000.0);
+    printf("exp(1000)  : %s, errno=%s\n",
+           isinf(big) ? "inf" : "수", errno == ERANGE ? "ERANGE" : "0");
 
-    /* ④ C23 의 bool 은 키워드다 — &lt;stdbool.h> 없이 쓴다 */
-    bool ready = true;
-    printf("bool 은 키워드: %s\n", ready ? "true" : "false");
+    /* ⑤ 분류 함수로 값의 종류를 가른다 */
+    double vals[] = { 1.0, 0.0, -0.0, inf_v, nan_v, 1e-320 };
+    const char *names[] = { "1.0", "0.0", "-0.0", "inf", "NaN", "1e-320" };
+    for (size_t i = 0; i &lt; sizeof vals / sizeof vals[0]; i++) {
+        const char *kind = "?";
+        switch (fpclassify(vals[i])) {
+            case FP_NORMAL:    kind = "정규";      break;
+            case FP_SUBNORMAL: kind = "비정규";    break;
+            case FP_ZERO:      kind = "0";         break;
+            case FP_INFINITE:  kind = "무한";      break;
+            case FP_NAN:       kind = "NaN";       break;
+        }
+        printf("  %-7s → %-6s (부호비트 %d)\n", names[i], kind, signbit(vals[i]) != 0);
+    }
 
-    /* ⑤ 표준이 정한 매크로로 판을 확인한다 */
-    printf("__STDC_VERSION__ = %ldL\n", (long)__STDC_VERSION__);
+    /* ⑥ 0.0 과 -0.0 은 같다고 비교되지만 부호는 다르다 */
+    printf("0.0 == -0.0 : %s\n", 0.0 == -0.0 ? "참" : "거짓");
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>부속서 K: 이 구현에는 없다
-ckd_add: 넘쳤다 (int 로는 담을 수 없다)
-ckd_mul: 넘쳤다 — 할당을 시도하지 않는다
-int32_t=4 bytes, alignof(max_align_t)=16
-bool 은 키워드: true
-__STDC_VERSION__ = 202000L
-</code></pre></div></div><p><code>&lt;stdckdint.h></code>가 이 판의 실용적 승자다. 52장에서 본 크기 계산의 감김을 <strong>값으로</strong> 알려 준다 — <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code>은 넘치면 참을 돌려주고, 결과는 감긴 값이 아니라 “쓸 수 없음”으로 다루면 된다.</p><p><code>&lt;stdbit.h></code>도 새로 왔다. 앞의 0 개수 세기, 켜진 비트 세기, 2의 거듭제곱 올림 같은 비트 조작이 표준 함수가 됐다 — 그전까지는 컴파일러 내장 함수 (<code>__builtin_clz</code> 등)에 기대던 자리다.</p><p>그 밖에 C23은 <code>bool</code>·<code>true</code>·<code>false</code>·<code>static_assert</code>·<code>thread_local</code>을 키워드로 승격시키고, <code>nullptr</code>을 들였으며(31장), <code>&lt;stdbool.h></code>· <code>&lt;stdnoreturn.h></code> 같은 호환용 헤더를 사실상 은퇴시켰다.</p><h3 id="loc-291">58.4 부속서 K — “안전한 함수”의 실패한 시도</h3><p>이제 이 장의 본론이다.</p><p>2000년대 초, Microsoft는 자사 컴파일러에 <code>strcpy_s</code>·<code>sprintf_s</code> 같은 함수들을 넣고 기존 함수 사용에 경고를 띄우기 시작했다. 그 설계를 표준으로 만들자는 제안이 C11의 <strong>부속서 K</strong>(Bounds-checking interfaces)로 들어갔다.</p><p>핵심 착상은 셋이었다.</p><ol><li>목적지 크기를 <strong>반드시</strong> 인자로 받는다.</li><li>문제가 생기면 잘라 넘어가지 않고 <strong>오류를 돌려준다</strong>(<code>errno_t</code>).</li><li>계약 위반이 감지되면 프로그램이 정한 <strong>제약 처리기</strong>를 부른다.</li></ol><pre><code data-lang="c">#define __STDC_WANT_LIB_EXT1__ 1
-#include &lt;string.h>
-
-char dst[8];
-errno_t e = strcpy_s(dst, sizeof dst, src);   /* 넘치면 오류 */</code></pre><p>방향은 49장에서 우리가 정리한 “필요한 것”과 닮았다. 그런데 결과는 실패였다.</p><div class="dev realcase"><p class="dev-label">◉ 부속서 K가 채택되지 못한 이유</p><p>2015년, C 표준 위원회 문서 N1967 “Field Experience With Annex K”가 실태를 조사했다. 요지는 냉정했다 — <strong>널리 구현되지 않았고, 구현된 곳에서도 서로 다르게 동작하며, 실제 코드를 더 안전하게 만들었다는 증거가 없다</strong>.</p><p>구체적으로는 이런 사정들이었다.</p><ul><li><strong>Microsoft의 함수와 표준의 함수가 같지 않다.</strong> 이름은 같은데 인자와 동작이 어긋나는 경우가 있어, 한쪽에 맞춘 코드가 다른 쪽에서 깨졌다.</li><li><strong>glibc를 비롯한 주요 구현이 채택하지 않았다.</strong> 오늘까지도 그렇다 — 앞의 예제가 “이 구현에는 없다”를 찍은 이유다.</li><li><strong>제약 처리기라는 전역 상태</strong>가 라이브러리 사이에 충돌을 일으켰다.</li><li>기존 코드를 기계적으로 바꿔 놓았을 뿐, 실제 결함은 <strong>크기를 잘못 계산하는 자리</strong>에 남아 있었다.</li></ul><p>위원회는 부속서 K를 제거하자는 논의까지 갔고, 결국 남기되 사실상 권장하지 않는 상태로 정리됐다. “표준에 넣으면 안전해진다”는 기대가 현실에서 어떻게 어긋나는지 보여 주는 대표 사례다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “<code>_s</code> 붙은 함수를 쓰면 안전하다”</p><p>세 가지를 확인해야 한다. 첫째, <strong>그 함수가 있는가</strong> — 표준 부속서 K는 선택이고 대부분의 유닉스 계열에 없다. 둘째, <strong>어느 쪽 판인가</strong> — 표준의 것과 Microsoft의 것이 다를 수 있다. 셋째, <strong>무엇이 안전해지는가</strong> — 크기를 받는다는 것이지, 여러분이 넘긴 크기가 옳다는 뜻이 아니다. <code>sizeof</code> 대신 <code>strlen</code>을 넘기는 실수는 <code>_s</code> 함수에서도 똑같이 사고다.</p><p>이식성 있는 코드에서 현실적인 선택은 지금도 이렇다 — 표준 안에서는 <code>snprintf</code>와 명시적 경계 검사, 플랫폼이 허용하면 <code>strlcpy</code> 계열, 그리고 반복되는 위험 지대에는 검사를 내장한 부품(제12부).</p></div><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — Windows에서 만나는 <code>_s</code> 함수들</p><p>MSVC는 <code>strcpy_s</code>·<code>sprintf_s</code>·<code>fopen_s</code> 등을 오래전부터 제공하고, 기존 함수를 쓰면 <code>C4996</code> 경고를 낸다. 경고를 끄려면 <code>_CRT_SECURE_NO_WARNINGS</code>를 정의하는 것이 관행이다.</p><p>주의할 점은 <strong>이 함수들이 표준 부속서 K와 완전히 같지 않다</strong>는 것이다. 예를 들어 인자 검증 실패 시의 동작과 반환값 규칙이 다를 수 있다. 그래서 Windows 전용 코드가 아니라면 <code>_s</code> 계열에 기대지 않고, 크로스 플랫폼 프로젝트는 대개 자체 래퍼를 하나 두는 쪽을 택한다.</p></div><h3 id="loc-292">58.5 이 부가 남기는 것</h3><p>열 장에 걸쳐 표준 라이브러리를 걸었다. 함수 이름을 외우는 것이 목적이 아니었으므로, 남길 것은 몇 가지 태도다.</p><ol><li><strong>계약을 먼저 읽는다.</strong> 크기를 받는가, 실패를 어떻게 알리는가, 돌려준 포인터의 주인은 누구인가.</li><li><strong>반환값을 버리지 않는다.</strong> 특히 <code>fclose</code>·<code>snprintf</code>·<code>scanf</code> 계열.</li><li><strong>전역 상태를 의심한다.</strong> <code>errno</code>, 로케일, 정적 버퍼, 반올림 모드.</li><li><strong>표준에 있다고 안전한 것은 아니다.</strong> <code>gets</code>가 22년을 살아남았다.</li><li><strong>플랫폼 확장은 이득과 이식성을 저울질해서.</strong></li></ol><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>판별 표.</p><table><tr><th><strong>판</strong></th><th><strong>대표 보탬</strong></th><th><strong>실제로 쓰이는가</strong></th></tr><tr><td>C99</td><td><code>&lt;stdint.h></code>·<code>&lt;inttypes.h></code></td><td>예 — 사실상 필수</td></tr><tr><td>C99</td><td><code>&lt;complex.h></code></td><td>드물다</td></tr><tr><td>C11</td><td><code>&lt;stdatomic.h></code></td><td>예 — 동시성의 토대</td></tr><tr><td>C11</td><td><code>&lt;threads.h></code></td><td>드물다 — pthread가 우세</td></tr><tr><td>C11</td><td>부속서 K(<code>*_s</code>)</td><td>아니오 — 이 장의 이야기</td></tr><tr><td>C23</td><td><code>&lt;stdckdint.h></code></td><td>예 — 크기 계산의 정답</td></tr><tr><td>C23</td><td><code>&lt;stdbit.h></code></td><td>늘어나는 중</td></tr><tr><td>C23</td><td>키워드 승격(<code>bool</code>·<code>nullptr</code> 등)</td><td>예</td></tr></table></div><p>판별 표의 아래 세 줄 — <code>&lt;stdatomic.h></code>, <code>&lt;stdckdint.h></code>, 키워드 승격 — 은 얼굴만 비쳤다. 이 부의 남은 세 장이 그 셋을 하나씩 자세히 다룬다. 동시성의 토대부터 시작한다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>NaN == NaN : 거짓
+isnan(NaN) : 참
+1.0/0.0    : inf (isinf: 1)
+0.0/0.0    : NaN
+sqrt(-1)   : NaN, errno=EDOM
+exp(1000)  : inf, errno=ERANGE
+  1.0     → 정규 (부호비트 0)
+  0.0     → 0      (부호비트 0)
+  -0.0    → 0      (부호비트 1)
+  inf     → 무한 (부호비트 0)
+  NaN     → NaN    (부호비트 0)
+  1e-320  → 비정규 (부호비트 0)
+0.0 == -0.0 : 참
+</code></pre></div></div><p>출력에서 네 가지를 짚는다.</p><p><strong>① NaN은 자기 자신과 같지 않다.</strong> IEEE 754가 그렇게 정했다. 그래서 <code>x != x</code>가 참이면 <code>x</code>는 NaN이라는 오래된 관용구가 성립하고, 표준 함수로는 <code>isnan(x)</code>를 쓴다. 이 성질 때문에 NaN이 든 배열을 <code>qsort</code>로 정렬하면 비교자의 전순서가 깨져 결과가 무너진다(56장).</p><p><strong>② 실수의 0 나누기는 계약 밖이 아니다.</strong> 정수 나눗셈과 달리(26장) IEEE 754 환경에서는 무한대나 NaN을 낳는다. 다만 <strong>0으로 나눈다는 사실 자체가 대개 버그</strong>라는 점은 같다.</p><p><strong>③ <code>sqrt(-1)</code>은 <code>EDOM</code>, <code>exp(1000)</code>은 <code>ERANGE</code>.</strong> 전자는 정의역 밖, 후자는 결과가 표현 범위를 넘은 경우다. <code>errno</code>를 볼 생각이라면 호출 직전에 0으로 놓아야 한다(60장).</p><p><strong>④ 0.0과 −0.0은 <code>==</code>로 같다.</strong> 그러나 부호 비트는 다르고, <code>1/0.0</code>과 <code>1/-0.0</code>은 각각 +∞와 −∞다. 부호를 구별해야 하면 <code>signbit</code>을 쓴다.</p><div class="dev misconception"><p class="dev-label">⚠ “실수 비교는 엡실론을 쓰면 안전하다”</p><p>43장에서 배운 엡실론 비교는 만능이 아니다. 절대 오차(<code>fabs(a-b) &lt; eps</code>)는 값이 클 때 무의미해지고 — 1e9 근처에서 1e-9는 표현조차 안 된다 — 상대 오차는 0 근처에서 무너진다. 실무의 처방은 <strong>상황에 맞는 허용 오차를 정하는 것</strong>이지 보편 상수를 쓰는 것이 아니다. 그리고 애초에 비교가 필요 없도록 정수나 고정소수점으로 다룰 수 있는지 먼저 묻는 것이 낫다(6장의 금액 계산 이야기).</p></div><h3>58.2 자주 틀리는 함수들</h3><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>함정</strong></th></tr><tr><td><code>pow(x, y)</code></td><td>거듭제곱</td><td>정수 거듭제곱에 쓰면 느리고 부정확할 수 있다</td></tr><tr><td><code>round</code>·<code>nearbyint</code></td><td>반올림</td><td><code>round</code>는 0에서 먼 쪽, <code>nearbyint</code>는 현재 모드</td></tr><tr><td><code>floor</code>·<code>ceil</code>·<code>trunc</code></td><td>정수로 깎기</td><td>음수에서 방향이 다르다</td></tr><tr><td><code>fmod</code>·<code>remainder</code></td><td>나머지</td><td>부호 규칙이 서로 다르다</td></tr><tr><td><code>abs</code>·<code>fabs</code></td><td>절댓값</td><td>★ <code>abs</code>는 정수용. 실수에 쓰면 잘린다</td></tr><tr><td><code>atan2(y, x)</code></td><td>각도</td><td>인자 순서가 <code>y, x</code>다</td></tr><tr><td><code>isnan</code>·<code>isinf</code></td><td>분류</td><td>매크로다 — 함수 포인터로 쓸 수 없다</td></tr></table><p><code>pow(x, 2)</code>는 널리 쓰이지만, 정수 제곱이라면 <code>x * x</code>가 빠르고 정확하다. 컴파일러가 최적화해 주는 경우도 많지만 언제나 그런 것은 아니다.</p><p><code>abs</code>를 실수에 쓰는 실수는 특히 조용하다. <code>&lt;stdlib.h></code>의 <code>abs</code>는 <code>int</code>를 받으므로 <code>abs(-1.5)</code>는 −1.5를 1로 만들어 버린다. 요즘 컴파일러는 경고하지만 <code>&lt;math.h></code>를 포함하지 않은 파일에서는 놓치기 쉽다.</p><h3>58.3 반올림 모드와 부동소수점 예외 — <code>&lt;fenv.h></code></h3><p>부동소수점 연산에는 <strong>숨은 전역 상태</strong>가 둘 있다.</p><p><strong>반올림 모드</strong> — 기본은 “가장 가까운 값, 동점이면 짝수”다. <code>fesetround</code>로 바꿀 수 있고, 바꾸면 그 뒤의 모든 실수 연산이 영향을 받는다.</p><p><strong>예외 플래그</strong> — 나눗셈에서 0, 넘침, 부정확 등이 일어나면 플래그가 켜진다. <code>fetestexcept</code>로 읽고 <code>feclearexcept</code>로 지운다. <code>errno</code>보다 정밀하지만, 이 기능을 쓰려면 <code>#pragma STDC FENV_ACCESS ON</code>을 켜야 하고 — 그러면 컴파일러가 실수 연산 재배열을 자제한다 — 최적화가 줄어든다.</p><div class="dev antipattern"><p class="dev-label">✗ <code>-ffast-math</code>를 켜고 NaN을 검사하기</p><pre><code data-lang="sh">cc -O2 -ffast-math app.c        # 컴파일러에게 "NaN·무한대는 없다고 쳐라"</code></pre><pre><code data-lang="c">if (isnan(x)) { /* 이 분기가 통째로 사라질 수 있다 */ }</code></pre><p><code>-ffast-math</code> 계열 선택지는 결합 법칙을 가정하고 NaN·−0.0의 존재를 무시해도 좋다고 컴파일러에 알린다. 속도는 얻지만 <strong>검사 코드가 최적화로 사라질 수 있다</strong> — 15장에서 본 “릴리스에서만 나는 버그”의 실수 판이다. 수치의 정확성이 중요한 프로그램에서는 켜지 않는 것이 기본이다.</p></div><h3>58.4 타입 제네릭 — <code>&lt;tgmath.h></code></h3><p><code>sqrt</code>는 <code>double</code>용, <code>sqrtf</code>는 <code>float</code>용, <code>sqrtl</code>은 <code>long double</code>용이다. <code>&lt;tgmath.h></code>를 포함하면 <code>sqrt(x)</code> 하나로 인자의 타입에 맞는 판이 골라진다 — 48장에서 본 <code>_Generic</code>이 표준 라이브러리에 쓰인 대표 사례다.</p><p>편하지만 대가가 있다. 매크로이므로 함수 포인터로 넘길 수 없고, 인자를 두 번 평가하는 구현이 있을 수 있어 부수효과가 있는 표현식을 넣으면 위험하다.</p><div class="dev realcase"><p class="dev-label">◉ 같은 계산, 다른 답 — 초과 정밀도의 역사</p><p>x86의 옛 부동소수점 장치(x87)는 내부적으로 80비트로 계산했다. 그래서 같은 <code>double</code> 연산이 레지스터에 남아 있을 때와 메모리에 저장된 뒤가 달라지는 일이 생겼다 — 최적화 수준을 바꾸면 결과가 미세하게 달라지고, <code>x == y</code>가 참이었다가 거짓이 되기도 했다.</p><p>C99가 <code>FLT_EVAL_METHOD</code>로 이 사정을 명시하게 만들었고, 오늘날 64비트 x86은 SSE를 쓰므로 문제가 크게 줄었다. 그러나 “같은 코드, 다른 답”의 가능성은 여전히 컴파일 선택지와 대상 기계에 남아 있다 — 43장에서 “실수 계산은 재현 가능성을 따로 챙겨야 한다”고 한 이유다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>수 요약.</p><table><tr><th><strong>상황</strong></th><th><strong>쓸 것</strong></th><th><strong>조심할 것</strong></th></tr><tr><td>NaN 검사</td><td><code>isnan</code></td><td><code>x == NaN</code>은 언제나 거짓</td></tr><tr><td>무한대 검사</td><td><code>isinf</code></td><td>실수의 0 나누기는 UB가 아니다</td></tr><tr><td>값의 종류</td><td><code>fpclassify</code></td><td>비정규 수의 존재</td></tr><tr><td>정의역·범위 오류</td><td>반환값 + <code>errno</code></td><td>호출 직전 <code>errno = 0</code></td></tr><tr><td>정수 제곱</td><td><code>x * x</code></td><td><code>pow(x, 2)</code></td></tr><tr><td>실수 절댓값</td><td><code>fabs</code></td><td><code>abs</code>(정수용)</td></tr><tr><td>타입별 함수</td><td><code>&lt;tgmath.h></code></td><td>매크로 — 부수효과 인자 금지</td></tr><tr><td>빠른 수학 옵션</td><td>끄는 것이 기본</td><td>검사 코드가 사라진다</td></tr></table></div><p>수를 지났다. 다음 장은 시간 — 표준이 정해 주지 않은 것이 유난히 많은 자리다.</p>
 <div class="nav"><a href="ch57.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch59.html">다음 →</a></div>
 </div></main></body></html>

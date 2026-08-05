@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>37 동적 메모리 — Proven C Book</title><style>
+<title>37 안전한 입력과 proven의 등장 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,30 +68,29 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-179">37 동적 메모리</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>제7부의 마지막 자리 — 실행 중에 크기를 정하고, 원하는 때까지 살려 <span id="idx-entry-63"></span>두는 기억이다. <code>malloc</code>과 <code>free</code>, 소유라는 개념, 그리고 이 세계의 세 가지 대표 사고(누수·이중 해제·해제 후 사용)까지. 기억의 지도가 여기서 완성된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>36장에서 자동 수명(함수와 함께 죽는다)과 정적 수명(프로그램 내내 산다)을 배웠다. 그러면 “입력에 따라 크기가 정해지고, 필요한 동안만 살아야 하는” 기억은 — 둘 중 어디에 두는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>어느 쪽도 맞지 않는다. 크기가 실행 중에 정해지고 수명이 프로그램의 논리에 따라 갈리는 기억이 필요하다 — 그래서 세 번째 자리가 있다: <span id="idx-entry-64"></span><strong>동적 저장 기간</strong>, 흔히 <strong>힙</strong>(heap)이라 부르는 창고다. 이 자리의 규칙은 앞의 둘과 결정적으로 다르다 — <strong>태어남과 죽음을 프로그래머가 직접 지시한다.</strong></p></div></div><h3 id="loc-180">37.1 빌리고, 돌려준다</h3><p>문법은 함수 두 개다. <code>malloc(바이트 수)</code>는 창고에서 그만큼의 연속된 칸을 빌려 그 시작 주소를 돌려주고, <code>free(주소)</code>는 빌린 것을 돌려준다.</p><div><div><p><code>examples/ch37/dyn.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdlib.h>
+<h2>37 안전한 입력과 proven의 등장</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>24장에서 “안전한 입력은 왜 어려운가”를 예고했고, 33·36장에서 그 위험의 뿌리(경계, NUL 종단)를 배웠다. 이 장에서 사고의 해부를 완성하고 — 1장에서 약속한 손님, 이 책의 기반 라이브러리 <strong>proven</strong>이 드디어 등장한다. “필요가 스스로 증명된 시점에”라는 약속 그대로다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>36장의 gets는 그릇 크기를 안 받아서 퇴출됐고, 24장의 fgets는 크기를 받아서 안전하다 했다. 그러면 “크기를 받는다”는 것만으로 입력의 안전 문제가 다 풀리는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>절반만이다. 크기 전달은 <strong>넘침</strong>을 막지만, 입력에는 두 번째 문제가 있다 — <strong>내용을 믿을 수 없다</strong>는 것(24장). 수를 기대했는데 글자가 오고, 짧은 줄을 기대했는데 긴 줄이 오고, 악의적인 상대는 일부러 경계를 노린 입력을 만든다(21장의 서식 문자열 공격이 그 맛보기였다). 안전한 입력이란 [넘침 차단 + 실패의 명시적 처리]의 합이고, 이 장의 두 기둥이 그 둘이다.</p></div></div><h3>37.1 사고의 해부 — 경계 침범이라는 유행병</h3><p>35장의 경계 규칙과 36장의 NUL 종단을 합치면, C 역사상 가장 값비싼 사고 무늬가 조립된다. 그릇보다 긴 입력이 이웃 기억을 덮어쓴다(경계 침범) — 덮어써진 곳이 하필 <strong>함수 호출의 복귀 장부</strong>(다음 장에서 정체를 본다)라면, 공격자는 입력만으로 프로그램의 실행 흐름을 탈취한다. 이것이 버퍼 오버플로 공격의 골자이고, Morris worm(1988, 36장)부터 오늘의 보안 공지까지 면면히 이어지는 유행병이다. 통계적으로도 압도적이다 — 주요 보안 기관들의 “가장 위험한 소프트웨어 결함” 목록에서 경계 침범 계열은 수십 년째 최상위 단골이다.</p><p>C가 실행 중 경계 검사를 “하지 않기로” 했기 때문에(35장), 방어는 층층이 쌓는 수밖에 없다 — 크기를 받는 함수(fgets), 경고와 새니타이저(15장), 그리고 <strong>애초에 검사가 내장된 부품</strong>. 마지막 층이 이 장의 손님이다.</p><h3>37.2 proven — 검증된 기본기라는 부품</h3><p>proven은 이 책의 저자가 만든 C 라이브러리로(1장의 정직 공개 그대로), 설계 사상은 한 문장이다 — <strong>사고가 가장 잦은 기본기(문자열, 입력 해석, 수 변환)를, 실패가 값으로 드러나고 경계가 항상 검사되는 형태로 제공 한다.</strong> 7장에서 본 표현 방식의 언어로 말하면, NUL 종단의 세계 위에 길이·용량 명시 계열의 안전한 층을 세운 것이다.</p><p>첫 시연으로 24장의 숙제 — 입력 해석의 실패 처리 — 를 proven으로 풀어 본다. 성공 경로와 실패 경로를 <strong>둘 다</strong> 보인다:</p><div><div><p><code>examples/ch37/scan.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+void try_parse(const char *text)
+{
+    proven_scan_t sc = proven_scan_init(proven_u8str_view_from_cstr(text));
+    proven_result_i64_t r = proven_scan_i64(&amp;sc);
+
+    if (proven_is_ok(r.err)) {
+        printf("\"%s\" -> ok: %lld\n", text, (long long)r.val);
+    } else {
+        printf("\"%s\" -> failed (not a number)\n", text);
+    }
+}
 
 int main(void)
 {
-    int count = 5;
-    int *scores = malloc(count * sizeof *scores);   /* 창고에서 빌린다 */
-
-    if (scores == nullptr) {                        /* 빌리기는 실패할 수 있다 */
-        printf("allocation failed\n");
-        return 1;
-    }
-
-    int sum = 0;
-    for (int i = 0; i &lt; count; i += 1) {
-        scores[i] = (i + 1) * 10;
-        sum += scores[i];
-    }
-    printf("total: %d\n", sum);
-
-    free(scores);                                   /* 빌린 것은 돌려준다 */
+    try_parse("  42 and some text");
+    try_parse("forty-two");
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>total: 150
-</code></pre></div></div><p>세 가지 관행이 시연에 박혀 있다.</p><p><strong>크기 계산은 <code>sizeof *포인터</code>로.</strong> <code>count * sizeof *scores</code>는 “원소 하나의 크기 × 개수”인데, 타입 이름 대신 <strong>대상</strong>으로 크기를 물었다 — 나중에 타입이 바뀌어도 이 줄은 고칠 필요가 없다.</p><p><strong>빌리기는 실패할 수 있다.</strong> <code>malloc</code>은 창고가 부족하면 널 포인터를 돌려준다 — 그래서 <strong>쓰기 전에 확인한다</strong>(31장의 수칙이 여기서 실전이 된다). 확인 없이 쓰면 널 역참조로 붕괴다.</p><p><strong>빌린 것은 돌려준다.</strong> <code>free</code>를 잊으면 그 칸은 프로그램이 끝날 때까지 묶여 있다 — <strong>메모리 누수</strong>(leak)다. 짧은 프로그램에서는 티가 안 나지만, 오래 도는 서버에서는 조금씩 새어 나가 결국 기계를 잡아먹는다.</p><h3 id="loc-181">37.2 소유 — 누가 돌려줄 책임을 지는가</h3><p><code>malloc</code>이 준 주소는 여러 변수에 복사될 수 있고, 함수 사이를 오갈 수도 있다. 그런데 <code>free</code>는 <strong>정확히 한 번</strong> 불려야 한다 — 여기서 C 프로그래밍 의 핵심 규율이 나온다: 어느 시점에든 그 기억을 해제할 책임을 지는 주체 하나를 정해 두는 것, <strong>소유</strong>(ownership)라는 관념이다. C에는 소유를 강제하는 문법이 없다 — 그래서 소유는 <strong>주석과 이름과 규약</strong>으로 표현 된다(“이 함수는 반환한 포인터의 소유권을 넘긴다”처럼). 현대 언어들이 소유를 타입 체계로 끌어올린 것(Rust의 소유권, C++의 스마트 포인터)은 이 규율을 기계가 강제하게 만든 결과다 — 1장에서 본 이웃 언어들의 문제의식이 바로 이 자리에서 나왔다.</p><div class="dev realcase"><p class="dev-label">◉ 세 가지 대표 사고 — 누수, 이중 해제, 해제 후 사용</p><p>동적 메모리의 사고는 세 얼굴로 온다. <strong>누수</strong>는 돌려주기를 잊는 것 — 느리게 죽는 병이다. <strong>이중 해제</strong>(double free)는 같은 주소를 두 번 <code>free</code>하는 것으로, 창고 관리 장부를 망가뜨려 그 뒤의 모든 할당이 오염된다. 가장 위험한 것은 <strong>해제 후 사용</strong>(use-after-free) — 돌려준 칸의 주소를 계속 쓰는 것이다. 36장의 댕글링 포인터가 힙에서 재현되는 것인데, 창고는 그 칸을 곧 다른 요청에 내주므로 <strong>공격자가 그 자리에 자기 데이터를 놓을</strong> 수 있다. 브라우저와 커널의 심각한 취약점 목록에서 use-after-free는 오늘도 최상위 단골이고, 그래서 현대 시스템 프로그래밍 전체가 “소유를 언어가 강제하게 하자”는 방향으로 움직여 왔다. C에서의 방어는 규율 + 도구다 — <code>free</code> 직후 포인터에 <code>nullptr</code>를 대입하는 관행, 그리고 15장의 ASan(이 세 사고를 모두 잡아내는 것이 ASan의 주특기다).</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>그러면 동적 메모리를 되도록 피하는 것이 상책인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>실제로 그것이 첫 번째 전략이고, 이 책이 여기까지 <code>malloc</code> 없이 온 이유이기도 하다 — 크기를 아는 데이터는 자동 변수(스택)로 두는 것이 가장 빠르고 가장 안전하다(해제할 것이 없으니 세 사고가 원천 봉쇄된다). 임베디드나 안전 필수 분야에서는 아예 동적 할당을 금지하는 규약도 흔하다. 그러나 실행 중에 크기가 정해지는 데이터(사용자가 준 목록, 파일 내용)는 결국 창고가 필요하고 — 그때는 소유를 명확히 하고, 도구로 검사하고, 잘 만들어진 부품(35장의 proven처럼 할당과 경계를 함께 관리하는 계열)을 쓰는 것이 실무의 답이다.</p></div></div><h3 id="loc-182">37.3 제7부를 닫으며</h3><p>기억의 지도가 완성됐다 — 레지스터와 캐시라는 사다리(9장) 위에, C의 세 저장 기간(자동·정적·동적)이 놓이고, 그 위를 포인터가 다닌다. 30장에서 개념을 얻고, 30–32장에서 규칙을, 32–34장에서 연속된 기억과 문자열을, 35장에서 안전한 부품을, 35–37장에서 수명과 창고를 배웠다. C의 힘과 위험이 함께 사는 자리를 한 바퀴 돈 것이다.</p><p>다음 부는 짧지만 오래 미뤄 온 곳이다 — 제5부에서 “타입을 만드는 선언은 메모리 모델을 갖춘 뒤”라며 미뤄 두었던 구조체와 공용체. 이제 그 조건이 갖춰졌다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>"  42 and some text" -> ok: 42
+"forty-two" -> failed (not a number)
+</code></pre></div></div><p>읽는 법 — <code>proven_scan_init</code>이 글자 열 위에 해석기(스캐너)를 세우고, <code>proven_scan_i64</code>가 정수 하나를 해석한다. 반환값이 이 설계의 심장이다: <strong>값이 아니라 <code>{err, val}</code> 꾸러미</strong>를 돌려주고, 쓰는 쪽은 <code>proven_is_ok</code> 로 성공을 확인한 뒤에만 값을 꺼낸다. sscanf(24장)와 비교하면 — “성공 개수”라는 관례적 신호 대신 <strong>실패가 타입으로 명시</strong>되고, 함수에는 <code>[[nodiscard]]</code>(C23 — “이 반환값을 버리면 경고하라”는 표기)가 붙어 있어 <strong>실패 확인을 잊는 실수를 컴파일러가 잡아 준다</strong>. 44장에서 정식으로 다룰 “오류는 값이다” 규율의 실물이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>표준 라이브러리로도 되는 일을 왜 라이브러리를 더해서 하는가 — 부품이 늘면 배울 것도 느는데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>이 책의 대답은 층의 구별이다. <strong>개념은 표준 C로 온전히 배웠다</strong> — 30–36장까지 proven 없이 온 것이 그 증거이고, proven을 걷어내도 이 책의 C 지식은 성립한다(1장의 약속). 그 위에서 <strong>실무의 기본기</strong>를 고를 때는, 표준 라이브러리의 역사적 함정(gets의 장례, scanf의 꼬임, 검사 없는 문자열 함수들)을 아는 채로 고르는 것이 현대적 선택이다 — Rust나 Zig가 언어 차원에서 내장한 안전을(1장), C에서는 부품 선택으로 얻는 것이다. proven은 그 선택지의 하나이자 이 책의 시연 재료이고, 같은 사상의 다른 라이브러리를 골라도 원리는 같다.</p></div></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>proven 함수들의 이름이 길다 — <code>proven_scan_i64</code>처럼. 왜 이렇게 짓는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>C에는 이름 공간이 없기 때문이다(23장의 스코프는 블록의 것이고, 파일 경계를 넘는 이름들은 한 마당에서 산다 — 46장). 라이브러리들이 같은 이름을 쓰면 링크 단계(14장)에서 충돌하므로, C 라이브러리의 관행은 <strong>접두어가 이름 공간을 대신</strong>하는 것이다 — <code>proven_</code>이 그 담장이다. 길지만, 어느 부품의 것인지 이름만 봐도 드러난다는 실속이 있다.</p></div></div><p>(이 장은 첫 만남이라 필요한 만큼만 쓴다 — 라이브러리의 설계 전모와 사용법은 제12부에서 세 장에 걸쳐 다룬다. 이 책이 C 입문서이면서 동시에 proven의 안내서이기도 한 이유다.)</p><p>입력의 안전을 갖췄다. 그런데 이 장에서 “함수 호출의 복귀 장부”라는 말이 설명 없이 지나갔다 — 기억의 어디에 무엇이 살고, 언제 태어나고 죽는가. 다음 장이 그 지도 — 수명과 저장 기간 — 다.</p>
 <div class="nav"><a href="ch36.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch38.html">다음 →</a></div>
 </div></main></body></html>

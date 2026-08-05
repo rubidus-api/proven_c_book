@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>28 반복 — 루프와 불변식 — Proven C Book</title><style>
+<title>28 불리언과 비교 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,31 +68,21 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-144">28 반복 — 루프와 불변식</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>프로그램의 진짜 힘 — 되풀이 — 를 손에 넣는다. 루프 3형제(<code>while</code>, <code>for</code>, <code>do-while</code>)와 새 연산자들(<code>++</code>, <code>+=</code>), 루프를 옳게 읽고 쓰는 <span id="idx-entry-52"></span>생각의 틀(불변식)까지. 그리고 10장에서 예약해 둔 재회 — Duff’s device — 를 드디어 만난다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>2장에서 “단순한 걸음이라도 1초에 수십억 번이면 어떤 복잡한 일이든 지을 수 있다”고 했다. 그런데 27장까지의 우리 프로그램은 위에서 아래로 한 번 흐르고 끝난다 — 수십억 번의 걸음은 어디서 나오는 것인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>같은 문장들을 <strong>다시 실행하는</strong> 장치에서 나온다. 조건이 참인 동안 블록으로 <strong>되돌아가는</strong> 것 — 루프다. 분기가 흐름을 가르는 장치였다면 루프는 흐름을 감아올리는 장치이고, 이 둘을 갖추는 순간 C는 계산 가능한 모든 것을 적을 수 있는 언어가 된다(이론적으로도 그렇다 — 2장의 계산 모델이 요구하는 전부가 “순차, 분기, 반복”이다).</p></div></div><h3 id="loc-145">28.1 루프 3형제</h3><p><strong><code>while</code></strong> — 가장 원초적인 형태다. “조건이 참인 동안, 블록을 반복하라”:</p><pre><code data-lang="c">while (조건) {
-    반복할 문장들
-}</code></pre><p>조건을 <strong>먼저</strong> 검사하므로, 처음부터 거짓이면 한 번도 돌지 않는다.</p><p><strong><code>for</code></strong> — 반복의 살림살이(시작·조건·갱신)를 한 줄에 모은 형태다. 시연으로 본다 — 1부터 100까지의 합이다:</p><div><div><p><code>examples/ch28/sum.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+<h2>28 불리언과 비교</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-51"></span><p>참과 거짓이라는 값의 세계다 — C23의 <code>bool</code>, 비교 연산자들, 그리고 논리 연산자와 그 특별한 성질(단락 평가)까지. 다음 장의 분기가 물을 <span id="idx-entry-52"></span>“조건”이 여기서 만들어진다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>22장에서 <code>=</code>(담기)와 <code>==</code>(비교)는 기호를 나눠 쓴다고 예고했다. 그러면 <code>3 &lt; 5</code> 같은 비교의 <strong>결과</strong>는 무엇인가 — 수식은 값이 된다고 했는데 (19장), 비교도 수식이라면 무슨 값이 되는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>참 또는 거짓 — 그 두 가지만을 담는 값이 된다. C23에서 그 타입의 이름이 <code>bool</code>이고, 값의 이름이 <code>true</code>와 <code>false</code>다. 비교는 “물음”이 아니라 <strong>bool 값을 계산하는 수식</strong>이라는 것 — 이 관점이 이 장의 중심이고, 다음 장에서 분기가 그 값을 소비한다.</p></div></div><h3>28.1 bool — 두 값짜리 타입</h3><p><code>bool</code>은 값의 집합이 {<code>false</code>, <code>true</code>} 둘뿐인 타입이다. 25장의 정수 가족 곁에 있는 가장 작은 그릇인 셈이다. 역사를 한 줄 알아 두면 낯선 구석이 풀린다 — 초기 C에는 불리언 타입이 <strong>없었고</strong>, 0을 거짓으로 0 아닌 모든 값을 참으로 치는 관행이 그 자리를 대신했다. C99가 뒷문으로 (<code>&lt;stdbool.h></code> 상자를 통해) 들여왔고, <strong>C23에 이르러서야</strong> <code>bool</code>, <code>true</code>, <code>false</code>가 상자 없이 쓰는 정식 키워드가 됐다. 반세기 만의 정식 입적이다 — 그리고 그 관행의 흔적으로, <code>bool</code>을 <code>%d</code>로 찍으면 1과 0으로 나온다(시연에서 확인된다).</p><h3>28.2 비교 — bool을 만드는 수식</h3><p>비교 연산자는 여섯이다 — <code>==</code>(같다), <code>!=</code>(다르다), <code>&lt;</code>, <code>&lt;=</code>, <code>></code>, <code>>=</code>. 전부 두 값을 재료로 받아 bool을 내놓는 수식이다.</p><div><div><p><code>examples/ch28/cmp.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
 
 int main(void)
 {
-    int sum = 0;
+    bool tall = 10 > 3;                 /* 비교의 결과는 bool 값이다 */
+    printf("%d\n", tall);
+    printf("%d\n", 3 &lt; 5 &amp;&amp; 2 + 2 == 4);
 
-    for (int i = 1; i &lt;= 100; i += 1) {
-        sum += i;               /* 불변식: sum == 1 + 2 + ... + (i - 1)... 갱신 후엔 ...+ i */
-    }
-    printf("sum of 1..100 = %d\n", sum);
+    /* 단락 평가: 왼쪽이 0(거짓)이면 오른쪽은 아예 평가되지 않는다 */
+    printf("%d\n", 0 &amp;&amp; printf("this line is never printed\n"));
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>sum of 1..100 = 5050
-</code></pre></div></div><p><code>for (int i = 1; i &lt;= 100; i += 1)</code>을 세 칸으로 읽는다 — <strong>시작</strong>(<code>int i<br>= 1</code>: 루프 변수를 만들고), <strong>조건</strong>(<code>i &lt;= 100</code>: 돌기 전마다 검사), <strong>갱신</strong>(<code>i += 1</code>: 한 바퀴 끝날 때마다 실행). 새 연산자 <code>+=</code>는 20장 대입의 줄임꼴로 <code>i = i + 1</code>과 같고, 더 줄인 <code>i++</code>(증가 연산자)도 같은 일을 한다 — 관용적으로 <code>for (...; i++)</code> 꼴을 가장 많이 보게 된다. (<code>++</code>에는 앞에 붙는 꼴과 뒤에 붙는 꼴, 그리고 수식 안에서의 미묘한 사정이 있는데 — 다음 장의 시퀀스 포인트 이야기와 함께 다룬다.)</p><p><strong><code>do-while</code></strong> — 블록을 <strong>먼저</strong> 한 번 실행하고 조건을 검사하는 형태다 (<code>do { ... } while (조건);</code>). “최소 한 번은 해야 하는 일”(메뉴를 먼저 보여 주고 반복 여부를 묻는 류)에 쓰이고, 셋 중 등장 빈도가 가장 낮다.</p><div class="dev mathbox"><p class="dev-label">∑ 루프 불변식 — 반복을 증명하는 눈</p><p>루프를 “옳게” 읽는 도구가 하나 있다 — <strong>불변식</strong>(invariant): 매 바퀴의 같은 지점에서 항상 성립하는 명제다. 시연의 루프라면, 몸통에 들어설 때마다</p><math display="block"><mtext>sum</mtext><mo>=</mo><mn>1</mn><mo>+</mo><mn>2</mn><mo>+</mo><mi>⋯</mi><mo>+</mo><mrow><mo>(</mo><mrow><mi>𝑖</mi><mo>−</mo><mn>1</mn></mrow><mo>)</mo></mrow></math><p>이 성립한다(첫 바퀴에는 빈 합 = 0). 몸통이 <code>sum += i</code>를 하면 등식의 오른쪽이 <math><mi>⋯</mi><mo>+</mo><mi>𝑖</mi></math>까지 자라고, 갱신이 <math><mi>𝑖</mi></math>를 올리면 다시 같은 꼴이 된다 — 불변식이 <strong>유지</strong>된다. 루프가 끝나는 순간은 <math><mi>𝑖</mi><mo>=</mo><mn>101</mn></math>이므로, 불변식에 대입하면 sum = 1 + … + 100. 즉 [불변식 + 종료 조건 = 루프의 정확성 증명]이다. 매번 이렇게 적진 않더라도, “이 루프에서 변하지 않는 사실이 무엇인가”를 묻는 습관은 루프 버그의 대부분 — 하나 모자라게/많게 도는 off-by-one — 을 잡아 주는 눈이 된다. 계약 으로서의 코드라는 관점(42장)의 첫 연습이기도 하다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>조건이 영영 거짓이 안 되면 어떻게 되는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>무한 루프다 — 프로그램이 그 자리를 영원히 돈다. 대개는 갱신을 잊은 버그의 결과지만, 의도적인 무한 루프(<code>while (true)</code>)도 어엿한 관용구다 — 서버처럼 “끝나지 않는 것이 정상”인 프로그램의 뼈대가 그것이고, 안에서 조건을 보아 <code>break</code>(루프 탈출 — switch의 그 break와 같은 낱말이다)로 나온다. 위험한 것은 무한 루프 자체가 아니라 <strong>의도치 않은</strong> 무한 루프다.</p></div></div><h3 id="loc-146">28.2 재회 — Duff’s device</h3><p>10장에서 예약한 전설을 만날 시간이다. 이제 우리는 switch의 폴스루 (27장)와 루프(이 장)를 모두 알고 있다.</p><p>1983년, 루카스필름의 Tom Duff는 데이터를 장치로 복사하는 루프가 너무 느려 고심하고 있었다. 한 바퀴마다 드는 살림 비용(조건 검사·갱신)을 줄이려 여덟 개씩 묶어 처리(언롤링)하되 — 개수가 8의 배수가 아닐 때의 나머지 처리를, 그는 아무도 상상 못 한 방법으로 해결했다:</p><pre><code data-lang="c">switch (count % 8) {
-case 0: do { *to = *from++;
-case 7:      *to = *from++;
-case 6:      *to = *from++;
-case 5:      *to = *from++;
-case 4:      *to = *from++;
-case 3:      *to = *from++;
-case 2:      *to = *from++;
-case 1:      *to = *from++;
-        } while ((count -= 8) > 0);
-}</code></pre><p>(<code>*to</code>, <code>*from++</code> 부분은 30장의 포인터 문법이라 아직 겉모양만 보면 된다 — 핵심은 구조다.) 읽는 법: switch가 <strong>루프의 한복판으로</strong> 건너 뛴다. <code>case</code>는 이름표일 뿐이라는 27장의 사실을 기억하면 — 이름표가 <code>do-while</code>의 몸통 <strong>안에</strong> 찍혀 있어도 문법 위반이 아니다. 첫 진입은 나머지 개수만큼만 처리하는 지점으로 뛰어들고, 이후는 do-while이 여덟 줄짜리 몸통을 통째로 돈다. 나머지 처리와 언롤링이 한 몸이 된 것이다.</p><p>Duff 자신도 “발견하고 나서 자부심과 혐오감이 뒤섞였다”는 소감을 남긴 이 코드는, 합법과 기괴함의 경계에서 C 문법의 유연함(어쩌면 헐거움)을 보여 주는 기념비다. 그리고 오늘의 교훈은 10장에서 예고한 그대로다 — <strong>이 곡예는 이제 사람의 일이 아니다.</strong> 현대 컴파일러는 평범하게 쓴 루프를 알아서 언롤링한다(11장의 편집자). Duff’s device는 박물관의 걸작으로 감상하고, 우리의 루프는 시연의 <code>for</code>처럼 평범하고 읽기 쉽게 쓰는 것 — 그것이 모던 C다.</p><p>반복까지 갖추며 흐름의 도구가 완성됐다 — 순차(16장), 분기(27장), 반복(28장). 다음 장은 제6부의 마무리로, 함수라는 장치의 <strong>의미</strong>를 파고든다 — 값은 어떻게 건너가는가, 부수효과란 정확히 무엇인가, 그리고 17장에서 심어 둔 씨앗(평가 순서)의 정식 답까지.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>1
+1
+0
+</code></pre></div></div><p>첫 줄이 그 확인이다 — <code>10 > 3</code>이라는 수식의 값(true)이 변수에 담기고, <code>%d</code>로 1이 찍혔다. 판단은 분기만의 것이 아니라 <strong>값으로 저장하고 전달할 수 있는 것</strong>이라는 감각 — 조건이 복잡해질수록 이 감각이 코드를 깨끗하게 만든다(<code>bool is_leap = ...</code>처럼 판단에 이름을 붙이는 관행).</p><div class="dev misconception"><p class="dev-label">⚠ “<code>x == 3</code> 대신 <code>x = 3</code>을 써도 어차피 비슷하게 동작할 것이다”</p><p>22장의 예고를 정면으로 회수한다 — 둘은 완전히 다른 수식이고, 최악의 점은 <strong>둘 다 합법</strong>이라는 것이다. <code>x = 3</code>은 담기 수식이라 x를 3으로 바꿔 버리고, 그 수식의 값 3은 “0이 아니므로 참”으로 읽힌다 — 조건 자리에 실수로 들어가면 <strong>항상 참이면서 변수까지 망가뜨리는</strong> 이중 사고가 된다. 역사가 이 함정으로 쌓은 사고가 하도 많아, 컴파일러 경고(-Wall)는 조건 자리의 <code>=</code>를 특별히 지목해 알려 준다 — 15장에서 경고를 켜 두자고 한 이유의 대표 사례다.</p></div><h3>28.3 논리 연산자 — 판단을 엮는다</h3><p>판단 여럿을 엮는 연산자가 셋 있다 — AND <code>&amp;&amp;</code>(둘 다 참), OR <code>||</code> (하나라도 참), NOT <code>!</code>(뒤집기). 시연의 둘째 줄이 <code>&amp;&amp;</code>의 예다 — <code>3 &lt; 5 &amp;&amp; 2 + 2 == 4</code>, 두 판단이 모두 참이라 1.</p><p>그리고 이 연산자들에는 C에서 각별히 중요한 성질이 있다 — <strong>단락 평가</strong>(short-circuit)다. <code>&amp;&amp;</code>는 왼쪽이 거짓이면 오른쪽을 <strong>아예 평가하지 않고</strong> 거짓을 내놓는다(<code>||</code>는 왼쪽이 참이면 오른쪽을 건너뛴다). 시연의 셋째 줄이 그 증명이다 — 오른쪽의 <code>printf</code>는 부수효과(출력)를 가진 수식인데, 왼쪽이 0(거짓)이라 <strong>호출 자체가 일어나지 않았다</strong>.</p><p>이것은 최적화가 아니라 <strong>보장</strong>이다 — 그리고 19장에서 “평가 순서는 대부분 미지정”이라 했던 것의 귀한 예외다: <code>&amp;&amp;</code>와 <code>||</code>는 왼쪽을 먼저 평가하고, 오른쪽 평가 여부까지 계약으로 정한다. 그래서 C 프로그래머는 이 보장을 <strong>문지기</strong>로 쓴다 — “0이 아닐 때만 나눠라”를 <code>b != 0 &amp;&amp; a / b > 10</code> 처럼 왼쪽 판단이 오른쪽의 위험(26장의 0 나누기) 을 막아서게 적는 것이 관용구다.</p><p>규칙의 이름을 정확히 적어 둔다 — <strong>단락 평가</strong>(short-circuit evaluation)다. 표준의 표현으로는 <code>&amp;&amp;</code>와 <code>||</code>의 왼쪽 피연산자 평가 뒤에 <strong>시퀀스 포인트</strong>(31장)가 있고, 오른쪽은 필요할 때만 평가된다. 그래서 이 둘은 평가 순서와 평가 여부를 동시에 보장하는, C에서 몇 안 되는 연산자다 (조건 연산자 <code>?:</code>도 같은 성질을 가진다 — 고르지 않은 쪽은 평가되지 않는다).</p><p>실무의 관용구는 세 가지 모양으로 굳어져 있다.</p><ul><li><strong>문지기</strong> — <code>if (p != nullptr &amp;&amp; p->count > 0)</code>. 왼쪽이 거짓이면 오른쪽의 역참조가 아예 일어나지 않는다(33장의 널 역참조를 이 한 줄이 막는다).</li><li><strong>기본값 채우기</strong> — <code>ok = load(&amp;cfg) || load_default(&amp;cfg);</code> 왼쪽이 성공하면 오른쪽은 시도조차 하지 않는다.</li><li><strong>비싼 검사 뒤로 미루기</strong> — <code>if (cheap_check(x) &amp;&amp; expensive_check(x))</code>. 순서를 바꾸면 결과는 같고 비용만 늘어난다.</li></ul><p>함정은 그 뒤집힌 얼굴이다. <strong>오른쪽에 부수효과를 두면 그것이 실행되지 않을 수 있다.</strong> <code>if (init() &amp;&amp; start())</code>에서 <code>init()</code>이 거짓을 돌려주면 <code>start()</code>는 영영 불리지 않는다 — 의도한 것이라면 좋은 코드이고, 잊고 쓴 것이라면 찾기 어려운 버그다. 그리고 비트 연산자 <code>&amp;</code>·<code>|</code>에는 이 보장이 <strong>없다</strong> — 양쪽이 모두 평가된다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>&amp;</code>(26장)와 <code>&amp;&amp;</code>가 정말로 어떻게 다른가 — 둘 다 AND라 불리는데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>층이 다르다. <code>&amp;</code>는 <strong>비트마다</strong> AND를 하는 산술 연산자다 — <code>5 &amp; 3</code>은 비트를 맞대 1을 얻는다. <code>&amp;&amp;</code>는 <strong>판단 전체</strong>의 AND다 — 값이 0인가 아닌가만 보고, 단락 평가의 보장이 있다. 실수로 바꿔 써도 우연히 답이 같은 경우가 많아 더 위험하다 — <code>2 &amp;&amp; 4</code>는 1(둘 다 0 아님)이지만 <code>2 &amp; 4</code>는 0(겹치는 비트 없음)이다. 판단에는 <code>&amp;&amp;</code>, 비트에는 <code>&amp;</code> — 자리를 섞지 않는 것이 수칙이다.</p></div></div><p>조건을 만들 줄 알게 됐다. 다음 장에서 드디어 프로그램이 <strong>갈라선다</strong> — 조건의 값에 따라 다른 길을 가는 것, 분기다. 24장에서 미뤄 둔 “입력 검사”의 숙제도 그때 풀 수 있게 된다.</p>
 <div class="nav"><a href="ch27.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch29.html">다음 →</a></div>
 </div></main></body></html>

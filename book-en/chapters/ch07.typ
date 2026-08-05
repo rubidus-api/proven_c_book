@@ -48,7 +48,7 @@ screen. A control character is not a letter but an instruction to a device —
 next chapter (streams). And sitting at *slot 0* of this table is the *NUL
 character* whose face we learned in chapter 4. A character meaning "no character
 at all", which C later adopted as the mark for the end of a string
-(chapter 34).
+(chapter 36).
 
 ASCII became the winning table — nearly every character code today carries
 ASCII inside it. But 128 slots were tight even for English and nowhere near
@@ -124,7 +124,7 @@ mountains of existing ASCII text. The answer was the variable-length encoding
 else takes 2–4 bytes. Thanks to the exquisite design by which an existing ASCII
 file is already valid UTF-8, UTF-8 has become effectively the only standard for
 the web and for source code today. It is what this book's examples and C23's
-`u8""` strings use as well (chapter 34).
+`u8""` strings use as well (chapter 36).
 
 #mathbox[
   The byte structure of UTF-8
@@ -153,7 +153,7 @@ the web and for source code today. It is what this book's examples and C23's
 ][
   A misconception left over from the intuitions of the ASCII era, and especially
   dangerous when learning C — because C's `char` type is, despite the name, not
-  a "character" but a *byte* (chapter 34). In UTF-8 the English `A` is 1 byte
+  a "character" but a *byte* (chapter 36). In UTF-8 the English `A` is 1 byte
   but the Hangul `가` is 3. The two letters of "안녕" are six bytes. Character
   count and byte count are different objects, and code in which the distinction
   has collapsed will certainly cause an accident when handling Hangul.
@@ -214,7 +214,7 @@ Compilers began warning about such characters afterwards.
 a letter on the web you write `&lt;` (HTML escaping). Stack several such layers
 and accidents follow — decode once-escaped text in another layer and the
 original symbol resurrects; conversely, check but forget to escape and the input
-becomes code. The format-string vulnerability of chapter 19, SQL injection in
+becomes code. The format-string vulnerability of chapter 21, SQL injection in
 databases and XSS on the web are all the same pattern — *making data be mistaken
 for the frame (the code)*. C's trigraphs were an ancestral case of the pattern:
 if `??/` happened to appear inside a string, the preprocessor turned it into a
@@ -231,7 +231,7 @@ C23's removal of trigraphs is welcome).
   *normalise and decode first, and check afterwards* — reverse the order and the
   overlong and UTF-7 accidents come back. Third, *do not mix data into the
   frame* — a value always goes in the place for values (the
-  `printf("%s", input)` idiom of chapter 19 is the smallest practice of this
+  `printf("%s", input)` idiom of chapter 21 is the smallest practice of this
   principle). All three come from this book's refrain that representation and
   interpretation are separate.
 ]
@@ -261,7 +261,7 @@ a string. The price is threefold: to know the length you must *count all the way
 to the NUL*; you cannot hold a NUL in the content; and above all, forget to
 plant the marker and the reader runs on into other people's land. That last
 price is the terrain of more accidents than any other in C's history, and
-chapter 34 is the scene.
+chapter 36 is the scene.
 
 *Method 3 — manage length and capacity together.* The dynamic strings of modern
 languages usually manage three values as one bundle: [where the content is, the
@@ -269,7 +269,7 @@ current length, the capacity of the container] — length queries are immediate,
 appending is free within the capacity, and when it runs out the content moves to
 a larger container. C++'s `std::string` and Rust's `String` have this structure,
 and proven's string handling, which we meet later, thinks in the same family by
-treating length explicitly (chapter 35).
+treating length explicitly (chapter 37).
 
 #realcase[
   The magic of fifteen characters — small string optimization in the MS STL
@@ -297,7 +297,7 @@ representation. One thing to remember: *the shape a string takes in memory is
 not one thing but a choice made by a language and a library, and that choice
 determines the character of its performance and safety.* What character C's
 choice (NUL termination) has, and how it must be handled, is faced head on in
-chapter 34.
+chapter 36.
 
 #qa[
   Why does a beginner need to know this messy history now? Is it not enough to

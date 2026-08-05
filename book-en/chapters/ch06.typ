@@ -67,7 +67,7 @@ the number of digits in the kernel is finite, so anything beyond them is
   machine is really a different number very close to 0.1. Small discrepancies
   can accumulate through a calculation. This is not a defect of the computer but
   a necessity of finite representation, and there are proper ways to handle it
-  (chapter 41). One thing to remember for now: *floating point is not an exact
+  (chapter 43). One thing to remember for now: *floating point is not an exact
   number but a faithful approximation.*
 ]
 
@@ -90,7 +90,7 @@ the number of digits in the kernel is finite, so anything beyond them is
 
 Let us look ahead, numerically, at the faces "faithful approximation" wears in
 practice. (Shown here by calculation on the page; running it in C is
-chapter 41.)
+chapter 43.)
 
 *Incident 1 — 0.1 + 0.2 ≠ 0.3.* The most famous non-equation in the programming
 world. As we just saw, 0.1, 0.2 and 0.3 are all infinite in binary, so the
@@ -140,7 +140,7 @@ That is the basic form; in practice there is one more layer — as numbers grow,
 so does the gap between neighbours (incident 3 below), so instead of a fixed
 $epsilon$ it is safer to use a tolerance *proportional to the size of the
 numbers* (relative error). The concrete use of both, and their traps, is
-covered in C code in chapter 41. What to remember now is one sentence: *code
+covered in C code in chapter 43. What to remember now is one sentence: *code
 that compares floating-point numbers with `==` is almost always suspect.*
 
 *Incident 3 — beside a large number, a small one disappears.* That the
@@ -204,7 +204,7 @@ and we meet this "age of contracts" again in chapter 10.
   digits) is chosen for its size advantage where memory and bandwidth matter —
   large numbers of coordinates, graphics, machine learning. "double for
   precision, float for volume" is roughly right. Actual use in C is covered in
-  chapter 41.
+  chapter 43.
 ]
 
 #qa[
@@ -216,7 +216,7 @@ and we meet this "age of contracts" again in chapter 10.
   the floating-point container is finite in *precision*, so it approximates a
   little everywhere (but its range is enormous). An exact but narrow container
   and a wide but approximating one — a feel for which container to use is a
-  fundamental of handling numbers, and choosing types in C (chapters 23 and 41)
+  fundamental of handling numbers, and choosing types in C (chapters 25 and 43)
   is exactly that choosing.
 ]
 

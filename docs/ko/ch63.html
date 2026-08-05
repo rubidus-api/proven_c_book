@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>63 시작하기 — 설치할 것이 없다 — Proven C Book</title><style>
+<title>63 넘침을 묻는 법 — &lt;stdckdint.h&gt; — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,34 +68,76 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-318">63 시작하기 — 설치할 것이 없다</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>proven을 실제로 쓰는 첫 장이다. 이 라이브러리에 <code>configure</code>도, 패키지 관리자도, 링크할 공유 라이브러리도 없는 이유 — 그리고 그 선택이 무엇을 주고 무엇을 앗아가는지 — 를 먼저 보고, 첫 프로그램을 돌린다. 62장에서 본 세 번째 버그(서식 불일치)가 이 첫 프로그램에서 이미 사라진다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>44장에서 여러 파일 프로그램을 만들며 헤더와 목적 파일, 링크를 배웠고, <span id="idx-entry-86"></span>14장에서는 컴파일 릴레이의 네 주자를 보았다. 그러면 “라이브러리를 쓴다”는 것은 그 그림에서 정확히 무엇을 하는 일인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>둘 중 하나다. <strong>함께 컴파일하거나</strong>, <strong>따로 컴파일된 것을 링크하거나</strong>. 앞의 길은 남의 소스를 내 소스와 같이 컴파일러에 넘기는 것이고, 뒤의 길은 이미 목적 코드가 된 덩어리(정적 <code>.a</code>나 공유 <code>.so</code>·<code>.dll</code>)를 링커에게 넘기는 것이다. 어느 쪽이든 컴파일러는 <strong>선언</strong>(헤더)을 보고 호출을 만들고, 링커가 <strong>정의</strong>를 찾아 잇는다 — 44장의 그림 그대로다. proven은 앞의 길을 택했고, 다음 절이 그 이유다.</p></div></div><h3 id="loc-319">63.1 설치할 것이 없다는 선택</h3><p>proven에는 설치 절차가 없다. 받아 둔 소스를 프로그램과 함께 컴파일하면 그만이다. 중요한 디렉터리는 둘뿐이다.</p><ul><li><code>src/proven/</code> — 이식 가능한 본체. 여기서는 운영체제를 부르지 않는다.</li><li><code>platform/</code> — 시스템 호출을 하는 얇은 층. 새 기계로 옮길 때 바꿔야 할 유일한 부분이다.</li></ul><p>운영체제가 없는 환경(임베디드)에서는 <code>platform/</code>을 빼고 빌드한다. 이 분리가 라이브러리 전체의 모양을 결정했다 — “어디서나 돌아야 한다”는 요구가 곧 “숨은 할당도, 숨은 전역 상태도 두지 않는다”는 규율이 된다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>왜 패키지로 배포하지 않는가? 설치가 더 편할 텐데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>대가와 이득을 맞바꾼 것이다. 잃는 것은 편의다 — 시스템 패키지로 받을 수 없고, 갱신은 “버전을 올리는 일”이 아니라 “새 소스를 받아오는 일”이 된다. 얻는 것은 통제권이다. 라이브러리가 지금 보고 있는 소스와 다를 수 없고, 내가 고르지 않은 컴파일 선택지가 딸려 오지 않으며, 배포판이 다른 설정으로 빌드했다는 이유로 링크가 깨지는 일이 없다. 무엇보다 <strong>호스트 환경과 베어메탈 양쪽에서 통하는 유일한 모델</strong>이다 — 임베디드에는 애초에 패키지 관리자가 없다.</p></div></div><h3 id="loc-320">63.2 이 책의 예제는 어떻게 빌드되는가</h3><p>정직하게 밝혀 두면, 이 책의 proven 예제들은 다음과 같이 컴파일된다. 라이브러리 소스를 한 번 목적 파일로 만들어 두고, 예제와 함께 링크한다.</p><pre><code data-lang="text">$ cc -std=c23 -O1 -Ivendor/proven/include -c vendor/proven/src/proven/*.c
-$ cc -std=c23 -Wall -Wextra -Werror -Ivendor/proven/include \
-     hello.c vendor-obj/*.o -lm -o hello</code></pre><p>첫 줄이 본체를, 둘째 줄이 내 프로그램을 다룬다. <code>-I</code>는 헤더를 찾을 자리를 알려 주는 것(44장), <code>-lm</code>은 수학 함수를 잇는 것이다. 이 두 줄이 이 책의 검증 스크립트가 실제로 매번 돌리는 명령이고, 지면에 인쇄된 모든 실행 결과는 그렇게 만들어진 프로그램의 출력이다.</p><h3 id="loc-321">63.3 첫 프로그램</h3><p><code>#include &lt;proven.h></code> 하나면 라이브러리 전체가 열린다.</p><div><div><p><code>examples/ch63/hello.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>63 넘침을 묻는 법 — <code>&lt;stdckdint.h></code></h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-87"></span><p>C23이 들여온 검사 산술(checked arithmetic)을 익힌다. 왜 “계산한 뒤에 넘쳤는지 확인하는” 손수 짠 코드가 위험한지, <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code>이 정확히 무엇을 약속하는지, 그리고 기존 코드의 크기 계산을 어떻게 이 도구로 옮기는지까지 본다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>5장에서 부호 없는 넘침은 정의된 감아 돌기이고 부호 있는 넘침은 계약 밖이라 했고, 56장에서는 <code>calloc</code>이 원소 수와 크기의 곱을 검사한다고 했다. 그러면 곱셈이 넘치는지 우리가 직접 확인하려면 어떻게 적는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>바로 그 “직접 확인”이 반세기 동안 틀리게 적혀 온 코드다. 부호 있는 값에서는 <strong>넘친 뒤에 검사하는 것 자체가 이미 계약 밖</strong>이라 컴파일러가 검사 코드를 지워 버릴 수 있고(11장의 편집자), 부호 없는 값에서도 나눗셈을 끼운 관용구는 읽기 어렵고 틀리기 쉽다. C23은 이 자리를 언어 차원에서 정리했다.</p></div></div><h3>63.1 사후 검사라는 함정</h3><p>가장 흔한 손수 짠 검사부터 본다.</p><div class="dev antipattern"><p class="dev-label">✗ 더한 다음에 넘쳤는지 보기</p><pre><code data-lang="c">int sum = a + b;
+if (sum &lt; a) { /* 넘쳤다 */ }        /* ← 이 검사가 사라질 수 있다 */</code></pre><p><code>a</code>와 <code>b</code>가 부호 있는 정수라면 <code>a + b</code>가 넘치는 순간 이미 정의되지 않은 동작이다. 그 뒤의 검사는 “넘치지 않았다면”이라는 전제 위에서만 뜻이 있으므로, 컴파일러는 <code>sum &lt; a</code>가 결코 참이 될 수 없다고 판단해 <strong>조건문을 통째로 지운다.</strong> 실제로 이 무늬 때문에 여러 프로젝트에서 검사가 조용히 사라졌고, 그중에는 보안 검사도 있었다.</p><p>부호 없는 값이라면 감아 돌기가 정의되어 있으므로 위 검사는 <strong>동작한다.</strong> 다만 곱셈으로 가면 그마저 까다로워진다.</p><pre><code data-lang="c">if (n != 0 &amp;&amp; bytes / n != sz) { /* 넘쳤다 */ }   /* 맞지만 읽기 어렵다 */</code></pre></div><p>그래서 컴파일러들이 저마다 확장을 내놓았다 — GCC와 Clang의 <code>__builtin_add_overflow</code> 계열, MSVC의 <code>SafeInt</code>, 여러 프로젝트의 자체 매크로. 잘 동작했지만 <strong>이식성이 없었고</strong>, 이식성을 확보하려면 프로젝트마다 같은 껍데기를 다시 짜야 했다. 55장의 <code>strlcpy</code> 이야기와 같은 무늬다 — 현실이 먼저 답을 찾고 표준이 뒤늦게 추인한다.</p><h3>63.2 C23의 답 — <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code></h3><div><div><p><code>examples/ch63/ckdint.c</code></p><pre><code data-lang="c">/* 넘침을 값이 아니라 "일어났는가"로 받는다 — C23 &lt;stdckdint.h> */
+#include &lt;limits.h>
+#include &lt;stdckdint.h>
+#include &lt;stdint.h>
+#include &lt;stdio.h>
+#include &lt;stdlib.h>
+
+/* 흔한 할당 계산: 원소 n 개 x 크기 sz. 곱셈이 넘치면 그릇이 작아진다. */
+static void *alloc_array(size_t n, size_t sz)
+{
+    size_t bytes;
+    if (ckd_mul(&amp;bytes, n, sz)) {       /* 참이면 넘쳤다 */
+        printf("  크기 계산이 넘쳤다 - 할당하지 않는다\n");
+        return NULL;
+    }
+    return malloc(bytes);
+}
 
 int main(void)
 {
-    const char *name = "world";
-    int         count = 3;
-    double      ratio = 0.75;
-    bool        ready = true;
-    char        grade = 'A';
+    /* 판정과 결과 읽기를 반드시 갈라 적는다 (한 표현식에 섞으면 순서가 없다) */
+    int r;
+    bool over = ckd_add(&amp;r, INT_MAX, 1);
+    printf("INT_MAX = %d\n", INT_MAX);
+    printf("ckd_add(INT_MAX, 1)  넘침? %s   r = %d (감아 돈 값)\n", over ? "예" : "아니오", r);
 
-    /* {} 는 자리표시자일 뿐 타입이 없다. 타입은 인자에서 온다 */
-    proven_println("Hello, {}! You have {} messages.",
-                   PROVEN_ARG(name), PROVEN_ARG(count));
+    over = ckd_add(&amp;r, 1, 2);
+    printf("ckd_add(1, 2)        넘침? %s   r = %d\n", over ? "예" : "아니오", r);
 
-    /* 어떤 타입이든 같은 자리표시자로 간다 */
-    proven_println("ratio={} ready={} grade={}",
-                   PROVEN_ARG(ratio), PROVEN_ARG(ready), PROVEN_ARG(grade));
+    /* 타입이 섞여도 수학적 값으로 판정한다 */
+    signed char c;
+    over = ckd_add(&amp;c, 200, 100);
+    printf("signed char &lt;- 300   넘침? %s   c = %d\n", over ? "예" : "아니오", c);
 
-    /* 서식 지정은 콜론 뒤에 붙인다 — 폭, 정렬, 자릿수 */
-    proven_println("|{:>8}|{:&lt;8}|{:.3}|",
-                   PROVEN_ARG(name), PROVEN_ARG(name), PROVEN_ARG(ratio));
+    /* 부호 없는 뺄셈: 감아 도는 것은 정의된 동작이지만, 여기서도 "넘쳤다"고 알린다 */
+    unsigned u;
+    over = ckd_sub(&amp;u, 3u, 5u);
+    printf("unsigned  &lt;- 3 - 5   넘침? %s   u = %u\n", over ? "예" : "아니오", u);
+
+    printf("\n할당 계산\n");
+    void *ok = alloc_array(1000, sizeof(int));
+    printf("  1000 x %zu -> %s\n", sizeof(int), ok ? "할당됨" : "거부됨");
+    free(ok);
+    void *bad = alloc_array(SIZE_MAX / 2, sizeof(int));
+    printf("  SIZE_MAX/2 x %zu -> %s\n", sizeof(int), bad ? "할당됨" : "거부됨");
+    free(bad);
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>Hello, world! You have 3 messages.
-ratio=0.750000 ready=true grade=A
-|   world|world   |0.750|
-</code></pre></div></div><p>한 줄씩 읽는다. <code>proven_println</code>은 서식과 인자를 받아 표준 출력에 한 줄을 찍는다 — 여기까지는 <code>printf</code>와 같다. 다른 것은 <strong>자리표시자</strong>다.</p><ul><li><code>{}</code>에는 타입이 들어 있지 않다. <code>%d</code>도 <code>%s</code>도 아니고 그냥 <code>{}</code>다.</li><li>타입은 <strong>인자에서</strong> 온다. <code>PROVEN_ARG(x)</code>가 <code>x</code>의 타입을 보고 알맞은 꼬리표를 붙여 값을 감싼다.</li><li>그래서 62장의 셋째 버그 — 서식과 인자의 불일치 — 가 <strong>구조적으로</strong> 일어날 수 없다. 타입을 두 번 적지 않으니 어긋날 자리가 없다.</li></ul><p><code>{:>8}</code>처럼 콜론 뒤에 적는 것은 48장에서 본 폭·정렬·정밀도에 해당한다. <code>></code>는 오른쪽 정렬, <code>&lt;</code>는 왼쪽 정렬, <code>.3</code>은 소수 셋째 자리까지다. 정렬 기호가 앞에 오는 것이 <code>printf</code>와 다른 점이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>PROVEN_ARG</code>는 어떻게 타입을 알아내는가? C에는 함수 오버로딩이 없지 않은가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>C11에 들어온 <code>_Generic</code>이라는 장치를 쓴다 — 표현식의 타입에 따라 여러 가지 중 하나를 <strong>컴파일 시간에</strong> 고르는 문법이다. <code>PROVEN_ARG(x)</code>는 <code>x</code>가 <code>int</code>면 정수 꼬리표를, <code>double</code>이면 실수 꼬리표를, <code>const char *</code> 면 문자열 꼬리표를 붙인 작은 구조체를 만든다. 실행 시간에 타입을 판별하는 것이 아니라 <strong>컴파일러가 이미 아는 것을 그대로 쓰는</strong> 것이라 비용이 없다. 문법과 전체 서식 규칙은 68장에서 정면으로 다룬다.</p></div></div><div class="dev misconception"><p class="dev-label">⚠ “라이브러리를 쓰면 프로그램이 무거워진다”</p><p>자주 듣는 걱정이고, 언어와 라이브러리의 성격에 따라 다르다. C에서 소스로 함께 컴파일하는 라이브러리는 <strong>쓰지 않은 것이 실행 파일에 남지 않는다</strong> — 링커가 참조되지 않은 목적 파일을 아예 넣지 않기 때문이다 (14장의 링크 단계). 게다가 proven에는 시작할 때 도는 초기화 코드도, 등록되는 전역 상태도, 몰래 뜨는 스레드도 없다. 무거워지는 것은 라이브러리를 쓴 대가가 아니라, 프레임워크가 프로그램의 구조를 가져갈 때 생기는 일이다.</p></div><div class="dev realcase"><p class="dev-label">◉ 소스로 배포하는 관행 — 한 파일짜리 SQLite</p><p>이 배포 모델은 proven만의 별난 선택이 아니다. 세계에서 가장 널리 쓰이는 데이터베이스 엔진 SQLite는 수십 개 소스 파일을 하나의 거대한 <code>.c</code> 파일로 합친 <strong>amalgamation</strong>을 공식 배포 형태로 제공한다 — 받아서 프로그램과 함께 컴파일하면 끝이다. 이미지·폰트 처리로 유명한 <code>stb</code> 계열 라이브러리는 아예 헤더 파일 하나가 전부다. 이유는 모두 같다. 빌드 환경이 제각각인 세상에서 <strong>가장 이식성 높은 배포 단위는 소스</strong>이기 때문이다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>이 장의 요약.</p><table><tr><th><strong>무엇</strong></th><th><strong>어떻게</strong></th></tr><tr><td>헤더</td><td><code>#include &lt;proven.h></code> 하나</td></tr><tr><td>빌드</td><td><code>src/proven/*.c</code>를 프로그램과 함께 컴파일</td></tr><tr><td>OS 의존</td><td><code>platform/</code>에만 있다 (없으면 빼고 빌드)</td></tr><tr><td>출력</td><td><code>proven_println("... {} ...", PROVEN_ARG(x))</code></td></tr><tr><td>서식 지정</td><td><code>{:>8}</code> <code>{:&lt;8}</code> <code>{:.3}</code> — 콜론 뒤</td></tr><tr><td>대가</td><td>인자마다 <code>PROVEN_ARG</code>, 익숙한 <code>%d</code>와 다른 문법</td></tr></table></div><p>첫 프로그램이 돌았다. 그런데 방금 쓴 <code>proven_println</code>도 사실은 실패할 수 있다 — 화면으로 가는 띠가 끊길 수 있기 때문이다(8장). 이 함수는 에러를 돌려주되 <strong>확인을 강요하지는 않는데</strong>, 그 선택 자체가 이 라이브러리의 에러 모델을 이해하는 좋은 입구다. 다음 장이 그것이다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>INT_MAX = 2147483647
+ckd_add(INT_MAX, 1)  넘침? 예   r = -2147483648 (감아 돈 값)
+ckd_add(1, 2)        넘침? 아니오   r = 3
+signed char &lt;- 300   넘침? 예   c = 44
+unsigned  &lt;- 3 - 5   넘침? 예   u = 4294967294
+
+할당 계산
+  1000 x 4 -> 할당됨
+  크기 계산이 넘쳤다 - 할당하지 않는다
+  SIZE_MAX/2 x 4 -> 거부됨
+</code></pre></div></div><p>읽는 법은 이렇다. 세 매크로 모두 모양이 같다.</p><pre><code data-lang="c">bool 넘쳤는가 = ckd_add(&amp;결과, 왼쪽, 오른쪽);</code></pre><p>약속이 네 가지다.</p><ol><li><strong>무한 정밀도로 계산한 뒤 그릇에 넣는다.</strong> 판정은 “수학적 결과가 결과 타입에 들어가는가”이고, 중간 계산에서 넘치는 일이 없다. 그래서 인자의 타입이 서로 달라도, 심지어 인자보다 결과 타입이 좁아도 정확히 판정한다 — 예제의 <code>signed char &lt;- 300</code>이 그 확인이다.</li><li><strong>결과 타입은 첫 인자(포인터)가 정한다.</strong> 인자들의 승격 규칙(26장)이 결과를 좌우하지 않는다는 뜻이라, “어느 타입으로 계산되는가”를 두고 고민할 일이 없다.</li><li><strong>넘쳐도 결과는 저장된다.</strong> 그 값은 결과 타입으로 감아 돈 값이다. 예제의 <code>INT_MAX + 1</code>이 <code>-2147483648</code>로 남은 것이 그것이다 — 부호 있는 값이라도 <strong>이 자리에서는 정의된 동작</strong>이라는 점이 중요하다.</li><li><strong>부호 없는 감아 돌기도 “넘쳤다”고 알린다.</strong> 예제의 <code>3u - 5u</code>가 그 확인이다. 값 자체는 정의된 결과(<code>4294967294</code>)지만, 검사 산술은 <strong>수학적 값과 달라졌음</strong>을 알린다. 크기 계산에서 이것이 필요한 성질이다.</li></ol><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>ckd_*</code>는 함수인가 매크로인가? 인자를 여러 번 평가하지는 않는가?</p></div><div class="dev qa-a"><p class="dev-label">답 표준이 정한 것은 매크로이지만, 인자를 여러 번 평가하지 않도록 못박혀 있다(구현은 대개 컴파일러 내장 기능으로 확장한다). 그래서 <code>ckd_add(&amp;r, i++, j)</code> 같은 코드도 안전하다.</p><p>다만 <strong>다른</strong> 함정이 있다. 판정과 결과를 한 표현식 안에 섞으면 안 된다.</p><pre><code data-lang="c">printf("%s %d", ckd_add(&amp;r, a, b) ? "넘침" : "정상", r);   /* 위험 */</code></pre><p><code>r</code>을 읽는 시점과 <code>ckd_add</code>가 <code>r</code>에 쓰는 시점 사이에 순서가 정해져 있지 않아, 옛 값을 찍을 수 있다(19장의 순서 이야기다). 실제로 이 장의 예제를 처음 쓸 때 이 실수로 엉뚱한 값이 찍혔다. <strong>판정을 변수에 받고, 그다음 줄에서 결과를 쓴다</strong> — 이 한 줄 규율이면 끝난다.</p></div></div><h3>63.3 어디에 쓰는가 — 크기 계산이 첫 번째다</h3><p>예제 뒷부분의 <code>alloc_array</code>가 전형이다. 할당 크기 계산은 검사 산술이 가장 절실한 자리다. <code>n * sz</code>가 넘치면 <strong>작은 그릇을 얻고 큰 줄 알고 쓰는</strong> 상태가 되어, 곧바로 버퍼 넘침 사고로 이어진다. 유명한 취약점 여럿이 정확히 이 경로였다.</p><table><tr><th><strong>자리</strong></th><th><strong>예전 관용구</strong></th><th><strong>지금</strong></th></tr><tr><td>배열 할당</td><td><code>n &amp;&amp; SIZE_MAX/n &lt; sz</code> 검사</td><td><code>ckd_mul(&amp;bytes, n, sz)</code></td></tr><tr><td>버퍼 확장</td><td><code>cap * 2</code> 그냥 계산</td><td><code>ckd_mul(&amp;cap2, cap, 2)</code></td></tr><tr><td>길이 합치기</td><td><code>len1 + len2 + 1</code></td><td><code>ckd_add</code> 두 번</td></tr><tr><td>인덱스 계산</td><td><code>base + off</code> 그냥</td><td><code>ckd_add</code>(부호 있는 값이면 필수)</td></tr><tr><td>입력에서 온 수</td><td><code>atoi</code> 뒤 그냥 사용</td><td><code>strtol</code>(56장) + 범위 검사</td></tr></table><p>마지막 줄이 중요하다. 검사 산술은 <strong>계산</strong>의 넘침을 잡을 뿐, 애초에 값이 너무 큰 것을 걸러 주지는 않는다. 입력 해석 단계의 검사(56장)와 계산 단계의 검사는 서로를 대신하지 못한다.</p><div class="dev misconception"><p class="dev-label">⚠ “<code>ckd_*</code>를 쓰면 정수 넘침 걱정이 끝난다”</p><p>세 가지가 남는다. 첫째, <strong>나눗셈</strong>은 이 헤더에 없다 — <code>INT_MIN / -1</code>은 여전히 스스로 막아야 하는 계약 밖이다. 둘째, <strong>변환</strong>은 검사하지 않는다. 넓은 타입에서 좁은 타입으로 대입하는 것은 산술이 아니라 변환이라(5장의 잘림), 여기서 값이 망가지는 것은 <code>ckd_*</code>의 소관이 아니다. 셋째, <strong>부동소수점</strong>은 대상이 아니다(58장).</p><p>요약하면 검사 산술은 “덧셈·뺄셈·곱셈이 그릇을 넘겼는가”라는 좁고 분명한 질문에 답하는 도구다. 좁아서 좋은 도구이기도 하다.</p></div><h3>63.4 이 도구가 없는 곳에서</h3><p>C23 헤더를 아직 못 쓰는 환경이라면 두 단계로 대비한다.</p><pre><code data-lang="c">#if defined(__has_include)
+#  if __has_include(&lt;stdckdint.h>)
+#    include &lt;stdckdint.h>
+#    define HAVE_CKDINT 1
+#  endif
+#endif
+
+#ifndef HAVE_CKDINT                      /* GCC·Clang 확장으로 메운다 */
+#  define ckd_add(r, a, b) __builtin_add_overflow((a), (b), (r))
+#  define ckd_sub(r, a, b) __builtin_sub_overflow((a), (b), (r))
+#  define ckd_mul(r, a, b) __builtin_mul_overflow((a), (b), (r))
+#endif</code></pre><p>인자 순서가 다르다는 점만 주의하면 된다 — 표준은 결과 포인터가 앞, 컴파일러 내장은 뒤다. 이런 껍데기를 한 자리에 모아 두는 것이 47장에서 말한 이식성 층의 실제 모습이고, 제12부의 라이브러리도 같은 일을 한다.</p><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — 검사를 도구에 맡기는 길</p><p>코드를 고치지 않고 넘침을 잡는 방법도 있다. GCC와 Clang의 <code>-fsanitize=signed-integer-overflow</code>(UBSan)는 실행 중에 넘침을 잡아 보고하고, <code>-ftrapv</code>는 넘침에서 프로그램을 세운다. 둘 다 <strong>시험용</strong>이다 — 넘침이 실제로 일어난 실행에서만 드러나므로, 검사 산술처럼 “일어날 수 있는 자리를 코드로 막는” 것과는 성격이 다르다. 15장의 디버거 이야기와 같은 결론이다: 도구는 관찰을 돕지만 계약을 대신하지 않는다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>사후 검사</td><td>부호 있는 값에서는 검사 자체가 계약 밖 — 지워질 수 있다</td></tr><tr><td>모양</td><td><code>bool 넘침 = ckd_add(&amp;결과, a, b)</code></td></tr><tr><td>판정 기준</td><td>수학적 결과가 <strong>결과 타입</strong>에 들어가는가</td></tr><tr><td>결과 타입</td><td>첫 인자가 정한다. 승격 규칙에 휘둘리지 않는다</td></tr><tr><td>넘쳐도</td><td>감아 돈 값이 저장된다(정의된 동작)</td></tr><tr><td>부호 없는 값</td><td>감아 돌기도 “넘침”으로 알린다</td></tr><tr><td>한 표현식</td><td>판정과 결과를 섞지 않는다</td></tr><tr><td>적용 1순위</td><td>할당 크기 계산</td></tr><tr><td>없는 곳</td><td><code>__builtin_*_overflow</code> 로 껍데기를 만든다</td></tr></table></div><p>넘침을 계약대로 묻는 법을 익혔다. 다음 장은 이 부의 마지막이자, C23이 언어에 손댄 가장 눈에 띄는 변화다 — 매크로였던 것들이 키워드가 된 이야기다.</p>
 <div class="nav"><a href="ch62.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch64.html">다음 →</a></div>
 </div></main></body></html>

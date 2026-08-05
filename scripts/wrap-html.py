@@ -10,12 +10,12 @@ body = m.group(1) if m else raw
 STR = {
  "ko": dict(title="Proven C Book — proven 라이브러리에 기반한 모던 C 입문",
    short="Proven C Book", other="English", other_href="../en/",
-   toc="목차", prev="이전", next="다음", top="목차로",
+   toc="목차", prev="이전", next="다음", top="목차로", extra="부록과 찾아보기",
    note=('이 판은 <strong>초안(draft)</strong>이다. 쪽 번호가 붙은 찾아보기와 정확한 조판은 '
          '<a href="https://github.com/rubidus-api/proven_c_book/tree/main/dist">PDF</a>를 보라.')),
  "en": dict(title="Proven C Book — Modern C, built on the proven library",
    short="Proven C Book", other="한국어", other_href="../ko/",
-   toc="Contents", prev="Prev", next="Next", top="Contents",
+   toc="Contents", prev="Prev", next="Next", top="Contents", extra="Front and back matter",
    note=('This edition is a <strong>draft</strong>. For the paginated index and exact '
          'typesetting, see the '
          '<a href="https://github.com/rubidus-api/proven_c_book/tree/main/dist">PDF</a>.')),
@@ -128,7 +128,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -164,7 +168,43 @@ names = []
 for i, (t, _) in enumerate(chapters):
     mnum = re.match(r"\s*(\d+)\s", t)
     names.append(f"ch{int(mnum.group(1)):02d}.html" if mnum else f"sec{i+1:02d}.html")
-toc = "".join(f'<a href="{names[i]}">{htmlmod.escape(chapters[i][0])}</a>' for i in range(len(chapters)))
+# ── 목차를 *부 단위로* 묶는다 ──────────────────────────────────
+# 부 구성의 단일 출처는 main.typ 이다 (여기에 목록을 베끼지 않는다).
+def read_parts(lang):
+    src = pathlib.Path(__file__).resolve().parent.parent / ("book" if lang == "ko" else "book-en") / "main.typ"
+    out = []
+    for line in src.read_text(encoding="utf-8").splitlines():
+        m = re.match(r'\s*\("([^"]+)",\s*(?:none|"[^"]*"),\s*\(([\d,\s]+)\)\),', line)
+        if m:
+            nums = [int(x) for x in re.findall(r"\d+", m.group(2))]
+            out.append((m.group(1), nums))
+    return out
+
+by_num = {}
+for i, (t, _) in enumerate(chapters):
+    mn = re.match(r"\s*(\d+)\s", t)
+    if mn:
+        by_num[int(mn.group(1))] = i
+
+toc_parts = []
+placed = set()
+for part_title, nums in read_parts(lang):
+    rows = []
+    for n in nums:
+        i = by_num.get(n)
+        if i is None:
+            continue
+        placed.add(i)
+        rows.append(f'<a href="{names[i]}">{htmlmod.escape(chapters[i][0])}</a>')
+    if rows:
+        toc_parts.append(f'<h4 class="toc-part">{htmlmod.escape(part_title)}</h4>'
+                         f'<div class="toc-group">{"".join(rows)}</div>')
+rest = [f'<a href="{names[i]}">{htmlmod.escape(chapters[i][0])}</a>'
+        for i in range(len(chapters)) if i not in placed]
+if rest:
+    toc_parts.append(f'<h4 class="toc-part">{STR["extra"]}</h4>'
+                     f'<div class="toc-group">{"".join(rest)}</div>')
+toc = "".join(toc_parts)
 index_inner = (f'<div class="note">{STR["note"]}</div><h1>{htmlmod.escape(STR["title"])}</h1>'
                f'<h3>{STR["toc"]}</h3><div class="toc">{toc}</div>'
                f'<hr style="border:none;border-top:1px solid var(--rule);margin:2.4rem 0">{front}')

@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [Unreleased]
+
+### Added
+- **16·17장 신설(제3부)** — 「컴파일러의 지형」: 현역 C 컴파일러 총람
+  (GCC·Clang/LLVM·MSVC, 윈도우용 Pelles C, 벤더 성능 컴파일러 icx·AOCC·
+  nvc·Open XL·CCE), *고전 `icc`는 은퇴(oneAPI 2024.0에서 제거)* 명시,
+  "새 컴파일러는 대부분 LLVM 기반"이라는 흐름. 「임베디드의 도구 상자」:
+  임베디드 컴파일러 표(IAR·Arm Compiler for Embedded·TI Arm Clang·
+  MPLAB XC·Renesas CC-RX/RL·Green Hills·Wind River Diab·SDCC·GCC 계열)와
+  make·git 곁의 연장 8묶음(빌드 생성기, 디버그 프로브와 OpenOCD/gdb,
+  UART·SWO·RTT 로그, QEMU·Renode, 정적 분석과 MISRA, Unity·Ceedling,
+  크기 측정 도구, 로직 애널라이저, Compiler Explorer).
+- 영어판 8~11장 번역.
+
+- **50장 「선언을 읽는 법」 신설** — 두 가지 독법(식별자에서 바깥으로 =
+  오른쪽-왼쪽 규칙, 그리고 바깥에서 안으로), 영어 어순으로 이어 읽기,
+  이름이 없는 추상 선언자, `typedef`의 문법적 정체와 한계(별명일 뿐 새 타입이
+  아니다)·포인터 숨기기 반례, 그리고 `cdecl`. 예제 1종 검증.
+- **39장 보강** — `malloc`이 돌려주는 주소의 정렬(`max_align_t`,
+  `aligned_alloc`)과 할당이 비싼 이유 다섯 가지, 실측(회당 ~11ns vs 재사용
+  0.4ns). `free`가 OS 반납이 아니라는 오개념 포함. 예제 1종 검증.
+- **38장 보강** — 기억의 지도(코드·rodata·data·bss·힙·스택)를 주소로 확인하는
+  예제와, 리눅스 8 MiB / 윈도우 1 MiB 스택 한도.
+- **65·66장 신설(제11부 끝)** — 「프로그램의 기억 지도」: 실행 파일 구역과
+  주소 공간, 리눅스/윈도우 대조(가드 페이지·ASLR·mmap 문턱·스레드 스택),
+  그리고 자유 사용 구현의 기억(Arm Cortex-M 벡터 테이블과 MSP/PSP, AVR의
+  하버드 구조와 `PROGMEM`, PIC의 뱅크와 컴파일된 스택·재귀 불가).
+  「할당자의 속」: 블록 헤더와 경계 태그, 빈과 갈래별 캐시, 단편화와 RSS,
+  대안 할당자(jemalloc·TCMalloc·mimalloc·snmalloc·scudo)와 대안 libc
+  (musl·picolibc·newlib·Bionic), 아레나·풀, 그리고 proven의 메모리 모델로
+  잇는 다리.
+
+### Changed
+- 목차를 *부 단위로 묶어* 낸다(PDF·HTML 양쪽). 장만 나열하던 긴 목록 대신
+  제1부…제13부 아래에 장을 들여 쓴다.
+- 이후 장이 18~78장으로 이동했다.
+
 ## [v0.2.0] - 2026-08-05
 
 ### Added
@@ -76,6 +113,43 @@ This project follows Keep a Changelog.
   33장 VLA·`[static N]`·배열 매개변수, 39장 비트 필드, 44장 X 매크로,
   57장 C와 C++의 관계.
 - 수록 예제 60여 종, 전부 실제 빌드·실행 검증(GCC 14 기준, Clang 교차 확인).
+
+## [Unreleased]
+
+### Added
+- **16·17장 신설(제3부)** — 「컴파일러의 지형」: 현역 C 컴파일러 총람
+  (GCC·Clang/LLVM·MSVC, 윈도우용 Pelles C, 벤더 성능 컴파일러 icx·AOCC·
+  nvc·Open XL·CCE), *고전 `icc`는 은퇴(oneAPI 2024.0에서 제거)* 명시,
+  "새 컴파일러는 대부분 LLVM 기반"이라는 흐름. 「임베디드의 도구 상자」:
+  임베디드 컴파일러 표(IAR·Arm Compiler for Embedded·TI Arm Clang·
+  MPLAB XC·Renesas CC-RX/RL·Green Hills·Wind River Diab·SDCC·GCC 계열)와
+  make·git 곁의 연장 8묶음(빌드 생성기, 디버그 프로브와 OpenOCD/gdb,
+  UART·SWO·RTT 로그, QEMU·Renode, 정적 분석과 MISRA, Unity·Ceedling,
+  크기 측정 도구, 로직 애널라이저, Compiler Explorer).
+- 영어판 8~11장 번역.
+
+- **50장 「선언을 읽는 법」 신설** — 두 가지 독법(식별자에서 바깥으로 =
+  오른쪽-왼쪽 규칙, 그리고 바깥에서 안으로), 영어 어순으로 이어 읽기,
+  이름이 없는 추상 선언자, `typedef`의 문법적 정체와 한계(별명일 뿐 새 타입이
+  아니다)·포인터 숨기기 반례, 그리고 `cdecl`. 예제 1종 검증.
+- **39장 보강** — `malloc`이 돌려주는 주소의 정렬(`max_align_t`,
+  `aligned_alloc`)과 할당이 비싼 이유 다섯 가지, 실측(회당 ~11ns vs 재사용
+  0.4ns). `free`가 OS 반납이 아니라는 오개념 포함. 예제 1종 검증.
+- **38장 보강** — 기억의 지도(코드·rodata·data·bss·힙·스택)를 주소로 확인하는
+  예제와, 리눅스 8 MiB / 윈도우 1 MiB 스택 한도.
+- **65·66장 신설(제11부 끝)** — 「프로그램의 기억 지도」: 실행 파일 구역과
+  주소 공간, 리눅스/윈도우 대조(가드 페이지·ASLR·mmap 문턱·스레드 스택),
+  그리고 자유 사용 구현의 기억(Arm Cortex-M 벡터 테이블과 MSP/PSP, AVR의
+  하버드 구조와 `PROGMEM`, PIC의 뱅크와 컴파일된 스택·재귀 불가).
+  「할당자의 속」: 블록 헤더와 경계 태그, 빈과 갈래별 캐시, 단편화와 RSS,
+  대안 할당자(jemalloc·TCMalloc·mimalloc·snmalloc·scudo)와 대안 libc
+  (musl·picolibc·newlib·Bionic), 아레나·풀, 그리고 proven의 메모리 모델로
+  잇는 다리.
+
+### Changed
+- 목차를 *부 단위로 묶어* 낸다(PDF·HTML 양쪽). 장만 나열하던 긴 목록 대신
+  제1부…제13부 아래에 장을 들여 쓴다.
+- 이후 장이 18~78장으로 이동했다.
 
 ## [v0.2.0] - 2026-08-05
 

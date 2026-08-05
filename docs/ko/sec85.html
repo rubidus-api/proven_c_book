@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>찾아보기 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>찾아보기</h2><p>이 책이 개념을 <strong>정의하거나 정면으로 다루는</strong> 자리만 모았다. 낱말이 스쳐 지나가는 자리는 싣지 않았다 — 찾아보기의 목적은 모든 등장을 세는 것이 아니라 “어디를 펴면 되는지”를 알려 주는 것이기 때문이다.</p><p>이 판(HTML)에는 쪽 번호가 없으므로 표제어만 싣는다. 쪽 번호가 붙은 찾아보기는 PDF 판에 있다.</p><ul><li><a href="ch05.html#idx-entry-11">1의 보수</a></li><li><a href="ch05.html#idx-entry-9">2의 보수</a></li><li><a href="ch30.html#idx-entry-54">Duff's device</a></li><li><a href="ch06.html#idx-entry-14">IEEE 754</a></li><li><a href="ch04.html#idx-entry-8">NUL 문자</a></li><li><a href="ch07.html#idx-entry-15">UTF-8</a></li><li><a href="ch44.html#idx-entry-73">assert</a></li><li><a href="ch64.html#idx-entry-88">bool</a></li><li><a href="ch65.html#idx-entry-91">bss</a></li><li><a href="ch44.html#idx-entry-74">const</a></li><li><a href="ch74.html#idx-entry-104">introsort</a></li><li><a href="ch69.html#idx-entry-95">nodiscard</a></li><li><a href="ch64.html#idx-entry-89">nullptr</a></li><li><a href="ch50.html#idx-entry-83">typedef</a></li><li><a href="ch11.html#idx-entry-31">volatile</a></li><li><a href="ch48.html#idx-entry-81">가변 인자</a></li><li><a href="ch10.html#idx-entry-28">거짓 공유</a></li><li><a href="ch63.html#idx-entry-87">검사 산술</a></li><li><a href="ch35.html#idx-entry-61">경계 침범</a></li><li><a href="ch15.html#idx-entry-38">경고 옵션</a></li><li><a href="ch44.html#idx-entry-72">계약</a></li><li><a href="ch42.html#idx-entry-70">공용체</a></li><li><a href="ch40.html#idx-entry-67">구조체</a></li><li><a href="ch45.html#idx-entry-75">구현 정의</a></li><li><a href="ch26.html#idx-entry-47">나눗셈</a></li><li><a href="ch04.html#idx-entry-7">널 포인터</a></li><li><a href="ch66.html#idx-entry-93">단편화</a></li><li><a href="ch62.html#idx-entry-86">데이터 경쟁</a></li><li><a href="ch39.html#idx-entry-65">동적 할당</a></li><li><a href="ch15.html#idx-entry-36">디버거</a></li><li><a href="ch09.html#idx-entry-22">레지스터</a></li><li><a href="ch08.html#idx-entry-21">리다이렉션</a></li><li><a href="ch14.html#idx-entry-35">링크</a></li><li><a href="ch11.html#idx-entry-32">멀티코어</a></li><li><a href="ch03.html#idx-entry-5">메모리 주소</a></li><li><a href="ch07.html#idx-entry-16">문자 집합</a></li><li><a href="ch36.html#idx-entry-62">문자열</a></li><li><a href="ch45.html#idx-entry-76">미지정</a></li><li><a href="ch02.html#idx-entry-2">바이트</a></li><li><a href="ch29.html#idx-entry-53">반복문</a></li><li><a href="ch34.html#idx-entry-60">배열</a></li><li><a href="ch47.html#idx-entry-79">번역 단계</a></li><li><a href="ch46.html#idx-entry-78">번역 단위</a></li><li><a href="ch22.html#idx-entry-43">변수</a></li><li><a href="ch41.html#idx-entry-68">복합 리터럴</a></li><li><a href="ch06.html#idx-entry-13">부동소수점</a></li><li><a href="ch31.html#idx-entry-55">부수효과</a></li><li><a href="ch26.html#idx-entry-48">부호 확장</a></li><li><a href="ch10.html#idx-entry-27">분기 예측</a></li><li><a href="ch28.html#idx-entry-51">불리언</a></li><li><a href="ch70.html#idx-entry-97">뷰(view)</a></li><li><a href="ch02.html#idx-entry-1">비트</a></li><li><a href="ch15.html#idx-entry-37">새니타이저</a></li><li><a href="ch21.html#idx-entry-41">서식 문자열</a></li><li><a href="ch50.html#idx-entry-82">선언 읽기</a></li><li><a href="ch71.html#idx-entry-100">소유와 빌림</a></li><li><a href="ch73.html#idx-entry-102">스캐너</a></li><li><a href="ch38.html#idx-entry-63">스택</a></li><li><a href="ch65.html#idx-entry-90">스택 크기</a></li><li><a href="ch08.html#idx-entry-20">스트림</a></li><li><a href="ch31.html#idx-entry-56">시퀀스 포인트</a></li><li><a href="ch05.html#idx-entry-12">시프트</a></li><li><a href="ch43.html#idx-entry-71">실수 비교</a></li><li><a href="ch69.html#idx-entry-96">실패 원자성</a></li><li><a href="ch71.html#idx-entry-98">아레나</a></li><li><a href="ch73.html#idx-entry-101">암묵적 변환</a></li><li><a href="ch11.html#idx-entry-33">엄격한 앨리어싱</a></li><li><a href="ch03.html#idx-entry-4">엔디안</a></li><li><a href="ch32.html#idx-entry-59">역참조</a></li><li><a href="ch05.html#idx-entry-10">오버플로</a></li><li><a href="ch03.html#idx-entry-3">워드</a></li><li><a href="ch62.html#idx-entry-85">원자적 연산</a></li><li><a href="ch07.html#idx-entry-17">유니코드</a></li><li><a href="ch07.html#idx-entry-18">인코딩</a></li><li><a href="ch17.html#idx-entry-40">임베디드</a></li><li><a href="ch31.html#idx-entry-57">재귀</a></li><li><a href="ch38.html#idx-entry-64">저장 기간</a></li><li><a href="ch47.html#idx-entry-80">전처리기</a></li><li><a href="ch07.html#idx-entry-19">정규화</a></li><li><a href="ch04.html#idx-entry-6">정렬</a></li><li><a href="ch27.html#idx-entry-49">정수 승격</a></li><li><a href="ch25.html#idx-entry-46">정수 타입</a></li><li><a href="ch45.html#idx-entry-77">정의되지 않은 동작(UB)</a></li><li><a href="ch28.html#idx-entry-52">조건문</a></li><li><a href="ch09.html#idx-entry-24">지역성</a></li><li><a href="ch11.html#idx-entry-29">추상 기계</a></li><li><a href="ch12.html#idx-entry-34">출처(provenance)</a></li><li><a href="ch09.html#idx-entry-23">캐시</a></li><li><a href="ch09.html#idx-entry-25">캐시 라인</a></li><li><a href="ch68.html#idx-entry-94">컴파일 과정</a></li><li><a href="ch16.html#idx-entry-39">컴파일러</a></li><li><a href="ch11.html#idx-entry-30">컴파일러 최적화</a></li><li><a href="ch76.html#idx-entry-105">코루틴</a></li><li><a href="ch27.html#idx-entry-50">통상 산술 변환</a></li><li><a href="ch10.html#idx-entry-26">파이프라인</a></li><li><a href="ch41.html#idx-entry-69">패딩</a></li><li><a href="ch32.html#idx-entry-58">포인터</a></li><li><a href="ch51.html#idx-entry-84">표준 라이브러리</a></li><li><a href="ch21.html#idx-entry-42">표준 출력</a></li><li><a href="ch71.html#idx-entry-99">풀(pool)</a></li><li><a href="ch76.html#idx-entry-106">프리스탠딩</a></li><li><a href="ch66.html#idx-entry-92">할당자</a></li><li><a href="ch23.html#idx-entry-44">함수 원형</a></li><li><a href="ch74.html#idx-entry-103">해시 맵</a></li><li><a href="ch23.html#idx-entry-45">헤더 파일</a></li><li><a href="ch39.html#idx-entry-66">힙</a></li></ul>
+<div class="nav"><a href="sec84.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><span></span></div>
+</div></main></body></html>

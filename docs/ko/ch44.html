@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>44 여러 파일 — 분할과 링크 — Proven C Book</title><style>
+<title>44 오류와 계약 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,17 +68,38 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-212">44 여러 파일 — 분할과 링크</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>지금까지의 프로그램은 파일 하나였다. 이제 여러 파일로 자란다 — <span id="idx-entry-76"></span>헤더와 소스의 분업, 번역 단위라는 개념, 이름의 연결(외부·내부), 그리고 링크 오류를 읽는 법까지. 14장의 릴레이와 21장의 선언/정의 구별이 여기서 하나로 합쳐진다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>21장에서 “원형을 파일 위쪽에 적어 두면 정의는 아래 어디에 있어도 되고, 더 중요하게는 <strong>다른 파일</strong>에 있어도 된다”고 했다. 그 말이 성립하는 근거를 14장의 릴레이로 설명하면?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>컴파일 단계는 <strong>선언만</strong> 보고 일하고, 몸통을 찾아 잇는 것은 링커이기 때문이다(14장). 그래서 파일 하나를 컴파일할 때 다른 파일의 내용은 전혀 필요하지 않다 — 필요한 것은 “이런 이름의 함수가 이런 서명으로 어딘가에 있다”는 약속뿐이고, 그 약속을 담아 나르는 그릇이 헤더 파일 이다. 이 장은 그 분업을 실물로 본다.</p></div></div><h3 id="loc-213">44.1 번역 단위와 헤더</h3><p>전처리가 끝난 소스 파일 하나 — <code>#include</code>가 전부 펼쳐진 결과 — 를 <strong>번역 단위</strong>(translation unit)라 부른다. 컴파일러는 언제나 번역 단위 하나만 본다. 여러 파일 프로그램이란 번역 단위 여럿을 각각 목적 파일로 만든 뒤, 링커가 하나로 잇는 것이다.</p><p>세 파일짜리 예제로 분업을 본다.</p><div><div><p><code>examples/ch44/main.c</code></p><pre><code data-lang="c">/* 여러 파일 예제 — 이 파일은 greet의 선언만 보고 컴파일된다. */
-#include "greet.h"
+<h2>44 오류와 계약</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-72"></span><p>31장에서 심은 계약의 씨앗이 자란다 — 함수는 무엇을 요구하고 무엇을 약속하는가(전제조건·후조건), 실패를 어떻게 알리는가(C의 방식: 오류는 값이다), 그리고 그 값을 반드시 확인하게 만드는 장치들까지. 37장에서 본 proven의 설계 사상이 여기서 원리로 정리된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>31장 끝에서 <code>fact</code> 함수가 “암묵의 약속”(n은 0 이상, 13 이상이면 넘침) 위에 서 있다고 했다. 그런데 그 약속은 코드 어디에도 적혀 있지 않았다 — 그러면 그것은 존재하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>존재하지만, <strong>지켜지지 않는 상태로</strong> 존재한다 — 그것이 문제의 핵심이다. 모든 함수에는 암묵의 계약이 있다: 어떤 입력에 대해 제대로 동작하는가 (전제조건), 성공하면 무엇을 보장하는가(후조건). 그 계약이 문서와 코드 어디에도 없으면, 계약 위반은 조용히 지나가 나중에 엉뚱한 곳에서 터진다. 이 장은 계약을 <strong>드러내는</strong> 방법들의 이야기다.</p></div></div><h3>44.1 오류는 값이다 — C의 방식</h3><p>많은 현대 언어가 실패를 위한 별도 통로(예외)를 갖고 있지만, C에는 없다. C에서 실패는 <strong>반환값으로 알린다</strong> — 함수의 결과 자체가 “성공했는가”를 담고 나오는 것이다. 관행은 세 갈래다.</p><ul><li><strong>성공/실패 불리언</strong> + 결과는 포인터로 받기(32장의 <code>&amp;</code> 관용구).</li><li><strong>특별한 값</strong>으로 실패 표시 — <code>malloc</code>의 널(39장), <code>fgets</code>의 널, 음수 반환 등.</li><li><strong>오류 코드</strong>를 돌려주고 0을 성공으로 — 시스템 호출 계열의 전통.</li></ul><p>첫 갈래를 시연으로 본다. 26장에서 배운 “0 나누기는 계약 밖”이라는 사실을, 함수 계약으로 다스리는 모습이다.</p><div><div><p><code>examples/ch44/errval.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;stdlib.h>
+
+/* 계약: divisor가 0이 아니어야 한다. 실패는 반환값으로 알린다. */
+[[nodiscard]] bool safe_div(int a, int b, int *out)
+{
+    if (b == 0) {
+        return false;           /* 실패 — out은 건드리지 않는다 */
+    }
+    *out = a / b;
+    return true;
+}
 
 int main(void)
 {
-    greet("world");
-    printf_count();
+    int result = 0;
+
+    if (safe_div(7, 2, &amp;result)) {
+        printf("7 / 2 = %d\n", result);
+    } else {
+        printf("7 / 2: failed\n");
+    }
+
+    if (safe_div(7, 0, &amp;result)) {
+        printf("7 / 0 = %d\n", result);
+    } else {
+        printf("7 / 0: cannot divide by zero (reported as a value)\n");
+    }
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>Hello, world!
-greet was called 1 times
-</code></pre></div></div><p><code>greet.h</code>(헤더)에는 <strong>선언</strong>만 있다 — 계약 서명. <code>greet.c</code>에는 <strong>정의</strong>가 있고, <code>main.c</code>는 헤더만 포함해 계약을 알고 호출한다. 컴파일은 각각 따로 되고, 링커가 <code>greet</code> 호출과 정의를 이어 준다.</p><p>헤더의 <code>#ifndef GREET_H ... #define ... #endif</code>는 <strong>포함 보호</strong>(include guard)다. 헤더가 여러 경로로 두 번 붙어도 내용이 한 번만 펼쳐지게 하는 관용구로, 두 번 선언되면 오류가 나는 것들(구조체 정의 등)을 막는다. 실무에서는 <code>#pragma once</code> 한 줄로 대신하는 경우도 많다(표준은 아니지만 주요 컴파일러가 전부 지원한다).</p><h3 id="loc-214">44.2 연결 — 이름이 파일 경계를 넘는가</h3><p>이름에는 스코프(21장) 말고 또 하나의 성질이 있다 — <strong>연결</strong>(linkage), 즉 다른 번역 단위에서 그 이름을 볼 수 있는가다.</p><ul><li><strong>외부 연결</strong>: 파일 밖에서도 보인다. 함수와 전역 변수의 기본값이다.</li><li><strong>내부 연결</strong>: 이 번역 단위 안에서만 보인다. 파일 수준 선언에 <code>static</code>을 붙이면 된다 — 예제의 <code>static int calls</code>가 그 예다.</li></ul><p><code>static</code>이라는 낱말이 36장(정적 수명)과 여기(내부 연결)에서 다른 뜻으로 쓰이는 것은 C의 유명한 낱말 재활용이다 — <strong>함수 안</strong>의 static은 수명을, <strong>파일 수준</strong>의 static은 연결을 뜻한다.</p><p>내부 연결은 실무의 기본 무기다. 35장에서 “C에는 이름 공간이 없어서 접두어가 담장을 대신한다”고 했는데, 파일 안에서만 쓰는 도우미 함수· 변수에 <code>static</code>을 붙이면 그 이름은 아예 바깥 마당에 나가지 않는다 — 충돌도 없고, 컴파일러가 더 공격적으로 최적화할 수 있다(그 이름이 다른 파일에서 불릴 리 없음을 아니까 — 12장의 편집자에게 주는 정직한 신호다).</p><div class="dev misconception"><p class="dev-label">⚠ “헤더 파일에 함수 정의를 넣어도 편하니 괜찮다”</p><p>포함되는 파일마다 정의가 복사되므로, 두 파일이 그 헤더를 포함하면 같은 함수의 정의가 둘이 되어 링커가 <strong>중복 정의</strong> 오류를 낸다(“multiple definition of …”). 헤더의 역할은 계약을 나르는 것이지 구현을 나르는 것이 아니다 — 헤더에는 선언, 소스에는 정의가 기본형이다. (예외가 없지는 않다: <code>static inline</code> 함수나 매크로는 헤더에 두는 것이 관행 이고, C23의 <code>constexpr</code> 상수도 그렇다. 예외를 알고 쓰는 것과 규칙을 모르고 어기는 것은 다르다.)</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>링크 오류 메시지는 어떻게 읽는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>두 문장만 알면 대부분 풀린다. <strong>“undefined reference to X”</strong> — 선언은 보았으나 정의를 못 찾았다는 뜻이다(14장). 소스 파일을 빌드에서 빠뜨렸거나, 라이브러리를 안 이어 줬거나, 철자가 다르다. <strong>“multiple definition of X”</strong> — 정의가 둘 이상이다. 헤더에 정의를 넣었거나, 전역 변수를 헤더에서 선언하며 초기화했을 때 흔하다. 두 메시지 모두 <strong>컴파일러 가 아니라 링커</strong>가 내는 것이라는 점이 진단의 출발점이다 — 문법은 멀쩡했다는 뜻이니까.</p></div></div><p>파일 경계를 넘는 법을 배웠다. 그런데 이 장에서 <code>#include</code>와 <code>#ifndef</code>가 또 나왔다 — 14장에서 “전처리기는 C를 모르는 텍스트 도구”라 하고 지나친 그 층이다. 다음 장에서 그 층을 정면으로 열고, 소스 코드가 프로그램이 되기까지의 정식 단계까지 본다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>7 / 2 = 3
+7 / 0: cannot divide by zero (reported as a value)
+</code></pre></div></div><p>읽을 점 셋. <strong>계약이 주석으로 적혀 있다</strong> — 무엇을 요구하는지가 코드 곁에 있다. <strong>실패해도 출력 인자를 건드리지 않는다</strong> — “실패 시 아무것도 바꾸지 않는다”는 것도 계약의 일부다. 그리고 <strong><code>[[nodiscard]]</code></strong> — C23의 표기로, 이 반환값을 버리는 호출이 있으면 컴파일러가 경고한다. 20장에서 “반환값을 버리는 것은 합법”이라 했던 그 자유에, “이 값만은 버리지 말라”는 제동을 거는 장치다. 37장의 proven 함수들이 이 표기를 두른 이유가 바로 이것이다.</p><div class="dev misconception"><p class="dev-label">⚠ “오류 처리는 코드를 지저분하게 만드는 부수적인 일이다”</p><p>입문자가 흔히 갖는 인상이고, 실제로 C의 오류 처리는 눈에 띄게 장황하다 — 호출마다 <code>if</code>가 붙으니까. 그러나 관점을 뒤집으면 정확히 반대다: <strong>오류 경로가 곧 프로그램의 절반이다.</strong> 파일이 없을 수 있고, 메모리가 부족할 수 있고, 입력이 엉터리일 수 있다는 것은 예외적 상황이 아니라 정상적인 현실이다. 실제 사고 분석에서 압도적으로 흔한 원인이 “반환값을 확인하지 않았다”인 것이 그 증거다 — 성공 경로만 적힌 코드는 절반만 쓰인 코드다. 장황함을 줄이는 법(공통 정리 지점으로 모으기, 실패를 감싸는 타입 쓰기)은 기술의 문제이고, <strong>확인한다</strong>는 원칙은 타협의 문제가 아니다.</p></div><h3>44.2 계약을 코드로 — assert와 방어</h3><span id="idx-entry-73"></span><p>전제조건을 문서가 아니라 <strong>코드</strong>로 적는 도구가 있다 — <code>&lt;assert.h></code>의 <code>assert(조건)</code>다. 조건이 거짓이면 프로그램을 즉시 세우고 위치를 알린다. 용도를 정확히 구별하는 것이 중요하다:</p><ul><li><strong><code>assert</code>는 프로그래머의 실수를 잡는 것이다</strong> — “여기까지 왔다면 이 조건은 반드시 참이어야 한다”는 내부 불변식(30장의 그 불변식과 같은 낱말이다). 배포 빌드에서는 꺼지는 것이 관행이다(<code>NDEBUG</code>).</li><li><strong>바깥에서 온 것은 assert가 아니라 검사로</strong> — 사용자 입력, 파일 내용, 네트워크 데이터는 “틀릴 수 있는 것이 정상”이므로 실행 중에 늘 확인 하고 오류 값으로 처리해야 한다. 입력 검증을 assert로 하면, 배포판 에서 검사가 통째로 사라지는 사고가 된다.</li></ul><p>이 구별이 곧 계약의 두 면이다 — 안쪽(내가 지켜야 할 불변식)은 assert로, 바깥(상대가 지킬지 모르는 약속)은 검사와 오류 값으로.</p><h3>44.3 const — 가장 값싼 계약</h3><p>계약을 코드로 적는 도구가 하나 더 있다. 22장에서 “바꾸지 않겠다는 문서”로 소개하고, 40장에서 “이 함수는 원본을 건드리지 않는다”는 표시로 <span id="idx-entry-74"></span>써 온 <code>const</code>다. 이 장의 관점에서 다시 보면, const는 <strong>가장 값싸게 적을 수 있는 계약 조항</strong>이다 — 함수 서명 한 곳에 한 낱말을 더하는 것으로, 호출하는 쪽에게 “당신의 데이터는 안전하다”를 약속하고 컴파일러에게 그 약속의 감시를 맡긴다.</p><p>효과는 세 층에 걸친다.</p><p><strong>① 사람에게 — 읽는 부담이 준다.</strong> <code>void render(const struct scene *s)</code> 라는 서명을 보는 순간, 이 함수가 scene을 바꾸지 않는다는 것이 확정 된다. 함수 몸통을 읽지 않아도 되는 것 — 큰 코드에서 이보다 값진 절약은 드물다. 22장에서 “바뀌지 않는 것이 많은 코드일수록 읽기 쉽다”고 한 것의 실체다.</p><p><strong>② 컴파일러에게 — 최적화의 근거가 된다.</strong> 11장에서 편집자가 값을 레지스터에 붙잡아 두는 장면을 보았고, 그 판단의 관건이 “이 값이 그 사이에 바뀔 수 있는가”였다. const는 그 판단을 돕는 신호다 — 다만 정확히 말해야 한다: <strong>const 자체가 마법의 최적화 스위치는 아니다.</strong> 포인터를 통해 들어온 데이터는 다른 경로로 바뀔 여지가 남아 있어서 (앨리어싱), const 하나로 컴파일러가 모든 걸 확신하지는 못한다. 확실한 이득은 <strong>const로 선언된 실제 객체</strong>(전역 상수, <code>static const</code> 테이블) 쪽이다 — 컴파일러가 값을 코드에 직접 심거나(상수 전파), 읽기 전용 구역에 배치해 아예 수정 불가로 만든다(36장의 문자열 리터럴이 그 자리에 살았다).</p><p><strong>③ 기억의 층에게 — 공유가 안전해진다.</strong> 바뀌지 않는 데이터는 <strong>복사할 이유가 없다.</strong> 여러 곳에서 같은 것을 함께 읽어도 되고, 9장의 캐시 관점에서는 여러 코어가 같은 캐시 라인을 나눠 읽어도 아무 다툼이 없다 — 10장에서 본 false sharing은 <strong>쓰기</strong>가 있어야 생기는 사고이기 때문 이다. 큰 데이터를 값 복사 대신 <code>const</code> 포인터로 넘기는 관행(40장)이 안전하면서 빠른 이유가 이것이다.</p><p>그래서 현대적 관행은 단순하다 — <strong>기본을 const로 두고, 바꿔야 하는 것만 예외로 푼다.</strong> 계약을 넓히는 데는 비용이 들지만, 좁히는 데는 낱말 하나면 된다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>37장의 proven은 이 원리를 어떻게 구현하고 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>세 가지가 이 장의 원리 그대로다. 첫째, <strong>실패가 타입에 드러난다</strong> — <code>{err, val}</code> 꾸러미를 돌려주므로 “성공했는지 묻지 않고 값을 꺼내는” 코드를 쓰기가 오히려 어색해진다. 둘째, <strong><code>[[nodiscard]]</code>로 확인을 강제한다</strong> — 버리면 컴파일러가 경고한다. 셋째, <strong>경계와 크기를 계약의 일부로 받는다</strong> — 33–36장에서 본 경계 침범의 뿌리를 API 차원에서 막는 것이다. 요약하면: 계약을 문서가 아니라 <strong>타입과 시그니처</strong>로 적는 설계다. 1장에서 본 Rust·Zig의 문제의식과 같은 방향을, C 안에서 부품으로 구현한 것이라 보면 된다.</p></div></div><p>계약과 오류를 다루는 법을 갖췄다. 그런데 이 책이 곳곳에서 “계약 밖”, “정의되지 않은 동작”이라 부르며 미뤄 온 세계가 아직 남아 있다. 다음 장에서 그 세계를 정면으로 본다 — C에서 가장 오해가 많고, 가장 값비싼 주제다.</p>
 <div class="nav"><a href="ch43.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch45.html">다음 →</a></div>
 </div></main></body></html>

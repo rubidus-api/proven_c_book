@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>머리말 — Proven C Book</title><style>
+<title>부록 E — 참고 문헌과 출처 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,6 +68,6 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-1">머리말</h2><p>이 책은 내가 만든 C 라이브러리 proven의 입문서이자, 그 홍보물이다.</p><p>그러나 무엇을 쓰라고 권하려면 먼저 그것이 왜 필요한지를 보여야 한다. proven이 다루는 문제들은 C의 미묘한 자리에 있다 — 표현의 한계, 변환의 규칙, 기억의 수명, 표준이 약속하지 않은 영역. 이 자리들을 모르는 사람에게 proven은 불필요한 물건으로 보인다. 그래서 라이브러리를 소개하기 전에, 그 문제들을 먼저 설명하기로 했다. 이 책의 대부분이 표준 C만으로 쓰인 이유이고, proven이 뒤늦게(제12부) 등장하는 이유다. 앞의 이야기를 읽고 나면 proven이 필요 없다고 판단할 수도 있다. 그것도 좋은 결말이다.</p><p>다른 한편으로 이 책에는 C를 좋아하는 사람의 마음도 얼마간 들어가 있다. 쉰 해를 넘긴 언어가 왜 아직 남아 있는지, 그 설계가 무엇을 포기하고 무엇을 얻었는지를 설명하다 보면 자연히 그렇게 된다. 그 부분은 감추지 않았다.</p><p>이 책에 실린 모든 코드는 실제로 컴파일되고 실행된 것이다. 인쇄된 실행 결과는 사람이 옮겨 적은 것이 아니라 책을 만들 때마다 기계가 예제를 돌려 얻은 출력이며, 두 컴파일러(gcc와 clang)로 교차 검증했다.</p><p>밝혀 둘 것이 하나 더 있다. <strong>이 책은 AI를 보조 도구로 삼아 집필했다.</strong> 무엇을 어떤 순서로 다룰지, 어떤 원칙으로 서술할지, 무엇을 싣고 무엇을 뺄지는 전부 내가 정했고, 원고는 그 지시에 따라 쓰인 뒤 내 검토를 거쳤다. 기술적 서술은 표준 문서와 1차 자료로 확인했으며, 앞 문단에서 말한 대로 예제는 사람이 아니라 기계가 매번 실제로 돌려 검증한다 — AI가 썼든 사람이 썼든 <strong>돌지 않는 코드는 이 책에 실리지 않는다</strong>는 뜻이다.</p><p>그럼에도 오류는 남아 있을 것이다. 그것은 도구의 몫이 아니라 내 몫이다. 발견하면 알려 주시기 바란다.</p><h3 id="loc-2">저작권과 연락</h3><p>본문(이 책의 글과 그림)은 <strong>CC BY-NC-SA 4.0</strong>을 따른다. 출처를 밝히면 자유롭게 공유하고 고칠 수 있으나, 영리 목적으로는 이용할 수 없고, 고친 결과물에도 같은 라이선스를 적용해야 한다.</p><p>예제 코드는 <strong>MIT 라이선스</strong>를 따른다. 이 책에서 배운 코드는 아무 제약 없이 자기 프로그램에 가져다 쓸 수 있다.</p><p>연락은 이메일로 받는다. 오류 신고와 수정 요청은 GitHub 저장소를 통해 하는 편이 낫다 — 기록이 남고, 다른 독자에게도 보인다.</p><p>받는 것은 <strong>오류 신고뿐이다.</strong> 틀린 서술, 어긋난 예제, 오탈자, 낡은 정보를 알려 주시면 고맙게 반영한다. 반면 새 장이나 새 절을 써 보내는 식의 원고 기여는 받지 않는다 — 이 책의 구성과 서술은 한 사람의 판단으로 유지하는 편이 낫다고 보았고, 저작권 관계를 단순하게 두려는 뜻도 있다.</p><p><a href="mailto:rubidus@gmail.com">rubidus@gmail.com</a><br><a href="https://github.com/rubidus-api/proven_c_book">github.com/rubidus-api/proven_c_book</a></p>
-<div class="nav"><a href="sec01.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch01.html">다음 →</a></div>
+<h2>부록 E — 참고 문헌과 출처</h2><p>이 책이 기대고 있는 문헌과, 본문에서 사례로 든 사건들의 출처를 모았다. 표준 문서를 구하는 방법은 부록 D에 있다.</p><h3>표준 문서</h3><ul><li>ISO/IEC 9899:2024 (C23) — 이 책의 기준 표준. 무료 초안 N3220.</li><li>ISO/IEC 9899:2018 (C17), 9899:2011 (C11), 9899:1999 (C99), 9899:1990 (C89/C90) — 판을 거슬러 확인할 때. 초안 N2176·N1570·N1256.</li><li>IEEE 754 — 부동소수점 산술 표준(6·43장의 근거).</li><li>The Unicode Standard — 문자 집합과 인코딩, 정규화(7장).</li><li>POSIX (IEEE Std 1003.1) — 표준 C 밖의 시스템 인터페이스(75장의 배경).</li></ul><h3>언어의 역사</h3><ul><li>Dennis M. Ritchie, “The Development of the C Language” (1993) — CPL→BCPL→B→C의 계보와 초기 설계 결정에 대한 창시자의 서술(2·10장).</li><li>Brian W. Kernighan, Dennis M. Ritchie, <span style="display: inline-block">The C Programming Language</span> (1978, 1988) — 이른바 K&amp;R. C89 이전과 이후를 가르는 기준점.</li><li>WG14 문서 저장소(<code>open-std.org</code>) — 제안서와 결함 보고서. “이 조항이 왜 이렇게 되었나”의 1차 자료.</li></ul><h3>이 책이 인용한 사건들</h3><ul><li>Ariane 5 비행 501 사고 조사 보고서(1996) — 변환 오류가 부른 실패(25장).</li><li>Apple “goto fail” TLS 검증 결함(CVE-2014-1266) — 중괄호 없는 분기(29장).</li><li>Morris 인터넷 웜(1988) — <code>gets</code>를 통한 버퍼 넘침(37장, 그리고 부록 D의 판데르린던 항목에서 언급한 그 사건).</li><li>형식 문자열 취약점의 대량 발견(1999–2000년) — wu-ftpd 등(19·51장).</li><li>해시 충돌을 이용한 서비스 거부(2011년 다수 웹 프레임워크) 및 algorithmic complexity attack 논문(2003) — 자료구조의 최악 케이스가 보안 문제가 되는 사례(47·74장).</li><li>Debian OpenSSL 난수 결함(CVE-2008-0166) — 예측 가능한 키(75장).</li><li>리눅스 커널의 <code>-fno-strict-aliasing</code> 채택과 VLA 제거(2018) — 현실의 타협(11·15·35장).</li></ul><h3>도구와 라이브러리</h3><ul><li>GCC, Clang/LLVM 공식 문서 — 경고 옵션, 새니타이저, 확장(15장).</li><li>GDB, LLDB 문서 — 디버거(15장).</li><li>proven C 라이브러리 — 이 책 제12부의 대상. 이 책은 v26.07.23d 스냅샷을 기준으로 서술하고, 예제도 그 판으로 검증했다.</li><li>cppreference.com — 표준 라이브러리의 실용 레퍼런스.</li></ul><h3>이 책의 검증 환경</h3><p>본문에 인쇄된 모든 실행 결과는 다음 환경에서 실제로 얻은 것이다.</p><ul><li>컴파일: <code>-std=c23 -Wall -Wextra -Werror</code></li><li>기준 컴파일러: GCC 14 (x86-64 리눅스)</li><li>교차 검증: Clang 22</li><li>디버거 세션 캡처: GDB 17.2</li><li>조판: Typst 0.15.1</li></ul>
+<div class="nav"><a href="sec83.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec85.html">다음 →</a></div>
 </div></main></body></html>

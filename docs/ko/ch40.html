@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>40 공용체와 표현 — Proven C Book</title><style>
+<title>40 구조체 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,123 +68,36 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-193">40 공용체와 표현</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-68"></span><p>같은 기억을 다른 눈으로 보는 장치 — 공용체다. 그리고 이 장은 표현의 장이기도 하다: 3장에서 예약한 엔디안 관찰 시연을 실행하고, 구조체의 숨은 빈틈(패딩)을 눈으로 확인한다. 표현과 추상의 분리라는 이 책의 후렴구가 마지막으로 크게 울리는 자리다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>11장에서 “float의 비트를 uint32의 눈으로 읽는” 옛 기법이 엄격한 앨리어싱 위반이며, 옳은 방법은 memcpy나 공용체라고 했다. 그러면 공용체란 정확히 무엇이길래 그 자리에 서는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>여러 멤버가 같은 기억을 공유하는 타입</strong>이다. 구조체가 멤버들을 나란히 놓는다면(38장), 공용체는 멤버들을 <strong>겹쳐</strong> 놓는다 — 크기는 가장 큰 멤버에 맞고, 어느 순간에든 실제로 담긴 것은 하나다. “같은 비트를 이 눈으로도 저 눈으로도 본다”는 3장의 관점이 문법이 된 것이다.</p></div></div><h3 id="loc-194">40.1 공용체 — 겹쳐 놓기</h3><p>문법은 구조체와 쌍둥이다. <code>struct</code>를 <code>union</code>으로 바꾸면 된다:</p><pre><code data-lang="c">union bits32 {
-    uint32_t as_int;
-    float    as_float;
-};</code></pre><p>멤버 접근도 같다(<code>u.as_int</code>). 다른 것은 기억의 배치뿐이다 — 두 멤버가 같은 4바이트를 공유하므로, <code>as_float</code>에 쓰고 <code>as_int</code>로 읽으면 <strong>같은 비트를 다른 해석으로</strong> 보게 된다. C 표준은 이 “쓴 멤버와 다른 멤버로 읽기”(타입 퍼닝)를 공용체에 한해 허용한다 — 11장의 포인터 캐스트 방식과 달리 계약 안이라는 점이 결정적 차이다(다만 읽은 값이 그 타입의 유효한 값이 아닐 수 있다는 주의는 남는다).</p><h3 id="loc-195">40.2 표현을 눈으로 — 엔디안과 패딩</h3><p>3장에서 “이 확인을 C로 실제로 해 보이는 것이 이 장의 시연”이라 예약해 두었다. 이제 갚는다. 여기서는 공용체 대신 가장 이식성 좋은 방법 — 32장에서 배운 바이트의 눈(<code>unsigned char</code>)과 <code>memcpy</code> — 을 쓴다.</p><div><div><p><code>examples/ch40/endian.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdint.h>
-#include &lt;string.h>
+<h2>40 구조체</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>제5부에서 “타입을 만드는 선언은 메모리 모델을 갖춘 뒤”라며 미뤄 둔 <span id="idx-entry-67"></span>약속을 지킨다. 여러 값을 하나로 묶는 타입 — 구조체다. 선언과 초기화, 두 가지 접근 표기(<code>.</code>와 <code>-></code>), 그리고 구조체가 값으로 오가는 방식까지.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>22장에서 “타입은 값의 집합 + 연산의 약속”이라 했고, 지금까지 쓴 타입은 전부 미리 있는 것들(int, double, char, 포인터)이었다. 그러면 프로그래머가 <strong>새 타입을 만든다</strong>는 것은 무슨 뜻인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>기억의 모양을 새로 정하고 이름을 붙이는 일이다. “정수 둘이 나란히 있는 덩어리를 점(point)이라 부르겠다”고 선언하면, 그 순간부터 point는 변수를 만들고 함수에 넘기고 배열로 늘어놓을 수 있는 어엿한 타입이 된다. 35장의 배열이 <strong>같은 타입의 반복</strong>이었다면, 구조체는 <strong>다른 타입의 묶음</strong>이다 — 그리고 그 묶음에 이름이 붙는 순간, 프로그램의 어휘가 늘어난다.</p></div></div><h3>40.1 선언, 초기화, 접근</h3><div><div><p><code>examples/ch40/point.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
 
-int main(void)
-{
-    uint32_t value = 0x12345678u;
-    unsigned char bytes[4];
-
-    memcpy(bytes, &amp;value, sizeof value);   /* 표현을 바이트로 들여다본다 */
-
-    printf("value: 0x%08X\n", value);
-    printf("memory order: %02X %02X %02X %02X\n",
-           bytes[0], bytes[1], bytes[2], bytes[3]);
-    printf("this machine is %s-endian\n",
-           bytes[0] == 0x78 ? "little" : "big");
-
-    struct padded {
-        char  tag;      /* 1바이트 */
-        int   count;    /* 4바이트 — 정렬 때문에 앞에 빈틈이 생긴다 */
-    };
-    printf("1 + 4 = 5, but sizeof = %zu\n", sizeof(struct padded));
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>value: 0x12345678
-memory order: 78 56 34 12
-this machine is little-endian
-1 + 4 = 5, but sizeof = 8
-</code></pre></div></div><p>첫 부분이 3장의 그림 그대로다. <code>0x12345678</code>이 메모리에 <code>78 56 34 12</code> 순서로 놓였다 — 이 책의 검증 기계는 리틀 엔디안이라는 뜻이고, 3장의 도해가 실물로 확인된 것이다. (빅 엔디안 기계에서 이 예제를 돌리면 <code>12 34 56 78</code>이 찍히고 판정 문장도 바뀐다 — 코드는 그대로다.)</p><p>둘째 부분은 구조체의 숨은 사정이다. <code>char</code> 하나(1바이트)와 <code>int</code> 하나(4바이트)를 담은 구조체의 크기가 5가 아니라 8이다 — 4장의 정렬 규칙 때문에 <code>char</code> 뒤에 3바이트의 <strong>패딩</strong>(padding, 빈틈)이 끼워진 것이다. int 멤버가 4의 배수 자리에서 시작해야 기계가 한 움큼에 집을 수 있기 때문이다(4장). 그래서 실무 관행 하나가 나온다 — <strong>큰 멤버부터 배치하면 빈틈이 줄어든다.</strong> 구조체 수백만 개를 다루는 코드에서는 이 배치 하나가 메모리와 캐시 효율(9장)을 좌우한다. 배치 규칙과, 빈틈을 없애거나 정렬을 강제하는 방법(<code>pack</code>·<code>alignas</code>)은 39장에서 자세히 다뤘다 — 여기서는 그 빈틈이 <strong>실제로 존재한다</strong>는 사실을 눈으로 확인하는 것이 목적이다.</p><div class="dev realcase"><p class="dev-label">◉ 빈틈이 흘린 비밀 — 커널의 패딩 정보 유출</p><p>패딩은 아무도 쓰지 않는 빈칸이라 무해해 보이지만, 보안의 눈으로 보면 <strong>초기화되지 않은 기억</strong>이다. 운영체제 커널이 구조체를 사용자 프로그램 에게 통째로 복사해 줄 때 이 빈틈이 함께 건너가는데 — 멤버들은 전부 채워 넣었어도 빈틈에는 그 자리에 남아 있던 <strong>다른 데이터의 잔해</strong>가 들어 있다. 공격자는 이 부스러기를 모아 커널 메모리의 내용이나 주소 배치를 엿볼 수 있고, 그것이 다음 공격의 발판이 된다. 리눅스를 비롯한 주요 커널들이 이 부류의 정보 유출 취약점을 수십 건 고쳐 왔고, 오늘의 대응은 단순하다 — 사용자에게 넘기는 구조체는 <strong>멤버를 채우기 전에 통째로 0으로 지운다</strong>. 20장에서 “선언과 동시에 초기화한다”고 한 규칙이, 보이지 않는 빈칸에까지 적용되는 순간이다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “구조체를 그대로 파일에 쓰거나 네트워크로 보내면 된다”</p><p>솔깃한 생각이고, 실제로 많이 시도된 방법이다 — 구조체의 바이트를 통째로 저장하면 코드가 짧아지니까. 그러나 이 장이 방금 보인 두 사실이 그것을 가로막는다: 바이트 순서가 기계마다 다르고(엔디안), 빈틈의 크기와 위치도 컴파일러·플랫폼마다 다르다(패딩). 한 기계에서 쓴 파일이 다른 기계에서 깨지는 것이다 — 3장의 NUXI 사건이 파일 형식의 세계에서 재현되는 셈이다. 정답은 <strong>직렬화</strong>(serialization)다: 멤버를 하나씩, 약속된 크기와 바이트 순서로(네트워크 바이트 순서 — 3장) 적고 읽는 코드를 명시적으로 쓰는 것. 표현은 기계의 사정이고, 파일과 통신은 약속의 세계라는 것 — 두 세계를 잇는 다리는 손으로 놓아야 한다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>공용체는 그러면 언제 쓰는 것이 정석인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>두 가지 자리다. 첫째, 방금 본 <strong>표현 들여다보기</strong>(타입 퍼닝) — 부동 소수점 비트를 검사하거나 하드웨어 레지스터를 여러 눈으로 보는 저수준 코드다. 둘째, 더 흔한 쓰임인 <strong>태그된 공용체</strong>(tagged union): 구조체 안에 “지금 어느 멤버가 유효한가”를 알리는 표시(태그)와 공용체를 함께 넣어, “이 값은 정수이거나, 실수이거나, 문자열이다” 같은 선택형 데이터를 표현하는 것이다. 인터프리터의 값 표현, 설정 파일 파서 같은 곳의 기본 도구이고 — 4장에서 본 태그 포인터가 비트 차원의 같은 발상이었다. 현대 언어들의 열거형(Rust의 enum, Swift의 associated value)이 이 패턴을 언어 차원으로 끌어올린 것이다.</p></div></div><h3 id="loc-196">40.3 비트 필드 — 한 워드를 쪼개 쓰기</h3><p>구조체 멤버 뒤에 콜론과 수를 적으면 <strong>비트 필드</strong>(bit field)가 된다 — 그 멤버가 차지할 비트 수를 직접 지정하는 것이다. 여기에 공용체를 겹치면 “통째로 한 워드로 보는 눈”과 “필드로 나눠 보는 눈”을 동시에 갖게 된다.</p><div><div><p><code>examples/ch40/bitfield.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdint.h>
-
-/* 실무에서 흔한 모양: 장치 레지스터 한 워드를 필드로 나눠 보고,
-   같은 기억을 통째로 32비트 정수로도 본다. */
-union control_reg {
-    uint32_t raw;                 /* 통째로 읽고 쓰는 눈 */
-    struct {
-        uint32_t enable   : 1;    /* 비트 1개 */
-        uint32_t mode     : 3;    /* 비트 3개 */
-        uint32_t priority : 4;
-        uint32_t reserved : 8;
-        uint32_t counter  : 16;
-    } f;                          /* 필드로 보는 눈 */
+struct point {
+    int x;
+    int y;
 };
 
-/* 구조체 안에 공용체를 넣는 실무 무늬: 태그 + 내용 */
-enum msg_kind { MSG_INT, MSG_TEXT, MSG_POINT };
-
-struct message {
-    enum msg_kind kind;           /* 어느 눈으로 볼지 알려 주는 태그 */
-    unsigned      flags : 4;      /* 작은 상태 몇 개 */
-    unsigned      urgent : 1;
-    union {                       /* 이름 없는 공용체 (C11) */
-        int  number;
-        char text[16];
-        struct { int x, y; } point;
-    };
-};
-
-static void show(const struct message *m)
+struct point moved(struct point p, int dx, int dy)
 {
-    printf("kind=%d flags=%u urgent=%u -> ", (int)m->kind, m->flags, m->urgent);
-    switch (m->kind) {
-        case MSG_INT:   printf("number %d\n", m->number); break;
-        case MSG_TEXT:  printf("text \"%s\"\n", m->text); break;
-        case MSG_POINT: printf("point (%d, %d)\n", m->point.x, m->point.y); break;
-    }
+    return (struct point){ .x = p.x + dx, .y = p.y + dy };  /* 복합 리터럴 */
 }
 
 int main(void)
 {
-    union control_reg r = { .raw = 0 };
-    r.f.enable = 1;
-    r.f.mode = 5;
-    r.f.priority = 9;
-    r.f.counter = 1000;
+    struct point a = { .x = 3, .y = 4 };     /* 지정 초기화 */
+    struct point b = moved(a, 10, -1);
 
-    printf("raw   = 0x%08x\n", r.raw);
-    printf("fields: enable=%u mode=%u priority=%u counter=%u\n",
-           r.f.enable, r.f.mode, r.f.priority, r.f.counter);
+    printf("a = (%d, %d)\n", a.x, a.y);       /* 값으로 접근: . */
+    printf("b = (%d, %d)\n", b.x, b.y);
 
-    /* 통째로 쓰고 필드로 읽기 — 같은 기억을 두 눈으로 본다 */
-    r.raw = 0x000A0013u;
-    printf("after raw write: enable=%u mode=%u priority=%u counter=%u\n",
-           r.f.enable, r.f.mode, r.f.priority, r.f.counter);
+    struct point *p = &amp;b;
+    printf("p->x = %d\n", p->x);              /* 포인터로 접근: -> */
 
-    printf("sizeof(union control_reg) = %zu\n", sizeof r);
-
-    struct message a = { .kind = MSG_INT, .flags = 3, .urgent = 1, .number = 42 };
-    struct message b = { .kind = MSG_TEXT, .flags = 0, .urgent = 0 };
-    for (int i = 0; i &lt; 5; i++) b.text[i] = "hello"[i];
-    b.text[5] = '\0';
-    struct message c = { .kind = MSG_POINT, .flags = 8, .urgent = 0,
-                         .point = { .x = 3, .y = -7 } };
-    show(&amp;a); show(&amp;b); show(&amp;c);
-    printf("sizeof(struct message) = %zu\n", sizeof(struct message));
+    printf("sizeof(struct point) = %zu\n", sizeof(struct point));
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>raw   = 0x03e8009b
-fields: enable=1 mode=5 priority=9 counter=1000
-after raw write: enable=1 mode=1 priority=1 counter=10
-sizeof(union control_reg) = 4
-kind=0 flags=3 urgent=1 -> number 42
-kind=1 flags=0 urgent=0 -> text "hello"
-kind=2 flags=8 urgent=0 -> point (3, -7)
-sizeof(struct message) = 24
-</code></pre></div></div><p>앞부분이 하드웨어 레지스터를 다루는 전형적인 무늬다. <code>r.f.mode = 5</code>처럼 필드에 쓰면 라이브러리 도움 없이도 비트 자리에 값이 들어가고, <code>r.raw</code>로 읽으면 그 결과가 한 워드로 보인다. 반대로 <code>r.raw</code>에 통째로 쓰고 필드로 읽는 것도 된다 — 출력의 세 번째 줄이 그 확인이다.</p><p>편해 보이지만 <strong>이식성의 대가</strong>가 크다. 표준이 정해 주지 않는 것이 많기 때문이다.</p><ul><li><strong>비트가 놓이는 순서</strong> — 낮은 자리부터 채울지 높은 자리부터 채울지는 구현 정의(implementation-defined)다. 그래서 같은 선언이 컴파일러마다 다른 배치를 낼 수 있다.</li><li><strong>경계를 넘는 필드</strong> — 저장 단위를 걸치는 필드를 허용할지도 구현이 정한다. 패딩이 얼마나 끼는지도 마찬가지다.</li><li><strong>부호</strong> — 그냥 <code>int x : 1;</code>은 부호 있는 1비트라 값이 0과 −1이 된다. 의도한 것이 아니라면 <code>unsigned</code>를 명시해야 한다.</li><li><strong>주소를 얻을 수 없다</strong> — 비트 필드에는 <code>&amp;</code>를 쓸 수 없다. 배열로 만들 수도 없다.</li><li><strong>원자적이지 않다</strong> — 같은 워드에 놓인 두 필드를 서로 다른 스레드가 건드리면 10장의 거짓 공유와 같은 부류의 사고가 난다.</li></ul><div class="dev misconception"><p class="dev-label">⚠ “비트 필드로 파일·네트워크 형식을 그대로 표현할 수 있다”</p><p>가장 흔한 오해이고, 이식성 사고의 단골이다. 파일 형식이나 프로토콜은 <strong>바이트와 비트의 배치가 규격으로 정해져 있는데</strong>, 비트 필드의 배치는 구현이 정한다. 컴파일러를 바꾸거나 다른 기계로 옮기는 순간 필드가 엉뚱한 자리에서 읽힌다 — 엔디안(앞 절)까지 겹치면 더 나빠진다. 외부 형식을 다룰 때의 정공법은 <strong>바이트 배열을 놓고 시프트와 마스크로 직접 뽑아 쓰는 것</strong>이다(5장). 비트 필드는 어디까지나 <strong>한 프로그램 안에서 기억을 아끼는 용도</strong>로 본다.</p></div><p>오늘날 비트 필드를 권하지 않는 이유가 이것이다. 그럼에도 이 문법을 알아야 하는 이유는 분명하다 — 임베디드 SDK의 레지스터 정의, 오래된 코드베이스의 플래그 묶음, 커널 자료구조에서 여전히 만나기 때문이다. <strong>읽을 줄은 알되, 새로 쓸 때는 한 번 더 생각한다</strong>가 실무의 감각이다.</p><h3 id="loc-197">40.4 구조체와 공용체를 섞는 실무 무늬</h3><p>예제의 뒷부분은 다른 이야기다. 구조체 안에 태그와 공용체를 함께 넣은 <strong>태그된 공용체</strong>(tagged union)로, 앞의 문답에서 이름만 나온 그 무늬다.</p><pre><code data-lang="c">struct message {
-    enum msg_kind kind;      /* 어느 눈으로 볼지 알려 주는 태그 */
-    unsigned      flags : 4; /* 작은 상태들 — 비트 필드가 여기서 쓰인다 */
-    unsigned      urgent : 1;
-    union {                  /* 이름 없는 공용체 (C11) */
-        int  number;
-        char text[16];
-        struct { int x, y; } point;
-    };
-};</code></pre><p>세 가지가 겹쳐 있다. 태그, 비트 필드로 아낀 상태 플래그, 그리고 <strong>이름 없는 공용체</strong>(anonymous union, C11)다. 이름이 없으면 멤버를 한 단계 덜 거쳐 <code>m->number</code>처럼 바로 쓸 수 있어서, 태그된 공용체가 훨씬 읽기 좋아 진다.</p><p>규율은 하나뿐이고, 그것이 전부다 — <strong>태그가 말하는 멤버만 읽는다.</strong> <code>kind</code>가 <code>MSG_TEXT</code>인데 <code>number</code>를 읽으면 40장 첫 절에서 본 “다른 눈으로 보기”가 되어 의미 없는 값이 나온다. 그래서 이런 자료를 다루는 코드는 거의 언제나 예제의 <code>show</code>처럼 <strong>태그로 분기하는 <code>switch</code> 하나</strong>를 통과 하도록 만든다. 접근을 한 곳에 모으면 규율을 지킬 자리도 한 곳이 된다.</p><p><code>sizeof(struct message)</code>가 24바이트로 나온 것도 읽어 둘 만하다 — 태그 4바이트 + 비트 필드가 든 워드 + 16바이트 공용체에, 정렬을 맞추는 패딩(앞 절)이 더해진 결과다. 표현은 언제나 이렇게 <strong>선언한 것보다 조금 더</strong> 차지한다.</p><h3 id="loc-198">40.5 제8부를 닫으며</h3><p>타입을 만드는 두 문법을 얻었다 — 나란히 놓는 구조체(38장)와 겹쳐 놓는 공용체(40장). 그리고 그 과정에서 표현의 현실(엔디안·패딩)을 눈으로 확인했다. 제2부의 배경지식이 문법으로 완전히 회수된 것이다.</p><p>다음 부는 정밀의 부다 — 6장에서 배운 근사의 수학이 C의 실수 타입으로 내려오고(41장), 29장에서 씨앗을 심은 계약의 관점이 오류 처리로 자라며 (42장), 이 책이 곳곳에서 예고해 온 “계약 밖”의 세계 — 정의되지 않은 동작 — 를 정면으로 만난다(43장).</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>a = (3, 4)
+b = (13, 3)
+p->x = 13
+sizeof(struct point) = 8
+</code></pre></div></div><p><strong>선언</strong>은 <code>struct point { int x; int y; };</code> — 중괄호 안의 각 항목을 <strong>멤버</strong>(member)라 부른다. 이 선언 자체는 기억을 잡지 않는다. “이런 모양의 타입이 있다”는 정의일 뿐이고, <code>struct point a;</code>처럼 써야 변수가 생긴다.</p><p><strong>초기화</strong>는 시연처럼 멤버 이름을 적는 <strong>지정 초기화</strong>(designated initializer, C99)를 권한다 — <code>{ .x = 3, .y = 4 }</code>. 순서에 기대는 <code>{3, 4}</code>보다 읽기 좋고, 멤버가 늘거나 순서가 바뀌어도 안전하다. 적지 않은 멤버는 0으로 채워진다.</p><p><strong>접근</strong>은 두 표기다 — 값에는 점(<code>a.x</code>), 포인터에는 화살표(<code>p->x</code>). 화살표는 사실 <code>(*p).x</code>의 줄임이다(32장의 역참조 + 점). 포인터로 구조체를 다루는 일이 압도적으로 흔해서 전용 표기를 둔 것이다.</p><p><strong>복합 리터럴</strong> — 시연의 <code>(struct point){ .x = ..., .y = ... }</code>는 “그 자리에서 이름 없는 구조체 값을 하나 만드는” 표기다(C99). 반환값이나 인자로 구조체를 즉석에서 넘길 때 요긴하다.</p><h3>40.2 구조체는 값이다</h3><p>C에서 구조체는 <strong>값처럼</strong> 다뤄진다 — 대입하면 통째로 복사되고, 함수에 넘기면 31장의 규칙 그대로 복사되어 건너가며, <code>return</code>으로 통째로 돌려 줄 수도 있다. 시연의 <code>moved(a, 10, -1)</code>이 그 확인이다: a는 그대로이고 새 값 b가 나왔다.</p><p>이 복사는 멤버를 그대로 옮겨 적는 <strong>얕은 복사</strong>(shallow copy)다. 멤버가 전부 수라면 문제가 없지만, 멤버 중에 포인터가 있으면 주소가 그대로 복제되어 원본과 사본이 같은 곳을 가리키게 된다 — 이 사실이 뒤에서 자기를 가리키는 자료를 다룰 때 결정적인 함정이 된다.</p><p>다만 실무에서는 큰 구조체를 값으로 주고받는 대신 <strong>포인터로 넘기는</strong> 관행이 흔하다 — 복사 비용을 아끼기 위해서다(9장의 기억 사다리를 떠올리면 큰 덩어리의 복사가 공짜가 아님이 보인다). 읽기만 할 때는 <code>const struct<br>point *p</code>처럼 const 포인터로 받는 것이 관행이다 — 22장의 <code>const</code>가 “이 함수는 원본을 건드리지 않는다”는 계약 표시로 일하는 것이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>struct point</code>라고 매번 <code>struct</code>를 붙이는 것이 번거롭다 — 줄일 수 없는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>전통적으로는 <code>typedef</code>로 별명을 만들어 왔다 — <code>typedef struct point<br><span style="white-space: pre-wrap">&#x20;&#x20;</span>point_t;</code>처럼. 다만 취향과 유파가 갈리는 지점이라(별명이 “이것이 구조체”라는 정보를 감춘다는 반론이 있다), 이 책은 지면에서 정체가 보이도록 <code>struct</code>를 붙여 쓴다. 어느 쪽이든 일관성이 중요하다.</p></div></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>구조체 안에 자기 자신을 멤버로 넣을 수 있는가 — 리스트 같은 것을 만들려면 필요할 것 같은데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>자기 자신을 <strong>값으로</strong> 담을 수는 없다(무한한 크기가 되므로). 그러나 <strong>자신을 가리키는 포인터</strong>는 담을 수 있고, 바로 그것이 연결 자료구조의 씨앗이다: <code>struct node { int value; struct node *next; };</code> 이 한 줄에 32장의 포인터와 39장의 동적 메모리가 만나면 연결 리스트·트리 같은 구조가 열린다 — 이 책의 범위를 넘는 자료구조의 세계이지만, 문을 여는 열쇠가 여기 있다는 것은 알아 둘 만하다.</p></div></div><p>값들을 묶는 법을 얻었다. 다음 장은 그것을 <strong>부리는</strong> 법이다 — 그 자리에서 만들어 넘기는 임시 구조체, 그것으로 얻는 순서 없는 이름 붙은 인자, 그리고 멤버 사이에 끼는 빈자리(패딩)를 다루는 법.</p>
 <div class="nav"><a href="ch39.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch41.html">다음 →</a></div>
 </div></main></body></html>

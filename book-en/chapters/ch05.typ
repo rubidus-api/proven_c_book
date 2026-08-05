@@ -151,7 +151,7 @@ three representations*. That neutrality was not free — with different
 representations the result bits of the same operation differ, so the standard
 had no choice but to leave much of the behaviour of signed integers as "it
 depends on the machine." Half the reason signed overflow became *undefined
-behaviour* (chapter 43) lies here.
+behaviour* (chapter 45) lies here.
 
 Meanwhile reality converged on one side. The circuit simplicity of two's
 complement was overwhelming, so for decades essentially every new CPU used it
@@ -171,7 +171,7 @@ practice was promoted to a promise of the standard (exactly the pattern of the
   that "signed numbers do not overflow" is valuable to the compiler
   (chapter 11) in loop analysis and reordering, so the standard chose to keep
   it. In summary: unsigned overflow = defined wrap-around, signed overflow =
-  still outside the contract. The practical rules are covered in chapter 23.
+  still outside the contract. The practical rules are covered in chapter 25.
 ]
 
 #misconception[
@@ -185,7 +185,7 @@ practice was promoted to a promise of the standard (exactly the pattern of the
   spectacularly was not an overflow "alarm" but a *downstream accident* caused
   by the wrapped value. Watching for overflow is the programmer's job, not the
   machine's — which is also why verified tools like proven check arithmetic
-  later on (chapters 35 and 65).
+  later on (chapters 37 and 70).
 ]
 
 == Shift — pushing bits wholesale
@@ -240,7 +240,7 @@ to promise.
   want, and keep only the bits you need." The shift as multiplication has been
   handed over to the compiler, but the shift as a *placement tool* remains the
   everyday language of the systems programmer. Its actual use in C's syntax is
-  covered in chapter 24.
+  covered in chapter 26.
 ]
 
 #qa[
@@ -257,7 +257,7 @@ to promise.
   is by now a familiar pattern — unable to take sides, it put *shifts of at
   least the width* outside the contract, as undefined behaviour. "Where machines
   respond differently, the standard gives up on promising" — we meet this
-  pattern formally again in chapter 43.
+  pattern formally again in chapter 45.
 ]
 
 == Sign extension — from a narrow container to a wide one
@@ -296,7 +296,7 @@ the upper bits — a cousin of overflow, in that a value that does not fit its
 container is silently ruined. C has rules for automatically widening small
 integers before a calculation (integer promotion), and when widening and
 narrowing happen and what is dangerous about them is treated formally with C's
-integer types in chapters 23 and 24 — the picture in this chapter (zero fill /
+integer types in chapters 25 and 26 — the picture in this chapter (zero fill /
 sign copy / truncation) is the capital for that.
 
 The background on integers is complete. Unsigned numbers are a modular world
@@ -304,7 +304,7 @@ that goes round like a clock; negative numbers were settled, after a
 competition of three agreements, on two's complement, which C23 pinned down;
 overflow is silent; and shifting and changing containers (extension) only make
 sense once you know how the vacancy is filled. C's integer *types* and the
-practical rules are built on this background in chapters 23 and 24.
+practical rules are built on this background in chapters 25 and 26.
 
 The next chapter is the next rung on the ladder — beyond integers, the two ways
 of holding numbers with a decimal point, and the contract called IEEE 754.

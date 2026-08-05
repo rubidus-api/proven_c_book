@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>23 정수 — 유한한 수의 세계 — Proven C Book</title><style>
+<title>23 함수 선언과 정의 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,78 +68,26 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-124">23 정수 — 유한한 수의 세계</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-44"></span><p>제6부는 값을 벼리고 흐름을 다스리는 부다. 첫 장은 C의 정수를 정면으로 다룬다 — 5장에서 배운 표현의 세계가 C의 타입 가족으로 어떻게 나타나는지, 오버플로가 실무에서 어떤 얼굴인지, 그리고 현대 C의 관행 (<code>&lt;stdint.h></code>)까지.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>5장에서 부호 없는 정수의 넘침은 “정의된 감아 돌기”이고 부호 있는 넘침은 계약 밖이라 했다. 그런데 20장에서 만든 <code>int</code>는 부호가 있는가 없는가 — 우리가 여태 쓴 변수들은 어느 세계에 있었던 것인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><code>int</code>는 부호 <strong>있는</strong> 정수다 — 즉 여태 우리의 변수들은 “넘치면 계약 밖”의 세계에 있었다. 다행히 지금까지의 예제는 ±21억의 그릇을 넘볼 일이 없었지만, 이제 그 경계선을 정확히 그어 둘 때가 됐다. 그릇의 종류와 크기, 경계의 위치, 넘었을 때의 규칙 — 이 장의 내용이다.</p></div></div><h3 id="loc-125">23.1 정수 타입 가족</h3><p>C의 정수 타입은 <code>int</code> 하나가 아니라 가족이다. 부호 있는 쪽의 기본 구성원은 크기 순으로 <code>char</code>(1바이트 — 2장의 그 “바이트=문자” 사연이 이름에 남았다), <code>short</code>, <code>int</code>, <code>long</code>, <code>long long</code>이고, 각각의 앞에 <code>unsigned</code>를 붙이면 부호 없는 짝이 된다(<code>unsigned int</code> 등). 표준은 각 타입의 <strong>최소</strong> 크기만 정한다 — <code>int</code>는 최소 16비트, <code>long</code>은 최소 32비트라는 식이라, 정확한 크기는 플랫폼의 몫이다(주류 환경에서 <code>int</code>는 32비트).</p><p>“기계마다 다르다”가 불안하게 들린다면 정확한 직감이다 — 그래서 현대 C의 관행은 크기가 이름에 박힌 타입을 쓰는 것이다. <code>&lt;stdint.h></code> 도구 상자의 <code>int32_t</code>(정확히 32비트, 부호 있음), <code>uint8_t</code>, <code>int64_t</code> 같은 타입들이다. 크기가 계약의 일부인 자리 — 파일 형식, 통신, 3장의 엔디안이 문제 되는 모든 곳 — 에서는 이쪽이 표준 관행이다. C23은 여기에 <code>_BitInt(N)</code> — 원하는 비트 폭을 직접 적는 정수 — 까지 보탰다. 이 책의 예제는 지면의 단순함을 위해 <code>int</code>를 기본으로 쓰되, 크기가 중요한 장면에서는 <code>&lt;stdint.h></code> 가족으로 갈아탄다.</p><h3 id="loc-126">23.2 기본 자료형의 지도 — 최소 범위와 실제 범위</h3><p>C의 기본 자료형이 정확히 무엇무엇인지, 그리고 각자 얼마나 큰지를 한자리에 정리한다. 이 절은 찾아보는 자리다.</p><p><strong>정수형</strong>은 다섯 층이고 각 층에 부호 있는 판과 없는 판이 있다 — <code>char</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>long long</code>. 여기에 <code>bool</code>(C99)과 문자 전용 타입들(<code>char16_t</code>·<code>char32_t</code>·<code>wchar_t</code>)이 딸린다. <strong>실수형</strong>은 셋이다 — <code>float</code>, <code>double</code>, <code>long double</code>.</p><p>표준이 못박는 것은 <strong>크기가 아니라 최소 범위</strong>다. “int는 4바이트”라는 흔한 말은 표준의 문장이 아니라 오늘날 대부분의 플랫폼이 그렇다는 관찰일 뿐이다.</p><table><tr><th><strong>타입</strong></th><th><strong>표준이 보장하는 최소 범위</strong></th><th><strong>최소 폭</strong></th><th><strong>한계 매크로</strong></th></tr><tr><td><code>signed char</code></td><td>−127   +127</td><td>8비트</td><td><code>SCHAR_MIN</code> <code>SCHAR_MAX</code></td></tr><tr><td><code>unsigned char</code></td><td>0   255</td><td>8비트</td><td><code>UCHAR_MAX</code></td></tr><tr><td><code>char</code></td><td>위 둘 중 하나(구현 정의)</td><td>8비트</td><td><code>CHAR_MIN</code> <code>CHAR_MAX</code></td></tr><tr><td><code>short</code></td><td>−32767   +32767</td><td>16비트</td><td><code>SHRT_MIN</code> <code>SHRT_MAX</code></td></tr><tr><td><code>unsigned short</code></td><td>0   65535</td><td>16비트</td><td><code>USHRT_MAX</code></td></tr><tr><td><code>int</code></td><td>−32767   +32767</td><td>16비트</td><td><code>INT_MIN</code> <code>INT_MAX</code></td></tr><tr><td><code>unsigned int</code></td><td>0   65535</td><td>16비트</td><td><code>UINT_MAX</code></td></tr><tr><td><code>long</code></td><td>−2147483647   +2147483647</td><td>32비트</td><td><code>LONG_MIN</code> <code>LONG_MAX</code></td></tr><tr><td><code>unsigned long</code></td><td>0   4294967295</td><td>32비트</td><td><code>ULONG_MAX</code></td></tr><tr><td><code>long long</code></td><td>약 ±9.2×10<sup>18</sup></td><td>64비트</td><td><code>LLONG_MIN</code> <code>LLONG_MAX</code></td></tr><tr><td><code>unsigned long long</code></td><td>0   약 1.8×10<sup>19</sup></td><td>64비트</td><td><code>ULLONG_MAX</code></td></tr></table><p>최소 범위가 −127(−128이 아니라)인 것에 눈이 갈 것이다. 옛 표준이 세 가지 부호 표현을 모두 허용했기 때문이고(5장), C23이 2의 보수를 못박은 지금은 실질적으로 −128이다.</p><p><strong>크기의 순서</strong>도 표준이 정한다. 폭은 이 순서를 거스를 수 없다.</p><pre><code data-lang="text">char  ≤  short  ≤  int  ≤  long  ≤  long long</code></pre><p>그리고 <code>sizeof(char)</code>는 언제나 1이다 — 바이트가 곧 <code>char</code>의 크기라는 정의(2장) 때문이다. 다만 <strong>한 바이트가 몇 비트인지</strong>는 <code>CHAR_BIT</code>이 말해 주고, 표준은 8 이상만 보장한다.</p><p><strong>실수형</strong>의 한계는 <code>&lt;float.h></code>가 담당한다. 자주 쓰는 것만 추리면 이렇다.</p><table><tr><th><strong>매크로</strong></th><th><strong>뜻</strong></th><th><strong>IEEE 754 double 기준</strong></th></tr><tr><td><code>FLT_DIG</code> <code>DBL_DIG</code></td><td>믿을 수 있는 십진 자릿수</td><td>6 / 15</td></tr><tr><td><code>FLT_MAX</code> <code>DBL_MAX</code></td><td>표현 가능한 최댓값</td><td>약 1.8×10<sup>308</sup></td></tr><tr><td><code>FLT_MIN</code> <code>DBL_MIN</code></td><td>정규화된 최솟값</td><td>약 2.2×10<sup>−308</sup></td></tr><tr><td><code>FLT_EPSILON</code> <code>DBL_EPSILON</code></td><td>1.0과 구분되는 최소 차이</td><td>약 2.2×10<sup>−16</sup></td></tr><tr><td><code>FLT_RADIX</code></td><td>지수의 밑</td><td>2</td></tr></table><p><code>DBL_EPSILON</code>은 41장에서 실수를 비교할 때 다시 만난다 — “같다”를 판단하는 기준을 세울 때 쓰는 값이다.</p><div><div><p><code>examples/ch23/limits.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;limits.h>
-#include &lt;stdint.h>
-#include &lt;float.h>
-#include &lt;stddef.h>
+<h2>23 함수 선언과 정의</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>20장에서 함수를 <strong>부르는</strong> 법을 배웠다 — 이제 <strong>만드는</strong> 법이다. 정의와 <span id="idx-entry-44"></span>선언(원형)의 구별, 매개변수와 <code>return</code>, 스코프의 첫걸음까지. 그리고 이 장의 끝에서, 13장부터 끌고 온 외상 — <code>int main(void)</code>와 <code>return 0</code> — 을 완전히 청산한다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>14장에서 “컴파일 단계는 <strong>선언</strong>(예고)만 있으면 만족하고, 몸통을 찾아 잇는 것은 링커”라고 했다. 그때의 “선언”과, 22장에서 배운 “변수 선언”은 같은 낱말을 쓴다 — 우연인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>우연이 아니다. C에서 <strong>선언</strong>이란 언제나 같은 일 — “컴파일러에게 이름과 그 생김새(타입)를 미리 알리는 것” — 이다. 변수 선언은 값의 이름을, 함수 선언은 일의 이름을 알린다. 이 장에서 그 두 번째 종류를 만들고 나면, <code>#include</code>가 가져오던 것의 정체(선언들의 묶음)까지 한 줄로 꿰어진다.</p></div></div><h3>23.1 정의 — 일꾼을 만드는 문법</h3><p>20장의 <code>abs</code>나 <code>printf</code> 같은 일꾼을 이제 직접 만든다. 함수 <strong>정의</strong>의 문법은 이렇다:</p><pre><code data-lang="c">반환타입 이름(매개변수 목록)
+{
+    몸통 — 문장들의 목록
+}</code></pre><p>시연부터 보면 빠르다. 정수를 받아 그 제곱을 돌려주는 일꾼이다:</p><div><div><p><code>examples/ch23/fn.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+int square(int n)     /* 정수 하나를 받아 정수 하나를 돌려주는 일꾼 */
+{
+    return n * n;
+}
 
 int main(void)
 {
-    printf("--- 기본 정수형의 크기(이 기계에서) ---\n");
-    printf("char=%zu short=%zu int=%zu long=%zu long long=%zu\n",
-           sizeof(char), sizeof(short), sizeof(int), sizeof(long), sizeof(long long));
-    printf("size_t=%zu ptrdiff_t=%zu void*=%zu\n",
-           sizeof(size_t), sizeof(ptrdiff_t), sizeof(void *));
-
-    printf("\n--- 실제 범위(&lt;limits.h> 매크로) ---\n");
-    printf("CHAR_BIT  = %d\n", CHAR_BIT);
-    printf("SCHAR_MIN = %d, SCHAR_MAX = %d, UCHAR_MAX = %u\n",
-           SCHAR_MIN, SCHAR_MAX, (unsigned)UCHAR_MAX);
-    printf("SHRT_MIN  = %d, SHRT_MAX  = %d, USHRT_MAX = %u\n",
-           SHRT_MIN, SHRT_MAX, (unsigned)USHRT_MAX);
-    printf("INT_MIN   = %d, INT_MAX   = %d, UINT_MAX  = %u\n",
-           INT_MIN, INT_MAX, UINT_MAX);
-    printf("LONG_MIN  = %ld, LONG_MAX = %ld\n", LONG_MIN, LONG_MAX);
-    printf("LLONG_MAX = %lld, ULLONG_MAX = %llu\n", LLONG_MAX, ULLONG_MAX);
-
-    printf("\n--- 고정 폭 타입(&lt;stdint.h>) ---\n");
-    printf("INT8_MAX=%d INT16_MAX=%d INT32_MAX=%d\n",
-           (int)INT8_MAX, (int)INT16_MAX, (int)INT32_MAX);
-    printf("INT64_MAX=%lld UINT64_MAX=%llu\n",
-           (long long)INT64_MAX, (unsigned long long)UINT64_MAX);
-    printf("SIZE_MAX=%zu\n", SIZE_MAX);
-
-    printf("\n--- 실수형(&lt;float.h>) ---\n");
-    printf("float : %zu bytes, %d digits, max %g\n", sizeof(float), FLT_DIG, (double)FLT_MAX);
-    printf("double: %zu bytes, %d digits, max %g\n", sizeof(double), DBL_DIG, DBL_MAX);
-    printf("DBL_EPSILON = %g (1.0 과 구분되는 가장 작은 차이)\n", DBL_EPSILON);
+    printf("%d\n", square(12));
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>--- 기본 정수형의 크기(이 기계에서) ---
-char=1 short=2 int=4 long=8 long long=8
-size_t=8 ptrdiff_t=8 void*=8
-
---- 실제 범위(&lt;limits.h> 매크로) ---
-CHAR_BIT  = 8
-SCHAR_MIN = -128, SCHAR_MAX = 127, UCHAR_MAX = 255
-SHRT_MIN  = -32768, SHRT_MAX  = 32767, USHRT_MAX = 65535
-INT_MIN   = -2147483648, INT_MAX   = 2147483647, UINT_MAX  = 4294967295
-LONG_MIN  = -9223372036854775808, LONG_MAX = 9223372036854775807
-LLONG_MAX = 9223372036854775807, ULLONG_MAX = 18446744073709551615
-
---- 고정 폭 타입(&lt;stdint.h>) ---
-INT8_MAX=127 INT16_MAX=32767 INT32_MAX=2147483647
-INT64_MAX=9223372036854775807 UINT64_MAX=18446744073709551615
-SIZE_MAX=18446744073709551615
-
---- 실수형(&lt;float.h>) ---
-float : 4 bytes, 6 digits, max 3.40282e+38
-double: 8 bytes, 15 digits, max 1.79769e+308
-DBL_EPSILON = 2.22045e-16 (1.0 과 구분되는 가장 작은 차이)
-</code></pre></div></div><p>이 출력은 <strong>이 책을 만든 기계의 것</strong>이라는 점이 중요하다. 다른 기계에서 돌리면 다른 수가 나올 수 있고, 그것이 바로 이 절의 요점이다 — <strong>크기를 가정하지 말고 물어보라.</strong></p><h3 id="loc-127">23.3 크기가 계약인 자리 — 고정 폭 타입</h3><p>폭이 정확히 정해져야 하는 곳이 있다. 파일 형식, 네트워크 프로토콜, 하드웨어 레지스터가 그렇다. 이런 자리에는 <code>&lt;stdint.h></code>의 고정 폭 타입을 쓴다.</p><table><tr><th><strong>갈래</strong></th><th><strong>예</strong></th><th><strong>뜻</strong></th></tr><tr><td>정확한 폭</td><td><code>int8_t</code> <code>uint16_t</code> <code>int32_t</code> <code>uint64_t</code></td><td>정확히 그 비트 수. 없으면 제공되지 않는다</td></tr><tr><td>최소 폭</td><td><code>int_least16_t</code></td><td>적어도 그만큼인 것 중 가장 작은 타입</td></tr><tr><td>가장 빠른</td><td><code>int_fast32_t</code></td><td>적어도 그만큼이면서 기계가 가장 빨리 다루는 타입</td></tr><tr><td>포인터 크기</td><td><code>intptr_t</code> <code>uintptr_t</code></td><td>포인터를 담을 수 있는 정수(12장의 출처 주의)</td></tr><tr><td>최대</td><td><code>intmax_t</code> <code>uintmax_t</code></td><td>가장 넓은 정수</td></tr><tr><td>크기·차이</td><td><code>size_t</code> <code>ptrdiff_t</code></td><td>크기와 포인터 차이의 타입</td></tr></table><p>각각의 한계도 매크로로 있다 — <code>INT32_MAX</code>, <code>UINT64_MAX</code>, <code>SIZE_MAX</code>, <code>PTRDIFF_MAX</code>처럼. 서식 지정자는 <code>&lt;inttypes.h></code>의 <code>PRId32</code> 계열을 쓴다(부록 B).</p><p>수칙은 단순하다. <strong>의미가 “이 기계의 자연스러운 정수”라면 <code>int</code>, “크기·인덱스”라면 <code>size_t</code>, “형식이 정한 폭”이라면 고정 폭 타입.</strong></p><h3 id="loc-128">23.4 경계를 눈으로 본다</h3><p>그릇의 가장자리는 <code>&lt;limits.h></code> 도구 상자가 알려 준다. 그리고 부호 없는 세계의 감아 돌기는 — 5장에서 지면으로 배운 그것 — 이제 직접 실행해 보일 수 있다.</p><div><div><p><code>examples/ch23/wrap.c</code></p><pre><code data-lang="c">#include &lt;limits.h>
-#include &lt;stdio.h>
-
-int main(void)
+</code></pre></div><div><p>실행 결과</p><pre><code>144
+</code></pre></div></div><p><code>square</code>의 정의를 부분별로 읽는다.</p><ul><li><strong>반환타입</strong> <code>int</code> — 이 일꾼이 내놓는 결과가 정수라는 약속이다.</li><li><strong>매개변수</strong> <code>int n</code> — 재료를 받는 <strong>변수 선언</strong>이다(22장의 문법 그대로). 호출될 때, 재료의 값이 이 변수에 담긴 채 몸통이 시작된다. <code>square(12)</code>라 부르면 <code>n</code>에 12가 담기고 몸통이 돈다.</li><li><strong><code>return</code> 문</strong> — 결과를 내놓고 <strong>즉시 퇴장</strong>한다. <code>return n * n;</code>은 수식을 평가해 그 값을 호출한 쪽에 돌려준다 — 20장에서 배운 “호출 자리가 반환값으로 바뀐다”의 공급자 쪽 모습이다.</li></ul><p>이것으로 호출의 그림이 완성됐다. 20장은 소비자의 눈(부르기)이었고 이 장은 생산자의 눈(만들기)이다 — <code>printf("%d\n", square(12))</code>에서 값 12가 <code>n</code>으로, <code>n * n</code>의 144가 호출 자리로, 다시 <code>printf</code>의 재료로 흐르는 릴레이 전체가 이제 보인다.</p><h3>23.2 선언 — 계약 서명만 미리</h3><p>위 예제에서 <code>square</code>의 정의는 <code>main</code>보다 <strong>위에</strong> 있다. 우연이 아니다 — 컴파일러는 파일을 위에서 아래로 읽으므로(14장), <code>main</code> 안의 <code>square(12)</code>를 만나는 시점에 square가 <strong>무엇인지</strong>(재료와 결과의 타입)를 이미 알아야 호출이 맞는지 검사할 수 있다.</p><p>그런데 정의 전체를 미리 보여 줄 필요는 없다. <strong>계약 서명만</strong> 미리 알리면 된다 — 그것이 함수 <strong>선언</strong>, 관용적으로 <strong>원형</strong>(prototype)이다:</p><pre><code data-lang="c">int square(int n);    /* 선언: 이런 일꾼이 (어딘가에) 있다 */</code></pre><p>몸통 없이 서명과 세미콜론뿐이다. 파일 위쪽에 원형을 적어 두면 정의는 아래 어디에 있어도 되고 — 더 중요하게는 — <strong>다른 파일</strong>에 있어도 된다. 14장의 수수께끼가 여기서 완전히 풀린다: <code>#include &lt;stdio.h></code>가 붙여 넣던 수만 줄의 정체가 바로 이런 <strong>원형들의 묶음</strong>이다. <code>printf</code>의 계약 <span id="idx-entry-45"></span>서명을 컴파일러에게 미리 보여 주는 것 — 그것이 헤더 파일의 일이고, 몸통은 링커가 잇는다(정의와 선언의 분업이 여러 파일 프로젝트로 자라는 이야기는 46장이다).</p><p>이 원형이라는 발명품의 나이도 이제 말할 수 있다 — 10장에서 본 대로, C89가 표준화하며 들여온 것이다. 그전의 C는 재료의 타입을 검사하지 않았고, 틀린 재료로 부른 호출이 소리 없이 통과해 사고가 났다. 원형은 “계약을 컴파일 시점에 검사한다”는, C가 계약의 언어로 자라는 첫걸음 이었다.</p><div class="dev realcase"><p class="dev-label">◉ 원형 없는 호출이 남긴 상처 — 암묵 선언</p><p>원형이 없던 시절(10장)의 C에는 관대한 규칙이 하나 있었다. 선언한 적 없는 이름을 함수처럼 부르면, 컴파일러가 “정수를 돌려주는 함수겠거니” 하고 <strong>멋대로 선언을 지어내</strong> 통과시킨 것이다(암묵 선언). 편해 보이지만 결과는 참혹했다 — 실제로는 실수를 돌려주는 함수를 정수 함수로 오해하거나, 포인터를 받는 함수에 정수를 넘겨도 아무 경고 없이 컴파일 됐다. 특히 정수와 포인터의 크기가 다른 기계로 옮길 때 조용히 무너지는 코드가 쏟아졌다 — 32비트에서 64비트로 넘어가던 시기에 이 부류의 버그가 대거 드러났다. C99가 마침내 암묵 선언을 표준에서 제거했고, 오늘의 컴파일러는 이를 오류로 잡는다. “쓰기 전에 선언한다”는 규칙이 성가신 격식이 아니라 사고의 방벽이라는 것 — 반세기의 상처가 남긴 교훈이다.</p></div><h3>23.3 스코프 — 이름이 보이는 범위</h3><p><code>square</code>의 <code>n</code>과 <code>main</code>의 어떤 이름이 부딪히지 않을까 — 걱정할 필요가 없다. <strong>블록 안에서 선언된 이름은 그 블록 안에서만 보인다.</strong> 이 보이는 범위를 <strong>스코프</strong>(scope)라 한다. <code>n</code>은 <code>square</code>의 몸통에서만 존재하고, <code>main</code>은 그 이름을 아예 모른다. 함수마다 자기만의 작업대가 있는 셈이라, 일꾼들이 서로의 도구를 건드릴 걱정 없이 이름을 자유로이 짓는다 — 프로그램이 커져도 무너지지 않는 비결의 절반이 이 칸막이다. (작업대의 더 깊은 사정 — 이름의 수명, 함수 사이에 값이 어떻게 오가는지의 정밀한 그림 — 은 29·38장에서 이어진다.)</p><h3>23.4 외상 청산 — int main(void)</h3><p>이제 이 순간을 위해 아껴 둔 일을 한다. 13장의 헬로 월드에서 마지막까지 “주문”으로 남겨 둔 두 줄을, 오늘 배운 문법으로 다시 읽는다.</p><pre><code data-lang="c">int main(void)
 {
-    printf("INT_MAX  = %d\n", INT_MAX);
-    printf("UINT_MAX = %u\n", UINT_MAX);
-    printf("UINT_MAX + 1 = %u\n", UINT_MAX + 1u);  /* 정의된 감아 돌기 */
+    ...
     return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>INT_MAX  = 2147483647
-UINT_MAX = 4294967295
-UINT_MAX + 1 = 0
-</code></pre></div></div><p>서식 하나가 새로 합류했다 — 부호 없는 정수는 <code>%d</code>가 아니라 <code>%u</code>로 찍는다(19장의 서식 계약이 타입 가족을 따라 늘어나는 것이다). 그리고 셋째 줄이 5장의 약속 그대로다: 최댓값에 1을 더하니 0 — 시계가 한 바퀴 돈 것이고, 이것은 <strong>정의된</strong> 동작이다.</p><p>부호 있는 쪽은 사정이 다르다. <code>INT_MAX + 1</code>을 계산하는 코드는 계약 밖(정의되지 않은 동작)이라서, <strong>이 책의 검증 파이프라인에 넣을 수조차 없다</strong> — 15장에서 장만한 UBSan이 정확히 이런 코드를 실행 중에 잡아 낸다. 같은 “+1”인데 한쪽은 시연 가능하고 한쪽은 불가능하다는 것 자체가, 두 세계의 차이를 웅변한다.</p><div class="dev misconception"><p class="dev-label">⚠ “오버플로는 큰 수를 다루는 특수한 프로그램의 문제다”</p><p>그럴듯하지만, 실제 사고 목록은 반대를 말한다. 가장 흔한 오버플로는 평범한 곳에서 난다 — 두 인덱스의 평균을 <code>(a + b) / 2</code>로 구하다가 <strong>더하는 중간 결과</strong>가 넘치고(유명한 이진 탐색 버그: 표준 라이브러리 들에 20년 가까이 숨어 있었다), 밀리초 타이머가 49일 만에 감아 돌고 (Windows 95의 49.7일 멈춤 사고), 크기 계산 <code>개수 * 크기</code>가 넘쳐 터무니없이 작은 메모리를 잡는다(보안 사고의 고전). 공통점은 <strong>최종 값이 아니라 중간 계산</strong>이 넘친다는 것이다 — 그릇 걱정은 결과가 아니라 수식의 모든 중간 단계에 대해 하는 것이고, 이것이 proven류의 검사 산술이 존재하는 이유다(35장).</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>char</code>가 정수 타입 가족이라는 것이 이상하다 — 문자 아닌가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>C에서 문자와 작은 정수는 같은 것이다 — 6장에서 배운 대로 문자는 번호이고, <code>char</code>는 그 번호를 담는 1바이트 정수 그릇일 뿐이다. <code>'A'</code>라는 문자 리터럴의 값은 그냥 65다. 한 가지 함정만 미리 — <code>char</code>가 부호 있는지 없는지는 <strong>플랫폼마다 다르다</strong>(둘 다 아닌 제3의 타입이다). 그래서 수치 계산에는 <code>char</code>를 쓰지 않고, 바이트가 필요하면 <code>uint8_t</code>를 쓰는 것이 현대 관행이다. 문자열과 <code>char</code>의 본격적인 이야기는 34장에 있다.</p></div></div><p>정수의 그릇들을 정리했다. 다음 장은 그 그릇 위의 연산 — 17장에서 미뤄 둔 나눗셈의 진실과, 5장에서 배운 비트 세계의 연산자들이 C 문법으로 합류한다.</p>
+}</code></pre><p>이것은 그냥 <strong>함수 정의</strong>다. 이름이 <code>main</code>이고, 매개변수 목록의 <code>void</code>는 “재료 없음”을 명시하는 표기이며, 반환타입은 <code>int</code> — 즉 “재료 없이 일하고 정수 하나를 내놓는 일꾼”이다. 특별한 것은 문법이 아니라 <strong>호출자</strong> 다: <code>main</code>을 부르는 것은 우리 코드가 아니라 <strong>운영체제</strong>다. 프로그램 실행이란 운영체제가 <code>main</code>을 호출하는 일이고, <code>return 0;</code>은 그 호출자에게 결과값을 돌려주는 것이다 — 관례로 0이 “무사히 마쳤음”, 0 아닌 값이 “문제 있었음”이다. 그 값은 버려지지 않는다 — 운영체제와 셸이 받아서, 프로그램들을 이어 붙인 자동화가 성공·실패를 가리는 데 쓴다(8장의 스트림처럼, 이것도 프로그램을 부품으로 잇는 장치다).</p><p>13장의 외상 장부가 이것으로 <strong>전부 청산되었다</strong>. 헬로 월드의 여섯 줄에 이제 모르는 것이 없다 — 전처리 지시, 함수 정의, 블록, 호출 수식문, 문자열 리터럴, 서식, 반환까지. 입문의 첫 산 하나를 넘은 것이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>main</code>도 함수라면, 우리가 <code>main()</code>이라고 직접 불러도 되는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>문법상 가능하지만 하지 않는 것이 관행이고, 할 이유도 없다 — <code>main</code>은 “운영체제가 부르는 입구”라는 역할이 본질이라서, 코드 안에서 다시 부르는 것은 건물의 정문을 방 안에 또 만드는 격이다. 재사용하고 싶은 일이 있다면 그 일을 별도 함수로 빼서 부르면 된다 — 사실 그것이 함수를 만드는 이유의 전부다: <strong>이름 붙일 가치가 있는 일에 이름을 붙이는 것.</strong></p></div></div><p>이름 붙은 값(22장)과 이름 붙은 일(23장)을 다 갖췄다. 이제 21장에서 미뤄 둔 마지막 약속을 지킬 수 있다 — 값을 담을 곳이 생겼으니, 드디어 <strong>입력</strong>이다.</p>
 <div class="nav"><a href="ch22.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch24.html">다음 →</a></div>
 </div></main></body></html>

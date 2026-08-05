@@ -101,7 +101,51 @@
   #h(0.8em) #link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]
 ]
 
-#outline(depth: 2)
+#let parts = (
+  ("제1부 — 바탕", none, (1,)),
+  ("제2부 — 전산의 기본과 배경지식", "parts/part02.typ", (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)),
+  ("제3부 — 첫 프로그램", none, (13, 14, 15, 16, 17)),
+  ("제4부 — 최소한의 도구 상자", none, (18, 19, 20, 21)),
+  ("제5부 — 선언: 이름을 만드는 법", none, (22, 23, 24)),
+  ("제6부 — 값과 흐름", none, (25, 26, 27, 28, 29, 30, 31)),
+  ("제7부 — 기억", none, (32, 33, 34, 35, 36, 37, 38, 39)),
+  ("제8부 — 자료의 모양", none, (40, 41, 42)),
+  ("제9부 — 정밀", none, (43, 44, 45)),
+  ("제10부 — 구성", none, (46, 47, 48, 49, 50, 51)),
+  ("제11부 — 표준 라이브러리 정독", "parts/part11s.typ", (52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66)),
+  ("제12부 — proven — 검증된 기본기", "parts/part12.typ", (67, 68, 69, 70, 71, 72, 73, 74, 75, 76)),
+  ("제13부 — 닫으며", none, (77, 78)),
+)
+
+// 목차: 장만 나열하면 길어지므로 *부 단위로 묶어* 낸다.
+// 장 제목과 쪽 번호는 실제 heading 에서 가져온다(수작업 목록 금지).
+#context {
+  let heads = query(heading.where(level: 1)).filter(h => h.numbering != none)
+  let by-num = (:)
+  for h in heads {
+    let n = counter(heading).at(h.location()).first()
+    by-num.insert(str(n), h)
+  }
+  block(width: 100%)[
+    #text(font: ("Noto Sans CJK KR",), size: 15pt, weight: "bold")[차례]
+    #v(0.5em)
+    #for (part-title, intro, chs) in parts {
+      block(above: 0.9em, below: 0.35em)[
+        #text(font: ("Noto Sans CJK KR",), size: 10.5pt, weight: "bold", part-title)
+      ]
+      for i in chs {
+        let h = by-num.at(str(i), default: none)
+        if h != none {
+          block(width: 100%, inset: (left: 1.2em), below: 0.2em,
+            grid(columns: (1fr, auto), column-gutter: 0.6em, align: (left, right),
+              link(h.location())[#i. #h.body],
+              link(h.location())[#counter(page).at(h.location()).first()]))
+        }
+      }
+    }
+  ]
+}
+
 #pagebreak()
 
 #set heading(numbering: none)
@@ -110,23 +154,8 @@
 #counter(heading).update(0)
 #pagebreak(weak: true)
 
-// ── 본문 (RFC-0002 rev.f 10부 46장) ──────────────────
+// ── 본문 (RFC-0002 rev.f 10부 48장) ──────────────────
 // (제목, 부 도입부 파일 또는 none, 장 번호들)
-#let parts = (
-  ("제1부 — 바탕", none, (1,)),
-  ("제2부 — 전산의 기본과 배경지식", "parts/part02.typ", (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)),
-  ("제3부 — 첫 프로그램", none, (13, 14, 15)),
-  ("제4부 — 최소한의 도구 상자", none, (16, 17, 18, 19)),
-  ("제5부 — 선언: 이름을 만드는 법", none, (20, 21, 22)),
-  ("제6부 — 값과 흐름", none, (23, 24, 25, 26, 27, 28, 29)),
-  ("제7부 — 기억", none, (30, 31, 32, 33, 34, 35, 36, 37)),
-  ("제8부 — 자료의 모양", none, (38, 39, 40)),
-  ("제9부 — 정밀", none, (41, 42, 43)),
-  ("제10부 — 구성", none, (44, 45, 46, 47, 48)),
-  ("제11부 — 표준 라이브러리 정독", "parts/part11s.typ", (49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61)),
-  ("제12부 — proven — 검증된 기본기", "parts/part12.typ", (62, 63, 64, 65, 66, 67, 68, 69, 70, 71)),
-  ("제13부 — 닫으며", none, (72, 73)),
-)
 #for (part-title, intro, chs) in parts {
   pagebreak(weak: true)
   align(center + horizon)[

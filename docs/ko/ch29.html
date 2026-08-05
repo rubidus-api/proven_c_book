@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>29 함수의 의미 — 값 복사와 부수효과 — Proven C Book</title><style>
+<title>29 결정 — if와 switch — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,79 +68,72 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-147">29 함수의 의미 — 값 복사와 부수효과</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>제6부의 마무리다. 함수 호출에서 값이 <strong>어떻게</strong> 건너가는지(복사), <span id="idx-entry-53"></span>부수효과와 평가 순서의 정식 규칙(17장 씨앗의 회수), 재귀라는 새로운 반복, 그리고 조건 연산자 <code>?:</code>까지. 마지막에 심는 씨앗 — 계약이라는 관점 — 은 제9부에서 꽃핀다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>21장에서 매개변수는 “재료를 받는 변수 선언”이라 했다. 그러면 함수 안에서 그 매개변수를 <strong>바꾸면</strong> — 밖에서 재료로 넘긴 변수도 바뀌는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>바뀌지 않는다 — 그리고 이것이 C 함수의 의미를 정하는 단 하나의 규칙이다: <strong>값은 복사되어 건너간다.</strong> 매개변수는 재료의 값을 복사받은 별개의 변수이고, 함수 안의 어떤 일도 원본에 닿지 않는다. 말보다 증명이 빠르다 — 바로 시연한다.</p></div></div><h3 id="loc-148">29.1 값 복사 — 원본은 안전하다</h3><div><div><p><code>examples/ch29/copy.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-
-void try_change(int x)
-{
-    x = 999;                    /* 복사본을 바꿀 뿐이다 */
-    printf("inside function, x = %d\n", x);
-}
+<h2>29 결정 — if와 switch</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>프로그램이 갈림길을 만난다. 조건에 따라 다른 길을 가는 <code>if</code>와, 여러 갈래를 한 번에 벌이는 <code>switch</code> — 두 분기 장치를 익힌다. 2장의 계산 모델(“결과가 0이면 건너뛰어라”)이 드디어 C 문법의 얼굴로 나타나는 장이다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>10장에서 “if 는 공짜가 아니다”라는 감각을 예고했다 — 분기 예측이 틀리면 파이프라인을 비우는 벌금을 문다고. 그러면 프로그래머는 분기를 피해야 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>아니다 — 분기는 프로그램의 뼈대이고, 예측기는 일상 코드에서 90% 넘게 맞힌다. 그 감각의 쓸모는 “분기를 쓰지 말라”가 아니라 <strong>분기의 비용이 일정하지 않음을 아는 것</strong>이다 — 규칙적인 갈림길은 싸고, 무작위한 갈림길은 비싸다(정렬된 배열 사건). 성능이 문제 되는 극히 일부 코드에서만 꺼내는 지식이고, 오늘 배우는 분기는 마음껏 쓰면 된다.</p></div></div><h3>29.1 if — 조건이 참이면</h3><p>문법은 읽는 그대로다:</p><pre><code data-lang="c">if (조건) {
+    조건이 참일 때의 문장들
+} else {
+    거짓일 때의 문장들   /* else 부분은 없어도 된다 */
+}</code></pre><p>조건 자리에는 bool이 되는 수식(28장)이 오고, 갈래마다 블록(18장)이 온다. 갈래가 여럿이면 <code>else if</code>로 사다리를 만든다 — 시연이 그 모습이다. 24장의 입력 관행(fgets+sscanf)이 다시 나오는 것도 눈여겨보면 된다.</p><div><div><p><code>examples/ch29/grade.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
 
 int main(void)
 {
-    int n = 1;
+    char line[100];
+    int score = 0;
 
-    try_change(n);
-    printf("after the call,  n = %d\n", n);   /* 원본은 그대로다 */
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>inside function, x = 999
-after the call,  n = 1
-</code></pre></div></div><p><code>try_change</code> 안에서 <code>x</code>를 999로 바꿨지만, 밖의 <code>n</code>은 1 그대로다. 호출 <code>try_change(n)</code>의 정확한 의미가 이것이다 — n의 <strong>값</strong> 1이 복사되어 x라는 <strong>다른 변수</strong>의 첫 값이 되고, 이후 둘은 남남이다. 21장의 스코프 칸막이에 이 복사 규칙까지 더하면, 함수는 완전한 격리실이 된다: 재료는 값으로 들어오고, 결과는 <code>return</code>의 값으로 나가며, 그 외의 통로는 없다.</p><div class="dev misconception"><p class="dev-label">⚠ “함수에 변수를 넘긴다”</p><p>일상어로는 자연스럽지만, C의 의미론으로는 틀린 문장이고 — 이 문장 대로 상상하는 순간 위 시연이 수수께끼가 된다. 넘어가는 것은 변수가 아니라 <strong>변수의 값</strong>(복사본)이다. “그러면 함수가 밖의 변수를 바꿔 주는 일은 아예 불가능한가?”라는 자연스러운 반문이 생기는데 — 가능하게 만드는 정공법이 따로 있다: 변수 대신 <strong>변수의 주소</strong>를 값으로 복사해 넘기는 것이다. 주소를 받은 함수는 그 주소로 찾아가 원본을 만진다. 22장에서 <code>sscanf(line, "%d", &amp;n)</code>의 <code>&amp;</code>가 정확히 이 일을 하고 있었다 — 값 복사 규칙은 그대로인 채(주소도 값이다 — 3장!), 효과는 “원본 수정”이 되는 것. 이 정공법의 문법이 30장의 포인터다.</p></div><h3 id="loc-149">29.2 “값 호출”과 “참조 호출” — 용어를 못박는다</h3><p>입문서마다 지면을 크게 할애하는 주제가 있다. <strong>call by value</strong>와 <strong>call by reference</strong>다. 결론부터 적는다.</p><p><strong>C에는 참조 호출이 없다. C의 인자 전달은 언제나 값의 복사다.</strong></p><p>포인터를 넘기는 것도 예외가 아니다. <code>f(&amp;n)</code>이 하는 일은 “n을 넘기는 것”이 아니라 <strong>n의 주소라는 값을 복사해 넘기는 것</strong>이다. 함수 안의 매개변수는 그 주소를 담은 별개의 변수이고, 그 변수에 다른 주소를 대입해도 호출자 쪽은 아무 영향을 받지 않는다. 다만 그 주소를 <strong>따라가서</strong>(역참조) 쓰면 호출자가 가진 객체가 바뀔 뿐이다. 바뀌는 것은 인자가 아니라 <strong>인자가 가리킨 곳</strong>이다.</p><div class="dev misconception"><p class="dev-label">⚠ “포인터를 넘기면 참조 호출이다”</p><p>많은 교재가 이 표현을 쓰는데, 정확하지 않다. <strong>참조 호출</strong>은 언어가 “호출자의 변수 자체를 매개변수에 묶어 주는” 기능을 가질 때 쓰는 말이다 — C++의 참조(<code>void f(int &amp;x)</code>)나 파스칼의 <code>var</code> 매개변수가 그것이다. 그런 언어에서는 함수 안에서 <code>x = 5</code>라고만 써도 호출자의 변수가 바뀐다.</p><p>C에는 그런 문법이 없다. <code>void f(int *p)</code>에 <code>*p = 5</code>라고 <strong>역참조를 적어야</strong> 하고, 그 별표가 바로 “이것은 값(주소)이고, 나는 지금 그것을 따라간다”는 증거다. 그래서 정확한 표현은 <strong>“포인터를 값으로 넘겨 참조와 같은 효과를 낸다”</strong>이지 “참조 호출”이 아니다. 영어권에서도 이 구분은 오래된 논쟁거리인데, 표준의 용어로 보면 다툴 여지가 없다 — C 표준에는 참조라는 개념 자체가 없다.</p></div><p>용어를 정확히 하면 실제로 헷갈릴 일이 줄어든다. 자주 나오는 세 물음이 같은 규칙 하나로 풀린다.</p><ul><li><strong>배열을 넘기면 복사가 안 되는 것 아닌가?</strong> — 배열 이름이 첫 원소의 주소로 무너져(33장) 그 <strong>주소가 복사되어</strong> 간다. 규칙의 예외가 아니라 적용이다.</li><li><strong>구조체를 넘기면 통째로 복사되나?</strong> — 그렇다(38장). 크면 포인터를 넘기는 관행이 생긴 이유다.</li><li><strong>함수가 호출자의 포인터 자체를 바꾸게 하려면?</strong> — 포인터의 주소를 넘긴다(<code>int **</code>). 값 복사 규칙을 알면 자연스럽게 나오는 답이다.</li></ul><h3 id="loc-150">29.3 부수효과와 평가 순서 — 씨앗의 회수</h3><p>17장에서 “한 문장 안의 계산 시간 순서는 달라질 수 있다”는 씨앗만 심어 두었다. 이제 재료가 다 모였으니 정식으로 정리한다.</p><p><strong>부수효과</strong>(side effect)란 수식 평가가 값을 내놓는 것 <strong>외에</strong> 세상의 상태를 바꾸는 모든 일이다 — 우리가 아는 것만 벌써 셋이다: 출력(19장), 대입과 <code>+=</code>·<code>++</code>(20·28장), 그리고 입력(22장). 함수 호출은 몸통이 이런 일을 하면 부수효과를 <strong>품는다</strong>.</p><p><strong>평가 순서의 규칙</strong>은 두 문장으로 요약된다. 첫째, 한 문장(정확히는 완전 수식) 안에서 부분 수식들의 평가 순서는 대부분 <strong>미지정</strong>이다 — 함수 호출 둘이 한 수식에 있으면 어느 쪽이 먼저 불릴지 계약에 없다(17장의 “호랑이/사자”). 둘째, <strong>문장의 끝(세미콜론)에 도달하는 순간, 그 문장이 일으킨 부수효과는 전부 완료됨이 보장된다</strong> — 이 보장 지점을 전통 용어로 <span id="idx-entry-54"></span><strong>시퀀스 포인트</strong>(sequence point)라 한다. 세미콜론 외에도 몇 곳이 더 있는데, 대표가 26장에서 만난 <code>&amp;&amp;</code>·<code>||</code>(왼쪽 평가 완료 후 오른쪽)와 함수 호출의 경계(재료 평가 완료 후 몸통 진입)다. 현대 표준(C11 이후)은 같은 개념을 “앞서 차례 매겨짐”(sequenced before)이라는 관계로 더 정밀하게 다듬었지만, 고전 용어가 여전히 통용된다.</p><p>이 규칙에서 실전 수칙과 함정이 나온다. 수칙은 17장 그대로 — <strong>순서가 중요한 부수효과들은 문장을 나눠라.</strong> 함정은 새로 생겼다 — <code>++</code>를 배웠기 때문이다. 한 수식 안에서 <strong>같은 변수를 두 번 바꾸거나, 바꾸면서 따로 읽는</strong> 코드:</p><pre><code data-lang="c">i = i++ + 1;      /* 같은 i를 두 곳에서 바꾼다 — 계약 밖 */
-printf("%d %d\n", i, i++);   /* 바꾸면서 따로 읽는다 — 계약 밖 */</code></pre><p>이런 수식은 미지정(어느 순서든 하나가 일어남)을 넘어 아예 <strong>정의되지 않은 동작</strong>이다 — 표준은 결과를 전혀 보장하지 않는다(43장). 규칙을 외울 것 없이 무늬만 기억하면 된다: <strong>한 문장에서 한 변수는 한 번만 바꾼다.</strong> 15장의 UBSan과 컴파일러 경고가 이 무늬를 잘 잡아 주는 것도 든든한 뒷배다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>값 복사가 규칙이라면, 큰 구조체를 넘길 때마다 통째로 복사되는가 — 비용이 만만치 않을 텐데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>그렇다, 의미론상으로는 복사다 — 그리고 그 비용이 실무에서 포인터로 넘기는 관행의 이유가 된다(38장에서 구조체와 함께 다룬다). 다만 두 가지 단서가 있다. 첫째, <strong>작은 값은 복사가 사실상 공짜다</strong> — 9장에서 배운 대로 인자는 대개 레지스터로 건너가므로, 정수 몇 개를 넘기는 데는 메모리 왕복조차 없다. 둘째, 11장의 편집자가 개입한다 — 관찰 가능한 결과가 같다면 실제 복사를 생략하기도 한다. <strong>의미는 복사, 구현은 컴파일러의 재량</strong> — 이 구별이 성능을 걱정하기 전에 먼저 잡아야 할 관점이다.</p></div></div><h3 id="loc-151">29.4 재귀 — 자신을 부르는 함수</h3><p>함수가 함수를 부를 수 있다면 — 자기 자신도 부를 수 있는가. 있다. <span id="idx-entry-55"></span><strong>재귀</strong>(recursion)다.</p><div><div><p><code>examples/ch29/fact.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+    fgets(line, sizeof line, stdin);
+    sscanf(line, "%d", &amp;score);
 
-int fact(int n)
-{
-    if (n &lt;= 1) {
-        return 1;               /* 바닥: 더 내려가지 않는 경우 */
+    if (score >= 90) {
+        printf("%d: excellent\n", score);
+    } else if (score >= 80) {
+        printf("%d: good\n", score);
+    } else if (score >= 70) {
+        printf("%d: fair\n", score);
+    } else {
+        printf("%d: needs work\n", score);
     }
-    return n * fact(n - 1);     /* 자신을 부르되, 더 작은 문제로 */
+    return 0;
 }
+</code></pre></div><div><p>표준 입력으로 준 것</p><pre><code>87
+</code></pre></div><div><p>실행 결과</p><pre><code>87: good
+</code></pre></div></div><p>사다리는 <strong>위에서부터 차례로</strong> 검사되고, 처음 참이 되는 갈래 하나만 실행된다 — 87점이 “우”에서 멈추고 아래로 내려가지 않는 것이 그 보장이다. 그래서 사다리의 순서가 곧 논리다: 좁은 조건을 위에, 넓은 조건을 아래에 두는 것이 정석이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>갈래가 하나뿐이면 중괄호를 생략해도 된다고 들었다 — 써도 되는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>문법상 허용된다 — 그리고 이 책은 쓰지 않기를 권한다. 중괄호 없는 분기는 “다음 문장 하나만” 갈래에 속하는데, 나중에 문장을 한 줄 보태며 중괄호 없음을 잊는 실수가 고전적 사고 경로다. 실제로 애플의 SSL 라이브러리에서 이 무늬로 검증 코드가 분기 밖으로 밀려나 보안 검사가 통째로 건너뛰어진 사건(“goto fail” 사고, 2014)이 있었다 — 들여쓰기는 사람 눈에만 보이고 컴파일러에게는 안 보인다는 것(18장)이 값비싸게 증명된 날이다. 갈래에는 언제나 중괄호 — 이 책의 전 예제가 따르는 수칙이다.</p></div></div><h3>29.2 switch — 값으로 갈라서는 판</h3><p>갈림길이 “어느 범위인가”가 아니라 “어느 <strong>값</strong>인가”로 갈릴 때는 전용 장치가 따로 있다 — <code>switch</code>다.</p><div><div><p><code>examples/ch29/season.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
 
 int main(void)
 {
-    printf("5! = %d\n", fact(5));
+    char line[100];
+    int month = 0;
+
+    fgets(line, sizeof line, stdin);
+    sscanf(line, "%d", &amp;month);
+
+    switch (month) {
+    case 12:
+    case 1:
+    case 2:                     /* 세 case가 하나의 답을 공유한다(폴스루) */
+        printf("month %d: winter\n", month);
+        break;
+    case 3:
+    case 4:
+    case 5:
+        printf("month %d: spring\n", month);
+        break;
+    case 6:
+    case 7:
+    case 8:
+        printf("month %d: summer\n", month);
+        break;
+    case 9:
+    case 10:
+    case 11:
+        printf("month %d: autumn\n", month);
+        break;
+    default:
+        printf("month %d: no such month\n", month);
+        break;
+    }
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>5! = 120
-</code></pre></div></div><p><code>fact(5)</code>는 <code>5 * fact(4)</code>이고, 그 안은 <code>4 * fact(3)</code>… 바닥(<code>n &lt;= 1</code>) 에 닿으면 1을 돌려주며 겹겹의 호출이 차례로 값을 물고 돌아온다. 이것이 가능한 이유는 이 장의 규칙 그 자체다 — 호출마다 매개변수 <code>n</code>이 <strong>새로 복사</strong>되므로, 다섯 겹의 fact는 각자의 n(5, 4, 3, 2, 1)을 가진 다섯 개의 격리실이다. 값 복사와 스코프가 만드는 격리가 없다면 재귀는 성립 하지 않는다.</p><p>재귀는 “더 작은 같은 문제”로 쪼개지는 일에 자연스러운 표현이고(나무 구조 탐색이 대표 — 38장 이후), 모든 재귀는 루프로도 적을 수 있다 (28장의 팩토리얼 루프판을 떠올리면 된다). 어느 쪽이 좋은가는 문제의 모양이 정한다 — 그리고 재귀에는 “겹겹의 호출”이 쌓이는 물리적 공간 문제가 따라오는데, 그 공간(스택)의 정체는 36장에서 만난다.</p><h3 id="loc-152">29.5 마지막 연산자, 그리고 계약이라는 씨앗</h3><p>이 부의 배분표 마지막 항목 — <strong>조건 연산자</strong> <code>?:</code>다. <code>조건 ? 값1 : 값2</code>는 “조건이 참이면 값1, 거짓이면 값2”가 되는 <strong>수식</strong> 이다. <code>int big = a > b ? a : b;</code>처럼 “골라 담기”를 한 줄로 적는다 — if는 문장이라 값이 될 수 없는 자리(초기화 등)에서 요긴하다. 남용하면 읽기 어려워지므로, 이 책은 “한 겹까지만”을 관행으로 삼는다.</p><p>세 가지 성질을 알아 두면 충분하다.</p><p><strong>첫째, 고르지 않은 쪽은 평가되지 않는다.</strong> 26장의 단락 평가와 같은 보장이다 — <code>p != nullptr ? p->x : 0</code>이 안전한 이유다.</p><p><strong>둘째, 결과의 타입은 하나로 정해진다.</strong> 이것이 초보자가 가장 자주 헛디디는 자리다. 두 가지의 타입이 다르면 통상 산술 변환(25장)이 적용되어 <strong>공통 타입 하나</strong>가 되고, 그 타입은 조건의 값과 무관하게 컴파일 시간에 확정된다.</p><div><div><p><code>examples/ch29/ternary.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-
-int main(void)
-{
-    int    i = 7;
-    double d = 2.5;
-
-    /* 조건 연산자의 타입은 *컴파일 시간에 하나로* 정해진다.
-       두 가지가 int 와 double 이면 결과는 언제나 double 이다. */
-    printf("sizeof(int)=%zu sizeof(double)=%zu\n", sizeof i, sizeof d);
-    printf("sizeof(1 ? i : d) = %zu  (조건이 참이어도 double)\n", sizeof(1 ? i : d));
-    printf("value  (1 ? i : d) = %.1f\n", 1 ? i : d);   /* 7 이 아니라 7.0 */
-
-    /* 부호가 섞이면 통상 산술 변환이 그대로 적용된다.
-       (아래는 컴파일러 경고를 피하려고 미리 맞춰 준 판이다 —
-        맞추지 않으면 gcc 가 -Wsign-compare 로 이 자리를 짚는다) */
-    int      neg = -1;
-    unsigned one = 1u;
-    unsigned mixed = 1 ? (unsigned)neg : one;
-    printf("(1 ? neg : one) becomes unsigned = %u\n", mixed);
-
-    /* 문자 상수는 C 에서 이미 int 다 */
-    printf("sizeof('a')=%zu sizeof(1 ? 'a' : 'b')=%zu\n",
-           sizeof('a'), sizeof(1 ? 'a' : 'b'));
-
-    /* 포인터 쪽 규칙: 한쪽이 널 포인터 상수면 결과는 다른 쪽의 타입 */
-    const char *s = "text";
-    const char *r = 1 ? s : NULL;
-    printf("pointer branch: %s\n", r);
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>sizeof(int)=4 sizeof(double)=8
-sizeof(1 ? i : d) = 8  (조건이 참이어도 double)
-value  (1 ? i : d) = 7.0
-(1 ? neg : one) becomes unsigned = 4294967295
-sizeof('a')=4 sizeof(1 ? 'a' : 'b')=4
-pointer branch: text
-</code></pre></div></div><p><code>1 ? i : d</code>에서 조건이 참이라 <code>i</code>(int)가 골라졌는데도 결과의 크기는 8바이트이고 값은 <code>7.0</code>이다. <code>int</code>와 <code>double</code>이 만나 <code>double</code>로 통일된 것이다. 부호가 섞이면 같은 규칙이 더 사납게 나타난다 — <code>-1</code>이 <code>4294967295</code>가 되는 마지막 줄이 그 증거이고, gcc는 이 자리를 실제로 이렇게 짚어 준다.</p><pre><code data-lang="text">error: operand of ‘?:’ changes signedness from ‘int’ to ‘unsigned int’
-       due to unsignedness of other operand [-Werror=sign-compare]</code></pre><p><strong>셋째, 그래서 “조건에 따라 다른 타입을 돌려주는” 용도로는 쓸 수 없다.</strong> <code>cond ? 3 : "three"</code> 같은 코드는 애초에 컴파일되지 않고, <code>cond ? 1 : 2.0</code> 처럼 컴파일되는 조합은 <strong>양쪽이 같은 타입으로 변환된 뒤</strong>다. C의 수식은 값이 하나의 정적 타입을 갖는다는 원칙(20장)이 여기서도 그대로 지켜지는 것이다. 타입이 갈리는 선택이 필요하면 방법은 둘뿐이다 — 40장의 태그된 공용체로 “여러 타입 중 하나”를 담는 타입을 만들거나, 46장의 <code>_Generic</code> 으로 컴파일 시간에 갈래를 고르는 것이다.</p><p>포인터 쪽에는 편의 규칙이 하나 더 있다. 한쪽이 널 포인터 상수이면 결과는 다른 쪽의 포인터 타입이 된다 — 예제의 마지막 줄이 그 경우다.</p><h3 id="loc-153">29.6 연산자 한눈에 — 지금까지 만난 것들</h3><p>제6부를 닫으며 연산자를 한자리에 모은다. 이 책은 필요한 자리마다 조금씩 꺼내 왔으므로(17장의 최소 집합에서 시작했다), 여기서 전체 지도를 보는 것이 처음이다. 우선순위와 결합은 부록 A에 있다.</p><table><tr><th><strong>갈래</strong></th><th><strong>연산자</strong></th><th><strong>한 줄 소개</strong></th></tr><tr><td>산술</td><td><code>+ - * / %</code></td><td><code>%</code>는 정수에만. 나눗셈은 0을 향해 버린다(24장)</td></tr><tr><td>증감</td><td><code>++ --</code></td><td>전위는 바꾸고 나서, 후위는 바꾸기 전 값(28장)</td></tr><tr><td>비교</td><td><code>&lt; &lt;= > >= == !=</code></td><td>결과는 <code>bool</code>. <code>==</code>와 <code>=</code>를 섞지 않는다(26장)</td></tr><tr><td>논리</td><td><code>&amp;&amp; || !</code></td><td>단락 평가의 보장이 있다(26장)</td></tr><tr><td>비트</td><td><code>&amp; | ^ ~</code></td><td>무부호 위에서 쓴다(24장)</td></tr><tr><td>시프트</td><td><code>&lt;&lt; >></code></td><td>폭 이상 옮기면 계약 밖(5장)</td></tr><tr><td>대입</td><td><code>=</code> 와 복합 <code>+= -= *= /= %= &amp;= |= ^= &lt;&lt;= >>=</code></td><td>복합 대입은 왼쪽을 한 번만 평가한다</td></tr><tr><td>조건</td><td><code>?: </code></td><td>수식 자리의 갈래. 타입은 하나로 통일된다(이 장)</td></tr><tr><td>기억</td><td><code>&amp; * [] . -></code></td><td>주소·역참조·첨자·멤버(30·33·38장)</td></tr><tr><td>크기·정렬</td><td><code>sizeof alignof</code></td><td>값이 아니라 타입을 묻는다. 대개 평가되지 않는다</td></tr><tr><td>형변환</td><td><code>(타입)</code></td><td>명시적 변환. 필요할 때만(24·25장)</td></tr><tr><td>쉼표</td><td><code>,</code></td><td>왼쪽을 평가해 버리고 오른쪽이 값이 된다</td></tr></table><p>표에서 두 항목만 따로 짚는다.</p><p><strong>복합 대입</strong>은 단순한 줄임이 아니다. <code>a[f(i)] += 1</code>은 <code>a[f(i)] = a[f(i)] + 1</code> 과 달리 왼쪽을 <strong>한 번만</strong> 평가한다 — <code>f</code>가 두 번 불리지 않는다는 뜻이다.</p><p><strong>쉼표 연산자</strong>는 “왼쪽을 평가하고 버린 뒤 오른쪽 값을 결과로 삼는” 연산자 다. <code>for (i = 0, j = n; i &lt; j; i++, j--)</code>처럼 for의 머리에서 두 가지를 함께 움직일 때가 거의 유일한 정당한 쓰임이고, 그 밖에서는 읽기를 해친다. 함수 호출의 인자 구분자와 <strong>모양이 같아</strong> 헷갈리기 쉽다는 것도 기억해 둘 만하다 — <code>f(a, b)</code>의 쉼표는 연산자가 아니라 문법의 일부다.</p><p>끝으로, 다음을 위한 씨앗 하나. <code>fact</code>는 사실 <strong>암묵의 약속</strong> 위에 서 있다 — “n은 0 이상이어야 하고(음수면 바닥에 안 닿는다), 13 이상이면 int 그릇이 넘친다(23장).” 함수가 재료에 거는 조건(전제조건)과 결과에 관해 약속하는 것(후조건) — 이 관점으로 함수를 바라보기 시작하면, 함수 하나하나가 작은 <strong>계약서</strong>로 보인다. 이 관점이 오류 처리(42장)와 proven의 설계 철학(35장)의 뿌리이고, 제9부에서 정면으로 다룬다.</p><p>제6부가 끝났다 — 값을 벼리고(23–26장), 흐름을 다스리고(26–28장), 함수의 의미까지 갖췄다(29장). 다음 부는 이 책의 두 번째 산, <strong>기억</strong>이다 — 3장의 사물함 복도로 돌아가, 이번에는 C의 문법으로 그 복도를 걷는다. 포인터가 기다린다.</p>
+</code></pre></div><div><p>표준 입력으로 준 것</p><pre><code>12
+</code></pre></div><div><p>실행 결과</p><pre><code>month 12: winter
+</code></pre></div></div><p>읽는 법 — <code>switch (month)</code>가 값을 하나 들고 판에 들어서면, 실행은 그 값과 일치하는 <code>case</code> 이름표로 <strong>건너뛴다</strong>. 그리고 여기가 switch의 가장 중요한 성질이다: <code>case</code>는 담장이 아니라 <strong>이름표</strong>라서, 일단 건너뛴 뒤에는 다음 <code>case</code>를 지나쳐 <strong>아래로 계속 흐른다</strong>. 이 흐름을 <strong>폴스루</strong>(fall-through)라 부르고, 멈추고 싶은 자리에 <code>break</code>(판을 나가라)를 명시한다.</p><p>폴스루는 양날이다. 시연처럼 여러 값이 한 답을 공유하게 묶는 데는 제격이지만(12·1·2월이 겨울 하나로), <code>break</code>를 <strong>잊으면</strong> 의도치 않은 갈래까지 흘러 들어가는 고전적 사고가 된다 — 그래서 컴파일러 경고와 C23의 명시 표기(<code>[[fallthrough]]</code> — “의도된 흐름임”을 적는 문서)가 이 자리를 지킨다. <code>default</code>는 어느 이름표에도 안 맞을 때의 갈래다 — “그런 달은 없다”처럼, <strong>예상 밖의 값을 잡는 그물</strong>로 항상 두는 것이 관행이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>if</code>의 사다리로도 다 되는데, <code>switch</code>가 굳이 필요한 이유는 무엇인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>둘의 차이는 표현력이 아니라 <strong>의도의 전달</strong>이다. switch는 “하나의 값을 여러 상수와 맞춰 본다”는 의도를 문법으로 못박아서, 읽는 사람과 컴파일러 모두에게 구조가 보인다 — 컴파일러는 그 구조를 이용해 점프 표 같은 빠른 코드로 바꾸기도 하고(11장의 편집자가 좋아하는 모양이다), 경고 기능은 “열거된 값 중 빠진 case”를 짚어 줄 수 있다. 값 하나로 갈라서면 switch, 범위·복합 조건이면 if 사다리 — 도구를 의도에 맞추는 것이다. 그리고 다음 장에서, 이 폴스루라는 성질을 극한까지 악용(?)한 전설의 코드를 드디어 만난다.</p></div></div><p>갈림길을 배웠다 — 그러나 프로그램의 진짜 힘은 갈라서는 것이 아니라 <strong>되풀이하는 것</strong>에서 나온다. 2장에서 “단순한 걸음도 수십억 번이면”이라 <span id="idx-entry-53"></span>했던 그 반복을, 다음 장에서 손에 넣는다.</p>
 <div class="nav"><a href="ch28.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch30.html">다음 →</a></div>
 </div></main></body></html>

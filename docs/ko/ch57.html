@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>57 진단과 제어 — &lt;errno.h&gt;·&lt;assert.h&gt;·&lt;signal.h&gt;·&lt;setjmp.h&gt; — Proven C Book</title><style>
+<title>57 문자와 로케일 — &lt;ctype.h&gt;·&lt;locale.h&gt;·&lt;wchar.h&gt; — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,54 +68,50 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-282">57 진단과 제어 — <code>&lt;errno.h></code>·<code>&lt;assert.h></code>·<code>&lt;signal.h></code>·<code>&lt;setjmp.h></code></h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>프로그램이 <strong>잘못됐을 때</strong> 쓰는 네 헤더를 한자리에서 본다. 오류 번호를 담는 전역, 계약 위반을 잡는 단언, 바깥에서 날아오는 신호, 그리고 스택을 건너뛰는 점프. 42장에서 세운 “오류는 값이다”라는 규율이 왜 그렇게 중요한지, 대안들의 실제 모습을 보면 분명해진다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>42장에서 C의 오류 통보 방식이 반환값·전역 상태·프로그램 중단 셋뿐이라 했다. 그러면 <code>errno</code>라는 전역은 정확히 언제 믿을 수 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>실패가 확인된 직후에만</strong> 믿을 수 있다. 표준의 규칙은 두 겹이다. 첫째, 성공한 호출도 <code>errno</code>에 값을 넣을 수 있다 — 그래서 “0이 아니면 실패”가 아니라 “함수가 실패를 알린 뒤에 이유를 읽는” 순서여야 한다. 둘째, 값은 다음 라이브러리 호출이 언제든 덮어쓸 수 있다 — 그래서 읽었으면 즉시 저장한다. 이 두 규칙이 전역 상태로 오류를 나르는 설계의 대가다.</p></div></div><h3 id="loc-283">57.1 <code>errno</code> — 전역으로 오류를 나르는 대가</h3><div><div><p><code>examples/ch57/errno_demo.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;errno.h>
+<h2>57 문자와 로케일 — <code>&lt;ctype.h></code>·<code>&lt;locale.h></code>·<code>&lt;wchar.h></code></h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>한 글자를 다루는 함수들을 본다. 겉보기에 가장 단순한 헤더인데, C에서 가장 미묘한 함정 두 개가 여기 있다 — <strong><code>char</code>를 그대로 넘기면 계약 밖</strong> 이라는 것과, <strong>답이 로케일이라는 전역 상태에 달렸다</strong>는 것. 7장의 인코딩 이야기가 함수 차원에서 되돌아온다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>7장에서 문자는 코드표의 번호이고 인코딩은 그 번호를 바이트로 적는 방식 이라 했다. 그러면 <code>isalpha('가')</code> 같은 호출은 무엇을 묻는 것인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>잘못 던진 물음이다. <code>&lt;ctype.h></code>의 함수들은 <strong>한 바이트</strong>를 판정한다. UTF-8에서 “가”는 세 바이트이므로 애초에 인자로 들어갈 수 없고, 넣더라도 각 바이트를 따로 볼 뿐이다. 이 헤더는 아스키 시절의 도구이고, 여러 바이트 문자를 다루려면 와이드 문자 계열(<code>&lt;wctype.h></code>)이나 인코딩을 직접 다루는 코드가 필요하다.</p></div></div><h3>57.1 첫 번째 함정 — <code>char</code>를 그대로 넘기지 않는다</h3><div><div><p><code>examples/ch57/ctype.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;ctype.h>
+#include &lt;limits.h>
 #include &lt;string.h>
-#include &lt;stdlib.h>
 
+/* ctype 함수는 int 를 받는다 — 그런데 그 int 는 char 가 아니다 */
 int main(void)
 {
-    /* ① 성공한 호출도 errno 를 건드릴 수 있다 — 그래서 직전에 0 으로 놓는다 */
-    errno = 0;
-    FILE *ok = fopen("errno_demo_tmp.txt", "w");
-    printf("성공 후 errno = %d\n", errno);
-    if (ok) { fputs("x", ok); fclose(ok); }
+    printf("CHAR_MIN = %d (이 기계의 char 는 %s)\n",
+           CHAR_MIN, CHAR_MIN &lt; 0 ? "부호 있음" : "부호 없음");
 
-    /* ② 실패하면 errno 에 이유가 남는다 */
-    errno = 0;
-    FILE *f = fopen("/definitely/not/here.txt", "r");
-    if (!f) {
-        printf("실패: errno=%d, strerror=[%s]\n", errno, strerror(errno));
-        perror("perror 출력");     /* 앞에 문맥을 붙여 stderr 로 */
-    }
+    /* 아스키 범위는 문제가 없다 */
+    printf("isalpha('A') = %d, isdigit('7') = %d, isspace(' ') = %d\n",
+           isalpha('A') != 0, isdigit('7') != 0, isspace(' ') != 0);
 
-    /* ③ 중간에 다른 호출이 끼면 errno 가 덮인다 */
-    errno = 0;
-    f = fopen("/definitely/not/here.txt", "r");
-    int saved = errno;                    /* 곧바로 저장해 둔다 */
-    printf("정리 작업 중...\n");           /* printf 가 errno 를 바꿀 수 있다 */
-    printf("저장해 둔 errno=%d (%s)\n", saved, strerror(saved));
+    /* 128 이상의 바이트가 문제다: char 로 넘기면 음수가 된다 */
+    char bytes[] = { (char)0xC7, (char)0x41, 'A', '\0' };   /* CP949 '가' 의 첫 바이트 */
+    printf("바이트 0xC7 을 char 로 담으면: %d\n", bytes[0]);
 
-    /* ④ strtol 은 errno 로 범위 초과를 알린다 */
-    errno = 0;
-    long v = strtol("999999999999999999999", NULL, 10);
-    printf("strtol 범위 초과: errno==ERANGE? %s (값=%ld)\n",
-           errno == ERANGE ? "예" : "아니오", v);
+    /* 올바른 관용구: unsigned char 로 바꿔서 넘긴다 */
+    printf("올바른 호출: isalpha((unsigned char)b) = %d\n",
+           isalpha((unsigned char)bytes[0]) != 0);
 
-    remove("errno_demo_tmp.txt");
+    /* toupper/tolower 도 같은 규칙 */
+    const char *s = "Hello, World!";
+    char up[32];
+    size_t i = 0;
+    for (; s[i] &amp;&amp; i + 1 &lt; sizeof up; i++)
+        up[i] = (char)toupper((unsigned char)s[i]);
+    up[i] = '\0';
+    printf("toupper 적용: [%s]\n", up);
+
+    /* EOF 도 유효한 인자다 — 그래서 인자 타입이 int 다 */
+    printf("isalpha(EOF) = %d (EOF 는 허용된 인자)\n", isalpha(EOF) != 0);
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>perror 출력: No such file or directory
-성공 후 errno = 0
-실패: errno=2, strerror=[No such file or directory]
-정리 작업 중...
-저장해 둔 errno=2 (No such file or directory)
-strtol 범위 초과: errno==ERANGE? 예 (값=9223372036854775807)
-</code></pre></div></div><p>출력이 규칙을 그대로 보여 준다. 호출 직전에 0으로 놓고, 실패를 확인한 뒤 읽고, 다른 일을 하기 전에 저장한다. <code>printf</code> 한 줄이 사이에 끼는 것만으로 값이 바뀔 수 있기 때문이다.</p><p><code>errno</code>는 변수처럼 보이지만 <strong>매크로</strong>다. 여러 갈래로 도는 프로그램에서는 갈래마다 다른 값을 봐야 하므로, 구현이 스레드 지역 저장소를 가리키는 매크로로 정의한다.</p><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>메모</strong></th></tr><tr><td><code>strerror(n)</code></td><td>오류 번호 → 문장</td><td>★ 정적 버퍼. 스레드 안전하지 않다</td></tr><tr><td><code>perror(s)</code></td><td><code>s: 이유</code>를 <code>stderr</code>로</td><td>문맥 문자열을 붙이는 습관</td></tr><tr><td><code>strerror_r</code></td><td>호출자 버퍼에 채움</td><td>POSIX. 두 가지 판이 있어 혼란</td></tr><tr><td><code>strerror_s</code></td><td>같은 취지</td><td>부속서 K(58장)</td></tr></table><p>표준이 이름을 정한 오류 번호는 셋뿐이다 — <code>EDOM</code>(정의역), <code>ERANGE</code>(범위), <code>EILSEQ</code>(인코딩). 나머지 <code>ENOENT</code>·<code>EACCES</code> 같은 것들은 POSIX나 플랫폼이 정한다. 즉 <strong><code>errno</code> 값을 비교하는 코드는 이식성이 그만큼 좁아진다</strong>.</p><h3 id="loc-284">57.2 <code>assert</code> — 계약을 코드로 적는 가장 싼 방법</h3><p>42장에서 배운 그 매크로다. 규칙을 다시 못박으면 이렇다.</p><ul><li><code>assert</code>는 <strong>프로그램 내부의 불변식</strong>을 확인한다. “여기까지 왔다면 p는 널이 아니다” 같은 것.</li><li><strong>바깥에서 온 값을 검사하는 데 쓰지 않는다.</strong> 사용자 입력·파일 내용·네트워크 데이터는 <code>if</code>로 검사하고 오류로 처리한다.</li><li><code>NDEBUG</code>가 정의되면 <strong>통째로 사라진다</strong>(15장). 그래서 부수효과가 있는 표현식을 넣으면 안 된다.</li></ul><div class="dev antipattern"><p class="dev-label">✗ <code>assert</code> 안에 일을 시키기</p><pre><code data-lang="c">assert(fclose(f) == 0);      /* 릴리스 빌드에서는 fclose 자체가 사라진다 */
-assert(i++ &lt; n);             /* i 가 증가하지 않는 빌드가 생긴다 */</code></pre><p>검사와 부수효과를 분리한다.</p><pre><code data-lang="c">int rc = fclose(f);
-assert(rc == 0);
-(void)rc;                    /* 릴리스에서 미사용 경고 방지 */</code></pre></div><p>C11은 <code>static_assert</code>(C23에서는 <code>_Static_assert</code> 없이도 쓸 수 있다)를 들여왔다. 컴파일 시간에 확인하므로 실행 비용이 0이고, <code>sizeof</code>나 상수 조건에 쓴다.</p><pre><code data-lang="c">static_assert(sizeof(int) >= 4, "이 코드는 32비트 int 를 가정한다");</code></pre><h3 id="loc-285">57.3 신호 — 바깥에서 날아오는 방해</h3><p><code>&lt;signal.h></code>는 프로그램 밖에서 오는 사건(Ctrl+C, 잘못된 메모리 접근, 산술 오류)을 다룬다. 표준이 정한 신호는 여섯 개뿐이고(<code>SIGINT</code>·<code>SIGSEGV</code>· <code>SIGFPE</code>·<code>SIGILL</code>·<code>SIGABRT</code>·<code>SIGTERM</code>), 나머지는 플랫폼의 것이다.</p><p>핵심은 <strong>처리기 안에서 할 수 있는 일이 거의 없다</strong>는 사실이다. 표준이 허용하는 것은 이 정도다.</p><ul><li><code>volatile sig_atomic_t</code> 타입 변수에 값을 대입하기</li><li><code>_Exit</code>나 <code>abort</code> 부르기</li><li>같은 신호의 처리기를 다시 설정하기</li></ul><p><code>printf</code>도, <code>malloc</code>도 부를 수 없다 — 그 함수들이 중간까지 실행된 상태에서 신호가 끼어들 수 있기 때문이다(<strong>비동기 신호 안전</strong>이 아니다). 실무의 관용구는 “처리기는 깃발만 세우고, 실제 처리는 주 흐름에서”다.</p><pre><code data-lang="c">static volatile sig_atomic_t stop = 0;
-static void on_int(int sig) { (void)sig; stop = 1; }
-/* main 루프에서: while (!stop) { ... } */</code></pre><div class="dev misconception"><p class="dev-label">⚠ “<code>SIGSEGV</code>를 잡아서 프로그램을 계속 돌릴 수 있다”</p><p>잡을 수는 있지만 계속 돌릴 수는 없다. <code>SIGSEGV</code>는 이미 <strong>계약이 깨진 뒤</strong>에 오는 신호다(43장의 정의되지 않은 동작). 처리기에서 정상으로 복귀하면 같은 명령이 다시 실행되어 무한히 반복되거나, 손상된 상태 위에서 계속 달린다. 디버깅용으로 스택 추적을 남기고 <code>_Exit</code>로 끝내는 것이 현실적인 최선이고, “복구”는 애초에 그 접근을 하지 않도록 고치는 것이다.</p></div><h3 id="loc-286">57.4 비지역 점프 — <code>setjmp</code>/<code>longjmp</code></h3><p><code>setjmp</code>로 지금 자리를 기억해 두고, 나중에 깊은 곳에서 <code>longjmp</code>로 되돌아 오는 장치다. 예외가 없는 언어에서 예외 비슷한 것을 만들려는 시도이고, 그만큼 대가가 크다.</p><ul><li><code>longjmp</code> 뒤에도 값을 믿을 수 있는 지역 변수는 <code>volatile</code>로 선언한 것뿐이다. 나머지는 레지스터에 있었을 수 있어 값이 미정이다.</li><li><strong>정리 코드가 실행되지 않는다.</strong> 건너뛴 함수들이 잡아 둔 자원(파일·메모리)은 그대로 샌다. C++의 소멸자 같은 장치가 없기 때문이다.</li><li><code>setjmp</code>를 부른 함수가 이미 반환했다면 <code>longjmp</code>는 계약 밖이다.</li><li>신호 처리기에서 <code>longjmp</code>로 빠져나오는 것은 특히 위험하다.</li></ul><p>그래서 실무의 결론은 대개 “쓰지 않는다”이다. 쓰는 자리가 있다면 인터프리터의 오류 복구나 파서의 깊은 실패처럼, <strong>정리할 자원이 아레나 하나로 묶여 있는</strong> 구조에 한한다(제12부의 아레나가 그 조건을 만든다).</p><div class="dev realcase"><p class="dev-label">◉ 오류 처리 방식이 만든 코드의 모양</p><p>같은 프로그램을 세 가지 방식으로 짜면 모양이 이렇게 갈린다.</p><ul><li><strong>반환값 + <code>errno</code></strong>: 호출마다 <code>if</code>가 붙고 오류 경로가 눈에 보인다. 번거롭지만 흐름이 정직하다.</li><li><strong><code>setjmp</code>/<code>longjmp</code></strong>: 본문은 깔끔해지지만 자원 정리를 사람이 전부 기억해야 하고, 어디로 튀는지 코드에서 보이지 않는다.</li><li><strong><code>goto cleanup</code></strong>: C 코드베이스에서 가장 널리 정착한 절충이다. 실패하면 한 곳으로 모여 역순으로 정리한다. 리눅스 커널이 이 무늬를 관행으로 못박았고, 26장에서 “goto는 절제해서”라고 한 그 절제된 용법이 바로 이것이다.</li></ul><p>세 방식 모두 “실패를 값으로 다루고, 정리를 잊지 않는다”는 같은 문제를 푼다. 제12부의 라이브러리는 여기에 네 번째 답 — <strong>실패를 타입으로 만드는 것</strong> — 을 얹는다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>진단과 제어 요약.</p><table><tr><th><strong>도구</strong></th><th><strong>쓰는 자리</strong></th><th><strong>규칙</strong></th></tr><tr><td><code>errno</code></td><td>라이브러리 호출의 실패 이유</td><td>직전 0, 실패 확인 후 읽기, 즉시 저장</td></tr><tr><td><code>assert</code></td><td>내부 불변식</td><td>부수효과 금지, 입력 검사에 쓰지 않기</td></tr><tr><td><code>static_assert</code></td><td>컴파일 시간 가정</td><td>비용 0</td></tr><tr><td><code>signal</code></td><td>Ctrl+C 같은 외부 사건</td><td>처리기에서는 깃발만</td></tr><tr><td><code>SIGSEGV</code></td><td>—</td><td>잡아도 복구 불가</td></tr><tr><td><code>setjmp</code>/<code>longjmp</code></td><td>특수한 복구</td><td><code>volatile</code> 아니면 값 미정, 정리 안 됨</td></tr><tr><td>실무 관용구</td><td>실패 시 정리</td><td><code>goto cleanup</code>으로 한 곳에 모으기</td></tr></table></div><p>여기까지가 C89 시절부터 있던 헤더들이다. 다음 장은 그 뒤로 표준이 보탠 것들 — 그리고 “안전한 함수”를 만들려던 시도가 어떻게 되었는지의 이야기다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>CHAR_MIN = -128 (이 기계의 char 는 부호 있음)
+isalpha('A') = 1, isdigit('7') = 1, isspace(' ') = 1
+바이트 0xC7 을 char 로 담으면: -57
+올바른 호출: isalpha((unsigned char)b) = 0
+toupper 적용: [HELLO, WORLD!]
+isalpha(EOF) = 0 (EOF 는 허용된 인자)
+</code></pre></div></div><p><code>&lt;ctype.h></code>의 모든 함수는 <code>int</code>를 받는다. 그리고 표준이 요구하는 인자의 값은 <strong><code>unsigned char</code>로 표현되는 값이거나 <code>EOF</code></strong>다.</p><p>문제는 <code>char</code>가 부호 있는 구현이 흔하다는 데 있다(25장). 예제의 출력처럼 0xC7 바이트를 <code>char</code>에 담으면 −57이 되고, 그것을 그대로 <code>isalpha</code>에 넘기면 <strong>허용되지 않은 값</strong>을 넘기는 것이 된다 — 계약 밖이다. 실제 구현들이 대개 배열 색인으로 만들어져 있어서, 음수 인덱스로 배열 앞을 읽는 사고가 난다.</p><p>관용구는 하나다.</p><pre><code data-lang="c">isalpha((unsigned char)c)
+toupper((unsigned char)c)</code></pre><p><code>EOF</code>가 유효한 인자라는 점도 기억할 만하다 — 그래서 인자 타입이 <code>char</code>가 아니라 <code>int</code>인 것이다(53장의 <code>fgetc</code> 이야기와 같은 뿌리다).</p><div class="dev antipattern"><p class="dev-label">✗ <code>char</code>를 그대로 넘기기</p><pre><code data-lang="c">char *p = line;
+while (*p) { if (isspace(*p)) ... ; p++; }   /* 0x80 이상 바이트에서 계약 밖 */</code></pre><p>아스키만 들어온다는 보장이 없으면 반드시 변환한다.</p><pre><code data-lang="c">while (*p) { if (isspace((unsigned char)*p)) ... ; p++; }</code></pre><p>한글·일본어·유럽어 텍스트를 다루는 프로그램에서 이 한 줄이 실제 사고와 무사고를 가른다.</p></div><h3>57.2 두 번째 함정 — 로케일</h3><p><code>&lt;ctype.h></code>의 판정은 <strong>현재 로케일</strong>에 달렸다. 기본은 <code>"C"</code> 로케일이고, <code>setlocale(LC_ALL, "")</code>을 부르면 환경 변수가 정한 로케일로 바뀐다. 그 순간부터 <code>isalpha</code>가 참을 돌려주는 바이트의 집합이 달라질 수 있다.</p><p>로케일이 바꾸는 것은 문자 분류만이 아니다.</p><table><tr><th><strong>범주</strong></th><th><strong>무엇이 바뀌나</strong></th><th><strong>조심할 자리</strong></th></tr><tr><td><code>LC_CTYPE</code></td><td>문자 분류·대소문자 변환</td><td><code>isalpha</code>, <code>toupper</code></td></tr><tr><td><code>LC_NUMERIC</code></td><td>소수점 문자</td><td>★ <code>printf("%f")</code>, <code>strtod</code></td></tr><tr><td><code>LC_COLLATE</code></td><td>문자열 정렬 순서</td><td><code>strcoll</code>, <code>strxfrm</code></td></tr><tr><td><code>LC_TIME</code></td><td>날짜·시각 표기</td><td><code>strftime</code>(59장)</td></tr><tr><td><code>LC_MONETARY</code></td><td>통화 표기</td><td><code>localeconv</code></td></tr></table><p><code>LC_NUMERIC</code>이 특히 위험하다. 독일·프랑스 로케일에서는 소수점이 쉼표라, <code>printf("%f", 3.14)</code>가 <code>3,140000</code>을 찍고 <code>strtod("3.14", …)</code>는 3에서 멈춘다. <strong>사람에게 보여 줄 숫자</strong>와 <strong>파일·프로토콜에 적을 숫자</strong>는 다른 규칙을 따라야 한다는 뜻이다.</p><div class="dev realcase"><p class="dev-label">◉ 로케일이 데이터를 망가뜨린 무늬</p><p>같은 프로그램이 개발자의 기계(영어 로케일)에서는 <code>3.14</code>를 쓰고, 사용자의 기계(독일어 로케일)에서는 <code>3,14</code>를 쓰는 일이 실제로 반복해서 일어났다. CSV 파일이 열에 따라 파싱되지 않거나, 설정 파일을 저장한 뒤 다시 읽지 못하거나, 두 나라의 서버가 주고받는 JSON이 어긋나는 식이다.</p><p>처방은 분명하다. <strong>기계가 읽을 숫자는 로케일에 의존하지 않는 경로로 다룬다</strong> — <code>"C"</code> 로케일을 유지하거나, 직접 자리 표기법을 다루거나, 로케일 독립 함수를 쓴다. C11의 <code>&lt;uchar.h></code>와 여러 라이브러리가 이 문제를 피하려고 별도 경로를 두는 이유이기도 하다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “<code>setlocale</code>을 부르지 않으면 로케일 문제는 없다”</p><p>대체로 맞지만 예외가 있다. 프로그램이 쓰는 <strong>다른 라이브러리</strong>가 <code>setlocale</code>을 부를 수 있고(GUI 툴킷이 흔히 그런다), 그 순간부터 내 코드의 <code>printf("%f")</code>도 영향을 받는다. 게다가 로케일은 <strong>프로세스 전역</strong>이라 여러 갈래로 도는 프로그램에서는 경쟁이 된다. POSIX의 <code>uselocale</code>이나 <code>newlocale</code> 같은 스레드 지역 로케일이 그래서 생겼지만, 표준 C에는 없다.</p></div><h3>57.3 와이드 문자 — <code>&lt;wchar.h></code>·<code>&lt;wctype.h></code>·<code>&lt;uchar.h></code></h3><p>C95가 <code>wchar_t</code>와 그 함수들을 들여왔다. 발상은 “한 글자를 한 단위로”였지만, 현실은 그 발상을 배신했다.</p><ul><li><code>wchar_t</code>의 <strong>크기가 구현마다 다르다.</strong> 리눅스는 4바이트(UTF-32에 가깝다), Windows는 2바이트(UTF-16이라 보조 평면 문자가 두 단위가 된다). 즉 “한 글자 = 한 <code>wchar_t</code>”가 어디서나 성립하지 않는다.</li><li>변환 함수(<code>mbstowcs</code> 등)는 <strong>로케일에 의존한다.</strong> UTF-8 문자열을 다루려면 로케일이 UTF-8이어야 한다.</li><li>그래서 이식성 있는 프로그램은 와이드 문자 대신 <strong>UTF-8 바이트열을 그대로 다루는</strong> 쪽을 택하는 경우가 많다.</li></ul><p>C11이 보탠 <code>&lt;uchar.h></code>의 <code>char16_t</code>·<code>char32_t</code>는 크기가 고정이라 이 문제를 피한다. 다만 라이브러리 지원이 얇아, 실무에서는 여전히 전용 유니코드 라이브러리를 쓰거나 직접 다룬다.</p><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — Windows와 UTF-16</p><p>Windows API의 “W” 계열 함수는 UTF-16(<code>wchar_t</code>)을 받는다. 그래서 Windows 프로그램은 경계에서 UTF-8과 UTF-16을 오가야 하고, 이 변환이 실패할 수 있다는 사실(짝이 맞지 않는 서러게이트)을 잊으면 안 된다. 15장의 인코딩 사슬 이야기가 API 층에서 재현되는 자리이며, 제12부의 문자열 장에서 다루는 <code>u16</code> 계열이 정확히 이 다리를 놓는 도구다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>문자와 로케일 요약.</p><table><tr><th><strong>상황</strong></th><th><strong>규칙</strong></th><th><strong>틀리면</strong></th></tr><tr><td><code>&lt;ctype.h></code> 호출</td><td><code>(unsigned char)</code>로 변환</td><td>음수 인자 — 계약 밖</td></tr><tr><td><code>EOF</code> 처리</td><td>인자 타입은 <code>int</code></td><td>0xFF와 혼동</td></tr><tr><td>여러 바이트 문자</td><td>바이트 단위 판정은 무의미</td><td>글자가 쪼개진 판정</td></tr><tr><td>숫자 입출력</td><td>기계용은 로케일 독립 경로</td><td>소수점이 바뀌어 파싱 실패</td></tr><tr><td>정렬</td><td>사람용은 <code>strcoll</code></td><td><code>strcmp</code>는 사전순이 아니다</td></tr><tr><td><code>wchar_t</code></td><td>크기가 구현마다 다르다</td><td>Windows에서 글자 수 오산</td></tr><tr><td>권장</td><td>UTF-8 바이트열 + 경계에서만 변환</td><td>—</td></tr></table></div><p>한 글자의 세계를 지났다. 다음 장은 수의 세계 — 실수 계산이 표준 라이브러리에서 어떻게 실패를 알리는지 본다.</p>
 <div class="nav"><a href="ch56.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch58.html">다음 →</a></div>
 </div></main></body></html>

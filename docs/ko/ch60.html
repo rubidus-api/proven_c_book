@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>60 넘침을 묻는 법 — &lt;stdckdint.h&gt; — Proven C Book</title><style>
+<title>60 진단과 제어 — &lt;errno.h&gt;·&lt;assert.h&gt;·&lt;signal.h&gt;·&lt;setjmp.h&gt; — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,76 +68,54 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-300">60 넘침을 묻는 법 — <code>&lt;stdckdint.h></code></h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-83"></span><p>C23이 들여온 검사 산술(checked arithmetic)을 익힌다. 왜 “계산한 뒤에 넘쳤는지 확인하는” 손수 짠 코드가 위험한지, <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code>이 정확히 무엇을 약속하는지, 그리고 기존 코드의 크기 계산을 어떻게 이 도구로 옮기는지까지 본다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>5장에서 부호 없는 넘침은 정의된 감아 돌기이고 부호 있는 넘침은 계약 밖이라 했고, 53장에서는 <code>calloc</code>이 원소 수와 크기의 곱을 검사한다고 했다. 그러면 곱셈이 넘치는지 우리가 직접 확인하려면 어떻게 적는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>바로 그 “직접 확인”이 반세기 동안 틀리게 적혀 온 코드다. 부호 있는 값에서는 <strong>넘친 뒤에 검사하는 것 자체가 이미 계약 밖</strong>이라 컴파일러가 검사 코드를 지워 버릴 수 있고(11장의 편집자), 부호 없는 값에서도 나눗셈을 끼운 관용구는 읽기 어렵고 틀리기 쉽다. C23은 이 자리를 언어 차원에서 정리했다.</p></div></div><h3 id="loc-301">60.1 사후 검사라는 함정</h3><p>가장 흔한 손수 짠 검사부터 본다.</p><div class="dev antipattern"><p class="dev-label">✗ 더한 다음에 넘쳤는지 보기</p><pre><code data-lang="c">int sum = a + b;
-if (sum &lt; a) { /* 넘쳤다 */ }        /* ← 이 검사가 사라질 수 있다 */</code></pre><p><code>a</code>와 <code>b</code>가 부호 있는 정수라면 <code>a + b</code>가 넘치는 순간 이미 정의되지 않은 동작이다. 그 뒤의 검사는 “넘치지 않았다면”이라는 전제 위에서만 뜻이 있으므로, 컴파일러는 <code>sum &lt; a</code>가 결코 참이 될 수 없다고 판단해 <strong>조건문을 통째로 지운다.</strong> 실제로 이 무늬 때문에 여러 프로젝트에서 검사가 조용히 사라졌고, 그중에는 보안 검사도 있었다.</p><p>부호 없는 값이라면 감아 돌기가 정의되어 있으므로 위 검사는 <strong>동작한다.</strong> 다만 곱셈으로 가면 그마저 까다로워진다.</p><pre><code data-lang="c">if (n != 0 &amp;&amp; bytes / n != sz) { /* 넘쳤다 */ }   /* 맞지만 읽기 어렵다 */</code></pre></div><p>그래서 컴파일러들이 저마다 확장을 내놓았다 — GCC와 Clang의 <code>__builtin_add_overflow</code> 계열, MSVC의 <code>SafeInt</code>, 여러 프로젝트의 자체 매크로. 잘 동작했지만 <strong>이식성이 없었고</strong>, 이식성을 확보하려면 프로젝트마다 같은 껍데기를 다시 짜야 했다. 52장의 <code>strlcpy</code> 이야기와 같은 무늬다 — 현실이 먼저 답을 찾고 표준이 뒤늦게 추인한다.</p><h3 id="loc-302">60.2 C23의 답 — <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code></h3><div><div><p><code>examples/ch60/ckdint.c</code></p><pre><code data-lang="c">/* 넘침을 값이 아니라 "일어났는가"로 받는다 — C23 &lt;stdckdint.h> */
-#include &lt;limits.h>
-#include &lt;stdckdint.h>
-#include &lt;stdint.h>
-#include &lt;stdio.h>
+<h2>60 진단과 제어 — <code>&lt;errno.h></code>·<code>&lt;assert.h></code>·<code>&lt;signal.h></code>·<code>&lt;setjmp.h></code></h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>프로그램이 <strong>잘못됐을 때</strong> 쓰는 네 헤더를 한자리에서 본다. 오류 번호를 담는 전역, 계약 위반을 잡는 단언, 바깥에서 날아오는 신호, 그리고 스택을 건너뛰는 점프. 44장에서 세운 “오류는 값이다”라는 규율이 왜 그렇게 중요한지, 대안들의 실제 모습을 보면 분명해진다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>44장에서 C의 오류 통보 방식이 반환값·전역 상태·프로그램 중단 셋뿐이라 했다. 그러면 <code>errno</code>라는 전역은 정확히 언제 믿을 수 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>실패가 확인된 직후에만</strong> 믿을 수 있다. 표준의 규칙은 두 겹이다. 첫째, 성공한 호출도 <code>errno</code>에 값을 넣을 수 있다 — 그래서 “0이 아니면 실패”가 아니라 “함수가 실패를 알린 뒤에 이유를 읽는” 순서여야 한다. 둘째, 값은 다음 라이브러리 호출이 언제든 덮어쓸 수 있다 — 그래서 읽었으면 즉시 저장한다. 이 두 규칙이 전역 상태로 오류를 나르는 설계의 대가다.</p></div></div><h3>60.1 <code>errno</code> — 전역으로 오류를 나르는 대가</h3><div><div><p><code>examples/ch60/errno_demo.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;errno.h>
+#include &lt;string.h>
 #include &lt;stdlib.h>
-
-/* 흔한 할당 계산: 원소 n 개 x 크기 sz. 곱셈이 넘치면 그릇이 작아진다. */
-static void *alloc_array(size_t n, size_t sz)
-{
-    size_t bytes;
-    if (ckd_mul(&amp;bytes, n, sz)) {       /* 참이면 넘쳤다 */
-        printf("  크기 계산이 넘쳤다 - 할당하지 않는다\n");
-        return NULL;
-    }
-    return malloc(bytes);
-}
 
 int main(void)
 {
-    /* 판정과 결과 읽기를 반드시 갈라 적는다 (한 표현식에 섞으면 순서가 없다) */
-    int r;
-    bool over = ckd_add(&amp;r, INT_MAX, 1);
-    printf("INT_MAX = %d\n", INT_MAX);
-    printf("ckd_add(INT_MAX, 1)  넘침? %s   r = %d (감아 돈 값)\n", over ? "예" : "아니오", r);
+    /* ① 성공한 호출도 errno 를 건드릴 수 있다 — 그래서 직전에 0 으로 놓는다 */
+    errno = 0;
+    FILE *ok = fopen("errno_demo_tmp.txt", "w");
+    printf("성공 후 errno = %d\n", errno);
+    if (ok) { fputs("x", ok); fclose(ok); }
 
-    over = ckd_add(&amp;r, 1, 2);
-    printf("ckd_add(1, 2)        넘침? %s   r = %d\n", over ? "예" : "아니오", r);
+    /* ② 실패하면 errno 에 이유가 남는다 */
+    errno = 0;
+    FILE *f = fopen("/definitely/not/here.txt", "r");
+    if (!f) {
+        printf("실패: errno=%d, strerror=[%s]\n", errno, strerror(errno));
+        perror("perror 출력");     /* 앞에 문맥을 붙여 stderr 로 */
+    }
 
-    /* 타입이 섞여도 수학적 값으로 판정한다 */
-    signed char c;
-    over = ckd_add(&amp;c, 200, 100);
-    printf("signed char &lt;- 300   넘침? %s   c = %d\n", over ? "예" : "아니오", c);
+    /* ③ 중간에 다른 호출이 끼면 errno 가 덮인다 */
+    errno = 0;
+    f = fopen("/definitely/not/here.txt", "r");
+    int saved = errno;                    /* 곧바로 저장해 둔다 */
+    printf("정리 작업 중...\n");           /* printf 가 errno 를 바꿀 수 있다 */
+    printf("저장해 둔 errno=%d (%s)\n", saved, strerror(saved));
 
-    /* 부호 없는 뺄셈: 감아 도는 것은 정의된 동작이지만, 여기서도 "넘쳤다"고 알린다 */
-    unsigned u;
-    over = ckd_sub(&amp;u, 3u, 5u);
-    printf("unsigned  &lt;- 3 - 5   넘침? %s   u = %u\n", over ? "예" : "아니오", u);
+    /* ④ strtol 은 errno 로 범위 초과를 알린다 */
+    errno = 0;
+    long v = strtol("999999999999999999999", NULL, 10);
+    printf("strtol 범위 초과: errno==ERANGE? %s (값=%ld)\n",
+           errno == ERANGE ? "예" : "아니오", v);
 
-    printf("\n할당 계산\n");
-    void *ok = alloc_array(1000, sizeof(int));
-    printf("  1000 x %zu -> %s\n", sizeof(int), ok ? "할당됨" : "거부됨");
-    free(ok);
-    void *bad = alloc_array(SIZE_MAX / 2, sizeof(int));
-    printf("  SIZE_MAX/2 x %zu -> %s\n", sizeof(int), bad ? "할당됨" : "거부됨");
-    free(bad);
+    remove("errno_demo_tmp.txt");
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>INT_MAX = 2147483647
-ckd_add(INT_MAX, 1)  넘침? 예   r = -2147483648 (감아 돈 값)
-ckd_add(1, 2)        넘침? 아니오   r = 3
-signed char &lt;- 300   넘침? 예   c = 44
-unsigned  &lt;- 3 - 5   넘침? 예   u = 4294967294
-
-할당 계산
-  1000 x 4 -> 할당됨
-  크기 계산이 넘쳤다 - 할당하지 않는다
-  SIZE_MAX/2 x 4 -> 거부됨
-</code></pre></div></div><p>읽는 법은 이렇다. 세 매크로 모두 모양이 같다.</p><pre><code data-lang="c">bool 넘쳤는가 = ckd_add(&amp;결과, 왼쪽, 오른쪽);</code></pre><p>약속이 네 가지다.</p><ol><li><strong>무한 정밀도로 계산한 뒤 그릇에 넣는다.</strong> 판정은 “수학적 결과가 결과 타입에 들어가는가”이고, 중간 계산에서 넘치는 일이 없다. 그래서 인자의 타입이 서로 달라도, 심지어 인자보다 결과 타입이 좁아도 정확히 판정한다 — 예제의 <code>signed char &lt;- 300</code>이 그 확인이다.</li><li><strong>결과 타입은 첫 인자(포인터)가 정한다.</strong> 인자들의 승격 규칙(24장)이 결과를 좌우하지 않는다는 뜻이라, “어느 타입으로 계산되는가”를 두고 고민할 일이 없다.</li><li><strong>넘쳐도 결과는 저장된다.</strong> 그 값은 결과 타입으로 감아 돈 값이다. 예제의 <code>INT_MAX + 1</code>이 <code>-2147483648</code>로 남은 것이 그것이다 — 부호 있는 값이라도 <strong>이 자리에서는 정의된 동작</strong>이라는 점이 중요하다.</li><li><strong>부호 없는 감아 돌기도 “넘쳤다”고 알린다.</strong> 예제의 <code>3u - 5u</code>가 그 확인이다. 값 자체는 정의된 결과(<code>4294967294</code>)지만, 검사 산술은 <strong>수학적 값과 달라졌음</strong>을 알린다. 크기 계산에서 이것이 필요한 성질이다.</li></ol><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>ckd_*</code>는 함수인가 매크로인가? 인자를 여러 번 평가하지는 않는가?</p></div><div class="dev qa-a"><p class="dev-label">답 표준이 정한 것은 매크로이지만, 인자를 여러 번 평가하지 않도록 못박혀 있다(구현은 대개 컴파일러 내장 기능으로 확장한다). 그래서 <code>ckd_add(&amp;r, i++, j)</code> 같은 코드도 안전하다.</p><p>다만 <strong>다른</strong> 함정이 있다. 판정과 결과를 한 표현식 안에 섞으면 안 된다.</p><pre><code data-lang="c">printf("%s %d", ckd_add(&amp;r, a, b) ? "넘침" : "정상", r);   /* 위험 */</code></pre><p><code>r</code>을 읽는 시점과 <code>ckd_add</code>가 <code>r</code>에 쓰는 시점 사이에 순서가 정해져 있지 않아, 옛 값을 찍을 수 있다(17장의 순서 이야기다). 실제로 이 장의 예제를 처음 쓸 때 이 실수로 엉뚱한 값이 찍혔다. <strong>판정을 변수에 받고, 그다음 줄에서 결과를 쓴다</strong> — 이 한 줄 규율이면 끝난다.</p></div></div><h3 id="loc-303">60.3 어디에 쓰는가 — 크기 계산이 첫 번째다</h3><p>예제 뒷부분의 <code>alloc_array</code>가 전형이다. 할당 크기 계산은 검사 산술이 가장 절실한 자리다. <code>n * sz</code>가 넘치면 <strong>작은 그릇을 얻고 큰 줄 알고 쓰는</strong> 상태가 되어, 곧바로 버퍼 넘침 사고로 이어진다. 유명한 취약점 여럿이 정확히 이 경로였다.</p><table><tr><th><strong>자리</strong></th><th><strong>예전 관용구</strong></th><th><strong>지금</strong></th></tr><tr><td>배열 할당</td><td><code>n &amp;&amp; SIZE_MAX/n &lt; sz</code> 검사</td><td><code>ckd_mul(&amp;bytes, n, sz)</code></td></tr><tr><td>버퍼 확장</td><td><code>cap * 2</code> 그냥 계산</td><td><code>ckd_mul(&amp;cap2, cap, 2)</code></td></tr><tr><td>길이 합치기</td><td><code>len1 + len2 + 1</code></td><td><code>ckd_add</code> 두 번</td></tr><tr><td>인덱스 계산</td><td><code>base + off</code> 그냥</td><td><code>ckd_add</code>(부호 있는 값이면 필수)</td></tr><tr><td>입력에서 온 수</td><td><code>atoi</code> 뒤 그냥 사용</td><td><code>strtol</code>(53장) + 범위 검사</td></tr></table><p>마지막 줄이 중요하다. 검사 산술은 <strong>계산</strong>의 넘침을 잡을 뿐, 애초에 값이 너무 큰 것을 걸러 주지는 않는다. 입력 해석 단계의 검사(53장)와 계산 단계의 검사는 서로를 대신하지 못한다.</p><div class="dev misconception"><p class="dev-label">⚠ “<code>ckd_*</code>를 쓰면 정수 넘침 걱정이 끝난다”</p><p>세 가지가 남는다. 첫째, <strong>나눗셈</strong>은 이 헤더에 없다 — <code>INT_MIN / -1</code>은 여전히 스스로 막아야 하는 계약 밖이다. 둘째, <strong>변환</strong>은 검사하지 않는다. 넓은 타입에서 좁은 타입으로 대입하는 것은 산술이 아니라 변환이라(5장의 잘림), 여기서 값이 망가지는 것은 <code>ckd_*</code>의 소관이 아니다. 셋째, <strong>부동소수점</strong>은 대상이 아니다(55장).</p><p>요약하면 검사 산술은 “덧셈·뺄셈·곱셈이 그릇을 넘겼는가”라는 좁고 분명한 질문에 답하는 도구다. 좁아서 좋은 도구이기도 하다.</p></div><h3 id="loc-304">60.4 이 도구가 없는 곳에서</h3><p>C23 헤더를 아직 못 쓰는 환경이라면 두 단계로 대비한다.</p><pre><code data-lang="c">#if defined(__has_include)
-#  if __has_include(&lt;stdckdint.h>)
-#    include &lt;stdckdint.h>
-#    define HAVE_CKDINT 1
-#  endif
-#endif
-
-#ifndef HAVE_CKDINT                      /* GCC·Clang 확장으로 메운다 */
-#  define ckd_add(r, a, b) __builtin_add_overflow((a), (b), (r))
-#  define ckd_sub(r, a, b) __builtin_sub_overflow((a), (b), (r))
-#  define ckd_mul(r, a, b) __builtin_mul_overflow((a), (b), (r))
-#endif</code></pre><p>인자 순서가 다르다는 점만 주의하면 된다 — 표준은 결과 포인터가 앞, 컴파일러 내장은 뒤다. 이런 껍데기를 한 자리에 모아 두는 것이 45장에서 말한 이식성 층의 실제 모습이고, 제12부의 라이브러리도 같은 일을 한다.</p><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — 검사를 도구에 맡기는 길</p><p>코드를 고치지 않고 넘침을 잡는 방법도 있다. GCC와 Clang의 <code>-fsanitize=signed-integer-overflow</code>(UBSan)는 실행 중에 넘침을 잡아 보고하고, <code>-ftrapv</code>는 넘침에서 프로그램을 세운다. 둘 다 <strong>시험용</strong>이다 — 넘침이 실제로 일어난 실행에서만 드러나므로, 검사 산술처럼 “일어날 수 있는 자리를 코드로 막는” 것과는 성격이 다르다. 15장의 디버거 이야기와 같은 결론이다: 도구는 관찰을 돕지만 계약을 대신하지 않는다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>사후 검사</td><td>부호 있는 값에서는 검사 자체가 계약 밖 — 지워질 수 있다</td></tr><tr><td>모양</td><td><code>bool 넘침 = ckd_add(&amp;결과, a, b)</code></td></tr><tr><td>판정 기준</td><td>수학적 결과가 <strong>결과 타입</strong>에 들어가는가</td></tr><tr><td>결과 타입</td><td>첫 인자가 정한다. 승격 규칙에 휘둘리지 않는다</td></tr><tr><td>넘쳐도</td><td>감아 돈 값이 저장된다(정의된 동작)</td></tr><tr><td>부호 없는 값</td><td>감아 돌기도 “넘침”으로 알린다</td></tr><tr><td>한 표현식</td><td>판정과 결과를 섞지 않는다</td></tr><tr><td>적용 1순위</td><td>할당 크기 계산</td></tr><tr><td>없는 곳</td><td><code>__builtin_*_overflow</code> 로 껍데기를 만든다</td></tr></table></div><p>넘침을 계약대로 묻는 법을 익혔다. 다음 장은 이 부의 마지막이자, C23이 언어에 손댄 가장 눈에 띄는 변화다 — 매크로였던 것들이 키워드가 된 이야기다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>perror 출력: No such file or directory
+성공 후 errno = 0
+실패: errno=2, strerror=[No such file or directory]
+정리 작업 중...
+저장해 둔 errno=2 (No such file or directory)
+strtol 범위 초과: errno==ERANGE? 예 (값=9223372036854775807)
+</code></pre></div></div><p>출력이 규칙을 그대로 보여 준다. 호출 직전에 0으로 놓고, 실패를 확인한 뒤 읽고, 다른 일을 하기 전에 저장한다. <code>printf</code> 한 줄이 사이에 끼는 것만으로 값이 바뀔 수 있기 때문이다.</p><p><code>errno</code>는 변수처럼 보이지만 <strong>매크로</strong>다. 여러 갈래로 도는 프로그램에서는 갈래마다 다른 값을 봐야 하므로, 구현이 스레드 지역 저장소를 가리키는 매크로로 정의한다.</p><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>메모</strong></th></tr><tr><td><code>strerror(n)</code></td><td>오류 번호 → 문장</td><td>★ 정적 버퍼. 스레드 안전하지 않다</td></tr><tr><td><code>perror(s)</code></td><td><code>s: 이유</code>를 <code>stderr</code>로</td><td>문맥 문자열을 붙이는 습관</td></tr><tr><td><code>strerror_r</code></td><td>호출자 버퍼에 채움</td><td>POSIX. 두 가지 판이 있어 혼란</td></tr><tr><td><code>strerror_s</code></td><td>같은 취지</td><td>부속서 K(61장)</td></tr></table><p>표준이 이름을 정한 오류 번호는 셋뿐이다 — <code>EDOM</code>(정의역), <code>ERANGE</code>(범위), <code>EILSEQ</code>(인코딩). 나머지 <code>ENOENT</code>·<code>EACCES</code> 같은 것들은 POSIX나 플랫폼이 정한다. 즉 <strong><code>errno</code> 값을 비교하는 코드는 이식성이 그만큼 좁아진다</strong>.</p><h3>60.2 <code>assert</code> — 계약을 코드로 적는 가장 싼 방법</h3><p>44장에서 배운 그 매크로다. 규칙을 다시 못박으면 이렇다.</p><ul><li><code>assert</code>는 <strong>프로그램 내부의 불변식</strong>을 확인한다. “여기까지 왔다면 p는 널이 아니다” 같은 것.</li><li><strong>바깥에서 온 값을 검사하는 데 쓰지 않는다.</strong> 사용자 입력·파일 내용·네트워크 데이터는 <code>if</code>로 검사하고 오류로 처리한다.</li><li><code>NDEBUG</code>가 정의되면 <strong>통째로 사라진다</strong>(15장). 그래서 부수효과가 있는 표현식을 넣으면 안 된다.</li></ul><div class="dev antipattern"><p class="dev-label">✗ <code>assert</code> 안에 일을 시키기</p><pre><code data-lang="c">assert(fclose(f) == 0);      /* 릴리스 빌드에서는 fclose 자체가 사라진다 */
+assert(i++ &lt; n);             /* i 가 증가하지 않는 빌드가 생긴다 */</code></pre><p>검사와 부수효과를 분리한다.</p><pre><code data-lang="c">int rc = fclose(f);
+assert(rc == 0);
+(void)rc;                    /* 릴리스에서 미사용 경고 방지 */</code></pre></div><p>C11은 <code>static_assert</code>(C23에서는 <code>_Static_assert</code> 없이도 쓸 수 있다)를 들여왔다. 컴파일 시간에 확인하므로 실행 비용이 0이고, <code>sizeof</code>나 상수 조건에 쓴다.</p><pre><code data-lang="c">static_assert(sizeof(int) >= 4, "이 코드는 32비트 int 를 가정한다");</code></pre><h3>60.3 신호 — 바깥에서 날아오는 방해</h3><p><code>&lt;signal.h></code>는 프로그램 밖에서 오는 사건(Ctrl+C, 잘못된 메모리 접근, 산술 오류)을 다룬다. 표준이 정한 신호는 여섯 개뿐이고(<code>SIGINT</code>·<code>SIGSEGV</code>· <code>SIGFPE</code>·<code>SIGILL</code>·<code>SIGABRT</code>·<code>SIGTERM</code>), 나머지는 플랫폼의 것이다.</p><p>핵심은 <strong>처리기 안에서 할 수 있는 일이 거의 없다</strong>는 사실이다. 표준이 허용하는 것은 이 정도다.</p><ul><li><code>volatile sig_atomic_t</code> 타입 변수에 값을 대입하기</li><li><code>_Exit</code>나 <code>abort</code> 부르기</li><li>같은 신호의 처리기를 다시 설정하기</li></ul><p><code>printf</code>도, <code>malloc</code>도 부를 수 없다 — 그 함수들이 중간까지 실행된 상태에서 신호가 끼어들 수 있기 때문이다(<strong>비동기 신호 안전</strong>이 아니다). 실무의 관용구는 “처리기는 깃발만 세우고, 실제 처리는 주 흐름에서”다.</p><pre><code data-lang="c">static volatile sig_atomic_t stop = 0;
+static void on_int(int sig) { (void)sig; stop = 1; }
+/* main 루프에서: while (!stop) { ... } */</code></pre><div class="dev misconception"><p class="dev-label">⚠ “<code>SIGSEGV</code>를 잡아서 프로그램을 계속 돌릴 수 있다”</p><p>잡을 수는 있지만 계속 돌릴 수는 없다. <code>SIGSEGV</code>는 이미 <strong>계약이 깨진 뒤</strong>에 오는 신호다(45장의 정의되지 않은 동작). 처리기에서 정상으로 복귀하면 같은 명령이 다시 실행되어 무한히 반복되거나, 손상된 상태 위에서 계속 달린다. 디버깅용으로 스택 추적을 남기고 <code>_Exit</code>로 끝내는 것이 현실적인 최선이고, “복구”는 애초에 그 접근을 하지 않도록 고치는 것이다.</p></div><h3>60.4 비지역 점프 — <code>setjmp</code>/<code>longjmp</code></h3><p><code>setjmp</code>로 지금 자리를 기억해 두고, 나중에 깊은 곳에서 <code>longjmp</code>로 되돌아 오는 장치다. 예외가 없는 언어에서 예외 비슷한 것을 만들려는 시도이고, 그만큼 대가가 크다.</p><ul><li><code>longjmp</code> 뒤에도 값을 믿을 수 있는 지역 변수는 <code>volatile</code>로 선언한 것뿐이다. 나머지는 레지스터에 있었을 수 있어 값이 미정이다.</li><li><strong>정리 코드가 실행되지 않는다.</strong> 건너뛴 함수들이 잡아 둔 자원(파일·메모리)은 그대로 샌다. C++의 소멸자 같은 장치가 없기 때문이다.</li><li><code>setjmp</code>를 부른 함수가 이미 반환했다면 <code>longjmp</code>는 계약 밖이다.</li><li>신호 처리기에서 <code>longjmp</code>로 빠져나오는 것은 특히 위험하다.</li></ul><p>그래서 실무의 결론은 대개 “쓰지 않는다”이다. 쓰는 자리가 있다면 인터프리터의 오류 복구나 파서의 깊은 실패처럼, <strong>정리할 자원이 아레나 하나로 묶여 있는</strong> 구조에 한한다(제12부의 아레나가 그 조건을 만든다).</p><div class="dev realcase"><p class="dev-label">◉ 오류 처리 방식이 만든 코드의 모양</p><p>같은 프로그램을 세 가지 방식으로 짜면 모양이 이렇게 갈린다.</p><ul><li><strong>반환값 + <code>errno</code></strong>: 호출마다 <code>if</code>가 붙고 오류 경로가 눈에 보인다. 번거롭지만 흐름이 정직하다.</li><li><strong><code>setjmp</code>/<code>longjmp</code></strong>: 본문은 깔끔해지지만 자원 정리를 사람이 전부 기억해야 하고, 어디로 튀는지 코드에서 보이지 않는다.</li><li><strong><code>goto cleanup</code></strong>: C 코드베이스에서 가장 널리 정착한 절충이다. 실패하면 한 곳으로 모여 역순으로 정리한다. 리눅스 커널이 이 무늬를 관행으로 못박았고, 28장에서 “goto는 절제해서”라고 한 그 절제된 용법이 바로 이것이다.</li></ul><p>세 방식 모두 “실패를 값으로 다루고, 정리를 잊지 않는다”는 같은 문제를 푼다. 제12부의 라이브러리는 여기에 네 번째 답 — <strong>실패를 타입으로 만드는 것</strong> — 을 얹는다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>진단과 제어 요약.</p><table><tr><th><strong>도구</strong></th><th><strong>쓰는 자리</strong></th><th><strong>규칙</strong></th></tr><tr><td><code>errno</code></td><td>라이브러리 호출의 실패 이유</td><td>직전 0, 실패 확인 후 읽기, 즉시 저장</td></tr><tr><td><code>assert</code></td><td>내부 불변식</td><td>부수효과 금지, 입력 검사에 쓰지 않기</td></tr><tr><td><code>static_assert</code></td><td>컴파일 시간 가정</td><td>비용 0</td></tr><tr><td><code>signal</code></td><td>Ctrl+C 같은 외부 사건</td><td>처리기에서는 깃발만</td></tr><tr><td><code>SIGSEGV</code></td><td>—</td><td>잡아도 복구 불가</td></tr><tr><td><code>setjmp</code>/<code>longjmp</code></td><td>특수한 복구</td><td><code>volatile</code> 아니면 값 미정, 정리 안 됨</td></tr><tr><td>실무 관용구</td><td>실패 시 정리</td><td><code>goto cleanup</code>으로 한 곳에 모으기</td></tr></table></div><p>여기까지가 C89 시절부터 있던 헤더들이다. 다음 장은 그 뒤로 표준이 보탠 것들 — 그리고 “안전한 함수”를 만들려던 시도가 어떻게 되었는지의 이야기다.</p>
 <div class="nav"><a href="ch59.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch61.html">다음 →</a></div>
 </div></main></body></html>

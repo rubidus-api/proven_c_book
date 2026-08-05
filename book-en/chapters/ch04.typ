@@ -77,7 +77,7 @@ meaningful.
 
 There are three things called "null" around C. Telling them apart once, now,
 saves great confusion later. They get formal treatment in Part VII
-(chapter 31); here we merely learn their faces.
+(chapter 33); here we merely learn their faces.
 
 - *The null pointer* — what we just saw. The agreed pointer value meaning
 #idx("NUL character")  "points nowhere." It lives in the world of pointers.
@@ -87,7 +87,7 @@ saves great confusion later. They get formal treatment in Part VII
 - *The NUL character* — an entirely different object. It is a single
   *character* of value 0, at position 0 of the character table (chapter 7),
   written `'\0'` in C. It is one byte of data and is used to mark the end of a
-  string (chapter 34). It lives in the world of characters.
+  string (chapter 36). It lives in the world of characters.
 
 All three have "null" in the name and all three have a 0 tangled up in them
 somewhere, so they are easy to mix up, but the pointer's null and the
@@ -152,7 +152,7 @@ none" is still in active service one layer up, in the world of runtimes.
   It is technically possible in C and is a genuinely used technique, but it is
   an advanced one with many traps — you need a guarantee of alignment, you must
   strip the tag before use without fail, and it tangles with the pointer rules
-  to come (provenance in chapter 12, and chapter 32). One conclusion suffices at
+  to come (provenance in chapter 12, and chapter 34). One conclusion suffices at
   this stage: the low bits of an address are not "just a number" but a special
   place that alignment created.
 ]

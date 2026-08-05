@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>71 경계 — 겹쳐 돌리기, 그리고 OS가 없을 때 — Proven C Book</title><style>
+<title>71 할당은 매개변수다 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,49 +68,97 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-356">71 경계 — 겹쳐 돌리기, 그리고 OS가 없을 때</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>제12부의 마지막 장이다. 여러 일을 겹쳐 돌리는 두 가지 방법(스택리스 <span id="idx-entry-98"></span>코루틴과 작업 시스템), 여러 갈래로 도는 프로그램에서 할당자와 포인터 출처가 왜 문제가 되는지, 그리고 운영체제가 아예 없는 자리에서 이 라이브러리가 어떤 모습이 되는지를 본다. 마지막 절은 <strong>언제 쓰지 않는 것이 나은가</strong>다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>10장에서 클록의 한계 때문에 코어가 여럿이 됐고, 거짓 공유 같은 사고가 생긴다고 했다. 그러면 “동시에 여러 일을 한다”는 말에는 몇 가지 서로 다른 뜻이 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>적어도 둘이다. <strong>겹쳐 돌리기</strong>(concurrency)는 여러 일이 서로 기다리며 번갈아 진행하는 것으로, 코어가 하나여도 성립한다 — 입출력을 기다리는 동안 다른 일을 하는 서버가 그렇다. <strong>동시에 돌리기</strong>(parallelism)는 실제로 여러 코어가 같은 순간에 계산하는 것이다. 앞의 것은 <strong>구조</strong>의 문제이고 뒤의 것은 <strong>성능</strong>의 문제다. 이 장의 코루틴은 앞을, 작업 시스템은 뒤를 다룬다.</p></div></div><h3 id="loc-357">71.1 스택리스 코루틴 — 스레드 없이 겹쳐 돌리기</h3><p>한 함수가 일을 하다 멈추고, 나중에 <strong>그 자리에서</strong> 다시 시작할 수 있으면 많은 것이 쉬워진다. 상태 기계를 손으로 짜는 대신 코드를 순서대로 쓸 수 있기 때문이다.</p><div><div><p><code>examples/ch71/coro.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>71 할당은 매개변수다</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>67장의 넷째 버그 — 불분명한 소유권 — 에 대한 답이다. 기억의 출처를 값으로 다루는 <strong>할당자</strong>(allocator), 수명이 같은 것들을 한꺼번에 되돌리는 <span id="idx-entry-98"></span>아레나(arena), 그리고 소유와 빌림을 타입으로 가르는 규칙까지. 39장에서 배운 힙의 위험이 여기서 설계로 정리된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>39장에서 <code>malloc</code>으로 얻은 기억은 누군가 정확히 한 번 <code>free</code>해야 하고, 그 “누군가”를 정하는 것이 프로그램의 설계라고 했다. 그러면 함수 하나만 보고 “이 함수가 기억을 할당하는가”를 알 방법이 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>표준 C에는 없다. <code>malloc</code>은 어디서든 부를 수 있으므로 어떤 함수든 몰래 할당할 수 있고, 시그니처는 그 사실을 말하지 않는다. proven의 답은 규칙 하나로 그 정보를 시그니처에 되돌리는 것이다 — <strong>할당자를 인자로 받지 않는 함수는 할당하지 않는다.</strong> 이 규칙이 지켜지면 시그니처를 읽는 것만 으로 “이 함수는 기억을 잡을 수 있다”를 알 수 있다.</p></div></div><h3>71.1 할당자는 값이다</h3><p><code>proven_allocator_t</code>는 구조체 하나다 — 문맥 포인터와 함수 포인터 셋 (할당·재할당·해제). 특별한 전역도, 등록 절차도 없다. 그냥 값이라서 인자로 넘기고, 구조체에 담고, 함수에서 돌려줄 수 있다.</p><p>그래서 할당하는 함수는 모두 이런 모양이다.</p><pre><code data-lang="c">proven_result_u8str_t proven_u8str_create(proven_allocator_t alloc,
+                                          proven_size_t limit);
+void                  proven_u8str_destroy(proven_allocator_t alloc,
+                                           proven_u8str_t *str);</code></pre><p><strong>만들 때 준 할당자로 파괴한다</strong> — 이것이 소유권 규칙의 전부다.</p><div><div><p><code>examples/ch71/swap.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
-/* 스택리스 코루틴: 진행 상태를 구조체 한 칸에 담고, 매크로가 switch 로
-   그 자리에 되돌아간다. 스레드도, 별도 스택도, 할당도 없다. */
-typedef struct {
-    proven_coro_t co;      /* 어디까지 갔는지 기억하는 칸 */
-    int           sent;
-    int           limit;
-} producer_t;
-
-/* 0 을 돌려주면 "값 하나를 내놓고 잠시 멈춤", 1 이면 "다 끝남" */
-static int produce(producer_t *p, int *out)
+/* 이 함수는 어디서 기억을 얻는지 모른다 — 받은 할당자에게 물을 뿐이다.
+   시그니처에 allocator 가 있다는 사실 자체가 "할당한다"는 선언이다. */
+static proven_err_t build(proven_allocator_t alloc, const char *who)
 {
-    PROVEN_CORO_BEGIN(&amp;p->co);
-    while (p->sent &lt; p->limit) {
-        *out = p->sent * 10;
-        p->sent += 1;
-        PROVEN_CORO_YIELD(&amp;p->co);   /* 여기서 나갔다가 다음 호출에 되돌아온다 */
-    }
-    PROVEN_CORO_END(&amp;p->co);
+    proven_result_u8str_t made = proven_u8str_create(alloc, 64);
+    if (!proven_is_ok(made.err)) return made.err;
+
+    proven_u8str_t s = made.value;
+    proven_err_t e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hi, "));
+    if (proven_is_ok(e))
+        e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr(who));
+    if (!proven_is_ok(e)) { proven_u8str_destroy(alloc, &amp;s); return e; }
+
+    proven_u8str_view_t v = proven_u8str_as_view(&amp;s);
+    printf("  -> \"%.*s\"\n", (int)v.size, (const char *)v.ptr);
+
+    proven_u8str_destroy(alloc, &amp;s);   /* 준 곳으로 돌려준다 */
+    return PROVEN_OK;
 }
 
 int main(void)
 {
-    producer_t p = { .sent = 0, .limit = 4 };
-    PROVEN_CORO_INIT(&amp;p.co);
+    /* ① 힙 — malloc/free 를 감싼 것 */
+    printf("heap  :\n");
+    (void)build(proven_heap_allocator(), "heap");
 
-    int value = -1;
-    while (!PROVEN_CORO_IS_DONE(&amp;p.co)) {
-        if (produce(&amp;p, &amp;value) == 0)
-            printf("produced %d\n", value);
-    }
-    printf("finished after %d values; coroutine state is %zu bytes\n",
-           p.sent, sizeof(proven_coro_t));
+    /* ② 아레나 — 정적 버퍼 위에서 잘라 쓴다. 힙이 아예 없어도 된다 */
+    static proven_byte_t backing[512];
+    proven_arena_t arena = proven_arena_create(
+        (proven_mem_mut_t){ .ptr = backing, .size = sizeof backing });
+
+    printf("arena :\n");
+    (void)build(proven_arena_as_allocator(&amp;arena), "arena");
+    printf("  used %zu of %zu bytes\n", arena.offset, sizeof backing);
+
+    /* 아레나는 개별 해제가 없다 — 한 번에 되돌린다 */
+    proven_arena_reset(&amp;arena);
+    printf("  after reset: %zu bytes used\n", arena.offset);
+
+    /* ③ 같은 아레나를 다시 쓴다 — 같은 코드, 다른 기억의 출처 */
+    printf("arena :\n");
+    (void)build(proven_arena_as_allocator(&amp;arena), "arena again");
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>produced 0
-produced 10
-produced 20
-produced 30
-finished after 4 values; coroutine state is 4 bytes
-</code></pre></div></div><p>핵심은 마지막 줄이다 — 이 코루틴이 기억하는 상태는 <strong>4바이트</strong>다. 별도 스택도, 스레드도, 할당도 없다. 매크로가 <code>switch</code>와 <code>case</code>로 재진입 지점을 만드는, C에서 오래된 요령(Duff’s device의 사촌이다 — 27장에서 본 그 문법이 여기 다시 쓰인다)을 정리한 것이다.</p><p>대가도 분명하다. <strong>지역 변수가 살아남지 않는다</strong> — 멈췄다 돌아오면 사라지고 없으므로, 유지해야 할 상태는 구조체에 두어야 한다. 예제가 <code>sent</code>를 구조체 멤버로 둔 이유다. 그리고 <code>switch</code>로 구현되었으므로 <code>PROVEN_CORO_YIELD</code>를 다른 <code>switch</code> 안에 넣을 수 없다.</p><p>그래도 이 모델이 임베디드에서 사랑받는 이유는 뚜렷하다. 태스크 하나가 4바이트라면 수백 개를 띄워도 부담이 없고, 스택을 따로 잡지 않으니 기억 사용량을 컴파일 시간에 계산할 수 있다.</p><div class="dev misconception"><p class="dev-label">⚠ “코루틴은 스레드의 가벼운 버전이다”</p><p>하는 일이 아예 다르다. 스레드는 운영체제가 <strong>마음대로 끼어들어</strong> 전환 하지만(선점), 코루틴은 오직 자기가 <code>YIELD</code>라고 적은 자리에서만 멈춘다 (협력). 그래서 코루틴들 사이에는 경쟁 조건이 생기지 않는다 — 두 코루틴이 같은 순간에 도는 일이 없기 때문이다. 대신 대가가 있다. 한 코루틴이 오래 계산하며 양보하지 않으면 나머지가 전부 굶는다. 그리고 코루틴은 코어를 여럿 쓰지 못한다 — 그것이 다음 절의 작업 시스템이 따로 있는 이유다.</p></div><h3 id="loc-358">71.2 작업 시스템 — 코어를 여럿 쓰기</h3><p><code>proven_job_sys_t</code>는 일감 큐와 작업자 스레드를 갖춘 작은 시스템이다. 큐의 크기가 <strong>고정</strong>이라는 점이 특징이다 — 넘치면 제출이 실패하고, 그 실패는 값으로 온다. 무한히 늘어나는 큐는 기억을 다 쓸 때까지 문제를 미루는 장치일 뿐이라는 판단이다.</p><div class="dev antipattern"><p class="dev-label">✗ 닫기와 제출을 겹치기</p><pre><code data-lang="c">/* 스레드 A */                    /* 스레드 B */
-proven_job_submit(sys, job);      proven_job_system_destroy(sys);</code></pre><p>헤더가 명시적으로 금지하는 무늬다. 올바른 순서는 <strong>닫고(close), 생산자를 모두 합류시킨 뒤, 파괴(destroy)</strong>다. 이런 순서 계약은 자료구조 안쪽에 락을 숨겨서는 해결되지 않는다 — 오히려 숨겨진 락이 있으면 “된다고 착각하는” 코드가 늘어난다. 이 라이브러리가 컨테이너에 락을 넣지 않고 <strong>공유 변경은 호출자가 동기화한다</strong>고 못박은 이유이기도 하다.</p></div><h3 id="loc-359">71.3 스레드, 할당자, 그리고 출처</h3><p>여러 갈래로 도는 프로그램에서 할당자는 특별한 주의를 요구한다. 아레나 하나를 두 스레드가 함께 쓰면, 66장에서 본 “앞에서부터 잘라 주는” 그 단순한 동작이 곧바로 경쟁이 된다. 처방은 대개 <strong>스레드마다 하나씩</strong> 두는 것이다 — 그러면 동기화가 아예 필요 없다.</p><p>12장에서 이름만 보았던 포인터 <strong>출처</strong>(provenance)도 여기서 실무가 된다. 같은 주소라도 어느 할당에서 온 포인터인지가 의미를 가지므로, 어떤 할당자에서 얻은 블록을 다른 할당자에게 돌려주는 것은 (66장의 반례처럼) 주소가 우연히 맞더라도 계약 위반이다. 라이브러리의 이름이 여기서 왔다.</p><h3 id="loc-360">71.4 OS가 없을 때 — 프리스탠딩</h3><p>이 라이브러리의 모양을 가장 크게 결정한 제약이 이것이다. 48장에서 표준 라이브러리가 얇은 이유로 든 바로 그 환경 — 운영체제도, 힙도, 파일도 없는 자리 — 에서 돌아야 한다는 요구다.</p><span id="idx-entry-99"></span><p>프리스탠딩 빌드에서 달라지는 것은 이렇다.</p><ul><li><code>platform/</code>을 아예 넣지 않는다. 파일·시간·OS 난수가 사라진다.</li><li>할당은 정적 버퍼 위의 아레나로 한다(66장). <code>malloc</code>은 없다.</li><li>문자열은 <code>_borrow</code>로 스택·정적 버퍼 위에서 다룬다(67장).</li><li>패닉 처리기를 직접 등록한다 — 인쇄할 콘솔이 없을 수 있으므로, LED를 켜거나 워치독을 물리거나 재부팅하는 식이 된다.</li><li>실수 형식화는 큰 정수 연산을 쓰므로, 필요 없으면 통째로 뺄 수 있다.</li></ul><p>앞 장들에서 “할당자를 인자로 받는다”, “뷰는 빌린 것이다”, “숨은 전역이 없다” 같은 규율이 왜 그렇게 집요했는지가 여기서 드러난다. 그 규율들은 취향이 아니라 <strong>이 환경에서 돌기 위한 최소 조건</strong>이었다.</p><div class="dev realcase"><p class="dev-label">◉ 같은 코드를 두 세계에서 — 그리고 그 대가</p><p>임베디드와 호스트 양쪽에서 도는 코드를 한 벌로 유지하는 것은 실제로 가치가 크다. 프로토콜 파서를 PC에서 테스트하고 그대로 펌웨어에 넣을 수 있다면, 디버깅 환경이 없는 보드 위에서 헤매는 시간이 크게 줄기 때문이다. 많은 임베디드 팀이 “호스트에서 도는 시험용 빌드”를 별도로 유지하는 이유이고, 그 구조를 가능하게 하는 것이 정확히 <strong>플랫폼 의존을 한 층에 가두는</strong> 설계다. 대가는 API가 조금 더 격식을 갖추게 된다는 것 — 어디서나 통하는 코드는 어디에도 특화되지 않는다.</p></div><h3 id="loc-361">71.5 언제 쓰지 않는 것이 나은가</h3><p>정직하게 닫는다. 이 라이브러리가 답이 아닌 경우가 있다.</p><ul><li><strong>짧은 스크립트성 프로그램</strong> — 스무 줄짜리 도구에 소유권 규율과 할당자 매개변수는 격식일 뿐이다. 표준 라이브러리로 충분하다.</li><li><strong>이미 다른 규약을 가진 코드베이스</strong> — 큰 프로젝트에는 대개 자체 문자열· 컨테이너·에러 규약이 이미 있다. 두 규약이 섞이면 경계마다 변환 코드가 생기고, 그 경계가 새 버그의 자리가 된다.</li><li><strong>C++·Rust처럼 이미 그 문제를 언어가 푸는 곳</strong> — 소유권과 에러 전파를 언어가 다루는 환경에서 굳이 C 라이브러리를 얹을 이유는 적다.</li><li><strong>표준 함수 하나면 끝나는 일</strong> — 이 책이 48장에서 말한 그대로다. 옳은 태도는 “쓰지 않기”도 “무조건 쓰기”도 아니라 <strong>계약을 알고 고르기</strong>다.</li></ul><div><div class="dev qa-q"><p class="dev-label">문</p><p>그러면 이 부에서 배운 것 중 proven을 쓰지 않아도 남는 것은 무엇인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>거의 전부다. 길이를 지니고 다니는 문자열, 자르지 않고 거부하는 쓰기, 값으로 돌아오는 에러, 시그니처에 드러나는 할당, 소유와 빌림의 구분, 검사 산술로 하는 크기 계산, 전순서를 지키는 비교자, 적대적 입력을 가정한 해시 — 이것들은 라이브러리가 아니라 <strong>설계 원칙</strong>이고, 어떤 C 코드에도 손으로 적용할 수 있다. 62장의 표를 다시 펴 보면 오른쪽 열이 전부 그런 항목이다. 이 부가 정말로 팔고 싶었던 것은 코드가 아니라 그 열이다.</p></div></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>제12부 전체 요약 — 문제와 답.</p><table><tr><th><strong>62장의 문제</strong></th><th><strong>답</strong></th><th><strong>장</strong></th></tr><tr><td>크기를 모르는 문자열</td><td>뷰(ptr+size), 거부하되 자르지 않기</td><td>50·52</td></tr><tr><td>확인되지 않는 실패</td><td>값으로 오는 에러, <code>[[nodiscard]]</code></td><td>49</td></tr><tr><td>서식 불일치</td><td><code>{}</code> 와 <code>PROVEN_ARG</code> (<code>_Generic</code>)</td><td>53</td></tr><tr><td>불분명한 소유권</td><td>할당자 매개변수, 소유 대 빌림</td><td>51</td></tr><tr><td>검사되지 않는 콜백</td><td>문서화된 계약, introsort, 키드 해시</td><td>54</td></tr><tr><td>바이트의 숨은 타입</td><td><code>proven_byte_t</code></td><td>50</td></tr><tr><td>OS가 없는 환경</td><td>platform 층 분리, 정적 아레나</td><td>56</td></tr></table></div><p>이것으로 이 책이 1장에서 밝힌 약속을 지켰다 — C의 문제들을 먼저 보이고, 그에 대한 하나의 대답을 끝까지 보였다. 남은 두 장은 지면 밖의 이야기다. 다음 장에서 실무의 지형(빌드 도구, 버전 관리, 실제 프로젝트들)을 둘러보고, 마지막 장에서 이 책이 지나온 길을 정리한다.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>heap  :
+  -> "hi, heap"
+arena :
+  -> "hi, arena"
+  used 65 of 512 bytes
+  after reset: 0 bytes used
+arena :
+  -> "hi, arena again"
+</code></pre></div></div><p><code>build</code> 함수를 보라. 이 함수는 자기가 쓰는 기억이 <code>malloc</code>에서 오는지 정적 배열에서 오는지 <strong>알지 못한다</strong>. 호출자가 정한다. 같은 코드가 힙 위에서 한 번, 아레나 위에서 두 번 돌았고 결과는 같다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>이게 왜 그렇게 중요한 성질인가? 어차피 대부분은 힙을 쓸 텐데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>세 가지가 한꺼번에 따라오기 때문이다. 첫째, <strong>힙이 없는 환경에서도 같은 코드가 돈다</strong> — 임베디드가 그렇고(76장), 커널 안이 그렇다. 둘째, <strong>시험이 쉬워진다</strong> — 일부러 실패하는 할당자를 끼워 넣으면 “기억이 모자랄 때 이 코드가 제대로 복구하는가”를 시험할 수 있다. 셋째, <strong>성능을 호출자가 고를 수 있다</strong> — 짧게 살다 한꺼번에 죽는 자료라면 아레나가 힙보다 훨씬 빠르다. 라이브러리가 <code>malloc</code>을 직접 부르는 순간 이 셋이 전부 사라진다.</p></div></div><h3>71.2 아레나 — 수명이 같은 것들을 한 번에</h3><p>39장에서 힙의 위험 셋(누수·이중 해제·사용 후 해제)을 배웠다. 그 셋은 모두 <strong>개별 해제</strong>에서 나온다. 그렇다면 개별 해제를 없애면 어떨까 — 그것이 아레나의 착상이다.</p><p>아레나는 큰 기억 덩어리 하나를 받아 두고, 요청이 올 때마다 앞에서부터 잘라 준다. 해제 함수는 있지만 아무 일도 하지 않는다. 대신 <strong>리셋</strong>이 있다 — 한 번에 전부 되돌린다.</p><div><div><p><code>examples/ch71/arena.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+int main(void)
+{
+    /* 아레나: 뒤를 받쳐 줄 기억을 통째로 주고, 그 안에서 잘라 쓴다 */
+    static unsigned char backing[1024];
+    proven_arena_t arena = proven_arena_create(
+        (proven_mem_mut_t){ .ptr = backing, .size = sizeof backing });
+
+    proven_result_mem_mut_t a = proven_arena_alloc(&amp;arena, 100);
+    proven_result_mem_mut_t b = proven_arena_alloc(&amp;arena, 200);
+
+    if (!proven_is_ok(a.err) || !proven_is_ok(b.err)) {
+        printf("arena allocation failed\n");
+        return 1;
+    }
+    printf("carved two blocks: %zu, %zu bytes\n", a.value.size, b.value.size);
+
+    /* 개별 해제는 없다 — 수명이 같은 것들을 한 번에 되돌린다 */
+    proven_arena_reset(&amp;arena);
+    printf("one reset reclaimed everything\n");
+
+    /* 그릇보다 큰 요청은 실패가 값으로 온다 (붕괴하지 않는다) */
+    proven_result_mem_mut_t too_big = proven_arena_alloc(&amp;arena, 100000);
+    printf("oversized request: %s\n", proven_is_ok(too_big.err) ? "granted" : "refused");
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>carved two blocks: 100, 200 bytes
+one reset reclaimed everything
+oversized request: refused
+</code></pre></div></div><p>이 모델이 맞는 자리가 실제로 많다. 한 요청을 처리하는 동안 만든 임시 자료들, 한 프레임 동안 쓰는 게임의 계산 결과, 한 파일을 파싱하는 동안 만든 구문 트리 — 전부 <strong>태어난 시점은 다르지만 죽는 시점이 같은</strong> 자료들이다. 그런 자료에 개별 해제는 비용이자 위험일 뿐이다.</p><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>세 가지 기억의 출처 비교.</p><table><tr><th></th><th><strong>힙</strong></th><th><strong>아레나</strong></th><th><strong>풀(pool)</strong></th></tr><tr><td>주는 방식</td><td>임의 크기</td><td>앞에서부터 자름</td><td>고정 크기 칸</td></tr><tr><td>개별 해제</td><td>있음</td><td>없음(리셋)</td><td>있음(칸 반납)</td></tr><tr><td>단편화</td><td>생길 수 있음</td><td>없음</td><td>없음</td></tr><tr><td>속도</td><td>보통</td><td>매우 빠름</td><td>매우 빠름</td></tr><tr><td>맞는 자리</td><td>수명이 제각각</td><td>수명이 같은 무리</td><td>같은 크기를 반복</td></tr></table></div><span id="idx-entry-99"></span><p>풀(<code>proven_pool_t</code>)은 세 번째 갈래다. 같은 크기의 객체를 반복해서 만들고 없애는 자리 — 게임의 총알, 서버의 연결 객체, 파서의 노드 — 에서 쓴다. 칸의 크기가 고정이라 단편화가 없고, 반납된 칸을 곧바로 재사용한다. 풀도 <code>proven_pool_as_allocator</code>로 할당자가 되므로 앞 예제의 <code>build</code> 함수가 그대로 돈다.</p><div class="dev antipattern"><p class="dev-label">✗ 다른 할당자로 파괴하기</p><pre><code data-lang="c">proven_result_u8str_t r = proven_u8str_create(proven_heap_allocator(), 64);
+...
+proven_u8str_destroy(proven_arena_as_allocator(&amp;arena), &amp;r.value);  /* 틀렸다 */</code></pre><p><code>malloc</code>으로 얻은 것을 아레나에게 돌려주는 셈이다. 이 규칙은 라이브러리가 강제할 수 없다 — 할당자는 그냥 값이고, 어떤 값을 넘길지는 호출자가 정하기 때문이다. 그래서 실무의 관행은 <strong>할당자를 자료구조와 함께 들고 다니거나</strong>, 한 모듈 안에서 하나만 쓰도록 범위를 좁히는 것이다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “아레나를 쓰면 해제를 신경 쓸 필요가 없다”</p><p>개별 해제는 없어지지만 <strong>수명은 그대로 남는다.</strong> 아레나를 리셋하는 순간 그 위에서 잘라 준 모든 조각이 한꺼번에 무효가 되므로, 리셋 이후에도 살아 있어야 하는 자료를 아레나에 두면 안 된다. 70장에서 본 “뷰는 소유자보다 오래 살 수 없다”가 여기서 아레나 단위로 커진 것이다. 아레나가 없애는 것은 해제의 <strong>횟수</strong>이지 수명에 대한 <strong>사고</strong>가 아니다.</p></div><h3>71.3 소유와 빌림, 그리고 자기를 가리키는 상태</h3><p>이제 67장의 넷째 버그로 되돌아간다. <code>char *</code>가 네 가지를 뜻하던 문제는 <span id="idx-entry-100"></span>타입을 둘로 가르는 것으로 풀린다.</p><ul><li><strong>소유하는 것</strong>(owned) — <code>proven_u8str_t</code>, <code>proven_array_t</code> 같은 것들. <code>_create</code>로 얻고 <code>_destroy</code>로 놓는다.</li><li><strong>빌린 것</strong>(borrowed) — <code>proven_u8str_view_t</code>, <code>proven_mem_view_t</code>. 절대 파괴하지 않는다. 소유자가 사라지면 함께 무효가 된다.</li></ul><p>시그니처만 보고 “이걸 해제해야 하나”를 답할 수 있다는 것, 그것이 이 구분의 전부이자 목적이다.</p><p>여기에 딸린 규칙이 하나 더 있다. <strong>자기를 가리키는 상태는 복사하지 않는다.</strong> 40장에서 구조체 대입이 얕은 복사(shallow copy)라는 것을 배웠다. 내부에 자기 버퍼를 가리키는 포인터를 둔 객체를 그렇게 복사하면 사본의 포인터가 여전히 원본을 가리켜 두 객체가 같은 기억을 공유하게 되고, 둘 다 파괴하면 이중 해제다. 그래서 이런 객체는 값으로 복사하지 않고 포인터로 넘긴다.</p><div class="dev realcase"><p class="dev-label">◉ 할당자를 인자로 받는 설계의 확산</p><p>이 방식은 proven의 발명이 아니라 시스템 프로그래밍의 최근 합의에 가깝다. Zig는 표준 라이브러리의 거의 모든 할당 API가 할당자를 인자로 받고 “숨은 할당 없음”을 언어의 표어로 삼는다. Rust에서도 컨테이너에 할당자를 붙이는 기능이 표준에 들어오는 중이고, C++의 <code>std::pmr</code>도 같은 문제의식에서 나왔다. 이유는 모두 같다 — 게임, 임베디드, 커널, 고성능 서버에서 <strong>기억의 출처를 고르는 일</strong>이 성능과 안전 양쪽의 핵심이기 때문이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>그러면 대가는 무엇인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>시그니처에 매개변수가 하나 더 붙는다. 그리고 그 할당자를 <strong>어디까지 들고 다닐 것인가</strong>라는 설계 문제가 새로 생긴다 — 함수마다 넘길 것인지, 구조체에 담아 둘 것인지. 작은 프로그램에서는 이것이 성가신 격식으로만 보일 수 있다. 값이 드러나는 것은 프로그램이 커진 뒤, 또는 힙을 쓸 수 없는 자리로 코드를 옮겨야 할 때다.</p></div></div><p>기억을 얻고 놓는 규칙을 세웠다. 다음 장부터는 그 위에 올라가는 실제 부품들이다 — 먼저, 이 책이 36장 내내 조심하라고 했던 문자열이다.</p>
 <div class="nav"><a href="ch70.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch72.html">다음 →</a></div>
 </div></main></body></html>

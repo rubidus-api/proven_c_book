@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>68 형식화와 파싱 — 타입을 두 번 적지 않기 — Proven C Book</title><style>
+<title>68 시작하기 — 설치할 것이 없다 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
@@ -51,7 +51,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .platform { border-left-style:double; }
 .note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
@@ -64,89 +68,34 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-341">68 형식화와 파싱 — 타입을 두 번 적지 않기</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>62장의 셋째 버그 — 서식과 인자의 불일치 — 에 대한 답이다. <code>{}</code>라는 타입 없는 자리표시자가 어떻게 타입 안전을 얻는지, 그 밑에서 <code>_Generic</code>이 무엇을 하는지, 그리고 반대 방향인 파싱에서 실패가 어떻게 값으로 드러나는지를 본다. 48장에서 뜯어본 <code>printf</code>·<code>scanf</code>의 대안이다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>46장에서 가변 인자에는 타입 정보가 실려 가지 않는다고 했고, 48장에서는 그래서 서식 문자열이 “스택을 어떻게 읽을지”를 혼자 정한다고 했다. 그러면 인자에서 타입을 가져오려면 무엇이 필요한가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>호출 자리에서</strong> 타입을 붙잡아 값과 함께 실어 보내면 된다. 즉 인자를 그대로 넘기지 않고 <code>{타입 꼬리표, 값}</code> 꾸러미로 감싸는 것이다. 남은 문제는 “타입 꼬리표를 어떻게 자동으로 붙이는가”인데, 그 답이 C11의 <code>_Generic</code>이다 — 표현식의 타입에 따라 컴파일 시간에 서로 다른 코드를 <span id="idx-entry-94"></span>고르는 장치. 실행 시간 비용은 0이고, 25장에서 배운 암묵적 변환 규칙과 달리 여기서는 타입이 <strong>보존된다</strong>.</p></div></div><h3 id="loc-342">68.1 <code>{}</code> — 타입이 없는 자리표시자</h3><p>규칙은 셋뿐이다.</p><ul><li><code>{}</code> — 여기에 다음 인자를 넣는다. 타입은 적지 않는다.</li><li><code>{:...}</code> — 콜론 뒤에 서식 지정(폭·정렬·자릿수)을 적는다.</li><li><code>{{</code> <code>}}</code> — 중괄호 글자 자체.</li></ul><p><code>%d</code>가 없으니 <code>%d</code>와 <code>double</code>이 어긋날 자리도 없다. 48장에서 본 불일치의 가능성이 문법 차원에서 제거된 것이다.</p><div><div><p><code>examples/ch68/fmt.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
-#include &lt;stdio.h>
+<h2>68 시작하기 — 설치할 것이 없다</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>proven을 실제로 쓰는 첫 장이다. 이 라이브러리에 <code>configure</code>도, 패키지 관리자도, 링크할 공유 라이브러리도 없는 이유 — 그리고 그 선택이 무엇을 주고 무엇을 앗아가는지 — 를 먼저 보고, 첫 프로그램을 돌린다. 67장에서 본 세 번째 버그(서식 불일치)가 이 첫 프로그램에서 이미 사라진다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>46장에서 여러 파일 프로그램을 만들며 헤더와 목적 파일, 링크를 배웠고, <span id="idx-entry-94"></span>14장에서는 컴파일 릴레이의 네 주자를 보았다. 그러면 “라이브러리를 쓴다”는 것은 그 그림에서 정확히 무엇을 하는 일인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>둘 중 하나다. <strong>함께 컴파일하거나</strong>, <strong>따로 컴파일된 것을 링크하거나</strong>. 앞의 길은 남의 소스를 내 소스와 같이 컴파일러에 넘기는 것이고, 뒤의 길은 이미 목적 코드가 된 덩어리(정적 <code>.a</code>나 공유 <code>.so</code>·<code>.dll</code>)를 링커에게 넘기는 것이다. 어느 쪽이든 컴파일러는 <strong>선언</strong>(헤더)을 보고 호출을 만들고, 링커가 <strong>정의</strong>를 찾아 잇는다 — 46장의 그림 그대로다. proven은 앞의 길을 택했고, 다음 절이 그 이유다.</p></div></div><h3>68.1 설치할 것이 없다는 선택</h3><p>proven에는 설치 절차가 없다. 받아 둔 소스를 프로그램과 함께 컴파일하면 그만이다. 중요한 디렉터리는 둘뿐이다.</p><ul><li><code>src/proven/</code> — 이식 가능한 본체. 여기서는 운영체제를 부르지 않는다.</li><li><code>platform/</code> — 시스템 호출을 하는 얇은 층. 새 기계로 옮길 때 바꿔야 할 유일한 부분이다.</li></ul><p>운영체제가 없는 환경(임베디드)에서는 <code>platform/</code>을 빼고 빌드한다. 이 분리가 라이브러리 전체의 모양을 결정했다 — “어디서나 돌아야 한다”는 요구가 곧 “숨은 할당도, 숨은 전역 상태도 두지 않는다”는 규율이 된다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>왜 패키지로 배포하지 않는가? 설치가 더 편할 텐데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>대가와 이득을 맞바꾼 것이다. 잃는 것은 편의다 — 시스템 패키지로 받을 수 없고, 갱신은 “버전을 올리는 일”이 아니라 “새 소스를 받아오는 일”이 된다. 얻는 것은 통제권이다. 라이브러리가 지금 보고 있는 소스와 다를 수 없고, 내가 고르지 않은 컴파일 선택지가 딸려 오지 않으며, 배포판이 다른 설정으로 빌드했다는 이유로 링크가 깨지는 일이 없다. 무엇보다 <strong>호스트 환경과 베어메탈 양쪽에서 통하는 유일한 모델</strong>이다 — 임베디드에는 애초에 패키지 관리자가 없다.</p></div></div><h3>68.2 이 책의 예제는 어떻게 빌드되는가</h3><p>정직하게 밝혀 두면, 이 책의 proven 예제들은 다음과 같이 컴파일된다. 라이브러리 소스를 한 번 목적 파일로 만들어 두고, 예제와 함께 링크한다.</p><pre><code data-lang="text">$ cc -std=c23 -O1 -Ivendor/proven/include -c vendor/proven/src/proven/*.c
+$ cc -std=c23 -Wall -Wextra -Werror -Ivendor/proven/include \
+     hello.c vendor-obj/*.o -lm -o hello</code></pre><p>첫 줄이 본체를, 둘째 줄이 내 프로그램을 다룬다. <code>-I</code>는 헤더를 찾을 자리를 알려 주는 것(46장), <code>-lm</code>은 수학 함수를 잇는 것이다. 이 두 줄이 이 책의 검증 스크립트가 실제로 매번 돌리는 명령이고, 지면에 인쇄된 모든 실행 결과는 그렇게 만들어진 프로그램의 출력이다.</p><h3>68.3 첫 프로그램</h3><p><code>#include &lt;proven.h></code> 하나면 라이브러리 전체가 열린다.</p><div><div><p><code>examples/ch68/hello.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 
 int main(void)
 {
-    /* 화면이 아니라 문자열로 형식화한다 — 버퍼는 스택에서 빌린다 */
-    proven_byte_t buf[64];
-    proven_u8str_t out = proven_u8str_borrow(buf, sizeof buf);
+    const char *name = "world";
+    int         count = 3;
+    double      ratio = 0.75;
+    bool        ready = true;
+    char        grade = 'A';
 
-    int      port = 8080;
-    double   load = 0.4237;
-    const char *host = "example.org";
+    /* {} 는 자리표시자일 뿐 타입이 없다. 타입은 인자에서 온다 */
+    proven_println("Hello, {}! You have {} messages.",
+                   PROVEN_ARG(name), PROVEN_ARG(count));
 
-    proven_fmt_result_t r = proven_u8str_append_fmt(&amp;out, "{}:{} load={:.2}",
-                                                   PROVEN_ARG(host), PROVEN_ARG(port),
-                                                   PROVEN_ARG(load));
-    if (proven_is_ok(r.err)) {
-        proven_u8str_view_t v = proven_u8str_as_view(&amp;out);
-        printf("formatted : %.*s\n", (int)v.size, (const char *)v.ptr);
-    }
+    /* 어떤 타입이든 같은 자리표시자로 간다 */
+    proven_println("ratio={} ready={} grade={}",
+                   PROVEN_ARG(ratio), PROVEN_ARG(ready), PROVEN_ARG(grade));
 
-    /* 그릇이 모자라면? 자르지 않고 거부한다 */
-    proven_byte_t small_buf[8];
-    proven_u8str_t small = proven_u8str_borrow(small_buf, sizeof small_buf);
-    proven_fmt_result_t r2 = proven_u8str_append_fmt(&amp;small, "{}:{}",
-                                                    PROVEN_ARG(host), PROVEN_ARG(port));
-    printf("into 8 bytes: %s (err=%d)\n",
-           proven_is_ok(r2.err) ? "ok" : "refused", (int)r2.err);
-
-    /* 정렬과 자릿수 — 46장의 폭/정밀도에 해당한다 */
-    proven_u8str_t line = proven_u8str_borrow(buf, sizeof buf);
-    (void)proven_u8str_reset(&amp;line);
-    proven_fmt_result_t r3 = proven_u8str_append_fmt(&amp;line, "|{:>10}|{:&lt;10}|{:.3}|",
-                                                    PROVEN_ARG(host), PROVEN_ARG(host),
-                                                    PROVEN_ARG(load));
-    if (proven_is_ok(r3.err)) {
-        proven_u8str_view_t v = proven_u8str_as_view(&amp;line);
-        printf("aligned   : %.*s\n", (int)v.size, (const char *)v.ptr);
-    }
+    /* 서식 지정은 콜론 뒤에 붙인다 — 폭, 정렬, 자릿수 */
+    proven_println("|{:>8}|{:&lt;8}|{:.3}|",
+                   PROVEN_ARG(name), PROVEN_ARG(name), PROVEN_ARG(ratio));
     return 0;
 }
-</code></pre></div><div><p>실행 결과</p><pre><code>formatted : example.org:8080 load=0.42
-into 8 bytes: refused (err=2)
-aligned   : |example.org|example.org|0.424|
-</code></pre></div></div><p>이 예제는 화면이 아니라 <strong>문자열로</strong> 형식화한다 — 63장에서 본 <code>proven_println</code>이 이 기계를 표준 출력에 연결한 판이다. 세 가지를 짚을 수 있다.</p><p><strong>첫째, 서식화도 실패할 수 있다.</strong> 8바이트 그릇에 <code>example.org:8080</code>을 넣을 수 없으므로 거부됐다. 67장의 원칙이 여기서도 그대로다 — 자르느니 실패를 돌려준다. <code>snprintf</code>와 정반대의 기본값이다.</p><p><strong>둘째, 서식 지정 문법이 조금 다르다.</strong> <code>{:>10}</code>의 <code>></code>는 오른쪽 정렬, <code>{:&lt;10}</code>은 왼쪽 정렬, <code>{:.3}</code>은 소수 셋째 자리다. 48장의 <code>%10s</code>·<code>%-10s</code>·<code>%.3f</code>와 대응하지만, <strong>타입 글자가 없다</strong>는 점이 다르다.</p><p><strong>셋째, 반올림은 하되 자릿수는 지킨다.</strong> <code>load=0.42</code>는 <code>{:.2}</code>가 만든 것이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>PROVEN_ARG</code>가 정확히 무엇을 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답 <code>_Generic</code>으로 인자의 타입을 골라, 그 타입에 맞는 꼬리표를 붙인 작은 구조체를 만든다. 개념만 옮기면 이런 모양이다.</p><pre><code data-lang="c">#define PROVEN_ARG(x) _Generic((x),          \
-    int:          proven_arg_i32,            \
-    double:       proven_arg_f64,            \
-    const char *: proven_arg_cstr,           \
-    bool:         proven_arg_bool            \
-    /* ... */ )(x)</code></pre><p><code>_Generic</code>은 <strong>컴파일 시간에</strong> 가지를 고르므로 실행 시간에 타입을 판별하는 비용이 없다. 그리고 목록에 없는 타입을 넘기면 <strong>컴파일 오류</strong>가 난다 — 48장의 <code>printf</code>가 무엇이든 받아 주던 것과 정반대다.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ <code>PROVEN_ARG</code> 없이 값을 그냥 넘기기</p><pre><code data-lang="c">proven_println("count={}", count);        /* 컴파일되지 않는다 */</code></pre><p>꾸러미가 아닌 날값을 넘겼으므로 타입이 맞지 않아 빌드가 실패한다. 성가시게 느껴질 수 있지만 이것이 설계의 요점이다 — <strong>감싸는 일을 잊으면 프로그램이 만들어지지 않는다.</strong> 잊어도 컴파일되고 실행 중에 이상해지는 <code>printf</code>와의 차이가 여기에 있다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “자리표시자에 타입이 없으니 느릴 것이다”</p><p>반대다. <code>printf</code>는 <strong>실행 중에</strong> 서식 문자열을 한 글자씩 해석하며 다음에 무엇을 꺼낼지 결정한다. <code>{}</code>도 서식을 훑는 것은 같지만, 각 인자의 타입은 이미 꼬리표로 정해져 있어 추측이 없다. 무엇보다 타입 불일치로 인한 UB가 없으므로 방어 코드도 필요 없다. 비용의 차이는 대개 무시할 만하고, 이 라이브러리의 실수 형식화는 정확성 쪽에 더 신경을 쓴 편이다 — 48장에서 본 <code>%f</code>의 반올림 규칙을 그대로 재현하는 것이 오히려 까다로운 일이다.</p></div><h3 id="loc-343">68.2 반대 방향 — 스캐너</h3><p>파싱은 형식화의 거울이지만, 실패의 성격이 다르다. 형식화는 그릇이 모자랄 때만 실패하는데, 파싱은 <strong>입력이 기대와 다를 때마다</strong> 실패한다. 그리고 48장에서 본 대로 <code>sscanf</code>는 “몇 개나 성공했는가”만 알려 준다 — 어디서 왜 멈췄는지는 말해 주지 않는다.</p><span id="idx-entry-95"></span><p>proven의 스캐너는 커서를 가진 객체다. 뷰 위에 놓고, 하나씩 읽어 나간다. 읽을 때마다 결과가 꾸러미로 온다.</p><div><div><p><code>examples/ch68/lines.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
-#include &lt;stdio.h>
-
-/* 한 줄에서 "이름 나이" 꼴을 해석한다 — 실패는 값으로 드러난다. */
-static void parse_line(const char *line)
-{
-    proven_scan_t sc = proven_scan_init(proven_u8str_view_from_cstr(line));
-
-    proven_result_u8str_view_t name = proven_scan_str(&amp;sc);
-    if (!proven_is_ok(name.err)) {
-        printf("[%s] -> no name found\n", line);
-        return;
-    }
-
-    proven_result_i64_t age = proven_scan_i64(&amp;sc);
-    if (!proven_is_ok(age.err)) {
-        printf("[%s] -> age is not a number\n", line);
-        return;
-    }
-
-    printf("[%s] -> name %.*s, age %lld\n", line,
-           (int)name.val.size, (const char *)name.val.ptr, (long long)age.val);
-}
-
-int main(void)
-{
-    parse_line("alice 33");
-    parse_line("bob thirty");
-    parse_line("   ");
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>[alice 33] -> name alice, age 33
-[bob thirty] -> age is not a number
-[   ] -> no name found
-</code></pre></div></div><p>세 입력이 세 갈래로 갈린 것이 핵심이다. <code>bob thirty</code>는 이름은 읽혔지만 나이에서 멈췄고, 공백뿐인 줄은 이름부터 실패했다. <code>sscanf</code>라면 둘 다 “항목 하나 성공” 또는 “0”으로 뭉뚱그려졌을 것이다.</p><p>커서를 가진다는 것에는 또 다른 이점이 있다. <strong>어디까지 읽었는지</strong>를 알 수 있어서, 남은 부분을 다른 방식으로 처리하거나 오류 메시지에 위치를 실을 수 있다. 22장에서 <code>sscanf</code>로 줄을 해석할 때 “몇 글자를 소비했는지 알 수 없다”고 했던 문제의 답이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>스캐너에도 서식 문자열이 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>있다 — <code>proven_scan_fmt_cursor(&amp;sc, "{}:{}", PROVEN_SCAN_ARG(&amp;host),<br><span style="white-space: pre-wrap">&#x20;&#x20;</span>PROVEN_SCAN_ARG(&amp;port))</code>처럼 쓴다. 형식화와 대칭이고, 인자는 담을 곳의 주소를 감싼 것이다. 다만 헤더가 정직하게 밝혀 두는 주의사항이 하나 있다 — 서식 중간에서 실패하면 <strong>그 전까지 채워진 값은 이미 바뀌어 있다</strong>는 것이다. 64장에서 배운 실패 원자성이 여기서는 보장되지 않으므로, 꼭 필요하면 커서와 목적지를 미리 저장해 두었다가 되돌려야 한다. 계약을 숨기지 않고 문서에 적어 두는 것이 이 라이브러리의 방식이다.</p></div></div><div class="dev realcase"><p class="dev-label">◉ 파서가 관대하면 무슨 일이 생기는가</p><p>HTTP 요청 처리에서 반복적으로 드러난 문제가 있다. 서버와 프록시가 같은 요청을 <strong>조금씩 다르게</strong> 해석하면, 공격자가 그 틈으로 두 번째 요청을 몰래 끼워 넣을 수 있다(request smuggling). 한쪽은 헤더의 이상한 공백을 너그럽게 넘기고 다른 쪽은 엄격히 거부하는 식의 차이가 원인이었다. 교훈은 67장의 인코딩 이야기와 정확히 같다 — <strong>애매한 입력은 고쳐 읽지 말고 거부하라.</strong> 실패를 값으로 돌려주는 파서는 그 거부를 표현할 수단을 갖춘 파서이기도 하다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>형식화·파싱 요약.</p><table><tr><th><strong>하는 일</strong></th><th><strong>API</strong></th><th><strong>메모</strong></th></tr><tr><td>화면에 한 줄</td><td><code>proven_println(fmt, ARG…)</code></td><td>에러 반환하되 강요 안 함</td></tr><tr><td>문자열로 형식화</td><td><code>proven_u8str_append_fmt(&amp;s, …)</code></td><td>모자라면 거부</td></tr><tr><td>자를 것을 허용</td><td><code>…_append_fmt_trunc</code></td><td>이름으로 의도를 밝힘</td></tr><tr><td>늘려 가며</td><td><code>…_append_fmt_grow(alloc, …)</code></td><td>할당자 필요</td></tr><tr><td>인자 감싸기</td><td><code>PROVEN_ARG(x)</code></td><td><code>_Generic</code> — 없는 타입은 컴파일 오류</td></tr><tr><td>스캐너 시작</td><td><code>proven_scan_init(view)</code></td><td>커서를 가진 객체</td></tr><tr><td>하나씩 읽기</td><td><code>proven_scan_i64/f64/str</code></td><td>꾸러미로 결과와 실패</td></tr><tr><td>서식으로 읽기</td><td><code>proven_scan_fmt_cursor(…)</code></td><td>중간 실패 시 부분 변경 주의</td></tr></table></div><p>문자열을 담고, 만들고, 되읽는 어휘가 갖춰졌다. 다음은 <strong>여럿을 담는</strong> 도구 들이다 — 자라는 배열, 리스트, 링 버퍼, 해시 맵, 그리고 62장에서 예고한 “최악에도 보장이 있는” 알고리즘들.</p>
+</code></pre></div><div><p>실행 결과</p><pre><code>Hello, world! You have 3 messages.
+ratio=0.750000 ready=true grade=A
+|   world|world   |0.750|
+</code></pre></div></div><p>한 줄씩 읽는다. <code>proven_println</code>은 서식과 인자를 받아 표준 출력에 한 줄을 찍는다 — 여기까지는 <code>printf</code>와 같다. 다른 것은 <strong>자리표시자</strong>다.</p><ul><li><code>{}</code>에는 타입이 들어 있지 않다. <code>%d</code>도 <code>%s</code>도 아니고 그냥 <code>{}</code>다.</li><li>타입은 <strong>인자에서</strong> 온다. <code>PROVEN_ARG(x)</code>가 <code>x</code>의 타입을 보고 알맞은 꼬리표를 붙여 값을 감싼다.</li><li>그래서 67장의 셋째 버그 — 서식과 인자의 불일치 — 가 <strong>구조적으로</strong> 일어날 수 없다. 타입을 두 번 적지 않으니 어긋날 자리가 없다.</li></ul><p><code>{:>8}</code>처럼 콜론 뒤에 적는 것은 51장에서 본 폭·정렬·정밀도에 해당한다. <code>></code>는 오른쪽 정렬, <code>&lt;</code>는 왼쪽 정렬, <code>.3</code>은 소수 셋째 자리까지다. 정렬 기호가 앞에 오는 것이 <code>printf</code>와 다른 점이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>PROVEN_ARG</code>는 어떻게 타입을 알아내는가? C에는 함수 오버로딩이 없지 않은가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>C11에 들어온 <code>_Generic</code>이라는 장치를 쓴다 — 표현식의 타입에 따라 여러 가지 중 하나를 <strong>컴파일 시간에</strong> 고르는 문법이다. <code>PROVEN_ARG(x)</code>는 <code>x</code>가 <code>int</code>면 정수 꼬리표를, <code>double</code>이면 실수 꼬리표를, <code>const char *</code> 면 문자열 꼬리표를 붙인 작은 구조체를 만든다. 실행 시간에 타입을 판별하는 것이 아니라 <strong>컴파일러가 이미 아는 것을 그대로 쓰는</strong> 것이라 비용이 없다. 문법과 전체 서식 규칙은 73장에서 정면으로 다룬다.</p></div></div><div class="dev misconception"><p class="dev-label">⚠ “라이브러리를 쓰면 프로그램이 무거워진다”</p><p>자주 듣는 걱정이고, 언어와 라이브러리의 성격에 따라 다르다. C에서 소스로 함께 컴파일하는 라이브러리는 <strong>쓰지 않은 것이 실행 파일에 남지 않는다</strong> — 링커가 참조되지 않은 목적 파일을 아예 넣지 않기 때문이다 (14장의 링크 단계). 게다가 proven에는 시작할 때 도는 초기화 코드도, 등록되는 전역 상태도, 몰래 뜨는 스레드도 없다. 무거워지는 것은 라이브러리를 쓴 대가가 아니라, 프레임워크가 프로그램의 구조를 가져갈 때 생기는 일이다.</p></div><div class="dev realcase"><p class="dev-label">◉ 소스로 배포하는 관행 — 한 파일짜리 SQLite</p><p>이 배포 모델은 proven만의 별난 선택이 아니다. 세계에서 가장 널리 쓰이는 데이터베이스 엔진 SQLite는 수십 개 소스 파일을 하나의 거대한 <code>.c</code> 파일로 합친 <strong>amalgamation</strong>을 공식 배포 형태로 제공한다 — 받아서 프로그램과 함께 컴파일하면 끝이다. 이미지·폰트 처리로 유명한 <code>stb</code> 계열 라이브러리는 아예 헤더 파일 하나가 전부다. 이유는 모두 같다. 빌드 환경이 제각각인 세상에서 <strong>가장 이식성 높은 배포 단위는 소스</strong>이기 때문이다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>이 장의 요약.</p><table><tr><th><strong>무엇</strong></th><th><strong>어떻게</strong></th></tr><tr><td>헤더</td><td><code>#include &lt;proven.h></code> 하나</td></tr><tr><td>빌드</td><td><code>src/proven/*.c</code>를 프로그램과 함께 컴파일</td></tr><tr><td>OS 의존</td><td><code>platform/</code>에만 있다 (없으면 빼고 빌드)</td></tr><tr><td>출력</td><td><code>proven_println("... {} ...", PROVEN_ARG(x))</code></td></tr><tr><td>서식 지정</td><td><code>{:>8}</code> <code>{:&lt;8}</code> <code>{:.3}</code> — 콜론 뒤</td></tr><tr><td>대가</td><td>인자마다 <code>PROVEN_ARG</code>, 익숙한 <code>%d</code>와 다른 문법</td></tr></table></div><p>첫 프로그램이 돌았다. 그런데 방금 쓴 <code>proven_println</code>도 사실은 실패할 수 있다 — 화면으로 가는 띠가 끊길 수 있기 때문이다(8장). 이 함수는 에러를 돌려주되 <strong>확인을 강요하지는 않는데</strong>, 그 선택 자체가 이 라이브러리의 에러 모델을 이해하는 좋은 입구다. 다음 장이 그것이다.</p>
 <div class="nav"><a href="ch67.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch69.html">다음 →</a></div>
 </div></main></body></html>

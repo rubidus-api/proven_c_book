@@ -49,7 +49,51 @@
   ])
 ]
 
-#outline(depth: 2)
+#let parts = (
+  ("Part I — Ground", none, (1,)),
+  ("Part II — How computing works", "parts/part02.typ", (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)),
+  ("Part III — The first program", none, (13, 14, 15, 16, 17)),
+  ("Part IV — A minimal toolbox", none, (18, 19, 20, 21)),
+  ("Part V — Declarations: how names are made", none, (22, 23, 24)),
+  ("Part VI — Values and flow", none, (25, 26, 27, 28, 29, 30, 31)),
+  ("Part VII — Memory", none, (32, 33, 34, 35, 36, 37, 38, 39)),
+  ("Part VIII — The shape of data", none, (40, 41, 42)),
+  ("Part IX — Precision", none, (43, 44, 45)),
+  ("Part X — Structure", none, (46, 47, 48, 49, 50, 51)),
+  ("Part XI — Reading the standard library", "parts/part11s.typ", (52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66)),
+  ("Part XII — proven — fundamentals, verified", "parts/part12.typ", (67, 68, 69, 70, 71, 72, 73, 74, 75, 76)),
+  ("Part XIII — Closing", none, (77, 78)),
+)
+
+// 목차: 장만 나열하면 길어지므로 *부 단위로 묶어* 낸다.
+// 장 제목과 쪽 번호는 실제 heading 에서 가져온다(수작업 목록 금지).
+#context {
+  let heads = query(heading.where(level: 1)).filter(h => h.numbering != none)
+  let by-num = (:)
+  for h in heads {
+    let n = counter(heading).at(h.location()).first()
+    by-num.insert(str(n), h)
+  }
+  block(width: 100%)[
+    #text(font: ("Noto Sans CJK KR",), size: 15pt, weight: "bold")[Contents]
+    #v(0.5em)
+    #for (part-title, intro, chs) in parts {
+      block(above: 0.9em, below: 0.35em)[
+        #text(font: ("Noto Sans CJK KR",), size: 10.5pt, weight: "bold", part-title)
+      ]
+      for i in chs {
+        let h = by-num.at(str(i), default: none)
+        if h != none {
+          block(width: 100%, inset: (left: 1.2em), below: 0.2em,
+            grid(columns: (1fr, auto), column-gutter: 0.6em, align: (left, right),
+              link(h.location())[#i. #h.body],
+              link(h.location())[#counter(page).at(h.location()).first()]))
+        }
+      }
+    }
+  ]
+}
+
 #pagebreak()
 
 #set heading(numbering: none)
@@ -60,7 +104,7 @@
 The Korean edition is the original and is complete — 13 parts, 69 chapters,
 appendices A–E and an index, about 287 pages. This English edition is
 translated from it chapter by chapter, and *chapter numbers are kept identical
-to the original*, so a cross-reference to "chapter 49" means the same chapter
+to the original*, so a cross-reference to "chapter 52" means the same chapter
 in both editions. Chapters not yet translated are listed where they belong,
 and the parts they sit in are marked accordingly.
 
@@ -81,23 +125,8 @@ Until a chapter arrives here, the complete text is the Korean edition:
 // ── Body ────────────────────────────────────────────
 // Same skeleton as the Korean edition. Only translated chapters are included;
 // the heading counter is set per chapter so numbering matches the original.
-#let translated = (1, 2, 3, 4, 5, 6, 7)
+#let translated = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
 
-#let parts = (
-  ("Part I — Ground", none, (1,)),
-  ("Part II — How computing works", "parts/part02.typ", (2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)),
-  ("Part III — The first program", none, (13, 14, 15)),
-  ("Part IV — A minimal toolbox", none, (16, 17, 18, 19)),
-  ("Part V — Declarations: how names are made", none, (20, 21, 22)),
-  ("Part VI — Values and flow", none, (23, 24, 25, 26, 27, 28, 29)),
-  ("Part VII — Memory", none, (30, 31, 32, 33, 34, 35, 36, 37)),
-  ("Part VIII — The shape of data", none, (38, 39, 40)),
-  ("Part IX — Precision", none, (41, 42, 43)),
-  ("Part X — Structure", none, (44, 45, 46, 47, 48)),
-  ("Part XI — Reading the standard library", "parts/part11s.typ", (49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61)),
-  ("Part XII — proven — fundamentals, verified", "parts/part12.typ", (62, 63, 64, 65, 66, 67, 68, 69, 70, 71)),
-  ("Part XIII — Closing", none, (72, 73)),
-)
 
 #for (part-title, intro, chs) in parts {
   let have = chs.filter(c => c in translated)
