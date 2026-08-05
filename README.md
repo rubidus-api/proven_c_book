@@ -8,7 +8,7 @@ C를 처음 배우는 사람을 위한 한국어 책이다. 문법 목록이 아
 이어진다.
 
 - **현재 판**: v0.1.0 — **초안(draft)**
-- 한국어: [PDF](dist/proven_c_book-v0.1.0.pdf) · [웹으로 읽기](https://rubidus-api.github.io/proven_c_book/ko/)
+- 한국어: [PDF](dist/proven_c_book-v0.1.0-ko.pdf) · [웹으로 읽기](https://rubidus-api.github.io/proven_c_book/ko/)
 - English: [PDF](dist/proven_c_book-v0.1.0-en.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/en/) — 번역 진행 중
 - 묶음 내려받기: [ko zip](dist/proven_c_book-v0.1.0-ko.zip) · [en zip](dist/proven_c_book-v0.1.0-en.zip) · [전체 zip](dist/proven_c_book-v0.1.0-all.zip)
 - 12부 58장 + 부록 A~E + 찾아보기, 약 570쪽
@@ -24,28 +24,30 @@ C를 처음 배우는 사람을 위한 한국어 책이다. 문법 목록이 아
 - **AI를 보조 도구로 삼아 집필했다.** 구성·방침·수록 여부는 저자가 정하고
   검토했으며, 예제는 기계가 매번 실제로 돌려 검증한다.
 
-## 빌드
+## 예제 직접 돌려 보기
+
+본문에 실린 예제는 전부 이 저장소에 있고, 한 번에 빌드·실행해 볼 수 있다.
 
 ```sh
-TYPST=/path/to/typst FONT_PATH=/path/to/fonts scripts/build-book.sh     # 예제 검증 + 한국어 PDF
-TYPST=... FONT_PATH=... scripts/build-book-en.sh                        # 영어판 PDF
-TYPST=... FONT_PATH=... scripts/build-html.sh                           # HTML (docs/, GitHub Pages)
-scripts/release.sh                                                      # dist/ 에 zip 릴리스
+scripts/verify-examples.sh          # 전 예제 C23 빌드 + 실행 + 출력 캡처
+CC=clang scripts/verify-examples.sh # 다른 컴파일러로 교차 검증
 ```
 
-- Typst 0.15 이상, 본문 글꼴 Noto Serif/Sans CJK KR, 코드 글꼴 D2Coding.
-- `scripts/verify-examples.sh` — 예제 전수 빌드·실행·출력 캡처(C23).
+- C23 컴파일러가 필요하다(GCC 14+ 또는 Clang 16+).
+- `#include <proven...>`을 쓰는 예제는 `vendor/proven`이 자동으로 함께
+  빌드된다.
+
+> 원고(Typst 소스)와 조판 스크립트는 공개하지 않는다. 이 저장소가 담는
+> 것은 완성된 책(PDF·HTML)과 예제 코드다.
 
 ## 구성
 
 ```
-book/       Typst 원고 — 한국어판 (chapters/, appendix/, front/, back/, parts/)
-book-en/    Typst 원고 — 영어판(번역 진행 중)
-docs/       GitHub Pages 가 서비스하는 HTML 판
-examples/   본문에 실리는 예제 소스 — 전부 검증 대상
-scripts/    빌드와 검증
+dist/       배포물 — PDF(ko·en)와 zip 묶음
+docs/       GitHub Pages 가 서비스하는 HTML 판 (ko/, en/)
+examples/   본문에 실리는 예제 소스 63종 — 전부 검증된 것
+scripts/    예제 검증 스크립트
 vendor/     proven 라이브러리 스냅샷 (예제 링크용)
-dist/       배포 PDF
 ```
 
 ## 라이선스

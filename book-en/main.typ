@@ -35,37 +35,15 @@
     ]
   ]
 
-  #v(1.2cm)
-  #align(center, block(width: 82%)[
-    #set text(size: 9.7pt)
-    #set par(justify: false, first-line-indent: 0em, leading: 0.72em)
-    #align(left)[
-      *What this book is for* — not a list of syntax, but an eye for reading
-      *contracts*. It talks about the machine before it talks about C, and
-      brings in syntax only when the story asks for it.
+  #v(1.4cm)
+  #align(center, block(width: 74%)[
+    #set text(size: 10pt)
+    #set par(justify: false, first-line-indent: 0em, leading: 0.75em)
+    #align(center)[
+      An introduction to C, and an introduction to the proven C library.
 
-      #v(0.35cm)
-      *Who it is for* — someone starting programming for the first time, and
-      someone who knows the syntax but is stuck at "so what do I actually
-      build with this, and how". No prior knowledge is assumed, and it reads
-      without a computer in front of you.
-
-      #v(0.35cm)
-      *How it reads* — no exercises, no "try it yourself". It moves through
-      question-and-answer in the running text; review is handled by deeper
-      questions at the start of the next chapter.
-
-      #v(0.35cm)
-      *What it covers* — the fundamentals (bits, the memory ladder, pipelines,
-      encodings, floating point), then the first program and a working
-      toolchain, values and control flow, memory and pointers, data layout,
-      precision and contracts, multiple files and the preprocessor, and finally
-      the five bugs C has been shipping for fifty years — and the proven
-      library as one answer to them. C23 is the default throughout.
-
-      #v(0.35cm)
-      *The promise* — every listing is compiled and run on every build, and the
-      printed output is that run's output (cross-checked with GCC and Clang).
+      #v(0.3cm)
+      Written for readers who are just starting out with C.
     ]
   ])
 ]

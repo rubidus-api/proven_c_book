@@ -8,7 +8,7 @@ standard (C23) as its default, and ends as a manual for the
 [proven](https://github.com/rubidus-api) C library.
 
 - **Current edition**: v0.1.0 — **draft**
-- Korean: [PDF](dist/proven_c_book-v0.1.0.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/ko/)
+- Korean: [PDF](dist/proven_c_book-v0.1.0-ko.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/ko/)
 - English: [PDF](dist/proven_c_book-v0.1.0-en.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/en/) — *translation in progress*
 - 12 parts, 58 chapters, appendices A–E and an index; about 570 pages.
 
@@ -30,31 +30,30 @@ The Korean edition is complete. The English edition currently carries the front
 matter; chapters are added as they are translated. Contributions of translated
 chapters are not accepted (see below) — the translation is done by the author.
 
-## Build
+## Running the examples
+
+Every listing in the book lives here and can be built and run in one go.
 
 ```sh
-# Korean edition: verify examples, then build the PDF
-TYPST=/path/to/typst FONT_PATH=/path/to/fonts scripts/build-book.sh
-# English edition
-TYPST=... FONT_PATH=... scripts/build-book-en.sh
-# HTML editions (GitHub Pages, into docs/)
-TYPST=... FONT_PATH=... scripts/build-html.sh
-# release archives into dist/
-scripts/release.sh
+scripts/verify-examples.sh          # build + run every example (C23), capture output
+CC=clang scripts/verify-examples.sh # cross-check with another compiler
 ```
 
-Requires Typst 0.15+, Noto Serif/Sans CJK KR for the body and D2Coding for code.
+A C23 compiler is required (GCC 14+ or Clang 16+). Examples that
+`#include <proven...>` link against the `vendor/proven` snapshot automatically.
+
+> The manuscript sources (Typst) and typesetting scripts are not published.
+> What this repository carries is the finished book (PDF, HTML) and the
+> example code.
 
 ## Layout
 
 ```
-book/       Typst sources, Korean edition
-book-en/    Typst sources, English edition (in progress)
-examples/   every listing in the book — all verified on each build
-scripts/    build and verification
+dist/       released PDFs (ko, en) and zip archives
+docs/       HTML editions served by GitHub Pages (ko/, en/)
+examples/   every listing in the book (63 files), all verified
+scripts/    example verification
 vendor/     snapshot of the proven library (for linking the examples)
-docs/       HTML editions served by GitHub Pages
-dist/       released PDFs and zip archives
 ```
 
 ## License
