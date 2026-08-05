@@ -112,3 +112,4 @@
 #include "appendix/a1-operators.typ"
 #include "appendix/a2-formats.typ"
 #include "appendix/a3-conversions.typ"
+#include "appendix/a4-reading.typ"
