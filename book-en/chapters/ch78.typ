@@ -64,6 +64,30 @@ Its characteristic is that the queue's size is *fixed* — if it overflows, subm
 fails, and that failure comes as a value. The judgement is that an infinitely growing
 queue is merely a device for putting the problem off until memory is exhausted.
 
+There are five doors, and their order is itself the contract.
+
+```c
+proven_job_sys_t *sys;
+proven_err_t e = proven_job_system_init(alloc, 4, 256, &sys);  /* ① 4 workers, queue 256 */
+bool ok = proven_job_submit(sys, routine, arg);                /* ② submit (false if full) */
+bool did = proven_job_execute_one(sys);                        /* ③ this thread handles one too */
+proven_job_system_close(sys);                                  /* ④ take no more */
+proven_job_system_destroy(sys);                                /* ⑤ join the workers and clean up */
+```
+
+That it is an *opaque type* stands out — the inside of `proven_job_sys_t` is not in the
+header and it is handled only by pointer (the opaque type of chapter 52 in the flesh).
+Platform resources such as threads and locks are inside, and their layout is not to be
+exposed to user code.
+
+That ④ and ⑤ are divided is a contract too. *Closing* is "no more submissions are
+taken", and *destroying* is "wait for the workers to finish and then clean up". Between
+them, the header requires the producer threads to be joined.
+
+`proven_job_execute_one` is a little special. It lets *the submitting side handle one
+item of work itself* — so when submission fails because the queue is full, instead of
+merely waiting one can handle one and try again (a simple form of work stealing).
+
 #antipattern[
   Overlapping closing with submitting
 ][
@@ -112,6 +136,44 @@ Why the disciplines of the earlier chapters — "take the allocator as an argume
 view is borrowed", "no hidden globals" — were so persistent shows itself here. Those
 disciplines were not a taste but *the minimum condition for running in this
 environment*.
+
+=== The actual build procedure
+
+Left in words alone it stays vague, so here is the order.
+
++ *Take `platform/` out of the compilation list.* Leave only `src/proven/*.c`. Files,
+  time, OS randomness, streams, mmap and the job system go out with it.
++ *Define `PROVEN_FREESTANDING`* (`-DPROVEN_FREESTANDING=1`). `proven_heap_allocator()`
+  then returns *an unusable value* (all zeros), and if it is used by mistake
+  `proven_alloc_is_valid` says false.
++ *Take the backing memory statically.* Put one array where the linker script knows it
+  and lay an arena over it (chapter 73).
++ *Register a panic handler.* There being no console, one of an LED, a watchdog or a
+  reboot (chapter 71's example).
++ *Take out what is not needed.* If real-number formatting is not used,
+  `-DPROVEN_FMT_NO_FLOAT` strips the large-integer arithmetic code out whole.
+
+```c
+/* the skeleton of a freestanding program */
+static proven_byte_t g_pool[8 * 1024];      /* the memory budget is settled here */
+
+int main(void)
+{
+    proven_set_panic_handler(board_panic);
+    proven_arena_t arena = proven_arena_create(
+        (proven_mem_mut_t){ .ptr = g_pool, .size = sizeof g_pool });
+    proven_allocator_t alloc = proven_arena_as_allocator(&arena);
+
+    for (;;) {
+        proven_arena_reset(&arena);          /* taken back each turn */
+        handle_one_event(alloc);
+    }
+}
+```
+
+These twenty lines contain all of this part's discipline — *the allocator is an
+argument*, *lifetime is per arena*, *`main` does not return* (chapter 47), and *the
+memory budget is written as a number in the source*.
 
 #realcase[
   The same code in two worlds — and its price

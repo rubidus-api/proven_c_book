@@ -69,7 +69,120 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../ko/">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>75 Formatting and parsing — not writing the type twice</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The answer to chapter 69′s third bug — the mismatch of format and argument. How the typeless placeholder <code>{}</code> obtains type safety, what <code>_Generic</code> does beneath it, and how failure appears as a value in the opposite direction, parsing. It is the alternative to the <code>printf</code> and <code>scanf</code> taken apart in chapter 53.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 50 said type information does not ride along into variadic arguments, and chapter 53 said that is why the format string alone settles “how the stack is to be read”. Then what is needed to take the type from the argument?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Catch the type <strong>at the call site</strong> and send it along with the value. That is, do not pass the argument as it is but wrap it into a <code>{type tag, value}</code> bundle. The remaining problem is “how is the type tag attached automatically”, and the answer is C11′s <code>_Generic</code> — the device that chooses different code at compile time according to an expression’s type. The run-time cost is zero, and unlike the implicit <span id="idx-entry-107"></span>conversion rules learned in chapter 28, here the type is <strong>preserved</strong>.</p></div></div><h3>75.1 <code>{}</code> — the placeholder with no type</h3><p>The rules are only three.</p><ul><li><code>{}</code> — put the next argument here. The type is not written.</li><li><code>{:...}</code> — after the colon write the format specification (width, alignment, digits).</li><li><code>{{</code> <code>}}</code> — the brace characters themselves.</li></ul><p>There being no <code>%d</code>, there is no place for a <code>%d</code> and a <code>double</code> to go out of step. The possibility of mismatch seen in chapter 53 is removed at the level of syntax.</p><div><div><p><code>examples/ch75/fmt.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>75 Formatting and parsing — not writing the type twice</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The answer to chapter 69′s third bug — the mismatch of format and argument. How the typeless placeholder <code>{}</code> obtains type safety, what <code>_Generic</code> does beneath it, and how failure appears as a value in the opposite direction, parsing. It is the alternative to the <code>printf</code> and <code>scanf</code> taken apart in chapter 53.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 50 said type information does not ride along into variadic arguments, and chapter 53 said that is why the format string alone settles “how the stack is to be read”. Then what is needed to take the type from the argument?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Catch the type <strong>at the call site</strong> and send it along with the value. That is, do not pass the argument as it is but wrap it into a <code>{type tag, value}</code> bundle. The remaining problem is “how is the type tag attached automatically”, and the answer is C11′s <code>_Generic</code> — the device that chooses different code at compile time according to an expression’s type. The run-time cost is zero, and unlike the implicit <span id="idx-entry-107"></span>conversion rules learned in chapter 28, here the type is <strong>preserved</strong>.</p></div></div><h3>75.1 <code>{}</code> — the placeholder with no type</h3><p>The rules are only three.</p><ul><li><code>{}</code> — put the next argument here. The type is not written.</li><li><code>{:...}</code> — after the colon write the format specification (width, alignment, digits).</li><li><code>{{</code> <code>}}</code> — the brace characters themselves.</li></ul><p>There being no <code>%d</code>, there is no place for a <code>%d</code> and a <code>double</code> to go out of step. The possibility of mismatch seen in chapter 53 is removed at the level of syntax.</p><h4>75.1.1 The whole grammar after the colon</h4><p>The order of the specifiers is fixed, and every one may be omitted.</p><table><tr><th><strong>place</strong></th><th><strong>what may be written</strong></th><th><strong>meaning</strong></th></tr><tr><td>fill</td><td>any character</td><td>the character filling the spare places. it comes <strong>before</strong> the alignment symbol</td></tr><tr><td>align</td><td><code>&lt;</code> <code>></code> <code>^</code></td><td>left, right, centre. the default is right for numbers, left otherwise</td></tr><tr><td>sign</td><td><code>+</code></td><td>attach a sign to positives too</td></tr><tr><td>alternative form</td><td><code>#</code></td><td>attach the <code>0x</code>, <code>0b</code>, <code>0</code> prefix</td></tr><tr><td>zero fill</td><td><code>0</code></td><td>put before the width to fill with zeros (it goes after the sign)</td></tr><tr><td>width</td><td>a number</td><td>the minimum number of characters. it does not cut if over</td></tr><tr><td>precision</td><td><code>.number</code></td><td>decimal places for reals</td></tr><tr><td>type</td><td><code>x X o b f e g</code></td><td>hexadecimal (lower, upper), octal, binary, fixed, exponential, shortest</td></tr></table><p>They correspond to chapter 53′s <code>printf</code> formats but differ in three ways. <strong>The alignment symbol comes first</strong> (<code>{:&lt;10}</code> instead of <code>%-10s</code>), <strong>the fill character can be chosen</strong> (<code>{:*>8}</code>), and <strong>there is no type letter</strong> (<code>%d</code>’s <code>d</code> has gone — the type comes from the argument).</p><div><div><p><code>examples/ch75/spec.c</code></p><pre><code data-lang="c">/* 자리표시자 문법 전부 — 채움·정렬·폭·정밀도·꼴, 그리고 사용자 타입.
+   {} 하나로 시작해 표 하나를 그리는 데까지 간다. */
+#include &lt;proven.h>
+
+/* 라이브러리가 모르는 타입을 찍는 법: 그리는 함수를 하나 주면 된다 */
+typedef struct { int num; int den; } frac_t;
+
+static proven_err_t render_frac(proven_fmt_sink_t out, const void *obj)
+{
+    const frac_t *f = (const frac_t *)obj;
+    proven_byte_t buf[32];
+    proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
+    proven_fmt_result_t r = proven_u8str_append_fmt(&amp;s, "{}/{}",
+                                                    PROVEN_ARG(f->num),
+                                                    PROVEN_ARG(f->den));
+    if (!proven_is_ok(r.err)) return r.err;
+    return proven_fmt_put(out, proven_u8str_as_view(&amp;s));
+}
+
+int main(void)
+{
+    proven_byte_t buf[256];
+
+    /* ── ① 정렬과 채움 ───────────────────────────────────────── */
+    proven_println("|{:>8}|{:&lt;8}|{:^8}|  (오른쪽·왼쪽·가운데)",
+                   PROVEN_ARG("ab"), PROVEN_ARG("ab"), PROVEN_ARG("ab"));
+    proven_println("|{:*>8}|{:-&lt;8}|{:.^8}|  (채움 문자를 앞에 적는다)",
+                   PROVEN_ARG("ab"), PROVEN_ARG("ab"), PROVEN_ARG("ab"));
+    proven_println("|{:08}|{:+}|{:+}|      (0 채움, 부호 강제)",
+                   PROVEN_ARG(42), PROVEN_ARG(42), PROVEN_ARG(-42));
+
+    /* ── ② 진법과 대체 형식 ──────────────────────────────────── */
+    proven_println("{:x} {:X} {:#x} {:o} {:b} {:#b}",
+                   PROVEN_ARG(255), PROVEN_ARG(255), PROVEN_ARG(255),
+                   PROVEN_ARG(8), PROVEN_ARG(5), PROVEN_ARG(5));
+
+    /* ── ③ 실수 — 자릿수와 꼴 ────────────────────────────────── */
+    proven_println("{} {:.2} {:.0} {:f} {:e} {:g}",
+                   PROVEN_ARG(3.14159), PROVEN_ARG(3.14159), PROVEN_ARG(3.14159),
+                   PROVEN_ARG(3.14159), PROVEN_ARG(3.14159), PROVEN_ARG(3.14159));
+    proven_println("아주 큰 수/작은 수: {} {}",
+                   PROVEN_ARG(1e20), PROVEN_ARG(5e-7));
+
+    /* ── ④ 중괄호 자체 ───────────────────────────────────────── */
+    proven_println("중괄호는 {{ 와 }} 로 적는다");
+
+    /* ── ⑤ 사용자 타입 ───────────────────────────────────────── */
+    frac_t half = { .num = 1, .den = 2 };
+    proven_arg_t a = proven_arg_custom(&amp;half, render_frac);
+    proven_println("사용자 타입: {} (폭도 먹는다: |{:>8}|)",
+                   PROVEN_ARG(a), PROVEN_ARG(a));
+
+    /* ── ⑥ 세 갈래의 형식화 — 거부 / 자름 / 성장 ─────────────── */
+    proven_u8str_t small = proven_u8str_borrow(buf, 8);   /* 내용 7바이트까지 */
+
+    proven_fmt_result_t r1 = proven_u8str_append_fmt(&amp;small, "{}", PROVEN_ARG("가나다라마바사아"));
+    proven_println("append_fmt        err={} written={} required={}",
+                   PROVEN_ARG((int)r1.err), PROVEN_ARG(r1.written), PROVEN_ARG(r1.required));
+
+    proven_fmt_result_t r2 = proven_u8str_append_fmt_trunc(&amp;small, "{}", PROVEN_ARG("abcdefghij"));
+    proven_println("append_fmt_trunc  err={} written={} required={} 내용=\"{}\"",
+                   PROVEN_ARG((int)r2.err), PROVEN_ARG(r2.written), PROVEN_ARG(r2.required),
+                   PROVEN_ARG(proven_u8str_as_view(&amp;small)));
+
+    proven_allocator_t alloc = proven_heap_allocator();
+    proven_result_u8str_t made = proven_u8str_create(alloc, 4);
+    if (proven_is_ok(made.err)) {
+        proven_u8str_t g = made.value;
+        proven_fmt_result_t r3 = proven_u8str_append_fmt_grow(alloc, &amp;g, "{} {} {}",
+                                                              PROVEN_ARG("자라난다"),
+                                                              PROVEN_ARG(2026),
+                                                              PROVEN_ARG(true));
+        proven_println("append_fmt_grow   err={} 내용=\"{}\"",
+                       PROVEN_ARG((int)r3.err), PROVEN_ARG(proven_u8str_as_view(&amp;g)));
+        proven_u8str_destroy(alloc, &amp;g);
+    }
+
+    /* ── ⑦ 표 그리기 — 폭 지정의 실제 쓸모 ───────────────────── */
+    proven_println("");
+    proven_println("{:&lt;10}{:>6}{:>9}", PROVEN_ARG("이름"), PROVEN_ARG("개수"), PROVEN_ARG("비율"));
+    proven_println("{:-&lt;25}", PROVEN_ARG(""));
+    const char *names[] = { "alpha", "beta", "gamma" };
+    int         counts[] = { 7, 128, 3 };
+    for (int i = 0; i &lt; 3; i++)
+        proven_println("{:&lt;10}{:>6}{:>9.2}", PROVEN_ARG(names[i]),
+                       PROVEN_ARG(counts[i]), PROVEN_ARG(counts[i] / 138.0 * 100));
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>|      ab|ab      |   ab   |  (오른쪽·왼쪽·가운데)
+|******ab|ab------|...ab...|  (채움 문자를 앞에 적는다)
+|00000042|+42|-42|      (0 채움, 부호 강제)
+ff FF 0xff 10 101 0b101
+3.141590 3.14 3 3.141590 3.141590e+00 3.14159
+아주 큰 수/작은 수: 1.000000e+20 5.000000e-07
+중괄호는 { 와 } 로 적는다
+사용자 타입: 1/2 (폭도 먹는다: |     1/2|)
+append_fmt        err=2 written=0 required=24
+append_fmt_trunc  err=2 written=7 required=10 내용="abcdefg"
+append_fmt_grow   err=0 내용="자라난다 2026 true"
+
+이름    개수   비율
+-------------------------
+alpha          7     5.07
+beta         128    92.75
+gamma          3     2.17
+</code></pre></div></div><p>The example shows this table in the flesh, a line at a time. A few points.</p><p><strong>① The fill is written before the alignment.</strong> <code>{:*>8}</code> is “fill with asterisks, align right”. Swap the order (<code>{:>*8}</code>) and it does not mean anything.</p><p><strong>② The 0 of <code>{:08}</code> goes after the sign.</strong> Zero-fill <code>-42</code> to a width of 8 and it is <code>-0000042</code>, not <code>000000-42</code> — the same rule as <code>%08d</code> seen in chapter 53.</p><p><strong>③ The default notation for reals differs from <code>printf</code>’s.</strong> Very large and very small numbers are printed by <code>printf("%f")</code> as <code>100000000000000000000.000000</code> or <code>0.000000</code>, while this library uses exponential notation, <code>1.000000e+20</code> and <code>5.000000e-07</code>. The side that <strong>does not lose information</strong> was taken as the default, and it is a difference to know before comparing two logs. If fixed notation is needed, force it with <code>{:f}</code>.</p><p><strong>④ <code>{:g}</code> gives the shortest notation that round-trips.</strong> That <code>3.14159</code> comes out as it stands is that result — the notation keeping the “read it back and it is the same value” property seen in chapter 8.</p><h4>75.1.2 Printing a type the library has never heard of</h4><p>What can go into <code>{}</code> is only the types in the <code>_Generic</code> list. Then how is my own struct printed — <strong>give it one function that draws.</strong></p><pre><code data-lang="c">static proven_err_t render_frac(proven_fmt_sink_t out, const void *obj)
+{
+    const frac_t *f = obj;
+    /* ... make it ... */
+    return proven_fmt_put(out, view);      /* and send it out */
+}
+
+proven_arg_t a = proven_arg_custom(&amp;half, render_frac);
+proven_println("{} and |{:>8}|", PROVEN_ARG(a), PROVEN_ARG(a));</code></pre><p><code>proven_fmt_sink_t</code> is “a hole that receives bytes”, and <code>proven_fmt_put</code> sends them out. As the example’s output shows, <strong>width and alignment apply to a user type too</strong>.</p><p>There is one contract to know here. <strong>The drawing function is called twice per <code>{}</code></strong> — once with a counting sink (because the width and alignment must be calculated) and once for real. So this function must be <strong>deterministic</strong> and must not mutate its target. If the two results disagree the library returns <code>INVALID_ARG</code> rather than print a misaligned field. It is the price paid for aligning without allocating.</p><div><div><p><code>examples/ch75/fmt.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
 int main(void)
@@ -113,12 +226,21 @@ int main(void)
 </code></pre></div><div><p>Output</p><pre><code>formatted : example.org:8080 load=0.42
 into 8 bytes: refused (err=2)
 aligned   : |example.org|example.org|0.424|
-</code></pre></div></div><p>This example formats not to the screen but <strong>into a string</strong> — the <code>proven_println</code> seen in chapter 70 is the edition connecting this machinery to standard output. Three things can be pointed out.</p><p><strong>First, formatting too can fail.</strong> <code>example.org:8080</code> cannot go into an 8-byte vessel, so it was refused. Chapter 74′s principle stands here too — rather than truncate, it returns a failure. The opposite default from <code>snprintf</code>.</p><p><strong>Second, the format specification syntax is a little different.</strong> The <code>></code> of <code>{:>10}</code> is right alignment, <code>{:&lt;10}</code> left alignment, <code>{:.3}</code> three decimal places. They correspond to chapter 53′s <code>%10s</code>, <code>%-10s</code> and <code>%.3f</code>, differing in that <strong>there is no type letter</strong>.</p><p><strong>Third, it rounds but keeps the number of digits.</strong> <code>load=0.42</code> is what <code>{:.2}</code> made.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What exactly does <code>PROVEN_ARG</code> do?</p></div><div class="dev qa-a"><p class="dev-label">A It chooses on the argument’s type with <code>_Generic</code> and makes a small struct with a tag fitting that type attached. Carried over in concept alone it has this shape.</p><pre><code data-lang="c">#define PROVEN_ARG(x) _Generic((x),          \
+</code></pre></div></div><p>This example formats not to the screen but <strong>into a string</strong> — the <code>proven_println</code> seen in chapter 70 is the edition connecting this machinery to standard output. Three things can be pointed out.</p><p><strong>First, formatting too can fail.</strong> <code>example.org:8080</code> cannot go into an 8-byte vessel, so it was refused. Chapter 74′s principle stands here too — rather than truncate, it returns a failure. The opposite default from <code>snprintf</code>.</p><p><strong>Second, the format specification syntax is a little different.</strong> The <code>></code> of <code>{:>10}</code> is right alignment, <code>{:&lt;10}</code> left alignment, <code>{:.3}</code> three decimal places. They correspond to chapter 53′s <code>%10s</code>, <code>%-10s</code> and <code>%.3f</code>, differing in that <strong>there is no type letter</strong>.</p><p><strong>Third, it rounds but keeps the number of digits.</strong> <code>load=0.42</code> is what <code>{:.2}</code> made.</p><h4>75.1.3 Which formatting function to use</h4><p>Chapter 74′s three kinds are here in formatting too. Organised in a table there is nothing to choose over.</p><table><tr><th><strong>function</strong></th><th><strong>when short</strong></th><th><strong>allocator</strong></th><th><strong>where it is used</strong></th></tr><tr><td><code>proven_println(fmt, …)</code></td><td>—</td><td>not needed</td><td>one line to the screen</td></tr><tr><td><code>proven_print(fmt, …)</code></td><td>—</td><td>not needed</td><td>without a line break</td></tr><tr><td><code>proven_eprint(fmt, …)</code></td><td>—</td><td>not needed</td><td>to standard error</td></tr><tr><td><code>proven_u8str_append_fmt</code></td><td>refuses (the original stands)</td><td>not needed</td><td>a fixed buffer. the default</td></tr><tr><td><code>proven_u8str_append_fmt_trunc</code></td><td>as much as fits</td><td>not needed</td><td>places that may be cut, such as a log line</td></tr><tr><td><code>proven_u8str_append_fmt_grow</code></td><td>grows</td><td>needed</td><td>when the length is unknown</td></tr><tr><td><code>proven_u8str_append_fmt_with_scratch</code></td><td>grows</td><td>needed (+ scratch)</td><td>when the temporary memory is to be given separately</td></tr></table><p>All of them return a <code>proven_fmt_result_t</code>, and this bundle has two more numbers beside <code>err</code>.</p><pre><code data-lang="c">typedef struct {
+    proven_err_t  err;
+    proven_size_t written;    /* the number of bytes actually written */
+    proven_size_t required;   /* the number of bytes needed to write it all */
+} proven_fmt_result_t;</code></pre><p><code>required</code> is the same information as <code>snprintf</code>’s return value seen in chapter 53. The difference is <strong>that it sits in a named slot</strong> — with <code>snprintf</code> a human had to remember the convention “if the return value is at least the buffer size it was truncated”, while here <code>err</code> already says that and <code>required</code> answers “so how much was needed”. In the output of the example <code>spec.c</code>, <code>written=7 required=10</code> is that use — how much to enlarge the buffer by is known as it stands.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What exactly does <code>PROVEN_ARG</code> do?</p></div><div class="dev qa-a"><p class="dev-label">A It chooses on the argument’s type with <code>_Generic</code> and makes a small struct with a tag fitting that type attached. Carried over in concept alone it has this shape.</p><pre><code data-lang="c">#define PROVEN_ARG(x) _Generic((x),          \
     int:          proven_arg_i32,            \
     double:       proven_arg_f64,            \
     const char *: proven_arg_cstr,           \
     bool:         proven_arg_bool            \
-    /* ... */ )(x)</code></pre><p><code>_Generic</code> chooses the branch <strong>at compile time</strong>, so there is no run-time cost of determining the type. And passing a type not in the list is <strong>a compile error</strong> — the exact opposite of chapter 53′s <code>printf</code>, which accepted anything.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ Passing a value without <code>PROVEN_ARG</code></p><pre><code data-lang="c">proven_println("count={}", count);        /* it does not compile */</code></pre><p>A raw value rather than a bundle was passed, so the types do not match and the build fails. It can feel tiresome, but this is the point of the design — <strong>forget to wrap it and the program is not made.</strong> Herein lies the difference from <code>printf</code>, which compiles even when you forget and goes strange during execution.</p></div><div class="dev misconception"><p class="dev-label">⚠ “The placeholder has no type, so it must be slow”</p><p>The opposite. <code>printf</code> interprets the format string letter by letter <strong>during execution</strong> and decides what to take out next. <code>{}</code> scans the format too, but each argument’s type is already settled by its tag, so there is no guessing. Above all, there being no UB from type mismatch, no defensive code is needed either. The difference in cost is mostly negligible, and this library’s real-number formatting has rather taken more care over accuracy — reproducing exactly the rounding rules of <code>%f</code> seen in chapter 53 is the more awkward task.</p></div><h3>75.2 The opposite direction — the scanner</h3><p>Parsing is formatting’s mirror, but the character of failure differs. Formatting fails only when the vessel is too small, while parsing fails <strong>whenever the input differs from expectation</strong>. And as seen in chapter 53, <code>sscanf</code> tells only “how many succeeded” — it does not say where or why it stopped.</p><span id="idx-entry-108"></span><p>proven’s scanner is an object with a cursor. It is placed over a view and reads onward one at a time. Each read gives its result as a bundle.</p><div><div><p><code>examples/ch75/lines.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+    /* ... */ )(x)</code></pre><p><code>_Generic</code> chooses the branch <strong>at compile time</strong>, so there is no run-time cost of determining the type. And passing a type not in the list is <strong>a compile error</strong> — the exact opposite of chapter 53′s <code>printf</code>, which accepted anything.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ Passing a value without <code>PROVEN_ARG</code></p><pre><code data-lang="c">proven_println("count={}", count);        /* it does not compile */</code></pre><p>A raw value rather than a bundle was passed, so the types do not match and the build fails. It can feel tiresome, but this is the point of the design — <strong>forget to wrap it and the program is not made.</strong> Herein lies the difference from <code>printf</code>, which compiles even when you forget and goes strange during execution.</p></div><div class="dev misconception"><p class="dev-label">⚠ “The placeholder has no type, so it must be slow”</p><p>The opposite. <code>printf</code> interprets the format string letter by letter <strong>during execution</strong> and decides what to take out next. <code>{}</code> scans the format too, but each argument’s type is already settled by its tag, so there is no guessing. Above all, there being no UB from type mismatch, no defensive code is needed either. The difference in cost is mostly negligible, and this library’s real-number formatting has rather taken more care over accuracy — reproducing exactly the rounding rules of <code>%f</code> seen in chapter 53 is the more awkward task.</p></div><h3>75.2 The opposite direction — the scanner</h3><p>Parsing is formatting’s mirror, but the character of failure differs. Formatting fails only when the vessel is too small, while parsing fails <strong>whenever the input differs from expectation</strong>. And as seen in chapter 53, <code>sscanf</code> tells only “how many succeeded” — it does not say where or why it stopped.</p><span id="idx-entry-108"></span><p>proven’s scanner is an object with a cursor. It is placed over a view and reads onward one at a time. Each read gives its result as a bundle.</p><pre><code data-lang="c">typedef struct {
+    proven_u8str_view_t view;     /* the input being read (borrowed) */
+    proven_size_t       cursor;   /* how far it has read */
+} proven_scan_t;</code></pre><p>That there are only two slots says two things. First, <strong>the scanner does not own the input</strong> — it is only a cursor laid over a view, so making it allocates nothing and there is no destroying. Second, <strong>the cursor can be saved and restored by hand</strong>. Copy the whole struct, and on failure put it back, so a parser that “looks a few characters ahead to judge” is not hard to write.</p><pre><code data-lang="c">proven_scan_t save = sc;         /* a mark to go back to */
+proven_result_i64_t n = proven_scan_i64(&amp;sc);
+if (!proven_is_ok(n.err)) sc = save;   /* it failed, so let it never have happened */</code></pre><p>There are six reading functions, and all of them push the cursor forward.</p><table><tr><th><strong>function</strong></th><th><strong>what it reads</strong></th><th><strong>what it returns</strong></th></tr><tr><td><code>proven_scan_i64(&amp;sc)</code></td><td>a signed integer</td><td><code>{err, val}</code></td></tr><tr><td><code>proven_scan_u64(&amp;sc)</code></td><td>an unsigned integer</td><td><code>{err, val}</code></td></tr><tr><td><code>proven_scan_f64(&amp;sc)</code></td><td>a real</td><td><code>{err, val}</code></td></tr><tr><td><code>proven_scan_str(&amp;sc)</code></td><td>a word up to whitespace</td><td><code>{err, view}</code> — <strong>a view into the original</strong></td></tr><tr><td><code>proven_scan_skip_whitespace(&amp;sc)</code></td><td>skips whitespace</td><td>—</td></tr><tr><td><code>proven_scan_skip_until(&amp;sc, t)</code></td><td>skips until <code>t</code> appears</td><td><code>err</code> (the cursor stands if absent)</td></tr></table><p>That <code>proven_scan_str</code> <strong>returns a view without copying</strong> matters — chapter 74′s “text handling without copying” holds in parsing too. In exchange that view is valid only while the original input is alive (chapter 72).</p><div><div><p><code>examples/ch75/lines.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
 /* 한 줄에서 "이름 나이" 꼴을 해석한다 — 실패는 값으로 드러난다. */

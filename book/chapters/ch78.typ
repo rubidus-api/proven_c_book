@@ -64,6 +64,31 @@
 실패는 값으로 온다. 무한히 늘어나는 큐는 기억을 다 쓸 때까지 문제를
 미루는 장치일 뿐이라는 판단이다.
 
+문은 다섯이고, 순서가 곧 계약이다.
+
+```c
+proven_job_sys_t *sys;
+proven_err_t e = proven_job_system_init(alloc, 4, 256, &sys);  /* ① 작업자 4, 큐 256 */
+bool ok = proven_job_submit(sys, routine, arg);                /* ② 제출 (가득 차면 false) */
+bool did = proven_job_execute_one(sys);                        /* ③ 이 스레드도 하나 처리 */
+proven_job_system_close(sys);                                  /* ④ 더 받지 않는다 */
+proven_job_system_destroy(sys);                                /* ⑤ 작업자를 합류시키고 정리 */
+```
+
+*불투명 타입*이라는 점이 눈에 띈다 — `proven_job_sys_t`의 속은 헤더에
+없고, 포인터로만 다룬다(52장에서 말한 불투명 타입의 실물이다). 스레드와
+잠금 같은 플랫폼 자원이 안에 있어서, 그 배치를 사용자 코드에 노출하지
+않으려는 것이다.
+
+④와 ⑤가 나뉘어 있는 이유도 계약이다. *닫기*는 "더 이상 제출을 받지
+않는다"이고, *파괴*는 "작업자가 다 끝나기를 기다린 뒤 정리한다"다. 그
+사이에 생산자 스레드들을 합류시키라는 것이 헤더의 요구다.
+
+`proven_job_execute_one`은 조금 특별하다. *제출한 쪽도 일감 하나를 직접
+처리하게* 해 준다 — 큐가 가득 차서 제출이 실패했을 때 그냥 기다리는 대신
+자기가 하나 처리하고 다시 시도하는 무늬(작업 훔치기의 단순한 형태)를
+만들 수 있다.
+
 #antipattern[
   닫기와 제출을 겹치기
 ][
@@ -108,6 +133,44 @@
 앞 장들에서 "할당자를 인자로 받는다", "뷰는 빌린 것이다", "숨은 전역이
 없다" 같은 규율이 왜 그렇게 집요했는지가 여기서 드러난다. 그 규율들은
 취향이 아니라 *이 환경에서 돌기 위한 최소 조건*이었다.
+
+=== 실제 빌드 절차
+
+말로만 두면 막연하므로 순서를 적어 둔다.
+
++ *`platform/`을 컴파일 목록에서 뺀다.* `src/proven/*.c`만 남긴다.
+  파일·시간·OS 난수·스트림·mmap·작업 시스템이 함께 빠진다.
++ *`PROVEN_FREESTANDING`을 정의한다*(`-DPROVEN_FREESTANDING=1`).
+  `proven_heap_allocator()`가 *쓸 수 없는 값*(전부 0)을 돌려주게 되고,
+  그것을 실수로 쓰면 `proven_alloc_is_valid`가 거짓을 말한다.
++ *기억의 바탕을 정적으로 잡는다.* 링커 스크립트가 아는 자리에 배열
+  하나를 두고 그 위에 아레나를 얹는다(73장).
++ *패닉 처리기를 등록한다.* 콘솔이 없으므로 LED·워치독·재부팅 중 하나로
+  (71장의 예).
++ *필요 없는 것을 뺀다.* 실수 형식화를 쓰지 않으면
+  `-DPROVEN_FMT_NO_FLOAT`로 큰 정수 연산 코드를 통째로 걷어낼 수 있다.
+
+```c
+/* 프리스탠딩 프로그램의 뼈대 */
+static proven_byte_t g_pool[8 * 1024];      /* 기억 예산은 여기서 정해진다 */
+
+int main(void)
+{
+    proven_set_panic_handler(board_panic);
+    proven_arena_t arena = proven_arena_create(
+        (proven_mem_mut_t){ .ptr = g_pool, .size = sizeof g_pool });
+    proven_allocator_t alloc = proven_arena_as_allocator(&arena);
+
+    for (;;) {
+        proven_arena_reset(&arena);          /* 매 회전마다 되돌린다 */
+        handle_one_event(alloc);
+    }
+}
+```
+
+이 스무 줄에 이 부의 규율이 전부 들어 있다 — *할당자는 인자*,
+*수명은 아레나 단위*, *`main`은 돌아오지 않는다*(47장), 그리고 *기억
+예산이 소스에 숫자로 적혀 있다*.
 
 #realcase[
   같은 코드를 두 세계에서 — 그리고 그 대가

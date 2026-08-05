@@ -69,7 +69,94 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../ko/">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>71 Errors are values</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We see the answer to chapter 69′s second bug — unconfirmed failure. The way of returning failure as a value, the bundle holding a value and an error together, and the device that makes the compiler protest if an error is thrown away. The discipline set up in chapter 45, “errors are values”, hardens here into a type.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 45 said C’s ways of reporting an error are only three — the return value, global state, and stopping the program — and that of these the return value is the most honest. Then how does one say both “it failed” and “here is the result” with a single return value?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>There are three ways. Mix an <strong>impossible value</strong> into the result’s place (null, <code>-1</code> — that trap seen in chapter 69), take the result out as an <strong>output parameter</strong> and use the return value for status alone, or <strong>hold both in one struct</strong> and return them together. proven uses the second and third together — and the third is possible because, as learned in chapter 41, a C struct can be returned by value.</p></div></div><h3>71.1 Two shapes of return</h3><p>The rule is simple. <strong>A function that can fail must return the failure as a value.</strong></p><ul><li>If there is no result to return, it returns a single <code>proven_err_t</code>.</li><li>If there is a result to return, it returns an <code>{err, value}</code> bundle — with a name per type, such as <code>proven_result_u8str_t</code> or <code>proven_result_size_t</code>.</li></ul><p><code>proven_err_t</code> is an enumeration and success is <code>PROVEN_OK</code> (0). Failures have a name per kind — <code>PROVEN_ERR_NOMEM</code> (out of memory), <code>PROVEN_ERR_OUT_OF_BOUNDS</code> (out of room), <code>PROVEN_ERR_NOT_FOUND</code>, <code>PROVEN_ERR_INVALID_ARG</code>, <code>PROVEN_ERR_IO</code>, <code>PROVEN_ERR_EOF</code> and so on. The check is always the single <code>proven_is_ok(err)</code>.</p><div><div><p><code>examples/ch71/errval.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>71 Errors are values</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We see the answer to chapter 69′s second bug — unconfirmed failure. The way of returning failure as a value, the bundle holding a value and an error together, and the device that makes the compiler protest if an error is thrown away. The discipline set up in chapter 45, “errors are values”, hardens here into a type.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 45 said C’s ways of reporting an error are only three — the return value, global state, and stopping the program — and that of these the return value is the most honest. Then how does one say both “it failed” and “here is the result” with a single return value?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>There are three ways. Mix an <strong>impossible value</strong> into the result’s place (null, <code>-1</code> — that trap seen in chapter 69), take the result out as an <strong>output parameter</strong> and use the return value for status alone, or <strong>hold both in one struct</strong> and return them together. proven uses the second and third together — and the third is possible because, as learned in chapter 41, a C struct can be returned by value.</p></div></div><h3>71.1 Two shapes of return</h3><p>The rule is simple. <strong>A function that can fail must return the failure as a value.</strong></p><ul><li>If there is no result to return, it returns a single <code>proven_err_t</code>.</li><li>If there is a result to return, it returns an <code>{err, value}</code> bundle — with a name per type, such as <code>proven_result_u8str_t</code> or <code>proven_result_size_t</code>.</li></ul><p><code>proven_err_t</code> is an enumeration and success is <code>PROVEN_OK</code> (0). The check is always the single <code>proven_is_ok(err)</code> — writing <code>err == 0</code> would work too, but using the name lets the code survive a later change of representation.</p><h4>71.1.1 Every error code</h4><p>Failures have a name per kind, and there are sixteen in all. They are not to be memorised; it is enough to know <strong>what branches exist</strong> — most code divides only success from failure, and looks at the branch only when attempting recovery.</p><table><tr><th><strong>code</strong></th><th><strong>what happened</strong></th><th><strong>mainly where</strong></th></tr><tr><td><code>PROVEN_OK</code></td><td>success (0)</td><td>—</td></tr><tr><td><code>ERR_NOMEM</code></td><td>the allocator could not hand out memory</td><td><code>_create</code>, <code>_grow</code></td></tr><tr><td><code>ERR_OUT_OF_BOUNDS</code></td><td>outside the vessel — refused rather than truncated</td><td><code>append</code>, <code>slice</code>, array indexing</td></tr><tr><td><code>ERR_INVALID_ENCODING</code></td><td>the UTF-8/UTF-16 was broken</td><td>string conversion, <code>hex</code>/<code>base64</code></td></tr><tr><td><code>ERR_INVALID_ARG</code></td><td>an argument is outside the contract (null, 0, an unusable allocator)</td><td>almost every entry point</td></tr><tr><td><code>ERR_IO</code></td><td>the outside world failed</td><td>files and streams</td></tr><tr><td><code>ERR_NOT_FOUND</code></td><td>what was sought is not there</td><td>map lookup, opening a file</td></tr><tr><td><code>ERR_INVALID_STATE</code></td><td>it cannot be done in the present state</td><td>a closed stream, a destroyed object</td></tr><tr><td><code>ERR_NEED_MORE</code></td><td>more input is needed before judging</td><td>parsers and decoders</td></tr><tr><td><code>ERR_OVERFLOW</code></td><td>a size calculation overflowed</td><td><code>create</code>, container growth</td></tr><tr><td><code>ERR_UNSUPPORTED</code></td><td>this environment does not have that facility</td><td>OS features under freestanding</td></tr><tr><td><code>ERR_AGAIN</code></td><td>not now — try again</td><td>non-blocking I/O</td></tr><tr><td><code>ERR_EOF</code></td><td>the end was reached</td><td>reading</td></tr><tr><td><code>ERR_BUSY</code></td><td>somebody else is using it</td><td>locks, the job queue</td></tr><tr><td><code>ERR_PERMISSION</code></td><td>there is no permission</td><td>files</td></tr><tr><td><code>ERR_INVALID_FORMAT</code></td><td>the format was wrong</td><td>parsing, format strings</td></tr></table><div><div><p><code>examples/ch71/codes.c</code></p><pre><code data-lang="c">/* 에러는 값이다 — 그 값이 실제로 어떤 것들인지 눈으로 본다. */
+#include &lt;proven.h>
+
+static const char *name_of(proven_err_t e)
+{
+    switch (e) {
+    case PROVEN_OK:                   return "PROVEN_OK";
+    case PROVEN_ERR_NOMEM:            return "NOMEM (기억이 모자람)";
+    case PROVEN_ERR_OUT_OF_BOUNDS:    return "OUT_OF_BOUNDS (그릇 밖)";
+    case PROVEN_ERR_INVALID_ENCODING: return "INVALID_ENCODING (인코딩이 깨짐)";
+    case PROVEN_ERR_INVALID_ARG:      return "INVALID_ARG (인자가 계약 밖)";
+    case PROVEN_ERR_IO:               return "IO (바깥 세계의 실패)";
+    case PROVEN_ERR_NOT_FOUND:        return "NOT_FOUND (없음)";
+    case PROVEN_ERR_INVALID_STATE:    return "INVALID_STATE (지금 할 수 없음)";
+    case PROVEN_ERR_NEED_MORE:        return "NEED_MORE (입력이 더 필요)";
+    case PROVEN_ERR_OVERFLOW:         return "OVERFLOW (계산이 넘침)";
+    case PROVEN_ERR_UNSUPPORTED:      return "UNSUPPORTED (이 환경엔 없음)";
+    case PROVEN_ERR_AGAIN:            return "AGAIN (지금은 말고 다시)";
+    case PROVEN_ERR_EOF:              return "EOF (끝에 닿음)";
+    case PROVEN_ERR_BUSY:             return "BUSY (남이 쓰는 중)";
+    case PROVEN_ERR_PERMISSION:       return "PERMISSION (권한 없음)";
+    case PROVEN_ERR_INVALID_FORMAT:   return "INVALID_FORMAT (형식이 틀림)";
+    }
+    return "(알 수 없음)";
+}
+
+int main(void)
+{
+    proven_println("― 에러 코드 전수 ―");
+    for (int i = PROVEN_OK; i &lt;= PROVEN_ERR_INVALID_FORMAT; i++)
+        proven_println("{:>2}  {}", PROVEN_ARG(i), PROVEN_ARG(name_of((proven_err_t)i)));
+
+    proven_println("");
+    proven_println("― 실제로 어떤 코드가 돌아오는가 ―");
+
+    /* ① 그릇이 모자라다 → OUT_OF_BOUNDS */
+    proven_byte_t small[8];
+    proven_u8str_t s = proven_u8str_borrow(small, sizeof small);
+    proven_err_t e1 = proven_u8str_append(&amp;s, PROVEN_LIT("Hello, world"));
+    proven_println("append 12 bytes into 8   -> {}", PROVEN_ARG(name_of(e1)));
+
+    /* 실패 원자성: 거부된 뒤에도 원본은 손대지 않은 상태다 */
+    proven_println("  after failure, len = {}",
+                   PROVEN_ARG(proven_u8str_as_view(&amp;s).size));
+
+    /* ② 계약을 어긴 인자 → INVALID_ARG.
+          쓸 수 없는 할당자(전부 0인 값)를 주면 만들기 전에 걸러낸다. */
+    proven_allocator_t nothing = (proven_allocator_t){0};
+    proven_result_u8str_t bad = proven_u8str_create(nothing, 16);
+    proven_println("create with a null allocator -> {}", PROVEN_ARG(name_of(bad.err)));
+
+    /* ③ 범위 밖 자르기 → OUT_OF_BOUNDS (있는 만큼 주지 않는다) */
+    proven_u8str_view_t v = PROVEN_LIT("abcdefgh");
+    proven_result_mem_view_t sl =
+        proven_mem_view_slice_checked(proven_mem_view_from_u8(v), 6, 4);
+    proven_println("slice 4 bytes from 6/8   -> {}", PROVEN_ARG(name_of(sl.err)));
+
+    /* ④ 성공은 언제나 0이고, 확인은 언제나 같은 한 줄이다 */
+    proven_err_t ok = proven_u8str_append(&amp;s, PROVEN_LIT("hi"));
+    proven_println("append 2 bytes into 8    -> {} (is_ok={})",
+                   PROVEN_ARG(name_of(ok)), PROVEN_ARG(proven_is_ok(ok)));
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>― 에러 코드 전수 ―
+ 0  PROVEN_OK
+ 1  NOMEM (기억이 모자람)
+ 2  OUT_OF_BOUNDS (그릇 밖)
+ 3  INVALID_ENCODING (인코딩이 깨짐)
+ 4  INVALID_ARG (인자가 계약 밖)
+ 5  IO (바깥 세계의 실패)
+ 6  NOT_FOUND (없음)
+ 7  INVALID_STATE (지금 할 수 없음)
+ 8  NEED_MORE (입력이 더 필요)
+ 9  OVERFLOW (계산이 넘침)
+10  UNSUPPORTED (이 환경엔 없음)
+11  AGAIN (지금은 말고 다시)
+12  EOF (끝에 닿음)
+13  BUSY (남이 쓰는 중)
+14  PERMISSION (권한 없음)
+15  INVALID_FORMAT (형식이 틀림)
+
+― 실제로 어떤 코드가 돌아오는가 ―
+append 12 bytes into 8   -> OUT_OF_BOUNDS (그릇 밖)
+  after failure, len = 0
+create with a null allocator -> INVALID_ARG (인자가 계약 밖)
+slice 4 bytes from 6/8   -> OUT_OF_BOUNDS (그릇 밖)
+append 2 bytes into 8    -> PROVEN_OK (is_ok=1)
+</code></pre></div></div><p>The latter part of the example shows this table in the flesh. Try to put twelve bytes into an eight-byte vessel and <code>OUT_OF_BOUNDS</code> comes — <strong>and the original is left untouched</strong> (the length is still 0). Give an unusable allocator and it is caught as <code>INVALID_ARG</code> before anything is made. Slicing outside the range too is a refusal, not “as much as there is”.</p><p>Two things are worth taking from here. First, <strong><code>ERR_INVALID_ARG</code> is usually a bug in my own code</strong> — not a failure of the outside world but a contract violation, so it is to be mended rather than recovered from. Second, <code>ERR_EOF</code> and <code>ERR_AGAIN</code> are <strong>part of the normal flow</strong>. In a reading loop EOF is not an error but the ending condition (chapter 77).</p><h4>71.1.2 The kinds of result bundle</h4><p>A function with a value to return has one bundle per type. The naming rule being the same, the list need not be memorised — inside a <code>proven_result_XXX_t</code> there are always just <code>err</code> and <code>value</code>.</p><table><tr><th><strong>bundle</strong></th><th><strong>the type of <code>value</code></strong></th><th><strong>where it is returned</strong></th></tr><tr><td><code>proven_result_size_t</code></td><td><code>proven_size_t</code></td><td>lengths, counts, bytes written</td></tr><tr><td><code>proven_result_mem_mut_t</code></td><td><code>proven_mem_mut_t</code></td><td>allocators (chapters 72 and 73)</td></tr><tr><td><code>proven_result_mem_view_t</code></td><td><code>proven_mem_view_t</code></td><td>slicing (chapter 72)</td></tr><tr><td><code>proven_result_u8str_t</code></td><td><code>proven_u8str_t</code></td><td>making a string (chapter 74)</td></tr><tr><td><code>proven_result_buf_t</code></td><td><code>proven_buf_t</code></td><td>making a buffer</td></tr><tr><td><code>proven_result_cstr_t</code></td><td><code>const char *</code></td><td>exporting as a C string (chapter 74)</td></tr><tr><td><code>proven_fmt_result_t</code></td><td>(amount written and amount needed)</td><td>formatting (chapter 75)</td></tr></table><p>Only the last row is of a different grain. For formatting, “success or failure” is not enough — if it was truncated you must know <strong>how much more was needed</strong> — so beside <code>err</code> it carries two numbers as well (we look at it closely in chapter 75).</p><div><div><p><code>examples/ch71/errval.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
 /* 실패할 수 있는 일을 한다: 정해진 용량의 문자열에 두 조각을 붙인다.
@@ -131,6 +218,114 @@ PROVEN_OK is 0, and every failure is non-zero
     5 |     proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hi"));
       |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 note: declared here
-  123 | [[nodiscard]] proven_err_t proven_u8str_append(...);</code></pre><p>If the <code>-Werror</code> recommended in chapter 17 is turned on, this is not a warning but a <strong>build failure</strong>. What was “checking is optional” has become “it does not compile unless you check”.</p><p>Of course there are times when you really do want to ignore it. Then <code>(void)</code> is put in front.</p><pre><code data-lang="c">(void)proven_u8str_append(&amp;s, view);   /* ignored knowingly */</code></pre><div><div class="dev qa-q"><p class="dev-label">Q</p><p>If it can be ignored with <code>(void)</code>, is it not compulsory after all?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because the purpose of the compulsion is not “to prevent ignoring” but <strong>“to make ignoring visible”</strong>. An error thrown away with no mark is invisible in code review, while a line with <code>(void)</code> attached becomes a declaration that “this failure is deliberately ignored”. The very fact that it must be typed is the heart of it — it cannot be done by accident, only on purpose.</p></div></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>But chapter 70′s <code>proven_println</code> had no such mark. Why is screen output alone an exception?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because contracts have grades too. The failure of a write going to the console has conventionally been ignored (have you ever seen code that checks <code>printf</code>’s return value?), and making every line of output carry a <code>(void)</code> would bury the code in noise. So this library placed output in the grade that <strong>returns the error but does not compel a check</strong>. Conversely, the functions on the <strong>input</strong> side do have the mark — ignore the failure of a read and you treat “data not read” as though it had been read, replaying chapter 69′s second bug exactly. Where to attach the mark is itself a design judgement.</p></div></div><h3>71.3 What remains after a failure — failure atomicity</h3><p>There is a question that naturally arises after receiving an error. <strong>What state is the object the failed function was touching in now?</strong></p><span id="idx-entry-102"></span><p>The library’s answer is <strong>failure atomicity</strong> — unless the documentation says otherwise, a failed operation leaves the target in the state it was in before being touched. If memory runs short while growing an array the existing elements are still alive, and if there is not enough room while appending to a string the original content stands. The second call of the example just now is that case — it failed, but no half-written string was left.</p><p>Why does this matter? Without failure atomicity a caller can do nothing after a failure <strong>but throw the object away</strong>. With it, “give up this addition and carry on with what has been gathered so far” becomes possible.</p><div class="dev misconception"><p class="dev-label">⚠ “If it fails we will end the program anyway, so what does the state matter”</p><p>For a short-running command-line tool that may be so. But long-running programs — servers, editors, games, firmware — must not die on one failure. If the whole server went down because handling one request failed for lack of memory, that would be the greater accident. Failure atomicity is the minimal condition that makes possible the recovery of “throw away only this request and take the next”.</p></div><h3>71.4 When there is nobody to return to — the panic</h3><p>To return an error as a value there must be <strong>somebody to return it to</strong>. But in a place where the contract itself is broken there is no such somebody — if, for example, a null arrived in a place where there is no reason whatever to pass a null, that is not a failure but means <strong>the program’s logic is already wrong</strong>.</p><p>For such places the library has a panic path. It is the same spirit as chapter 45′s <code>assert</code>, differing in that the way it is handled can be swapped out so as to be usable in embedded work too (chapter 78). The distinction is best remembered like this.</p><div class="dev recap"><p class="dev-label">☰ Recap</p><table><tr><th><strong>situation</strong></th><th><strong>example</strong></th><th><strong>the library’s handling</strong></th></tr><tr><td>failure of the outside world</td><td>out of memory, file not found, out of room</td><td>return the error as a value</td></tr><tr><td>the caller’s contract violation</td><td>a null that must not be, reusing a destroyed object</td><td>panic (or undefined)</td></tr><tr><td>failure that may be ignored</td><td>console output failure</td><td>return the error but do not compel</td></tr></table></div><div class="dev realcase"><p class="dev-label">◉ Other languages that chose errors as values</p><p>This design is not C’s invention alone but a current common to recent systems languages. Go has functions return a result and an error side by side, and Rust wraps success and failure in the single <code>Result</code> type and warns if it is ignored. Both are languages that decided not to use exceptions, and the reason is the same — <strong>the error paths must be visible in the shape of the code</strong>. Exceptions are convenient but erase from the signature “which failure jumps where from here”. Three different languages, in effect, found the answer to the second row of chapter 69′s table from the same direction.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What is the price of this way?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p><code>if</code>s multiply. There being no device like exceptions to sweep a deep failure up in one go, code that checks and passes upward attaches at every place a failure is met. That is half the reason the <code>make_greeting</code> of the example just now runs to some twenty lines. In exchange one thing is gained — <strong>where and what can fail is visible in the code as it stands.</strong> That there is no hidden failure is the thing this library sells.</p></div></div><p>Knowing the shape of errors, we now go down to what those errors protect — memory itself. The next chapter is bytes and views, and size calculation that does not overflow.</p>
+  123 | [[nodiscard]] proven_err_t proven_u8str_append(...);</code></pre><p>If the <code>-Werror</code> recommended in chapter 17 is turned on, this is not a warning but a <strong>build failure</strong>. What was “checking is optional” has become “it does not compile unless you check”.</p><p>Of course there are times when you really do want to ignore it. Then <code>(void)</code> is put in front.</p><pre><code data-lang="c">(void)proven_u8str_append(&amp;s, view);   /* ignored knowingly */</code></pre><div><div class="dev qa-q"><p class="dev-label">Q</p><p>If it can be ignored with <code>(void)</code>, is it not compulsory after all?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because the purpose of the compulsion is not “to prevent ignoring” but <strong>“to make ignoring visible”</strong>. An error thrown away with no mark is invisible in code review, while a line with <code>(void)</code> attached becomes a declaration that “this failure is deliberately ignored”. The very fact that it must be typed is the heart of it — it cannot be done by accident, only on purpose.</p></div></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>But chapter 70′s <code>proven_println</code> had no such mark. Why is screen output alone an exception?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because contracts have grades too. The failure of a write going to the console has conventionally been ignored (have you ever seen code that checks <code>printf</code>’s return value?), and making every line of output carry a <code>(void)</code> would bury the code in noise. So this library placed output in the grade that <strong>returns the error but does not compel a check</strong>. Conversely, the functions on the <strong>input</strong> side do have the mark — ignore the failure of a read and you treat “data not read” as though it had been read, replaying chapter 69′s second bug exactly. Where to attach the mark is itself a design judgement.</p></div></div><h3>71.3 What remains after a failure — failure atomicity</h3><p>There is a question that naturally arises after receiving an error. <strong>What state is the object the failed function was touching in now?</strong></p><span id="idx-entry-102"></span><p>The library’s answer is <strong>failure atomicity</strong> — unless the documentation says otherwise, a failed operation leaves the target in the state it was in before being touched. If memory runs short while growing an array the existing elements are still alive, and if there is not enough room while appending to a string the original content stands. The second call of the example just now is that case — it failed, but no half-written string was left.</p><p>Why does this matter? Without failure atomicity a caller can do nothing after a failure <strong>but throw the object away</strong>. With it, “give up this addition and carry on with what has been gathered so far” becomes possible.</p><div class="dev misconception"><p class="dev-label">⚠ “If it fails we will end the program anyway, so what does the state matter”</p><p>For a short-running command-line tool that may be so. But long-running programs — servers, editors, games, firmware — must not die on one failure. If the whole server went down because handling one request failed for lack of memory, that would be the greater accident. Failure atomicity is the minimal condition that makes possible the recovery of “throw away only this request and take the next”.</p></div><h3>71.4 Raising a failure upward — together with the cleanup</h3><p>Receiving errors as values raises one practical problem at once. <strong>If it fails in the middle, who gives back what has been taken so far?</strong> In a language with exceptions the stack unwinds and destructors handle it, but C has no such device (chapter 62). So an idiom is needed.</p><div><div><p><code>examples/ch71/cleanup.c</code></p><pre><code data-lang="c">/* 실패 경로에서 자원을 흘리지 않는 법 — 한 곳에 모아 역순으로 정리한다.
+   62장에서 본 `goto cleanup` 관용구가 proven 의 에러 값과 만나는 자리다. */
+#include &lt;proven.h>
+
+/* 실패를 흉내 내기 위한 할당자: n 번째 할당부터는 반드시 실패한다. */
+typedef struct {
+    proven_allocator_t base;
+    int                budget;   /* 남은 성공 횟수 */
+} failing_ctx_t;
+
+static proven_result_mem_mut_t failing_alloc(void *ctx, proven_size_t size,
+                                             proven_size_t align)
+{
+    failing_ctx_t *f = (failing_ctx_t *)ctx;
+    if (f->budget &lt;= 0)
+        return (proven_result_mem_mut_t){ .err = PROVEN_ERR_NOMEM };
+    f->budget--;
+    return f->base.alloc_fn(f->base.ctx, size, align);
+}
+
+static proven_result_mem_mut_t failing_realloc(void *ctx, void *old_ptr,
+                                               proven_size_t old_size,
+                                               proven_size_t new_size,
+                                               proven_size_t align)
+{
+    failing_ctx_t *f = (failing_ctx_t *)ctx;
+    if (f->budget &lt;= 0)
+        return (proven_result_mem_mut_t){ .err = PROVEN_ERR_NOMEM };
+    f->budget--;
+    return f->base.realloc_fn(f->base.ctx, old_ptr, old_size, new_size, align);
+}
+
+static void failing_free(void *ctx, void *ptr)
+{
+    failing_ctx_t *f = (failing_ctx_t *)ctx;
+    f->base.free_fn(f->base.ctx, ptr);
+}
+
+/* 자원 둘을 잡고 일하는 함수. 어디서 실패하든 잡은 것만 정확히 되돌린다. */
+static proven_err_t join_two(proven_allocator_t alloc,
+                             proven_u8str_view_t a,
+                             proven_u8str_view_t b,
+                             proven_u8str_t *out)
+{
+    proven_err_t   err   = PROVEN_OK;
+    bool           has_x = false;
+    proven_u8str_t x;                       /* 첫 번째 자원 */
+    proven_u8str_t y;                       /* 두 번째 자원 */
+
+    proven_result_u8str_t rx = proven_u8str_create_from_view(alloc, a);
+    if (!proven_is_ok(rx.err)) { err = rx.err; goto done; }
+    x = rx.value; has_x = true;
+
+    proven_result_u8str_t ry = proven_u8str_create_from_view(alloc, b);
+    if (!proven_is_ok(ry.err)) { err = ry.err; goto done; }
+    y = ry.value;
+
+    /* 두 조각을 이어 붙인다 — 모자라면 늘린다(할당자가 필요한 이유) */
+    err = proven_u8str_append_grow(alloc, &amp;y, proven_u8str_as_view(&amp;x));
+    if (!proven_is_ok(err)) { proven_u8str_destroy(alloc, &amp;y); goto done; }
+
+    *out = y;                               /* 성공: y 의 소유권을 넘긴다 */
+                                            /* x 는 아래에서 반납된다 */
+done:
+    if (has_x) proven_u8str_destroy(alloc, &amp;x);   /* 잡았으면 반드시 되돌린다 */
+    return err;
+}
+
+static void run(int budget)
+{
+    proven_allocator_t heap = proven_heap_allocator();
+    failing_ctx_t      ctx  = { .base = heap, .budget = budget };
+    proven_allocator_t alloc = {
+        .ctx = &amp;ctx, .alloc_fn = failing_alloc,
+        .realloc_fn = failing_realloc, .free_fn = failing_free,
+    };
+
+    proven_u8str_t out;
+    proven_err_t e = join_two(alloc, PROVEN_LIT("world"), PROVEN_LIT("hello, "), &amp;out);
+
+    if (proven_is_ok(e)) {
+        proven_println("budget={} -> ok: \"{}\"  (남은 예산 {})",
+                       PROVEN_ARG(budget), PROVEN_ARG(proven_u8str_as_view(&amp;out)),
+                       PROVEN_ARG(ctx.budget));
+        proven_u8str_destroy(alloc, &amp;out);
+    } else {
+        proven_println("budget={} -> 실패(코드 {}) — 잡았던 것은 전부 반납됐다",
+                       PROVEN_ARG(budget), PROVEN_ARG((int)e));
+    }
+}
+
+int main(void)
+{
+    run(0);   /* 첫 할당부터 실패 */
+    run(1);   /* 첫 자원은 잡고 두 번째에서 실패 → x 를 흘리면 누수다 */
+    run(9);   /* 전부 성공 */
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>budget=0 -> 실패(코드 1) — 잡았던 것은 전부 반납됐다
+budget=1 -> 실패(코드 1) — 잡았던 것은 전부 반납됐다
+budget=9 -> ok: "hello, world"  (남은 예산 6)
+</code></pre></div></div><p>This example deliberately inserts a failing allocator (once the <strong>budget</strong> runs out it necessarily gives <code>NOMEM</code>) and runs all three cases — failure from the first allocation, one taken and failure at the second, and everything succeeding. The middle case is the heart of it. <code>x</code> has already been taken while <code>y</code> failed, so simply returning here is <strong>a leak</strong>.</p><p>The pattern comes to three.</p><ol><li><strong>Mark what you hold with a flag</strong> — one boolean such as <code>has_x</code>. If the resources are several, so are the flags.</li><li><strong>On failure everything gathers at one place</strong> — <code>goto done</code>. That use chapter 62 called “disciplined <code>goto</code>”.</li><li><strong>Clean up in reverse order of taking</strong> — what was taken later is given back first.</li></ol><p>It is worth noticing too that after ownership passes with <code>*out = y;</code> on the success path, <code>y</code> is not destroyed thereafter. <strong>You must be able to point at the place where ownership passes with a single line of code</strong> — a function that cannot is usually one of blurred design.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Is deliberately making a failing allocator of any use in practice too?</p></div><div class="dev qa-a"><p class="dev-label">A Of great use. The out-of-memory path is almost never executed in a real program, so in most codebases it is <strong>the least tested path</strong>. And a leak or double free there is the hardest of all to diagnose.</p><p>As chapter 73 will show, an allocator is simply a value, so a shell that “fails from the nth call” can be made in ten lines, as in the example, and inserted. Raise n from 1 and run the tests and you can pass through <strong>every failure point</strong> once, and running it with ASan or Valgrind (chapter 17) makes that path’s leaks show themselves plainly. It is the place where the decision that the library does not call <code>malloc</code> directly comes back as testability.</p></div></div><h3>71.5 When there is nobody to return to — the panic</h3><p>To return an error as a value there must be <strong>somebody to return it to</strong>. But in a place where the contract itself is broken there is no such somebody — if, for example, a null arrived in a place where there is no reason whatever to pass a null, that is not a failure but means <strong>the program’s logic is already wrong</strong>.</p><p>For such places the library has a panic path. It is the same spirit as chapter 45′s <code>assert</code>, differing in that the way it is handled can be swapped out so as to be usable in embedded work too (chapter 78).</p><p>There are only two doors.</p><pre><code data-lang="c">void proven_panic(const char *msg);                       /* raise a panic */
+void proven_set_panic_handler(proven_panic_handler_t h);  /* swap the handler */</code></pre><p>The default handler <strong>does not return</strong> — it stops the program on the spot (the implementation is <code>__builtin_trap()</code>). And this swapping is what pays in embedded work. On a board with no console there is nowhere to print a message, so a handler is registered that lights an LED, kicks the watchdog, or reboots.</p><pre><code data-lang="c">static void my_panic(const char *msg) {
+    (void)msg;
+    board_led_on(LED_FAULT);
+    for (;;) { }          /* it does not go back */
+}
+/* at the program's starting place */
+proven_set_panic_handler(my_panic);</code></pre><p><strong>A handler must not return.</strong> If it returns, the validity of what an <code>_or_panic</code> function gave back is not guaranteed — a panic is the declaration that “from here the program’s premises are broken”. The exception is test code deliberately using a returning handler to confirm the panic path, and even then the value after it is not used.</p><p>The places where the library itself calls a panic can be counted on the fingers — the functions with <code>_or_panic</code> in the name (chapter 73′s arena allocation is representative) and a few places where the contract is plainly already broken. Everything else is returned as a value.</p><p>The distinction is best remembered like this.</p><div class="dev recap"><p class="dev-label">☰ Recap</p><table><tr><th><strong>situation</strong></th><th><strong>example</strong></th><th><strong>the library’s handling</strong></th></tr><tr><td>failure of the outside world</td><td>out of memory, file not found, out of room</td><td>return the error as a value</td></tr><tr><td>the caller’s contract violation</td><td>a null that must not be, reusing a destroyed object</td><td>panic (or undefined)</td></tr><tr><td>failure that may be ignored</td><td>console output failure</td><td>return the error but do not compel</td></tr></table></div><div class="dev realcase"><p class="dev-label">◉ Other languages that chose errors as values</p><p>This design is not C’s invention alone but a current common to recent systems languages. Go has functions return a result and an error side by side, and Rust wraps success and failure in the single <code>Result</code> type and warns if it is ignored. Both are languages that decided not to use exceptions, and the reason is the same — <strong>the error paths must be visible in the shape of the code</strong>. Exceptions are convenient but erase from the signature “which failure jumps where from here”. Three different languages, in effect, found the answer to the second row of chapter 69′s table from the same direction.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What is the price of this way?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p><code>if</code>s multiply. There being no device like exceptions to sweep a deep failure up in one go, code that checks and passes upward attaches at every place a failure is met. That is half the reason the <code>make_greeting</code> of the example just now runs to some twenty lines. In exchange one thing is gained — <strong>where and what can fail is visible in the code as it stands.</strong> That there is no hidden failure is the thing this library sells.</p></div></div><p>Knowing the shape of errors, we now go down to what those errors protect — memory itself. The next chapter is bytes and views, and size calculation that does not overflow.</p>
 <div class="nav"><a href="ch70.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch72.html">Next →</a></div>
 </div></main></body></html>

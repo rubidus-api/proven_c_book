@@ -24,10 +24,49 @@
   every time you make a container, it is better to use one made properly once.
 ]
 
+== The life cycle of the four containers
+
+First we see the four on one screen. How making, putting in, traversing and giving back
+differ between them is all in this example.
+
+#demo("examples/ch76/tour.c")
+
+#dtable(
+  columns: 5,
+  [*container*], [*making*], [*allocation*], [*traversal*], [*giving back*],
+  [`array`], [`PROVEN_ARRAY_INIT(alloc, T, n)`], [grows], [by index], [`PROVEN_ARRAY_DESTROY`],
+  [`list`], [`proven_list_init(&l)`], [*none*], [`PROVEN_LIST_FOR_EACH`], [unnecessary],
+  [`ring`], [`PROVEN_RING_INIT(alloc, T, n)`], [once, fixed], [by popping], [`proven_ring_destroy`],
+  [`map`], [`PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)`], [grows (rehashing)], [by key lookup], [`proven_map_destroy`],
+)
+
+That only the list has no allocation stands out — because the node lives inside the
+data. So a list is the only container that *cannot fail for lack of memory*, and it is
+especially loved in embedded work (chapter 78).
+
 == The growing array
 
-`proven_array_t` is a byte buffer that knows the element size and alignment. C having
-no generics, the type is filled in by macros.
+`proven_array_t` is a byte buffer that knows the element size and alignment. Open it up
+and why the type is filled in by macros becomes clear.
+
+```c
+typedef struct {
+    proven_allocator_t alloc;       /* it remembers the allocator given at creation */
+    proven_byte_t     *data;        /* the byte buffer */
+    proven_size_t      len;         /* the number of elements held now */
+    proven_size_t      cap;         /* the number of elements it can hold */
+    proven_size_t      elem_size;   /* the size of one element */
+    proven_size_t      align;       /* the element's alignment requirement */
+} proven_array_t;
+```
+
+*That the array remembers the allocator* differs from strings. A string takes an
+allocator per operation (chapter 74), while an array takes one at creation and keeps it
+inside — making `push` pass an allocator every time it grows would make the code noisy.
+So the allocator is not given again at destruction either
+(`PROVEN_ARRAY_DESTROY(&arr)`).
+
+C having no generics, the type is filled in by macros.
 
 #demo("examples/ch76/arr.c")
 
@@ -52,11 +91,26 @@ array remembers the allocator it was given at creation).
   becomes the defence here.
 ]
 
-== The intrusive list and the ring buffer
+== The intrusive list — linking without allocation
 
 `proven_list_t` is an *intrusive* linked list — the node does not hold the data;
 rather a link field is planted inside the data struct. It amounts to putting one
 `proven_list_node_t link;` slot inside a `struct` made in chapter 41.
+
+```c
+typedef struct proven_list_node_t {
+    struct proven_list_node_t *next;
+    struct proven_list_node_t *prev;
+} proven_list_node_t;
+
+typedef struct {
+    proven_list_node_t head;      /* a sentinel pointing at itself */
+} proven_list_t;
+```
+
+That `head` is a *sentinel* is this implementation's knack. In an empty list
+`head.next` and `head.prev` point at head itself, and so not one "is it null" check
+appears in the insertion and deletion code — a pattern the Linux kernel long used.
 
 What is good about it? *There is nothing to allocate separately* in order to put
 something in the list — because the node is the data. A list can be used even in an
@@ -64,11 +118,55 @@ environment with no heap (chapter 78), and hanging the same object on two lists 
 once is a matter of keeping two link fields. The price is that the data struct must
 know about the list.
 
+Getting back the other way is the problem, and one macro solves it.
+
+```c
+task_t *t = PROVEN_LIST_ENTRY(node, task_t, link);
+```
+
+It is the macro that *works the struct's starting address back* from the address of the
+`link` member — the `offsetof` seen in chapter 41 used here in the flesh. This one line
+returning from node to data is nearly the whole of the intrusive list.
+
+There are two traversal macros.
+
+#dtable(
+  columns: 3,
+  [*macro*], [*what it does*], [*when*],
+  [`PROVEN_LIST_FOR_EACH(it, &l)`], [traverses from the front], [when only reading],
+  [`PROVEN_LIST_FOR_EACH_SAFE(it, tmp, &l)`], [holds the next node in advance], [★ when removing while traversing],
+)
+
+The star matters. Remove a node during traversal and its `next` becomes meaningless, so
+the loop loses its way. The `_SAFE` edition turns with *the next node already in hand*,
+so removing the present node is safe. It is why the example used it when detaching item
+20.
+
+It is worth knowing too that both macros require the iteration variables to be
+*declared in advance* (`proven_list_node_t *node, *tmp;`). The macro does not put a
+declaration in the `for`'s initialiser — a kernel practice carried on from the C89 days.
+
+== The ring buffer — a stream of fixed size
+
 `proven_ring_t` is a fixed-size circular buffer. It is used where a producer and a
 consumer come and go, for the most recent N of a log, and for streams such as audio
 and sensor samples where *what has passed may be thrown away*. The size being fixed,
 what to do when it is full is part of the contract — and here too the default is to
-report rather than quietly overwrite.
+report rather than quietly overwrite (the example's `err=2` is that confirmation).
+
+There are only `push` and `pop`, and both *copy the element*. Putting in gives an
+address, and taking out gives the address of the place to receive it.
+
+```c
+int v = 42;
+proven_err_t e = proven_ring_push(&ring, &v);     /* copies the value in */
+int out;
+e = proven_ring_pop(&ring, &out);                 /* copies the value out */
+```
+
+Thanks to this design no pointer into an element inside the ring leaks outward — holding
+a pointer in a circular buffer and having that place overwritten is a classic accident,
+and it was blocked by the interface.
 
 == The hash map, and data structures under attack
 
@@ -76,6 +174,35 @@ report rather than quietly overwrite.
 and string keys have two modes — *a borrowed key* (the caller keeps the bytes alive)
 and *an owned key* (the map copies and holds it). Chapter 73's owning-borrowing
 distinction appears here as it is too.
+
+The kind of key is settled at creation.
+
+#dtable(
+  columns: 3,
+  [*creation macro*], [*key*], [*caution*],
+  [`PROVEN_MAP_INIT_INT(alloc, T, n)`], [an integer (`key.id`)], [the fastest],
+  [`PROVEN_MAP_INIT_U8_BORROWED(alloc, T, n)`], [a string (borrowed)], [★ the key bytes must outlive the map],
+  [`PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)`], [a string (copied)], [a copy cost on insertion. safe in exchange],
+)
+
+The key is passed as one union — `.id` for an integer, `.str` for a string.
+
+```c
+proven_map_key_t k = { .str = PROVEN_LIT("beta") };
+const int *v = proven_map_get(&map, k);      /* null if absent */
+```
+
+*Lookup answers with null.* The reason it returns a pointer rather than a bundle is
+that "absent" is not a failure but a normal answer (distinct from chapter 71's error
+branches). And that pointer *points inside the map*, so it becomes invalid the next time
+the map grows — the same rule as with arrays.
+
+There are three functions for putting in. `proven_map_set` (general),
+`proven_map_set_u8_owned` (copying a string key in), and
+`proven_map_set_with_scratch` (giving the temporary memory separately). The last is used
+when the temporary buffers of internal work such as rehashing are to be obtained from
+another allocator — a device for keeping dead memory from piling up when running a map
+on an arena.
 
 #demo("examples/ch76/wordcount.c")
 

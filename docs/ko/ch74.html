@@ -69,7 +69,18 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>74 문자열과 텍스트</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>69장의 첫째 버그 — 그릇의 크기를 모르는 문자열 함수 — 에 대한 답이다. 길이를 지니고 다니는 문자열, 소유와 빌림의 구분, 그리고 이 라이브러리 에서 가장 논쟁적인 결정인 <strong>거부하되 자르지 않는다</strong>까지. 9장의 인코딩 이야기와 37장의 경계 이야기가 여기서 하나로 모인다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>37장에서 C 문자열은 “NUL을 만날 때까지”가 곧 길이라, 길이를 알려면 매번 세어야 한다고 했다. 그러면 길이를 함께 들고 다니면 무엇이 좋아지는가 — 그리고 무엇을 잃는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>얻는 것이 셋이다. 길이를 세는 비용이 사라지고(<math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math>이 <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math>이 된다), 중간에 0바이트가 들어 있는 자료도 다룰 수 있으며, 무엇보다 <strong>경계를 검사할 수 있다</strong> — 길이를 모르면 검사할 것 자체가 없다. 잃는 것은 둘이다. 문자열 하나가 한 워드가 아니라 두 워드가 되고, <code>printf("%s")</code> 처럼 NUL 종단을 기대하는 세상과 만날 때 변환이 필요해진다. 이 라이브러리는 그 변환 비용을 없애려고 내부적으로 NUL도 함께 유지한다 — 둘 다 가지는 절충이다.</p></div></div><h3>74.1 두 개의 타입, 하나의 규칙</h3><p>문자열 어휘는 둘뿐이다.</p><ul><li><code>proven_u8str_t</code> — <strong>소유하는</strong> 문자열. 버퍼와 길이와 용량을 가진다.</li><li><code>proven_u8str_view_t</code> — <strong>빌린</strong> 문자열. 포인터와 길이뿐이다.</li></ul><p>이름에 <code>view</code>가 있으면 빌린 것이고, 빌린 것은 파괴하지 않는다. 73장에서 세운 규칙이 문자열에 그대로 적용된 것이다. <code>u8</code>은 UTF-8을 뜻한다 — 9장에서 본 그 인코딩이 이 라이브러리의 기본 텍스트 표현이다.</p><p>소유하는 문자열을 얻는 길은 둘이다. 할당자에게 받거나(<code>_create</code>), 남의 버퍼를 빌려 쓰거나(<code>_borrow</code>).</p><div><div><p><code>examples/ch74/ops.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>74 문자열과 텍스트</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>69장의 첫째 버그 — 그릇의 크기를 모르는 문자열 함수 — 에 대한 답이다. 길이를 지니고 다니는 문자열, 소유와 빌림의 구분, 그리고 이 라이브러리 에서 가장 논쟁적인 결정인 <strong>거부하되 자르지 않는다</strong>까지. 9장의 인코딩 이야기와 37장의 경계 이야기가 여기서 하나로 모인다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>37장에서 C 문자열은 “NUL을 만날 때까지”가 곧 길이라, 길이를 알려면 매번 세어야 한다고 했다. 그러면 길이를 함께 들고 다니면 무엇이 좋아지는가 — 그리고 무엇을 잃는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>얻는 것이 셋이다. 길이를 세는 비용이 사라지고(<math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math>이 <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math>이 된다), 중간에 0바이트가 들어 있는 자료도 다룰 수 있으며, 무엇보다 <strong>경계를 검사할 수 있다</strong> — 길이를 모르면 검사할 것 자체가 없다. 잃는 것은 둘이다. 문자열 하나가 한 워드가 아니라 두 워드가 되고, <code>printf("%s")</code> 처럼 NUL 종단을 기대하는 세상과 만날 때 변환이 필요해진다. 이 라이브러리는 그 변환 비용을 없애려고 내부적으로 NUL도 함께 유지한다 — 둘 다 가지는 절충이다.</p></div></div><h3>74.1 두 개의 타입, 하나의 규칙</h3><p>문자열 어휘는 둘뿐이다.</p><ul><li><code>proven_u8str_t</code> — <strong>소유하는</strong> 문자열. 버퍼와 길이와 용량을 가진다.</li><li><code>proven_u8str_view_t</code> — <strong>빌린</strong> 문자열. 포인터와 길이뿐이다.</li></ul><p>이름에 <code>view</code>가 있으면 빌린 것이고, 빌린 것은 파괴하지 않는다. 73장에서 세운 규칙이 문자열에 그대로 적용된 것이다. <code>u8</code>은 UTF-8을 뜻한다 — 9장에서 본 그 인코딩이 이 라이브러리의 기본 텍스트 표현이다.</p><p>속을 열어 보면 왜 둘로 갈랐는지가 분명해진다.</p><pre><code data-lang="c">/* 빌린 문자열 — 72장의 mem_view_t 와 같은 모양이다 */
+typedef struct {
+    const proven_byte_t *ptr;
+    proven_size_t        size;
+} proven_u8str_view_t;
+
+/* 소유하는 문자열 — 버퍼 하나와 "빌린 것인가" 깃발 */
+typedef struct {
+    proven_buf_t internal;   /* { ptr, len, cap } */
+    bool         borrowed;
+} proven_u8str_t;</code></pre><p><code>proven_buf_t</code>의 세 칸이 문자열의 성격을 그대로 말해 준다. <strong><code>len</code>은 지금 담긴 내용의 바이트 수</strong>, <strong><code>cap</code>은 버퍼 전체 크기</strong>이고, 그 차이가 NUL 자리를 포함한 여유다. 그래서 <code>create(alloc, 64)</code>가 실제로는 65바이트를 잡는다 — 64는 <strong>내용</strong>의 한도이고 한 바이트는 NUL의 몫이다. 이 한 바이트 덕에 <code>proven_u8str_as_cstr</code>이 복사도 할당도 없이 C 문자열을 내줄 수 있다.</p><p><code>borrowed</code> 깃발은 <code>_borrow</code>로 만든 문자열을 표시한다. 이 깃발이 켜져 있으면 <code>_destroy</code>는 <strong>아무것도 해제하지 않고</strong> 구조체만 비운다 — 남의 기억을 돌려줄 수는 없기 때문이다.</p><p>문자열을 얻는 길은 셋이다.</p><table><tr><th><strong>함수</strong></th><th><strong>할당</strong></th><th><strong>파괴</strong></th><th><strong>쓰는 자리</strong></th></tr><tr><td><code>proven_u8str_create(alloc, limit)</code></td><td>예</td><td><code>_destroy</code> 필요</td><td>빈 문자열로 시작해 채워 나갈 때</td></tr><tr><td><code>proven_u8str_create_from_view(alloc, v)</code></td><td>예</td><td><code>_destroy</code> 필요</td><td>있는 내용을 복사해 소유할 때</td></tr><tr><td><code>proven_u8str_borrow(buf, cap)</code></td><td>아니오</td><td>불필요(무해)</td><td>스택·정적 배열 위에서. 임베디드</td></tr></table><p><code>_borrow</code>의 <code>cap</code>이 <strong>NUL을 포함한 전체 용량</strong>이라는 점만 주의하면 된다 — <code>buf[64]</code>를 주면 내용은 63바이트까지다.</p><p>리터럴에서 뷰를 만드는 것은 매크로 하나로 끝난다.</p><pre><code data-lang="c">PROVEN_LIT("hello")        /* 컴파일 시간에 { ptr, 5 } 가 된다 — strlen 없음 */
+proven_u8str_view_from_cstr(p)   /* 실행 시간에 길이를 센다 */</code></pre><p><code>PROVEN_LIT</code>은 <code>sizeof("...") - 1</code>로 길이를 뽑으므로 <strong>실행 시간 비용이 0</strong>이다. 문자열 리터럴을 넘길 때는 이쪽을 쓰는 것이 관행이고, 길이를 모르는 C 문자열에는 <code>_from_cstr</code>을 쓴다.</p><div><div><p><code>examples/ch74/ops.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
 static void show(const char *label, proven_u8str_view_t v)
@@ -134,6 +145,88 @@ field 3      [city] (4 bytes)
 eq 'name,age,city' : 1
 starts with 'name' : 1
 </code></pre></div></div><p>첫 줄이 73장의 규칙을 다시 보여 준다. <code>proven_u8str_borrow</code>에는 할당자가 없다 — 그러므로 할당하지 않는다. 스택에 잡은 16바이트 배열 위에서 문자열 연산을 하는 것이고, 임베디드에서 힙 없이 문자열을 다루는 방식이 정확히 이것이다.</p><h3>74.2 거부하되, 자르지 않는다</h3><p>두 번째 <code>append</code>가 이 부에서 가장 중요한 한 줄이다. 16바이트 그릇에 <code>"hello"</code> 다음으로 <code>" world, and more"</code>를 붙이려 하자 라이브러리는 <strong>아무것도 쓰지 않고</strong> <code>PROVEN_ERR_OUT_OF_BOUNDS</code>를 돌려주었다. 그리고 그다음 줄이 보여 주듯 원래 내용 <code>hello</code>는 그대로다 — 71장에서 배운 실패 원자성이다.</p><p>69장에서 본 <code>snprintf</code>의 선택과 정반대다. 왜 자르지 않는가?</p><p><strong>잘린 값은 짧은 값이 아니라 다른 값이기 때문이다.</strong> 잘린 경로는 다른 파일을 가리키고, 잘린 명령은 다른 명령이며, 잘린 사용자 이름은 다른 사람이다. 자르고 성공을 말하면 호출자는 자기가 받은 것이 요청한 것인지 알 수 없다. 그래서 이 라이브러리는 <strong>결정을 호출자에게 되돌려준다</strong> — “자리가 모자랍니다. 어떻게 할까요?”</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>그래도 로그 한 줄처럼 잘려도 괜찮은 자리가 있지 않은가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>있다. 그래서 <strong>명시적으로 부분만 쓰는</strong> 함수가 따로 있다 — <code>proven_u8str_append_partial</code>은 들어간 바이트 수를 돌려준다. 이름이 길고 반환값이 다르다는 점이 핵심이다. 자르기는 여전히 가능하지만, 그것을 하려면 <strong>그렇게 적어야</strong> 한다. 기본값은 언제나 안전한 쪽이고 위험한 선택은 눈에 보이는 이름으로만 할 수 있다는 원칙(72장의 <code>_unchecked</code>와 같다)이 여기서도 지켜진다.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ 성장과 고정 용량을 헷갈리기</p><pre><code data-lang="c">proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
-proven_err_t e = proven_u8str_append_grow(alloc, &amp;s, view);  /* 위험 */</code></pre><p><code>_append</code>는 용량 안에서만 쓰고, <code>_append_grow</code>는 모자라면 할당자에게 더 달라고 한다 — 그래서 후자에만 할당자 인자가 있다. 문제는 빌린 버퍼(<code>_borrow</code>) 위에서 성장을 요구하는 경우다. 스택 배열은 자랄 수 없으므로 이것은 설계 오류다. 시그니처를 읽는 습관이 여기서 그대로 방어가 된다 — <strong>할당자가 있으면 자랄 수 있고, 없으면 자랄 수 없다.</strong></p></div><h3>74.3 찾기와 자르기 — 복사 없는 텍스트 처리</h3><p>예제의 ③·④가 뷰의 진짜 쓸모다. 부분 문자열을 얻는 데 복사가 필요 없다 — 원본을 가리키는 포인터와 길이를 새로 계산할 뿐이다. CSV 한 줄을 세 필드로 가르는 동안 할당은 한 번도 일어나지 않았다.</p><p>이 무늬는 파서에서 특히 강력하다. 25장에서 <code>sscanf</code>로 줄을 해석할 때는 결과를 담을 버퍼를 미리 준비해야 했지만, 뷰로 자르면 <strong>원본 위에 표시만</strong> 남긴다. 대신 지켜야 할 것이 하나 늘어난다 — 72장에서 본 대로 <strong>원본이 살아 있는 동안만 유효하다</strong>.</p><p><code>find</code>가 못 찾았을 때 돌려주는 값에도 규약이 있다. 0이나 음수가 아니라 <code>PROVEN_INDEX_NOT_FOUND</code>라는 이름의 센티널이다. 69장에서 센티널 값의 위험을 이야기했는데, 여기서는 <strong>이름이 붙어 있고 문서화되어 있다</strong>는 점이 다르다 — 이름 없는 마법의 수와 이름 붙은 계약은 다른 물건이다.</p><div class="dev misconception"><p class="dev-label">⚠ “길이를 들고 다니면 글자 수를 아는 것이다”</p><p>아니다. 길이는 <strong>바이트 수</strong>다. 9장에서 배운 대로 UTF-8에서 한 글자는 1~4바이트이므로, 한글 “가”는 3바이트이고 이모지는 4바이트다. 예제의 출력이 굳이 “(5 bytes)”라고 밝히는 이유다. 그래서 “n번째 글자”를 다루는 일은 여전히 조심스럽고, <strong>바이트 경계에서 아무 데나 자르면</strong> 9장에서 본 깨진 글자가 나온다. 문자열 라이브러리가 해결해 주는 것은 경계 침범이지 인코딩의 본질적 난이도가 아니다.</p></div><h3>74.4 두 세계의 경계 — NUL 종단과 UTF-16</h3><p>바깥 세계와 만나는 자리마다 변환이 필요하다.</p><ul><li><code>proven_u8str_as_cstr</code> — 소유 문자열에서 NUL 종단 포인터를 얻는다. 내부에 NUL을 유지해 두므로 복사도 할당도 없다. <code>printf("%s")</code>나 파일 API에 넘길 때 쓴다.</li><li><code>proven_u8str_view_to_cstr</code> — 뷰에서 NUL 종단 문자열을 만든다. 이쪽은 <strong>할당자를 받는다</strong> — 뷰는 원본 중간을 가리킬 수 있어 그 자리에 NUL을 쓸 수 없기 때문이다. 시그니처가 다시 한번 사실을 말해 준다.</li><li><code>proven_u16str_t</code> / <code>proven_u16str_view_t</code> — UTF-16 세계와의 다리다. Windows API가 이 인코딩을 쓰므로 변환이 필요하고, 변환은 실패할 수 있다(짝이 맞지 않는 서러게이트 같은 것). 그래서 결과는 꾸러미로 온다.</li></ul><div class="dev realcase"><p class="dev-label">◉ “추측하지 말고 거부하라” — 인코딩 처리의 원칙</p><p>9장에서 본 텍스트 보안 문제들의 뿌리는 대개 <strong>너그러운 디코더</strong>다. 잘못된 UTF-8을 만났을 때 “비슷한 것으로 고쳐 읽는” 구현은 과거 여러 번 보안 사고의 통로가 됐다 — 특히 지나치게 긴 인코딩(overlong)을 허용한 디코더들이 검사를 우회당했다. 그래서 오늘의 규범은 한 문장이다. <strong>유효하지 않은 입력은 고쳐 읽지 말고 거부하라.</strong> proven의 인코딩 변환이 <code>PROVEN_ERR_INVALID_ENCODING</code>을 돌려주며 멈추는 것이 그 규범의 구현이고, 이 원칙은 이 장 전체의 “자르지 않는다”와 정확히 같은 정신이다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>문자열 어휘 요약.</p><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>실패·소유</strong></th></tr><tr><td><code>u8str_create(alloc, cap)</code></td><td>소유 문자열 생성</td><td>꾸러미 반환, <code>_destroy</code> 필요</td></tr><tr><td><code>u8str_borrow(buf, cap)</code></td><td>남의 버퍼 위에 문자열</td><td>할당 없음, 파괴 없음</td></tr><tr><td><code>u8str_append(&amp;s, v)</code></td><td>용량 안에서 덧붙임</td><td>모자라면 거부(원본 보존)</td></tr><tr><td><code>u8str_append_partial</code></td><td>들어가는 만큼</td><td>넣은 바이트 수 반환</td></tr><tr><td><code>u8str_append_grow(alloc,…)</code></td><td>모자라면 늘려서</td><td>할당 실패 가능</td></tr><tr><td><code>u8str_view_find</code></td><td>부분 문자열 위치</td><td>없으면 <code>PROVEN_INDEX_NOT_FOUND</code></td></tr><tr><td><code>u8str_view_slice</code></td><td>부분 뷰</td><td>복사 없음 — 원본 수명에 묶임</td></tr><tr><td><code>u8str_as_cstr</code></td><td>NUL 종단 포인터</td><td>복사 없음</td></tr><tr><td><code>u8str_view_to_cstr</code></td><td>뷰 → C 문자열</td><td>할당자 필요</td></tr></table></div><p>문자열을 안전하게 담고 자를 수 있게 됐다. 그런데 아직 <strong>만드는</strong> 일이 남았다 — 수와 값을 글자로 바꾸고, 글자를 다시 수로 되돌리는 일. 69장의 셋째 버그가 기다리는 자리이자, 이 라이브러리에서 가장 눈에 띄게 다른 문법이 나오는 자리다.</p>
+proven_err_t e = proven_u8str_append_grow(alloc, &amp;s, view);  /* 위험 */</code></pre><p><code>_append</code>는 용량 안에서만 쓰고, <code>_append_grow</code>는 모자라면 할당자에게 더 달라고 한다 — 그래서 후자에만 할당자 인자가 있다. 문제는 빌린 버퍼(<code>_borrow</code>) 위에서 성장을 요구하는 경우다. 스택 배열은 자랄 수 없으므로 이것은 설계 오류다.</p><p>라이브러리는 이 경우 <strong>조용히 남의 기억을 재할당하지 않고</strong> <code>OUT_OF_BOUNDS</code>를 돌려준다 — 들어가는 동안은 성공하고, 들어가지 않게 되는 순간 거부한다. 시그니처를 읽는 습관이 여기서 그대로 방어가 된다 — <strong>할당자가 있으면 자랄 수 있고, 없으면 자랄 수 없다.</strong></p></div><h3>74.3 세 갈래의 쓰기 — 거부·자름·성장</h3><p>이 라이브러리의 문자열 연산은 이름만 보고 갈래를 알 수 있게 되어 있다. “자리가 모자랄 때 어떻게 하는가”가 그 갈래다.</p><table><tr><th><strong>갈래</strong></th><th><strong>이름의 꼴</strong></th><th><strong>모자랄 때</strong></th><th><strong>실패 원자성</strong></th></tr><tr><td>고정 용량·원자적</td><td><code>_append</code>, <code>_insert</code>, <code>_replace_at</code></td><td>거부(<code>OUT_OF_BOUNDS</code>)</td><td>예 — 원본 그대로</td></tr><tr><td>최선 노력·자름</td><td><code>_append_partial</code>, <code>_append_fmt_trunc</code></td><td>들어가는 만큼 쓰고 알린다</td><td>아니오(의도적)</td></tr><tr><td>성장</td><td><code>_append_grow</code>, <code>_insert_grow</code>, <code>_replace_at_grow</code></td><td>할당자에게 더 달라고 한다</td><td>예 — 할당 실패 시 원본 그대로</td></tr></table><p>세 갈래가 다 필요한 이유는 자리마다 옳은 답이 다르기 때문이다. 파일 경로를 만드는 자리에서는 잘리면 안 되므로 <strong>거부</strong>가 옳고, 화면 한 줄에 맞춰 로그를 찍는 자리에서는 <strong>자름</strong>이 옳고, 내용이 얼마나 될지 모르는 자리에서는 <strong>성장</strong>이 옳다. 기본값(짧은 이름)이 거부라는 점이 이 설계의 태도를 보여 준다.</p><h3>74.4 문자열을 고치는 연산들</h3><p>붙이기만으로는 부족하다. 가운데를 고치고, 지우고, 되쓰는 연산이 함께 있다.</p><div><div><p><code>examples/ch74/edit.c</code></p><pre><code data-lang="c">/* 문자열을 고치는 연산들 — 끼우기, 지우기, 바꾸기, 그리고 되쓰기.
+   전부 "들어가면 하고, 안 들어가면 원본을 그대로 두고 거부한다". */
+#include &lt;proven.h>
+
+static void show(const char *label, const proven_u8str_t *s)
+{
+    proven_u8str_view_t v = proven_u8str_as_view(s);
+    proven_println("{:&lt;16} \"{}\" (len {})",
+                   PROVEN_ARG(label), PROVEN_ARG(v), PROVEN_ARG(v.size));
+}
+
+int main(void)
+{
+    proven_allocator_t alloc = proven_heap_allocator();
+
+    /* ── ① 뷰에서 바로 만들기 ─────────────────────────────────── */
+    proven_result_u8str_t r =
+        proven_u8str_create_from_view(alloc, PROVEN_LIT("hello world"));
+    if (!proven_is_ok(r.err)) return 1;
+    proven_u8str_t s = r.value;
+    show("만든 직후", &amp;s);
+
+    /* ── ② 가운데에 끼우기 ────────────────────────────────────── */
+    proven_err_t e = proven_u8str_insert_grow(alloc, &amp;s, 5, PROVEN_LIT(","));
+    show("insert(5, \",\")", &amp;s);
+
+    /* ── ③ 구간 바꾸기 — 길이가 달라도 된다 ───────────────────── */
+    e = proven_u8str_replace_at_grow(alloc, &amp;s, 7, 5, PROVEN_LIT("proven C"));
+    show("replace_at", &amp;s);
+
+    /* ── ④ 처음 만나는 조각 바꾸기 ────────────────────────────── */
+    e = proven_u8str_replace_first(&amp;s, 0, PROVEN_LIT("hello"), PROVEN_LIT("HELLO"));
+    show("replace_first", &amp;s);
+
+    /* 없는 것을 바꾸라고 하면 아무 일도 하지 않고 성공한다 */
+    e = proven_u8str_replace_first(&amp;s, 0, PROVEN_LIT("zzz"), PROVEN_LIT("!"));
+    proven_println("없는 것 바꾸기     -> err={} (그대로 두고 성공)",
+                   PROVEN_ARG((int)e));
+
+    /* ── ⑤ 구간 지우기 ───────────────────────────────────────── */
+    e = proven_u8str_remove(&amp;s, 0, 6);
+    show("remove(0,6)", &amp;s);
+
+    /* ── ⑥ 되쓰기 — 버퍼는 그대로 두고 내용만 비운다 ──────────── */
+    e = proven_u8str_reset(&amp;s);
+    show("reset 뒤", &amp;s);
+
+    e = proven_u8str_append(&amp;s, PROVEN_LIT("다시 쓴다"));
+    show("다시 채운 뒤", &amp;s);
+    proven_println("(reset 은 재할당 없이 되쓰기 위한 것 — 프레임마다 새로 짓는 코드에)");
+
+    /* ── ⑦ 미리 잡아 두기 ────────────────────────────────────── */
+    e = proven_u8str_reserve(alloc, &amp;s, 256);
+    proven_println("reserve(256)      -> err={} (아레나에서 특히 값을 한다)",
+                   PROVEN_ARG((int)e));
+
+    /* ── ⑧ 조회 연산들 ───────────────────────────────────────── */
+    proven_u8str_view_t v = proven_u8str_as_view(&amp;s);
+    proven_println("starts_with(\"다시\")={} ends_with(\"쓴다\")={} find(\"쓴\")={}",
+                   PROVEN_ARG((bool)proven_u8str_view_starts_with(v, PROVEN_LIT("다시"))),
+                   PROVEN_ARG((bool)proven_u8str_view_ends_with(v, PROVEN_LIT("쓴다"))),
+                   PROVEN_ARG(proven_u8str_view_find(v, 0, PROVEN_LIT("쓴"))));
+
+    proven_size_t nf = proven_u8str_view_find(v, 0, PROVEN_LIT("없음"));
+    proven_println("못 찾으면 {} (PROVEN_INDEX_NOT_FOUND)",
+                   PROVEN_ARG((bool)(nf == PROVEN_INDEX_NOT_FOUND)));
+
+    proven_u8str_destroy(alloc, &amp;s);
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>만든 직후    "hello world" (len 11)
+insert(5, ",")   "hello, world" (len 12)
+replace_at       "hello, proven C" (len 15)
+replace_first    "HELLO, proven C" (len 15)
+없는 것 바꾸기     -> err=0 (그대로 두고 성공)
+remove(0,6)      " proven C" (len 9)
+reset 뒤        "" (len 0)
+다시 채운 뒤 "다시 쓴다" (len 13)
+(reset 은 재할당 없이 되쓰기 위한 것 — 프레임마다 새로 짓는 코드에)
+reserve(256)      -> err=0 (아레나에서 특히 값을 한다)
+starts_with("다시")=true ends_with("쓴다")=true find("쓴")=7
+못 찾으면 true (PROVEN_INDEX_NOT_FOUND)
+</code></pre></div></div><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>계약</strong></th></tr><tr><td><code>_insert(&amp;s, i, v)</code></td><td><code>i</code> 자리에 끼워 넣는다</td><td><code>i</code> ≤ 길이. 뒤를 밀어낸다</td></tr><tr><td><code>_remove(&amp;s, i, n)</code></td><td><code>i</code>부터 <code>n</code>바이트를 지운다</td><td>범위를 넘으면 에러</td></tr><tr><td><code>_replace_at(&amp;s, i, old, v)</code></td><td>구간을 다른 내용으로</td><td>길이가 달라도 된다</td></tr><tr><td><code>_replace_first(&amp;s, off, t, r)</code></td><td>처음 만나는 <code>t</code>를 <code>r</code>로</td><td>★ 없으면 <strong>성공</strong>으로 돌아온다</td></tr><tr><td><code>_reset(&amp;s)</code></td><td>내용만 비운다</td><td>버퍼와 용량은 그대로</td></tr><tr><td><code>_reserve(alloc, &amp;s, n)</code></td><td>용량을 미리 <code>n</code>까지</td><td>아레나에서 특히 값을 한다</td></tr><tr><td><code>_append_byte(alloc, &amp;s, b)</code></td><td>한 바이트 붙이기</td><td>필요하면 늘린다</td></tr></table><p>별표 친 <code>_replace_first</code>의 계약을 조심해야 한다. <strong>찾지 못해도 에러가 아니라 성공</strong>이다 — “바꿀 것이 없었다”와 “바꿨다”를 구별하려면 <code>proven_u8str_view_find</code>로 먼저 확인해야 한다. 예제의 “없는 것 바꾸기”가 <code>err=0</code>으로 돌아오는 것이 그 확인이다.</p><p><code>_reset</code>과 <code>_reserve</code>는 성능을 위한 짝이다. 프레임마다, 요청마다 문자열을 새로 짓는 코드에서 <strong>버퍼를 버리지 않고 되쓰는</strong> 것이 <code>_reset</code>이고, 얼마나 커질지 대충 아는 경우 미리 잡아 두는 것이 <code>_reserve</code>다. 73장에서 본 대로 아레나 위에서는 <code>_reserve</code>가 특히 값을 한다 — 중간에 다른 할당이 끼기 전에 크게 잡아 두면 제자리 성장이 가능해지기 때문이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>_insert</code>와 <code>_insert_grow</code> 중 어느 쪽을 기본으로 삼아야 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답 <strong>용량을 내가 정한 자리에서는 <code>_insert</code></strong>, <strong>내용이 얼마나 될지 모르는 자리에서는 <code>_insert_grow</code></strong>다. 판단의 기준은 간단하다 — “여기서 자리가 모자란 것이 <strong>버그</strong>인가, 아니면 <strong>일어날 수 있는 일</strong>인가.”</p><p>고정 크기 버퍼에 프로토콜 헤더를 조립하는 자리라면 모자란 것이 버그이고, 그때는 거부가 옳다(그리고 그 에러가 버그를 드러낸다). 사용자 입력을 이어 붙이는 자리라면 얼마든지 길어질 수 있으니 성장이 옳다. 임베디드 코드가 <code>_grow</code> 없는 판만 쓰는 이유도 같다 — 그쪽에서는 <strong>예측 불가능한 성장 자체가 금지</strong>이기 때문이다(78장).</p></div></div><h3>74.5 찾기와 자르기 — 복사 없는 텍스트 처리</h3><p>예제의 ③·④가 뷰의 진짜 쓸모다. 부분 문자열을 얻는 데 복사가 필요 없다 — 원본을 가리키는 포인터와 길이를 새로 계산할 뿐이다. CSV 한 줄을 세 필드로 가르는 동안 할당은 한 번도 일어나지 않았다.</p><p>이 무늬는 파서에서 특히 강력하다. 25장에서 <code>sscanf</code>로 줄을 해석할 때는 결과를 담을 버퍼를 미리 준비해야 했지만, 뷰로 자르면 <strong>원본 위에 표시만</strong> 남긴다. 대신 지켜야 할 것이 하나 늘어난다 — 72장에서 본 대로 <strong>원본이 살아 있는 동안만 유효하다</strong>.</p><p><code>find</code>가 못 찾았을 때 돌려주는 값에도 규약이 있다. 0이나 음수가 아니라 <code>PROVEN_INDEX_NOT_FOUND</code>라는 이름의 센티널이다. 69장에서 센티널 값의 위험을 이야기했는데, 여기서는 <strong>이름이 붙어 있고 문서화되어 있다</strong>는 점이 다르다 — 이름 없는 마법의 수와 이름 붙은 계약은 다른 물건이다.</p><div class="dev misconception"><p class="dev-label">⚠ “길이를 들고 다니면 글자 수를 아는 것이다”</p><p>아니다. 길이는 <strong>바이트 수</strong>다. 9장에서 배운 대로 UTF-8에서 한 글자는 1~4바이트이므로, 한글 “가”는 3바이트이고 이모지는 4바이트다. 예제의 출력이 굳이 “(5 bytes)”라고 밝히는 이유다. 그래서 “n번째 글자”를 다루는 일은 여전히 조심스럽고, <strong>바이트 경계에서 아무 데나 자르면</strong> 9장에서 본 깨진 글자가 나온다. 문자열 라이브러리가 해결해 주는 것은 경계 침범이지 인코딩의 본질적 난이도가 아니다.</p></div><h3>74.6 두 세계의 경계 — NUL 종단과 UTF-16</h3><p>바깥 세계와 만나는 자리마다 변환이 필요하다.</p><ul><li><code>proven_u8str_as_cstr</code> — 소유 문자열에서 NUL 종단 포인터를 얻는다. 내부에 NUL을 유지해 두므로 복사도 할당도 없다. <code>printf("%s")</code>나 파일 API에 넘길 때 쓴다.</li><li><code>proven_u8str_view_to_cstr</code> — 뷰에서 NUL 종단 문자열을 만든다. 이쪽은 <strong>할당자를 받는다</strong> — 뷰는 원본 중간을 가리킬 수 있어 그 자리에 NUL을 쓸 수 없기 때문이다. 시그니처가 다시 한번 사실을 말해 준다.</li><li><code>proven_u16str_t</code> / <code>proven_u16str_view_t</code> — UTF-16 세계와의 다리다. Windows API가 이 인코딩을 쓰므로 변환이 필요하고, 변환은 실패할 수 있다(짝이 맞지 않는 서러게이트 같은 것). 그래서 결과는 꾸러미로 온다.</li></ul><div class="dev realcase"><p class="dev-label">◉ “추측하지 말고 거부하라” — 인코딩 처리의 원칙</p><p>9장에서 본 텍스트 보안 문제들의 뿌리는 대개 <strong>너그러운 디코더</strong>다. 잘못된 UTF-8을 만났을 때 “비슷한 것으로 고쳐 읽는” 구현은 과거 여러 번 보안 사고의 통로가 됐다 — 특히 지나치게 긴 인코딩(overlong)을 허용한 디코더들이 검사를 우회당했다. 그래서 오늘의 규범은 한 문장이다. <strong>유효하지 않은 입력은 고쳐 읽지 말고 거부하라.</strong> proven의 인코딩 변환이 <code>PROVEN_ERR_INVALID_ENCODING</code>을 돌려주며 멈추는 것이 그 규범의 구현이고, 이 원칙은 이 장 전체의 “자르지 않는다”와 정확히 같은 정신이다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>문자열 어휘 요약.</p><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>실패·소유</strong></th></tr><tr><td><code>u8str_create(alloc, cap)</code></td><td>소유 문자열 생성</td><td>꾸러미 반환, <code>_destroy</code> 필요</td></tr><tr><td><code>u8str_borrow(buf, cap)</code></td><td>남의 버퍼 위에 문자열</td><td>할당 없음, 파괴 없음</td></tr><tr><td><code>u8str_append(&amp;s, v)</code></td><td>용량 안에서 덧붙임</td><td>모자라면 거부(원본 보존)</td></tr><tr><td><code>u8str_append_partial</code></td><td>들어가는 만큼</td><td>넣은 바이트 수 반환</td></tr><tr><td><code>u8str_append_grow(alloc,…)</code></td><td>모자라면 늘려서</td><td>할당 실패 가능</td></tr><tr><td><code>u8str_view_find</code></td><td>부분 문자열 위치</td><td>없으면 <code>PROVEN_INDEX_NOT_FOUND</code></td></tr><tr><td><code>u8str_view_slice</code></td><td>부분 뷰</td><td>복사 없음 — 원본 수명에 묶임</td></tr><tr><td><code>u8str_as_cstr</code></td><td>NUL 종단 포인터</td><td>복사 없음</td></tr><tr><td><code>u8str_view_to_cstr</code></td><td>뷰 → C 문자열</td><td>할당자 필요</td></tr></table></div><p>문자열을 안전하게 담고 자를 수 있게 됐다. 그런데 아직 <strong>만드는</strong> 일이 남았다 — 수와 값을 글자로 바꾸고, 글자를 다시 수로 되돌리는 일. 69장의 셋째 버그가 기다리는 자리이자, 이 라이브러리에서 가장 눈에 띄게 다른 문법이 나오는 자리다.</p>
 <div class="nav"><a href="ch73.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch75.html">다음 →</a></div>
 </div></main></body></html>

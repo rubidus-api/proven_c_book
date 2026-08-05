@@ -69,65 +69,108 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../ko/">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>73 Allocation is a parameter</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The answer to chapter 69′s fourth bug — unclear ownership. The <strong>allocator</strong> that handles the source of memory as a value, the <strong>arena</strong> that returns <span id="idx-entry-104"></span>things of the same lifetime all at once, and the rule that divides owning from borrowing by type. The dangers of the heap learned in chapter 40 are organised here into design.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 40 said memory obtained with <code>malloc</code> must be <code>free</code>d by somebody exactly once, and that settling that “somebody” is the program’s design. Then is there a way to know from a function alone whether “this function allocates memory”?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>In standard C there is not. <code>malloc</code> can be called anywhere, so any function can allocate in secret, and the signature does not say so. proven’s answer is to return that information to the signature with one rule — <strong>a function that does not take an allocator as an argument does not allocate.</strong> If this rule is kept, reading the signature alone tells you “this function may take memory”.</p></div></div><h3>73.1 An allocator is a value</h3><p><code>proven_allocator_t</code> is one struct — a context pointer and three function pointers (allocate, reallocate, free). There is no special global and no registration procedure. Being simply a value, it can be passed as an argument, held in a struct, and returned from a function.</p><p>So every function that allocates has this shape.</p><pre><code data-lang="c">proven_result_u8str_t proven_u8str_create(proven_allocator_t alloc,
+<h2>73 Allocation is a parameter</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The answer to chapter 69′s fourth bug — unclear ownership. The <strong>allocator</strong> that handles the source of memory as a value, the <strong>arena</strong> that returns <span id="idx-entry-104"></span>things of the same lifetime all at once, and the rule that divides owning from borrowing by type. The dangers of the heap learned in chapter 40 are organised here into design.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 40 said memory obtained with <code>malloc</code> must be <code>free</code>d by somebody exactly once, and that settling that “somebody” is the program’s design. Then is there a way to know from a function alone whether “this function allocates memory”?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>In standard C there is not. <code>malloc</code> can be called anywhere, so any function can allocate in secret, and the signature does not say so. proven’s answer is to return that information to the signature with one rule — <strong>a function that does not take an allocator as an argument does not allocate.</strong> If this rule is kept, reading the signature alone tells you “this function may take memory”.</p></div></div><h3>73.1 An allocator is a value</h3><p><code>proven_allocator_t</code> is one struct — a context pointer and three function pointers (allocate, reallocate, free). There is no special global and no registration procedure. Being simply a value, it can be passed as an argument, held in a struct, and returned from a function. The <strong>virtual function table</strong> seen in chapter 51 is here as it stands.</p><pre><code data-lang="c">typedef struct {
+    void *ctx;                        /* this allocator's state (for an arena, the arena) */
+    proven_alloc_fn_t   alloc_fn;
+    proven_realloc_fn_t realloc_fn;
+    proven_free_fn_t    free_fn;
+} proven_allocator_t;</code></pre><p>The three functions’ signatures write the contract down as they stand.</p><pre><code data-lang="c">proven_result_mem_mut_t (*alloc_fn)(void *ctx, proven_size_t size,
+                                    proven_size_t align);
+proven_result_mem_mut_t (*realloc_fn)(void *ctx, void *old_ptr,
+                                      proven_size_t old_size,
+                                      proven_size_t new_size,
+                                      proven_size_t align);
+void                    (*free_fn)(void *ctx, void *ptr);</code></pre><p><strong>Why pass <code>old_size</code> and <code>align</code> too.</strong> The standard <code>realloc</code> does not ask the old size — because the allocator wrote it into the block’s header (chapter 68). But an arena has no header. Not making a place to write the size is why an arena is fast, so the choice was for <strong>the caller to tell it</strong> instead. This decision is what lets a “headerless allocator” fit the same interface.</p><p>Four things from the contract must be remembered.</p><ol><li><strong><code>align</code> must be a power of two.</strong> And <strong>a block must be reallocated and freed with the same alignment it was allocated with.</strong> Because the heap allocator handles requests at or below the default alignment differently from stricter ones (chapter 72) — handing a block back in a different alignment class is outside the contract.</li><li><strong><code>size == 0</code> is <code>INVALID_ARG</code>.</strong> A zero-byte allocation is treated as a caller’s bug. Before this rule the heap said <code>NOMEM</code> (a lie — nothing was out of memory) and the arena returned a valid pointer, so <strong>the answer differed per allocator</strong>. Generic code cannot be written on a rule like that.</li><li><strong>A reallocation with <code>new_size == 0</code> is a free</strong> — it gives a null pointer and <code>PROVEN_OK</code>.</li><li><strong>Reallocation is failure-atomic.</strong> On failure <code>old_ptr</code> is still valid and its contents untouched — chapter 58′s <code>realloc</code> leak counterexample blocked at the level of the interface.</li></ol><p>And every function that allocates has this shape.</p><pre><code data-lang="c">proven_result_u8str_t proven_u8str_create(proven_allocator_t alloc,
                                           proven_size_t limit);
 void                  proven_u8str_destroy(proven_allocator_t alloc,
-                                           proven_u8str_t *str);</code></pre><p><strong>Destroy with the allocator given at creation</strong> — that is the whole of the ownership rule.</p><div><div><p><code>examples/ch73/swap.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
-#include &lt;stdio.h>
+                                           proven_u8str_t *str);</code></pre><p><strong>Destroy with the allocator given at creation</strong> — that is the whole of the ownership rule.</p><h3>73.2 Swapping the three sources</h3><div><div><p><code>examples/ch73/three.c</code></p><pre><code data-lang="c">/* 같은 코드, 세 가지 기억의 출처 — 힙, 아레나, 풀.
+   할당자가 그냥 값이라는 사실이 무엇을 가능하게 하는지 본다. */
+#include &lt;proven.h>
 
-/* 이 함수는 어디서 기억을 얻는지 모른다 — 받은 할당자에게 물을 뿐이다.
-   시그니처에 allocator 가 있다는 사실 자체가 "할당한다"는 선언이다. */
-static proven_err_t build(proven_allocator_t alloc, const char *who)
+/* 이 함수는 자기가 쓰는 기억이 어디서 오는지 모른다.
+   할당자를 인자로 받았다는 사실만으로 "할당할 수 있다"가 시그니처에 드러난다. */
+static proven_err_t make_list(proven_allocator_t alloc, int n, proven_u8str_t *out)
 {
-    proven_result_u8str_t made = proven_u8str_create(alloc, 64);
+    proven_result_u8str_t made = proven_u8str_create(alloc, 128);
     if (!proven_is_ok(made.err)) return made.err;
 
     proven_u8str_t s = made.value;
-    proven_err_t e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hi, "));
-    if (proven_is_ok(e))
-        e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr(who));
-    if (!proven_is_ok(e)) { proven_u8str_destroy(alloc, &amp;s); return e; }
-
-    proven_u8str_view_t v = proven_u8str_as_view(&amp;s);
-    printf("  -> \"%.*s\"\n", (int)v.size, (const char *)v.ptr);
-
-    proven_u8str_destroy(alloc, &amp;s);   /* 준 곳으로 돌려준다 */
+    for (int i = 1; i &lt;= n; i++) {
+        proven_fmt_result_t r =
+            proven_u8str_append_fmt(&amp;s, i == 1 ? "{}" : ", {}", PROVEN_ARG(i));
+        if (!proven_is_ok(r.err)) {
+            proven_u8str_destroy(alloc, &amp;s);
+            return r.err;
+        }
+    }
+    *out = s;
     return PROVEN_OK;
+}
+
+static void run(const char *where, proven_allocator_t alloc)
+{
+    proven_u8str_t s;
+    proven_err_t e = make_list(alloc, 6, &amp;s);
+    if (!proven_is_ok(e)) {
+        proven_println("{:&lt;8} 실패(코드 {})", PROVEN_ARG(where), PROVEN_ARG((int)e));
+        return;
+    }
+    proven_println("{:&lt;8} {}", PROVEN_ARG(where), PROVEN_ARG(proven_u8str_as_view(&amp;s)));
+    proven_u8str_destroy(alloc, &amp;s);      /* 만들 때 준 그 할당자로 */
 }
 
 int main(void)
 {
-    /* ① 힙 — malloc/free 를 감싼 것 */
-    printf("heap  :\n");
-    (void)build(proven_heap_allocator(), "heap");
+    /* ── ① 힙 — 표준 malloc 을 인터페이스로 감싼 것 ─────────────── */
+    run("heap", proven_heap_allocator());
 
-    /* ② 아레나 — 정적 버퍼 위에서 잘라 쓴다. 힙이 아예 없어도 된다 */
+    /* ── ② 아레나 — 정적 배열 위에서. malloc 은 한 번도 불리지 않는다 ── */
     static proven_byte_t backing[512];
     proven_arena_t arena = proven_arena_create(
         (proven_mem_mut_t){ .ptr = backing, .size = sizeof backing });
+    run("arena", proven_arena_as_allocator(&amp;arena));
 
-    printf("arena :\n");
-    (void)build(proven_arena_as_allocator(&amp;arena), "arena");
-    printf("  used %zu of %zu bytes\n", arena.offset, sizeof backing);
+    proven_println("  아레나 사용량: {} / {} 바이트",
+                   PROVEN_ARG(arena.offset), PROVEN_ARG(arena.backing.size));
 
-    /* 아레나는 개별 해제가 없다 — 한 번에 되돌린다 */
+    /* 아레나의 해제는 개별이 아니라 통째로다 */
     proven_arena_reset(&amp;arena);
-    printf("  after reset: %zu bytes used\n", arena.offset);
+    proven_println("  리셋 뒤 사용량: {} (개별 해제는 아무 일도 하지 않았다)",
+                   PROVEN_ARG(arena.offset));
 
-    /* ③ 같은 아레나를 다시 쓴다 — 같은 코드, 다른 기억의 출처 */
-    printf("arena :\n");
-    (void)build(proven_arena_as_allocator(&amp;arena), "arena again");
+    /* ── ③ 풀 — 같은 크기 조각을 돌려 쓴다 ─────────────────────── */
+    proven_pool_t pool;
+    proven_err_t pe = proven_pool_init(&amp;pool, proven_heap_allocator(),
+                                       /* item_size  */ 129,
+                                       /* item_align */ PROVEN_MAX_ALIGN,
+                                       /* bin_cap    */ 8);
+    if (proven_is_ok(pe)) {
+        proven_allocator_t pa = proven_pool_as_allocator(&amp;pool);
+        run("pool", pa);
+        run("pool", pa);          /* 두 번째는 앞서 반납된 조각을 재사용한다 */
+        proven_pool_destroy(&amp;pool);
+    }
+
+    /* ── ④ 아레나가 바닥나면 — 실패가 값으로 온다 ───────────────── */
+    proven_arena_t tiny = proven_arena_create(
+        (proven_mem_mut_t){ .ptr = backing, .size = 64 });
+    proven_u8str_t s;
+    proven_err_t e = make_list(proven_arena_as_allocator(&amp;tiny), 6, &amp;s);
+    proven_println("64바이트 아레나 -> 코드 {} (붕괴가 아니라 거부)",
+                   PROVEN_ARG((int)e));
     return 0;
 }
-</code></pre></div><div><p>Output</p><pre><code>heap  :
-  -> "hi, heap"
-arena :
-  -> "hi, arena"
-  used 65 of 512 bytes
-  after reset: 0 bytes used
-arena :
-  -> "hi, arena again"
-</code></pre></div></div><p>Look at the <code>build</code> function. This function <strong>does not know</strong> whether the memory it uses comes from <code>malloc</code> or from a static array. The caller settles it. The same code ran once on the heap and twice on an arena, and the results are the same.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Why is this such an important property? Most of the time the heap will be used anyway.</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because three things follow at once. First, <strong>the same code runs in an environment with no heap</strong> — such is embedded work (chapter 78), and such is inside a kernel. Second, <strong>testing becomes easy</strong> — insert an allocator that fails on purpose and you can test “does this code recover properly when memory runs short”. Third, <strong>the caller can choose the performance</strong> — for data that lives briefly and dies all at once, an arena is far faster than the heap. The moment the library calls <code>malloc</code> directly, all three of these vanish.</p></div></div><h3>73.2 The arena — things of the same lifetime, all at once</h3><p>Chapter 40 taught the heap’s three dangers (leak, double free, use after free). All three come from <strong>individual release</strong>. Then what if individual release were removed — that is the arena’s idea.</p><p>An arena takes one large lump of memory and, whenever a request comes, cuts from the front. There is a release function but it does nothing. Instead there is <strong>reset</strong> — it returns everything at once.</p><div><div><p><code>examples/ch73/arena.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+</code></pre></div><div><p>Output</p><pre><code>heap     1, 2, 3, 4, 5, 6
+arena    1, 2, 3, 4, 5, 6
+  아레나 사용량: 129 / 512 바이트
+  리셋 뒤 사용량: 0 (개별 해제는 아무 일도 하지 않았다)
+pool     1, 2, 3, 4, 5, 6
+pool     1, 2, 3, 4, 5, 6
+64바이트 아레나 -> 코드 1 (붕괴가 아니라 거부)
+</code></pre></div></div><p>Look at the <code>make_list</code> function. This function <strong>does not know</strong> whether the memory it uses comes from <code>malloc</code>, from a static array, or from a recycling bin. The caller settles it, and the same code runs identically over all three.</p><p>Three things can be read in the output.</p><p><strong>① An arena’s usage is visible.</strong> That <code>arena.offset</code> is 129 means exactly 129 bytes (128 of content + 1 NUL) went out for one string. A number that cannot be known on the heap can be counted in an arena — in embedded work this transparency pays when setting a memory budget.</p><p><strong>② Reset makes individual release meaningless.</strong> The usage did not fall although <code>destroy</code> was called (an arena’s <code>free</code> does nothing), and one <code>reset</code> took it to 0. “Instead of giving back individually, give the whole back” is this picture.</p><p><strong>③ When it runs dry it refuses as a value.</strong> Requesting 128 bytes from a 64-byte arena gave back <code>NOMEM</code> (1). It neither collapses nor quietly falls back to the heap.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Besides <code>heap</code>, <code>arena</code> and <code>pool</code>, can I make an allocator myself?</p></div><div class="dev qa-a"><p class="dev-label">A Of course. Chapter 71′s example already did — a testing allocator that “fails from the nth call” made of three functions and inserted. The only rule is keeping the contract above.</p><p>The cases for making one in practice are mostly these. <strong>Instrumentation</strong> — a shell counting allocations and peak usage. <strong>Testing</strong> — failing on purpose, painting freed memory with 0xDD. <strong>Debugging</strong> — recording the place (file and line) of an allocation. <strong>Special resources</strong> — obtaining from shared memory or a DMA-capable region, places <code>malloc</code> cannot give.</p><p>All four take the shape of <strong>wrapping an existing allocator</strong>. They hold a backing allocator inside, do their own work and pass it on. Chapter 71′s example is the model.</p></div></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Why is this such an important property? Most of the time the heap will be used anyway.</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because three things follow at once. First, <strong>the same code runs in an environment with no heap</strong> — such is embedded work (chapter 78), and such is inside a kernel. Second, <strong>testing becomes easy</strong> — insert an allocator that fails on purpose and you can test “does this code recover properly when memory runs short”. Third, <strong>the caller can choose the performance</strong> — for data that lives briefly and dies all at once, an arena is far faster than the heap. The moment the library calls <code>malloc</code> directly, all three of these vanish.</p></div></div><h3>73.3 The arena — things of the same lifetime, all at once</h3><p>Chapter 40 taught the heap’s three dangers (leak, double free, use after free). All three come from <strong>individual release</strong>. Then what if individual release were removed — that is the arena’s idea.</p><p>An arena takes one large lump of memory and, whenever a request comes, cuts from the front. There is a release function but it does nothing. Instead there is <strong>reset</strong> — it returns everything at once.</p><p>That the struct has only two slots shows this simplicity as it stands.</p><pre><code data-lang="c">typedef struct {
+    proven_mem_mut_t backing;   /* the memory that backs it (borrowed) */
+    proven_size_t    offset;    /* how far it has been handed out */
+} proven_arena_t;</code></pre><p><strong>An arena does not own its memory.</strong> That <code>backing</code> is a writing window (<code>mem_mut_t</code>) is that declaration — a static array, a stack array, or a lump received once from the heap is prepared by the caller, and the arena only cuts on top of it. So <code>proven_arena_destroy</code> <strong>does nothing</strong> (there is nothing borrowed to give back). If the lump came from the heap, returning it is still the caller’s part.</p><p>The life cycle is four steps.</p><table><tr><th><strong>step</strong></th><th><strong>function</strong></th><th><strong>what happens</strong></th></tr><tr><td>making</td><td><code>proven_arena_create(backing)</code></td><td><code>offset = 0</code>. no allocation</td></tr><tr><td>handing out</td><td><code>proven_arena_alloc(&amp;a, n)</code></td><td>aligns and pushes <code>offset</code></td></tr><tr><td>taking back</td><td><code>proven_arena_reset(&amp;a)</code></td><td><code>offset = 0</code> — everything becomes invalid</td></tr><tr><td>ending</td><td><code>proven_arena_destroy(&amp;a)</code></td><td>the formal partner. it does nothing</td></tr></table><p>The allocation function has four editions. Choose the one that fits.</p><table><tr><th><strong>function</strong></th><th><strong>when to use it</strong></th></tr><tr><td><code>proven_arena_alloc(&amp;a, size)</code></td><td>the default. cuts at the default alignment</td></tr><tr><td><code>proven_arena_alloc_aligned(&amp;a, size, align)</code></td><td>data where alignment matters (SIMD, DMA)</td></tr><tr><td><code>proven_arena_alloc_or_panic(&amp;a, size)</code></td><td>places where failure should stop the program</td></tr><tr><td><code>proven_arena_realloc_aligned(...)</code></td><td>grows in place if it is the last block</td></tr></table><p>The <code>_or_panic</code> family exists for the reason given in chapter 71 — where the memory budget has been calculated in advance (embedded work is representative), “the arena is short” is not a failure to recover from but <strong>a design error</strong>, so demanding a check every time is rather noise.</p><p>The <code>realloc</code> has one interesting property. An arena having no header, ordinary reallocation is “cut anew and copy”, but <strong>if the block being grown happens to be the last one handed out</strong> it can grow in place simply by pushing <code>offset</code>. It is why code that appends to a string a little at a time is fast on an arena, and why calling chapter 74′s <code>proven_u8str_reserve</code> in advance pays especially on an arena (an intervening allocation breaks the property).</p><div><div><p><code>examples/ch73/arena.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
 int main(void)
@@ -160,6 +203,11 @@ one reset reclaimed everything
 oversized request: refused
 </code></pre></div></div><p>There really are many places this model fits. The temporary data made while handling one request, a game’s calculation results used for one frame, the syntax tree made while parsing one file — all data <strong>born at different moments but dying at the same one</strong>. For such data, individual release is only cost and risk.</p><div class="dev recap"><p class="dev-label">☰ Recap</p><p>A comparison of the three sources of memory.</p><table><tr><th></th><th><strong>heap</strong></th><th><strong>arena</strong></th><th><strong>pool</strong></th></tr><tr><td>how it gives</td><td>arbitrary sizes</td><td>cuts from the front</td><td>fixed-size slots</td></tr><tr><td>individual release</td><td>yes</td><td>no (reset)</td><td>yes (return the slot)</td></tr><tr><td>fragmentation</td><td>can arise</td><td>none</td><td>none</td></tr><tr><td>speed</td><td>ordinary</td><td>very fast</td><td>very fast</td></tr><tr><td>where it fits</td><td>assorted lifetimes</td><td>a group of the same lifetime</td><td>the same size repeatedly</td></tr></table></div><span id="idx-entry-105"></span><p>The pool (<code>proven_pool_t</code>) is the third branch. It is used where objects of the same size are repeatedly made and unmade — a game’s bullets, a server’s connection objects, a parser’s nodes. The slot size being fixed there is no fragmentation, and a returned slot is reused at once. A pool too becomes an allocator through <code>proven_pool_as_allocator</code>, so the previous example’s <code>build</code> function runs on it as it is.</p><div class="dev antipattern"><p class="dev-label">✗ Destroying with a different allocator</p><pre><code data-lang="c">proven_result_u8str_t r = proven_u8str_create(proven_heap_allocator(), 64);
 ...
-proven_u8str_destroy(proven_arena_as_allocator(&amp;arena), &amp;r.value);  /* wrong */</code></pre><p>It amounts to giving back to an arena what was obtained from <code>malloc</code>. This rule cannot be enforced by the library — an allocator is simply a value, and which value is passed is settled by the caller. So the practice in the field is <strong>to carry the allocator along with the data structure</strong>, or to narrow the scope so that only one is used within a module.</p></div><div class="dev misconception"><p class="dev-label">⚠ “Use an arena and you need not care about releasing”</p><p>Individual release disappears but <strong>the lifetime remains as it was.</strong> The moment the arena is reset, every piece cut on it becomes invalid at once, so data that must still be alive after the reset must not be put in the arena. Chapter 72′s “a view cannot outlive its owner” has grown here to arena scale. What an arena removes is the <strong>number of times</strong> one releases, not the <strong>thinking</strong> about lifetime.</p></div><h3>73.3 Owning and borrowing, and state that points at itself</h3><p>Now we return to chapter 69′s fourth bug. The problem of <code>char *</code> meaning four things <span id="idx-entry-106"></span>is solved by dividing the type in two.</p><ul><li><strong>Owned</strong> — things such as <code>proven_u8str_t</code> and <code>proven_array_t</code>. Obtained with <code>_create</code> and let go with <code>_destroy</code>.</li><li><strong>Borrowed</strong> — <code>proven_u8str_view_t</code>, <code>proven_mem_view_t</code>. Never destroyed. When the owner vanishes they become invalid with it.</li></ul><p>That “must I release this?” can be answered from the signature alone is the whole of this distinction and its purpose.</p><p>There is one more rule attached. <strong>State that points at itself is not copied.</strong> Chapter 41 taught that struct assignment is a shallow copy. Copy an object that holds inside a pointer to its own buffer that way, and the copy’s pointer still points at the original, so two objects share the same memory and destroying both is a double free. So such objects are not copied by value but passed by pointer.</p><div class="dev realcase"><p class="dev-label">◉ The spread of the allocator-as-argument design</p><p>This way is not proven’s invention but is close to the recent consensus of systems programming. In Zig, almost every allocating API of the standard library takes an allocator as an argument and “no hidden allocation” is the language’s motto. In Rust too, attaching an allocator to a container is on its way into the standard, and C++‘s <code>std::pmr</code> arose from the same problem-consciousness. The reason is the same in every case — in games, embedded work, kernels and high-performance servers, <strong>choosing the source of memory</strong> is the heart of both performance and safety.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then what is the price?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>One more parameter attaches to the signature. And a new design problem arises of <strong>how far the allocator is to be carried</strong> — whether to pass it to every function or to hold it in a struct. In a small program this can look like nothing but tiresome formality. Its value shows itself after the program grows, or when the code must be moved to a place where the heap cannot be used.</p></div></div><p>We have set up the rules for obtaining and letting go of memory. From the next chapter come the real components that rise on top of it — first, the strings this book warned about all through chapter 37.</p>
+proven_u8str_destroy(proven_arena_as_allocator(&amp;arena), &amp;r.value);  /* wrong */</code></pre><p>It amounts to giving back to an arena what was obtained from <code>malloc</code>. This rule cannot be enforced by the library — an allocator is simply a value, and which value is passed is settled by the caller. So the practice in the field is <strong>to carry the allocator along with the data structure</strong>, or to narrow the scope so that only one is used within a module.</p></div><div class="dev misconception"><p class="dev-label">⚠ “Use an arena and you need not care about releasing”</p><p>Individual release disappears but <strong>the lifetime remains as it was.</strong> The moment the arena is reset, every piece cut on it becomes invalid at once, so data that must still be alive after the reset must not be put in the arena. Chapter 72′s “a view cannot outlive its owner” has grown here to arena scale. What an arena removes is the <strong>number of times</strong> one releases, not the <strong>thinking</strong> about lifetime.</p><pre><code data-lang="c">proven_u8str_t name;
+for (int i = 0; i &lt; n; i++) {
+    proven_arena_reset(&amp;per_request);        /* taken back per request */
+    handle(proven_arena_as_allocator(&amp;per_request), &amp;name);
+}
+use(&amp;name);        /* ← dangerous. what name pointed at has already gone back */</code></pre><p>The discipline in the field is one — <strong>call the arena’s lifetime and the lifetime of the data on it by the same name.</strong> “the request arena”, “the frame arena”, “the file arena”. Then which data must survive the reset shows itself in the name alone, and data that must cross over is copied to <strong>a longer-lived allocator</strong>.</p></div><h3>73.4 Which to choose</h3><table><tr><th><strong>situation</strong></th><th><strong>what to choose</strong></th><th><strong>why</strong></th><th><strong>caution</strong></th></tr><tr><td>data of assorted lifetimes</td><td>the heap</td><td>general-purpose. individual release possible</td><td>cost and fragmentation (chapter 68)</td></tr><tr><td>data born and dying with a unit of work</td><td>an arena</td><td>allocation is one addition, release one reset</td><td>everything invalid after a reset</td></tr><tr><td>the same struct by the thousand</td><td>a pool</td><td>no fragmentation, immediate reuse</td><td>one size only</td></tr><tr><td>an environment with no heap at all</td><td>a static array + an arena</td><td><code>malloc</code> is never called once</td><td>the budget must be calculated in advance</td></tr><tr><td>testing the out-of-memory path</td><td>a failing shell (chapter 71)</td><td>it runs the path that never otherwise runs</td><td>for testing only</td></tr></table><p>In practice these four are <strong>layered</strong>. The program as a whole uses the heap, while handling one request uses a request arena, and a data structure making thousands of nodes inside it lays a pool on top. That all three share the same interface, so that layering needs no special device, is the value of this design.</p><h3>73.5 Owning and borrowing, and state that points at itself</h3><p>Now we return to chapter 69′s fourth bug. The problem of <code>char *</code> meaning four things <span id="idx-entry-106"></span>is solved by dividing the type in two.</p><ul><li><strong>Owned</strong> — things such as <code>proven_u8str_t</code> and <code>proven_array_t</code>. Obtained with <code>_create</code> and let go with <code>_destroy</code>.</li><li><strong>Borrowed</strong> — <code>proven_u8str_view_t</code>, <code>proven_mem_view_t</code>. Never destroyed. When the owner vanishes they become invalid with it.</li></ul><p>That “must I release this?” can be answered from the signature alone is the whole of this distinction and its purpose.</p><p>There is one more rule attached. <strong>State that points at itself is not copied.</strong> Chapter 41 taught that struct assignment is a shallow copy. Copy an object that holds inside a pointer to its own buffer that way, and the copy’s pointer still points at the original, so two objects share the same memory and destroying both is a double free. So such objects are not copied by value but passed by pointer.</p><div class="dev realcase"><p class="dev-label">◉ The spread of the allocator-as-argument design</p><p>This way is not proven’s invention but is close to the recent consensus of systems programming. In Zig, almost every allocating API of the standard library takes an allocator as an argument and “no hidden allocation” is the language’s motto. In Rust too, attaching an allocator to a container is on its way into the standard, and C++‘s <code>std::pmr</code> arose from the same problem-consciousness. The reason is the same in every case — in games, embedded work, kernels and high-performance servers, <strong>choosing the source of memory</strong> is the heart of both performance and safety.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then what is the price?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>One more parameter attaches to the signature. And a new design problem arises of <strong>how far the allocator is to be carried</strong> — whether to pass it to every function or to hold it in a struct. In a small program this can look like nothing but tiresome formality. Its value shows itself after the program grows, or when the code must be moved to a place where the heap cannot be used.</p></div></div><p>We have set up the rules for obtaining and letting go of memory. From the next chapter come the real components that rise on top of it — first, the strings this book warned about all through chapter 37.</p>
 <div class="nav"><a href="ch72.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch74.html">Next →</a></div>
 </div></main></body></html>

@@ -69,7 +69,122 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>76 컨테이너와 알고리즘</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-109"></span><p>여럿을 담는 도구들이다 — 자라는 배열, 침습적 리스트, 링 버퍼, 해시 맵. 그리고 69장의 다섯째 버그(검사되지 않는 콜백)와 그 자리에 딸린 성능 함정에 대한 답으로, <strong>최악에도 보장이 있는</strong> 정렬과 <strong>공격을 견디는</strong> 해시를 본다. 35장의 배열과 41장의 구조체가 여기서 실전 부품이 된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>35장에서 C의 배열은 크기가 컴파일 시간에 정해지고, 40장에서 <code>realloc</code> 으로 늘릴 수 있다고 배웠다. 그러면 “자라는 배열”을 직접 만들 때 가장 틀리기 쉬운 자리는 어디인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>세 곳이다. 첫째, <strong>늘릴 크기 계산</strong> — 72장에서 본 곱셈 감김이 여기서 일어난다. 둘째, <strong>실패했을 때의 상태</strong> — <code>realloc</code>이 실패하면 원본 포인터는 그대로 유효한데, 반환값을 곧바로 원본 변수에 대입하는 흔한 코드는 그 원본을 잃어버린다(누수다). 셋째, <strong>늘어난 뒤의 포인터</strong> — 원소를 가리키던 포인터는 재할당 후 무효가 된다. 컨테이너를 직접 만들 때마다 이 셋을 다시 맞히는 것보다, 한 번 제대로 만든 것을 쓰는 편이 낫다.</p></div></div><h3>76.1 자라는 배열</h3><p><code>proven_array_t</code>는 원소 크기와 정렬을 알고 있는 바이트 버퍼다. C에는 제네릭이 없으므로 타입은 매크로가 채워 준다.</p><div><div><p><code>examples/ch76/arr.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>76 컨테이너와 알고리즘</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-109"></span><p>여럿을 담는 도구들이다 — 자라는 배열, 침습적 리스트, 링 버퍼, 해시 맵. 그리고 69장의 다섯째 버그(검사되지 않는 콜백)와 그 자리에 딸린 성능 함정에 대한 답으로, <strong>최악에도 보장이 있는</strong> 정렬과 <strong>공격을 견디는</strong> 해시를 본다. 35장의 배열과 41장의 구조체가 여기서 실전 부품이 된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>35장에서 C의 배열은 크기가 컴파일 시간에 정해지고, 40장에서 <code>realloc</code> 으로 늘릴 수 있다고 배웠다. 그러면 “자라는 배열”을 직접 만들 때 가장 틀리기 쉬운 자리는 어디인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>세 곳이다. 첫째, <strong>늘릴 크기 계산</strong> — 72장에서 본 곱셈 감김이 여기서 일어난다. 둘째, <strong>실패했을 때의 상태</strong> — <code>realloc</code>이 실패하면 원본 포인터는 그대로 유효한데, 반환값을 곧바로 원본 변수에 대입하는 흔한 코드는 그 원본을 잃어버린다(누수다). 셋째, <strong>늘어난 뒤의 포인터</strong> — 원소를 가리키던 포인터는 재할당 후 무효가 된다. 컨테이너를 직접 만들 때마다 이 셋을 다시 맞히는 것보다, 한 번 제대로 만든 것을 쓰는 편이 낫다.</p></div></div><h3>76.1 네 컨테이너의 한살이</h3><p>먼저 넷을 한 화면에서 본다. 만들고, 넣고, 훑고, 되돌리는 과정이 서로 어떻게 다른지가 이 예제에 다 들어 있다.</p><div><div><p><code>examples/ch76/tour.c</code></p><pre><code data-lang="c">/* 네 컨테이너의 한살이 — 만들고, 넣고, 훑고, 되돌린다.
+   array · list · ring · map 을 한 화면에서 비교한다. */
+#include &lt;proven.h>
+
+/* 침습적 리스트: 노드가 자료 안에 산다 */
+typedef struct {
+    int                id;
+    proven_list_node_t link;      /* ← 이 한 칸이 리스트에 매달릴 고리다 */
+} task_t;
+
+int main(void)
+{
+    proven_allocator_t alloc = proven_heap_allocator();
+
+    /* ── ① 자라는 배열 ───────────────────────────────────────── */
+    proven_result_array_t ar = PROVEN_ARRAY_INIT(alloc, int, 2);
+    if (!proven_is_ok(ar.err)) return 1;
+    proven_array_t arr = ar.value;
+
+    for (int i = 1; i &lt;= 5; i++)
+        (void)PROVEN_ARRAY_PUSH(&amp;arr, int, i * i);
+
+    proven_println("array  len={} cap={} elem_size={}",
+                   PROVEN_ARG(arr.len), PROVEN_ARG(arr.cap), PROVEN_ARG(arr.elem_size));
+
+    /* 훑기는 인덱스로 — 포인터를 들고 다니지 않는다 */
+    proven_print("       내용:");
+    for (proven_size_t i = 0; i &lt; arr.len; i++)
+        proven_print(" {}", PROVEN_ARG(*PROVEN_ARRAY_GET(&amp;arr, int, i)));
+    proven_println("");
+
+    int last = 0;
+    (void)PROVEN_ARRAY_POP(&amp;arr, int, &amp;last);
+    proven_println("       pop -> {} (len {})", PROVEN_ARG(last), PROVEN_ARG(arr.len));
+    PROVEN_ARRAY_DESTROY(&amp;arr);
+
+    /* ── ② 침습적 리스트 — 할당이 한 번도 없다 ───────────────── */
+    task_t     items[3] = { { .id = 10 }, { .id = 20 }, { .id = 30 } };
+    proven_list_t list;
+    proven_list_init(&amp;list);
+    for (int i = 0; i &lt; 3; i++)
+        proven_list_push_back(&amp;list, &amp;items[i].link);
+
+    proven_list_node_t *node, *tmp;
+    proven_print("list   앞에서부터:");
+    PROVEN_LIST_FOR_EACH(node, &amp;list) {
+        task_t *t = PROVEN_LIST_ENTRY(node, task_t, link);
+        proven_print(" {}", PROVEN_ARG(t->id));
+    }
+    proven_println("  (노드가 자료 안에 있으므로 할당이 필요 없다)");
+
+    /* 훑으면서 떼어내려면 SAFE 판을 쓴다 */
+    PROVEN_LIST_FOR_EACH_SAFE(node, tmp, &amp;list) {
+        task_t *t = PROVEN_LIST_ENTRY(node, task_t, link);
+        if (t->id == 20) proven_list_remove(node);
+    }
+    proven_print("       20 을 뗀 뒤:");
+    PROVEN_LIST_FOR_EACH(node, &amp;list) {
+        proven_print(" {}", PROVEN_ARG(PROVEN_LIST_ENTRY(node, task_t, link)->id));
+    }
+    proven_println("");
+
+    /* ── ③ 링 버퍼 — 고정 크기, 지나간 것은 버린다 ───────────── */
+    proven_result_ring_t rr = PROVEN_RING_INIT(alloc, int, 4);
+    if (proven_is_ok(rr.err)) {
+        proven_ring_t ring = rr.value;
+        for (int i = 1; i &lt;= 4; i++) (void)proven_ring_push(&amp;ring, &amp;i);
+
+        int five = 5;
+        proven_err_t full = proven_ring_push(&amp;ring, &amp;five);
+        proven_println("ring   가득 찬 뒤 push -> err={} (덮지 않고 알린다)",
+                       PROVEN_ARG((int)full));
+
+        int v = 0;
+        (void)proven_ring_pop(&amp;ring, &amp;v);
+        proven_println("       pop -> {} (가장 먼저 넣은 것)", PROVEN_ARG(v));
+        proven_ring_destroy(&amp;ring);
+    }
+
+    /* ── ④ 해시 맵 — 키를 소유할지 빌릴지 고른다 ─────────────── */
+    /* 키를 맵이 복사해 소유한다(U8_OWNED) — 빌리는 판도 있다 */
+    proven_result_map_t mr = PROVEN_MAP_INIT_U8_OWNED(alloc, int, 8);
+    if (proven_is_ok(mr.err)) {
+        proven_map_t map = mr.value;
+        int a = 1, b = 2;
+        (void)proven_map_set_u8_owned(&amp;map, PROVEN_LIT("alpha"), &amp;a);
+        (void)proven_map_set_u8_owned(&amp;map, PROVEN_LIT("beta"), &amp;b);
+
+        const int *found = proven_map_get(&amp;map,
+                        (proven_map_key_t){ .str = PROVEN_LIT("beta") });
+        proven_println("map    get(\"beta\") -> {}",
+                       PROVEN_ARG(found ? *found : -1));
+        proven_println("       get(\"없음\") -> {} (없으면 널)",
+                       PROVEN_ARG((bool)(proven_map_get(&amp;map,
+                            (proven_map_key_t){ .str = PROVEN_LIT("없음") }) == nullptr)));
+        proven_map_destroy(&amp;map);
+    }
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>array  len=5 cap=8 elem_size=4
+       내용: 1 4 9 16 25
+       pop -> 25 (len 4)
+list   앞에서부터: 10 20 30  (노드가 자료 안에 있으므로 할당이 필요 없다)
+       20 을 뗀 뒤: 10 30
+ring   가득 찬 뒤 push -> err=2 (덮지 않고 알린다)
+       pop -> 1 (가장 먼저 넣은 것)
+map    get("beta") -> 2
+       get("없음") -> true (없으면 널)
+</code></pre></div></div><table><tr><th><strong>컨테이너</strong></th><th><strong>만들기</strong></th><th><strong>할당</strong></th><th><strong>훑기</strong></th><th><strong>되돌리기</strong></th></tr><tr><td><code>array</code></td><td><code>PROVEN_ARRAY_INIT(alloc, T, n)</code></td><td>자란다</td><td>인덱스로</td><td><code>PROVEN_ARRAY_DESTROY</code></td></tr><tr><td><code>list</code></td><td><code>proven_list_init(&amp;l)</code></td><td><strong>없음</strong></td><td><code>PROVEN_LIST_FOR_EACH</code></td><td>불필요</td></tr><tr><td><code>ring</code></td><td><code>PROVEN_RING_INIT(alloc, T, n)</code></td><td>한 번, 고정</td><td><code>pop</code> 으로 꺼내며</td><td><code>proven_ring_destroy</code></td></tr><tr><td><code>map</code></td><td><code>PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)</code></td><td>자란다(재해싱)</td><td>키로 조회</td><td><code>proven_map_destroy</code></td></tr></table><p>리스트만 할당이 없다는 점이 눈에 띈다 — 노드가 자료 안에 있기 때문이다. 그래서 리스트는 <strong>기억 부족으로 실패할 수 없는</strong> 유일한 컨테이너이고, 임베디드에서 특별히 사랑받는다(78장).</p><h3>76.2 자라는 배열</h3><p><code>proven_array_t</code>는 원소 크기와 정렬을 알고 있는 바이트 버퍼다. 속을 보면 왜 타입을 매크로로 채우는지가 분명해진다.</p><pre><code data-lang="c">typedef struct {
+    proven_allocator_t alloc;       /* 만들 때 받은 할당자를 기억한다 */
+    proven_byte_t     *data;        /* 바이트 버퍼 */
+    proven_size_t      len;         /* 지금 든 원소 수 */
+    proven_size_t      cap;         /* 담을 수 있는 원소 수 */
+    proven_size_t      elem_size;   /* 원소 하나의 크기 */
+    proven_size_t      align;       /* 원소의 정렬 요구 */
+} proven_array_t;</code></pre><p><strong>배열이 할당자를 기억한다</strong>는 점이 문자열과 다르다. 문자열은 연산마다 할당자를 받지만(74장), 배열은 만들 때 한 번 받아 안에 넣어 둔다 — <code>push</code>가 자랄 때마다 할당자를 넘기게 하면 코드가 시끄러워지기 때문이다. 그래서 파괴할 때도 할당자를 다시 주지 않는다(<code>PROVEN_ARRAY_DESTROY(&amp;arr)</code>).</p><p>C에는 제네릭이 없으므로 타입은 매크로가 채워 준다.</p><div><div><p><code>examples/ch76/arr.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
 int main(void)
@@ -104,7 +219,18 @@ int main(void)
 1 4 9 16 25 36 
 </code></pre></div></div><p><code>PROVEN_ARRAY_INIT(alloc, int, 4)</code>는 “int를 담을 배열, 초기 용량 4”라는 뜻이고, <code>PROVEN_ARRAY_PUSH</code>는 타입을 다시 적어 <strong>컴파일 시간에 맞는지 확인한다</strong>. 용량 4를 넘긴 다섯째 원소에서 배열은 스스로 늘어났다 — 그리고 그 성장은 할당자를 통해 일어난다(73장의 규칙 그대로, 배열이 자기가 만들어질 때 받은 할당자를 기억한다).</p><div class="dev antipattern"><p class="dev-label">✗ 원소 포인터를 들고 있다가 push 하기</p><pre><code data-lang="c">int *first = PROVEN_ARRAY_GET_MUT(&amp;arr, int, 0);
 (void)PROVEN_ARRAY_PUSH(&amp;arr, int, 42);   /* 여기서 버퍼가 옮겨갈 수 있다 */
-*first = 7;                               /* 옛 주소에 쓴다 — 사용 후 해제 */</code></pre><p>배열이 자라면 내용이 새 버퍼로 옮겨가고, 옛 주소를 가리키던 포인터는 무효가 된다. 40장에서 배운 사용 후 해제가 컨테이너 위에서 나타나는 형태다. 규칙은 하나다 — <strong>컨테이너를 바꾼 뒤에는 인덱스로 다시 얻는다.</strong> 포인터가 아니라 인덱스를 들고 다니는 습관이 여기서 방어가 된다.</p></div><h3>76.2 침습적 리스트와 링 버퍼</h3><p><code>proven_list_t</code>는 <strong>침습적</strong>(intrusive) 연결 리스트다 — 노드가 자료를 품는 것이 아니라, 자료 구조체 안에 링크 필드를 심는다. 41장에서 만든 <code>struct</code> 안에 <code>proven_list_node_t link;</code>를 한 칸 두는 식이다.</p><p>무엇이 좋은가. 리스트에 넣기 위해 <strong>따로 할당할 것이 없다</strong> — 노드가 곧 자료이기 때문이다. 힙이 없는 환경에서도 리스트를 쓸 수 있고(78장), 같은 객체를 두 리스트에 동시에 매다는 것도 링크 필드를 둘 두면 된다. 대가는 자료 구조체가 리스트를 알아야 한다는 것이다.</p><p><code>proven_ring_t</code>는 고정 크기 원형 버퍼다. 생산자와 소비자가 오가는 자리, 로그의 최근 N개, 오디오·센서 샘플처럼 <strong>지나간 것은 버려도 되는</strong> 흐름에 쓴다. 크기가 고정이므로 가득 차면 어떻게 할지가 계약의 일부다 — 여기서도 기본은 조용히 덮지 않고 알리는 쪽이다.</p><h3>76.3 해시 맵, 그리고 공격받는 자료구조</h3><p><code>proven_map_t</code>는 열린 주소 방식(open addressing) 해시 맵이다. 키는 정수나 바이트열이고, 문자열 키는 두 가지 모드가 있다 — <strong>빌린 키</strong>(호출자가 바이트를 살려 둔다)와 <strong>소유한 키</strong>(맵이 복사해 들고 있다). 73장의 소유·빌림 구분이 여기서도 그대로 나타난다.</p><div><div><p><code>examples/ch76/wordcount.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+*first = 7;                               /* 옛 주소에 쓴다 — 사용 후 해제 */</code></pre><p>배열이 자라면 내용이 새 버퍼로 옮겨가고, 옛 주소를 가리키던 포인터는 무효가 된다. 40장에서 배운 사용 후 해제가 컨테이너 위에서 나타나는 형태다. 규칙은 하나다 — <strong>컨테이너를 바꾼 뒤에는 인덱스로 다시 얻는다.</strong> 포인터가 아니라 인덱스를 들고 다니는 습관이 여기서 방어가 된다.</p></div><h3>76.3 침습적 리스트 — 할당 없는 연결</h3><p><code>proven_list_t</code>는 <strong>침습적</strong>(intrusive) 연결 리스트다 — 노드가 자료를 품는 것이 아니라, 자료 구조체 안에 링크 필드를 심는다. 41장에서 만든 <code>struct</code> 안에 <code>proven_list_node_t link;</code>를 한 칸 두는 식이다.</p><pre><code data-lang="c">typedef struct proven_list_node_t {
+    struct proven_list_node_t *next;
+    struct proven_list_node_t *prev;
+} proven_list_node_t;
+
+typedef struct {
+    proven_list_node_t head;      /* 자기 자신을 가리키는 보초(sentinel) */
+} proven_list_t;</code></pre><p><code>head</code>가 <strong>보초</strong>라는 점이 이 구현의 요령이다. 빈 리스트에서 <code>head.next</code>와 <code>head.prev</code>는 자기 자신을 가리키고, 그래서 삽입·삭제 코드에 “널인가” 검사가 한 번도 나오지 않는다 — 리눅스 커널이 오래 쓴 무늬다.</p><p>무엇이 좋은가. 리스트에 넣기 위해 <strong>따로 할당할 것이 없다</strong> — 노드가 곧 자료이기 때문이다. 힙이 없는 환경에서도 리스트를 쓸 수 있고(78장), 같은 객체를 두 리스트에 동시에 매다는 것도 링크 필드를 둘 두면 된다. 대가는 자료 구조체가 리스트를 알아야 한다는 것이다.</p><p>되찾는 방향이 문제인데, 그것을 매크로 하나가 해결한다.</p><pre><code data-lang="c">task_t *t = PROVEN_LIST_ENTRY(node, task_t, link);</code></pre><p><code>link</code> 멤버의 주소에서 <strong>구조체의 시작 주소를 역산</strong>하는 매크로다 — 41장에서 본 <code>offsetof</code>가 여기서 실물로 쓰인다. 노드에서 자료로 돌아가는 이 한 줄이 침습적 리스트의 전부라 해도 좋다.</p><p>훑는 매크로는 둘이다.</p><table><tr><th><strong>매크로</strong></th><th><strong>하는 일</strong></th><th><strong>언제</strong></th></tr><tr><td><code>PROVEN_LIST_FOR_EACH(it, &amp;l)</code></td><td>앞에서부터 훑는다</td><td>읽기만 할 때</td></tr><tr><td><code>PROVEN_LIST_FOR_EACH_SAFE(it, tmp, &amp;l)</code></td><td>다음 노드를 미리 잡아 둔다</td><td>★ 훑으면서 떼어낼 때</td></tr></table><p>별표가 중요하다. 훑는 도중에 노드를 떼어내면 그 노드의 <code>next</code>가 무의미해져 루프가 길을 잃는다. <code>_SAFE</code> 판은 <strong>다음 노드를 미리 손에 쥐고</strong> 도므로 지금 노드를 떼어내도 안전하다. 예제에서 20번 항목을 떼어낼 때 이 판을 쓴 이유다.</p><p>두 매크로 모두 반복 변수를 <strong>미리 선언해 두어야 한다</strong>는 점도 알아 두면 좋다(<code>proven_list_node_t *node, *tmp;</code>). 매크로가 <code>for</code>의 초기화 자리에 선언을 넣지 않기 때문인데, C89 시절부터 이어진 커널 관행이다.</p><h3>76.4 링 버퍼 — 고정 크기의 흐름</h3><p><code>proven_ring_t</code>는 고정 크기 원형 버퍼다. 생산자와 소비자가 오가는 자리, 로그의 최근 N개, 오디오·센서 샘플처럼 <strong>지나간 것은 버려도 되는</strong> 흐름에 쓴다. 크기가 고정이므로 가득 차면 어떻게 할지가 계약의 일부다 — 여기서도 기본은 조용히 덮지 않고 알리는 쪽이다(예제의 <code>err=2</code>가 그 확인이다).</p><p><code>push</code>와 <code>pop</code> 둘뿐이고, 둘 다 <strong>원소를 복사한다.</strong> 넣을 때는 주소를 주고, 꺼낼 때도 받을 곳의 주소를 준다.</p><pre><code data-lang="c">int v = 42;
+proven_err_t e = proven_ring_push(&amp;ring, &amp;v);     /* 값을 복사해 넣는다 */
+int out;
+e = proven_ring_pop(&amp;ring, &amp;out);                 /* 값을 복사해 꺼낸다 */</code></pre><p>이 설계 덕에 링 버퍼 안의 원소를 가리키는 포인터가 밖으로 새지 않는다 — 원형 버퍼에서 포인터를 들고 있다가 그 자리가 덮이는 것이 고전적인 사고인데, 그것을 인터페이스로 막았다.</p><h3>76.5 해시 맵, 그리고 공격받는 자료구조</h3><p><code>proven_map_t</code>는 열린 주소 방식(open addressing) 해시 맵이다. 키는 정수나 바이트열이고, 문자열 키는 두 가지 모드가 있다 — <strong>빌린 키</strong>(호출자가 바이트를 살려 둔다)와 <strong>소유한 키</strong>(맵이 복사해 들고 있다). 73장의 소유·빌림 구분이 여기서도 그대로 나타난다.</p><p>키의 갈래를 만들 때 정한다.</p><table><tr><th><strong>만들기 매크로</strong></th><th><strong>키</strong></th><th><strong>주의</strong></th></tr><tr><td><code>PROVEN_MAP_INIT_INT(alloc, T, n)</code></td><td>정수(<code>key.id</code>)</td><td>가장 빠르다</td></tr><tr><td><code>PROVEN_MAP_INIT_U8_BORROWED(alloc, T, n)</code></td><td>문자열(빌림)</td><td>★ 키 바이트를 맵보다 오래 살려 둬야 한다</td></tr><tr><td><code>PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)</code></td><td>문자열(복사)</td><td>넣을 때 복사 비용. 대신 안전</td></tr></table><p>키는 공용체 하나로 넘긴다 — 정수면 <code>.id</code>, 문자열이면 <code>.str</code>이다.</p><pre><code data-lang="c">proven_map_key_t k = { .str = PROVEN_LIT("beta") };
+const int *v = proven_map_get(&amp;map, k);      /* 없으면 널 */</code></pre><p><strong>조회는 널로 답한다.</strong> 꾸러미가 아니라 포인터를 돌려주는 이유는 “없음”이 실패가 아니라 정상적인 답이기 때문이다(71장의 에러 갈래와 구별된다). 그리고 그 포인터는 <strong>맵 안을 가리키므로</strong>, 다음에 맵이 자라면 무효가 된다 — 배열에서와 같은 규칙이다.</p><p>넣는 함수는 셋이다. <code>proven_map_set</code>(일반), <code>proven_map_set_u8_owned</code>(문자열 키를 복사해 넣기), <code>proven_map_set_with_scratch</code>(임시 기억을 따로 주기). 마지막 것은 재해싱 같은 내부 작업의 임시 버퍼를 다른 할당자에서 얻고 싶을 때 쓴다 — 아레나 위에서 맵을 돌릴 때 죽은 기억이 쌓이지 않게 하는 장치다.</p><div><div><p><code>examples/ch76/wordcount.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
 /* 낱말을 세어 정렬해 찍는다 — 맵과 배열과 정렬을 한 번에 */
@@ -181,6 +307,6 @@ int main(void)
   dog = 1
   lazy = 1
   quick = 1
-</code></pre></div></div><p>이 예제 하나에 이 장의 도구가 다 들어 있다 — 맵으로 세고, 배열에 모으고, 정렬해서 찍는다. 낱말을 자르는 데는 74장의 뷰를 썼으므로 문자열 복사는 맵이 키를 소유할 때 한 번뿐이다.</p><div class="dev realcase"><p class="dev-label">◉ HashDoS — 해시 맵이 공격 대상이 된 사건</p><p>2011년, 여러 웹 프레임워크가 동시에 같은 취약점으로 무너졌다. 공격자가 <strong>같은 버킷으로 몰리는 키들</strong>을 골라 요청 하나에 수천 개의 매개변수로 실어 보내면, 평균 <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math>이던 삽입이 <math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math>이 되고 전체가 <math><mi>𝑂</mi><mrow><mo>(</mo><msup><mi>𝑛</mi><mn>2</mn></msup><mo>)</mo></mrow></math>으로 퇴화해 서버 한 대가 요청 몇 개로 멎었다. 해시 함수가 공개되어 있어 충돌을 <strong>계산할 수 있었다</strong>는 것이 원인이었다.</p><p>오늘의 처방은 <strong>키드 해시</strong>(keyed hash)다 — 프로세스마다 무작위 비밀을 뽑아 해시에 섞으면 공격자가 충돌을 미리 계산할 수 없다. proven의 <code>proven_map_create</code>가 문자열 키에 SipHash-2-4와 무작위 씨앗을 기본으로 쓰는 이유이고, 반대로 키가 전부 내 코드에서 오는 경우를 위해 더 빠른 FNV-1a를 쓰는 <code>proven_map_create_trusted</code>를 따로 둔 이유다. <strong>기본값은 안전한 쪽, 빠른 쪽은 이름을 밝혀서</strong> — 이 부에서 반복해 만난 원칙이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>키드 해시를 쓰면 얼마나 느려지는가? 그리고 OS가 없으면 무작위 비밀은 어디서 오는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>SipHash는 FNV-1a보다 느리지만 문자열 길이에 비례하는 정도이고, 맵 연산 전체에서 해시 계산이 차지하는 몫은 대개 크지 않다. 무작위 비밀은 운영체제의 난수원에서 한 번 뽑는다 — 그리고 OS가 없는 환경(78장)에서는 뽑을 곳이 없으므로 FNV-1a로 물러난다. 라이브러리는 이 사실을 숨기지 않고 문서에 적어 두는데, 근거가 분명하다: <strong>공격자가 없는 곳에는 공격자 모델도 필요 없다.</strong> 펌웨어 안에서 키를 고르는 외부인은 존재하지 않는다.</p></div></div><h3>76.4 최악을 보장하는 정렬</h3><p>69장에서 본 두 가지 문제 — 검사되지 않는 비교자, 그리고 최악에서 무너지는 알고리즘 — 을 여기서 함께 다룬다.</p><span id="idx-entry-110"></span><p><code>proven_array_sort</code>는 <strong>introsort</strong>다. 빠른 퀵소트로 시작하되, 재귀가 너무 깊어지면 힙소트로 갈아탄다. 그래서 평균은 퀵소트만큼 빠르고 최악에도 <math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math>이 <strong>보장</strong>된다 — 69장에서 본 복잡도 공격이 통하지 않는다. 헤더의 문구를 그대로 옮기면 “<math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math>은 평균이 아니라 보장”이다.</p><p>비교자 쪽은 언어가 도와줄 수 없으므로 계약을 문서와 예제로 밝힌다. 예제의 <code>by_count_desc</code>가 그 본보기다 — 개수로 내림차순, <strong>동점이면 낱말로</strong> 가른다. 69장의 반례(첫 글자만 보는 비교자)와 정확히 대비된다.</p><div class="dev misconception"><p class="dev-label">⚠ “동점은 어떻게 처리해도 상관없다”</p><p>상관있다. 비교자는 <strong>전순서</strong>(total order)를 이뤄야 한다 — 같으면 0, 일관되게 크고 작아야 하며, <code>cmp(a,b)</code>와 <code>cmp(b,a)</code>의 부호가 반대여야 한다. 이것을 어기면 결과가 뒤죽박죽이 되는 정도가 아니라, 구현에 따라 <strong>배열 밖을 침범</strong>할 수도 있다(파티션 알고리즘이 경계를 비교 결과로 판단하기 때문이다). “동점을 아무렇게나” 돌려주는 비교자는 그래서 버그이지 취향이 아니다.</p></div><h3>76.5 바이트를 글자로 — 해시와 인코딩</h3><p>같은 상자 안에 든 나머지 도구들도 짚어 둔다.</p><ul><li><strong>용도별 해시</strong> — 맵의 내부용(빠른 혼합), 무결성 확인용(CRC-32), 암호학적 용도(SHA-256), 그리고 앞서 본 키드 해시(SipHash). 라이브러리가 이들을 구분해 두는 이유는 <strong>같은 “해시”라는 낱말이 전혀 다른 요구를 뜻하기</strong> 때문이다 — 빠르기만 하면 되는 자리에 SHA-256을 쓰면 낭비이고, 적대적 입력이 오는 자리에 FNV-1a를 쓰면 위험하다.</li><li><strong>hex와 Base64</strong> — 바이트를 텍스트로 옮기는 두 표준. 여기서도 원칙은 같다. 잘못된 입력(홀수 길이 hex, 잘못된 패딩)은 <strong>추측해 고치지 않고</strong> <code>PROVEN_ERR_INVALID_ENCODING</code>으로 거부한다(74장의 그 규범이다).</li></ul><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>컨테이너 요약.</p><table><tr><th><strong>도구</strong></th><th><strong>모양</strong></th><th><strong>맞는 자리</strong></th><th><strong>주의</strong></th></tr><tr><td><code>array</code></td><td>자라는 연속 배열</td><td>순서 있는 목록</td><td>자라면 포인터 무효</td></tr><tr><td><code>list</code></td><td>침습적 연결 리스트</td><td>할당 없이 잇기</td><td>자료가 링크를 품는다</td></tr><tr><td><code>ring</code></td><td>고정 크기 원형</td><td>흐름·최근 N개</td><td>가득 찼을 때의 계약</td></tr><tr><td><code>map</code></td><td>열린 주소 해시</td><td>키로 찾기</td><td>키 소유 여부를 고른다</td></tr><tr><td><code>array_sort</code></td><td>introsort</td><td>무엇이든 정렬</td><td>비교자는 전순서</td></tr><tr><td>해시 4종</td><td>용도별</td><td>맵·무결성·암호·반공격</td><td>용도를 섞지 않는다</td></tr></table></div><p>여기까지가 순수한 계산의 세계다 — 운영체제가 없어도 전부 돈다. 다음 장에서는 바깥으로 나간다. 파일, 스트림, 시간, 난수 — OS와 닿는 자리다.</p>
+</code></pre></div></div><p>이 예제 하나에 이 장의 도구가 다 들어 있다 — 맵으로 세고, 배열에 모으고, 정렬해서 찍는다. 낱말을 자르는 데는 74장의 뷰를 썼으므로 문자열 복사는 맵이 키를 소유할 때 한 번뿐이다.</p><div class="dev realcase"><p class="dev-label">◉ HashDoS — 해시 맵이 공격 대상이 된 사건</p><p>2011년, 여러 웹 프레임워크가 동시에 같은 취약점으로 무너졌다. 공격자가 <strong>같은 버킷으로 몰리는 키들</strong>을 골라 요청 하나에 수천 개의 매개변수로 실어 보내면, 평균 <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math>이던 삽입이 <math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math>이 되고 전체가 <math><mi>𝑂</mi><mrow><mo>(</mo><msup><mi>𝑛</mi><mn>2</mn></msup><mo>)</mo></mrow></math>으로 퇴화해 서버 한 대가 요청 몇 개로 멎었다. 해시 함수가 공개되어 있어 충돌을 <strong>계산할 수 있었다</strong>는 것이 원인이었다.</p><p>오늘의 처방은 <strong>키드 해시</strong>(keyed hash)다 — 프로세스마다 무작위 비밀을 뽑아 해시에 섞으면 공격자가 충돌을 미리 계산할 수 없다. proven의 <code>proven_map_create</code>가 문자열 키에 SipHash-2-4와 무작위 씨앗을 기본으로 쓰는 이유이고, 반대로 키가 전부 내 코드에서 오는 경우를 위해 더 빠른 FNV-1a를 쓰는 <code>proven_map_create_trusted</code>를 따로 둔 이유다. <strong>기본값은 안전한 쪽, 빠른 쪽은 이름을 밝혀서</strong> — 이 부에서 반복해 만난 원칙이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>키드 해시를 쓰면 얼마나 느려지는가? 그리고 OS가 없으면 무작위 비밀은 어디서 오는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>SipHash는 FNV-1a보다 느리지만 문자열 길이에 비례하는 정도이고, 맵 연산 전체에서 해시 계산이 차지하는 몫은 대개 크지 않다. 무작위 비밀은 운영체제의 난수원에서 한 번 뽑는다 — 그리고 OS가 없는 환경(78장)에서는 뽑을 곳이 없으므로 FNV-1a로 물러난다. 라이브러리는 이 사실을 숨기지 않고 문서에 적어 두는데, 근거가 분명하다: <strong>공격자가 없는 곳에는 공격자 모델도 필요 없다.</strong> 펌웨어 안에서 키를 고르는 외부인은 존재하지 않는다.</p></div></div><h3>76.6 최악을 보장하는 정렬</h3><p>69장에서 본 두 가지 문제 — 검사되지 않는 비교자, 그리고 최악에서 무너지는 알고리즘 — 을 여기서 함께 다룬다.</p><span id="idx-entry-110"></span><p><code>proven_array_sort</code>는 <strong>introsort</strong>다. 빠른 퀵소트로 시작하되, 재귀가 너무 깊어지면 힙소트로 갈아탄다. 그래서 평균은 퀵소트만큼 빠르고 최악에도 <math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math>이 <strong>보장</strong>된다 — 69장에서 본 복잡도 공격이 통하지 않는다. 헤더의 문구를 그대로 옮기면 “<math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math>은 평균이 아니라 보장”이다.</p><p>비교자 쪽은 언어가 도와줄 수 없으므로 계약을 문서와 예제로 밝힌다. 예제의 <code>by_count_desc</code>가 그 본보기다 — 개수로 내림차순, <strong>동점이면 낱말로</strong> 가른다. 69장의 반례(첫 글자만 보는 비교자)와 정확히 대비된다.</p><div class="dev misconception"><p class="dev-label">⚠ “동점은 어떻게 처리해도 상관없다”</p><p>상관있다. 비교자는 <strong>전순서</strong>(total order)를 이뤄야 한다 — 같으면 0, 일관되게 크고 작아야 하며, <code>cmp(a,b)</code>와 <code>cmp(b,a)</code>의 부호가 반대여야 한다. 이것을 어기면 결과가 뒤죽박죽이 되는 정도가 아니라, 구현에 따라 <strong>배열 밖을 침범</strong>할 수도 있다(파티션 알고리즘이 경계를 비교 결과로 판단하기 때문이다). “동점을 아무렇게나” 돌려주는 비교자는 그래서 버그이지 취향이 아니다.</p></div><h3>76.7 바이트를 글자로 — 해시와 인코딩</h3><p>같은 상자 안에 든 나머지 도구들도 짚어 둔다.</p><ul><li><strong>용도별 해시</strong> — 맵의 내부용(빠른 혼합), 무결성 확인용(CRC-32), 암호학적 용도(SHA-256), 그리고 앞서 본 키드 해시(SipHash). 라이브러리가 이들을 구분해 두는 이유는 <strong>같은 “해시”라는 낱말이 전혀 다른 요구를 뜻하기</strong> 때문이다 — 빠르기만 하면 되는 자리에 SHA-256을 쓰면 낭비이고, 적대적 입력이 오는 자리에 FNV-1a를 쓰면 위험하다.</li><li><strong>hex와 Base64</strong> — 바이트를 텍스트로 옮기는 두 표준. 여기서도 원칙은 같다. 잘못된 입력(홀수 길이 hex, 잘못된 패딩)은 <strong>추측해 고치지 않고</strong> <code>PROVEN_ERR_INVALID_ENCODING</code>으로 거부한다(74장의 그 규범이다).</li></ul><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>컨테이너 요약.</p><table><tr><th><strong>도구</strong></th><th><strong>모양</strong></th><th><strong>맞는 자리</strong></th><th><strong>주의</strong></th></tr><tr><td><code>array</code></td><td>자라는 연속 배열</td><td>순서 있는 목록</td><td>자라면 포인터 무효</td></tr><tr><td><code>list</code></td><td>침습적 연결 리스트</td><td>할당 없이 잇기</td><td>자료가 링크를 품는다</td></tr><tr><td><code>ring</code></td><td>고정 크기 원형</td><td>흐름·최근 N개</td><td>가득 찼을 때의 계약</td></tr><tr><td><code>map</code></td><td>열린 주소 해시</td><td>키로 찾기</td><td>키 소유 여부를 고른다</td></tr><tr><td><code>array_sort</code></td><td>introsort</td><td>무엇이든 정렬</td><td>비교자는 전순서</td></tr><tr><td>해시 4종</td><td>용도별</td><td>맵·무결성·암호·반공격</td><td>용도를 섞지 않는다</td></tr></table></div><p>여기까지가 순수한 계산의 세계다 — 운영체제가 없어도 전부 돈다. 다음 장에서는 바깥으로 나간다. 파일, 스트림, 시간, 난수 — OS와 닿는 자리다.</p>
 <div class="nav"><a href="ch75.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch77.html">다음 →</a></div>
 </div></main></body></html>

@@ -23,7 +23,71 @@
   remains so as not to hide that fact.
 ]
 
-== Files — open, read, close
+== The life of one file
+
+A file is the first resource in this part that touches *the outside world*. The
+discipline of making and giving back is the same as in the earlier chapters, but the
+kinds of failure are far more numerous.
+
+#demo("examples/ch77/fslife.c")
+
+The life cycle is four steps, and at each step failure comes as a value.
+
+#dtable(
+  columns: 3,
+  [*step*], [*function*], [*to know*],
+  [opening], [`proven_fs_open(scratch, path, mode)`], [*a scratch allocator* is needed (for path conversion)],
+  [writing, reading], [`_write`/`_write_all`, `_read`], [amount requested ≠ amount handled],
+  [nailing it down], [`proven_fs_sync(file)`], [closing alone does not leave it on the disk],
+  [closing], [`proven_fs_close(file)`], [it has a return value — there is something to check],
+)
+
+*The mode weaves bit flags.* Instead of a string like the standard `fopen`'s `"w+b"`,
+named values are joined with `|`.
+
+#dtable(
+  columns: 2,
+  [*flag*], [*meaning*],
+  [`PROVEN_FS_READ`], [reading],
+  [`PROVEN_FS_WRITE`], [writing],
+  [`PROVEN_FS_APPEND`], [appending at the end],
+  [`PROVEN_FS_CREATE`], [create it if absent],
+  [`PROVEN_FS_TRUNC`], [empty it if present],
+  [`PROVEN_FS_CREATE_NEW`], [★ *fail if it already exists* — creating anew without a race],
+)
+
+Two things are better than string modes. First, *the combination is visible* — there is
+no need to memorise what `"a+"` exactly is. Second, things absent from string modes,
+such as `CREATE_NEW`, can be expressed. When making a lock file or a temporary file,
+"fail if it already exists" is the only road that blocks a race condition (recall
+chapter 56's `tmpnam` story).
+
+*Handles travel by value.* That the functions take a `proven_file_t` by value rather
+than by pointer is the mark of it, because what is inside is about one integer
+descriptor. So the discipline of not using that value again after closing is still a
+human's part.
+
+=== The convenience functions that read and write in one go
+
+In half the cases in practice the file is small and may be handled whole. Then opening,
+reading and closing need not be woven by hand.
+
+#dtable(
+  columns: 3,
+  [*function*], [*what it does*], [*caution*],
+  [`proven_fs_read_all(alloc, path)`], [the whole file as bytes], [a large file eats memory],
+  [`proven_fs_read_all_u8str(alloc, path)`], [the whole file as a string], [the same. it does not check the encoding],
+  [`proven_fs_write_file(scratch, path, data)`], [writing it whole], [die in the middle and a half-written file is left],
+  [`proven_fs_write_file_atomic(...)`], [write to a temporary and swap], [★ no half-written file is left],
+  [`proven_fs_write_file_durable(...)`], [atomic + `sync`], [it survives a power cut. the slowest],
+)
+
+The difference between the last three rows matters in practice. Code that overwrites a
+configuration file or saved data, *if it dies in the middle, leaves a file that is
+neither the original nor the new one*, and the standard practice that prevents it is
+"write to a temporary file and rename" (renaming is atomic within the same file system).
+`_atomic` does that work for you, and `_durable` hangs a `sync` on it as well so that it
+survives a power cut.
 
 #demo("examples/ch77/fileio.c")
 

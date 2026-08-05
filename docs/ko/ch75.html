@@ -69,7 +69,120 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>75 형식화와 파싱 — 타입을 두 번 적지 않기</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>69장의 셋째 버그 — 서식과 인자의 불일치 — 에 대한 답이다. <code>{}</code>라는 타입 없는 자리표시자가 어떻게 타입 안전을 얻는지, 그 밑에서 <code>_Generic</code>이 무엇을 하는지, 그리고 반대 방향인 파싱에서 실패가 어떻게 값으로 드러나는지를 본다. 53장에서 뜯어본 <code>printf</code>·<code>scanf</code>의 대안이다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>50장에서 가변 인자에는 타입 정보가 실려 가지 않는다고 했고, 53장에서는 그래서 서식 문자열이 “스택을 어떻게 읽을지”를 혼자 정한다고 했다. 그러면 인자에서 타입을 가져오려면 무엇이 필요한가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>호출 자리에서</strong> 타입을 붙잡아 값과 함께 실어 보내면 된다. 즉 인자를 그대로 넘기지 않고 <code>{타입 꼬리표, 값}</code> 꾸러미로 감싸는 것이다. 남은 문제는 “타입 꼬리표를 어떻게 자동으로 붙이는가”인데, 그 답이 C11의 <code>_Generic</code>이다 — 표현식의 타입에 따라 컴파일 시간에 서로 다른 코드를 <span id="idx-entry-107"></span>고르는 장치. 실행 시간 비용은 0이고, 28장에서 배운 암묵적 변환 규칙과 달리 여기서는 타입이 <strong>보존된다</strong>.</p></div></div><h3>75.1 <code>{}</code> — 타입이 없는 자리표시자</h3><p>규칙은 셋뿐이다.</p><ul><li><code>{}</code> — 여기에 다음 인자를 넣는다. 타입은 적지 않는다.</li><li><code>{:...}</code> — 콜론 뒤에 서식 지정(폭·정렬·자릿수)을 적는다.</li><li><code>{{</code> <code>}}</code> — 중괄호 글자 자체.</li></ul><p><code>%d</code>가 없으니 <code>%d</code>와 <code>double</code>이 어긋날 자리도 없다. 53장에서 본 불일치의 가능성이 문법 차원에서 제거된 것이다.</p><div><div><p><code>examples/ch75/fmt.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>75 형식화와 파싱 — 타입을 두 번 적지 않기</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>69장의 셋째 버그 — 서식과 인자의 불일치 — 에 대한 답이다. <code>{}</code>라는 타입 없는 자리표시자가 어떻게 타입 안전을 얻는지, 그 밑에서 <code>_Generic</code>이 무엇을 하는지, 그리고 반대 방향인 파싱에서 실패가 어떻게 값으로 드러나는지를 본다. 53장에서 뜯어본 <code>printf</code>·<code>scanf</code>의 대안이다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>50장에서 가변 인자에는 타입 정보가 실려 가지 않는다고 했고, 53장에서는 그래서 서식 문자열이 “스택을 어떻게 읽을지”를 혼자 정한다고 했다. 그러면 인자에서 타입을 가져오려면 무엇이 필요한가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>호출 자리에서</strong> 타입을 붙잡아 값과 함께 실어 보내면 된다. 즉 인자를 그대로 넘기지 않고 <code>{타입 꼬리표, 값}</code> 꾸러미로 감싸는 것이다. 남은 문제는 “타입 꼬리표를 어떻게 자동으로 붙이는가”인데, 그 답이 C11의 <code>_Generic</code>이다 — 표현식의 타입에 따라 컴파일 시간에 서로 다른 코드를 <span id="idx-entry-107"></span>고르는 장치. 실행 시간 비용은 0이고, 28장에서 배운 암묵적 변환 규칙과 달리 여기서는 타입이 <strong>보존된다</strong>.</p></div></div><h3>75.1 <code>{}</code> — 타입이 없는 자리표시자</h3><p>규칙은 셋뿐이다.</p><ul><li><code>{}</code> — 여기에 다음 인자를 넣는다. 타입은 적지 않는다.</li><li><code>{:...}</code> — 콜론 뒤에 서식 지정(폭·정렬·자릿수)을 적는다.</li><li><code>{{</code> <code>}}</code> — 중괄호 글자 자체.</li></ul><p><code>%d</code>가 없으니 <code>%d</code>와 <code>double</code>이 어긋날 자리도 없다. 53장에서 본 불일치의 가능성이 문법 차원에서 제거된 것이다.</p><h4>75.1.1 콜론 뒤의 문법 전부</h4><p>지정자의 순서는 정해져 있고, 전부 생략할 수 있다.</p><table><tr><th><strong>자리</strong></th><th><strong>쓸 수 있는 것</strong></th><th><strong>뜻</strong></th></tr><tr><td>채움</td><td>아무 글자</td><td>빈자리를 채울 글자. <strong>정렬 기호 앞에</strong> 온다</td></tr><tr><td>정렬</td><td><code>&lt;</code> <code>></code> <code>^</code></td><td>왼쪽·오른쪽·가운데. 기본은 수는 오른쪽, 그 밖은 왼쪽</td></tr><tr><td>부호</td><td><code>+</code></td><td>양수에도 부호를 붙인다</td></tr><tr><td>대체 형식</td><td><code>#</code></td><td><code>0x</code>·<code>0b</code>·<code>0</code> 접두사를 붙인다</td></tr><tr><td>0 채움</td><td><code>0</code></td><td>폭 앞에 붙이면 0으로 채운다(부호 뒤에 들어간다)</td></tr><tr><td>폭</td><td>수</td><td>최소 글자 수. 넘쳐도 자르지 않는다</td></tr><tr><td>정밀도</td><td><code>.수</code></td><td>실수의 소수 자릿수</td></tr><tr><td>꼴</td><td><code>x X o b f e g</code></td><td>16진(소·대)·8진·2진·고정·지수·짧은 쪽</td></tr></table><p>53장의 <code>printf</code> 서식과 대응하지만 세 가지가 다르다. <strong>정렬 기호가 앞에</strong> 오고(<code>%-10s</code> 대신 <code>{:&lt;10}</code>), <strong>채움 글자를 고를 수 있고</strong>(<code>{:*>8}</code>), <strong>타입 글자가 없다</strong>(<code>%d</code>의 <code>d</code>가 사라졌다 — 타입은 인자에서 온다).</p><div><div><p><code>examples/ch75/spec.c</code></p><pre><code data-lang="c">/* 자리표시자 문법 전부 — 채움·정렬·폭·정밀도·꼴, 그리고 사용자 타입.
+   {} 하나로 시작해 표 하나를 그리는 데까지 간다. */
+#include &lt;proven.h>
+
+/* 라이브러리가 모르는 타입을 찍는 법: 그리는 함수를 하나 주면 된다 */
+typedef struct { int num; int den; } frac_t;
+
+static proven_err_t render_frac(proven_fmt_sink_t out, const void *obj)
+{
+    const frac_t *f = (const frac_t *)obj;
+    proven_byte_t buf[32];
+    proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
+    proven_fmt_result_t r = proven_u8str_append_fmt(&amp;s, "{}/{}",
+                                                    PROVEN_ARG(f->num),
+                                                    PROVEN_ARG(f->den));
+    if (!proven_is_ok(r.err)) return r.err;
+    return proven_fmt_put(out, proven_u8str_as_view(&amp;s));
+}
+
+int main(void)
+{
+    proven_byte_t buf[256];
+
+    /* ── ① 정렬과 채움 ───────────────────────────────────────── */
+    proven_println("|{:>8}|{:&lt;8}|{:^8}|  (오른쪽·왼쪽·가운데)",
+                   PROVEN_ARG("ab"), PROVEN_ARG("ab"), PROVEN_ARG("ab"));
+    proven_println("|{:*>8}|{:-&lt;8}|{:.^8}|  (채움 문자를 앞에 적는다)",
+                   PROVEN_ARG("ab"), PROVEN_ARG("ab"), PROVEN_ARG("ab"));
+    proven_println("|{:08}|{:+}|{:+}|      (0 채움, 부호 강제)",
+                   PROVEN_ARG(42), PROVEN_ARG(42), PROVEN_ARG(-42));
+
+    /* ── ② 진법과 대체 형식 ──────────────────────────────────── */
+    proven_println("{:x} {:X} {:#x} {:o} {:b} {:#b}",
+                   PROVEN_ARG(255), PROVEN_ARG(255), PROVEN_ARG(255),
+                   PROVEN_ARG(8), PROVEN_ARG(5), PROVEN_ARG(5));
+
+    /* ── ③ 실수 — 자릿수와 꼴 ────────────────────────────────── */
+    proven_println("{} {:.2} {:.0} {:f} {:e} {:g}",
+                   PROVEN_ARG(3.14159), PROVEN_ARG(3.14159), PROVEN_ARG(3.14159),
+                   PROVEN_ARG(3.14159), PROVEN_ARG(3.14159), PROVEN_ARG(3.14159));
+    proven_println("아주 큰 수/작은 수: {} {}",
+                   PROVEN_ARG(1e20), PROVEN_ARG(5e-7));
+
+    /* ── ④ 중괄호 자체 ───────────────────────────────────────── */
+    proven_println("중괄호는 {{ 와 }} 로 적는다");
+
+    /* ── ⑤ 사용자 타입 ───────────────────────────────────────── */
+    frac_t half = { .num = 1, .den = 2 };
+    proven_arg_t a = proven_arg_custom(&amp;half, render_frac);
+    proven_println("사용자 타입: {} (폭도 먹는다: |{:>8}|)",
+                   PROVEN_ARG(a), PROVEN_ARG(a));
+
+    /* ── ⑥ 세 갈래의 형식화 — 거부 / 자름 / 성장 ─────────────── */
+    proven_u8str_t small = proven_u8str_borrow(buf, 8);   /* 내용 7바이트까지 */
+
+    proven_fmt_result_t r1 = proven_u8str_append_fmt(&amp;small, "{}", PROVEN_ARG("가나다라마바사아"));
+    proven_println("append_fmt        err={} written={} required={}",
+                   PROVEN_ARG((int)r1.err), PROVEN_ARG(r1.written), PROVEN_ARG(r1.required));
+
+    proven_fmt_result_t r2 = proven_u8str_append_fmt_trunc(&amp;small, "{}", PROVEN_ARG("abcdefghij"));
+    proven_println("append_fmt_trunc  err={} written={} required={} 내용=\"{}\"",
+                   PROVEN_ARG((int)r2.err), PROVEN_ARG(r2.written), PROVEN_ARG(r2.required),
+                   PROVEN_ARG(proven_u8str_as_view(&amp;small)));
+
+    proven_allocator_t alloc = proven_heap_allocator();
+    proven_result_u8str_t made = proven_u8str_create(alloc, 4);
+    if (proven_is_ok(made.err)) {
+        proven_u8str_t g = made.value;
+        proven_fmt_result_t r3 = proven_u8str_append_fmt_grow(alloc, &amp;g, "{} {} {}",
+                                                              PROVEN_ARG("자라난다"),
+                                                              PROVEN_ARG(2026),
+                                                              PROVEN_ARG(true));
+        proven_println("append_fmt_grow   err={} 내용=\"{}\"",
+                       PROVEN_ARG((int)r3.err), PROVEN_ARG(proven_u8str_as_view(&amp;g)));
+        proven_u8str_destroy(alloc, &amp;g);
+    }
+
+    /* ── ⑦ 표 그리기 — 폭 지정의 실제 쓸모 ───────────────────── */
+    proven_println("");
+    proven_println("{:&lt;10}{:>6}{:>9}", PROVEN_ARG("이름"), PROVEN_ARG("개수"), PROVEN_ARG("비율"));
+    proven_println("{:-&lt;25}", PROVEN_ARG(""));
+    const char *names[] = { "alpha", "beta", "gamma" };
+    int         counts[] = { 7, 128, 3 };
+    for (int i = 0; i &lt; 3; i++)
+        proven_println("{:&lt;10}{:>6}{:>9.2}", PROVEN_ARG(names[i]),
+                       PROVEN_ARG(counts[i]), PROVEN_ARG(counts[i] / 138.0 * 100));
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>|      ab|ab      |   ab   |  (오른쪽·왼쪽·가운데)
+|******ab|ab------|...ab...|  (채움 문자를 앞에 적는다)
+|00000042|+42|-42|      (0 채움, 부호 강제)
+ff FF 0xff 10 101 0b101
+3.141590 3.14 3 3.141590 3.141590e+00 3.14159
+아주 큰 수/작은 수: 1.000000e+20 5.000000e-07
+중괄호는 { 와 } 로 적는다
+사용자 타입: 1/2 (폭도 먹는다: |     1/2|)
+append_fmt        err=2 written=0 required=24
+append_fmt_trunc  err=2 written=7 required=10 내용="abcdefg"
+append_fmt_grow   err=0 내용="자라난다 2026 true"
+
+이름    개수   비율
+-------------------------
+alpha          7     5.07
+beta         128    92.75
+gamma          3     2.17
+</code></pre></div></div><p>예제가 이 표를 한 줄씩 실물로 보여 준다. 몇 가지만 짚는다.</p><p><strong>① 채움은 정렬 앞에 적는다.</strong> <code>{:*>8}</code>은 “별표로 채워 오른쪽 정렬”이다. 순서를 바꾸면(<code>{:>*8}</code>) 뜻이 되지 않는다.</p><p><strong>② <code>{:08}</code>의 0은 부호 뒤에 들어간다.</strong> <code>-42</code>를 폭 8로 0 채움하면 <code>-0000042</code>이지 <code>000000-42</code>가 아니다 — 53장에서 본 <code>%08d</code>와 같은 규칙이다.</p><p><strong>③ 실수의 기본 표기가 <code>printf</code>와 다르다.</strong> 아주 큰 수와 아주 작은 수를 <code>printf("%f")</code>는 <code>100000000000000000000.000000</code>이나 <code>0.000000</code>으로 찍지만, 이 라이브러리는 <code>1.000000e+20</code>과 <code>5.000000e-07</code>로 지수 표기를 쓴다. <strong>정보를 잃지 않는 쪽</strong>을 기본으로 삼은 것인데, 두 로그를 비교하기 전에 알아 두어야 할 차이다. 고정 표기가 필요하면 <code>{:f}</code>로 강제한다.</p><p><strong>④ <code>{:g}</code>는 왕복 가능한 가장 짧은 표기를 준다.</strong> <code>3.14159</code>가 그대로 나오는 것이 그 결과다 — 8장에서 본 “읽었다 쓰면 같은 값” 성질을 지키는 표기다.</p><h4>75.1.2 라이브러리가 모르는 타입 찍기</h4><p><code>{}</code>에 넣을 수 있는 것은 <code>_Generic</code> 목록에 있는 타입뿐이다. 그러면 내 구조체는 어떻게 찍는가 — <strong>그리는 함수를 하나 주면 된다.</strong></p><pre><code data-lang="c">static proven_err_t render_frac(proven_fmt_sink_t out, const void *obj)
+{
+    const frac_t *f = obj;
+    /* ... 만들어서 ... */
+    return proven_fmt_put(out, view);      /* 내보낸다 */
+}
+
+proven_arg_t a = proven_arg_custom(&amp;half, render_frac);
+proven_println("{} 그리고 |{:>8}|", PROVEN_ARG(a), PROVEN_ARG(a));</code></pre><p><code>proven_fmt_sink_t</code>는 “바이트를 받는 구멍”이고, <code>proven_fmt_put</code>으로 내보낸다. 예제의 출력에서 보듯 <strong>폭과 정렬이 사용자 타입에도 그대로 적용된다.</strong></p><p>여기에 알아 둘 계약이 하나 있다. <strong>그리는 함수는 <code>{}</code> 하나당 두 번 불린다</strong> — 한 번은 길이를 세는 가짜 구멍으로(폭·정렬을 계산해야 하므로), 한 번은 진짜로. 그래서 이 함수는 <strong>결정적</strong>이어야 하고 대상을 고쳐서는 안 된다. 두 번의 결과가 다르면 라이브러리는 어긋난 칸을 찍는 대신 <code>INVALID_ARG</code>를 돌려준다. 할당 없이 정렬을 맞추기 위해 치른 대가다.</p><div><div><p><code>examples/ch75/fmt.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
 int main(void)
@@ -113,12 +226,21 @@ int main(void)
 </code></pre></div><div><p>실행 결과</p><pre><code>formatted : example.org:8080 load=0.42
 into 8 bytes: refused (err=2)
 aligned   : |example.org|example.org|0.424|
-</code></pre></div></div><p>이 예제는 화면이 아니라 <strong>문자열로</strong> 형식화한다 — 70장에서 본 <code>proven_println</code>이 이 기계를 표준 출력에 연결한 판이다. 세 가지를 짚을 수 있다.</p><p><strong>첫째, 서식화도 실패할 수 있다.</strong> 8바이트 그릇에 <code>example.org:8080</code>을 넣을 수 없으므로 거부됐다. 74장의 원칙이 여기서도 그대로다 — 자르느니 실패를 돌려준다. <code>snprintf</code>와 정반대의 기본값이다.</p><p><strong>둘째, 서식 지정 문법이 조금 다르다.</strong> <code>{:>10}</code>의 <code>></code>는 오른쪽 정렬, <code>{:&lt;10}</code>은 왼쪽 정렬, <code>{:.3}</code>은 소수 셋째 자리다. 53장의 <code>%10s</code>·<code>%-10s</code>·<code>%.3f</code>와 대응하지만, <strong>타입 글자가 없다</strong>는 점이 다르다.</p><p><strong>셋째, 반올림은 하되 자릿수는 지킨다.</strong> <code>load=0.42</code>는 <code>{:.2}</code>가 만든 것이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>PROVEN_ARG</code>가 정확히 무엇을 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답 <code>_Generic</code>으로 인자의 타입을 골라, 그 타입에 맞는 꼬리표를 붙인 작은 구조체를 만든다. 개념만 옮기면 이런 모양이다.</p><pre><code data-lang="c">#define PROVEN_ARG(x) _Generic((x),          \
+</code></pre></div></div><p>이 예제는 화면이 아니라 <strong>문자열로</strong> 형식화한다 — 70장에서 본 <code>proven_println</code>이 이 기계를 표준 출력에 연결한 판이다. 세 가지를 짚을 수 있다.</p><p><strong>첫째, 서식화도 실패할 수 있다.</strong> 8바이트 그릇에 <code>example.org:8080</code>을 넣을 수 없으므로 거부됐다. 74장의 원칙이 여기서도 그대로다 — 자르느니 실패를 돌려준다. <code>snprintf</code>와 정반대의 기본값이다.</p><p><strong>둘째, 서식 지정 문법이 조금 다르다.</strong> <code>{:>10}</code>의 <code>></code>는 오른쪽 정렬, <code>{:&lt;10}</code>은 왼쪽 정렬, <code>{:.3}</code>은 소수 셋째 자리다. 53장의 <code>%10s</code>·<code>%-10s</code>·<code>%.3f</code>와 대응하지만, <strong>타입 글자가 없다</strong>는 점이 다르다.</p><p><strong>셋째, 반올림은 하되 자릿수는 지킨다.</strong> <code>load=0.42</code>는 <code>{:.2}</code>가 만든 것이다.</p><h4>75.1.3 어느 형식화 함수를 쓸 것인가</h4><p>74장의 세 갈래가 형식화에도 그대로 있다. 표로 정리하면 고를 일이 없다.</p><table><tr><th><strong>함수</strong></th><th><strong>모자랄 때</strong></th><th><strong>할당자</strong></th><th><strong>쓰는 자리</strong></th></tr><tr><td><code>proven_println(fmt, …)</code></td><td>—</td><td>필요 없음</td><td>화면에 한 줄</td></tr><tr><td><code>proven_print(fmt, …)</code></td><td>—</td><td>필요 없음</td><td>줄바꿈 없이</td></tr><tr><td><code>proven_eprint(fmt, …)</code></td><td>—</td><td>필요 없음</td><td>표준 오류로</td></tr><tr><td><code>proven_u8str_append_fmt</code></td><td>거부(원본 보존)</td><td>필요 없음</td><td>고정 버퍼. 기본값</td></tr><tr><td><code>proven_u8str_append_fmt_trunc</code></td><td>들어가는 만큼</td><td>필요 없음</td><td>로그 한 줄처럼 잘려도 되는 자리</td></tr><tr><td><code>proven_u8str_append_fmt_grow</code></td><td>늘린다</td><td>필요</td><td>길이를 모를 때</td></tr><tr><td><code>proven_u8str_append_fmt_with_scratch</code></td><td>늘린다</td><td>필요(+임시용)</td><td>임시 기억을 따로 주고 싶을 때</td></tr></table><p>세 함수 모두 <code>proven_fmt_result_t</code>를 돌려주는데, 이 꾸러미에는 <code>err</code> 말고 숫자가 둘 더 있다.</p><pre><code data-lang="c">typedef struct {
+    proven_err_t  err;
+    proven_size_t written;    /* 실제로 쓴 바이트 수 */
+    proven_size_t required;   /* 전부 쓰려면 필요했던 바이트 수 */
+} proven_fmt_result_t;</code></pre><p><code>required</code>가 53장에서 본 <code>snprintf</code>의 반환값과 같은 정보다. 다른 점은 <strong>그것이 이름 있는 칸에 들어 있다</strong>는 것 — <code>snprintf</code>는 “반환값이 버퍼 크기 이상이면 잘린 것”이라는 규약을 사람이 기억해야 했지만, 여기서는 <code>err</code>가 이미 그것을 말해 주고 <code>required</code>는 “그래서 얼마나 필요했나”에 답한다. 예제 <code>spec.c</code>의 출력에서 <code>written=7 required=10</code>이 그 쓰임이다 — 버퍼를 얼마나 키워야 하는지 그대로 알 수 있다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>PROVEN_ARG</code>가 정확히 무엇을 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답 <code>_Generic</code>으로 인자의 타입을 골라, 그 타입에 맞는 꼬리표를 붙인 작은 구조체를 만든다. 개념만 옮기면 이런 모양이다.</p><pre><code data-lang="c">#define PROVEN_ARG(x) _Generic((x),          \
     int:          proven_arg_i32,            \
     double:       proven_arg_f64,            \
     const char *: proven_arg_cstr,           \
     bool:         proven_arg_bool            \
-    /* ... */ )(x)</code></pre><p><code>_Generic</code>은 <strong>컴파일 시간에</strong> 가지를 고르므로 실행 시간에 타입을 판별하는 비용이 없다. 그리고 목록에 없는 타입을 넘기면 <strong>컴파일 오류</strong>가 난다 — 53장의 <code>printf</code>가 무엇이든 받아 주던 것과 정반대다.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ <code>PROVEN_ARG</code> 없이 값을 그냥 넘기기</p><pre><code data-lang="c">proven_println("count={}", count);        /* 컴파일되지 않는다 */</code></pre><p>꾸러미가 아닌 날값을 넘겼으므로 타입이 맞지 않아 빌드가 실패한다. 성가시게 느껴질 수 있지만 이것이 설계의 요점이다 — <strong>감싸는 일을 잊으면 프로그램이 만들어지지 않는다.</strong> 잊어도 컴파일되고 실행 중에 이상해지는 <code>printf</code>와의 차이가 여기에 있다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “자리표시자에 타입이 없으니 느릴 것이다”</p><p>반대다. <code>printf</code>는 <strong>실행 중에</strong> 서식 문자열을 한 글자씩 해석하며 다음에 무엇을 꺼낼지 결정한다. <code>{}</code>도 서식을 훑는 것은 같지만, 각 인자의 타입은 이미 꼬리표로 정해져 있어 추측이 없다. 무엇보다 타입 불일치로 인한 UB가 없으므로 방어 코드도 필요 없다. 비용의 차이는 대개 무시할 만하고, 이 라이브러리의 실수 형식화는 정확성 쪽에 더 신경을 쓴 편이다 — 53장에서 본 <code>%f</code>의 반올림 규칙을 그대로 재현하는 것이 오히려 까다로운 일이다.</p></div><h3>75.2 반대 방향 — 스캐너</h3><p>파싱은 형식화의 거울이지만, 실패의 성격이 다르다. 형식화는 그릇이 모자랄 때만 실패하는데, 파싱은 <strong>입력이 기대와 다를 때마다</strong> 실패한다. 그리고 53장에서 본 대로 <code>sscanf</code>는 “몇 개나 성공했는가”만 알려 준다 — 어디서 왜 멈췄는지는 말해 주지 않는다.</p><span id="idx-entry-108"></span><p>proven의 스캐너는 커서를 가진 객체다. 뷰 위에 놓고, 하나씩 읽어 나간다. 읽을 때마다 결과가 꾸러미로 온다.</p><div><div><p><code>examples/ch75/lines.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+    /* ... */ )(x)</code></pre><p><code>_Generic</code>은 <strong>컴파일 시간에</strong> 가지를 고르므로 실행 시간에 타입을 판별하는 비용이 없다. 그리고 목록에 없는 타입을 넘기면 <strong>컴파일 오류</strong>가 난다 — 53장의 <code>printf</code>가 무엇이든 받아 주던 것과 정반대다.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ <code>PROVEN_ARG</code> 없이 값을 그냥 넘기기</p><pre><code data-lang="c">proven_println("count={}", count);        /* 컴파일되지 않는다 */</code></pre><p>꾸러미가 아닌 날값을 넘겼으므로 타입이 맞지 않아 빌드가 실패한다. 성가시게 느껴질 수 있지만 이것이 설계의 요점이다 — <strong>감싸는 일을 잊으면 프로그램이 만들어지지 않는다.</strong> 잊어도 컴파일되고 실행 중에 이상해지는 <code>printf</code>와의 차이가 여기에 있다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “자리표시자에 타입이 없으니 느릴 것이다”</p><p>반대다. <code>printf</code>는 <strong>실행 중에</strong> 서식 문자열을 한 글자씩 해석하며 다음에 무엇을 꺼낼지 결정한다. <code>{}</code>도 서식을 훑는 것은 같지만, 각 인자의 타입은 이미 꼬리표로 정해져 있어 추측이 없다. 무엇보다 타입 불일치로 인한 UB가 없으므로 방어 코드도 필요 없다. 비용의 차이는 대개 무시할 만하고, 이 라이브러리의 실수 형식화는 정확성 쪽에 더 신경을 쓴 편이다 — 53장에서 본 <code>%f</code>의 반올림 규칙을 그대로 재현하는 것이 오히려 까다로운 일이다.</p></div><h3>75.2 반대 방향 — 스캐너</h3><p>파싱은 형식화의 거울이지만, 실패의 성격이 다르다. 형식화는 그릇이 모자랄 때만 실패하는데, 파싱은 <strong>입력이 기대와 다를 때마다</strong> 실패한다. 그리고 53장에서 본 대로 <code>sscanf</code>는 “몇 개나 성공했는가”만 알려 준다 — 어디서 왜 멈췄는지는 말해 주지 않는다.</p><span id="idx-entry-108"></span><p>proven의 스캐너는 커서를 가진 객체다. 뷰 위에 놓고, 하나씩 읽어 나간다. 읽을 때마다 결과가 꾸러미로 온다.</p><pre><code data-lang="c">typedef struct {
+    proven_u8str_view_t view;     /* 읽고 있는 입력(빌린 것) */
+    proven_size_t       cursor;   /* 어디까지 읽었는가 */
+} proven_scan_t;</code></pre><p>두 칸뿐이라는 사실이 두 가지를 말해 준다. 첫째, <strong>스캐너는 입력을 소유하지 않는다</strong> — 뷰 위에 얹힌 커서일 뿐이라 만들 때 할당이 없고 파괴도 없다. 둘째, <strong>커서를 손으로 저장하고 되돌릴 수 있다</strong>. 구조체를 통째로 복사해 두었다가 실패하면 되돌리면 되므로, “몇 글자 미리 보고 판단하는” 파서를 어렵지 않게 짤 수 있다.</p><pre><code data-lang="c">proven_scan_t save = sc;         /* 되돌리기 위한 표시 */
+proven_result_i64_t n = proven_scan_i64(&amp;sc);
+if (!proven_is_ok(n.err)) sc = save;   /* 실패했으니 없던 일로 */</code></pre><p>읽는 함수는 여섯이고, 전부 커서를 앞으로 민다.</p><table><tr><th><strong>함수</strong></th><th><strong>읽는 것</strong></th><th><strong>돌려주는 것</strong></th></tr><tr><td><code>proven_scan_i64(&amp;sc)</code></td><td>부호 있는 정수</td><td><code>{err, val}</code></td></tr><tr><td><code>proven_scan_u64(&amp;sc)</code></td><td>부호 없는 정수</td><td><code>{err, val}</code></td></tr><tr><td><code>proven_scan_f64(&amp;sc)</code></td><td>실수</td><td><code>{err, val}</code></td></tr><tr><td><code>proven_scan_str(&amp;sc)</code></td><td>공백 전까지의 낱말</td><td><code>{err, view}</code> — <strong>원본을 가리키는 뷰</strong></td></tr><tr><td><code>proven_scan_skip_whitespace(&amp;sc)</code></td><td>공백을 건너뛴다</td><td>—</td></tr><tr><td><code>proven_scan_skip_until(&amp;sc, t)</code></td><td><code>t</code>가 나올 때까지 건너뛴다</td><td><code>err</code>(없으면 커서 그대로)</td></tr></table><p><code>proven_scan_str</code>이 <strong>복사하지 않고 뷰를 돌려준다</strong>는 점이 중요하다 — 74장의 “복사 없는 텍스트 처리”가 파싱에서도 그대로다. 대신 그 뷰는 원본 입력이 살아 있는 동안만 유효하다(72장).</p><div><div><p><code>examples/ch75/lines.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
 /* 한 줄에서 "이름 나이" 꼴을 해석한다 — 실패는 값으로 드러난다. */

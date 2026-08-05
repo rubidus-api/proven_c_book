@@ -69,7 +69,123 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../ko/">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>77 The outside world — files, streams, time, random numbers</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>From here we touch the operating system. Opening, reading and writing files, buffered streams, reading and formatting time, and random numbers — those random numbers that become entirely different things according to the purpose. Chapter 10′s story of streams and chapter 25′s story of input are completed here as real APIs.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 10′s design had a stream be one where “the program does not know what it is connected to”, and chapter 53 said <code>fopen</code> reports failure with null. Then what failure is most often missed in a file API?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p><strong>The partial write.</strong> A failure to open is conspicuous, but the case of <code>write</code> returning without writing all that was requested is easy to forget — it really happens when the disk fills, when a signal cuts in, or when the other end is a pipe. So this library has two editions. <code>proven_fs_write</code> returns <strong>the number of bytes actually written</strong>, and <code>proven_fs_write_all</code> repeats until all is written and then reports only success or failure. What most code wants is the latter, and the former remains so as not to hide that fact.</p></div></div><h3>77.1 Files — open, read, close</h3><div><div><p><code>examples/ch77/fileio.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>77 The outside world — files, streams, time, random numbers</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>From here we touch the operating system. Opening, reading and writing files, buffered streams, reading and formatting time, and random numbers — those random numbers that become entirely different things according to the purpose. Chapter 10′s story of streams and chapter 25′s story of input are completed here as real APIs.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 10′s design had a stream be one where “the program does not know what it is connected to”, and chapter 53 said <code>fopen</code> reports failure with null. Then what failure is most often missed in a file API?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p><strong>The partial write.</strong> A failure to open is conspicuous, but the case of <code>write</code> returning without writing all that was requested is easy to forget — it really happens when the disk fills, when a signal cuts in, or when the other end is a pipe. So this library has two editions. <code>proven_fs_write</code> returns <strong>the number of bytes actually written</strong>, and <code>proven_fs_write_all</code> repeats until all is written and then reports only success or failure. What most code wants is the latter, and the former remains so as not to hide that fact.</p></div></div><h3>77.1 The life of one file</h3><p>A file is the first resource in this part that touches <strong>the outside world</strong>. The discipline of making and giving back is the same as in the earlier chapters, but the kinds of failure are far more numerous.</p><div><div><p><code>examples/ch77/fslife.c</code></p><pre><code data-lang="c">/* 파일 하나의 한살이 — 열기 모드, 부분 쓰기, 위치, 그리고 안전한 저장.
+   바깥 세계와 닿는 자리에서 실패가 어떻게 값으로 오는지 본다. */
+#include &lt;proven.h>
+
+/* 읽은 바이트를 글자로 보기 위한 도우미 (매크로 인자에 쉼표를 넣지 않으려고) */
+static proven_u8str_view_t as_text(const proven_byte_t *p, proven_size_t n)
+{
+    return (proven_u8str_view_t){ .ptr = p, .size = n };
+}
+
+static const char *codename(proven_err_t e)
+{
+    switch (e) {
+    case PROVEN_OK:               return "OK";
+    case PROVEN_ERR_NOT_FOUND:    return "NOT_FOUND";
+    case PROVEN_ERR_PERMISSION:   return "PERMISSION";
+    case PROVEN_ERR_IO:           return "IO";
+    case PROVEN_ERR_EOF:          return "EOF";
+    case PROVEN_ERR_INVALID_ARG:  return "INVALID_ARG";
+    default:                      return "(그 밖)";
+    }
+}
+
+int main(void)
+{
+    proven_allocator_t scratch = proven_heap_allocator();
+    proven_u8str_view_t path = PROVEN_LIT("build/ch77-demo.txt");
+
+    /* ── ① 열기 — 모드는 비트 깃발을 엮는다 ──────────────────── */
+    proven_result_file_t opened = proven_fs_open(
+        scratch, path,
+        PROVEN_FS_WRITE | PROVEN_FS_CREATE | PROVEN_FS_TRUNC);
+    if (!proven_is_ok(opened.err)) {
+        proven_println("열기 실패: {}", PROVEN_ARG(codename(opened.err)));
+        return 1;
+    }
+    proven_file_t f = opened.value;
+    proven_println("열기            -> OK (쓰기·생성·비우기)");
+
+    /* ── ② 쓰기의 두 판 ──────────────────────────────────────── */
+    proven_u8str_view_t line = PROVEN_LIT("first line\nsecond line\n");
+
+    /* _write 는 "실제로 쓴 양"을 돌려준다 — 부분 쓰기가 있을 수 있다 */
+    proven_result_size_t w = proven_fs_write(f, proven_mem_view_from_u8(line));
+    proven_println("write           -> err={} 쓴 바이트={} (요청 {})",
+                   PROVEN_ARG(codename(w.err)), PROVEN_ARG(w.value),
+                   PROVEN_ARG(line.size));
+
+    /* _write_all 은 다 쓸 때까지 되풀이한 뒤 성공/실패만 알려 준다 */
+    proven_err_t e = proven_fs_write_all(f, proven_mem_view_from_u8(PROVEN_LIT("third\n")));
+    proven_println("write_all       -> {} (대부분의 코드가 원하는 쪽)",
+                   PROVEN_ARG(codename(e)));
+
+    /* ── ③ 디스크에 못박기 — flush 와 sync 는 다르다 ──────────── */
+    e = proven_fs_sync(f);
+    proven_println("sync            -> {} (여기까지 해야 정전에도 남는다)",
+                   PROVEN_ARG(codename(e)));
+
+    proven_result_size_t sz = proven_fs_size(f);
+    proven_result_u64_t at = proven_fs_tell(f);
+    proven_println("size={} tell={}", PROVEN_ARG(sz.value), PROVEN_ARG(at.val));
+    (void)proven_fs_close(f);
+
+    /* ── ④ 읽기 — 요청량과 읽은 양은 다르다 ──────────────────── */
+    proven_result_file_t ro = proven_fs_open(scratch, path, PROVEN_FS_READ);
+    if (proven_is_ok(ro.err)) {
+        proven_file_t r = ro.value;
+        proven_byte_t buf[16];
+        proven_result_size_t got = proven_fs_read(r, (proven_mem_mut_t){ buf, sizeof buf });
+        proven_println("read(16)        -> 읽은 바이트={} \"{}\"",
+                       PROVEN_ARG(got.value),
+                       PROVEN_ARG(as_text(buf, got.value)));
+
+        /* 위치를 되돌리고 다시 읽는다 */
+        (void)proven_fs_seek(r, 0, PROVEN_FS_SEEK_SET);
+        proven_result_size_t again = proven_fs_read(r, (proven_mem_mut_t){ buf, 5 });
+        proven_println("seek(0)+read(5) -> {} 바이트", PROVEN_ARG(again.value));
+        (void)proven_fs_close(r);
+    }
+
+    /* ── ⑤ 한 번에 읽기 — 파일 크기를 모를 때 ────────────────── */
+    proven_result_u8str_t all = proven_fs_read_all_u8str(scratch, path);
+    if (proven_is_ok(all.err)) {
+        proven_u8str_t s = all.value;
+        proven_println("read_all        -> {} 바이트 (파일 전체를 한 번에)",
+                       PROVEN_ARG(proven_u8str_as_view(&amp;s).size));
+        proven_u8str_destroy(scratch, &amp;s);
+    }
+
+    /* ── ⑥ 없는 파일 — 실패는 값으로 온다 ────────────────────── */
+    proven_result_file_t missing =
+        proven_fs_open(scratch, PROVEN_LIT("build/없는파일.txt"), PROVEN_FS_READ);
+    proven_println("없는 파일 열기  -> {} (플랫폼 층이 어떤 코드로 옮기는지 확인할 것)",
+                   PROVEN_ARG(codename(missing.err)));
+
+    /* ── ⑦ 원자적 저장 — 임시 파일에 쓰고 바꿔치기 ───────────── */
+    e = proven_fs_write_file_atomic(scratch, PROVEN_LIT("build/ch77-atomic.txt"),
+                                    proven_mem_view_from_u8(PROVEN_LIT("all or nothing\n")));
+    proven_println("write_file_atomic -> {} (반쯤 쓰인 파일이 남지 않는다)",
+                   PROVEN_ARG(codename(e)));
+
+    (void)proven_fs_remove(scratch, path);
+    (void)proven_fs_remove(scratch, PROVEN_LIT("build/ch77-atomic.txt"));
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>열기            -> OK (쓰기·생성·비우기)
+write           -> err=OK 쓴 바이트=23 (요청 23)
+write_all       -> OK (대부분의 코드가 원하는 쪽)
+sync            -> OK (여기까지 해야 정전에도 남는다)
+size=29 tell=29
+read(16)        -> 읽은 바이트=16 "first line
+secon"
+seek(0)+read(5) -> 5 바이트
+read_all        -> 29 바이트 (파일 전체를 한 번에)
+없는 파일 열기  -> IO (플랫폼 층이 어떤 코드로 옮기는지 확인할 것)
+write_file_atomic -> OK (반쯤 쓰인 파일이 남지 않는다)
+</code></pre></div></div><p>The life cycle is four steps, and at each step failure comes as a value.</p><table><tr><th><strong>step</strong></th><th><strong>function</strong></th><th><strong>to know</strong></th></tr><tr><td>opening</td><td><code>proven_fs_open(scratch, path, mode)</code></td><td><strong>a scratch allocator</strong> is needed (for path conversion)</td></tr><tr><td>writing, reading</td><td><code>_write</code>/<code>_write_all</code>, <code>_read</code></td><td>amount requested ≠ amount handled</td></tr><tr><td>nailing it down</td><td><code>proven_fs_sync(file)</code></td><td>closing alone does not leave it on the disk</td></tr><tr><td>closing</td><td><code>proven_fs_close(file)</code></td><td>it has a return value — there is something to check</td></tr></table><p><strong>The mode weaves bit flags.</strong> Instead of a string like the standard <code>fopen</code>’s <code>"w+b"</code>, named values are joined with <code>|</code>.</p><table><tr><th><strong>flag</strong></th><th><strong>meaning</strong></th></tr><tr><td><code>PROVEN_FS_READ</code></td><td>reading</td></tr><tr><td><code>PROVEN_FS_WRITE</code></td><td>writing</td></tr><tr><td><code>PROVEN_FS_APPEND</code></td><td>appending at the end</td></tr><tr><td><code>PROVEN_FS_CREATE</code></td><td>create it if absent</td></tr><tr><td><code>PROVEN_FS_TRUNC</code></td><td>empty it if present</td></tr><tr><td><code>PROVEN_FS_CREATE_NEW</code></td><td>★ <strong>fail if it already exists</strong> — creating anew without a race</td></tr></table><p>Two things are better than string modes. First, <strong>the combination is visible</strong> — there is no need to memorise what <code>"a+"</code> exactly is. Second, things absent from string modes, such as <code>CREATE_NEW</code>, can be expressed. When making a lock file or a temporary file, “fail if it already exists” is the only road that blocks a race condition (recall chapter 56′s <code>tmpnam</code> story).</p><p><strong>Handles travel by value.</strong> That the functions take a <code>proven_file_t</code> by value rather than by pointer is the mark of it, because what is inside is about one integer descriptor. So the discipline of not using that value again after closing is still a human’s part.</p><h4>77.1.1 The convenience functions that read and write in one go</h4><p>In half the cases in practice the file is small and may be handled whole. Then opening, reading and closing need not be woven by hand.</p><table><tr><th><strong>function</strong></th><th><strong>what it does</strong></th><th><strong>caution</strong></th></tr><tr><td><code>proven_fs_read_all(alloc, path)</code></td><td>the whole file as bytes</td><td>a large file eats memory</td></tr><tr><td><code>proven_fs_read_all_u8str(alloc, path)</code></td><td>the whole file as a string</td><td>the same. it does not check the encoding</td></tr><tr><td><code>proven_fs_write_file(scratch, path, data)</code></td><td>writing it whole</td><td>die in the middle and a half-written file is left</td></tr><tr><td><code>proven_fs_write_file_atomic(...)</code></td><td>write to a temporary and swap</td><td>★ no half-written file is left</td></tr><tr><td><code>proven_fs_write_file_durable(...)</code></td><td>atomic + <code>sync</code></td><td>it survives a power cut. the slowest</td></tr></table><p>The difference between the last three rows matters in practice. Code that overwrites a configuration file or saved data, <strong>if it dies in the middle, leaves a file that is neither the original nor the new one</strong>, and the standard practice that prevents it is “write to a temporary file and rename” (renaming is atomic within the same file system). <code>_atomic</code> does that work for you, and <code>_durable</code> hangs a <code>sync</code> on it as well so that it survives a power cut.</p><div><div><p><code>examples/ch77/fileio.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
 int main(void)

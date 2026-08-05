@@ -69,7 +69,123 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>77 바깥 세계 — 파일, 스트림, 시간, 난수</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>여기서부터는 운영체제와 닿는다. 파일을 열고 읽고 쓰는 일, 버퍼드 스트림, 시간을 읽고 형식화하는 일, 그리고 난수 — 용도에 따라 완전히 다른 물건이 되는 그 난수까지. 10장의 스트림 이야기와 25장의 입력 이야기가 여기서 실제 API로 완결된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>10장에서 스트림이 “무엇에 연결됐는지 프로그램은 모른다”는 설계였고, 53장에서는 <code>fopen</code>이 실패를 널로 알린다고 했다. 그러면 파일 API에서 가장 자주 놓치는 실패는 무엇인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>부분 쓰기</strong>다. 열기 실패는 눈에 잘 띄지만, <code>write</code>가 요청한 만큼 다 쓰지 않고 돌아오는 경우는 잊기 쉽다 — 디스크가 차거나, 시그널이 끼어들거나, 상대가 파이프인 경우에 실제로 일어난다. 그래서 이 라이브러리에는 두 판이 있다. <code>proven_fs_write</code>는 <strong>실제로 쓴 바이트 수</strong>를 돌려주고, <code>proven_fs_write_all</code>은 다 쓸 때까지 되풀이한 뒤 성공·실패만 알려 준다. 대부분의 코드가 원하는 것은 후자이고, 전자는 그 사실을 감추지 않기 위해 남아 있다.</p></div></div><h3>77.1 파일 — 열고, 읽고, 닫기</h3><div><div><p><code>examples/ch77/fileio.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+<h2>77 바깥 세계 — 파일, 스트림, 시간, 난수</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>여기서부터는 운영체제와 닿는다. 파일을 열고 읽고 쓰는 일, 버퍼드 스트림, 시간을 읽고 형식화하는 일, 그리고 난수 — 용도에 따라 완전히 다른 물건이 되는 그 난수까지. 10장의 스트림 이야기와 25장의 입력 이야기가 여기서 실제 API로 완결된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>10장에서 스트림이 “무엇에 연결됐는지 프로그램은 모른다”는 설계였고, 53장에서는 <code>fopen</code>이 실패를 널로 알린다고 했다. 그러면 파일 API에서 가장 자주 놓치는 실패는 무엇인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>부분 쓰기</strong>다. 열기 실패는 눈에 잘 띄지만, <code>write</code>가 요청한 만큼 다 쓰지 않고 돌아오는 경우는 잊기 쉽다 — 디스크가 차거나, 시그널이 끼어들거나, 상대가 파이프인 경우에 실제로 일어난다. 그래서 이 라이브러리에는 두 판이 있다. <code>proven_fs_write</code>는 <strong>실제로 쓴 바이트 수</strong>를 돌려주고, <code>proven_fs_write_all</code>은 다 쓸 때까지 되풀이한 뒤 성공·실패만 알려 준다. 대부분의 코드가 원하는 것은 후자이고, 전자는 그 사실을 감추지 않기 위해 남아 있다.</p></div></div><h3>77.1 파일 하나의 한살이</h3><p>파일은 이 부에서 처음으로 <strong>바깥 세계</strong>와 닿는 자원이다. 만들고 되돌리는 규율은 앞 장들과 같지만, 실패의 종류가 훨씬 많다.</p><div><div><p><code>examples/ch77/fslife.c</code></p><pre><code data-lang="c">/* 파일 하나의 한살이 — 열기 모드, 부분 쓰기, 위치, 그리고 안전한 저장.
+   바깥 세계와 닿는 자리에서 실패가 어떻게 값으로 오는지 본다. */
+#include &lt;proven.h>
+
+/* 읽은 바이트를 글자로 보기 위한 도우미 (매크로 인자에 쉼표를 넣지 않으려고) */
+static proven_u8str_view_t as_text(const proven_byte_t *p, proven_size_t n)
+{
+    return (proven_u8str_view_t){ .ptr = p, .size = n };
+}
+
+static const char *codename(proven_err_t e)
+{
+    switch (e) {
+    case PROVEN_OK:               return "OK";
+    case PROVEN_ERR_NOT_FOUND:    return "NOT_FOUND";
+    case PROVEN_ERR_PERMISSION:   return "PERMISSION";
+    case PROVEN_ERR_IO:           return "IO";
+    case PROVEN_ERR_EOF:          return "EOF";
+    case PROVEN_ERR_INVALID_ARG:  return "INVALID_ARG";
+    default:                      return "(그 밖)";
+    }
+}
+
+int main(void)
+{
+    proven_allocator_t scratch = proven_heap_allocator();
+    proven_u8str_view_t path = PROVEN_LIT("build/ch77-demo.txt");
+
+    /* ── ① 열기 — 모드는 비트 깃발을 엮는다 ──────────────────── */
+    proven_result_file_t opened = proven_fs_open(
+        scratch, path,
+        PROVEN_FS_WRITE | PROVEN_FS_CREATE | PROVEN_FS_TRUNC);
+    if (!proven_is_ok(opened.err)) {
+        proven_println("열기 실패: {}", PROVEN_ARG(codename(opened.err)));
+        return 1;
+    }
+    proven_file_t f = opened.value;
+    proven_println("열기            -> OK (쓰기·생성·비우기)");
+
+    /* ── ② 쓰기의 두 판 ──────────────────────────────────────── */
+    proven_u8str_view_t line = PROVEN_LIT("first line\nsecond line\n");
+
+    /* _write 는 "실제로 쓴 양"을 돌려준다 — 부분 쓰기가 있을 수 있다 */
+    proven_result_size_t w = proven_fs_write(f, proven_mem_view_from_u8(line));
+    proven_println("write           -> err={} 쓴 바이트={} (요청 {})",
+                   PROVEN_ARG(codename(w.err)), PROVEN_ARG(w.value),
+                   PROVEN_ARG(line.size));
+
+    /* _write_all 은 다 쓸 때까지 되풀이한 뒤 성공/실패만 알려 준다 */
+    proven_err_t e = proven_fs_write_all(f, proven_mem_view_from_u8(PROVEN_LIT("third\n")));
+    proven_println("write_all       -> {} (대부분의 코드가 원하는 쪽)",
+                   PROVEN_ARG(codename(e)));
+
+    /* ── ③ 디스크에 못박기 — flush 와 sync 는 다르다 ──────────── */
+    e = proven_fs_sync(f);
+    proven_println("sync            -> {} (여기까지 해야 정전에도 남는다)",
+                   PROVEN_ARG(codename(e)));
+
+    proven_result_size_t sz = proven_fs_size(f);
+    proven_result_u64_t at = proven_fs_tell(f);
+    proven_println("size={} tell={}", PROVEN_ARG(sz.value), PROVEN_ARG(at.val));
+    (void)proven_fs_close(f);
+
+    /* ── ④ 읽기 — 요청량과 읽은 양은 다르다 ──────────────────── */
+    proven_result_file_t ro = proven_fs_open(scratch, path, PROVEN_FS_READ);
+    if (proven_is_ok(ro.err)) {
+        proven_file_t r = ro.value;
+        proven_byte_t buf[16];
+        proven_result_size_t got = proven_fs_read(r, (proven_mem_mut_t){ buf, sizeof buf });
+        proven_println("read(16)        -> 읽은 바이트={} \"{}\"",
+                       PROVEN_ARG(got.value),
+                       PROVEN_ARG(as_text(buf, got.value)));
+
+        /* 위치를 되돌리고 다시 읽는다 */
+        (void)proven_fs_seek(r, 0, PROVEN_FS_SEEK_SET);
+        proven_result_size_t again = proven_fs_read(r, (proven_mem_mut_t){ buf, 5 });
+        proven_println("seek(0)+read(5) -> {} 바이트", PROVEN_ARG(again.value));
+        (void)proven_fs_close(r);
+    }
+
+    /* ── ⑤ 한 번에 읽기 — 파일 크기를 모를 때 ────────────────── */
+    proven_result_u8str_t all = proven_fs_read_all_u8str(scratch, path);
+    if (proven_is_ok(all.err)) {
+        proven_u8str_t s = all.value;
+        proven_println("read_all        -> {} 바이트 (파일 전체를 한 번에)",
+                       PROVEN_ARG(proven_u8str_as_view(&amp;s).size));
+        proven_u8str_destroy(scratch, &amp;s);
+    }
+
+    /* ── ⑥ 없는 파일 — 실패는 값으로 온다 ────────────────────── */
+    proven_result_file_t missing =
+        proven_fs_open(scratch, PROVEN_LIT("build/없는파일.txt"), PROVEN_FS_READ);
+    proven_println("없는 파일 열기  -> {} (플랫폼 층이 어떤 코드로 옮기는지 확인할 것)",
+                   PROVEN_ARG(codename(missing.err)));
+
+    /* ── ⑦ 원자적 저장 — 임시 파일에 쓰고 바꿔치기 ───────────── */
+    e = proven_fs_write_file_atomic(scratch, PROVEN_LIT("build/ch77-atomic.txt"),
+                                    proven_mem_view_from_u8(PROVEN_LIT("all or nothing\n")));
+    proven_println("write_file_atomic -> {} (반쯤 쓰인 파일이 남지 않는다)",
+                   PROVEN_ARG(codename(e)));
+
+    (void)proven_fs_remove(scratch, path);
+    (void)proven_fs_remove(scratch, PROVEN_LIT("build/ch77-atomic.txt"));
+    return 0;
+}
+</code></pre></div><div><p>실행 결과</p><pre><code>열기            -> OK (쓰기·생성·비우기)
+write           -> err=OK 쓴 바이트=23 (요청 23)
+write_all       -> OK (대부분의 코드가 원하는 쪽)
+sync            -> OK (여기까지 해야 정전에도 남는다)
+size=29 tell=29
+read(16)        -> 읽은 바이트=16 "first line
+secon"
+seek(0)+read(5) -> 5 바이트
+read_all        -> 29 바이트 (파일 전체를 한 번에)
+없는 파일 열기  -> IO (플랫폼 층이 어떤 코드로 옮기는지 확인할 것)
+write_file_atomic -> OK (반쯤 쓰인 파일이 남지 않는다)
+</code></pre></div></div><p>한살이는 네 걸음이고, 각 걸음마다 실패가 값으로 온다.</p><table><tr><th><strong>걸음</strong></th><th><strong>함수</strong></th><th><strong>알아 둘 것</strong></th></tr><tr><td>열기</td><td><code>proven_fs_open(scratch, path, mode)</code></td><td><strong>scratch 할당자</strong>가 필요하다(경로 변환용)</td></tr><tr><td>쓰기·읽기</td><td><code>_write</code>/<code>_write_all</code>, <code>_read</code></td><td>요청량 ≠ 처리량</td></tr><tr><td>못박기</td><td><code>proven_fs_sync(file)</code></td><td>닫기만으로는 디스크에 남지 않는다</td></tr><tr><td>닫기</td><td><code>proven_fs_close(file)</code></td><td>반환값이 있다 — 확인할 값이 있다</td></tr></table><p><strong>모드는 비트 깃발을 엮는다.</strong> 표준 <code>fopen</code>의 <code>"w+b"</code> 같은 문자열 대신 이름 있는 값을 <code>|</code>로 잇는다.</p><table><tr><th><strong>깃발</strong></th><th><strong>뜻</strong></th></tr><tr><td><code>PROVEN_FS_READ</code></td><td>읽기</td></tr><tr><td><code>PROVEN_FS_WRITE</code></td><td>쓰기</td></tr><tr><td><code>PROVEN_FS_APPEND</code></td><td>끝에 이어 쓰기</td></tr><tr><td><code>PROVEN_FS_CREATE</code></td><td>없으면 만든다</td></tr><tr><td><code>PROVEN_FS_TRUNC</code></td><td>있으면 비운다</td></tr><tr><td><code>PROVEN_FS_CREATE_NEW</code></td><td>★ <strong>이미 있으면 실패</strong> — 경쟁 없이 새로 만들기</td></tr></table><p>문자열 모드보다 나은 점이 둘이다. 첫째, <strong>조합이 눈에 보인다</strong> — <code>"a+"</code>가 정확히 무엇인지 외울 필요가 없다. 둘째, <code>CREATE_NEW</code>처럼 문자열 모드에 없는 것을 표현할 수 있다. 잠금 파일이나 임시 파일을 만들 때 “이미 있으면 실패”가 경쟁 조건을 막는 유일한 길이다(56장의 <code>tmpnam</code> 이야기를 떠올리면 된다).</p><p><strong>핸들은 값으로 다닌다.</strong> <code>proven_file_t</code>를 포인터가 아니라 값으로 받는 함수들이 그 표시인데, 안에 든 것이 정수 서술자 하나 정도이기 때문이다. 그래서 닫은 뒤에 그 값을 다시 쓰면 안 된다는 규율은 여전히 사람의 몫이다.</p><h4>77.1.1 한 번에 읽고 쓰는 편의 함수들</h4><p>파일이 작고 통째로 다루면 되는 경우가 실무에서 절반은 된다. 그럴 때 열기·읽기·닫기를 손으로 엮지 않아도 된다.</p><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>주의</strong></th></tr><tr><td><code>proven_fs_read_all(alloc, path)</code></td><td>파일 전체를 바이트로</td><td>큰 파일이면 기억을 먹는다</td></tr><tr><td><code>proven_fs_read_all_u8str(alloc, path)</code></td><td>파일 전체를 문자열로</td><td>같음. 인코딩 검사는 하지 않는다</td></tr><tr><td><code>proven_fs_write_file(scratch, path, data)</code></td><td>통째로 쓰기</td><td>중간에 죽으면 반쯤 쓰인 파일이 남는다</td></tr><tr><td><code>proven_fs_write_file_atomic(...)</code></td><td>임시 파일에 쓰고 바꿔치기</td><td>★ 반쯤 쓰인 파일이 남지 않는다</td></tr><tr><td><code>proven_fs_write_file_durable(...)</code></td><td>원자적 + <code>sync</code></td><td>정전까지 견딘다. 가장 느리다</td></tr></table><p>마지막 세 줄의 차이가 실무에서 중요하다. 설정 파일이나 저장 데이터를 덮어쓰는 코드가 <strong>중간에 죽으면 원본도 새것도 아닌 파일이 남는데</strong>, 그것을 막는 표준 관행이 “임시 파일에 쓰고 이름을 바꾸는” 것이다(이름 바꾸기는 같은 파일 시스템 안에서 원자적이다). <code>_atomic</code>이 그 일을 대신해 주고, <code>_durable</code>은 거기에 <code>sync</code>까지 걸어 정전에도 견디게 한다.</p><div><div><p><code>examples/ch77/fileio.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
 #include &lt;stdio.h>
 
 int main(void)
