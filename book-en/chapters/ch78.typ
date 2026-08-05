@@ -194,6 +194,80 @@ memory budget is written as a number in the source*.
   little more formal — code that works anywhere is specialised to nowhere.
 ]
 
+== Where this library stands — what it is, and what it is not
+
+Before closing the part its place has to be made clear. The design seen so far —
+taking an allocator as a parameter, returning failure as a value, views that
+carry a length, refusing rather than truncating — was not invented by proven.
+Zig's allocator parameter, Rust's `Result` and slices, recent C++'s `span` and
+`expected`, and the in-house C conventions of many companies have all moved in
+the same direction. There is considerable common ground about it.
+
+*proven, however, is not that common ground itself.* It is *one attempt* to
+implement that direction in C23 — neither a standard nor an industry component.
+The distinction matters for a simple reason: the direction has been verified in
+many places, this implementation has not yet. What to take from this part is the
+direction rather than the code, and if you do take the code, take it knowing what
+follows.
+
+=== What has been verified so far
+
+What this book has put in print is exactly this much.
+
+#dtable(
+  columns: 2,
+  [*confirmed*], [*not confirmed*],
+  [this book's 94 examples build and run under GCC 14 and Clang 22], [behaviour under other compilers (MSVC, older GCC)],
+  [they all pass on x86-64 Linux], [continuous verification on other systems and architectures],
+  [the contracts of the API the examples use match the documentation], [coverage of the whole API],
+  [the platform layer has two branches, POSIX and Win32], [continuous automated verification of the Win32 branch],
+)
+
+That is, what this book vouches for is that *the code printed here runs in this
+environment* — not that the whole library is verified in every environment. The
+book claims no more than that.
+
+=== Stability — what may still change
+
+proven is not at 1.0. The edition this book uses is a snapshot of the
+`v26.07.23b` line, and that means:
+
+- *The API may change.* Names and signatures are still being tidied. There is no
+  guarantee that this book's examples compile unchanged against the next edition.
+- *No ABI is promised.* Struct layouts may change, so mixing pre-compiled
+  binaries is not advisable at this stage; building from source alongside your
+  own code is safer.
+- *Pin the edition.* If you use it in earnest, vendor a specific snapshot into
+  your repository (as this book does under `vendor/proven`) and move it
+  deliberately.
+
+=== What is not there yet
+
+Set down honestly, the following are absent or thin in this edition.
+
+- *Performance and size comparisons.* No benchmarks against the standard library
+  or other C libraries are published. That is why this book makes no performance
+  claim — a performance claim without data is advertising.
+- *Outside users.* There is little record of use in projects beyond the author's.
+- *A wide platform matrix.* The freestanding branch is designed for, but the list
+  of continuously verified targets is narrow.
+- *A long compatibility history.* The trust an old library earns — "it has been
+  carried across many editions already" — accumulates only with time.
+
+#qa[
+  Then what is this part to be read for?
+][
+  Two things. One is *how to read a design* — the eye that asks, of whatever
+  library you meet, "how does it report failure, who supplies the memory, where
+  is the length, what happens at the boundary?" That eye remains whether or not
+  you use proven.
+
+  The other is *grounds for a choice*. If, looking at the table above, you judge
+  that it is too early for your project, that too is the result of reading this
+  part properly. It means the same as the preface saying that deciding you do not
+  need proven is a fine outcome too.
+]
+
 == When it is better not to use it
 
 We close honestly. There are cases where this library is not the answer.

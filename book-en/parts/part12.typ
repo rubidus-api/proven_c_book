@@ -13,6 +13,16 @@ that come as values (chapter 71), bytes and views (chapter 72), allocators
 and algorithms (chapter 76), files, time and random numbers (chapter 77), and
 running things overlapped and environments with no OS (chapter 78).
 
+One thing should be said in advance. The design this part will show — taking an
+allocator as a parameter, returning failure as a value, views that carry their
+length — was not invented by proven. Zig, Rust and recent C++ have moved in the
+same direction, and there is considerable common ground about it. But *proven is
+not that common ground itself: it is one attempt to implement it in C23.* It is
+neither a standard nor a component the industry has adopted. That distinction
+holds throughout this part — the direction has been verified in many places, this
+implementation has not yet (chapter 78 sets down the supported range and the
+stability honestly).
+
 It is well to hold two purposes in reading. If you mean to use proven, this part is
 the starting point; and even if you do not — read it as a case of following to the
 end *how the dangers this book has taught are blocked by API design*. Whichever
