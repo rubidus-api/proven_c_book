@@ -1,7 +1,7 @@
 // Proven C Book — English edition. Build: scripts/build-book-en.sh
 #import "../book/lib.typ": *
 
-#let book-version = "v0.5.1"
+#let book-version = "v0.5.2"
 #let book-updated = "2026-08-05"
 #let book-status = "draft"
 #let book-repo = "https://github.com/rubidus-api/proven_c_book"
@@ -14,6 +14,9 @@
 #set text(font: ("Noto Serif", "Noto Serif CJK KR"), size: 10.5pt, lang: "en")
 #set par(justify: true, leading: 0.78em, first-line-indent: (amount: 1em, all: true))
 #show heading: set text(font: ("Noto Sans", "Noto Sans CJK KR"))
+// 절 제목(1.2 꼴)은 위아래로 숨을 준다 — 기본값은 본문에 너무 붙는다
+#show heading.where(level: 2): set block(above: 1.9em, below: 1.05em)
+#show heading.where(level: 3): set block(above: 1.5em, below: 0.85em)
 // 코드는 영어권 독자에게 익숙한 라틴 고정폭 Noto Sans Mono 로 통일한다.
 // D2Coding 은 쓰지 않는다. 유니코드·인코딩 설명처럼 코드 안에 한글이
 // 꼭 있어야 하는 자리만 Noto Sans CJK KR 이 뒤에서 받는다.
@@ -148,22 +151,38 @@
     let n = counter(heading).at(h.location()).first()
     by-num.insert(str(n), h)
   }
+  // 번호 없는 1단계 제목(머리말·번역 노트·부록·찾아보기)도 차례에 싣는다.
+  let plain = query(heading.where(level: 1)).filter(h => h.numbering == none)
+  let ch-pages = heads.map(h => counter(page).at(h.location()).first())
+  let first-ch = calc.min(..ch-pages)
+  let last-ch = calc.max(..ch-pages)
+  let page-of = h => counter(page).at(h.location()).first()
+  let front-extra = plain.filter(h => page-of(h) < first-ch)
+  let back-extra = plain.filter(h => page-of(h) > last-ch)
+  let row = (label, h) => block(width: 100%, inset: (left: 1.2em), below: 0.5em,
+    grid(columns: (1fr, auto), column-gutter: 0.6em, align: (left, right),
+      link(h.location())[#label],
+      link(h.location())[#page-of(h)]))
+
   block(width: 100%)[
+    #set par(leading: 0.9em)
     #text(font: ("Noto Sans", "Noto Sans CJK KR"), size: 15pt, weight: "bold")[Contents]
-    #v(0.5em)
+    #v(0.9em)
+    #for h in front-extra { row(h.body, h) }
     #for (part-title, intro, chs) in parts {
-      block(above: 0.9em, below: 0.35em)[
+      block(above: 1.5em, below: 0.7em)[
         #text(font: ("Noto Sans", "Noto Sans CJK KR"), size: 10.5pt, weight: "bold", part-title)
       ]
       for i in chs {
         let h = by-num.at(str(i), default: none)
-        if h != none {
-          block(width: 100%, inset: (left: 1.2em), below: 0.2em,
-            grid(columns: (1fr, auto), column-gutter: 0.6em, align: (left, right),
-              link(h.location())[#i. #h.body],
-              link(h.location())[#counter(page).at(h.location()).first()]))
-        }
+        if h != none { row([#i. #h.body], h) }
       }
+    }
+    #if back-extra.len() > 0 {
+      block(above: 1.5em, below: 0.7em)[
+        #text(font: ("Noto Sans", "Noto Sans CJK KR"), size: 10.5pt, weight: "bold")[Appendices and index]
+      ]
+      for h in back-extra { row(h.body, h) }
     }
   ]
 }
@@ -243,8 +262,8 @@ The Korean edition is at:
 #include "appendix/a2-formats.typ"
 #include "appendix/a3-conversions.typ"
 #include "appendix/a4-reading.typ"
-#include "appendix/a6-grammar.typ"
 #include "appendix/a5-bibliography.typ"
+#include "appendix/a6-grammar.typ"
 
 // ── Index ───────────────────────────────────────────
 #pagebreak(weak: true)
