@@ -10,7 +10,7 @@
 ]
 
 #deepqa[
-  25장에서 가변 인자로 넘어가는 값에는 기본 진급(float→double,
+#idx("가변 인자")  25장에서 가변 인자로 넘어가는 값에는 기본 진급(float→double,
   작은 정수→int)이 적용된다고 배웠다. 그런데 왜 하필 그 자리에만 특별한
   진급 규칙이 있는가?
 ][
@@ -45,6 +45,169 @@
 말의 정확한 무게가 이것이다 — 그 계약이 깨지면 printf는 있지도 않은
 인자를 꺼내며 메모리를 뒤진다(19장의 서식 문자열 취약점이 바로 이
 메커니즘이었다).
+
+== 기본 인자 승격 — `...`을 건너는 값은 굵어진다
+
+`va_arg`가 타입을 물어보는 이유가 하나 더 있다. `...`을 건너는 인자는
+*원래 타입 그대로 가지 않기* 때문이다. 25장에서 본 기본 인자
+승격(default argument promotion)이 여기서 실제로 일어난다.
+
+#align(center, table(
+  columns: 3,
+  stroke: 0.5pt + rgb("#cccccc"),
+  inset: 5pt,
+  align: (left, left, left),
+  [*넘긴 것*], [*실제로 도착하는 것*], [*그래서*],
+  [`char`, `signed char`, `unsigned char`], [`int`], [`va_arg(ap, char)`는 틀렸다],
+  [`short`, `unsigned short`], [`int`], [`va_arg(ap, int)`로 꺼낸다],
+  [`bool`], [`int`], [같음],
+  [`float`], [`double`], [`va_arg(ap, float)`는 틀렸다],
+  [`int` 이상의 정수], [그대로], [—],
+  [포인터], [그대로], [단 널 상수는 캐스트가 필요하다],
+))
+
+규칙을 한 줄로 줄이면 이렇다 — *`int`보다 좁은 정수는 `int`가 되고,
+`float`은 `double`이 된다.* 그래서 `printf`에 `float` 전용 서식이 없고
+(46장), `va_arg(ap, float)`라고 쓰면 도착하지도 않은 타입을 꺼내는
+계약 위반이 된다.
+
+널 포인터를 넘길 때의 함정도 여기서 나온다. `NULL`이 정수 `0`으로
+정의된 구현에서는 `...` 자리에 정수 0이 실려 가서, 받는 쪽이
+`va_arg(ap, char*)`로 꺼내면 폭이 어긋난다. C23의 `nullptr`(31장)이나
+명시적 캐스트(`(char *)0`)를 쓰는 이유다.
+
+== 근본적 한계 — 함수는 아무것도 모른다
+
+가변 인자 함수는 *넘어온 인자의 개수도, 타입도 알지 못한다.* 스택에
+값이 놓여 있을 뿐, 그것을 설명하는 정보가 함께 오지 않기 때문이다.
+그래서 모든 가변 인자 함수는 그 정보를 *바깥에서* 얻어야 하고, 방법은
+결국 셋뿐이다.
+
+#align(center, table(
+  columns: 3,
+  stroke: 0.5pt + rgb("#cccccc"),
+  inset: 5pt,
+  align: (left, left, left),
+  [*방식*], [*예*], [*깨지는 방식*],
+  [명세 문자열이 알려 준다], [`printf("%d %s", ...)`], [서식과 인자가 어긋나면 UB. 서식이 변수면 검사도 불가],
+  [개수·타입을 인자로 받는다], [`sum_n(3, a, b, c)`], [개수를 잘못 세면 없는 인자를 꺼낸다],
+  [끝 표지를 약속한다], [`execl(..., (char *)NULL)`], [표지를 빠뜨리면 멈추지 않는다],
+))
+
+세 방식 모두 *사람이 약속을 지켜야* 성립한다는 공통점이 있다. 컴파일러가
+검사해 줄 정보가 애초에 존재하지 않기 때문이다. 47장에서 이것을 "C가
+50년째 출하하는 다섯 가지 버그" 중 하나로 꼽는 이유가 여기 있다.
+
+== `_Generic` — 타입을 컴파일 시간에 붙잡기
+
+C11이 이 문제에 도구 하나를 보탰다. `_Generic`은 *표현식의 타입에 따라
+여러 선택지 중 하나를 컴파일 시간에 고르는* 문법이다.
+
+```c
+#define TYPE_NAME(x) _Generic((x), \
+    int:          "int",           \
+    double:       "double",        \
+    const char *: "string",        \
+    default:      "other")
+```
+
+주의할 점 셋이 있다. 첫째, 고르는 기준은 *타입*이지 값이 아니다. 둘째,
+고르지 않은 가지는 *컴파일되지도 않는다* — 그래서 서로 다른 타입에만
+맞는 코드를 나란히 둘 수 있다. 셋째, 목록에 없는 타입을 주면 `default`가
+없는 한 *컴파일 오류*가 난다 — 이 성질이 다음 절의 핵심이다.
+
+#demo("examples/ch45/generic.c")
+
+예제의 뒷부분이 이 장의 결론이다. `ARG(x)`는 `_Generic`으로 값의 타입을
+알아내, *값과 타입 꼬리표를 함께 담은 구조체*를 만든다. 그리고 그것들을
+배열에 담아 넘기므로 함수는 개수까지 알게 된다 — 가변 인자를 아예 쓰지
+않는 것이다. 서식 문자열이 없으니 서식과 인자가 어긋날 자리도 없다.
+
+== proven의 `PROVEN_ARG` — 실물의 구조
+
+53장에서 쓴 `proven_println("{}", PROVEN_ARG(x))`가 정확히 이 구조다.
+실제 구현을 뜯어보면 세 조각으로 되어 있다.
+
+*① 타입 꼬리표와 값을 담는 꾸러미.* 라이브러리는 인자 하나를 이렇게
+표현한다 — 어떤 종류인지 알려 주는 열거값과, 값 자체를 담는 공용체
+(39장의 태그된 공용체 그대로다).
+
+```c
+typedef enum {
+    PROVEN_ARG_NONE, PROVEN_ARG_I32, PROVEN_ARG_U32,
+    PROVEN_ARG_I64,  PROVEN_ARG_U64, PROVEN_ARG_F64,
+    PROVEN_ARG_CSTR, PROVEN_ARG_STR_VIEW, PROVEN_ARG_PTR,
+    PROVEN_ARG_CHAR, PROVEN_ARG_BOOL, PROVEN_ARG_CUSTOM, /* ... */
+} proven_arg_type_t;
+```
+
+*② 타입마다 하나씩 있는 생성 함수.* `proven_arg_i32(int v)`처럼, 값을
+받아 꼬리표를 붙여 돌려주는 작은 함수들이다. 전부 `static inline`이라
+호출 비용이 없다.
+
+*③ `_Generic`으로 그 함수들을 고르는 매크로.* 실제 헤더의 모습이다.
+
+```c
+#define PROVEN_ARG(x) _Generic((x),          \
+    _Bool:              proven_arg_bool,     \
+    char:               proven_arg_char,     \
+    signed char:        proven_arg_i32,      \
+    unsigned char:      proven_arg_u32,      \
+    short:              proven_arg_i32,      \
+    unsigned short:     proven_arg_u32,      \
+    int:                proven_arg_i32,      \
+    unsigned int:       proven_arg_u32,      \
+    long:               proven_arg_i64,      \
+    unsigned long:      proven_arg_u64,      \
+    long long:          proven_arg_i64,      \
+    unsigned long long: proven_arg_u64,      \
+    double:             proven_arg_f64,      \
+    float:              proven_arg_f64,      \
+    const char*:        proven_arg_cstr,     \
+    char*:              proven_arg_cstr,     \
+    void*:              proven_arg_ptr,      \
+    proven_u8str_view_t: proven_arg_str_view,\
+    proven_arg_t:       proven_arg_identity  \
+)(x)
+```
+
+읽는 요령은 마지막 줄의 `(x)`다. `_Generic`이 *함수 이름 하나*로 값이
+정해지고, 그 뒤의 `(x)`가 그 함수를 호출한다. 즉 `PROVEN_ARG(n)`은
+`n`이 `int`면 `proven_arg_i32(n)`으로, `double`이면 `proven_arg_f64(n)`
+으로 컴파일된다.
+
+설계의 세부 몇 가지가 눈에 띈다.
+
+- *좁은 정수를 굵은 쪽으로 모은다* — `short`와 `signed char`가 모두
+  `proven_arg_i32`로 간다. 앞 절의 기본 인자 승격과 같은 방향이지만,
+  이쪽은 *컴파일러가 아니라 라이브러리가 명시적으로* 정한 것이다.
+- *`float`을 `double`로 모은다* — 같은 이유다.
+- *`char`만 따로 둔다* — `proven_arg_char`가 따로 있어서 `char c = 'Z'`가
+  숫자 90이 아니라 글자 `Z`로 찍힌다. 다만 `PROVEN_ARG('Z')`는 `'Z'`가
+  `int`인 C의 규칙 때문에 여전히 90으로 간다 — 헤더가 이 한계를 주석에
+  정직하게 적어 두었다.
+- *`proven_arg_t` 자기 자신도 목록에 있다* — 이미 꾸러미로 만든 값을
+  다시 감쌀 때 그대로 통과시키기 위한 항등 가지다.
+- *목록에 없는 타입은 컴파일 오류* — `default` 가지가 없다. 구조체를
+  실수로 넘기면 빌드가 실패한다. `printf`가 무엇이든 받아 주고 실행
+  중에 무너지던 것과 정반대의 선택이다.
+
+그다음은 단순하다. `proven_println("...", PROVEN_ARG(a), PROVEN_ARG(b))`는
+꾸러미들을 *배열 리터럴*로 묶어 개수와 함께 실제 함수에 넘긴다. 가변
+인자 자리를 통과하지 않으므로 승격도, 개수 추측도, 서식-인자 불일치도
+없다.
+
+#qa[
+  그러면 `_Generic`으로 C에 제네릭이 생긴 것인가?
+][
+  아니다. `_Generic`은 *이미 존재하는 함수들 중에서 고르는* 장치이지,
+  타입에 따라 코드를 새로 만들어 주지 않는다. 타입마다 함수를 하나씩
+  손으로 써 두어야 하고, 목록도 손으로 유지해야 한다. 그래서 표준
+  라이브러리의 `<tgmath.h>`(수학 함수의 타입별 선택)나 이 절의
+  `PROVEN_ARG`처럼 *유한하고 잘 알려진 타입 집합*에 쓰인다. 진짜 제네릭이
+  필요하면 C에서는 여전히 매크로로 코드를 찍어 내거나(54장의 컨테이너
+  매크로), `void *`와 크기를 넘기는 방식(47장의 `qsort`)을 쓴다.
+]
 
 == 역사 — varargs에서 stdarg로
 

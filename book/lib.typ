@@ -117,3 +117,33 @@
   #set par(first-line-indent: 0em)
   #text(weight: "bold", size: 0.92em)[이 장이 끝나면] #v(2pt) #body
 ]
+
+// ── 색인 ─────────────────────────────────────────────
+// #idx("용어") 를 본문에 두면 그 자리의 쪽 번호가 색인에 실린다.
+// 화면에는 아무것도 그리지 않는다(metadata).
+#let idx(term) = [#metadata(term)<idx-entry>]
+
+// 책 끝에서 호출한다. 모든 표시를 모아 가나다순으로 정리한다.
+#let make-index() = context {
+  let entries = query(<idx-entry>)
+  let terms = ()
+  let pages = ()
+  for e in entries {
+    let term = e.value
+    let p = counter(page).at(e.location()).first()
+    let i = terms.position(x => x == term)
+    if i == none {
+      terms.push(term)
+      pages.push((p,))
+    } else if not pages.at(i).contains(p) {
+      pages.at(i).push(p)
+    }
+  }
+  let sorted-terms = terms.sorted()
+  set par(first-line-indent: 0em, justify: false, leading: 0.7em)
+  columns(2, gutter: 1.2em)[
+    #for t in sorted-terms [
+      #t #box(width: 1fr, repeat[.]) #pages.at(terms.position(x => x == t)).map(str).join(", ") \
+    ]
+  ]
+}

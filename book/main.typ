@@ -1,7 +1,12 @@
 // Proven C Book — 조판 진입점. 빌드: scripts/build-book.sh
 #import "lib.typ": *
 
-#set document(title: "Proven C Book", author: "rubidus")
+// 이 책의 판 번호. 갱신할 때마다 여기만 고친다 (VERSION.md 와 함께).
+#let book-version = "v0.1.0"
+#let book-date = "2026년 8월"
+#let book-repo = "https://github.com/rubidus-api"
+
+#set document(title: "Proven C Book " + book-version, author: "rubidus")
 #set page(paper: "a4", margin: (x: 2.2cm, y: 2.5cm), numbering: "1")
 #set text(font: ("Noto Serif CJK KR",), size: 10.5pt, lang: "ko")
 #set par(justify: true, leading: 0.78em, first-line-indent: (amount: 1em, all: true))
@@ -22,8 +27,10 @@
     #text(size: 11pt)[rubidus]
     #v(0.3cm)
     #text(size: 9.5pt, fill: rgb("#555555"))[
-      rubidus\@gmail.com #h(0.8em) https://github.com/rubidus-api
+      rubidus\@gmail.com #h(0.8em) #book-repo
     ]
+    #v(1.6cm)
+    #text(size: 10pt, fill: rgb("#555555"))[#book-version · #book-date]
   ]
 ]
 
@@ -36,7 +43,7 @@
   *Proven C Book — proven 라이브러리에 기반한 모던 C 입문*
 
   지은이 rubidus \
-  rubidus\@gmail.com · https://github.com/rubidus-api
+  rubidus\@gmail.com · #book-repo
 
   #v(0.5cm)
 
@@ -60,7 +67,16 @@
 
   #v(0.5cm)
 
-  판 1 · 2026년
+  *#book-version · #book-date*
+
+  #v(0.3cm)
+
+  *이 책은 계속 고쳐진다.* 지금 읽고 있는 것은 위 번호의 판이고, 그
+  뒤로도 오류 수정과 내용 보강이 이어진다. *가장 새로운 판과 그동안의
+  변경 내역은 저자의 GitHub에 있다* — 오래된 사본을 들고 있다면 그쪽을
+  먼저 확인하는 편이 좋다. 오류 신고와 수정 제안도 같은 자리에서 받는다.
+
+  #h(0.8em) #book-repo
 ]
 
 #outline(depth: 2)
@@ -113,3 +129,7 @@
 #include "appendix/a2-formats.typ"
 #include "appendix/a3-conversions.typ"
 #include "appendix/a4-reading.typ"
+
+// ── 찾아보기 ─────────────────────────────────────────
+#pagebreak(weak: true)
+#include "back/index.typ"
