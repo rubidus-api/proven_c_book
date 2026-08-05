@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>60 Numbers — &lt;math.h&gt;, &lt;fenv.h&gt;, &lt;tgmath.h&gt; — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>60 Numbers — <code>&lt;math.h></code>, <code>&lt;fenv.h></code>, <code>&lt;tgmath.h></code></h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We look at how real-number calculation reports failure. The mathematics of approximation learned in chapters 8 and 44 becomes the contract of functions here — calls outside the domain, results beyond the range, the properties of NaN and infinity, and the hidden global state called the rounding mode.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 44 said not to compare reals with <code>==</code>, and chapter 8 said 0.1 is not exactly representable. Then how does a mathematical function tell you when it receives “input it cannot calculate”?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>There are two paths. It gives NaN or an infinity as the <strong>return value</strong>, and at the same time leaves the reason in <strong><code>errno</code></strong> — <code>EDOM</code> for outside the domain, <code>ERANGE</code> when the result exceeds the representable range. But an implementation may choose to report through the floating-point exception flags (<code>&lt;fenv.h></code>) instead of <code>errno</code>, so to check portably you must be ready to look at both. In the field it is usually simpler to check the return value with <code>isnan</code> and <code>isinf</code>.</p></div></div><h3>60.1 The properties of NaN and infinity</h3><div><div><p><code>examples/ch60/math.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;math.h>
+#include &lt;errno.h>
+#include &lt;string.h>
+
+int main(void)
+{
+    /* ① NaN 은 자기 자신과도 같지 않다 */
+    double nan_v = nan("");
+    printf("NaN == NaN : %s\n", nan_v == nan_v ? "참" : "거짓");
+    printf("isnan(NaN) : %s\n", isnan(nan_v) ? "참" : "거짓");
+
+    /* ② 무한대와 0 나누기(실수는 UB 가 아니다) */
+    double inf_v = 1.0 / 0.0;
+    printf("1.0/0.0    : %f (isinf: %d)\n", inf_v, isinf(inf_v));
+    printf("0.0/0.0    : %s\n", isnan(0.0 / 0.0) ? "NaN" : "수");
+
+    /* ③ 정의역 밖 호출은 errno 와 NaN 으로 알려 온다 */
+    errno = 0;
+    double r = sqrt(-1.0);
+    printf("sqrt(-1)   : %s, errno=%s\n",
+           isnan(r) ? "NaN" : "수", errno == EDOM ? "EDOM" : "0");
+
+    /* ④ 범위를 넘으면 ERANGE 와 무한대 */
+    errno = 0;
+    double big = exp(1000.0);
+    printf("exp(1000)  : %s, errno=%s\n",
+           isinf(big) ? "inf" : "수", errno == ERANGE ? "ERANGE" : "0");
+
+    /* ⑤ 분류 함수로 값의 종류를 가른다 */
+    double vals[] = { 1.0, 0.0, -0.0, inf_v, nan_v, 1e-320 };
+    const char *names[] = { "1.0", "0.0", "-0.0", "inf", "NaN", "1e-320" };
+    for (size_t i = 0; i &lt; sizeof vals / sizeof vals[0]; i++) {
+        const char *kind = "?";
+        switch (fpclassify(vals[i])) {
+            case FP_NORMAL:    kind = "정규";      break;
+            case FP_SUBNORMAL: kind = "비정규";    break;
+            case FP_ZERO:      kind = "0";         break;
+            case FP_INFINITE:  kind = "무한";      break;
+            case FP_NAN:       kind = "NaN";       break;
+        }
+        printf("  %-7s → %-6s (부호비트 %d)\n", names[i], kind, signbit(vals[i]) != 0);
+    }
+
+    /* ⑥ 0.0 과 -0.0 은 같다고 비교되지만 부호는 다르다 */
+    printf("0.0 == -0.0 : %s\n", 0.0 == -0.0 ? "참" : "거짓");
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>NaN == NaN : 거짓
+isnan(NaN) : 참
+1.0/0.0    : inf (isinf: 1)
+0.0/0.0    : NaN
+sqrt(-1)   : NaN, errno=EDOM
+exp(1000)  : inf, errno=ERANGE
+  1.0     → 정규 (부호비트 0)
+  0.0     → 0      (부호비트 0)
+  -0.0    → 0      (부호비트 1)
+  inf     → 무한 (부호비트 0)
+  NaN     → NaN    (부호비트 0)
+  1e-320  → 비정규 (부호비트 0)
+0.0 == -0.0 : 참
+</code></pre></div></div><p>Four things to point out in the output.</p><p><strong>① NaN is not equal to itself.</strong> IEEE 754 settled it so. Hence the old idiom that if <code>x != x</code> is true then <code>x</code> is NaN, while the standard function is <code>isnan(x)</code>. Because of this property, sorting an array containing NaN with <code>qsort</code> breaks the comparator’s total order and the result collapses (chapter 58).</p><p><strong>② Dividing a real by zero is not outside the contract.</strong> Unlike integer division (chapter 27), in an IEEE 754 environment it yields an infinity or a NaN. But the same holds that <strong>the very fact of dividing by zero is usually a bug</strong>.</p><p><strong>③ <code>sqrt(-1)</code> is <code>EDOM</code>, <code>exp(1000)</code> is <code>ERANGE</code>.</strong> The former is outside the domain, the latter a case where the result exceeded the representable range. If you mean to look at <code>errno</code>, set it to 0 just before the call (chapter 62).</p><p><strong>④ 0.0 and −0.0 are equal under <code>==</code>.</strong> But the sign bit differs, and <code>1/0.0</code> and <code>1/-0.0</code> are +∞ and −∞ respectively. If the sign must be distinguished, use <code>signbit</code>.</p><div class="dev misconception"><p class="dev-label">⚠ “Comparing reals is safe if you use an epsilon”</p><p>The epsilon comparison learned in chapter 44 is not omnipotent. Absolute error (<code>fabs(a-b) &lt; eps</code>) becomes meaningless when the values are large — near 1e9, 1e-9 is not even representable — and relative error collapses near zero. The prescription in the field is <strong>settling a tolerance that fits the situation</strong>, not using a universal constant. And it is better to ask first whether it can be handled with integers or fixed point so that the comparison is not needed at all (chapter 8′s story of calculating money).</p></div><h3>60.2 Functions often got wrong</h3><table><tr><th><strong>function</strong></th><th><strong>what it does</strong></th><th><strong>trap</strong></th></tr><tr><td><code>pow(x, y)</code></td><td>raising to a power</td><td>used for an integer power it can be slow and inexact</td></tr><tr><td><code>round</code>, <code>nearbyint</code></td><td>rounding</td><td><code>round</code> goes away from zero, <code>nearbyint</code> follows the current mode</td></tr><tr><td><code>floor</code>, <code>ceil</code>, <code>trunc</code></td><td>cutting to an integer</td><td>the direction differs for negatives</td></tr><tr><td><code>fmod</code>, <code>remainder</code></td><td>the remainder</td><td>their sign rules differ from each other</td></tr><tr><td><code>abs</code>, <code>fabs</code></td><td>absolute value</td><td>★ <code>abs</code> is for integers. used on a real it truncates</td></tr><tr><td><code>atan2(y, x)</code></td><td>angle</td><td>the argument order is <code>y, x</code></td></tr><tr><td><code>isnan</code>, <code>isinf</code></td><td>classification</td><td>they are macros — they cannot be used as function pointers</td></tr></table><p><code>pow(x, 2)</code> is widely used, but for an integer square <code>x * x</code> is faster and exact. The compiler often optimises it, but not always.</p><p>The mistake of using <code>abs</code> on a real is especially quiet. <code>&lt;stdlib.h></code>‘s <code>abs</code> takes an <code>int</code>, so <code>abs(-1.5)</code> turns −1.5 into 1. Today’s compilers warn, but it is easy to miss in a file that does not include <code>&lt;math.h></code>.</p><h3>60.3 Rounding modes and floating-point exceptions — <code>&lt;fenv.h></code></h3><p>Floating-point operations have two pieces of <strong>hidden global state</strong>.</p><p><strong>The rounding mode</strong> — the default is “to the nearest value, ties to even”. It can be changed with <code>fesetround</code>, and once changed every subsequent real operation is affected.</p><p><strong>The exception flags</strong> — flags are raised when division by zero, overflow, inexactness and so on occur. They are read with <code>fetestexcept</code> and cleared with <code>feclearexcept</code>. They are finer than <code>errno</code>, but to use this facility <code>#pragma STDC FENV_ACCESS ON</code> must be turned on — and then the compiler refrains from reordering real operations, so optimisation is reduced.</p><div class="dev antipattern"><p class="dev-label">✗ Turning on <code>-ffast-math</code> and checking for NaN</p><pre><code data-lang="sh">cc -O2 -ffast-math app.c        # tells the compiler "take it that NaN and infinity do not exist"</code></pre><pre><code data-lang="c">if (isnan(x)) { /* this branch can vanish entirely */ }</code></pre><p>Options of the <code>-ffast-math</code> family tell the compiler it may assume associativity and ignore the existence of NaN and −0.0. Speed is gained, but <strong>the checking code can vanish under optimisation</strong> — the real-number edition of the “bug that appears only in release” seen in chapter 17. In a program where numerical accuracy matters, not turning it on is the default.</p></div><h3>60.4 Type-generic — <code>&lt;tgmath.h></code></h3><p><code>sqrt</code> is for <code>double</code>, <code>sqrtf</code> for <code>float</code>, <code>sqrtl</code> for <code>long double</code>. Include <code>&lt;tgmath.h></code> and the edition fitting the argument’s type is chosen by <code>sqrt(x)</code> alone — the representative case of the <code>_Generic</code> seen in chapter 50 being used in the standard library.</p><p>It is convenient but has a price. Being macros, they cannot be passed as function pointers, and there may be implementations that evaluate the argument twice, so putting in an expression with side effects is dangerous.</p><div class="dev realcase"><p class="dev-label">◉ The same calculation, a different answer — the history of excess precision</p><p>x86′s old floating-point unit (x87) calculated internally in 80 bits. So it happened that the same <code>double</code> operation differed depending on whether it was still in a register or had been stored to memory — change the optimisation level and the result changed minutely, and <code>x == y</code> that had been true could become false.</p><p>C99 made this circumstance explicit with <code>FLT_EVAL_METHOD</code>, and today’s 64-bit x86 uses SSE so the problem has greatly diminished. But the possibility of “the same code, a different answer” still remains in compilation options and the target machine — the reason chapter 44 said “real-number calculation needs reproducibility looked after separately.”</p></div><div class="dev recap"><p class="dev-label">☰ Recap</p><p>Numbers in summary.</p><table><tr><th><strong>situation</strong></th><th><strong>what to use</strong></th><th><strong>what to beware of</strong></th></tr><tr><td>checking for NaN</td><td><code>isnan</code></td><td><code>x == NaN</code> is always false</td></tr><tr><td>checking for infinity</td><td><code>isinf</code></td><td>dividing a real by zero is not UB</td></tr><tr><td>the kind of a value</td><td><code>fpclassify</code></td><td>the existence of subnormal numbers</td></tr><tr><td>domain and range errors</td><td>the return value + <code>errno</code></td><td><code>errno = 0</code> just before the call</td></tr><tr><td>integer squares</td><td><code>x * x</code></td><td><code>pow(x, 2)</code></td></tr><tr><td>absolute value of a real</td><td><code>fabs</code></td><td><code>abs</code> (for integers)</td></tr><tr><td>per-type functions</td><td><code>&lt;tgmath.h></code></td><td>macros — no arguments with side effects</td></tr><tr><td>fast-math options</td><td>off by default</td><td>checking code vanishes</td></tr></table></div><p>We have passed numbers. The next chapter is time — a place with unusually much that the standard does not settle for you.</p>
+<div class="nav"><a href="ch59.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch61.html">Next →</a></div>
+</div></main></body></html>

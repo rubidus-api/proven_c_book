@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>59 Characters and locales — &lt;ctype.h&gt;, &lt;locale.h&gt;, &lt;wchar.h&gt; — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>59 Characters and locales — <code>&lt;ctype.h></code>, <code>&lt;locale.h></code>, <code>&lt;wchar.h></code></h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We look at the functions that handle a single character. It is the simplest header in appearance, yet two of C’s subtlest traps are here — that <strong>passing a <code>char</code> as it stands is outside the contract</strong>, and that <strong>the answer depends on the global state called the locale</strong>. Chapter 9′s encoding story returns at the level of functions.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 9 said a character is a number in a code chart and an encoding is the way of writing that number as bytes. Then what is a call like <code>isalpha('가')</code> asking?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>It is a wrongly thrown question. The functions of <code>&lt;ctype.h></code> judge <strong>one byte</strong>. In UTF-8 “가” is three bytes, so it cannot go in as an argument to begin with, and even if it did each byte would merely be looked at separately. This header is a tool of the ASCII days; to handle multibyte characters you need the wide-character family (<code>&lt;wctype.h></code>) or code that handles the encoding yourself.</p></div></div><h3>59.1 The first trap — do not pass a <code>char</code> as it stands</h3><div><div><p><code>examples/ch59/ctype.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;ctype.h>
+#include &lt;limits.h>
+#include &lt;string.h>
+
+/* ctype 함수는 int 를 받는다 — 그런데 그 int 는 char 가 아니다 */
+int main(void)
+{
+    printf("CHAR_MIN = %d (이 기계의 char 는 %s)\n",
+           CHAR_MIN, CHAR_MIN &lt; 0 ? "부호 있음" : "부호 없음");
+
+    /* 아스키 범위는 문제가 없다 */
+    printf("isalpha('A') = %d, isdigit('7') = %d, isspace(' ') = %d\n",
+           isalpha('A') != 0, isdigit('7') != 0, isspace(' ') != 0);
+
+    /* 128 이상의 바이트가 문제다: char 로 넘기면 음수가 된다 */
+    char bytes[] = { (char)0xC7, (char)0x41, 'A', '\0' };   /* CP949 '가' 의 첫 바이트 */
+    printf("바이트 0xC7 을 char 로 담으면: %d\n", bytes[0]);
+
+    /* 올바른 관용구: unsigned char 로 바꿔서 넘긴다 */
+    printf("올바른 호출: isalpha((unsigned char)b) = %d\n",
+           isalpha((unsigned char)bytes[0]) != 0);
+
+    /* toupper/tolower 도 같은 규칙 */
+    const char *s = "Hello, World!";
+    char up[32];
+    size_t i = 0;
+    for (; s[i] &amp;&amp; i + 1 &lt; sizeof up; i++)
+        up[i] = (char)toupper((unsigned char)s[i]);
+    up[i] = '\0';
+    printf("toupper 적용: [%s]\n", up);
+
+    /* EOF 도 유효한 인자다 — 그래서 인자 타입이 int 다 */
+    printf("isalpha(EOF) = %d (EOF 는 허용된 인자)\n", isalpha(EOF) != 0);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>CHAR_MIN = -128 (이 기계의 char 는 부호 있음)
+isalpha('A') = 1, isdigit('7') = 1, isspace(' ') = 1
+바이트 0xC7 을 char 로 담으면: -57
+올바른 호출: isalpha((unsigned char)b) = 0
+toupper 적용: [HELLO, WORLD!]
+isalpha(EOF) = 0 (EOF 는 허용된 인자)
+</code></pre></div></div><p>Every function of <code>&lt;ctype.h></code> takes an <code>int</code>. And the argument value the standard requires is <strong>a value representable as an <code>unsigned char</code>, or <code>EOF</code></strong>.</p><p>The problem is that implementations where <code>char</code> is signed are common (chapter 26). As the example’s output shows, put a 0xC7 byte in a <code>char</code> and it becomes −57, and passing that straight to <code>isalpha</code> is passing <strong>a value that is not permitted</strong> — outside the contract. Real implementations are mostly built as array indexes, so the accident of reading before the array with a negative index occurs.</p><p>The idiom is one.</p><pre><code data-lang="c">isalpha((unsigned char)c)
+toupper((unsigned char)c)</code></pre><p>That <code>EOF</code> is a valid argument is worth remembering too — that is why the argument type is <code>int</code> and not <code>char</code> (the same root as chapter 55′s <code>fgetc</code> story).</p><div class="dev antipattern"><p class="dev-label">✗ Passing a <code>char</code> as it stands</p><pre><code data-lang="c">char *p = line;
+while (*p) { if (isspace(*p)) ... ; p++; }   /* outside the contract at bytes ≥ 0x80 */</code></pre><p>Unless there is a guarantee that only ASCII arrives, always convert.</p><pre><code data-lang="c">while (*p) { if (isspace((unsigned char)*p)) ... ; p++; }</code></pre><p>In a program handling Korean, Japanese or European text, this one line divides a real accident from no accident.</p></div><h3>59.2 The second trap — the locale</h3><p>The judgements of <code>&lt;ctype.h></code> depend on <strong>the current locale</strong>. The default is the <code>"C"</code> locale, and calling <code>setlocale(LC_ALL, "")</code> changes it to the locale the environment variables settle. From that moment the set of bytes for which <code>isalpha</code> returns true may differ.</p><p>What the locale changes is not only character classification.</p><table><tr><th><strong>category</strong></th><th><strong>what changes</strong></th><th><strong>where to beware</strong></th></tr><tr><td><code>LC_CTYPE</code></td><td>character classification, case conversion</td><td><code>isalpha</code>, <code>toupper</code></td></tr><tr><td><code>LC_NUMERIC</code></td><td>the decimal point character</td><td>★ <code>printf("%f")</code>, <code>strtod</code></td></tr><tr><td><code>LC_COLLATE</code></td><td>string sorting order</td><td><code>strcoll</code>, <code>strxfrm</code></td></tr><tr><td><code>LC_TIME</code></td><td>date and time notation</td><td><code>strftime</code> (chapter 61)</td></tr><tr><td><code>LC_MONETARY</code></td><td>currency notation</td><td><code>localeconv</code></td></tr></table><p><code>LC_NUMERIC</code> is especially dangerous. In German and French locales the decimal point is a comma, so <code>printf("%f", 3.14)</code> prints <code>3,140000</code> and <code>strtod("3.14", …)</code> stops at 3. It means that <strong>numbers to be shown to a human</strong> and <strong>numbers to be written to a file or protocol</strong> must follow different rules.</p><div class="dev realcase"><p class="dev-label">◉ The pattern in which a locale wrecked data</p><p>It really has happened repeatedly that the same program writes <code>3.14</code> on the developer’s machine (an English locale) and <code>3,14</code> on the user’s machine (a German locale). A CSV file fails to parse column by column, a configuration file cannot be read back after being saved, or the JSON two countries’ servers exchange goes out of step.</p><p>The prescription is clear. <strong>Numbers a machine will read are handled by a path that does not depend on the locale</strong> — keep the <code>"C"</code> locale, handle the notation of the digits yourself, or use locale-independent functions. It is also why C11′s <code>&lt;uchar.h></code> and several libraries lay a separate path to avoid this problem.</p></div><div class="dev misconception"><p class="dev-label">⚠ “If <code>setlocale</code> is not called there is no locale problem”</p><p>Broadly right, but there is an exception. <strong>Another library</strong> the program uses may call <code>setlocale</code> (GUI toolkits commonly do), and from that moment my code’s <code>printf("%f")</code> is affected too. Moreover the locale is <strong>process-global</strong>, so in a program running along several strands it becomes a race. Thread-local locales such as POSIX’s <code>uselocale</code> and <code>newlocale</code> arose for that reason, but they are not in standard C.</p></div><h3>59.3 Wide characters — <code>&lt;wchar.h></code>, <code>&lt;wctype.h></code>, <code>&lt;uchar.h></code></h3><p>C95 brought in <code>wchar_t</code> and its functions. The idea was “one character as one unit”, but reality betrayed the idea.</p><ul><li>The <strong>size of <code>wchar_t</code> differs by implementation.</strong> Linux has 4 bytes (close to UTF-32), Windows 2 bytes (it being UTF-16, characters of the supplementary planes become two units). That is, “one character = one <code>wchar_t</code>” does not hold everywhere.</li><li>The conversion functions (<code>mbstowcs</code> and so on) <strong>depend on the locale.</strong> To handle a UTF-8 string the locale must be UTF-8.</li><li>So portable programs often choose, instead of wide characters, to <strong>handle the UTF-8 byte sequence as it is</strong>.</li></ul><p>The <code>char16_t</code> and <code>char32_t</code> of <code>&lt;uchar.h></code>, added by C11, have fixed sizes and so avoid this problem. But library support is thin, so in the field a dedicated Unicode library is still used, or it is handled by hand.</p><div class="dev platform"><p class="dev-label">⊞ Platform note — Windows and UTF-16</p><p>The “W” family of Windows API functions takes UTF-16 (<code>wchar_t</code>). So a Windows program must go between UTF-8 and UTF-16 at the boundary, and it must not be forgotten that this conversion can fail (unpaired surrogates). It is the place where chapter 17′s chain-of-encodings story is replayed at the API layer, and the <code>u16</code> family treated in Part XII’s string chapter is exactly the tool that lays this bridge.</p></div><div class="dev recap"><p class="dev-label">☰ Recap</p><p>Characters and locales in summary.</p><table><tr><th><strong>situation</strong></th><th><strong>rule</strong></th><th><strong>if got wrong</strong></th></tr><tr><td>calling <code>&lt;ctype.h></code></td><td>convert with <code>(unsigned char)</code></td><td>a negative argument — outside the contract</td></tr><tr><td>handling <code>EOF</code></td><td>the argument type is <code>int</code></td><td>confusion with 0xFF</td></tr><tr><td>multibyte characters</td><td>judging byte by byte is meaningless</td><td>a judgement on a split character</td></tr><tr><td>numeric input and output</td><td>a locale-independent path for machines</td><td>the decimal point changes and parsing fails</td></tr><tr><td>sorting</td><td><code>strcoll</code> for humans</td><td><code>strcmp</code> is not dictionary order</td></tr><tr><td><code>wchar_t</code></td><td>the size differs by implementation</td><td>miscounting characters on Windows</td></tr><tr><td>recommended</td><td>UTF-8 byte sequences + conversion only at the boundary</td><td>—</td></tr></table></div><p>We have passed the world of the single character. The next chapter is the world of numbers — how real-number calculation reports failure in the standard library.</p>
+<div class="nav"><a href="ch58.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch60.html">Next →</a></div>
+</div></main></body></html>

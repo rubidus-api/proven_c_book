@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Index — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>Index</h2><p>Gathered here are only the places where this book <strong>defines a concept or treats it head on</strong>. Places where a word merely passes by are not listed — the purpose of an index is not to count every appearance but to tell you where to open the book.</p><p>This edition (HTML) has no page numbers, so only the headwords are listed. The index with page numbers is in the PDF edition.</p><ul><li><a href="sec88.html#idx-entry-114">BNF</a></li><li><a href="ch31.html#idx-entry-57">Duff's device</a></li><li><a href="sec88.html#idx-entry-115">EBNF</a></li><li><a href="ch08.html#idx-entry-18">IEEE 754</a></li><li><a href="ch06.html#idx-entry-12">NUL character</a></li><li><a href="ch09.html#idx-entry-19">UTF-8</a></li><li><a href="ch09.html#idx-entry-21">Unicode</a></li><li><a href="ch13.html#idx-entry-33">abstract machine</a></li><li><a href="ch06.html#idx-entry-10">alignment</a></li><li><a href="ch68.html#idx-entry-98">allocator</a></li><li><a href="ch73.html#idx-entry-104">arena</a></li><li><a href="ch35.html#idx-entry-63">array</a></li><li><a href="ch45.html#idx-entry-78">assert</a></li><li><a href="ch64.html#idx-entry-92">atomic operations</a></li><li><a href="ch04.html#idx-entry-5">bit</a></li><li><a href="ch66.html#idx-entry-95">bool</a></li><li><a href="ch29.html#idx-entry-54">boolean</a></li><li><a href="ch12.html#idx-entry-31">branch prediction</a></li><li><a href="ch02.html#idx-entry-2">bss</a></li><li><a href="ch36.html#idx-entry-64">buffer overrun</a></li><li><a href="ch04.html#idx-entry-6">byte</a></li><li><a href="ch11.html#idx-entry-27">cache</a></li><li><a href="ch11.html#idx-entry-29">cache line</a></li><li><a href="ch09.html#idx-entry-20">character set</a></li><li><a href="ch65.html#idx-entry-94">checked arithmetic</a></li><li><a href="ch44.html#idx-entry-76">comparing reals</a></li><li><a href="ch18.html#idx-entry-43">compiler</a></li><li><a href="ch13.html#idx-entry-34">compiler optimisation</a></li><li><a href="ch42.html#idx-entry-73">compound literal</a></li><li><a href="ch29.html#idx-entry-55">condition</a></li><li><a href="ch45.html#idx-entry-79">const</a></li><li><a href="ch45.html#idx-entry-77">contract</a></li><li><a href="ch78.html#idx-entry-111">coroutine</a></li><li><a href="ch64.html#idx-entry-93">data race</a></li><li><a href="ch17.html#idx-entry-40">debugger</a></li><li><a href="ch33.html#idx-entry-62">dereference</a></li><li><a href="ch27.html#idx-entry-50">division</a></li><li><a href="ch40.html#idx-entry-70">dynamic allocation</a></li><li><a href="ch80.html#idx-entry-113">embedded</a></li><li><a href="ch09.html#idx-entry-22">encoding</a></li><li><a href="ch05.html#idx-entry-8">endianness</a></li><li><a href="ch47.html#idx-entry-84">exit status</a></li><li><a href="ch71.html#idx-entry-102">failure atomicity</a></li><li><a href="ch12.html#idx-entry-32">false sharing</a></li><li><a href="ch08.html#idx-entry-17">floating point</a></li><li><a href="ch03.html#idx-entry-4">fork</a></li><li><a href="ch22.html#idx-entry-44">format string</a></li><li><a href="ch68.html#idx-entry-99">fragmentation</a></li><li><a href="ch78.html#idx-entry-112">freestanding</a></li><li><a href="ch24.html#idx-entry-47">function prototype</a></li><li><a href="ch76.html#idx-entry-109">hash map</a></li><li><a href="ch24.html#idx-entry-48">header file</a></li><li><a href="ch40.html#idx-entry-71">heap</a></li><li><a href="ch46.html#idx-entry-80">implementation-defined</a></li><li><a href="ch75.html#idx-entry-107">implicit conversion</a></li><li><a href="ch28.html#idx-entry-52">integer promotion</a></li><li><a href="ch26.html#idx-entry-49">integer types</a></li><li><a href="ch76.html#idx-entry-110">introsort</a></li><li><a href="ch39.html#idx-entry-69">linkage</a></li><li><a href="ch16.html#idx-entry-39">linking</a></li><li><a href="ch11.html#idx-entry-28">locality</a></li><li><a href="ch30.html#idx-entry-56">loop</a></li><li><a href="ch47.html#idx-entry-83">main</a></li><li><a href="ch05.html#idx-entry-9">memory address</a></li><li><a href="ch02.html#idx-entry-1">memory regions</a></li><li><a href="ch13.html#idx-entry-36">multicore</a></li><li><a href="ch71.html#idx-entry-101">nodiscard</a></li><li><a href="ch09.html#idx-entry-23">normalization</a></li><li><a href="ch06.html#idx-entry-11">null pointer</a></li><li><a href="ch66.html#idx-entry-96">nullptr</a></li><li><a href="ch07.html#idx-entry-15">ones' complement</a></li><li><a href="ch07.html#idx-entry-14">overflow</a></li><li><a href="ch73.html#idx-entry-106">owning and borrowing</a></li><li><a href="ch42.html#idx-entry-74">padding</a></li><li><a href="ch12.html#idx-entry-30">pipeline</a></li><li><a href="ch33.html#idx-entry-61">pointer</a></li><li><a href="ch73.html#idx-entry-105">pool</a></li><li><a href="ch49.html#idx-entry-87">preprocessor</a></li><li><a href="ch03.html#idx-entry-3">process</a></li><li><a href="ch14.html#idx-entry-38">provenance</a></li><li><a href="ch52.html#idx-entry-89">reading declarations</a></li><li><a href="ch32.html#idx-entry-60">recursion</a></li><li><a href="ch10.html#idx-entry-25">redirection</a></li><li><a href="ch11.html#idx-entry-26">register</a></li><li><a href="ch17.html#idx-entry-41">sanitizer</a></li><li><a href="ch75.html#idx-entry-108">scanner</a></li><li><a href="ch39.html#idx-entry-68">scope</a></li><li><a href="ch32.html#idx-entry-59">sequence point</a></li><li><a href="ch07.html#idx-entry-16">shift</a></li><li><a href="ch32.html#idx-entry-58">side effect</a></li><li><a href="ch27.html#idx-entry-51">sign extension</a></li><li><a href="ch39.html#idx-entry-66">stack</a></li><li><a href="ch67.html#idx-entry-97">stack size</a></li><li><a href="ch53.html#idx-entry-91">standard library</a></li><li><a href="ch22.html#idx-entry-45">standard output</a></li><li><a href="ch39.html#idx-entry-67">storage duration</a></li><li><a href="ch10.html#idx-entry-24">stream</a></li><li><a href="ch13.html#idx-entry-37">strict aliasing</a></li><li><a href="ch37.html#idx-entry-65">string</a></li><li><a href="ch41.html#idx-entry-72">struct</a></li><li><a href="ch70.html#idx-entry-100">the compilation process</a></li><li><a href="ch49.html#idx-entry-86">translation phases</a></li><li><a href="ch48.html#idx-entry-85">translation unit</a></li><li><a href="ch07.html#idx-entry-13">two's complement</a></li><li><a href="ch52.html#idx-entry-90">typedef</a></li><li><a href="ch46.html#idx-entry-82">undefined behaviour (UB)</a></li><li><a href="ch43.html#idx-entry-75">union</a></li><li><a href="ch46.html#idx-entry-81">unspecified</a></li><li><a href="ch28.html#idx-entry-53">usual arithmetic conversions</a></li><li><a href="ch23.html#idx-entry-46">variable</a></li><li><a href="ch50.html#idx-entry-88">variadic arguments</a></li><li><a href="ch72.html#idx-entry-103">view</a></li><li><a href="ch13.html#idx-entry-35">volatile</a></li><li><a href="ch17.html#idx-entry-42">warning options</a></li><li><a href="ch05.html#idx-entry-7">word</a></li></ul>
+<div class="nav"><a href="sec89.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><span></span></div>
+</div></main></body></html>

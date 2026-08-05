@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>63 What the new standards added, and the *_s controversy — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>63 What the new standards added, and the <code>*_s</code> controversy</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The last chapter of this part. We skim the headers C99, C11 and C23 added to the standard library, and then see the whole story of this language’s most famous failed attempt — annex K, which tried to bring “safe functions” into the standard. Why <code>gets_s</code> and <code>strcpy_s</code> are not widely used, and what is different about Microsoft’s functions of the same names.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 54 said the speed at which headers grow is the same as the language’s speed of change, and chapter 56 said <code>gets</code>’s funeral took twenty years. Then where are the “safe functions” the standard brought in to fill that place?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Mostly <strong>nowhere</strong>. C11 brought in dozens of functions such as <code>gets_s</code> and <code>strcpy_s</code> as annex K, but it was <strong>optional</strong> and the major implementations refused to adopt it. What was confirmed on the machine that made this book is the same — the “annex K: not present in this implementation” the example printed. The latter part of this chapter is that story.</p></div></div><h3>63.1 What C99 added</h3><table><tr><th><strong>header</strong></th><th><strong>what</strong></th><th><strong>its position today</strong></th></tr><tr><td><code>&lt;stdint.h></code></td><td>fixed-width integers (<code>int32_t</code> and so on)</td><td>effectively compulsory. chapter 26</td></tr><tr><td><code>&lt;inttypes.h></code></td><td>the format macros for those types</td><td>the <code>PRId32</code> family. appendix B</td></tr><tr><td><code>&lt;stdbool.h></code></td><td><code>bool</code>, <code>true</code>, <code>false</code></td><td>unnecessary, having become keywords in C23</td></tr><tr><td><code>&lt;complex.h></code></td><td>complex numbers</td><td>optional. support is uneven</td></tr><tr><td><code>&lt;fenv.h></code></td><td>the floating-point environment</td><td>chapter 60</td></tr><tr><td><code>&lt;tgmath.h></code></td><td>type-generic mathematics</td><td>chapter 60</td></tr></table><p><code>&lt;stdint.h></code> is this list’s winner. A standard way to express “exactly 32 bits” finally arose, and the practice of every project keeping its own <code>typedef</code> until then was tidied away.</p><h3>63.2 What C11 added</h3><table><tr><th><strong>header</strong></th><th><strong>what</strong></th><th><strong>its position today</strong></th></tr><tr><td><code>&lt;stdatomic.h></code></td><td>atomic operations and memory orders</td><td>the foundation of concurrency. chapter 12′s story</td></tr><tr><td><code>&lt;threads.h></code></td><td>threads, mutexes, condition variables</td><td>★ adoption is slow — pthreads are usually used</td></tr><tr><td><code>&lt;stdalign.h></code></td><td><code>alignas</code>, <code>alignof</code></td><td>keywords in C23</td></tr><tr><td><code>&lt;stdnoreturn.h></code></td><td><code>noreturn</code></td><td>to be retired in C23, in favour of <code>[[noreturn]]</code></td></tr><tr><td><code>&lt;uchar.h></code></td><td><code>char16_t</code>, <code>char32_t</code></td><td>chapter 59</td></tr></table><p><code>&lt;threads.h></code>‘s circumstance is interesting. Though it is in the standard, glibc long did not provide it, so portable code still uses POSIX threads. It is a case showing that <strong>entering the standard and becoming usable are different things</strong>.</p><h3>63.3 What C23 added</h3><div><div><p><code>examples/ch63/newheaders.c</code></p><pre><code data-lang="c">#define __STDC_WANT_LIB_EXT1__ 1
+#include &lt;stdio.h>
+#include &lt;string.h>
+#include &lt;stdint.h>
+#include &lt;stdckdint.h>
+#include &lt;stdalign.h>
+#include &lt;stddef.h>
+
+int main(void)
+{
+    /* ① 부속서 K 가 실제로 있는가 — 구현이 알려 준다 */
+#ifdef __STDC_LIB_EXT1__
+    printf("부속서 K: 있음 (__STDC_LIB_EXT1__)\n");
+#else
+    printf("부속서 K: 이 구현에는 없다\n");
+#endif
+
+    /* ② C23 의 검사 산술 — 넘침을 값으로 알려 준다 */
+    int a = 2000000000, b = 2000000000, sum;
+    if (ckd_add(&amp;sum, a, b))
+        printf("ckd_add: 넘쳤다 (int 로는 담을 수 없다)\n");
+    else
+        printf("ckd_add: %d\n", sum);
+
+    size_t count = (size_t)-1 / 2, elem = 8, bytes;
+    if (ckd_mul(&amp;bytes, count, elem))
+        printf("ckd_mul: 넘쳤다 — 할당을 시도하지 않는다\n");
+
+    /* ③ 고정 폭 정수와 정렬 */
+    printf("int32_t=%zu bytes, alignof(max_align_t)=%zu\n",
+           sizeof(int32_t), alignof(max_align_t));
+
+    /* ④ C23 의 bool 은 키워드다 — &lt;stdbool.h> 없이 쓴다 */
+    bool ready = true;
+    printf("bool 은 키워드: %s\n", ready ? "true" : "false");
+
+    /* ⑤ 표준이 정한 매크로로 판을 확인한다 */
+    printf("__STDC_VERSION__ = %ldL\n", (long)__STDC_VERSION__);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>부속서 K: 이 구현에는 없다
+ckd_add: 넘쳤다 (int 로는 담을 수 없다)
+ckd_mul: 넘쳤다 — 할당을 시도하지 않는다
+int32_t=4 bytes, alignof(max_align_t)=16
+bool 은 키워드: true
+__STDC_VERSION__ = 202000L
+</code></pre></div></div><p><code>&lt;stdckdint.h></code> is this edition’s practical winner. It reports the wrap-round of the size calculations seen in chapter 57 <strong>as a value</strong> — <code>ckd_add</code>, <code>ckd_sub</code> and <code>ckd_mul</code> return true on overflow, and the result may be treated as “unusable” rather than as the wrapped value.</p><p><code>&lt;stdbit.h></code> is new too. Bit manipulations such as counting leading zeros, counting set bits and rounding up to a power of two have become standard functions — until then a place that leaned on compiler builtins (<code>__builtin_clz</code> and the like).</p><p>Besides these, C23 promoted <code>bool</code>, <code>true</code>, <code>false</code>, <code>static_assert</code> and <code>thread_local</code> to keywords, brought in <code>nullptr</code> (chapter 34), and effectively retired compatibility headers such as <code>&lt;stdbool.h></code> and <code>&lt;stdnoreturn.h></code>.</p><h3>63.4 Annex K — the failed attempt at “safe functions”</h3><p>Now the main business of this chapter.</p><p>In the early 2000s Microsoft put functions such as <code>strcpy_s</code> and <code>sprintf_s</code> into its compiler and began raising warnings on use of the existing functions. The proposal to make that design a standard entered C11 as <strong>annex K</strong> (bounds-checking interfaces).</p><p>The core ideas were three.</p><ol><li>The destination size is <strong>compulsorily</strong> taken as an argument.</li><li>When a problem arises it does not truncate and carry on but <strong>returns an error</strong> (<code>errno_t</code>).</li><li>When a contract violation is detected, the program’s chosen <strong>constraint handler</strong> is called.</li></ol><pre><code data-lang="c">#define __STDC_WANT_LIB_EXT1__ 1
+#include &lt;string.h>
+
+char dst[8];
+errno_t e = strcpy_s(dst, sizeof dst, src);   /* an error if it overflows */</code></pre><p>The direction resembles what we organised in chapter 54 as “what is needed”. Yet the result was a failure.</p><div class="dev realcase"><p class="dev-label">◉ Why annex K was not adopted</p><p>In 2015, C standards committee document N1967, “Field Experience With Annex K”, surveyed the actual state. Its summary was cold — <strong>it was not widely implemented, it behaved differently where it was implemented, and there was no evidence that it made real code safer</strong>.</p><p>Concretely these were the circumstances.</p><ul><li><strong>Microsoft’s functions and the standard’s functions are not the same.</strong> The names are the same while arguments and behaviour go out of step in places, so code fitted to one side broke on the other.</li><li><strong>Major implementations, glibc among them, did not adopt it.</strong> That is still so today — the reason the earlier example printed “not present in this implementation”.</li><li><strong>The global state called the constraint handler</strong> caused conflicts between libraries.</li><li>It merely changed existing code mechanically, while the real defects remained <strong>where the size is calculated wrongly</strong>.</li></ul><p>The committee went as far as discussing removing annex K, and in the end it was settled to be kept but effectively not recommended. It is a representative case showing how the expectation that “putting it in the standard makes things safe” goes wrong in reality.</p></div><div class="dev misconception"><p class="dev-label">⚠ “Using functions with <code>_s</code> attached is safe”</p><p>Three things must be checked. First, <strong>is that function there</strong> — the standard’s annex K is optional and is absent on most of the Unix family. Second, <strong>which edition is it</strong> — the standard’s and Microsoft’s may differ. Third, <strong>what becomes safe</strong> — it means the size is taken as an argument, not that the size you passed is right. The mistake of passing <code>strlen</code> instead of <code>sizeof</code> is just as much an accident in an <code>_s</code> function.</p><p>The realistic choice in portable code is still this — within the standard, <code>snprintf</code> and explicit bounds checking; where the platform permits, the <code>strlcpy</code> family; and for the repeated danger zones, components with checking built in (Part XII).</p></div><div class="dev platform"><p class="dev-label">⊞ Platform note — The <code>_s</code> functions met on Windows</p><p>MSVC has long provided <code>strcpy_s</code>, <code>sprintf_s</code>, <code>fopen_s</code> and so on, and raises the <code>C4996</code> warning when the existing functions are used. Defining <code>_CRT_SECURE_NO_WARNINGS</code> to turn the warning off is the practice.</p><p>The point to beware of is that <strong>these functions are not entirely the same as the standard’s annex K</strong>. For example the behaviour on argument-validation failure and the rules for return values may differ. So unless the code is Windows-only one does not lean on the <code>_s</code> family, and cross-platform projects mostly choose to keep a wrapper of their own.</p></div><h3>63.5 What this part leaves behind</h3><p>We have walked the standard library across ten chapters. Memorising function names was not the aim, so what remains to be kept is a few attitudes.</p><ol><li><strong>Read the contract first.</strong> Does it take a size, how does it report failure, who owns the pointer it returned.</li><li><strong>Do not throw away return values.</strong> Especially <code>fclose</code>, <code>snprintf</code> and the <code>scanf</code> family.</li><li><strong>Suspect global state.</strong> <code>errno</code>, the locale, static buffers, the rounding mode.</li><li><strong>Being in the standard does not make it safe.</strong> <code>gets</code> survived twenty-two years.</li><li><strong>Weigh platform extensions between the gain and portability.</strong></li></ol><div class="dev recap"><p class="dev-label">☰ Recap</p><p>A table of the editions.</p><table><tr><th><strong>edition</strong></th><th><strong>representative addition</strong></th><th><strong>is it actually used</strong></th></tr><tr><td>C99</td><td><code>&lt;stdint.h></code>, <code>&lt;inttypes.h></code></td><td>yes — effectively compulsory</td></tr><tr><td>C99</td><td><code>&lt;complex.h></code></td><td>rarely</td></tr><tr><td>C11</td><td><code>&lt;stdatomic.h></code></td><td>yes — the foundation of concurrency</td></tr><tr><td>C11</td><td><code>&lt;threads.h></code></td><td>rarely — pthreads prevail</td></tr><tr><td>C11</td><td>annex K (<code>*_s</code>)</td><td>no — this chapter’s story</td></tr><tr><td>C23</td><td><code>&lt;stdckdint.h></code></td><td>yes — the right answer for size calculations</td></tr><tr><td>C23</td><td><code>&lt;stdbit.h></code></td><td>growing</td></tr><tr><td>C23</td><td>keyword promotion (<code>bool</code>, <code>nullptr</code> and so on)</td><td>yes</td></tr></table></div><p>The bottom three lines of that table — <code>&lt;stdatomic.h></code>, <code>&lt;stdckdint.h></code> and keyword promotion — have only shown their faces. The three remaining chapters of this part treat those three in detail, one each. We begin with the foundation of concurrency.</p>
+<div class="nav"><a href="ch62.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch64.html">Next →</a></div>
+</div></main></body></html>

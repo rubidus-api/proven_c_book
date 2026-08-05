@@ -1,6 +1,33 @@
 {
+  "book/appendix/a1-operators.typ": {
+    "ko": "e9c09e99b9e00033"
+  },
+  "book/appendix/a2-formats.typ": {
+    "ko": "77e0d629f00eafee"
+  },
+  "book/appendix/a3-conversions.typ": {
+    "ko": "2a06d31638482cf6"
+  },
+  "book/appendix/a4-reading.typ": {
+    "ko": "8a5a8db01790aebe"
+  },
+  "book/appendix/a5-bibliography.typ": {
+    "ko": "2ca7947e4e591a4e"
+  },
+  "book/appendix/a6-grammar.typ": {
+    "ko": "6cc45b9f1986faaa"
+  },
+  "book/back/index.typ": {
+    "ko": "c1eb01f743ab826b"
+  },
   "book/chapters/ch01.typ": {
     "ko": "d3f535f0837f7f75"
+  },
+  "book/chapters/ch02.typ": {
+    "ko": "b9e2e527c70affb6"
+  },
+  "book/chapters/ch03.typ": {
+    "ko": "e63ba7ff4ec8ed41"
   },
   "book/chapters/ch04.typ": {
     "ko": "e1abb58dca8adfb3"
@@ -227,8 +254,14 @@
   "book/chapters/ch78.typ": {
     "ko": "2e89e6c79579ffd4"
   },
+  "book/chapters/ch79.typ": {
+    "ko": "2b13969337688c0b"
+  },
   "book/chapters/ch80.typ": {
     "ko": "5fb8544a34beba66"
+  },
+  "book/chapters/ch81.typ": {
+    "ko": "b38023f07ad06a92"
   },
   "book/front/preface.typ": {
     "ko": "b921339b70209dc8"

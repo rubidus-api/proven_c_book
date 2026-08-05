@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>74 Strings and text — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>74 Strings and text</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The answer to chapter 69′s first bug — string functions that do not know the size of the vessel. Strings that carry their length, the distinction between owning and borrowing, and this library’s most contentious decision, <strong>refuse rather than truncate</strong>. Chapter 9′s story of encodings and chapter 37′s story of boundaries gather here into one.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 37 said that for a C string “up to the NUL” is the length, so to know the length it must be counted every time. Then what improves if the length is carried along — and what is lost?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Three things are gained. The cost of counting the length vanishes (<math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math> becomes <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math>), data with a zero byte in the middle can be handled, and above all <strong>the boundary can be checked</strong> — without the length there is nothing to check. Two things are lost. One string becomes two words rather than one, and conversion becomes necessary when meeting a world that expects NUL termination, as <code>printf("%s")</code> does. This library keeps a NUL internally as well in order to remove that conversion cost — a compromise that has both.</p></div></div><h3>74.1 Two types, one rule</h3><p>The string vocabulary is only two.</p><ul><li><code>proven_u8str_t</code> — an <strong>owning</strong> string. It has a buffer, a length and a capacity.</li><li><code>proven_u8str_view_t</code> — a <strong>borrowed</strong> string. Only a pointer and a length.</li></ul><p>If the name has <code>view</code> in it, it is borrowed, and what is borrowed is not destroyed. The rule set up in chapter 73 applied to strings as it is. <code>u8</code> means UTF-8 — that encoding seen in chapter 9 is this library’s default text representation.</p><p>There are two roads to obtaining an owning string. Receiving it from an allocator (<code>_create</code>), or borrowing somebody’s buffer (<code>_borrow</code>).</p><div><div><p><code>examples/ch74/ops.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+static void show(const char *label, proven_u8str_view_t v)
+{
+    printf("%-12s [%.*s] (%zu bytes)\n", label, (int)v.size, (const char *)v.ptr, v.size);
+}
+
+int main(void)
+{
+    /* ① 할당 없는 문자열: 스택 버퍼를 빌려 쓴다.
+          allocator 가 없는 시그니처 = 할당하지 않는다 */
+    proven_byte_t buf[16];
+    proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
+
+    proven_err_t e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hello"));
+    printf("append 'hello' : %s\n", proven_is_ok(e) ? "ok" : "refused");
+    show("content", proven_u8str_as_view(&amp;s));
+
+    /* ② 자리가 모자라면 거부한다 — 자르지 않는다 */
+    e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr(" world, and more"));
+    printf("append long    : %s (err=%d)\n",
+           proven_is_ok(e) ? "ok" : "refused", (int)e);
+    show("unchanged", proven_u8str_as_view(&amp;s));   /* 실패 원자성 */
+
+    /* ③ 찾기와 자르기 — 전부 view 위에서, 복사 없이 */
+    proven_u8str_view_t csv = proven_u8str_view_from_cstr("name,age,city");
+    proven_u8str_view_t comma = proven_u8str_view_from_cstr(",");
+
+    proven_size_t at = proven_u8str_view_find(csv, 0, comma);
+    printf("first comma at : %zu\n", at);
+    show("field 1", proven_u8str_view_slice(csv, 0, at));
+
+    /* ④ 구분자로 훑기: 못 찾으면 센티널(PROVEN_INDEX_NOT_FOUND)이 온다 */
+    proven_size_t start = 0;
+    int n = 0;
+    for (;;) {
+        proven_size_t hit = proven_u8str_view_find(csv, start, comma);
+        proven_size_t end = (hit == PROVEN_INDEX_NOT_FOUND) ? csv.size : hit;
+        char label[24];
+        snprintf(label, sizeof label, "field %d", ++n % 100);
+        show(label, proven_u8str_view_slice(csv, start, end - start));
+        if (hit == PROVEN_INDEX_NOT_FOUND) break;
+        start = hit + 1;
+    }
+
+    /* ⑤ 비교와 접두사 검사 */
+    printf("eq 'name,age,city' : %d\n",
+           proven_u8str_view_eq(csv, proven_u8str_view_from_cstr("name,age,city")));
+    printf("starts with 'name' : %d\n",
+           proven_u8str_view_starts_with(csv, proven_u8str_view_from_cstr("name")));
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>append 'hello' : ok
+content      [hello] (5 bytes)
+append long    : refused (err=2)
+unchanged    [hello] (5 bytes)
+first comma at : 4
+field 1      [name] (4 bytes)
+field 1      [name] (4 bytes)
+field 2      [age] (3 bytes)
+field 3      [city] (4 bytes)
+eq 'name,age,city' : 1
+starts with 'name' : 1
+</code></pre></div></div><p>The first line shows chapter 73′s rule again. <code>proven_u8str_borrow</code> has no allocator — therefore it does not allocate. It is doing string operations on a 16-byte array taken on the stack, and this is exactly how strings are handled in embedded work without a heap.</p><h3>74.2 Refuse, rather than truncate</h3><p>The second <code>append</code> is the most important single line of this part. On trying to attach <code>" world, and more"</code> after <code>"hello"</code> in a 16-byte vessel, the library <strong>wrote nothing</strong> and returned <code>PROVEN_ERR_OUT_OF_BOUNDS</code>. And as the next line shows, the original content <code>hello</code> stands as it was — the failure atomicity learned in chapter 71.</p><p>It is the exact opposite of <code>snprintf</code>’s choice seen in chapter 69. Why not truncate?</p><p><strong>Because a truncated value is not a short value but a different value.</strong> A truncated path points at a different file, a truncated command is a different command, a truncated user name is a different person. Truncate and declare success and the caller cannot know whether what was received is what was requested. So this library <strong>gives the decision back to the caller</strong> — “there is not enough room. What shall we do?”</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Still, are there not places where truncation is fine, such as one line of a log?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>There are. So there is a separate function that <strong>explicitly writes only part</strong> — <code>proven_u8str_append_partial</code> returns the number of bytes that went in. That the name is long and the return value different is the heart of it. Truncation is still possible, but to do it you must <strong>write it that way</strong>. The principle that the default is always the safe side and the dangerous choice can be made only through a visible name (the same as chapter 72′s <code>_unchecked</code>) is kept here too.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ Confusing growth with fixed capacity</p><pre><code data-lang="c">proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
+proven_err_t e = proven_u8str_append_grow(alloc, &amp;s, view);  /* dangerous */</code></pre><p><code>_append</code> writes only within the capacity, while <code>_append_grow</code> asks the allocator for more if there is not enough — which is why only the latter has an allocator argument. The problem is demanding growth on a borrowed buffer (<code>_borrow</code>). A stack array cannot grow, so this is a design error. The habit of reading signatures becomes the defence here as it stands — <strong>with an allocator it can grow, without one it cannot.</strong></p></div><h3>74.3 Finding and cutting — text handling without copying</h3><p>The example’s ③ and ④ are a view’s real usefulness. Obtaining a substring needs no copying — it merely calculates a new pointer into the original and a new length. While one CSV line was divided into three fields, not one allocation happened.</p><p>This pattern is especially powerful in parsers. When parsing a line with <code>sscanf</code> in chapter 25 a buffer had to be prepared in advance to hold the result, whereas cutting with views leaves only <strong>marks upon the original</strong>. In exchange one more thing must be kept — as seen in chapter 72, <strong>it is valid only while the original is alive</strong>.</p><p>There is a convention too in the value <code>find</code> returns when it does not find. It is not 0 or a negative number but a sentinel with a name, <code>PROVEN_INDEX_NOT_FOUND</code>. Chapter 69 spoke of the danger of sentinel values, and what differs here is that <strong>it has a name and is documented</strong> — a nameless magic number and a named contract are different things.</p><div class="dev misconception"><p class="dev-label">⚠ “Carrying the length means knowing the number of characters”</p><p>No. The length is <strong>the number of bytes</strong>. As learned in chapter 9, one character in UTF-8 is 1~4 bytes, so the Korean “가” is 3 bytes and an emoji is 4. It is why the example’s output takes the trouble to state “(5 bytes)”. So handling “the nth character” is still delicate, and <strong>cutting anywhere at a byte boundary</strong> gives the broken characters seen in chapter 9. What a string library solves is boundary trespass, not the essential difficulty of encodings.</p></div><h3>74.4 The boundary of two worlds — NUL termination and UTF-16</h3><p>Conversion is needed at every place where the outside world is met.</p><ul><li><code>proven_u8str_as_cstr</code> — obtains a NUL-terminated pointer from an owning string. A NUL being kept internally, there is neither copying nor allocation. It is used when passing to <code>printf("%s")</code> or to a file API.</li><li><code>proven_u8str_view_to_cstr</code> — makes a NUL-terminated string from a view. This one <strong>takes an allocator</strong> — because a view may point into the middle of the original and a NUL cannot be written in that place. The signature states the fact once again.</li><li><code>proven_u16str_t</code> / <code>proven_u16str_view_t</code> — the bridge to the UTF-16 world. The Windows API uses this encoding so conversion is needed, and conversion can fail (unpaired surrogates and the like). So the result comes as a bundle.</li></ul><div class="dev realcase"><p class="dev-label">◉ “Do not guess, refuse” — the principle of handling encodings</p><p>The root of the text security problems seen in chapter 9 is mostly <strong>the lenient decoder</strong>. Implementations that “read a wrong UTF-8 as something similar” have several times been the passage to security incidents — decoders that permitted overlong encodings in particular had their checks bypassed. So today’s norm is one sentence. <strong>Do not read invalid input as something mended; refuse it.</strong> proven’s encoding conversion stopping with <code>PROVEN_ERR_INVALID_ENCODING</code> is that norm implemented, and this principle is exactly the same spirit as this chapter’s “do not truncate”.</p></div><div class="dev recap"><p class="dev-label">☰ Recap</p><p>The string vocabulary in summary.</p><table><tr><th><strong>function</strong></th><th><strong>what it does</strong></th><th><strong>failure and ownership</strong></th></tr><tr><td><code>u8str_create(alloc, cap)</code></td><td>create an owning string</td><td>returns a bundle, needs <code>_destroy</code></td></tr><tr><td><code>u8str_borrow(buf, cap)</code></td><td>a string over somebody’s buffer</td><td>no allocation, no destruction</td></tr><tr><td><code>u8str_append(&amp;s, v)</code></td><td>append within the capacity</td><td>refuses if short (the original is preserved)</td></tr><tr><td><code>u8str_append_partial</code></td><td>as much as fits</td><td>returns the number of bytes put in</td></tr><tr><td><code>u8str_append_grow(alloc,…)</code></td><td>grow it if short</td><td>allocation may fail</td></tr><tr><td><code>u8str_view_find</code></td><td>the position of a substring</td><td><code>PROVEN_INDEX_NOT_FOUND</code> if absent</td></tr><tr><td><code>u8str_view_slice</code></td><td>a sub-view</td><td>no copying — tied to the original’s lifetime</td></tr><tr><td><code>u8str_as_cstr</code></td><td>a NUL-terminated pointer</td><td>no copying</td></tr><tr><td><code>u8str_view_to_cstr</code></td><td>view → a C string</td><td>needs an allocator</td></tr></table></div><p>We can now hold and cut strings safely. But the work of <strong>making</strong> them remains — turning numbers and values into letters, and turning letters back into numbers. It is the place where chapter 69′s third bug waits, and the place where this library’s most conspicuously different syntax appears.</p>
+<div class="nav"><a href="ch73.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch75.html">Next →</a></div>
+</div></main></body></html>

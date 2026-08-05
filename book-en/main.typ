@@ -1,9 +1,9 @@
-// Proven C Book — English edition (in progress). Build: scripts/build-book-en.sh
+// Proven C Book — English edition. Build: scripts/build-book-en.sh
 #import "../book/lib.typ": *
 
 #let book-version = "v0.2.0"
 #let book-updated = "2026-08-05"
-#let book-status = "draft — translation in progress"
+#let book-status = "draft"
 #let book-repo = "https://github.com/rubidus-api/proven_c_book"
 
 #set document(title: "Proven C Book " + book-version, author: "rubidus")
@@ -101,19 +101,20 @@
 
 = A note on this translation
 
-The Korean edition is the original and is complete — 13 parts, 69 chapters,
-appendices A–E and an index, about 287 pages. This English edition is
-translated from it chapter by chapter, and *chapter numbers are kept identical
-to the original*, so a cross-reference to "chapter 54" means the same chapter
-in both editions. Chapters not yet translated are listed where they belong,
-and the parts they sit in are marked accordingly.
+The Korean edition is the original. This English edition is translated from it
+chapter by chapter, and *chapter numbers are kept identical to the original*,
+so a cross-reference to "chapter 54" means the same chapter in both editions.
+All 13 parts, 81 chapters, appendices A–F and the index are now translated.
 
 The two editions are kept in step mechanically: `scripts/sync-status.py`
 records the hash of the Korean source each translated file was made from, and
-every build reports any chapter whose original has changed since. Per-chapter
-status is in `TRANSLATION.md` in the repository.
+every build reports any chapter whose original has changed since, so a change
+on one side surfaces as a stale entry on the other. `scripts/check-xrefs.py`
+compares the chapter cross-references of the two editions and reports any that
+have drifted apart. Per-chapter status is in `TRANSLATION.md` in the
+repository.
 
-Until a chapter arrives here, the complete text is the Korean edition:
+The Korean edition is at:
 
 - Web — #link("https://rubidus-api.github.io/proven_c_book/ko/")[rubidus-api.github.io/proven_c_book/ko/]
 - PDF — the `ko` asset of the current release
@@ -125,7 +126,7 @@ Until a chapter arrives here, the complete text is the Korean edition:
 // ── Body ────────────────────────────────────────────
 // Same skeleton as the Korean edition. Only translated chapters are included;
 // the heading counter is set per chapter so numbering matches the original.
-#let translated = (1, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 80)
+#let translated = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81)
 
 
 #for (part-title, intro, chs) in parts {
@@ -158,3 +159,19 @@ Until a chapter arrives here, the complete text is the Korean edition:
     include "chapters/ch" + n + ".typ"
   }
 }
+
+// ── Appendices ──────────────────────────────────────
+#pagebreak(weak: true)
+#align(center + horizon, text(font: ("Noto Sans CJK KR",), size: 20pt, weight: "bold", "Appendices"))
+#pagebreak(weak: true)
+#set heading(numbering: none)
+#include "appendix/a1-operators.typ"
+#include "appendix/a2-formats.typ"
+#include "appendix/a3-conversions.typ"
+#include "appendix/a4-reading.typ"
+#include "appendix/a6-grammar.typ"
+#include "appendix/a5-bibliography.typ"
+
+// ── Index ───────────────────────────────────────────
+#pagebreak(weak: true)
+#include "back/index.typ"

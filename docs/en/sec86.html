@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix C — Implicit conversions in summary — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>Appendix C — Implicit conversions in summary</h2><p>A compression of chapter 28′s rules into tables.</p><h3>Integer promotion</h3><p>When <code>bool</code>, <code>char</code>, <code>signed char</code>, <code>unsigned char</code>, <code>short</code>, <code>unsigned short</code> or a bit-field takes part in arithmetic:</p><ul><li>if all the values fit in an <code>int</code> → <code>int</code></li><li>otherwise → <code>unsigned int</code></li></ul><p>That is, <strong>arithmetic does not happen on a type narrower than int.</strong></p><h3>The usual arithmetic conversions (the common type of two operands)</h3><ol><li value="1">If one side is <code>long double</code> → both <code>long double</code></li><li value="2">Otherwise if one side is <code>double</code> → both <code>double</code></li><li value="3">Otherwise if one side is <code>float</code> → both <code>float</code></li><li value="4"><p>If both are integers → after promoting each:</p><ul><li>if the signedness is the same → the wider side</li><li>if the unsigned side is wider or equal → <strong>the unsigned side</strong></li><li>if the signed side is wider and holds all of the other’s values → the signed side</li><li>otherwise → the unsigned edition of the signed side</li></ul></li></ol><p>The practical summary: <strong>when they mix, to the wider side; when the widths are equal, the unsigned side wins.</strong> Avoid comparisons of mixed signedness (turn the warnings on and the compiler points them out).</p><h3>The default promotions of variadic arguments</h3><p>Arguments crossing into a place with no type in the prototype (<code>...</code>):</p><ul><li><code>float</code> → <code>double</code></li><li>the <code>bool</code>, <code>char</code> and <code>short</code> families → <code>int</code> (or <code>unsigned int</code>)</li></ul><p>So <code>printf</code> has no float-specific format, and <code>%f</code> takes a double (chapters 19, 25 and 50).</p><h3>Integer conversion rank (the criterion of the conversion rules)</h3><p>The order used when the usual arithmetic conversions choose “the wider side”. Higher is above.</p><pre><code data-lang="text">long long  >  long  >  int  >  short  >  char / bool</code></pre><p>At the same width the ranks of the unsigned and the signed side are the same, and then <strong>the unsigned side wins</strong>. That is why <code>-1 &lt; 1u</code> is false — <code>-1</code> turns into a huge unsigned value (chapter 28).</p><h3>Which conversion calls down which danger</h3><table><tr><th><strong>conversion</strong></th><th><strong>what happens</strong></th><th><strong>danger</strong></th></tr><tr><td>signed → unsigned</td><td>the two’s complement value is reinterpreted as it is</td><td>a negative becomes a huge value</td></tr><tr><td>unsigned → signed</td><td>as it is if it fits, otherwise implementation-defined</td><td>the value changes at the boundary</td></tr><tr><td>wide integer → narrow integer</td><td>the high bits are discarded</td><td>quiet loss of value</td></tr><tr><td>integer → real</td><td>rounded to the nearest value</td><td>loss of precision for large integers (chapter 8)</td></tr><tr><td>real → integer</td><td>the fractional part is discarded (towards 0)</td><td>outside the range it is outside the contract</td></tr><tr><td><code>double</code> → <code>float</code></td><td>the precision is reduced</td><td>rounding error</td></tr><tr><td>pointer → <code>void *</code></td><td>lossless</td><td>only the type information is lost</td></tr><tr><td><code>void *</code> → another pointer</td><td>lossless</td><td>outside the contract if the alignment does not match (chapter 35)</td></tr><tr><td>integer → pointer</td><td>implementation-defined</td><td>the provenance is lost (chapter 14)</td></tr></table><h3>A list of the places quiet conversions happen</h3><p>Implicit conversion happens <strong>without asking</strong> in the following places.</p><ul><li>Between the two operands of an arithmetic operation (the usual arithmetic conversions)</li><li>The right of an assignment → the left’s type</li><li>A function argument → the parameter’s type (when there is a prototype)</li><li>A <code>return</code>’s value → the return type</li><li>A condition place (the condition of <code>if</code>, <code>while</code>, <code>?:</code>) → judgement as <code>bool</code></li><li>Arguments crossing into <code>...</code> (the default promotions)</li><li>When an array or function name is used as a value (decay into a pointer)</li></ul><h3>Other conversions often met</h3><ul><li><strong>Narrowing</strong> (wide → narrow integer): the high bits are cut (chapter 7). In a signed type, if the value does not fit it is implementation-defined behaviour.</li><li><strong>Real → integer</strong>: the fractional part is discarded (towards 0). Outside the range it is outside the contract.</li><li><strong>Array → pointer</strong>: in most contexts it decays into the address of the first element. The exceptions are <code>sizeof</code>, <code>alignof</code> and <code>&amp;</code> (chapter 36).</li><li><strong>Function → pointer</strong>: a function name decays into a function pointer.</li></ul>
+<div class="nav"><a href="sec85.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="sec87.html">Next →</a></div>
+</div></main></body></html>

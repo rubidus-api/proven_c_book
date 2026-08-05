@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>49 The preprocessor and the translation phases — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>49 The preprocessor and the translation phases</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We open head on the layer chapter 16 passed over as “a text tool that does not know C”. The identity of the macro, the principle and idioms of the two <span id="idx-entry-86"></span>operators <code>#</code> and <code>##</code>, their traps, and the whole of the <strong>translation phases</strong> the standard pins down for source becoming a program. It is the grammar of the “second language” living inside a C source file.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 19 said lines beginning with <code>#</code> are not statements and have no <span id="idx-entry-87"></span>semicolon, and that the reason is “the preprocessor is a text tool working by lines, not by C’s grammar.” Then what does the preprocessor know of C?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Almost nothing — it knows neither types nor scopes nor functions. What it knows is only <strong>tokens</strong> (word-pieces that cannot be split further: names, numbers, operators, strings), and what it does is delete, insert and join tokens. This ignorance is the preprocessor’s power (it can produce any fragment of code whatever) and its danger (it upholds neither grammar nor meaning). This chapter sees the power and the danger together.</p></div></div><h3>49.1 Macros — turning a name into a stream of tokens</h3><p><code>#define NAME content</code> is the directive “from now on, when you meet the token NAME, replace it with content.” There is also a form taking arguments (<code>#define MAX(a,b) ...</code>), which looks like a function but is not — it is <strong>substitution, not a call</strong>, with neither type checking nor any guarantee about evaluation order.</p><p>Two idioms follow from this difference. First, <strong>wrap the arguments and the whole in parentheses</strong> — as in <code>#define SQ(x) ((x) * (x))</code>. Without them <code>SQ(1+2)</code> unfolds to <code>1+2*1+2</code> and gives 5 (chapter 20′s precedence applying to the substituted token stream as it is). Second, <strong>beware macros that use an argument twice</strong> — <code>SQ(i++)</code> increments <code>i</code> twice. Chapter 32′s “one variable changed only once in one statement” is broken behind your back by a macro.</p><h3>49.2 <code>#</code> — turning a token into a string (stringize)</h3><p>Put <code>#</code> before a macro argument and that argument becomes <strong>a string literal of it literally</strong>. The key is that what becomes a string is not the value but <strong>the shape as written</strong>.</p><div><div><p><code>examples/ch49/macro.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+/* # : 인자를 "글자 그대로" 문자열로 만든다 (stringize) */
+#define SHOW(expr)  printf(#expr " = %d\n", (expr))
+
+/* ## : 두 토큰을 하나로 붙인다 (token paste) */
+#define MAKE_NAME(prefix, n)  prefix##n
+
+/* 한 겹으로는 매크로가 안 풀린다 — 두 겹 우회가 정석이다 */
+#define STR_RAW(x)  #x
+#define STR(x)      STR_RAW(x)
+#define WIDTH       80
+
+int MAKE_NAME(value_, 1) = 11;   /* -> int value_1 = 11; */
+int MAKE_NAME(value_, 2) = 22;
+
+int main(void)
+{
+    SHOW(2 + 3 * 4);
+    SHOW(value_1 + value_2);
+
+    printf("STR_RAW(WIDTH) = %s\n", STR_RAW(WIDTH));  /* 안 풀린다 */
+    printf("STR(WIDTH)     = %s\n", STR(WIDTH));      /* 풀린 뒤 문자열이 된다 */
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>2 + 3 * 4 = 14
+value_1 + value_2 = 33
+STR_RAW(WIDTH) = WIDTH
+STR(WIDTH)     = 80
+</code></pre></div></div><p>The demonstration’s <code>SHOW(2 + 3 * 4)</code> is that in the flesh — <code>#expr</code> becomes the string <code>"2 + 3 * 4"</code> while the <code>(expr)</code> beside it is calculated and becomes 14. One argument was used <strong>both as text and as a value</strong>. This pattern is the basic form of debugging and checking macros: printing the condition “x > 0” as it stands when <code>assert(x > 0)</code> fails works on exactly this principle (the inner workings of the assert met in chapter 45).</p><h3>49.3 <code>##</code> — joining two tokens into one (token paste)</h3><p><code>##</code> <strong>joins</strong> the tokens on either side <strong>into one new token</strong>. The demonstration’s <code>MAKE_NAME(value_, 1)</code> becoming the <strong>identifier</strong> <code>value_1</code> is the example — not a string but a real name, so it can be used in a variable declaration.</p><p>Its use is <strong>code generation that assembles names</strong>. When functions or structs of the same shape must be stamped out per type (C having no generics), joining a prefix and a type name to produce names like <code>stack_int_push</code> and <code>stack_double_push</code> from one macro is the classic technique.</p><h3>49.4 The double indirection — why one layer does not unfold</h3><p>There is a rule you must meet when using <code>#</code> and <code>##</code>. <strong>A macro argument that becomes the operand of <code>#</code> or <code>##</code> is not expanded first.</strong> The demonstration’s last two lines are the contrast — <code>STR_RAW(WIDTH)</code> becomes <code>"WIDTH"</code>, while <code>STR(WIDTH)</code> becomes <code>"80"</code>.</p><p>The reason lies in the order of substitution. A macro argument is normally <strong>expanded fully first</strong> and then put into the body, but when it is the operand of <code>#</code> or <code>##</code> the <strong>unexpanded original token</strong> is used. So when you want the value you add another layer — the outer macro (<code>STR</code>) takes the argument ordinarily and <strong>after expanding it</strong> passes it to the inner macro (<code>STR_RAW</code>), which makes the string there. <code>##</code> has the same circumstance, so keeping a <code>PASTE</code>/<code>PASTE_RAW</code> pair is idiom. It is the preprocessor trap that catches people most often, and also a problem solved in two lines once known.</p><div class="dev realcase"><p class="dev-label">◉ A language made by one macro — the X macro</p><p>There is a classic technique showing the power of <code>#</code> and <code>##</code>. It writes a list in one place and unfolds it in several forms — the <strong>X macro</strong>. The name comes from the conventionally used parameter <code>X</code>. We see it in the flesh in the next section.</p></div><h3>49.5 The X macro — several sets of code from one list</h3><p>C has no code generation. So the problem arises of “having to write the same list repeatedly in several forms” — take error codes: once in an enumeration, once in a table of name strings, once in a <code>switch</code> returning messages. Miss one place when adding an item and the tables are out of step from then on.</p><p>The X macro solves this by <strong>writing the list only once</strong>. The knack is two steps.</p><ol><li>Write the list in the form of “calls to a macro <code>X</code> that is not yet defined.”</li><li>Define <code>X</code> differently each time and unfold the list. The same list comes out as different code every time.</li></ol><div><div><p><code>examples/ch49/xmacro.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+/* 하나의 목록에서 열거형·이름표·검사 코드를 함께 만들어 낸다.
+   목록을 고칠 때 한 곳만 고치면 나머지가 따라온다. */
+#define ERROR_LIST(X)                       \
+    X(OK,        0, "no error")             \
+    X(NOT_FOUND, 2, "resource not found")   \
+    X(DENIED,    5, "permission denied")    \
+    X(TIMEOUT,   9, "operation timed out")
+
+/* ① 열거형 만들기 — 이름과 값만 쓴다 */
+#define AS_ENUM(name, code, text) ERR_##name = code,
+enum error_code { ERROR_LIST(AS_ENUM) };
+#undef AS_ENUM
+
+/* ② 이름 문자열 표 만들기 — 이름을 문자열로 바꾼다(#) */
+#define AS_NAME(name, code, text) [code] = #name,
+static const char *const error_name[] = { ERROR_LIST(AS_NAME) };
+#undef AS_NAME
+
+/* ③ 설명 문자열을 돌려주는 함수 만들기 — switch 를 통째로 생성한다 */
+#define AS_CASE(name, code, text) case ERR_##name: return text;
+static const char *error_text(enum error_code e)
+{
+    switch (e) {
+        ERROR_LIST(AS_CASE)
+        default: return "unknown error";
+    }
+}
+#undef AS_CASE
+
+/* ④ 개수 세기 — 목록의 길이도 자동으로 얻는다 */
+#define AS_COUNT(name, code, text) + 1
+enum { ERROR_COUNT = 0 ERROR_LIST(AS_COUNT) };
+#undef AS_COUNT
+
+int main(void)
+{
+    printf("%d error codes defined\n", ERROR_COUNT);
+
+#define AS_ROW(name, code, text) \
+    printf("  %-10s code=%d name=%-9s text=%s\n", #name, (int)ERR_##name, \
+           error_name[code], error_text(ERR_##name));
+    ERROR_LIST(AS_ROW)
+#undef AS_ROW
+
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>4 error codes defined
+  OK         code=0 name=OK        text=no error
+  NOT_FOUND  code=2 name=NOT_FOUND text=resource not found
+  DENIED     code=5 name=DENIED    text=permission denied
+  TIMEOUT    code=9 name=TIMEOUT   text=operation timed out
+</code></pre></div></div><p>Four sets came out of one list. Taking them one at a time.</p><p><strong>① The enumeration</strong> — <code>AS_ENUM</code> unfolds to <code>ERR_##name = code,</code>. <code>##</code> joins <code>ERR_</code> with the name and produces <code>ERR_NOT_FOUND = 2,</code>.</p><p><strong>② The table of name strings</strong> — <code>#name</code> turns the name straight into a string. Moreover it uses the <strong>designated initialiser</strong> <code>[code] = #name</code> (chapter 41) so that the code value is itself the array index. Even with sparse values (0, 2, 5, 9) the table lines up by itself.</p><p><strong>③ Generating the <code>switch</code></strong> — <code>case ERR_##name: return text;</code> unfolds as many times as there are items. The whole body of the function was made from the list.</p><p><strong>④ Counting</strong> — the knack of making it unfold to <code>0 + 1 + 1 + 1 + 1</code>. Add items to the list and <code>ERROR_COUNT</code> follows by itself.</p><p><strong>⑤ And in the body</strong> — inside <code>main</code> the same list is unfolded once more to print a table. Erasing the macro with <code>#undef</code> after use is the convention, because a lingering name collides with the next use.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>I hear there is a version that keeps the list in a separate file. What is different?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>It is the same idea in different packaging. Write the list in a file such as <code>errors.def</code>, and on the using side define <code>X</code> and unfold it with <code>#include "errors.def"</code> — using directly the fact that <code>#include</code> is text pasting (chapter 48). The macro line continuations (<code>\\</code>) disappear and the list reads better, at the cost of one more file and the inconvenience that an IDE does not recognise that file as code. The Linux kernel’s system call table long used this approach.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ Where it is better not to use an X macro</p><pre><code data-lang="c">/* when there are only three items and only one derived form */
+#define COLOR_LIST(X) X(RED) X(GREEN) X(BLUE)</code></pre><p>At this size it reads better simply to write the enumeration and the string array side by side. The X macro’s value appears when <strong>the list is long, several sets of code derive from it, and items keep being added</strong>. Use it on a short list and what is lost (the unfolded code being invisible in the debugger and in error messages, a first-time reader being unable to read it) outweighs what is gained (removing duplication).</p></div><div class="dev realcase"><p class="dev-label">◉ X macros as met in practice</p><p>This technique is everywhere; only the name is unfamiliar. The Linux kernel’s system call table and error code definitions, the register and pin definitions of many embedded SDKs, the asset-kind lists of game engines, and the state lists of state machines are representative. What they share is the same — places where <strong>one list is used simultaneously as an enumeration, strings, checking code and serialisation code</strong>. It is an invention created by the pressure to remove duplication in a language with no tooling for it, and so it is also a technique that shows C’s character well.</p></div><div class="dev misconception"><p class="dev-label">⚠ “A macro is the fast version of a function”</p><p>In the old days it was half true — short functions were written as macros to save the cost of a call. But today’s compilers inline small functions by themselves (chapter 14′s editor), so reasons to use a macro for speed have almost vanished. What remains is only the price — no type checking, multiple evaluation of arguments, invisibility in the debugger, and error messages given against the unfolded code and thus hard to read. The modern guidance is clear: <strong>compute values with functions (with <code>static inline</code> if needed), make constants with <code>enum</code> or C23′s <code>constexpr</code>, and use macros only for what a function cannot do — conditional compilation, token assembly, capturing source location.</strong></p></div><h3>49.6 The translation phases — the eight steps the standard pins down</h3><p>We knew preprocessing happens “first”, but exactly what happens in what order? The standard pins this down as eight steps under the name <strong>translation phases</strong>. A real compiler need not perform these steps physically separately, but must behave <strong>as if it had done them in this order</strong> (chapter 14′s “as long as it looks the same” applies here too).</p><table><tr><th><strong>phase</strong></th><th><strong>what it does</strong></th></tr><tr><td>1</td><td>read the source characters and map them into the internal character set (chapter 9′s world of encodings). trigraph replacement used to be here — C23 removed it</td></tr><tr><td>2</td><td>join lines continued by a backslash at the end of a line</td></tr><tr><td>3</td><td>turn comments into a single space, and split the source into <strong>tokens</strong></td></tr><tr><td>4</td><td>execute preprocessing directives — <code>#include</code> (repeating phases 1~4 recursively), <code>#define</code> substitution, conditional compilation</td></tr><tr><td>5</td><td>convert the characters of character and string literals into the execution character set</td></tr><tr><td>6</td><td>join adjacent string literals into one (<code>"a" "b"</code> → <code>"ab"</code>)</td></tr><tr><td>7</td><td>interpret the tokens by C’s grammar and translate — this is “compiling”</td></tr><tr><td>8</td><td>join the needed definitions and make the executable image — linking</td></tr></table><p>This table unravels several riddles at once. <strong>Because comments become a space in phase 3</strong>, <code>a/**/b</code> is <code>a b</code>, not <code>ab</code>. <strong>Because <code>#include</code> is processed recursively in phase 4</strong>, headers within headers unfold naturally. <strong>Because string joining is in phase 6</strong>, the idiom of writing a long string over several lines works, and string fragments made by a macro (the result of the <code>#</code> operator) also join with a literal beside them. And <strong>that grammatical interpretation is phase 7</strong> restates this chapter’s core — when the preprocessor works, C’s grammar does not yet exist.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then where is a syntax error inside a macro caught?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>In phase 7, against <strong>the code after unfolding</strong> — which is why the error message looks remote from the line you wrote. The standard diagnosis is the <code>-E</code> (preprocess only) learned in chapter 16: preprocess the file in question and look at how it really unfolded, and a riddling error usually resolves at once. Modern compilers help with this too by showing trace information such as “expanded from macro NAME”.</p></div></div><p>We now know layer by layer the whole process of source becoming a program. The next chapter is the secret of how <code>printf</code> takes any number of arguments — the variadic function.</p>
+<div class="nav"><a href="ch48.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch50.html">Next →</a></div>
+</div></main></body></html>

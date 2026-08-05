@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>75 Formatting and parsing — not writing the type twice — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>75 Formatting and parsing — not writing the type twice</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The answer to chapter 69′s third bug — the mismatch of format and argument. How the typeless placeholder <code>{}</code> obtains type safety, what <code>_Generic</code> does beneath it, and how failure appears as a value in the opposite direction, parsing. It is the alternative to the <code>printf</code> and <code>scanf</code> taken apart in chapter 53.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 50 said type information does not ride along into variadic arguments, and chapter 53 said that is why the format string alone settles “how the stack is to be read”. Then what is needed to take the type from the argument?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Catch the type <strong>at the call site</strong> and send it along with the value. That is, do not pass the argument as it is but wrap it into a <code>{type tag, value}</code> bundle. The remaining problem is “how is the type tag attached automatically”, and the answer is C11′s <code>_Generic</code> — the device that chooses different code at compile time according to an expression’s type. The run-time cost is zero, and unlike the implicit <span id="idx-entry-107"></span>conversion rules learned in chapter 28, here the type is <strong>preserved</strong>.</p></div></div><h3>75.1 <code>{}</code> — the placeholder with no type</h3><p>The rules are only three.</p><ul><li><code>{}</code> — put the next argument here. The type is not written.</li><li><code>{:...}</code> — after the colon write the format specification (width, alignment, digits).</li><li><code>{{</code> <code>}}</code> — the brace characters themselves.</li></ul><p>There being no <code>%d</code>, there is no place for a <code>%d</code> and a <code>double</code> to go out of step. The possibility of mismatch seen in chapter 53 is removed at the level of syntax.</p><div><div><p><code>examples/ch75/fmt.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+int main(void)
+{
+    /* 화면이 아니라 문자열로 형식화한다 — 버퍼는 스택에서 빌린다 */
+    proven_byte_t buf[64];
+    proven_u8str_t out = proven_u8str_borrow(buf, sizeof buf);
+
+    int      port = 8080;
+    double   load = 0.4237;
+    const char *host = "example.org";
+
+    proven_fmt_result_t r = proven_u8str_append_fmt(&amp;out, "{}:{} load={:.2}",
+                                                   PROVEN_ARG(host), PROVEN_ARG(port),
+                                                   PROVEN_ARG(load));
+    if (proven_is_ok(r.err)) {
+        proven_u8str_view_t v = proven_u8str_as_view(&amp;out);
+        printf("formatted : %.*s\n", (int)v.size, (const char *)v.ptr);
+    }
+
+    /* 그릇이 모자라면? 자르지 않고 거부한다 */
+    proven_byte_t small_buf[8];
+    proven_u8str_t small = proven_u8str_borrow(small_buf, sizeof small_buf);
+    proven_fmt_result_t r2 = proven_u8str_append_fmt(&amp;small, "{}:{}",
+                                                    PROVEN_ARG(host), PROVEN_ARG(port));
+    printf("into 8 bytes: %s (err=%d)\n",
+           proven_is_ok(r2.err) ? "ok" : "refused", (int)r2.err);
+
+    /* 정렬과 자릿수 — 46장의 폭/정밀도에 해당한다 */
+    proven_u8str_t line = proven_u8str_borrow(buf, sizeof buf);
+    (void)proven_u8str_reset(&amp;line);
+    proven_fmt_result_t r3 = proven_u8str_append_fmt(&amp;line, "|{:>10}|{:&lt;10}|{:.3}|",
+                                                    PROVEN_ARG(host), PROVEN_ARG(host),
+                                                    PROVEN_ARG(load));
+    if (proven_is_ok(r3.err)) {
+        proven_u8str_view_t v = proven_u8str_as_view(&amp;line);
+        printf("aligned   : %.*s\n", (int)v.size, (const char *)v.ptr);
+    }
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>formatted : example.org:8080 load=0.42
+into 8 bytes: refused (err=2)
+aligned   : |example.org|example.org|0.424|
+</code></pre></div></div><p>This example formats not to the screen but <strong>into a string</strong> — the <code>proven_println</code> seen in chapter 70 is the edition connecting this machinery to standard output. Three things can be pointed out.</p><p><strong>First, formatting too can fail.</strong> <code>example.org:8080</code> cannot go into an 8-byte vessel, so it was refused. Chapter 74′s principle stands here too — rather than truncate, it returns a failure. The opposite default from <code>snprintf</code>.</p><p><strong>Second, the format specification syntax is a little different.</strong> The <code>></code> of <code>{:>10}</code> is right alignment, <code>{:&lt;10}</code> left alignment, <code>{:.3}</code> three decimal places. They correspond to chapter 53′s <code>%10s</code>, <code>%-10s</code> and <code>%.3f</code>, differing in that <strong>there is no type letter</strong>.</p><p><strong>Third, it rounds but keeps the number of digits.</strong> <code>load=0.42</code> is what <code>{:.2}</code> made.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What exactly does <code>PROVEN_ARG</code> do?</p></div><div class="dev qa-a"><p class="dev-label">A It chooses on the argument’s type with <code>_Generic</code> and makes a small struct with a tag fitting that type attached. Carried over in concept alone it has this shape.</p><pre><code data-lang="c">#define PROVEN_ARG(x) _Generic((x),          \
+    int:          proven_arg_i32,            \
+    double:       proven_arg_f64,            \
+    const char *: proven_arg_cstr,           \
+    bool:         proven_arg_bool            \
+    /* ... */ )(x)</code></pre><p><code>_Generic</code> chooses the branch <strong>at compile time</strong>, so there is no run-time cost of determining the type. And passing a type not in the list is <strong>a compile error</strong> — the exact opposite of chapter 53′s <code>printf</code>, which accepted anything.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ Passing a value without <code>PROVEN_ARG</code></p><pre><code data-lang="c">proven_println("count={}", count);        /* it does not compile */</code></pre><p>A raw value rather than a bundle was passed, so the types do not match and the build fails. It can feel tiresome, but this is the point of the design — <strong>forget to wrap it and the program is not made.</strong> Herein lies the difference from <code>printf</code>, which compiles even when you forget and goes strange during execution.</p></div><div class="dev misconception"><p class="dev-label">⚠ “The placeholder has no type, so it must be slow”</p><p>The opposite. <code>printf</code> interprets the format string letter by letter <strong>during execution</strong> and decides what to take out next. <code>{}</code> scans the format too, but each argument’s type is already settled by its tag, so there is no guessing. Above all, there being no UB from type mismatch, no defensive code is needed either. The difference in cost is mostly negligible, and this library’s real-number formatting has rather taken more care over accuracy — reproducing exactly the rounding rules of <code>%f</code> seen in chapter 53 is the more awkward task.</p></div><h3>75.2 The opposite direction — the scanner</h3><p>Parsing is formatting’s mirror, but the character of failure differs. Formatting fails only when the vessel is too small, while parsing fails <strong>whenever the input differs from expectation</strong>. And as seen in chapter 53, <code>sscanf</code> tells only “how many succeeded” — it does not say where or why it stopped.</p><span id="idx-entry-108"></span><p>proven’s scanner is an object with a cursor. It is placed over a view and reads onward one at a time. Each read gives its result as a bundle.</p><div><div><p><code>examples/ch75/lines.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+/* 한 줄에서 "이름 나이" 꼴을 해석한다 — 실패는 값으로 드러난다. */
+static void parse_line(const char *line)
+{
+    proven_scan_t sc = proven_scan_init(proven_u8str_view_from_cstr(line));
+
+    proven_result_u8str_view_t name = proven_scan_str(&amp;sc);
+    if (!proven_is_ok(name.err)) {
+        printf("[%s] -> no name found\n", line);
+        return;
+    }
+
+    proven_result_i64_t age = proven_scan_i64(&amp;sc);
+    if (!proven_is_ok(age.err)) {
+        printf("[%s] -> age is not a number\n", line);
+        return;
+    }
+
+    printf("[%s] -> name %.*s, age %lld\n", line,
+           (int)name.val.size, (const char *)name.val.ptr, (long long)age.val);
+}
+
+int main(void)
+{
+    parse_line("alice 33");
+    parse_line("bob thirty");
+    parse_line("   ");
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>[alice 33] -> name alice, age 33
+[bob thirty] -> age is not a number
+[   ] -> no name found
+</code></pre></div></div><p>That three inputs divided into three branches is the heart of it. <code>bob thirty</code> had its name read but stopped at the age, and the line of whitespace only failed from the name. With <code>sscanf</code> both would have been lumped together as “one item succeeded” or “0”.</p><p>Having a cursor has another advantage. <strong>How far it has read</strong> can be known, so the remaining part can be handled another way or the position can be carried in an error message. It is the answer to the problem chapter 25 named when parsing a line with <code>sscanf</code>: “you cannot know how many characters were consumed.”</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Does the scanner have a format string too?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>It does — it is used as <code>proven_scan_fmt_cursor(&amp;sc, "{}:{}", PROVEN_SCAN_ARG(&amp;host),<br><span style="white-space: pre-wrap">&#x20;&#x20;</span>PROVEN_SCAN_ARG(&amp;port))</code>. It is symmetrical with formatting, and the arguments are wrapped addresses of the places to hold the results. But there is one caution the header states honestly — if it fails in the middle of the format, <strong>the values filled in up to that point have already been changed</strong>. The failure atomicity learned in chapter 71 is not guaranteed here, so if it is really needed the cursor and the destinations must be saved beforehand and restored. Writing the contract in the documentation rather than hiding it is this library’s way.</p></div></div><div class="dev realcase"><p class="dev-label">◉ What happens when a parser is lenient</p><p>There is a problem that has come to light repeatedly in the handling of HTTP requests. If a server and a proxy interpret the same request <strong>slightly differently</strong>, an attacker can slip a second request in through that gap (request smuggling). The cause was differences such as one side generously letting odd whitespace in a header pass while the other refused strictly. The lesson is exactly the same as chapter 74′s story of encodings — <strong>do not read ambiguous input as something mended; refuse it.</strong> A parser that returns failure as a value is also a parser equipped with the means to express that refusal.</p></div><div class="dev recap"><p class="dev-label">☰ Recap</p><p>Formatting and parsing in summary.</p><table><tr><th><strong>what it does</strong></th><th><strong>API</strong></th><th><strong>note</strong></th></tr><tr><td>one line to the screen</td><td><code>proven_println(fmt, ARG…)</code></td><td>returns an error but does not compel</td></tr><tr><td>format into a string</td><td><code>proven_u8str_append_fmt(&amp;s, …)</code></td><td>refuses if short</td></tr><tr><td>permitting truncation</td><td><code>…_append_fmt_trunc</code></td><td>states the intent in the name</td></tr><tr><td>growing as it goes</td><td><code>…_append_fmt_grow(alloc, …)</code></td><td>needs an allocator</td></tr><tr><td>wrapping an argument</td><td><code>PROVEN_ARG(x)</code></td><td><code>_Generic</code> — a type not listed is a compile error</td></tr><tr><td>starting a scanner</td><td><code>proven_scan_init(view)</code></td><td>an object with a cursor</td></tr><tr><td>reading one at a time</td><td><code>proven_scan_i64/f64/str</code></td><td>result and failure as a bundle</td></tr><tr><td>reading by format</td><td><code>proven_scan_fmt_cursor(…)</code></td><td>beware partial changes on mid-way failure</td></tr></table></div><p>The vocabulary for holding, making and reading back strings is equipped. Next are the tools that <strong>hold many</strong> — growing arrays, lists, ring buffers, hash maps, and the algorithms with “a guarantee even in the worst case” foretold in chapter 69.</p>
+<div class="nav"><a href="ch74.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch76.html">Next →</a></div>
+</div></main></body></html>

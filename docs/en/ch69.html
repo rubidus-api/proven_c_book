@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>69 The five bugs shipped for fifty years — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>69 The five bugs shipped for fifty years</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>This part’s statement of the problem. We confirm with actually running code why C has kept shipping the same five classes of bug for half a century — that it is not the programmer’s carelessness but <strong>the shape of the API</strong>. Only after all five have been seen does the name proven appear again. Not introducing the tool first is this part’s principle.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 37 said the functions handling strings “do not know the size of the vessel”, and chapter 45 said “a failure not confirmed becomes a thing that never happened”. Then why do such problems still remain — is half a century not more than enough time to mend them?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Not because they cannot be mended but because mending them <strong>breaks all the code already written</strong>. The moment one more size parameter is put into <code>strcpy</code>’s signature, every C program in the world stops compiling. The standard is an institution that must protect existing code (chapter 53′s reason for “thin and old” appears here too), so instead of removing dangerous functions it has taken the road of <strong>placing better functions beside them</strong>. So the choice comes over to the programmer — it is, in effect, a language in which knowing what is dangerous and choosing accordingly is itself skill.</p></div></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then are these five a list of mistakes beginners make?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>No. These are mistakes <strong>the skilled keep making too</strong>, and that point matters. If people who know the whole grammar still slip in the same places, the cause is not the person but <strong>the shape of the tool</strong>. A function that does not take a size has no way of checking a size, and a function whose return value may be thrown away with nothing happening will one day be thrown away. This chapter takes that “shape” apart one at a time.</p></div></div><h3>69.1 One — string functions do not know the size of the vessel</h3><p>The oldest and most exploited class. Exactly as seen in chapter 37.</p><pre><code data-lang="c">char buf[64];
+strcpy(buf, name);            /* how long is name? strcpy does not ask */
+strcat(buf, ", welcome!");    /* and how much room is left now? */</code></pre><p><code>strcpy</code>’s signature has no destination size. What is not there cannot be checked, so this function will happily write to the 200th byte of a 64-byte vessel. What gets wrecked depends on what the compiler placed after it, and commonly that is the function’s return address (recall chapter 39′s picture of the stack).</p><p>The modern prescription is to use the editions that take a size — <code>snprintf</code> is representative. And here is a second trap. Functions that take a size <strong>quietly truncate</strong> when it overflows.</p><div><div><p><code>examples/ch69/truncate.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;string.h>
+
+/* 흔한 방식: 고정 버퍼에 경로를 조립한다.
+   컴파일러는 이 함수 안에서 dir/name 의 길이를 알 수 없다. */
+static int build_path(char *out, size_t cap, const char *dir, const char *name) {
+    return snprintf(out, cap, "%s/%s", dir, name);   /* 넘치면 조용히 자른다 */
+}
+
+int main(void) {
+    char path[24];
+
+    build_path(path, sizeof path, "/var/log", "app.log");
+    printf("fits      : %s\n", path);
+
+    build_path(path, sizeof path, "/var/log/service/http", "access.log");
+    printf("truncated : %s\n", path);
+    printf("            length=%zu, buffer=%zu\n", strlen(path), sizeof path);
+
+    /* 잘렸는지 알아내려면 반환값을 보아야 한다 */
+    int need = build_path(path, sizeof path, "/var/log/service/http", "access.log");
+    if (need >= (int)sizeof path)
+        printf("detected  : needed %d bytes, had %zu\n", need + 1, sizeof path);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>fits      : /var/log/app.log
+truncated : /var/log/service/http/a
+            length=23, buffer=24
+detected  : needed 33 bytes, had 24
+</code></pre></div></div><p>Look at the third line. What was to be made was <code>/var/log/service/http/access.log</code>, and what remained in hand is <code>/var/log/service/http/a</code>. The program neither stopped nor warned. If this string is a file path it opens the wrong file, if a command it becomes a different command, if a log the record of an accident is cut without a sound. <strong>A truncated path is not a short path but a wrong path.</strong></p><div class="dev antipattern"><p class="dev-label">✗ Treating truncation as success</p><pre><code data-lang="c">snprintf(path, sizeof path, "%s/%s", dir, name);
+open_file(path);          /* nobody asked whether it was truncated */</code></pre><p><code>snprintf</code> in fact gives the answer — it returns <strong>the length that would have been needed</strong>. If that value is at least the vessel’s size it was truncated (the example’s last line is that check). The problem is that this check is <strong>optional</strong>. Throw the return value away and the compiler says nothing. That leads straight into the second bug.</p></div><div class="dev realcase"><p class="dev-label">◉ The compiler catches only what it can see</p><p>Something that really happened while making this example. At first <code>snprintf</code> was called directly inside <code>main</code> with literal arguments, and gcc caught it.</p><pre><code data-lang="text">error: ‘%s’ directive output truncated writing 10 bytes
+       into a region of size 2 [-Werror=format-truncation=]
+note: ‘snprintf’ output 33 bytes into a destination of size 24</code></pre><p>An excellent diagnosis. Yet moving the same call inside a function called <code>build_path</code> made the warning <strong>vanish</strong>. The moment a function boundary is crossed the compiler cannot know the real lengths of <code>dir</code> and <code>name</code>. In a real program strings come from files or from the network, so cases where the compiler can help are rather rare. A warning is a free review, not a guarantee (chapter 17).</p></div><h3>69.2 Two — there is no device that makes you confirm failure</h3><pre><code data-lang="c">char *p = malloc(n);
+p[0] = 'x';                   /* malloc gives null on failure */</code></pre><p>C’s ways of reporting failure are two. Return a <strong>sentinel value</strong> (null, <code>-1</code>, <code>EOF</code>), or leave the reason in the global variable <code>errno</code>. Neither can compel a check. Code that throws the return value away is perfectly legal, and <code>errno</code> is global state that must be read at exactly the right moment, before the next call overwrites it (chapter 53).</p><div><div><p><code>examples/ch69/unchecked.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;stdlib.h>
+
+/* 설정 줄에서 포트 번호를 읽는다 — 실패를 확인하지 않는 판 */
+static int read_port_careless(const char *line) {
+    int port = 8080;              /* 기본값 */
+    sscanf(line, "port=%d", &amp;port);   /* 반환값을 보지 않는다 */
+    return port;
+}
+
+/* 같은 일 — 실패를 확인하는 판 */
+static int read_port_checked(const char *line, int fallback) {
+    int port;
+    if (sscanf(line, "port=%d", &amp;port) != 1) {
+        printf("  (parse failed, keeping %d)\n", fallback);
+        return fallback;
+    }
+    return port;
+}
+
+int main(void) {
+    const char *good = "port=9000";
+    const char *typo = "prot=9000";     /* 오타 */
+
+    printf("careless good: %d\n", read_port_careless(good));
+    printf("careless typo: %d\n", read_port_careless(typo));
+    printf("checked  typo: %d\n", read_port_checked(typo, 8080));
+
+    /* strtol 도 마찬가지다: 실패를 값으로 알리지만 아무도 강제하지 않는다 */
+    long n = strtol("abc", nullptr, 10);
+    printf("strtol(\"abc\") = %ld\n", n);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>careless good: 9000
+careless typo: 8080
+  (parse failed, keeping 8080)
+checked  typo: 8080
+strtol("abc") = 0
+</code></pre></div></div><p>That <code>careless typo</code> returned 8080 is this section’s heart. There was a typo in the configuration and the program <strong>quietly fell back to the default</strong>. On the surface nothing happened, and months later only the question “why is the setting not taking effect?” remains. That <code>strtol("abc")</code> gives 0 is the same pattern — failure and “a real 0” come back as the same value.</p><div class="dev misconception"><p class="dev-label">⚠ “Failure is exceptional, so it can be handled later”</p><p>The premise that failure is rare is wrong to begin with. A file may not exist, input carries typos, disks fill, networks break — every place where the program touches the outside world is a point of failure. And the real reason “later” is dangerous lies elsewhere. Code that ignored a failure <strong>does not stop but keeps running</strong>. A wrong value flows into the next calculation, into the function after that, and by the time the problem finally shows itself it blows up far from its cause. Chapter 45′s “fail early” returns here.</p></div><h3>69.3 Three — <code>printf</code> believes exactly what you tell it</h3><p>Chapter 53 took the grammar of the format string apart. That grammar has one structural weakness — <strong>the type is written twice</strong>. Once in the format (<code>%d</code>) and once in the argument (the variable’s type). If the two go out of step the language cannot prevent it, because as seen in chapter 50 type information does not ride along into variadic arguments.</p><p>Today’s compilers catch this. The real message is like this.</p><pre><code data-lang="text">warning: format ‘%d’ expects argument of type ‘int’,
+         but argument 2 has type ‘double’ [-Wformat=]
+    3 |     printf("%d\n", 3.0);
+      |             ~^     ~~~
+      |              |     |
+      |              int   double</code></pre><p>But only this far. The moment the format becomes a <strong>variable</strong> — the moment a multilingual message is taken from a table or a log format is received from a configuration — the compiler has nothing left to look at.</p><div class="dev antipattern"><p class="dev-label">✗ Code that takes the format as a variable</p><pre><code data-lang="c">const char *fmt = load_message("greeting");   /* a format taken from a table */
+printf(fmt, count);                           /* no warning. no check either */</code></pre><p>Not a single warning comes from this code. Because a way of knowing whether format and arguments match does not exist at compile time. Worst is when the format is <strong>user input</strong>, which becomes the format string vulnerability seen in chapter 53.</p></div><h3>69.4 Four — who frees this</h3><pre><code data-lang="c">char *s = build_message();    /* must this be freed? the type says nothing */</code></pre><p>As learned in chapter 40, dynamically taken memory must be released by somebody exactly once. Yet a <code>char *</code> a function returned may be any of four things.</p><ul><li>Just allocated — it must be freed.</li><li>Pointing at a buffer the caller gave — it must not be freed.</li><li>A string literal in a read-only place — freeing it is an accident.</li><li>A static buffer the next call will overwrite — it must neither be freed nor held for long (chapter 53′s <code>strtok</code> was such).</li></ul><p>The types of the four cases are <strong>all the same</strong>. The answer is in the documentation, and documentation goes out of step with code as a matter of course. Here arise chapter 40′s three accidents — a leak (nobody frees), a double free (both free), and use after free (somebody still points at it after freeing).</p><div class="dev antipattern"><p class="dev-label">✗ An API whose type does not state ownership</p><pre><code data-lang="c">const char *lookup(int code);        /* a literal? an allocation? a static buffer? */
+char       *format_time(time_t t);   /* must this be freed? */</code></pre><p>It cannot be known from the name and type alone. <strong>Every place</strong> that uses this API must remember the documentation, and if even one forgets it becomes one of the three accidents above. That the discipline is entrusted to human memory is the essence of the problem.</p></div><h3>69.5 Five — a callback nobody can type-check for you</h3><pre><code data-lang="c">qsort(a, n, sizeof *a, cmp);   /* cmp takes const void* */</code></pre><p><code>qsort</code> takes a comparison function through a <code>void *</code> interface in order to sort any type. In a language with no generics this is nearly the only way, but the price is <strong>the complete abandonment of type checking</strong>. Whatever you cast to inside the comparator, the compiler believes you.</p><div><div><p><code>examples/ch69/cmp_bad.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include &lt;string.h>
+
+/* 반례: 첫 글자만 비교한다. 타입은 완벽하게 맞고, 경고도 없다 */
+static int cmp_first_char(const void *a, const void *b) {
+    const char *const *x = a;
+    const char *const *y = b;
+    return (*x)[0] - (*y)[0];
+}
+
+/* 정례: 문자열 전체를 비교한다 */
+static int cmp_full(const void *a, const void *b) {
+    const char *const *x = a;
+    const char *const *y = b;
+    return strcmp(*x, *y);
+}
+
+static void show(const char *label, const char **v, size_t n) {
+    printf("%s:", label);
+    for (size_t i = 0; i &lt; n; i++) printf(" %s", v[i]);
+    printf("\n");
+}
+
+int main(void) {
+    const char *src[] = {"pear", "apple", "peach", "apricot"};
+    const char *v[4];
+    size_t n = sizeof src / sizeof src[0];
+
+    memcpy(v, src, sizeof src);
+    qsort(v, n, sizeof v[0], cmp_first_char);
+    show("first-char", v, n);
+
+    memcpy(v, src, sizeof src);
+    qsort(v, n, sizeof v[0], cmp_full);
+    show("full      ", v, n);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>first-char: apple apricot pear peach
+full      : apple apricot peach pear
+</code></pre></div></div><p>The <code>first-char</code> comparator’s types match perfectly, it compiles without a single warning, and it does not die. It is only that <code>peach</code> and <code>pear</code> are in the wrong order — seeing only the first letter, the two were judged “equal” and the rest was left to chance. This class of bug is found last of all, because it gives <strong>a quietly wrong answer</strong>.</p><div class="dev realcase"><p class="dev-label">◉ Attacks aiming at a data structure’s worst case</p><p>There is a performance trap in the same place. Widely used sorting and hashing implementations are fast on average but slow down sharply on particular inputs, and the technique of an attacker deliberately making such inputs to paralyse a server (an algorithmic complexity attack) was organised in a 2003 paper and used in real attacks. Attacks of the same family aiming at hash collisions brought down several web frameworks at once in 2011. They were events showing that a data structure’s <strong>worst case</strong> is itself a security problem, and so today’s libraries take as their defaults sorting with a guarantee even in the worst case (introsort) and hashes using a random seed — we see them in the flesh in chapter 76.</p></div><h3>69.6 And a sixth — bytes have types</h3><p>We said five, but one more must be added to be fair. It is the strict aliasing seen in chapter 13. A hand-written parser that peers into a byte buffer through pointers of different widths runs perfectly at <code>-O0</code> and quietly gives a different answer at <code>-O2</code>. It is the representative of the “bug that appears only in release” seen in chapter 17, and the clause to which the Linux kernel surrendered with a single flag.</p><p>Gathering the six into one table gives this part’s map.</p><div class="dev recap"><p class="dev-label">☰ Recap</p><table><tr><th><strong>problem</strong></th><th><strong>what C gives</strong></th><th><strong>what is needed</strong></th></tr><tr><td>buffer overflow and truncation</td><td>string functions that do not know the size</td><td>strings that carry their length, writes that do not truncate</td></tr><tr><td>unconfirmed failure</td><td>sentinel values and <code>errno</code></td><td>errors that come as values, a compile refusal if discarded</td></tr><tr><td>format mismatch</td><td>a <code>printf</code> that believes the format string</td><td>placeholders that take the type from the argument</td></tr><tr><td>unclear ownership</td><td>a <code>char *</code> that means four things</td><td>different types for owning and borrowing</td></tr><tr><td>unchecked callbacks</td><td>the <code>void *</code> interface</td><td>documented contracts and worst-case-guaranteed algorithms</td></tr><tr><td>the hidden type of bytes</td><td>UB on breaking the aliasing rule</td><td>a byte type the rule exempts</td></tr></table></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Would it not be better to use another language entirely to avoid such problems?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>That too is an answer, and many places really went that road (chapter 1). But the places where C must be used still remain — operating systems, firmware, the floor layer other languages lean on, and projects where decades of code have already piled up. What can be done in such places is <strong>not to change the language but to change the shape of the API</strong>. The right-hand column of the table above is not a list of items requiring a new language but things that can be made by design within C. From the next chapter we see that design.</p></div></div><p>The library that implements that right-hand column as it stands is the proven this book has leaned on. We first met it in chapter 38 and its name has come up a few times since, but treating it head on begins now. The next chapter is installation and a first program — and why this library has the shape of “nothing to install”.</p>
+<div class="nav"><a href="ch68.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch70.html">Next →</a></div>
+</div></main></body></html>

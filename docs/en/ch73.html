@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>73 Allocation is a parameter — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>73 Allocation is a parameter</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The answer to chapter 69′s fourth bug — unclear ownership. The <strong>allocator</strong> that handles the source of memory as a value, the <strong>arena</strong> that returns <span id="idx-entry-104"></span>things of the same lifetime all at once, and the rule that divides owning from borrowing by type. The dangers of the heap learned in chapter 40 are organised here into design.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 40 said memory obtained with <code>malloc</code> must be <code>free</code>d by somebody exactly once, and that settling that “somebody” is the program’s design. Then is there a way to know from a function alone whether “this function allocates memory”?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>In standard C there is not. <code>malloc</code> can be called anywhere, so any function can allocate in secret, and the signature does not say so. proven’s answer is to return that information to the signature with one rule — <strong>a function that does not take an allocator as an argument does not allocate.</strong> If this rule is kept, reading the signature alone tells you “this function may take memory”.</p></div></div><h3>73.1 An allocator is a value</h3><p><code>proven_allocator_t</code> is one struct — a context pointer and three function pointers (allocate, reallocate, free). There is no special global and no registration procedure. Being simply a value, it can be passed as an argument, held in a struct, and returned from a function.</p><p>So every function that allocates has this shape.</p><pre><code data-lang="c">proven_result_u8str_t proven_u8str_create(proven_allocator_t alloc,
+                                          proven_size_t limit);
+void                  proven_u8str_destroy(proven_allocator_t alloc,
+                                           proven_u8str_t *str);</code></pre><p><strong>Destroy with the allocator given at creation</strong> — that is the whole of the ownership rule.</p><div><div><p><code>examples/ch73/swap.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+/* 이 함수는 어디서 기억을 얻는지 모른다 — 받은 할당자에게 물을 뿐이다.
+   시그니처에 allocator 가 있다는 사실 자체가 "할당한다"는 선언이다. */
+static proven_err_t build(proven_allocator_t alloc, const char *who)
+{
+    proven_result_u8str_t made = proven_u8str_create(alloc, 64);
+    if (!proven_is_ok(made.err)) return made.err;
+
+    proven_u8str_t s = made.value;
+    proven_err_t e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hi, "));
+    if (proven_is_ok(e))
+        e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr(who));
+    if (!proven_is_ok(e)) { proven_u8str_destroy(alloc, &amp;s); return e; }
+
+    proven_u8str_view_t v = proven_u8str_as_view(&amp;s);
+    printf("  -> \"%.*s\"\n", (int)v.size, (const char *)v.ptr);
+
+    proven_u8str_destroy(alloc, &amp;s);   /* 준 곳으로 돌려준다 */
+    return PROVEN_OK;
+}
+
+int main(void)
+{
+    /* ① 힙 — malloc/free 를 감싼 것 */
+    printf("heap  :\n");
+    (void)build(proven_heap_allocator(), "heap");
+
+    /* ② 아레나 — 정적 버퍼 위에서 잘라 쓴다. 힙이 아예 없어도 된다 */
+    static proven_byte_t backing[512];
+    proven_arena_t arena = proven_arena_create(
+        (proven_mem_mut_t){ .ptr = backing, .size = sizeof backing });
+
+    printf("arena :\n");
+    (void)build(proven_arena_as_allocator(&amp;arena), "arena");
+    printf("  used %zu of %zu bytes\n", arena.offset, sizeof backing);
+
+    /* 아레나는 개별 해제가 없다 — 한 번에 되돌린다 */
+    proven_arena_reset(&amp;arena);
+    printf("  after reset: %zu bytes used\n", arena.offset);
+
+    /* ③ 같은 아레나를 다시 쓴다 — 같은 코드, 다른 기억의 출처 */
+    printf("arena :\n");
+    (void)build(proven_arena_as_allocator(&amp;arena), "arena again");
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>heap  :
+  -> "hi, heap"
+arena :
+  -> "hi, arena"
+  used 65 of 512 bytes
+  after reset: 0 bytes used
+arena :
+  -> "hi, arena again"
+</code></pre></div></div><p>Look at the <code>build</code> function. This function <strong>does not know</strong> whether the memory it uses comes from <code>malloc</code> or from a static array. The caller settles it. The same code ran once on the heap and twice on an arena, and the results are the same.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Why is this such an important property? Most of the time the heap will be used anyway.</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because three things follow at once. First, <strong>the same code runs in an environment with no heap</strong> — such is embedded work (chapter 78), and such is inside a kernel. Second, <strong>testing becomes easy</strong> — insert an allocator that fails on purpose and you can test “does this code recover properly when memory runs short”. Third, <strong>the caller can choose the performance</strong> — for data that lives briefly and dies all at once, an arena is far faster than the heap. The moment the library calls <code>malloc</code> directly, all three of these vanish.</p></div></div><h3>73.2 The arena — things of the same lifetime, all at once</h3><p>Chapter 40 taught the heap’s three dangers (leak, double free, use after free). All three come from <strong>individual release</strong>. Then what if individual release were removed — that is the arena’s idea.</p><p>An arena takes one large lump of memory and, whenever a request comes, cuts from the front. There is a release function but it does nothing. Instead there is <strong>reset</strong> — it returns everything at once.</p><div><div><p><code>examples/ch73/arena.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+int main(void)
+{
+    /* 아레나: 뒤를 받쳐 줄 기억을 통째로 주고, 그 안에서 잘라 쓴다 */
+    static unsigned char backing[1024];
+    proven_arena_t arena = proven_arena_create(
+        (proven_mem_mut_t){ .ptr = backing, .size = sizeof backing });
+
+    proven_result_mem_mut_t a = proven_arena_alloc(&amp;arena, 100);
+    proven_result_mem_mut_t b = proven_arena_alloc(&amp;arena, 200);
+
+    if (!proven_is_ok(a.err) || !proven_is_ok(b.err)) {
+        printf("arena allocation failed\n");
+        return 1;
+    }
+    printf("carved two blocks: %zu, %zu bytes\n", a.value.size, b.value.size);
+
+    /* 개별 해제는 없다 — 수명이 같은 것들을 한 번에 되돌린다 */
+    proven_arena_reset(&amp;arena);
+    printf("one reset reclaimed everything\n");
+
+    /* 그릇보다 큰 요청은 실패가 값으로 온다 (붕괴하지 않는다) */
+    proven_result_mem_mut_t too_big = proven_arena_alloc(&amp;arena, 100000);
+    printf("oversized request: %s\n", proven_is_ok(too_big.err) ? "granted" : "refused");
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>carved two blocks: 100, 200 bytes
+one reset reclaimed everything
+oversized request: refused
+</code></pre></div></div><p>There really are many places this model fits. The temporary data made while handling one request, a game’s calculation results used for one frame, the syntax tree made while parsing one file — all data <strong>born at different moments but dying at the same one</strong>. For such data, individual release is only cost and risk.</p><div class="dev recap"><p class="dev-label">☰ Recap</p><p>A comparison of the three sources of memory.</p><table><tr><th></th><th><strong>heap</strong></th><th><strong>arena</strong></th><th><strong>pool</strong></th></tr><tr><td>how it gives</td><td>arbitrary sizes</td><td>cuts from the front</td><td>fixed-size slots</td></tr><tr><td>individual release</td><td>yes</td><td>no (reset)</td><td>yes (return the slot)</td></tr><tr><td>fragmentation</td><td>can arise</td><td>none</td><td>none</td></tr><tr><td>speed</td><td>ordinary</td><td>very fast</td><td>very fast</td></tr><tr><td>where it fits</td><td>assorted lifetimes</td><td>a group of the same lifetime</td><td>the same size repeatedly</td></tr></table></div><span id="idx-entry-105"></span><p>The pool (<code>proven_pool_t</code>) is the third branch. It is used where objects of the same size are repeatedly made and unmade — a game’s bullets, a server’s connection objects, a parser’s nodes. The slot size being fixed there is no fragmentation, and a returned slot is reused at once. A pool too becomes an allocator through <code>proven_pool_as_allocator</code>, so the previous example’s <code>build</code> function runs on it as it is.</p><div class="dev antipattern"><p class="dev-label">✗ Destroying with a different allocator</p><pre><code data-lang="c">proven_result_u8str_t r = proven_u8str_create(proven_heap_allocator(), 64);
+...
+proven_u8str_destroy(proven_arena_as_allocator(&amp;arena), &amp;r.value);  /* wrong */</code></pre><p>It amounts to giving back to an arena what was obtained from <code>malloc</code>. This rule cannot be enforced by the library — an allocator is simply a value, and which value is passed is settled by the caller. So the practice in the field is <strong>to carry the allocator along with the data structure</strong>, or to narrow the scope so that only one is used within a module.</p></div><div class="dev misconception"><p class="dev-label">⚠ “Use an arena and you need not care about releasing”</p><p>Individual release disappears but <strong>the lifetime remains as it was.</strong> The moment the arena is reset, every piece cut on it becomes invalid at once, so data that must still be alive after the reset must not be put in the arena. Chapter 72′s “a view cannot outlive its owner” has grown here to arena scale. What an arena removes is the <strong>number of times</strong> one releases, not the <strong>thinking</strong> about lifetime.</p></div><h3>73.3 Owning and borrowing, and state that points at itself</h3><p>Now we return to chapter 69′s fourth bug. The problem of <code>char *</code> meaning four things <span id="idx-entry-106"></span>is solved by dividing the type in two.</p><ul><li><strong>Owned</strong> — things such as <code>proven_u8str_t</code> and <code>proven_array_t</code>. Obtained with <code>_create</code> and let go with <code>_destroy</code>.</li><li><strong>Borrowed</strong> — <code>proven_u8str_view_t</code>, <code>proven_mem_view_t</code>. Never destroyed. When the owner vanishes they become invalid with it.</li></ul><p>That “must I release this?” can be answered from the signature alone is the whole of this distinction and its purpose.</p><p>There is one more rule attached. <strong>State that points at itself is not copied.</strong> Chapter 41 taught that struct assignment is a shallow copy. Copy an object that holds inside a pointer to its own buffer that way, and the copy’s pointer still points at the original, so two objects share the same memory and destroying both is a double free. So such objects are not copied by value but passed by pointer.</p><div class="dev realcase"><p class="dev-label">◉ The spread of the allocator-as-argument design</p><p>This way is not proven’s invention but is close to the recent consensus of systems programming. In Zig, almost every allocating API of the standard library takes an allocator as an argument and “no hidden allocation” is the language’s motto. In Rust too, attaching an allocator to a container is on its way into the standard, and C++‘s <code>std::pmr</code> arose from the same problem-consciousness. The reason is the same in every case — in games, embedded work, kernels and high-performance servers, <strong>choosing the source of memory</strong> is the heart of both performance and safety.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then what is the price?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>One more parameter attaches to the signature. And a new design problem arises of <strong>how far the allocator is to be carried</strong> — whether to pass it to every function or to hold it in a struct. In a small program this can look like nothing but tiresome formality. Its value shows itself after the program grows, or when the code must be moved to a place where the heap cannot be used.</p></div></div><p>We have set up the rules for obtaining and letting go of memory. From the next chapter come the real components that rise on top of it — first, the strings this book warned about all through chapter 37.</p>
+<div class="nav"><a href="ch72.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch74.html">Next →</a></div>
+</div></main></body></html>

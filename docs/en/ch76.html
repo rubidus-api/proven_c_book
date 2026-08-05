@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>76 Containers and algorithms — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>76 Containers and algorithms</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><span id="idx-entry-109"></span><p>The tools that hold many — the growing array, the intrusive list, the ring buffer, the hash map. And as the answer to chapter 69′s fifth bug (unchecked callbacks) and the performance trap attached to that place, we see sorting <strong>guaranteed even in the worst case</strong> and hashing that <strong>withstands attack</strong>. Chapter 35′s arrays and chapter 41′s structs become practical components here.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 35 taught that a C array’s size is settled at compile time, and chapter 40 that it can be grown with <code>realloc</code>. Then where is it easiest to go wrong when making a “growing array” yourself?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>In three places. First, <strong>calculating the size to grow to</strong> — the multiplication wrap-round seen in chapter 72 happens here. Second, <strong>the state on failure</strong> — when <code>realloc</code> fails the original pointer is still valid, and the common code that assigns the return value straight into the original variable loses that original (a leak). Third, <strong>pointers after the growth</strong> — a pointer that pointed at an element becomes invalid after reallocation. Rather than getting these three right afresh every time you make a container, it is better to use one made properly once.</p></div></div><h3>76.1 The growing array</h3><p><code>proven_array_t</code> is a byte buffer that knows the element size and alignment. C having no generics, the type is filled in by macros.</p><div><div><p><code>examples/ch76/arr.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+int main(void)
+{
+    proven_allocator_t alloc = proven_heap_allocator();
+
+    proven_result_array_t made = PROVEN_ARRAY_INIT(alloc, int, 4);
+    if (!proven_is_ok(made.err)) {
+        printf("array creation failed\n");
+        return 1;
+    }
+    proven_array_t arr = made.value;
+
+    for (int i = 1; i &lt;= 6; i += 1) {          /* 용량 4를 넘겨 자동으로 자란다 */
+        if (!proven_is_ok(PROVEN_ARRAY_PUSH(&amp;arr, int, i * i))) {
+            printf("push failed\n");
+            PROVEN_ARRAY_DESTROY(&amp;arr);
+            return 1;
+        }
+    }
+
+    printf("count: %zu\n", arr.len);
+    for (size_t i = 0; i &lt; arr.len; i += 1) {
+        printf("%d ", *PROVEN_ARRAY_GET(&amp;arr, int, i));
+    }
+    printf("\n");
+
+    PROVEN_ARRAY_DESTROY(&amp;arr);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>count: 6
+1 4 9 16 25 36 
+</code></pre></div></div><p><code>PROVEN_ARRAY_INIT(alloc, int, 4)</code> means “an array to hold ints, initial capacity 4”, and <code>PROVEN_ARRAY_PUSH</code> writes the type again to <strong>check at compile time that it matches</strong>. At the fifth element, which exceeded the capacity of 4, the array grew by itself — and that growth happens through the allocator (exactly chapter 73′s rule; the array remembers the allocator it was given at creation).</p><div class="dev antipattern"><p class="dev-label">✗ Holding an element pointer and then pushing</p><pre><code data-lang="c">int *first = PROVEN_ARRAY_GET_MUT(&amp;arr, int, 0);
+(void)PROVEN_ARRAY_PUSH(&amp;arr, int, 42);   /* the buffer may move here */
+*first = 7;                               /* writes at the old address — use after free */</code></pre><p>When the array grows the contents move to a new buffer and a pointer to the old address becomes invalid. It is the form in which the use after free learned in chapter 40 appears on a container. The rule is one — <strong>after changing a container, obtain it again by index.</strong> The habit of carrying an index rather than a pointer becomes the defence here.</p></div><h3>76.2 The intrusive list and the ring buffer</h3><p><code>proven_list_t</code> is an <strong>intrusive</strong> linked list — the node does not hold the data; rather a link field is planted inside the data struct. It amounts to putting one <code>proven_list_node_t link;</code> slot inside a <code>struct</code> made in chapter 41.</p><p>What is good about it? <strong>There is nothing to allocate separately</strong> in order to put something in the list — because the node is the data. A list can be used even in an environment with no heap (chapter 78), and hanging the same object on two lists at once is a matter of keeping two link fields. The price is that the data struct must know about the list.</p><p><code>proven_ring_t</code> is a fixed-size circular buffer. It is used where a producer and a consumer come and go, for the most recent N of a log, and for streams such as audio and sensor samples where <strong>what has passed may be thrown away</strong>. The size being fixed, what to do when it is full is part of the contract — and here too the default is to report rather than quietly overwrite.</p><h3>76.3 The hash map, and data structures under attack</h3><p><code>proven_map_t</code> is an open-addressing hash map. Keys are integers or byte sequences, and string keys have two modes — <strong>a borrowed key</strong> (the caller keeps the bytes alive) and <strong>an owned key</strong> (the map copies and holds it). Chapter 73′s owning-borrowing distinction appears here as it is too.</p><div><div><p><code>examples/ch76/wordcount.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+/* 낱말을 세어 정렬해 찍는다 — 맵과 배열과 정렬을 한 번에 */
+typedef struct { proven_u8str_view_t word; int count; } entry_t;
+
+/* 비교자는 전순서여야 한다: 동점도 일관되게 갈라 준다 (47장의 반례를 피한다) */
+static int by_count_desc(const void *a, const void *b)
+{
+    const entry_t *x = a, *y = b;
+    if (x->count != y->count) return (x->count &lt; y->count) - (x->count > y->count);
+
+    proven_size_t n = x->word.size &lt; y->word.size ? x->word.size : y->word.size;
+    int c = proven_memcmp(x->word.ptr, y->word.ptr, n);
+    if (c != 0) return c;
+    return (x->word.size > y->word.size) - (x->word.size &lt; y->word.size);
+}
+
+int main(void)
+{
+    proven_allocator_t alloc = proven_heap_allocator();
+    const char *text = "the quick fox the lazy dog the fox";
+
+    /* 문자열 키 맵: 기본은 HashDoS 에 견디는 키드 해시를 쓴다 */
+    proven_result_map_t made_map =
+        proven_map_create(alloc, 16, PROVEN_KEY_TYPE_U8_OWNED, sizeof(int), alignof(int));
+    if (!proven_is_ok(made_map.err)) return 1;
+    proven_map_t counts = made_map.value;
+
+    proven_u8str_view_t all = proven_u8str_view_from_cstr(text);
+    proven_u8str_view_t space = proven_u8str_view_from_cstr(" ");
+    proven_size_t start = 0;
+
+    for (;;) {
+        proven_size_t hit = proven_u8str_view_find(all, start, space);
+        proven_size_t end = (hit == PROVEN_INDEX_NOT_FOUND) ? all.size : hit;
+        proven_u8str_view_t w = proven_u8str_view_slice(all, start, end - start);
+
+        const int *seen = proven_map_get(&amp;counts, (proven_map_key_t){ .str = w });
+        int next = seen ? *seen + 1 : 1;
+        if (!proven_is_ok(proven_map_set(&amp;counts, (proven_map_key_t){ .str = w }, &amp;next)))
+            break;
+
+        if (hit == PROVEN_INDEX_NOT_FOUND) break;
+        start = hit + 1;
+    }
+    printf("distinct words: %zu\n", counts.len);
+
+    /* 세어 둔 것을 배열에 모아 정렬한다 */
+    proven_result_array_t made_arr = PROVEN_ARRAY_INIT(alloc, entry_t, 8);
+    if (!proven_is_ok(made_arr.err)) return 1;
+    proven_array_t list = made_arr.value;
+
+    const char *words[] = {"the", "quick", "fox", "lazy", "dog"};
+    for (size_t i = 0; i &lt; sizeof words / sizeof words[0]; i++) {
+        proven_u8str_view_t w = proven_u8str_view_from_cstr(words[i]);
+        const int *c = proven_map_get(&amp;counts, (proven_map_key_t){ .str = w });
+        entry_t e = { .word = w, .count = c ? *c : 0 };
+        if (!proven_is_ok(PROVEN_ARRAY_PUSH(&amp;list, entry_t, e))) break;
+    }
+
+    proven_array_sort(&amp;list, by_count_desc);   /* 최악에도 O(n log n) 보장 */
+    for (size_t i = 0; i &lt; list.len; i++) {
+        const entry_t *e = PROVEN_ARRAY_GET(&amp;list, entry_t, i);
+        printf("  %.*s = %d\n", (int)e->word.size, (const char *)e->word.ptr, e->count);
+    }
+
+    PROVEN_ARRAY_DESTROY(&amp;list);
+    proven_map_destroy(&amp;counts);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>distinct words: 5
+  the = 3
+  fox = 2
+  dog = 1
+  lazy = 1
+  quick = 1
+</code></pre></div></div><p>This one example contains all of this chapter’s tools — it counts with a map, gathers into an array, sorts and prints. Chapter 74′s views were used to cut the words, so string copying happens only once, when the map owns the key.</p><div class="dev realcase"><p class="dev-label">◉ HashDoS — when hash maps became a target of attack</p><p>In 2011 several web frameworks collapsed at once through the same vulnerability. If an attacker chose <strong>keys that crowd into the same bucket</strong> and sent thousands of them as parameters in one request, insertion that had been <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math> on average became <math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math> and the whole degenerated to <math><mi>𝑂</mi><mrow><mo>(</mo><msup><mi>𝑛</mi><mn>2</mn></msup><mo>)</mo></mrow></math>, so a few requests stopped a server. The cause was that the hash function was public and collisions <strong>could be calculated</strong>.</p><p>Today’s prescription is a <strong>keyed hash</strong> — draw a random secret per process and mix it into the hash, and the attacker cannot precompute collisions. It is why proven’s <code>proven_map_create</code> uses SipHash-2-4 and a random seed by default for string keys, and conversely why there is a separate <code>proven_map_create_trusted</code> using the faster FNV-1a for cases where the keys all come from my own code. <strong>The default is the safe side, and the fast side states itself in the name</strong> — the principle met repeatedly in this part.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>How much slower is a keyed hash? And where does the random secret come from if there is no OS?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>SipHash is slower than FNV-1a, but by an amount proportional to the string length, and the share hash computation takes in the whole of a map operation is mostly not large. The random secret is drawn once from the operating system’s source of randomness — and in an environment with no OS (chapter 78) there is nowhere to draw it from, so it falls back to FNV-1a. The library does not hide this fact but writes it in the documentation, and the grounds are clear: <strong>where there is no attacker there is no need for an attacker model either.</strong> There exists no outsider choosing keys inside your firmware.</p></div></div><h3>76.4 Sorting with a worst-case guarantee</h3><p>The two problems seen in chapter 69 — the unchecked comparator, and the algorithm that collapses in the worst case — are treated together here.</p><span id="idx-entry-110"></span><p><code>proven_array_sort</code> is <strong>introsort</strong>. It begins as a fast quicksort and, if the recursion becomes too deep, switches to heapsort. So the average is as fast as quicksort and <math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math> is <strong>guaranteed</strong> even in the worst case — the complexity attack seen in chapter 69 does not work. To carry the header’s wording over as it is: “<math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math> is not an average but a guarantee.”</p><p>On the comparator side the language cannot help, so the contract is stated in the documentation and in examples. The example’s <code>by_count_desc</code> is the model — descending by count, and <strong>ties broken by the word</strong>. It contrasts exactly with chapter 69′s counterexample (the comparator that sees only the first letter).</p><div class="dev misconception"><p class="dev-label">⚠ “Ties may be handled however you like”</p><p>They may not. A comparator must form a <strong>total order</strong> — 0 if equal, consistently greater and less, and the signs of <code>cmp(a,b)</code> and <code>cmp(b,a)</code> must be opposite. Break this and the result is not merely jumbled; depending on the implementation it may even <strong>trespass outside the array</strong> (because the partitioning algorithm judges its boundaries from the comparison results). A comparator that returns anything at all for ties is therefore a bug, not a taste.</p></div><h3>76.5 Bytes into letters — hashes and encodings</h3><p>We note the remaining tools in the same box too.</p><ul><li><strong>Hashes by purpose</strong> — for the map’s internals (fast mixing), for integrity checking (CRC-32), for cryptographic use (SHA-256), and the keyed hash seen above (SipHash). The library distinguishes them because <strong>the same word “hash” means entirely different demands</strong> — using SHA-256 where only speed is needed is waste, and using FNV-1a where adversarial input comes is dangerous.</li><li><strong>hex and Base64</strong> — two standards for moving bytes into text. The principle here is the same. Wrong input (hex of odd length, wrong padding) is <strong>not guessed at and mended</strong> but refused with <code>PROVEN_ERR_INVALID_ENCODING</code> (that norm from chapter 74).</li></ul><div class="dev recap"><p class="dev-label">☰ Recap</p><p>Containers in summary.</p><table><tr><th><strong>tool</strong></th><th><strong>shape</strong></th><th><strong>where it fits</strong></th><th><strong>caution</strong></th></tr><tr><td><code>array</code></td><td>a growing contiguous array</td><td>an ordered list</td><td>pointers invalid after growth</td></tr><tr><td><code>list</code></td><td>an intrusive linked list</td><td>joining without allocation</td><td>the data holds the link</td></tr><tr><td><code>ring</code></td><td>fixed-size circular</td><td>streams, the most recent N</td><td>the contract when full</td></tr><tr><td><code>map</code></td><td>open-addressing hash</td><td>finding by key</td><td>choose whether the key is owned</td></tr><tr><td><code>array_sort</code></td><td>introsort</td><td>sorting anything</td><td>the comparator must be a total order</td></tr><tr><td>four hashes</td><td>by purpose</td><td>map, integrity, cryptography, anti-attack</td><td>do not mix the purposes</td></tr></table></div><p>That is as far as the world of pure computation — it all runs even with no operating system. In the next chapter we go outside. Files, streams, time, random numbers — the places that touch the OS.</p>
+<div class="nav"><a href="ch75.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch77.html">Next →</a></div>
+</div></main></body></html>

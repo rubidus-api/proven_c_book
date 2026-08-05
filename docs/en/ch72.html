@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>72 The foundation — bytes, views, and arithmetic that does not overflow — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>72 The foundation — bytes, views, and arithmetic that does not overflow</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We see the four basic vocabularies the whole library stands on — the type that <span id="idx-entry-103"></span>points at raw bytes, the <strong>view</strong> binding pointer and length into one, size calculation that does not wrap, and alignment. Chapter 69′s sixth bug (the hidden type of bytes) and chapter 36′s boundary problem obtain their answer at the level of types here.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 35 said that <code>char*</code> (and <code>unsigned char*</code>) alone has the privilege of peering into any object byte by byte, and chapter 13 showed code that broke that rule quietly collapsing under optimisation. Then what, concretely, does “handling bytes safely” keep?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Two things. First, <strong>fix the type you peer with to the one the rule exempts</strong> — <code>unsigned char</code>. Second, <strong>do not lose the range you are peering into</strong> — carry a pointer alone and you forget where your land ends, which is chapter 36′s boundary trespass. proven’s basic vocabulary is these two each made into a type.</p></div></div><h3>72.1 Bytes have a name</h3><p><code>proven_byte_t</code> is an alias for <code>unsigned char</code>. It seems no great thing, but one declaration writes down a contract — “this pointer is an eye that looks at <strong>representation</strong>, not something pointing at a value of some type”.</p><p>Why this distinction matters was already seen in chapter 13. Code that looks at the same memory alternately through <code>uint32_t*</code> and <code>uint16_t*</code> breaks the aliasing rule, and the compiler uses that premise in optimisation. Looking through <code>unsigned char</code>, on the other hand, is explicitly permitted by the standard. It is why the library always goes through this type when handling raw memory, and so through the library that bug cannot be written.</p><h3>72.2 Views — pointer and length as one</h3><p>The read-only view looks like this. Two slots of a struct are all of it.</p><pre><code data-lang="c">typedef struct {
+    const proven_byte_t *ptr;
+    proven_size_t        size;
+} proven_mem_view_t;</code></pre><p>The writable edition (<code>proven_mem_mut_t</code>) is its twin with only the <code>const</code> removed. What this small struct does is one thing — <strong>making sure the pointer and the length never part</strong>. It is the answer to the problem chapter 37 called “the real problem of strings is carrying the length separately”.</p><div><div><p><code>examples/ch72/view.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+static void dump(const char *label, proven_mem_view_t v)
+{
+    printf("%-10s size=%zu bytes:", label, v.size);
+    for (proven_size_t i = 0; i &lt; v.size; i++) printf(" %02x", v.ptr[i]);
+    printf("\n");
+}
+
+int main(void)
+{
+    /* 원시 바이트는 proven_byte_t 다 — unsigned char 의 별칭이라
+       어떤 객체의 표현이든 들여다볼 수 있는 유일한 타입이다 */
+    proven_byte_t buf[8] = {0x10, 0x20, 0x30, 0x40, 0x50, 0x60, 0x70, 0x80};
+
+    /* view = 포인터 + 길이. 길이를 따로 들고 다니지 않는다 */
+    proven_mem_view_t all = { .ptr = buf, .size = sizeof buf };
+    dump("all", all);
+
+    /* 자르기: 경계를 넘으면 실패가 값으로 온다 */
+    proven_result_mem_view_t mid = proven_mem_view_slice_checked(all, 2, 3);
+    if (proven_is_ok(mid.err)) dump("slice 2+3", mid.value);
+
+    proven_result_mem_view_t over = proven_mem_view_slice_checked(all, 6, 4);
+    printf("%-10s err=%d (refused, not clamped)\n", "slice 6+4", (int)over.err);
+
+    /* 크기 계산도 감기지 않게 한다: 배열 원소 수 x 원소 크기 */
+    proven_size_t n = (proven_size_t)-1 / 2;   /* 터무니없이 큰 개수 */
+    proven_size_t bytes;
+    if (PROVEN_CKD_MUL(&amp;bytes, n, (proven_size_t)8))
+        printf("%-10s %zu * 8 overflows — allocation refused\n", "size calc", n);
+    else
+        printf("%-10s %zu bytes\n", "size calc", bytes);
+
+    /* 정렬 올림: 다음 경계로 밀어 올린다 */
+    printf("align_up(13, 8) = %zu\n", proven_mem_align_up(13, 8));
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>all        size=8 bytes: 10 20 30 40 50 60 70 80
+slice 2+3  size=3 bytes: 30 40 50
+slice 6+4  err=2 (refused, not clamped)
+size calc  9223372036854775807 * 8 overflows — allocation refused
+align_up(13, 8) = 16
+</code></pre></div></div><p><code>slice 6+4</code> is this section’s heart. From an 8-byte view we asked for 4 bytes from the 6th, so two bytes are short. The library <strong>does not cut off as much as there is</strong> — it returns an error (number 2 is <code>PROVEN_ERR_OUT_OF_BOUNDS</code>). Giving as much as there is looks kinder, but then the caller cannot know whether what was received is what was requested. It is blocking chapter 69′s truncation problem from repeating here.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>I saw the slicing function in two editions, <code>_checked</code> and <code>_unchecked</code> — why does the latter exist?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>For places where the boundary has <strong>already been checked</strong>. Redoing the same check every turn inside a loop is waste, so one checks once before the loop and uses the unchecked edition inside. That the name carries <code>_unchecked</code> matters — the dangerous choice can be made only through <strong>a visible name</strong>, and the default is always the safe side. It is one form of chapter 45′s “write the contract as code”.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ Holding a view longer than its owner</p><pre><code data-lang="c">proven_mem_view_t get_view(void) {
+    proven_byte_t local[16] = {0};
+    return (proven_mem_view_t){ .ptr = local, .size = sizeof local };
+}   /* local dies here — the returned view is already invalid */</code></pre><p>A view is <strong>borrowed</strong>. When the owner vanishes it becomes invalid that instant, and use after that is the access to a dead automatic variable learned in chapter 39. That a view is safer than a pointer is about <strong>boundaries</strong>, not about <strong>lifetime</strong> — lifetime is still for a human to keep. That is why the next chapter’s story of allocators becomes necessary.</p></div><h3>72.3 Size arithmetic that does not overflow</h3><p>Chapter 26 taught the wrap-round of unsigned integers, and chapter 7 showed why it is defined behaviour. The fact that wrapping is quiet becomes especially dangerous in one place — <strong>when calculating the number of bytes to allocate</strong>.</p><pre><code data-lang="c">void *p = malloc(count * sizeof(item_t));   /* if count is large it wraps */</code></pre><p>If <code>count</code> is large enough the product wraps into a very small number, and <code>malloc</code> succeeds at that small size. Then the program begins writing as many items as it originally intended — a typical heap overflow. This is the pattern chapter 26 gave as the real accident case of overflow, “size calculation”.</p><p>The library uses C23′s checked arithmetic for size calculation. The example’s <code>PROVEN_CKD_MUL</code> is that: if the product overflows it returns <strong>true</strong> (the return value is whether it overflowed, not the result of the calculation). If it overflows, the allocation is not even attempted.</p><div class="dev misconception"><p class="dev-label">⚠ “<code>size_t</code> is as much as 64 bits, so it cannot overflow”</p><p>It can, and it does. Because multiplication grows values <strong>on a squared scale</strong> — four billion × four billion already exceeds 64 bits. Moreover on a 32-bit machine <code>size_t</code> is still 32 bits, and code multiplying two 32-bit fields read from a file format wraps on the spot. Most important of all is <strong>who settles that number</strong>. If the size is a constant inside the program you may rest easy, but if it is a number that came from a file or the network then it is <strong>an operand chosen by the attacker</strong>.</p></div><div class="dev realcase"><p class="dev-label">◉ The vulnerabilities one multiplication made</p><p>This pattern is a regular in the CVE lists. Cases have been reported repeatedly of an image decoder wrapping while calculating <code>width * height * bytes_per_pixel</code> in 32 bits, of a font parser wrapping while multiplying the glyph count, of decompression code wrapping while multiplying the original size. What they share is that <strong>the input file settles the size</strong> — that is, the attacker can choose the multiplication’s operands. So today’s languages and libraries do size calculation with checked arithmetic, or handle it with types that cannot overflow at all.</p></div><h3>72.4 Alignment — pushing up to the next boundary</h3><p>The alignment learned in chapter 6 becomes a practical tool here. <code>proven_mem_align_up(13, 8)</code> returns 16 — because to fit an object starting at address 13 to an 8-byte boundary it must be pushed to 16. This is exactly the calculation the next chapter’s arena does every time it lays objects out in a row.</p><p><code>PROVEN_MAX_ALIGN</code> is “the strictest alignment that can hold any type”, and <code>proven_is_pow2</code> confirms whether an alignment value is a power of two (alignment must always be a power of two — only then can the rounding up be calculated with bit operations).</p><div class="dev recap"><p class="dev-label">☰ Recap</p><p>This chapter’s vocabulary.</p><table><tr><th><strong>name</strong></th><th><strong>what</strong></th><th><strong>contract</strong></th></tr><tr><td><code>proven_byte_t</code></td><td>an alias for <code>unsigned char</code></td><td>the only legal window onto representation</td></tr><tr><td><code>proven_mem_view_t</code></td><td>a read-only view (ptr+size)</td><td>borrowed — it cannot outlive its owner</td></tr><tr><td><code>proven_mem_mut_t</code></td><td>a writable view</td><td>the same</td></tr><tr><td><code>..._slice_checked</code></td><td>making a sub-view</td><td>an error if it exceeds the range, no truncation</td></tr><tr><td><code>PROVEN_CKD_MUL/ADD</code></td><td>checked arithmetic</td><td>true if it overflows — the calculation is discarded</td></tr><tr><td><code>proven_mem_align_up</code></td><td>rounding up an alignment</td><td>alignment is a power of two</td></tr></table></div><p>We are equipped with the vocabulary for <strong>looking at</strong> memory. Next is the story of <strong>obtaining</strong> memory — and in that place we meet this library’s most characteristic decision.</p>
+<div class="nav"><a href="ch71.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch73.html">Next →</a></div>
+</div></main></body></html>

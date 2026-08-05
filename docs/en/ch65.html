@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>65 How to ask about overflow — &lt;stdckdint.h&gt; — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>65 How to ask about overflow — <code>&lt;stdckdint.h></code></h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><span id="idx-entry-94"></span><p>We learn the checked arithmetic C23 brought in. Why hand-written code that “checks after calculating whether it overflowed” is dangerous, exactly what <code>ckd_add</code>, <code>ckd_sub</code> and <code>ckd_mul</code> promise, and how to move the size calculations of existing code onto this tool.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 7 said unsigned overflow is defined wrap-round while signed overflow is outside the contract, and chapter 58 said <code>calloc</code> checks the product of the element count and the size. Then how do we write the check for whether a multiplication overflows ourselves?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>That very “checking ourselves” is the code that has been written wrongly for half a century. With signed values, <strong>checking after it has overflowed is itself already outside the contract</strong>, so the compiler may erase the checking code (chapter 13′s editor), and with unsigned values the idiom that inserts a division is hard to read and easy to get wrong. C23 tidied this place up at the level of the language.</p></div></div><h3>65.1 The trap of checking afterwards</h3><p>We start from the most common hand-written check.</p><div class="dev antipattern"><p class="dev-label">✗ Adding and then seeing whether it overflowed</p><pre><code data-lang="c">int sum = a + b;
+if (sum &lt; a) { /* it overflowed */ }        /* ← this check can vanish */</code></pre><p>If <code>a</code> and <code>b</code> are signed integers, the moment <code>a + b</code> overflows it is already undefined behaviour. The check after it has meaning only on the premise “if it did not overflow”, so the compiler judges that <code>sum &lt; a</code> can never be true and <strong>erases the conditional entirely.</strong> This pattern really did make checks vanish quietly in several projects, and among them were security checks.</p><p>For unsigned values, wrap-round being defined, the check above <strong>does work</strong>. But going to multiplication makes even that awkward.</p><pre><code data-lang="c">if (n != 0 &amp;&amp; bytes / n != sz) { /* it overflowed */ }   /* correct but hard to read */</code></pre></div><p>So compilers each put out extensions — GCC’s and Clang’s <code>__builtin_add_overflow</code> family, MSVC’s <code>SafeInt</code>, the home-made macros of many projects. They worked well but <strong>were not portable</strong>, and to secure portability every project had to write the same shell again. It is the same pattern as chapter 57′s <code>strlcpy</code> story — reality finds the answer first and the standard ratifies it belatedly.</p><h3>65.2 C23′s answer — <code>ckd_add</code>, <code>ckd_sub</code>, <code>ckd_mul</code></h3><div><div><p><code>examples/ch65/ckdint.c</code></p><pre><code data-lang="c">/* 넘침을 값이 아니라 "일어났는가"로 받는다 — C23 &lt;stdckdint.h> */
+#include &lt;limits.h>
+#include &lt;stdckdint.h>
+#include &lt;stdint.h>
+#include &lt;stdio.h>
+#include &lt;stdlib.h>
+
+/* 흔한 할당 계산: 원소 n 개 x 크기 sz. 곱셈이 넘치면 그릇이 작아진다. */
+static void *alloc_array(size_t n, size_t sz)
+{
+    size_t bytes;
+    if (ckd_mul(&amp;bytes, n, sz)) {       /* 참이면 넘쳤다 */
+        printf("  크기 계산이 넘쳤다 - 할당하지 않는다\n");
+        return NULL;
+    }
+    return malloc(bytes);
+}
+
+int main(void)
+{
+    /* 판정과 결과 읽기를 반드시 갈라 적는다 (한 표현식에 섞으면 순서가 없다) */
+    int r;
+    bool over = ckd_add(&amp;r, INT_MAX, 1);
+    printf("INT_MAX = %d\n", INT_MAX);
+    printf("ckd_add(INT_MAX, 1)  넘침? %s   r = %d (감아 돈 값)\n", over ? "예" : "아니오", r);
+
+    over = ckd_add(&amp;r, 1, 2);
+    printf("ckd_add(1, 2)        넘침? %s   r = %d\n", over ? "예" : "아니오", r);
+
+    /* 타입이 섞여도 수학적 값으로 판정한다 */
+    signed char c;
+    over = ckd_add(&amp;c, 200, 100);
+    printf("signed char &lt;- 300   넘침? %s   c = %d\n", over ? "예" : "아니오", c);
+
+    /* 부호 없는 뺄셈: 감아 도는 것은 정의된 동작이지만, 여기서도 "넘쳤다"고 알린다 */
+    unsigned u;
+    over = ckd_sub(&amp;u, 3u, 5u);
+    printf("unsigned  &lt;- 3 - 5   넘침? %s   u = %u\n", over ? "예" : "아니오", u);
+
+    printf("\n할당 계산\n");
+    void *ok = alloc_array(1000, sizeof(int));
+    printf("  1000 x %zu -> %s\n", sizeof(int), ok ? "할당됨" : "거부됨");
+    free(ok);
+    void *bad = alloc_array(SIZE_MAX / 2, sizeof(int));
+    printf("  SIZE_MAX/2 x %zu -> %s\n", sizeof(int), bad ? "할당됨" : "거부됨");
+    free(bad);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>INT_MAX = 2147483647
+ckd_add(INT_MAX, 1)  넘침? 예   r = -2147483648 (감아 돈 값)
+ckd_add(1, 2)        넘침? 아니오   r = 3
+signed char &lt;- 300   넘침? 예   c = 44
+unsigned  &lt;- 3 - 5   넘침? 예   u = 4294967294
+
+할당 계산
+  1000 x 4 -> 할당됨
+  크기 계산이 넘쳤다 - 할당하지 않는다
+  SIZE_MAX/2 x 4 -> 거부됨
+</code></pre></div></div><p>The way to read it is this. All three macros have the same shape.</p><pre><code data-lang="c">bool overflowed = ckd_add(&amp;result, left, right);</code></pre><p>There are four promises.</p><ol><li><strong>It calculates in infinite precision and then puts it in the vessel.</strong> The judgement is “does the mathematical result fit in the result type”, and there is no overflow in the intermediate calculation. So it judges exactly even when the arguments’ types differ from each other, and even when the result type is narrower than the arguments — the example’s <code>signed char &lt;- 300</code> confirms it.</li><li><strong>The result type is settled by the first argument (the pointer).</strong> It means the arguments’ promotion rules (chapter 27) do not sway the result, so there is no need to fret over “in which type is it calculated”.</li><li><strong>Even on overflow the result is stored.</strong> That value is the value wrapped round into the result type. The example’s <code>INT_MAX + 1</code> remaining as <code>-2147483648</code> is that — and it matters that even for a signed value <strong>it is defined behaviour in this place</strong>.</li><li><strong>Unsigned wrap-round is reported as “overflowed” too.</strong> The example’s <code>3u - 5u</code> confirms it. The value itself is a defined result (<code>4294967294</code>), but checked arithmetic reports that <strong>it differs from the mathematical value</strong>. In size calculations this is the property needed.</li></ol><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Are the <code>ckd_*</code> functions or macros? Do they not evaluate arguments several times?</p></div><div class="dev qa-a"><p class="dev-label">A What the standard settles are macros, but they are pinned down not to evaluate their arguments several times (implementations mostly expand them into compiler builtins). So code such as <code>ckd_add(&amp;r, i++, j)</code> is safe too.</p><p>But there is <strong>another</strong> trap. The judgement and the result must not be mixed inside one expression.</p><pre><code data-lang="c">printf("%s %d", ckd_add(&amp;r, a, b) ? "overflow" : "fine", r);   /* dangerous */</code></pre><p>There is no settled order between the moment <code>r</code> is read and the moment <code>ckd_add</code> writes to <code>r</code>, so the old value may be printed (chapter 20′s story of ordering). This mistake really did print a wrong value when this chapter’s example was first written. <strong>Take the judgement into a variable, and use the result on the next line</strong> — that one line of discipline is the whole of it.</p></div></div><h3>65.3 Where it is used — size calculation comes first</h3><p>The <code>alloc_array</code> in the latter part of the example is the type. Calculating an allocation size is the place where checked arithmetic is most sorely needed. If <code>n * sz</code> overflows you end up <strong>obtaining a small vessel and using it believing it big</strong>, which leads straight to a buffer overflow accident. Several famous vulnerabilities took exactly this route.</p><table><tr><th><strong>place</strong></th><th><strong>the old idiom</strong></th><th><strong>now</strong></th></tr><tr><td>array allocation</td><td>the check <code>n &amp;&amp; SIZE_MAX/n &lt; sz</code></td><td><code>ckd_mul(&amp;bytes, n, sz)</code></td></tr><tr><td>growing a buffer</td><td>just calculating <code>cap * 2</code></td><td><code>ckd_mul(&amp;cap2, cap, 2)</code></td></tr><tr><td>joining lengths</td><td><code>len1 + len2 + 1</code></td><td><code>ckd_add</code> twice</td></tr><tr><td>index calculation</td><td><code>base + off</code> just so</td><td><code>ckd_add</code> (compulsory for signed values)</td></tr><tr><td>numbers from input</td><td>using it straight after <code>atoi</code></td><td><code>strtol</code> (chapter 58) + a range check</td></tr></table><p>The last line matters. Checked arithmetic only catches the overflow of a <strong>calculation</strong>; it does not filter out a value that was too large to begin with. The check at the input-parsing stage (chapter 58) and the check at the calculation stage do not stand in for each other.</p><div class="dev misconception"><p class="dev-label">⚠ “Use <code>ckd_*</code> and worry about integer overflow ends”</p><p>Three things remain. First, <strong>division</strong> is not in this header — <code>INT_MIN / -1</code> is still an outside-the-contract case you must block yourself. Second, <strong>conversions</strong> are not checked. Assigning from a wide type to a narrow one is not arithmetic but conversion (chapter 7′s truncation), so a value being wrecked there is not <code>ckd_*</code>‘s business. Third, <strong>floating point</strong> is not its subject (chapter 60).</p><p>In summary, checked arithmetic is a tool answering the narrow and clear question “did an addition, subtraction or multiplication overflow its vessel”. It is a good tool precisely because it is narrow.</p></div><h3>65.4 Where this tool is absent</h3><p>In an environment that cannot yet use the C23 header, prepare in two steps.</p><pre><code data-lang="c">#if defined(__has_include)
+#  if __has_include(&lt;stdckdint.h>)
+#    include &lt;stdckdint.h>
+#    define HAVE_CKDINT 1
+#  endif
+#endif
+
+#ifndef HAVE_CKDINT                      /* fill in with the GCC/Clang extensions */
+#  define ckd_add(r, a, b) __builtin_add_overflow((a), (b), (r))
+#  define ckd_sub(r, a, b) __builtin_sub_overflow((a), (b), (r))
+#  define ckd_mul(r, a, b) __builtin_mul_overflow((a), (b), (r))
+#endif</code></pre><p>Only beware that the argument order differs — the standard puts the result pointer first, the compiler builtins put it last. Gathering such shells in one place is the real shape of the portability layer spoken of in chapter 49, and Part XII’s library does the same work.</p><div class="dev platform"><p class="dev-label">⊞ Platform note — The road of leaving the checking to tools</p><p>There is also a way of catching overflow without mending the code. GCC’s and Clang’s <code>-fsanitize=signed-integer-overflow</code> (UBSan) catches overflow during execution and reports it, and <code>-ftrapv</code> stops the program on overflow. Both are <strong>for testing</strong> — they show themselves only in a run in which an overflow actually happened, so they are different in character from checked arithmetic, which “blocks in code the places where it could happen”. It is the same conclusion as chapter 17′s story of debuggers: tools help observation but do not stand in for the contract.</p></div><div class="dev recap"><p class="dev-label">☰ Recap</p><table><tr><th><strong>to remember</strong></th><th><strong>the point</strong></th></tr><tr><td>checking afterwards</td><td>with signed values the check itself is outside the contract — it can be erased</td></tr><tr><td>the shape</td><td><code>bool overflowed = ckd_add(&amp;result, a, b)</code></td></tr><tr><td>the criterion</td><td>does the mathematical result fit in <strong>the result type</strong></td></tr><tr><td>the result type</td><td>settled by the first argument. not swayed by promotion rules</td></tr><tr><td>even on overflow</td><td>the wrapped value is stored (defined behaviour)</td></tr><tr><td>unsigned values</td><td>wrap-round too is reported as “overflow”</td></tr><tr><td>one expression</td><td>do not mix the judgement and the result</td></tr><tr><td>first place to apply it</td><td>allocation size calculation</td></tr><tr><td>where it is absent</td><td>make a shell with <code>__builtin_*_overflow</code></td></tr></table></div><p>We have learned how to ask about overflow according to the contract. The next chapter is this part’s last and the most conspicuous change C23 made to the language — the story of things that were macros becoming keywords.</p>
+<div class="nav"><a href="ch64.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch66.html">Next →</a></div>
+</div></main></body></html>

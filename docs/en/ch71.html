@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>71 Errors are values — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>71 Errors are values</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We see the answer to chapter 69′s second bug — unconfirmed failure. The way of returning failure as a value, the bundle holding a value and an error together, and the device that makes the compiler protest if an error is thrown away. The discipline set up in chapter 45, “errors are values”, hardens here into a type.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 45 said C’s ways of reporting an error are only three — the return value, global state, and stopping the program — and that of these the return value is the most honest. Then how does one say both “it failed” and “here is the result” with a single return value?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>There are three ways. Mix an <strong>impossible value</strong> into the result’s place (null, <code>-1</code> — that trap seen in chapter 69), take the result out as an <strong>output parameter</strong> and use the return value for status alone, or <strong>hold both in one struct</strong> and return them together. proven uses the second and third together — and the third is possible because, as learned in chapter 41, a C struct can be returned by value.</p></div></div><h3>71.1 Two shapes of return</h3><p>The rule is simple. <strong>A function that can fail must return the failure as a value.</strong></p><ul><li>If there is no result to return, it returns a single <code>proven_err_t</code>.</li><li>If there is a result to return, it returns an <code>{err, value}</code> bundle — with a name per type, such as <code>proven_result_u8str_t</code> or <code>proven_result_size_t</code>.</li></ul><p><code>proven_err_t</code> is an enumeration and success is <code>PROVEN_OK</code> (0). Failures have a name per kind — <code>PROVEN_ERR_NOMEM</code> (out of memory), <code>PROVEN_ERR_OUT_OF_BOUNDS</code> (out of room), <code>PROVEN_ERR_NOT_FOUND</code>, <code>PROVEN_ERR_INVALID_ARG</code>, <code>PROVEN_ERR_IO</code>, <code>PROVEN_ERR_EOF</code> and so on. The check is always the single <code>proven_is_ok(err)</code>.</p><div><div><p><code>examples/ch71/errval.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+/* 실패할 수 있는 일을 한다: 정해진 용량의 문자열에 두 조각을 붙인다.
+   에러는 값으로 돌아오고, 호출자는 그것을 그대로 위로 전달한다. */
+static proven_err_t make_greeting(proven_allocator_t alloc,
+                                  const char *who,
+                                  proven_size_t cap,
+                                  proven_u8str_t *out)
+{
+    proven_result_u8str_t made = proven_u8str_create(alloc, cap);
+    if (!proven_is_ok(made.err))
+        return made.err;                 /* 실패를 위로 넘긴다 */
+
+    proven_u8str_t s = made.value;       /* 확인한 뒤에야 value 를 쓴다 */
+
+    proven_err_t e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("Hello, "));
+    if (proven_is_ok(e))
+        e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr(who));
+    if (!proven_is_ok(e)) {
+        proven_u8str_destroy(alloc, &amp;s); /* 실패했으면 뒷정리도 우리 몫 */
+        return e;
+    }
+
+    *out = s;
+    return PROVEN_OK;
+}
+
+static void try(proven_allocator_t alloc, const char *who, proven_size_t cap)
+{
+    proven_u8str_t s;
+    proven_err_t e = make_greeting(alloc, who, cap, &amp;s);
+
+    if (!proven_is_ok(e)) {
+        printf("cap=%2zu who=%-8s -> failed with error code %d\n",
+               cap, who, (int)e);
+        return;
+    }
+    proven_u8str_view_t v = proven_u8str_as_view(&amp;s);
+    printf("cap=%2zu who=%-8s -> \"%.*s\"\n",
+           cap, who, (int)v.size, (const char *)v.ptr);
+    proven_u8str_destroy(alloc, &amp;s);
+}
+
+int main(void)
+{
+    proven_allocator_t alloc = proven_heap_allocator();
+
+    try(alloc, "world", 32);   /* 넉넉하다 */
+    try(alloc, "world", 8);    /* 자리가 모자란다 — 자르지 않고 거부한다 */
+
+    printf("PROVEN_OK is %d, and every failure is non-zero\n", (int)PROVEN_OK);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>cap=32 who=world    -> "Hello, world"
+cap= 8 who=world    -> failed with error code 2
+PROVEN_OK is 0, and every failure is non-zero
+</code></pre></div></div><p>This example contains all of this chapter’s syntax. <code>make_greeting</code> sends the result out through an output parameter (<code>out</code>) and used the return value for status alone — on failure it passes it up as it is. And <code>proven_u8str_create</code> returns a bundle, so <code>made.value</code> is taken out <strong>only after checking</strong>. The order must not be reversed.</p><div class="dev antipattern"><p class="dev-label">✗ Taking out <code>value</code> before checking</p><pre><code data-lang="c">proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* dangerous */</code></pre><p>It finishes in one line and looks clean, but what comes into your hand on failure is <strong>a meaningless value</strong>. The bundle’s contract is “<code>value</code> has meaning only when <code>err</code> is <code>PROVEN_OK</code>”, so this code has skipped the contract. That on failure a struct filled with zeros usually arrives and it does not die immediately is rather the danger — the accident is put off until much later (that pattern from chapter 69).</p></div><p>The output of the second call compresses this part’s theme. On trying to put <code>"Hello, world"</code> into a capacity of 8 bytes, the library, <strong>instead of putting in as much as fits and declaring success</strong>, wrote nothing and returned a failure. It is the exact opposite choice from <code>snprintf</code>’s quiet truncation seen in chapter 69.</p><h3>71.2 Throw it away and the compiler protests</h3><p>Returning the error as a value is not enough by itself. As seen in chapter 69, a return value <strong>can be thrown away</strong>. So functions for which failure is meaningful have C23′s <span id="idx-entry-101"></span><code>[[nodiscard]]</code> attached (we saw the name in chapter 45). Throw the result away and the compiler really says this.</p><pre><code data-lang="text">warning: ignoring return value of ‘proven_u8str_append’,
+         declared with attribute ‘nodiscard’ [-Wunused-result]
+    5 |     proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hi"));
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+note: declared here
+  123 | [[nodiscard]] proven_err_t proven_u8str_append(...);</code></pre><p>If the <code>-Werror</code> recommended in chapter 17 is turned on, this is not a warning but a <strong>build failure</strong>. What was “checking is optional” has become “it does not compile unless you check”.</p><p>Of course there are times when you really do want to ignore it. Then <code>(void)</code> is put in front.</p><pre><code data-lang="c">(void)proven_u8str_append(&amp;s, view);   /* ignored knowingly */</code></pre><div><div class="dev qa-q"><p class="dev-label">Q</p><p>If it can be ignored with <code>(void)</code>, is it not compulsory after all?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because the purpose of the compulsion is not “to prevent ignoring” but <strong>“to make ignoring visible”</strong>. An error thrown away with no mark is invisible in code review, while a line with <code>(void)</code> attached becomes a declaration that “this failure is deliberately ignored”. The very fact that it must be typed is the heart of it — it cannot be done by accident, only on purpose.</p></div></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>But chapter 70′s <code>proven_println</code> had no such mark. Why is screen output alone an exception?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because contracts have grades too. The failure of a write going to the console has conventionally been ignored (have you ever seen code that checks <code>printf</code>’s return value?), and making every line of output carry a <code>(void)</code> would bury the code in noise. So this library placed output in the grade that <strong>returns the error but does not compel a check</strong>. Conversely, the functions on the <strong>input</strong> side do have the mark — ignore the failure of a read and you treat “data not read” as though it had been read, replaying chapter 69′s second bug exactly. Where to attach the mark is itself a design judgement.</p></div></div><h3>71.3 What remains after a failure — failure atomicity</h3><p>There is a question that naturally arises after receiving an error. <strong>What state is the object the failed function was touching in now?</strong></p><span id="idx-entry-102"></span><p>The library’s answer is <strong>failure atomicity</strong> — unless the documentation says otherwise, a failed operation leaves the target in the state it was in before being touched. If memory runs short while growing an array the existing elements are still alive, and if there is not enough room while appending to a string the original content stands. The second call of the example just now is that case — it failed, but no half-written string was left.</p><p>Why does this matter? Without failure atomicity a caller can do nothing after a failure <strong>but throw the object away</strong>. With it, “give up this addition and carry on with what has been gathered so far” becomes possible.</p><div class="dev misconception"><p class="dev-label">⚠ “If it fails we will end the program anyway, so what does the state matter”</p><p>For a short-running command-line tool that may be so. But long-running programs — servers, editors, games, firmware — must not die on one failure. If the whole server went down because handling one request failed for lack of memory, that would be the greater accident. Failure atomicity is the minimal condition that makes possible the recovery of “throw away only this request and take the next”.</p></div><h3>71.4 When there is nobody to return to — the panic</h3><p>To return an error as a value there must be <strong>somebody to return it to</strong>. But in a place where the contract itself is broken there is no such somebody — if, for example, a null arrived in a place where there is no reason whatever to pass a null, that is not a failure but means <strong>the program’s logic is already wrong</strong>.</p><p>For such places the library has a panic path. It is the same spirit as chapter 45′s <code>assert</code>, differing in that the way it is handled can be swapped out so as to be usable in embedded work too (chapter 78). The distinction is best remembered like this.</p><div class="dev recap"><p class="dev-label">☰ Recap</p><table><tr><th><strong>situation</strong></th><th><strong>example</strong></th><th><strong>the library’s handling</strong></th></tr><tr><td>failure of the outside world</td><td>out of memory, file not found, out of room</td><td>return the error as a value</td></tr><tr><td>the caller’s contract violation</td><td>a null that must not be, reusing a destroyed object</td><td>panic (or undefined)</td></tr><tr><td>failure that may be ignored</td><td>console output failure</td><td>return the error but do not compel</td></tr></table></div><div class="dev realcase"><p class="dev-label">◉ Other languages that chose errors as values</p><p>This design is not C’s invention alone but a current common to recent systems languages. Go has functions return a result and an error side by side, and Rust wraps success and failure in the single <code>Result</code> type and warns if it is ignored. Both are languages that decided not to use exceptions, and the reason is the same — <strong>the error paths must be visible in the shape of the code</strong>. Exceptions are convenient but erase from the signature “which failure jumps where from here”. Three different languages, in effect, found the answer to the second row of chapter 69′s table from the same direction.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What is the price of this way?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p><code>if</code>s multiply. There being no device like exceptions to sweep a deep failure up in one go, code that checks and passes upward attaches at every place a failure is met. That is half the reason the <code>make_greeting</code> of the example just now runs to some twenty lines. In exchange one thing is gained — <strong>where and what can fail is visible in the code as it stands.</strong> That there is no hidden failure is the thing this library sells.</p></div></div><p>Knowing the shape of errors, we now go down to what those errors protect — memory itself. The next chapter is bytes and views, and size calculation that does not overflow.</p>
+<div class="nav"><a href="ch70.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch72.html">Next →</a></div>
+</div></main></body></html>

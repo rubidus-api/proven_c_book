@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>56 The traps of reading and writing — &lt;stdio.h&gt; ② — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>56 The traps of reading and writing — <code>&lt;stdio.h></code> ②</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We begin with the story of the only function ever <strong>deleted</strong> from the standard library. Why <code>gets</code> died, what stands in its place, and what traps that replacement carries in its turn. Then the remaining dangers of formatted input and output, and how safe the functions known as safe really are.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 38 said <code>gets</code> was deleted from the standard, and chapter 53 said its funeral took decades. Then what exactly was wrong with <code>gets</code>, and why did it take so long?</p></div><div class="dev qa-a"><p class="dev-label">A The problem is simple — <strong>it does not take the size of the destination buffer.</strong> Its signature is only <code>char *gets(char *s)</code>, so there is no way at all to know how much may be written, and if the input is long it necessarily overflows. It is one of the rare functions for which “use it carefully and it is fine” does not hold — a safe way to use it does not exist.</p><p>It took long because of the standard’s character (chapter 54). Not breaking code already written is the standard’s duty, so C99 marked it “do not use” (deprecated) and only C11 deleted it. For over twenty years in between, every compiler spat warnings and yet compiled it.</p></div></div><h3>56.1 The death of <code>gets</code> and its successors</h3><p>The hole the 1988 internet worm bored into was exactly this function (chapter 38). Today <code>gets</code> is not in the standard, and three remain in its place.</p><table><tr><th><strong>function</strong></th><th><strong>status</strong></th><th><strong>assessment</strong></th></tr><tr><td><code>gets</code></td><td>deleted in C11</td><td>there is no way to use it. mend it wherever it is seen in old code</td></tr><tr><td><code>fgets</code></td><td>standard</td><td>the realistic standard solution. but truncation must be checked by hand</td></tr><tr><td><code>gets_s</code></td><td>C11 annex K (optional)</td><td>implementations barely exist — treated in chapter 63</td></tr></table><p><code>fgets</code> is the right answer, but it is not the end in itself. As seen in chapter 55, if the buffer is too small it quietly reads only the front piece.</p><div><div><p><code>examples/ch56/reading.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;string.h>
+#include &lt;stdlib.h>
+
+/* 줄을 안전하게 읽는 두 가지 방법과 그 차이 */
+
+static const char *PATH = "reading_demo.txt";
+
+static void make_file(void)
+{
+    FILE *f = fopen(PATH, "w");
+    if (!f) return;
+    fputs("short\na line that is definitely too long\nend\n", f);
+    fclose(f);
+}
+
+/* ① 고정 버퍼 + 잘림 확인 */
+static void read_fixed(void)
+{
+    char buf[8];
+    FILE *f = fopen(PATH, "r");
+    if (!f) return;
+    while (fgets(buf, sizeof buf, f)) {
+        int complete = strchr(buf, '\n') != NULL;
+        if (complete) buf[strcspn(buf, "\n")] = '\0';
+        printf("  [%s]%s\n", buf, complete ? "" : "   &lt;- 잘림(줄이 이어짐)");
+    }
+    fclose(f);
+}
+
+/* ② 필요한 만큼 늘려 가며 읽기 — 표준 함수만으로 */
+static char *read_line(FILE *f)
+{
+    size_t cap = 8, len = 0;
+    char *buf = malloc(cap);
+    if (!buf) return NULL;
+
+    int c;
+    while ((c = fgetc(f)) != EOF &amp;&amp; c != '\n') {
+        if (len + 1 >= cap) {
+            char *nbuf = realloc(buf, cap * 2);
+            if (!nbuf) { free(buf); return NULL; }  /* 실패해도 원본은 살아 있다 */
+            buf = nbuf;
+            cap *= 2;
+        }
+        buf[len++] = (char)c;
+    }
+    if (c == EOF &amp;&amp; len == 0) { free(buf); return NULL; }
+    buf[len] = '\0';
+    return buf;
+}
+
+int main(void)
+{
+    make_file();
+
+    printf("고정 8바이트 버퍼:\n");
+    read_fixed();
+
+    printf("늘려 가며 읽기:\n");
+    FILE *f = fopen(PATH, "r");
+    if (f) {
+        char *line;
+        while ((line = read_line(f)) != NULL) {
+            printf("  [%s] (%zu bytes)\n", line, strlen(line));
+            free(line);
+        }
+        fclose(f);
+    }
+    remove(PATH);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>고정 8바이트 버퍼:
+  [short]
+  [a line ]   &lt;- 잘림(줄이 이어짐)
+  [that is]   &lt;- 잘림(줄이 이어짐)
+  [ defini]   &lt;- 잘림(줄이 이어짐)
+  [tely to]   &lt;- 잘림(줄이 이어짐)
+  [o long]
+  [end]
+늘려 가며 읽기:
+  [short] (5 bytes)
+  [a line that is definitely too long] (34 bytes)
+  [end] (3 bytes)
+</code></pre></div></div><p>The difference between the two approaches is clear. The fixed buffer split the long line into five pieces, while the edition that reads while growing returned the 34-byte line whole.</p><p>The rules for reading code come to three in the end.</p><ol><li>Turn the loop on <code>fgets</code>’s return value (whether it is null).</li><li>Check whether the line read has a newline and judge <strong>whether it was truncated</strong>.</li><li>Erase the newline with <code>buf[strcspn(buf, "\n")] = '\0';</code> — this idiom is safer than hand-written code based on <code>strlen</code>.</li></ol><div class="dev antipattern"><p class="dev-label">✗ <code>scanf("%s", buf)</code> — reading a string without a width</p><pre><code data-lang="c">char name[32];
+scanf("%s", name);        /* exactly the same danger as gets */</code></pre><p>Give <code>%s</code> no width and it writes without knowing the destination’s size. Always write <strong>a number one less than the buffer size</strong>, as in <code>scanf("%31s", name)</code> (for the NUL). And that this number must be written by hand is this API’s weakness — change the buffer size and the format string must be mended with it, which is easy to forget.</p></div><h3>56.2 The remaining traps of formatted input</h3><p>Chapter 53 took the grammar apart, so here we gather only the places where accidents happen.</p><p><strong>First, not checking the return value.</strong> The <code>scanf</code> family returns the number of items filled. Without checking it you end up using the <strong>previous value</strong> of the variable that failed (we see it in the flesh in chapter 69).</p><p><strong>Second, leftover input.</strong> After <code>scanf("%d", &amp;n)</code> a newline remains in the input buffer. Call <code>fgets</code> in that state and it reads an empty line. Not mixing them is the best policy, and if you must mix, empty the rest of the line and move on.</p><p><strong>Third, integer overflow.</strong> Give <code>99999999999</code> to a <code>%d</code> and it is outside the contract. If the range must be checked, read with <code>strtol</code> (chapter 58).</p><p><strong>Fourth, <code>%s</code> and the locale.</strong> The definition of whitespace may change with the locale (chapter 59).</p><div class="dev misconception"><p class="dev-label">⚠ “<code>snprintf</code> instead of <code>sprintf</code> is safe”</p><p>Half right. <code>snprintf</code> is safe in that it does not overrun the buffer, but it brings in the new danger of <strong>quietly truncating</strong>. And the meaning of its return value is peculiar — it is not the number of characters written but <strong>the number of characters that would have been needed</strong>.</p><pre><code data-lang="c">int need = snprintf(buf, sizeof buf, "%s/%s", dir, name);
+if (need &lt; 0 || (size_t)need >= sizeof buf) {
+    /* truncated — this path must not be used as it is */
+}</code></pre><p>Leave this check out and it becomes “I used the safe function and opened the wrong file.” We run this pattern for real in chapter 69.</p></div><h3>56.3 The traps on the output side</h3><p><strong><code>printf</code>’s return value</strong> — code that checks it is rare, but it fails in the situation of a broken pipe (<code>program | head</code>, say). For a program that keeps logs there is a value worth checking.</p><p><strong>The format string vulnerability</strong> — the one treated in chapter 53. The rule is one. The format string must always be a constant written by the program.</p><p><strong><code>%n</code></strong> — the conversion that <strong>writes</strong> the number of characters printed to where the argument points. Being the passage that promotes a format string vulnerability into an arbitrary memory write, several implementations block it by default today. There is almost no reason to use it.</p><p><strong>Buffering and order</strong> — mix <code>printf</code> (standard output, usually line-buffered) with <code>fprintf(stderr, ...)</code> (unbuffered) and the order in which things appear on the screen can be reversed. Half of the occasions on which “the output vanished” during debugging are this, and the other half are cases where the buffer was not emptied just before a collapse.</p><div class="dev realcase"><p class="dev-label">◉ Why output vanishes — buffers and abnormal termination</p><p>When a program dies by <code>abort</code> or a signal, the output remaining in the buffer vanishes with it. That is why the inference “the last printed line came out, so execution reached at least there” is dangerous — in reality several more lines may have run and died trapped in the buffer.</p><p>The practice of sending debugging output to <code>stderr</code> came from here. <code>stderr</code> is unbuffered, so the record right up to the moment of death survives. It is also the reason chapter 17 discussed debuggers and logs together.</p></div><h3>56.4 The remaining functions that handle files</h3><table><tr><th><strong>function</strong></th><th><strong>what it does</strong></th><th><strong>to beware of</strong></th></tr><tr><td><code>remove</code></td><td>delete a file</td><td>implementation-defined for an open file</td></tr><tr><td><code>rename</code></td><td>change a name</td><td>if the target exists it fails or overwrites, depending on the implementation</td></tr><tr><td><code>tmpfile</code></td><td>create a temporary file</td><td>deleted automatically on closing. the only portable safe edition</td></tr><tr><td><code>tmpnam</code></td><td>generate a temporary name</td><td>★ a race condition — it can be intercepted between receiving the name and creating the file</td></tr><tr><td><code>setvbuf</code></td><td>specify the buffering mode</td><td>it may be called only right after opening the stream</td></tr><tr><td><code>freopen</code></td><td>reconnect a stream</td><td>used when turning <code>stdout</code> to a file</td></tr></table><p><code>tmpnam</code> is in the standard, but not using it is the right answer — because another program can slip in between the returning of the name and the creating of a file with that name (the class of race called TOCTOU). Within the standard <code>tmpfile</code> is the answer, and if a platform API is permitted, <code>mkstemp</code> (POSIX).</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then can “safe file handling” be written with standard I/O alone?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Mostly it can. But there are clearly places where the standard gives no answer — handling directories, file locking, atomic replacement (writing to a temporary file and then renaming), permissions, symbolic links. All of these are the territory of platform APIs, and so a serious program lays one thin layer over standard I/O. Part XII’s file layer is exactly that layer.</p></div></div><div class="dev recap"><p class="dev-label">☰ Recap</p><p>Reading and writing in summary.</p><table><tr><th><strong>what you want to do</strong></th><th><strong>what to use</strong></th><th><strong>what to check</strong></th></tr><tr><td>read one line</td><td><code>fgets</code></td><td>whether null + whether there is a newline (truncation)</td></tr><tr><td>a line of unknown length</td><td>an <code>fgetc</code> loop + reallocation</td><td>preserve the original when <code>realloc</code> fails</td></tr><tr><td>print into a string</td><td><code>snprintf</code></td><td>return value ≥ buffer size means truncation</td></tr><tr><td>parse user input</td><td><code>fgets</code> + <code>strtol</code>/<code>sscanf</code></td><td>the item count and the range</td></tr><tr><td>temporary file</td><td><code>tmpfile</code></td><td><code>tmpnam</code> is a race condition</td></tr><tr><td>debugging output</td><td><code>fprintf(stderr, …)</code></td><td>unbuffered — it survives even a death</td></tr><tr><td>never to be used</td><td><code>gets</code>, <code>%s</code> without a width, <code>%n</code></td><td>—</td></tr></table></div><p>We have crossed the minefield of input and output. The next chapter is another minefield just as famous — the string functions.</p>
+<div class="nav"><a href="ch55.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch57.html">Next →</a></div>
+</div></main></body></html>

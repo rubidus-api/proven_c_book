@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>78 The boundaries — running things overlapped, and when there is no OS — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>78 The boundaries — running things overlapped, and when there is no OS</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The last chapter of Part XII. We see the two ways of running several things <span id="idx-entry-111"></span>overlapped (stackless coroutines and the job system), why allocators and pointer provenance become a problem in a program running along several strands, and what shape this library takes in a place with no operating system at all. The last section is <strong>when it is better not to use it</strong>.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 12 said cores became several because of the clock’s limits, and that accidents such as false sharing arise. Then how many different meanings does the phrase “doing several things at once” have?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>At least two. <strong>Concurrency</strong> is several tasks progressing by turns while waiting for each other, and it holds even with one core — such is a server doing other work while waiting for input and output. <strong>Parallelism</strong> is several cores really calculating at the same moment. The former is a problem of <strong>structure</strong>, the latter a problem of <strong>performance</strong>. This chapter’s coroutines treat the former and the job system the latter.</p></div></div><h3>78.1 Stackless coroutines — overlapping without threads</h3><p>If a function can do some work, stop, and later start again <strong>from that place</strong>, much becomes easy. Because the code can be written in order instead of a state machine being written by hand.</p><div><div><p><code>examples/ch78/coro.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
+#include &lt;stdio.h>
+
+/* 스택리스 코루틴: 진행 상태를 구조체 한 칸에 담고, 매크로가 switch 로
+   그 자리에 되돌아간다. 스레드도, 별도 스택도, 할당도 없다. */
+typedef struct {
+    proven_coro_t co;      /* 어디까지 갔는지 기억하는 칸 */
+    int           sent;
+    int           limit;
+} producer_t;
+
+/* 0 을 돌려주면 "값 하나를 내놓고 잠시 멈춤", 1 이면 "다 끝남" */
+static int produce(producer_t *p, int *out)
+{
+    PROVEN_CORO_BEGIN(&amp;p->co);
+    while (p->sent &lt; p->limit) {
+        *out = p->sent * 10;
+        p->sent += 1;
+        PROVEN_CORO_YIELD(&amp;p->co);   /* 여기서 나갔다가 다음 호출에 되돌아온다 */
+    }
+    PROVEN_CORO_END(&amp;p->co);
+}
+
+int main(void)
+{
+    producer_t p = { .sent = 0, .limit = 4 };
+    PROVEN_CORO_INIT(&amp;p.co);
+
+    int value = -1;
+    while (!PROVEN_CORO_IS_DONE(&amp;p.co)) {
+        if (produce(&amp;p, &amp;value) == 0)
+            printf("produced %d\n", value);
+    }
+    printf("finished after %d values; coroutine state is %zu bytes\n",
+           p.sent, sizeof(proven_coro_t));
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>produced 0
+produced 10
+produced 20
+produced 30
+finished after 4 values; coroutine state is 4 bytes
+</code></pre></div></div><p>The heart of it is the last line — the state this coroutine remembers is <strong>4 bytes</strong>. There is no separate stack, no thread and no allocation. It is a tidying up of an old knack in C in which macros make re-entry points with <code>switch</code> and <code>case</code> (a cousin of Duff’s device — that syntax seen in chapter 30 is used again here).</p><p>The price is clear too. <strong>Local variables do not survive</strong> — stop and come back and they are gone, so state that must be maintained has to be kept in a struct. It is why the example kept <code>sent</code> as a struct member. And, being implemented with <code>switch</code>, <code>PROVEN_CORO_YIELD</code> cannot be put inside another <code>switch</code>.</p><p>Even so the reason this model is loved in embedded work is plain. If one task is 4 bytes, hundreds may be raised with no burden, and since no stack is taken separately the memory usage can be calculated at compile time.</p><div class="dev misconception"><p class="dev-label">⚠ “A coroutine is a light version of a thread”</p><p>What they do is entirely different. Threads are switched by the operating system <strong>cutting in as it pleases</strong> (pre-emption), while a coroutine stops only where it itself wrote <code>YIELD</code> (co-operation). So race conditions do not arise between coroutines — because two coroutines never run at the same moment. There is a price in exchange. If one coroutine calculates long without yielding, all the rest starve. And coroutines cannot use several cores — which is why the next section’s job system exists separately.</p></div><h3>78.2 The job system — using several cores</h3><p><code>proven_job_sys_t</code> is a small system equipped with a queue of work and worker threads. Its characteristic is that the queue’s size is <strong>fixed</strong> — if it overflows, submission fails, and that failure comes as a value. The judgement is that an infinitely growing queue is merely a device for putting the problem off until memory is exhausted.</p><div class="dev antipattern"><p class="dev-label">✗ Overlapping closing with submitting</p><pre><code data-lang="c">/* thread A */                    /* thread B */
+proven_job_submit(sys, job);      proven_job_system_destroy(sys);</code></pre><p>A pattern the header explicitly forbids. The correct order is <strong>close, join all the producers, then destroy</strong>. Such ordering contracts are not solved by hiding a lock inside the data structure — rather, a hidden lock increases the code that “mistakenly believes it works”. It is also why this library puts no locks in its containers and pins down that <strong>shared mutation is synchronised by the caller</strong>.</p></div><h3>78.3 Threads, allocators, and provenance</h3><p>In a program running along several strands the allocator demands special care. If two threads use one arena together, the simple action seen in chapter 73 of “cutting from the front” becomes a race at once. The prescription is mostly <strong>one per thread</strong> — and then no synchronisation is needed at all.</p><p>Pointer <strong>provenance</strong>, whose name only was seen in chapter 14, becomes practical here too. Since even at the same address it matters which allocation a pointer came from, giving a block obtained from one allocator back to another is a contract violation (as in chapter 73′s counterexample) even if the address happens to match. The library’s name came from here.</p><h3>78.4 When there is no OS — freestanding</h3><p>This is the constraint that most shaped this library. It is the demand to run in the very environment chapter 53 gave as the reason the standard library is thin — a place with no operating system, no heap and no files.</p><span id="idx-entry-112"></span><p>What changes in a freestanding build is this.</p><ul><li><code>platform/</code> is not included at all. Files, time and OS randomness disappear.</li><li>Allocation is done with an arena over a static buffer (chapter 73). There is no <code>malloc</code>.</li><li>Strings are handled with <code>_borrow</code> over stack and static buffers (chapter 74).</li><li>The panic handler is registered by you — there may be no console to print to, so it becomes a matter of lighting an LED, kicking a watchdog or rebooting.</li><li>Real-number formatting uses large-integer arithmetic, so it can be taken out whole if it is not needed.</li></ul><p>Why the disciplines of the earlier chapters — “take the allocator as an argument”, “a view is borrowed”, “no hidden globals” — were so persistent shows itself here. Those disciplines were not a taste but <strong>the minimum condition for running in this environment</strong>.</p><div class="dev realcase"><p class="dev-label">◉ The same code in two worlds — and its price</p><p>Keeping as one set the code that runs both in embedded work and on a host really is of great value. If a protocol parser can be tested on a PC and put into the firmware as it stands, the time spent floundering on a board with no debugging environment shrinks greatly. It is why many embedded teams keep a separate “test build that runs on the host”, and what makes that structure possible is exactly the design of <strong>confining platform dependence to one layer</strong>. The price is that the API becomes a little more formal — code that works anywhere is specialised to nowhere.</p></div><h3>78.5 When it is better not to use it</h3><p>We close honestly. There are cases where this library is not the answer.</p><ul><li><strong>Short, script-like programs</strong> — for a twenty-line tool, ownership discipline and allocator parameters are mere formality. The standard library is enough.</li><li><strong>A codebase that already has other conventions</strong> — a large project mostly already has its own string, container and error conventions. Mix two conventions and conversion code arises at every boundary, and those boundaries become the places of new bugs.</li><li><strong>Places like C++ and Rust where the language already solves the problem</strong> — in an environment where the language handles ownership and error propagation, there is little reason to lay a C library on top.</li><li><strong>Work that one standard function finishes</strong> — exactly as this book said in chapter 53. The right attitude is neither “do not use it” nor “use it unconditionally” but <strong>knowing the contract and choosing</strong>.</li></ul><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then what remains of what was learned in this part if proven is not used?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Almost all of it. Strings that carry their length, writes that refuse rather than truncate, errors that come back as values, allocation visible in the signature, the distinction of owning and borrowing, size calculation done with checked arithmetic, comparators that keep a total order, hashes that assume adversarial input — these are not a library but <strong>design principles</strong>, and they can be applied by hand to any C code. Open chapter 69′s table again and the right-hand column is entirely such items. What this part really wanted to sell is not the code but that column.</p></div></div><div class="dev recap"><p class="dev-label">☰ Recap</p><p>A summary of the whole of Part XII — problems and answers.</p><table><tr><th><strong>chapter 69′s problem</strong></th><th><strong>the answer</strong></th><th><strong>chapter</strong></th></tr><tr><td>strings that do not know the size</td><td>views (ptr+size), refusing rather than truncating</td><td>chapters 72 and 74</td></tr><tr><td>unconfirmed failure</td><td>errors as values, <code>[[nodiscard]]</code></td><td>chapter 71</td></tr><tr><td>format mismatch</td><td><code>{}</code> and <code>PROVEN_ARG</code> (<code>_Generic</code>)</td><td>chapter 75</td></tr><tr><td>unclear ownership</td><td>the allocator parameter, owning versus borrowing</td><td>chapter 73</td></tr><tr><td>unchecked callbacks</td><td>documented contracts, introsort, keyed hashes</td><td>chapter 76</td></tr><tr><td>the hidden type of bytes</td><td><code>proven_byte_t</code></td><td>chapter 72</td></tr><tr><td>environments with no OS</td><td>separating the platform layer, static arenas</td><td>chapter 78</td></tr></table></div><p>With this, the promise this book made in chapter 1 has been kept — showing C’s problems first, and showing one answer to them through to the end. The two remaining chapters are the story beyond these pages. In the next chapter we look round the terrain of practice (build tools, version control, real projects), and in the last we gather up the road this book has travelled.</p>
+<div class="nav"><a href="ch77.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch79.html">Next →</a></div>
+</div></main></body></html>

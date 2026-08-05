@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>55 Streams in reality — &lt;stdio.h&gt; ① — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>55 Streams in reality — <code>&lt;stdio.h></code> ①</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We look at the floor beneath the header used most. How a stream is really opened and closed, when the buffer is emptied, where failure shows itself — and the misuse of <code>feof</code>, the place introductory books get wrong over and over. The notion of a stream learned in chapter 10 becomes an API here.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 10 said a stream is “a band whose other end the program does not know”, and that this is why the same program serves screen, file and other programs alike. Then <strong>when</strong> do the bytes a program wrote actually arrive at their destination?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Usually not at once. The standard library keeps a <strong>buffer</strong> per stream, gathers bytes there and sends them out in one go — because system calls are expensive (we meet this again in Part XII). There are three ways of deciding when to empty it. <strong>Full buffering</strong> is when the buffer fills, <strong>line buffering</strong> when a newline is met, <strong>unbuffered</strong> is immediately. Standard output connected to a terminal is usually line-buffered, and when redirected to a file it turns into full buffering — meaning <strong>the moment at which the same program’s output appears changes with what it is connected to</strong>, and that is this chapter’s first trap.</p></div></div><h3>55.1 Open, write, close — failure can happen three times</h3><div><div><p><code>examples/ch55/streams.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;string.h>
+
+/* 스트림의 세 가지 실제 — 버퍼링, 반환값, 끝을 아는 법 */
+int main(void)
+{
+    const char *path = "stream_demo.txt";
+
+    /* ① 쓰기: fopen 은 실패하면 널이다 */
+    FILE *f = fopen(path, "w");
+    if (!f) { perror("fopen"); return 1; }
+
+    /* fprintf 도 실패할 수 있다 — 반환값은 찍은 글자 수 */
+    int written = fprintf(f, "one\ntwo\nthree\n");
+    printf("fprintf wrote %d chars\n", written);
+
+    /* ② 닫기도 실패할 수 있다: 버퍼를 비우다 실패하면 여기서 드러난다 */
+    if (fclose(f) != 0) { perror("fclose"); return 1; }
+
+    /* ③ 읽기: 줄 단위로 */
+    f = fopen(path, "r");
+    if (!f) { perror("fopen"); return 1; }
+
+    char line[64];
+    int n = 0;
+    while (fgets(line, sizeof line, f)) {
+        line[strcspn(line, "\n")] = '\0';   /* 개행 제거의 관용구 */
+        printf("line %d: [%s]\n", ++n, line);
+    }
+
+    /* ④ 왜 멈췄는가 — 파일 끝인가 오류인가를 구분한다 */
+    if (ferror(f))      printf("stopped by an error\n");
+    else if (feof(f))   printf("stopped at end of file\n");
+
+    /* ⑤ 버퍼 크기보다 긴 줄은 잘려서 두 번에 나뉘어 온다 */
+    rewind(f);
+    char tiny[4];
+    printf("with a 4-byte buffer:\n");
+    for (int i = 0; i &lt; 3 &amp;&amp; fgets(tiny, sizeof tiny, f); i++)
+        printf("  chunk %d: [%s] (has newline: %s)\n",
+               i + 1, tiny, strchr(tiny, '\n') ? "yes" : "no");
+
+    fclose(f);
+    remove(path);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>fprintf wrote 14 chars
+line 1: [one]
+line 2: [two]
+line 3: [three]
+stopped at end of file
+with a 4-byte buffer:
+  chunk 1: [one] (has newline: no)
+  chunk 2: [
+] (has newline: yes)
+  chunk 3: [two] (has newline: no)
+</code></pre></div></div><p>It is worth noticing that the example checks for failure in three places.</p><p><strong>① <code>fopen</code></strong> — on failure it returns null. The reason is left in <code>errno</code>, and <code>perror</code> prints it as a sentence a human can read (chapter 62). The file may not exist, permission may be lacking, or too many files may be open.</p><p><strong>② Writing</strong> — <code>fprintf</code> returns the number of characters printed and gives a negative value on failure. Code that checks it is rare, but if the disk fills or a pipe breaks it shows itself here.</p><p><strong>③ <code>fclose</code></strong> — here is the real trap. It is the place where what remained in the buffer is finally sent out, so <strong>it is common for a write failure to show itself for the first time on closing</strong>. A program that must not lose data therefore always checks <code>fclose</code>’s return value.</p><div class="dev antipattern"><p class="dev-label">✗ Ignoring the failure of closing</p><pre><code data-lang="c">fprintf(f, "%s\n", important);
+fclose(f);                  /* nobody asked whether it failed */
+puts("saved");              /* it may in fact not have been saved */</code></pre><p>In buffered writing, the moment at which “it succeeded” may be said is <strong>after closing has succeeded</strong>. If it must truly be nailed to the disk, flush with <code>fflush</code> before closing and call the platform’s synchronisation call (<code>fsync</code> and the like) as well — that is what a database does.</p></div><h3>55.2 How to know the end of a file — the misuse of <code>feof</code></h3><p>The most widespread wrong answer is here.</p><div><div><p><code>examples/ch55/feof_bad.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+
+/* feof 로 반복을 제어하면 마지막 항목이 한 번 더 처리된다 —
+   C 입문서의 고전적 오답이다. */
+int main(void)
+{
+    const char *path = "feof_demo.txt";
+    FILE *f = fopen(path, "w");
+    if (!f) return 1;
+    fputs("10\n20\n30\n", f);
+    fclose(f);
+
+    printf("틀린 판 — while (!feof(f)):\n");
+    f = fopen(path, "r");
+    if (!f) return 1;
+    while (!feof(f)) {
+        int v;
+        fscanf(f, "%d", &amp;v);          /* 마지막 읽기 실패 후에도 한 번 더 돈다 */
+        printf("  read %d\n", v);      /* 30 이 두 번 찍힌다 */
+    }
+    fclose(f);
+
+    printf("올바른 판 — 읽기의 반환값으로 제어:\n");
+    f = fopen(path, "r");
+    if (!f) return 1;
+    int v;
+    while (fscanf(f, "%d", &amp;v) == 1)
+        printf("  read %d\n", v);
+    if (ferror(f)) printf("  (read error)\n");
+    fclose(f);
+
+    remove(path);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>틀린 판 — while (!feof(f)):
+  read 10
+  read 20
+  read 30
+  read 30
+올바른 판 — 읽기의 반환값으로 제어:
+  read 10
+  read 20
+  read 30
+</code></pre></div></div><p>Why is <code>while (!feof(f))</code> wrong? <code>feof</code> is <strong>not a prophet but a recorder</strong> — the mark saying “the end of the file was reached” is turned on only <strong>after</strong> a read has failed. So right after reading the last value it is still off, the loop turns once more, and the result of the failed read (= the previous value, unchanged) is used as it stands. That 30 was printed twice in the example is the evidence.</p><p>The rule is one. <strong>Control the loop by the reading function’s return value.</strong> <code>feof</code> and <code>ferror</code> are used after the loop ends, to tell “why did it end”.</p><table><tr><th><strong>function</strong></th><th><strong>success</strong></th><th><strong>end or failure</strong></th></tr><tr><td><code>fgets</code></td><td>the buffer pointer</td><td>null — tell them apart with <code>feof</code>/<code>ferror</code></td></tr><tr><td><code>fscanf</code></td><td>the number of items filled</td><td>0 (format mismatch) or <code>EOF</code></td></tr><tr><td><code>fgetc</code></td><td>the character read (an unsigned char as an int)</td><td><code>EOF</code></td></tr><tr><td><code>fread</code></td><td>the number of <strong>elements</strong> read</td><td>fewer than requested means the end or an error</td></tr></table><div class="dev misconception"><p class="dev-label">⚠ “The result of <code>fgetc</code> may be put in a <code>char</code>”</p><p>It may not. <code>fgetc</code> returns an <code>int</code>, and that value is either <strong>a character in 0–255</strong> or <strong><code>EOF</code></strong> (usually −1). The moment it goes into a <code>char</code> the two can no longer be told apart — on an implementation where <code>char</code> is signed, a 0xFF byte becomes −1 and is identical to <code>EOF</code>, and where it is unsigned, <code>EOF</code> becomes 255 and it never ends. So <code>int c; while ((c = fgetc(f)) != EOF)</code> is the canonical form. This one line is also the idiom most often miscopied in introductions to C.</p></div><h3>55.3 Lines longer than the buffer</h3><p>That is what the last part of the example shows. If the buffer is too small <code>fgets</code> reads <strong>only that far</strong> and stops — it is not an error. So without checking whether a newline is in there, what you believed to be “one line” may in fact be the front piece of a line.</p><p>Read <code>one\n</code> with a 4-byte buffer and it comes split in two: <code>one</code> (no newline) and <code>\n</code> (a newline only). When code handling long lines in the field forgets this fact, one line is quietly processed as two records.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What is done when the line length is unknown?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>There are three roads. First, <strong>a big enough buffer plus a newline check</strong> — if there is no newline, read the rest away or treat it as an error. Second, <strong>reading while growing it yourself</strong> — gather one character at a time with <code>fgetc</code> and enlarge the buffer when needed (chapter 40′s dynamic allocation). Third, <strong>a function the platform gives</strong> — POSIX’s <code>getline</code> enlarges by itself, but it is not standard. To write with the standard alone the second is the right answer, and using a library so as not to write that code every time is Part XII’s story.</p></div></div><h3>55.4 Text mode and binary mode</h3><p>That is the <code>b</code> attached to <code>fopen</code>’s second argument. On the Unix family there is no difference, but on Windows there is — text mode turns <code>\n</code> into <code>\r\n</code> when writing and turns it back when reading. So opening a binary file in text mode quietly changes the bytes.</p><div class="dev platform"><p class="dev-label">⊞ Platform note — Windows’ line-ending conversion</p><p>When handling binary data (images, compressed files, serialised structs) always open with <code>"rb"</code> or <code>"wb"</code>. Open in text mode and a 0x0A byte grows into 0x0D 0x0A, and on reading it shrinks the other way — <strong>the file’s size and content differ</strong>. It is the place where the CR/LF story seen in chapter 9 is replayed in the file API.</p><p>Conversely, opening a text file in binary mode on Windows leaves a <code>\r</code> at the end of the line, so a line read with <code>fgets</code> ends with an invisible <code>\r</code> — the cause of a failing comparison is often here.</p></div><div class="dev antipattern"><p class="dev-label">✗ <code>fflush(stdin)</code></p><pre><code data-lang="c">scanf("%d", &amp;n);
+fflush(stdin);      /* the intent is to empty the input buffer — it is outside the contract */</code></pre><p><code>fflush</code> is a function for <strong>output</strong> streams. Using it on an input stream is behaviour the standard does not define (some implementations merely support it as an extension), and it cannot be used in portable code. To throw away the remaining input you must read it away yourself.</p><pre><code data-lang="c">int c;
+while ((c = getchar()) != '\n' &amp;&amp; c != EOF) { }</code></pre></div><h3>55.5 File position and size</h3><p><code>fseek</code> and <code>ftell</code> handle position, but with restrictions. On a text stream the value <code>ftell</code> returns is <strong>not guaranteed to be a byte offset</strong>, and <code>fseek</code> is safe only with that value or with the combination of <code>SEEK_SET</code> and 0. On a large file <code>long</code> may be too small, so the non-standard <code>fseeko</code> and <code>ftello</code> (POSIX) or a platform API become necessary.</p><p>The idiom “to learn a file’s size, go to the end and <code>ftell</code>” is safe only in binary mode, and even then it is meaningless if the file is changing.</p><div class="dev recap"><p class="dev-label">☰ Recap</p><p><code>&lt;stdio.h></code> streams in summary.</p><table><tr><th><strong>place</strong></th><th><strong>rule</strong></th><th><strong>if got wrong</strong></th></tr><tr><td><code>fopen</code></td><td>check for null</td><td>null dereference</td></tr><tr><td>writing</td><td>check the return value (optional), check <code>fclose</code> (compulsory)</td><td>quiet data loss</td></tr><tr><td>loop control</td><td>by the reading return value</td><td>misuse of <code>feof</code> — the last value duplicated</td></tr><tr><td><code>fgetc</code></td><td>put it in an <code>int</code></td><td>confusing <code>EOF</code> with 0xFF</td></tr><tr><td><code>fgets</code></td><td>check for a newline</td><td>a long line processed split</td></tr><tr><td>binary files</td><td><code>"rb"</code>/<code>"wb"</code></td><td>byte corruption on Windows</td></tr><tr><td>emptying input</td><td>read it away yourself</td><td><code>fflush(stdin)</code> is outside the contract</td></tr><tr><td>position</td><td>byte meaning only in binary mode</td><td>misunderstanding in text mode</td></tr></table></div><p>We have seen the skeleton of streams. The next chapter is the functions that actually read and write on top of it — and the story of a function <strong>deleted</strong> from the standard.</p>
+<div class="nav"><a href="ch54.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch56.html">Next →</a></div>
+</div></main></body></html>

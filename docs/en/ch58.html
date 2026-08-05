@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>58 The drawer of odds and ends — &lt;stdlib.h&gt; — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2>58 The drawer of odds and ends — <code>&lt;stdlib.h></code></h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>A drawer named, exactly as it says, “the standard library”. Functions that turn strings into numbers, random numbers, dynamic allocation, program termination, sorting and binary search are all in here together. In place of anything in common there are many traps — in particular <strong>conversion functions with no way to report failure</strong> and <strong>the subtle differences between the terminating functions</strong> are this chapter’s two axes.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 25 read input with <code>fgets</code> and parsed it with <code>sscanf</code>, and chapter 53 said <code>sscanf</code> does not tell you “where and why it failed”. Then what is the most accurate way to turn one string into an integer?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>The <code>strtol</code> family. This function tells three things at once — the converted value, <strong>where it stopped</strong> (the end pointer), and whether the range was exceeded (<code>errno</code> being <code>ERANGE</code>). <code>atoi</code> tells none of them. Its name is short so it appears often in introductions, but it is a function not used in the field.</p></div></div><h3>58.1 Conversion — why <code>atoi</code> is abandoned</h3><div><div><p><code>examples/ch58/convert.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+#include &lt;stdlib.h>
+#include &lt;errno.h>
+#include &lt;limits.h>
+#include &lt;string.h>
+
+/* 문자열을 수로 바꾸는 세 가지 방법과 그 차이 */
+static void try_atoi(const char *s)
+{
+    printf("  atoi(\"%s\") = %d\n", s, atoi(s));   /* 실패를 알릴 방법이 없다 */
+}
+
+static void try_strtol(const char *s)
+{
+    errno = 0;
+    char *end;
+    long v = strtol(s, &amp;end, 10);
+
+    if (end == s)                 printf("  strtol(\"%s\"): 숫자가 아님\n", s);
+    else if (errno == ERANGE)     printf("  strtol(\"%s\"): 범위 밖 (ERANGE)\n", s);
+    else if (*end != '\0')        printf("  strtol(\"%s\"): %ld, 남은 글자 [%s]\n", s, v, end);
+    else                          printf("  strtol(\"%s\"): %ld (온전)\n", s, v);
+}
+
+int main(void)
+{
+    const char *cases[] = { "42", "abc", "42abc", "99999999999999999999", " 7", "" };
+
+    printf("atoi — 실패와 0 을 구별할 수 없다:\n");
+    for (size_t i = 0; i &lt; sizeof cases / sizeof cases[0]; i++) try_atoi(cases[i]);
+
+    printf("strtol — 무엇이 잘못됐는지 말해 준다:\n");
+    for (size_t i = 0; i &lt; sizeof cases / sizeof cases[0]; i++) try_strtol(cases[i]);
+
+    printf("LONG_MAX = %ld\n", LONG_MAX);
+    return 0;
+}
+</code></pre></div><div><p>Output</p><pre><code>atoi — 실패와 0 을 구별할 수 없다:
+  atoi("42") = 42
+  atoi("abc") = 0
+  atoi("42abc") = 42
+  atoi("99999999999999999999") = -1
+  atoi(" 7") = 7
+  atoi("") = 0
+strtol — 무엇이 잘못됐는지 말해 준다:
+  strtol("42"): 42 (온전)
+  strtol("abc"): 숫자가 아님
+  strtol("42abc"): 42, 남은 글자 [abc]
+  strtol("99999999999999999999"): 범위 밖 (ERANGE)
+  strtol(" 7"): 7 (온전)
+  strtol(""): 숫자가 아님
+LONG_MAX = 9223372036854775807
+</code></pre></div></div><p>Put the output side by side and the difference is clear.</p><ul><li><code>atoi("abc")</code> is 0. But <code>atoi("0")</code> is 0 too — <strong>failure and success cannot be distinguished.</strong></li><li><code>atoi("42abc")</code> is 42. It quietly ignores the rubbish attached behind.</li><li><code>atoi("99999999999999999999")</code> came out as −1. The standard says only that this case is <strong>undefined behaviour</strong> — −1 came out by accident; any value at all could come out and nothing is guaranteed.</li></ul><p><code>strtol</code> distinguished, for the same inputs, “not a number”, “characters left over” and “out of range” separately. The checking code looks long, but that length is precisely <strong>the real complexity of handling a string that came from outside</strong>.</p><div class="dev antipattern"><p class="dev-label">✗ Reading user input with <code>atoi</code></p><pre><code data-lang="c">int port = atoi(argv[1]);      /* "0" and "bad input" are the same value */</code></pre><p>Mended, it goes like this.</p><pre><code data-lang="c">errno = 0;
+char *end;
+long v = strtol(argv[1], &amp;end, 10);
+if (end == argv[1] || *end != '\0') { /* not a number */ }
+else if (errno == ERANGE || v &lt; 1 || v > 65535) { /* out of range */ }
+else port = (int)v;</code></pre><p><strong>Setting <code>errno</code> to 0 just before the call</strong> is the convention (chapter 62). Without it you read the value a previous call left behind.</p></div><p>Real conversion is the same. <code>atof</code> cannot report failure, while <code>strtod</code> gives an end pointer and <code>ERANGE</code>. Moreover <code>strtod</code> may, according to the locale, read the decimal point as <code>,</code> rather than <code>.</code> (chapter 59) — a point always to be remembered when parsing a data format.</p><h3>58.2 Dynamic allocation — four functions and their contracts</h3><p>We organise what chapter 40 taught, function by function.</p><table><tr><th><strong>function</strong></th><th><strong>what it does</strong></th><th><strong>contract and traps</strong></th></tr><tr><td><code>malloc(n)</code></td><td>allocate n bytes</td><td>the content is undetermined. null on failure</td></tr><tr><td><code>calloc(k, n)</code></td><td>allocate k×n bytes + fill with zeros</td><td>★ <strong>the implementation</strong> checks the multiplication for overflow</td></tr><tr><td><code>realloc(p, n)</code></td><td>change the size</td><td>★ on failure the original is kept — assigning the return value straight to the original leaks</td></tr><tr><td><code>free(p)</code></td><td>release</td><td>null is safe. freeing twice is outside the contract</td></tr><tr><td><code>aligned_alloc(a, n)</code></td><td>aligned allocation (C11)</td><td>n must be a multiple of a</td></tr></table><p><code>calloc</code>’s multiplication check is where it is useful. <code>malloc(k * n)</code> may have the product wrap round as seen in chapter 57, but for <code>calloc(k, n)</code> the standard requires the implementation to check for overflow and return null. <strong>If sizes must be multiplied, <code>calloc</code> is the safer choice.</strong></p><div class="dev antipattern"><p class="dev-label">✗ Assigning <code>realloc</code>’s return value straight to the original</p><pre><code data-lang="c">buf = realloc(buf, new_size);   /* on failure the original address is lost → a leak */
+if (!buf) return -1;</code></pre><p>The correct idiom goes through a temporary variable.</p><pre><code data-lang="c">char *tmp = realloc(buf, new_size);
+if (!tmp) { /* buf is still valid — it can be cleaned up or gone on using */ return -1; }
+buf = tmp;</code></pre><p>It is why chapter 56′s line-reading example used this idiom.</p></div><p><code>realloc</code> has two more peculiar rules. <code>realloc(NULL, n)</code> is the same as <code>malloc(n)</code>, and <code>realloc(p, 0)</code> is <strong>implementation-defined</strong> (C23 tidied it up explicitly so). There is old code that uses the latter as “release”, but portable code uses <code>free</code>.</p><h3>58.3 Termination — the difference between four ways</h3><table><tr><th><strong>way</strong></th><th><strong>cleanup</strong></th><th><strong>where it is used</strong></th></tr><tr><td><code>return</code> (in main)</td><td>the same as <code>exit</code></td><td>normal termination</td></tr><tr><td><code>exit(status)</code></td><td>runs <code>atexit</code>, flushes and closes streams</td><td>normal termination (from deep inside)</td></tr><tr><td><code>quick_exit(status)</code></td><td>runs only <code>at_quick_exit</code>, no flush</td><td>quick termination (C11)</td></tr><tr><td><code>_Exit(status)</code></td><td>does nothing</td><td>special places such as a child process</td></tr><tr><td><code>abort()</code></td><td>no cleanup, an abnormal-termination signal</td><td>an unrecoverable error</td></tr></table><p>The heart of it is <strong>the buffer</strong>. <code>exit</code> empties the streams while <code>_Exit</code> and <code>abort</code> do not — the “output vanishing” accident seen in chapter 56 happens here. It is also why the last log of a program dying by <code>abort</code> is not seen.</p><p>Functions registered with <code>atexit</code> are called in the <strong>reverse</strong> order of registration, and the standard guarantees registration of at least 32. Calling <code>exit</code> again inside a registered function is outside the contract.</p><h3>58.4 Sorting and searching — <code>qsort</code> and <code>bsearch</code></h3><p>The functions chapter 54 foretold. Written out exactly, the contract is this.</p><ul><li>The comparator is <code>int cmp(const void *a, const void *b)</code> and returns a negative, zero or positive value. <strong>Making it by subtraction can overflow</strong> — <code>return *x - *y;</code> is wrong for large values. <code>return (*x > *y) - (*x &lt; *y);</code> is the safe idiom.</li><li>The comparator must be a <strong>total order</strong> (chapter 69). If it is inconsistent the result is not merely jumbled — it can trespass outside the array.</li><li><code>qsort</code> is <strong>not a stable sort.</strong> The relative order of equal values is not preserved. If it is needed, lay the original index on top in the comparator to break ties.</li><li>Worst-case performance is settled by the implementation. The standard guarantees nothing — the reason chapter 54′s complexity attack was possible.</li><li><code>bsearch</code> presumes <strong>a sorted array</strong>. If it is not sorted the result is meaningless.</li></ul><h3>58.5 Random numbers — the limits of <code>rand</code></h3><p><code>rand</code> returns a number from 0 to <code>RAND_MAX</code>. <code>RAND_MAX</code> is guaranteed only to be at least 32767, so if a larger range is needed it must be composed.</p><div class="dev antipattern"><p class="dev-label">✗ Making a range with <code>rand() % n</code></p><pre><code data-lang="c">int dice = rand() % 6 + 1;      /* the values are not even */</code></pre><p>If <code>RAND_MAX + 1</code> is not a multiple of <code>n</code>, the values at the front come out more often. If the range is small the bias is small too, but as <code>n</code> grows it becomes noticeable. Moreover some old implementations had poor quality in the low bits, so <code>% 2</code> even came out alternating.</p><p>If an even distribution is needed, use <strong>rejection sampling</strong> — throw away a value that exceeds the range and draw again. And <strong>never use it for secrets</strong> (Part XII’s random number story).</p></div><p>Give no seed with <code>srand</code> and it is the same as <code>srand(1)</code> — the same sequence every time. <code>srand(time(NULL))</code> is a common idiom, but two processes started in the same second get the same sequence.</p><h3>58.6 The environment and processes</h3><p><code>getenv</code> returns an environment variable, but that string <strong>must not be modified</strong> and may not be valid after a subsequent <code>setenv</code>-like call. If the value is needed, copy it.</p><p><code>system</code> raises a shell and executes a command. If user input is mixed into that string it becomes <strong>command injection</strong> — the same class as the classic vulnerability of web applications. Within the standard there is no alternative, and the right answer is to use a platform API (<code>posix_spawn</code>, <code>CreateProcess</code>) and pass the arguments as an array.</p><div class="dev realcase"><p class="dev-label">◉ A real bug made by subtraction in a <code>qsort</code> comparator</p><p>A comparator of the form <code>return a - b;</code> is the most common mistake in sorting code. If the values are near <code>INT_MIN</code> the subtraction overflows and the sign flips, and the sort quietly gives a wrong result — since the signed overflow learned in chapter 7 is outside the contract, the symptom even changes with the compiler’s optimisation.</p><p>This pattern has been reported repeatedly in kernels, databases and game engines alike, common enough that static analysis tools catch it with a rule of their own. The mend is one line — do not subtract, compare.</p></div><div class="dev recap"><p class="dev-label">☰ Recap</p><p><code>&lt;stdlib.h></code> in summary.</p><table><tr><th><strong>what you want to do</strong></th><th><strong>what to use</strong></th><th><strong>what to avoid</strong></th></tr><tr><td>string → integer</td><td><code>strtol</code> + end pointer + <code>errno</code></td><td><code>atoi</code></td></tr><tr><td>string → real</td><td><code>strtod</code> (mind the locale)</td><td><code>atof</code></td></tr><tr><td>allocate an array</td><td><code>calloc(k, n)</code></td><td><code>malloc(k * n)</code></td></tr><tr><td>change the size</td><td><code>realloc</code> via a temporary variable</td><td>assigning straight to the original</td></tr><tr><td>normal termination</td><td><code>return</code>/<code>exit</code></td><td><code>_Exit</code> (buffer loss)</td></tr><tr><td>sorting</td><td><code>qsort</code> + a total-order comparator</td><td>a subtracting comparator, assuming stability</td></tr><tr><td>random numbers</td><td>rejection sampling, a generator fit for the purpose</td><td><code>rand() % n</code>, using it for secrets</td></tr><tr><td>external commands</td><td>an argument array through a platform API</td><td>joining input into <code>system</code></td></tr></table></div><p>The drawer is tidied. The next chapter is the functions that handle a single character — and the fact that those functions are tied to the global state called the locale.</p>
+<div class="nav"><a href="ch57.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch59.html">Next →</a></div>
+</div></main></body></html>
