@@ -99,17 +99,14 @@ GCC·Clang의 공식 문서가 가장 정확하다.
 
 찾아 둘 만한 문서 번호는 이렇다.
 
-#align(center, table(
+#dtable(
   columns: 3,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left, left),
   [*표준판*], [*정식 번호*], [*무료 초안*],
   [C23], [ISO/IEC 9899:2024], [N3220],
   [C17], [ISO/IEC 9899:2018], [N2176],
   [C11], [ISO/IEC 9899:2011], [N1570],
   [C99], [ISO/IEC 9899:1999], [N1256 (정오표 반영판)],
-))
+)
 
 받는 곳은 WG14의 문서 목록이다 — `open-std.org` 아래
 `jtc1/sc22/wg14/www/docs/`에 문서 번호 그대로 올라와 있다(예를 들어

@@ -52,11 +52,8 @@ long long  >  long  >  int  >  short  >  char / bool
 
 == 어떤 변환이 어떤 위험을 부르는가
 
-#align(center, table(
+#dtable(
   columns: 3,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left, left),
   [*변환*], [*일어나는 일*], [*위험*],
   [부호 있는 → 부호 없는], [2의 보수 값이 그대로 재해석된다], [음수가 거대한 값이 된다],
   [부호 없는 → 부호 있는], [담기면 그대로, 아니면 구현 정의], [경계에서 값이 바뀐다],
@@ -67,7 +64,7 @@ long long  >  long  >  int  >  short  >  char / bool
   [포인터 → `void *`], [무손실], [타입 정보만 잃는다],
   [`void *` → 다른 포인터], [무손실], [정렬이 맞지 않으면 계약 밖(32장)],
   [정수 → 포인터], [구현 정의], [출처(provenance)를 잃는다(12장)],
-))
+)
 
 == 조용한 변환이 일어나는 자리 목록
 

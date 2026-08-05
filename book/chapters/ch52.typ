@@ -141,11 +141,8 @@
 #recap[
   문자열 어휘 요약.
 
-  #align(center, table(
-    columns: 3,
-    stroke: 0.5pt + rgb("#cccccc"),
-    inset: 5pt,
-    align: (left, left, left),
+  #dtable(
+  columns: 3,
     [*함수*], [*하는 일*], [*실패·소유*],
     [`u8str_create(alloc, cap)`], [소유 문자열 생성], [꾸러미 반환, `_destroy` 필요],
     [`u8str_borrow(buf, cap)`], [남의 버퍼 위에 문자열], [할당 없음, 파괴 없음],
@@ -156,7 +153,7 @@
     [`u8str_view_slice`], [부분 뷰], [복사 없음 — 원본 수명에 묶임],
     [`u8str_as_cstr`], [NUL 종단 포인터], [복사 없음],
     [`u8str_view_to_cstr`], [뷰 → C 문자열], [할당자 필요],
-  ))
+)
 ]
 
 문자열을 안전하게 담고 자를 수 있게 됐다. 그런데 아직 *만드는* 일이

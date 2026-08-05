@@ -100,11 +100,8 @@ $ ./hello
 
 C 표준은 토큰을 여섯 갈래로 나눈다.
 
-#align(center, table(
+#dtable(
   columns: 3,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left, left),
   [*갈래*], [*예*], [*메모*],
   [키워드(keyword)], [`int` `if` `return` `sizeof` `struct`], [이름으로 쓸 수 없다],
   [식별자(identifier)], [`x` `main` `buffer_len`], [이름. 첫 글자는 숫자가 아니다],
@@ -112,7 +109,7 @@ C 표준은 토큰을 여섯 갈래로 나눈다.
   [문자열 리터럴], [`"hello"`], [배열이지 상수가 아니다(34장)],
   [구두점(punctuator)], [`+` `;` `{` `->` `<<=`], [연산자와 괄호·세미콜론],
   [헤더 이름], [`<stdio.h>`], [전처리 단계에서만 쓰인다],
-))
+)
 
 두 가지를 알아 두면 오류 메시지를 읽는 눈이 생긴다.
 

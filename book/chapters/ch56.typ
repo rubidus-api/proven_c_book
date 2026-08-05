@@ -150,11 +150,8 @@
 #recap[
   제11부 전체 요약 — 문제와 답.
 
-  #align(center, table(
-    columns: 3,
-    stroke: 0.5pt + rgb("#cccccc"),
-    inset: 5pt,
-    align: (left, left, left),
+  #dtable(
+  columns: 3,
     [*47장의 문제*], [*답*], [*장*],
     [크기를 모르는 문자열], [뷰(ptr+size), 거부하되 자르지 않기], [50·52],
     [확인되지 않는 실패], [값으로 오는 에러, `[[nodiscard]]`], [49],
@@ -163,7 +160,7 @@
     [검사되지 않는 콜백], [문서화된 계약, introsort, 키드 해시], [54],
     [바이트의 숨은 타입], [`proven_byte_t`], [50],
     [OS가 없는 환경], [platform 층 분리, 정적 아레나], [56],
-  ))
+)
 ]
 
 이것으로 이 책이 1장에서 밝힌 약속을 지켰다 — C의 문제들을 먼저 보이고,

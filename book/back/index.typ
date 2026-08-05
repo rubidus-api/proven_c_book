@@ -8,4 +8,11 @@
 
 #v(0.4cm)
 
-#make-index()
+#if sys.inputs.at("mode", default: "paged") == "html" [
+  이 판(HTML)에는 쪽 번호가 없으므로 표제어만 싣는다. 쪽 번호가 붙은
+  찾아보기는 PDF 판에 있다.
+
+  #make-index(pages: false)
+] else [
+  #make-index()
+]

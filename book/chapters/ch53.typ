@@ -141,11 +141,8 @@
 #recap[
   형식화·파싱 요약.
 
-  #align(center, table(
-    columns: 3,
-    stroke: 0.5pt + rgb("#cccccc"),
-    inset: 5pt,
-    align: (left, left, left),
+  #dtable(
+  columns: 3,
     [*하는 일*], [*API*], [*메모*],
     [화면에 한 줄], [`proven_println(fmt, ARG…)`], [에러 반환하되 강요 안 함],
     [문자열로 형식화], [`proven_u8str_append_fmt(&s, …)`], [모자라면 거부],
@@ -155,7 +152,7 @@
     [스캐너 시작], [`proven_scan_init(view)`], [커서를 가진 객체],
     [하나씩 읽기], [`proven_scan_i64/f64/str`], [꾸러미로 결과와 실패],
     [서식으로 읽기], [`proven_scan_fmt_cursor(…)`], [중간 실패 시 부분 변경 주의],
-  ))
+)
 ]
 
 문자열을 담고, 만들고, 되읽는 어휘가 갖춰졌다. 다음은 *여럿을 담는* 도구

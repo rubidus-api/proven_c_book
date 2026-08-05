@@ -190,11 +190,8 @@ $ cc -Wall -Wextra hello.c -o hello
 어떻게 여기까지 왔는지 호출의 사슬을 되짚는다. 표준 도구는 GNU의
 `gdb`와 LLVM의 `lldb`이고, 명령 이름만 다를 뿐 하는 일은 같다.
 
-#align(center, table(
+#dtable(
   columns: 3,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left, left),
   [*하고 싶은 일*], [*gdb 명령*], [*뜻*],
   [여기서 멈춰라], [`break sum_all`], [중단점(breakpoint)],
   [시작], [`run`], [프로그램 실행],
@@ -203,7 +200,7 @@ $ cc -Wall -Wextra hello.c -o hello
   [여기까지 어떻게 왔나], [`backtrace`], [호출 사슬(call stack)],
   [이 변수가 바뀌면 멈춰라], [`watch s`], [감시점(watchpoint)],
   [함수 끝날 때까지], [`finish`], [반환값까지 보여 준다],
-))
+)
 
 예제로 쓸 프로그램은 이렇다. 합이 150이어야 하는데 100이 나온다.
 

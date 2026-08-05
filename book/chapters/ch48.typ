@@ -120,11 +120,8 @@ $ cc -std=c23 -Wall -Wextra -Werror -Ivendor/proven/include \
 #recap[
   이 장의 요약.
 
-  #align(center, table(
-    columns: 2,
-    stroke: 0.5pt + rgb("#cccccc"),
-    inset: 5pt,
-    align: (left, left),
+  #dtable(
+  columns: 2,
     [*무엇*], [*어떻게*],
     [헤더], [`#include <proven.h>` 하나],
     [빌드], [`src/proven/*.c`를 프로그램과 함께 컴파일],
@@ -132,7 +129,7 @@ $ cc -std=c23 -Wall -Wextra -Werror -Ivendor/proven/include \
     [출력], [`proven_println("... {} ...", PROVEN_ARG(x))`],
     [서식 지정], [`{:>8}` `{:<8}` `{:.3}` — 콜론 뒤],
     [대가], [인자마다 `PROVEN_ARG`, 익숙한 `%d`와 다른 문법],
-  ))
+)
 ]
 
 첫 프로그램이 돌았다. 그런데 방금 쓴 `proven_println`도 사실은 실패할 수

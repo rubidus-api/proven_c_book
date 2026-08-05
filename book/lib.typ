@@ -124,26 +124,62 @@
 #let idx(term) = [#metadata(term)<idx-entry>]
 
 // 책 끝에서 호출한다. 모든 표시를 모아 가나다순으로 정리한다.
-#let make-index() = context {
+#let make-index(pages: true) = context {
   let entries = query(<idx-entry>)
   let terms = ()
-  let pages = ()
+  let page-list = ()
   for e in entries {
     let term = e.value
     let p = counter(page).at(e.location()).first()
     let i = terms.position(x => x == term)
     if i == none {
       terms.push(term)
-      pages.push((p,))
-    } else if not pages.at(i).contains(p) {
-      pages.at(i).push(p)
+      page-list.push((p,))
+    } else if not page-list.at(i).contains(p) {
+      page-list.at(i).push(p)
     }
   }
   let sorted-terms = terms.sorted()
   set par(first-line-indent: 0em, justify: false, leading: 0.7em)
   columns(2, gutter: 1.2em)[
     #for t in sorted-terms [
-      #t #box(width: 1fr, repeat[.]) #pages.at(terms.position(x => x == t)).map(str).join(", ") \
+      #if pages [
+        #t #box(width: 1fr, repeat[.]) #page-list.at(terms.position(x => x == t)).map(str).join(", ") \\
+      ] else [
+        #t \\
+      ]
     ]
   ]
+}
+
+// ── 모드 인지 표 ─────────────────────────────────────
+// PDF 에서는 Typst table, HTML 에서는 진짜 <table> 로 나간다.
+// 첫 줄(columns 개수만큼)을 머리글로 본다.
+#let dtable(columns: 2, ..cells) = {
+  let items = cells.pos()
+  if sys.inputs.at("mode", default: "paged") == "html" {
+    let rows = ()
+    let i = 0
+    while i < items.len() {
+      rows.push(items.slice(i, calc.min(i + columns, items.len())))
+      i = i + columns
+    }
+    html.elem("table", {
+      let first = true
+      for r in rows {
+        let tag = if first { "th" } else { "td" }
+        html.elem("tr", {
+          for c in r { html.elem(tag, c) }
+        })
+        first = false
+      }
+    })
+  } else {
+    align(center, table(
+      columns: columns,
+      stroke: 0.5pt + rgb("#cccccc"),
+      inset: 5pt,
+      ..items,
+    ))
+  }
 }

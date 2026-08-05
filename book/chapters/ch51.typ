@@ -75,18 +75,15 @@ void                  proven_u8str_destroy(proven_allocator_t alloc,
 #recap[
   세 가지 기억의 출처 비교.
 
-  #align(center, table(
-    columns: 4,
-    stroke: 0.5pt + rgb("#cccccc"),
-    inset: 5pt,
-    align: (left, left, left, left),
+  #dtable(
+  columns: 4,
     [], [*힙*], [*아레나*], [*풀(pool)*],
     [주는 방식], [임의 크기], [앞에서부터 자름], [고정 크기 칸],
     [개별 해제], [있음], [없음(리셋)], [있음(칸 반납)],
     [단편화], [생길 수 있음], [없음], [없음],
     [속도], [보통], [매우 빠름], [매우 빠름],
     [맞는 자리], [수명이 제각각], [수명이 같은 무리], [같은 크기를 반복],
-  ))
+)
 ]
 
 #idx("풀(pool)")풀(`proven_pool_t`)은 세 번째 갈래다. 같은 크기의 객체를 반복해서 만들고

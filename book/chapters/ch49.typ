@@ -147,16 +147,13 @@ note: declared here
 방식을 갈아 끼울 수 있다는 것이다(56장). 구분은 이렇게 기억하면 된다.
 
 #recap[
-  #align(center, table(
-    columns: 3,
-    stroke: 0.5pt + rgb("#cccccc"),
-    inset: 5pt,
-    align: (left, left, left),
+  #dtable(
+  columns: 3,
     [*상황*], [*예*], [*라이브러리의 처리*],
     [바깥 세계의 실패], [기억 부족, 파일 없음, 자리 부족], [에러를 값으로 반환],
     [호출자의 계약 위반], [있어서는 안 될 널, 파괴한 객체 재사용], [패닉 (또는 미정의)],
     [무시해도 좋은 실패], [콘솔 출력 실패], [에러를 반환하되 강요하지 않음],
-  ))
+)
 ]
 
 #realcase[

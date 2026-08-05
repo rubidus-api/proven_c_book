@@ -1,11 +1,16 @@
 # Proven C Book — proven 라이브러리에 기반한 모던 C 입문
 
+*[English README](README-en.md)*
+
 C를 처음 배우는 사람을 위한 한국어 책이다. 문법 목록이 아니라 *컴퓨터가
 어떻게 생겼는지*에서 출발해, 오늘의 표준(C23)을 기본값으로 삼고, 마지막
 부에서 [proven](https://github.com/rubidus-api) C 라이브러리의 매뉴얼로
 이어진다.
 
-- **현재 판**: v0.1.0 — [dist/proven_c_book-v0.1.0.pdf](dist/proven_c_book-v0.1.0.pdf)
+- **현재 판**: v0.1.0 — **초안(draft)**
+- 한국어: [PDF](dist/proven_c_book-v0.1.0.pdf) · [웹으로 읽기](https://rubidus-api.github.io/proven_c_book/ko/)
+- English: [PDF](dist/proven_c_book-v0.1.0-en.pdf) · [Web](https://rubidus-api.github.io/proven_c_book/en/) — 번역 진행 중
+- 묶음 내려받기: [ko zip](dist/proven_c_book-v0.1.0-ko.zip) · [en zip](dist/proven_c_book-v0.1.0-en.zip) · [전체 zip](dist/proven_c_book-v0.1.0-all.zip)
 - 12부 58장 + 부록 A~E + 찾아보기, 약 570쪽
 - 이 저장소가 최신본이다. 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
@@ -22,8 +27,10 @@ C를 처음 배우는 사람을 위한 한국어 책이다. 문법 목록이 아
 ## 빌드
 
 ```sh
-# 예제 검증 + PDF 생성
-TYPST=/path/to/typst FONT_PATH=/path/to/fonts scripts/build-book.sh
+TYPST=/path/to/typst FONT_PATH=/path/to/fonts scripts/build-book.sh     # 예제 검증 + 한국어 PDF
+TYPST=... FONT_PATH=... scripts/build-book-en.sh                        # 영어판 PDF
+TYPST=... FONT_PATH=... scripts/build-html.sh                           # HTML (docs/, GitHub Pages)
+scripts/release.sh                                                      # dist/ 에 zip 릴리스
 ```
 
 - Typst 0.15 이상, 본문 글꼴 Noto Serif/Sans CJK KR, 코드 글꼴 D2Coding.
@@ -32,7 +39,9 @@ TYPST=/path/to/typst FONT_PATH=/path/to/fonts scripts/build-book.sh
 ## 구성
 
 ```
-book/       Typst 원고 (chapters/, appendix/, front/, back/, parts/)
+book/       Typst 원고 — 한국어판 (chapters/, appendix/, front/, back/, parts/)
+book-en/    Typst 원고 — 영어판(번역 진행 중)
+docs/       GitHub Pages 가 서비스하는 HTML 판
 examples/   본문에 실리는 예제 소스 — 전부 검증 대상
 scripts/    빌드와 검증
 vendor/     proven 라이브러리 스냅샷 (예제 링크용)

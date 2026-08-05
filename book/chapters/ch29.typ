@@ -202,11 +202,8 @@ error: operand of ‘?:’ changes signedness from ‘int’ to ‘unsigned int�
 꺼내 왔으므로(17장의 최소 집합에서 시작했다), 여기서 전체 지도를 보는
 것이 처음이다. 우선순위와 결합은 부록 A에 있다.
 
-#align(center, table(
+#dtable(
   columns: 3,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left, left),
   [*갈래*], [*연산자*], [*한 줄 소개*],
   [산술], [`+ - * / %`], [`%`는 정수에만. 나눗셈은 0을 향해 버린다(24장)],
   [증감], [`++ --`], [전위는 바꾸고 나서, 후위는 바꾸기 전 값(28장)],
@@ -220,7 +217,7 @@ error: operand of ‘?:’ changes signedness from ‘int’ to ‘unsigned int�
   [크기·정렬], [`sizeof alignof`], [값이 아니라 타입을 묻는다. 대개 평가되지 않는다],
   [형변환], [`(타입)`], [명시적 변환. 필요할 때만(24·25장)],
   [쉼표], [`,`], [왼쪽을 평가해 버리고 오른쪽이 값이 된다],
-))
+)
 
 표에서 두 항목만 따로 짚는다.
 

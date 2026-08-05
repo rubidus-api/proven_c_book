@@ -4,6 +4,9 @@
 // 이 책의 판 번호. 갱신할 때마다 여기만 고친다 (VERSION.md 와 함께).
 #let book-version = "v0.1.0"
 #let book-date = "2026년 8월"
+#let book-updated = "2026-08-05"          // 최종 수정일
+#let book-status = "초안(draft)"           // 판의 성격
+#let html-mode = sys.inputs.at("mode", default: "paged") == "html"
 #let book-repo = "https://github.com/rubidus-api"
 
 #set document(title: "Proven C Book " + book-version, author: "rubidus")
@@ -18,20 +21,56 @@
 
 // ── 표제 ──────────────────────────────────────────────
 #page(numbering: none)[
-  #v(6cm)
+  #v(3.2cm)
   #align(center)[
     #text(font: ("Noto Sans CJK KR",), size: 26pt, weight: "bold")[Proven C Book]
     #v(0.6cm)
     #text(size: 13pt)[proven 라이브러리에 기반한 모던 C 입문]
-    #v(1.2cm)
+    #v(0.9cm)
+    #box(inset: (x: 10pt, y: 5pt), radius: 3pt, fill: rgb("#f3e9e6"),
+      stroke: 0.7pt + rgb("#b0483c"))[
+      #text(size: 10pt, fill: rgb("#8a3226"), weight: "bold")[#book-status]
+    ]
+    #v(0.5cm)
+    #text(size: 10.5pt)[#book-version · 최종 수정 #book-updated]
+    #v(1.0cm)
     #text(size: 11pt)[rubidus]
-    #v(0.3cm)
+    #v(0.25cm)
     #text(size: 9.5pt, fill: rgb("#555555"))[
       rubidus\@gmail.com #h(0.8em) #book-repo
     ]
-    #v(1.6cm)
-    #text(size: 10pt, fill: rgb("#555555"))[#book-version · #book-date]
   ]
+
+  #v(1.2cm)
+  #align(center, block(width: 82%)[
+    #set text(size: 9.7pt)
+    #set par(justify: false, first-line-indent: 0em, leading: 0.72em)
+    #align(left)[
+      *이 책이 하려는 것* — 문법의 목록이 아니라 *계약을 읽는 눈*을
+      기르는 것. 그래서 C 문법보다 컴퓨터를 먼저 이야기하고, 문법은 그
+      이야기가 요구할 때 꺼낸다.
+
+      #v(0.35cm)
+      *누구를 위한 책인가* — 프로그래밍을 처음 시작하는 사람, 그리고 문법은
+      알지만 "그래서 이걸로 무엇을 어떻게 짜야 하는가"에서 막힌 사람.
+      사전 지식은 필요 없고, 컴퓨터 앞에 앉아 있지 않아도 읽힌다.
+
+      #v(0.35cm)
+      *어떻게 읽히는가* — 연습문제도 "직접 해 보라"도 없다. 본문 곳곳의
+      즉문즉답으로 진행하고, 복습은 다음 장 서두의 심화 문답이 대신한다.
+
+      #v(0.35cm)
+      *무엇을 다루는가* — 전산의 기본(비트·기억의 사다리·파이프라인·
+      인코딩·부동소수점)에서 시작해, 첫 프로그램과 개발환경, 값과 흐름,
+      기억과 포인터, 자료의 모양, 정밀과 계약, 여러 파일과 전처리기를
+      지나, C가 반세기째 출하해 온 다섯 가지 버그와 그에 대한 답으로서의
+      proven 라이브러리 매뉴얼까지. C23을 기본값으로 삼는다.
+
+      #v(0.35cm)
+      *약속* — 실린 모든 코드는 매 빌드마다 실제로 컴파일·실행되고, 인쇄된
+      결과는 그 출력을 그대로 옮긴 것이다(GCC·Clang 교차 검증).
+    ]
+  ])
 ]
 
 // ── 판권 ──────────────────────────────────────────────
@@ -67,7 +106,8 @@
 
   #v(0.5cm)
 
-  *#book-version · #book-date*
+  *#book-version · #book-date* — #book-status \
+  최종 수정 #book-updated
 
   #v(0.3cm)
 

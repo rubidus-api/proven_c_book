@@ -52,11 +52,8 @@ C의 기본 자료형이 정확히 무엇무엇인지, 그리고 각자 얼마�
 표준이 못박는 것은 *크기가 아니라 최소 범위*다. "int는 4바이트"라는 흔한
 말은 표준의 문장이 아니라 오늘날 대부분의 플랫폼이 그렇다는 관찰일 뿐이다.
 
-#align(center, table(
+#dtable(
   columns: 4,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left, left, left),
   [*타입*], [*표준이 보장하는 최소 범위*], [*최소 폭*], [*한계 매크로*],
   [`signed char`], [−127 ~ +127], [8비트], [`SCHAR_MIN` `SCHAR_MAX`],
   [`unsigned char`], [0 ~ 255], [8비트], [`UCHAR_MAX`],
@@ -69,7 +66,7 @@ C의 기본 자료형이 정확히 무엇무엇인지, 그리고 각자 얼마�
   [`unsigned long`], [0 ~ 4294967295], [32비트], [`ULONG_MAX`],
   [`long long`], [약 ±9.2×10#super[18]], [64비트], [`LLONG_MIN` `LLONG_MAX`],
   [`unsigned long long`], [0 ~ 약 1.8×10#super[19]], [64비트], [`ULLONG_MAX`],
-))
+)
 
 최소 범위가 −127(−128이 아니라)인 것에 눈이 갈 것이다. 옛 표준이 세 가지
 부호 표현을 모두 허용했기 때문이고(5장), C23이 2의 보수를 못박은 지금은
@@ -87,18 +84,15 @@ char  ≤  short  ≤  int  ≤  long  ≤  long long
 
 *실수형*의 한계는 `<float.h>`가 담당한다. 자주 쓰는 것만 추리면 이렇다.
 
-#align(center, table(
+#dtable(
   columns: 3,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left, left),
   [*매크로*], [*뜻*], [*IEEE 754 double 기준*],
   [`FLT_DIG` `DBL_DIG`], [믿을 수 있는 십진 자릿수], [6 / 15],
   [`FLT_MAX` `DBL_MAX`], [표현 가능한 최댓값], [약 1.8×10#super[308]],
   [`FLT_MIN` `DBL_MIN`], [정규화된 최솟값], [약 2.2×10#super[−308]],
   [`FLT_EPSILON` `DBL_EPSILON`], [1.0과 구분되는 최소 차이], [약 2.2×10#super[−16]],
   [`FLT_RADIX`], [지수의 밑], [2],
-))
+)
 
 `DBL_EPSILON`은 40장에서 실수를 비교할 때 다시 만난다 — "같다"를 판단하는
 기준을 세울 때 쓰는 값이다.
@@ -115,11 +109,8 @@ char  ≤  short  ≤  int  ≤  long  ≤  long long
 하드웨어 레지스터가 그렇다. 이런 자리에는 `<stdint.h>`의 고정 폭 타입을
 쓴다.
 
-#align(center, table(
+#dtable(
   columns: 3,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left, left),
   [*갈래*], [*예*], [*뜻*],
   [정확한 폭], [`int8_t` `uint16_t` `int32_t` `uint64_t`], [정확히 그 비트 수. 없으면 제공되지 않는다],
   [최소 폭], [`int_least16_t`], [적어도 그만큼인 것 중 가장 작은 타입],
@@ -127,7 +118,7 @@ char  ≤  short  ≤  int  ≤  long  ≤  long long
   [포인터 크기], [`intptr_t` `uintptr_t`], [포인터를 담을 수 있는 정수(12장의 출처 주의)],
   [최대], [`intmax_t` `uintmax_t`], [가장 넓은 정수],
   [크기·차이], [`size_t` `ptrdiff_t`], [크기와 포인터 차이의 타입],
-))
+)
 
 각각의 한계도 매크로로 있다 — `INT32_MAX`, `UINT64_MAX`, `SIZE_MAX`,
 `PTRDIFF_MAX`처럼. 서식 지정자는 `<inttypes.h>`의 `PRId32` 계열을

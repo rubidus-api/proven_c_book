@@ -24,11 +24,8 @@
 
 자주 만나는 헤더를 갈래로 묶으면 지형이 한눈에 들어온다.
 
-#align(center, table(
+#dtable(
   columns: 2,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left),
   [*갈래*], [*대표 헤더와 내용*],
   [입출력], [`<stdio.h>` — 스트림, printf/scanf 계열, 파일],
   [문자열·기억], [`<string.h>` — 복사·비교·검색, `<ctype.h>` — 문자 분류],
@@ -37,7 +34,7 @@
   [시간·환경], [`<time.h>`, `<stdlib.h>`의 환경 접근],
   [계약·진단], [`<assert.h>`, `<errno.h>`],
   [현대의 보탬], [`<stdbool.h>`(C99, C23에서 불필요해짐), `<stdatomic.h>`·`<threads.h>`(C11), `<stdckdint.h>`(C23 검사 산술)],
-))
+)
 
 이 목록에서 두 가지가 눈에 띈다. 첫째, *얇다* — 자료구조(목록·해시
 표), 정규식, 네트워크, 그래픽이 없다. 둘째, *오래됐다* — 대부분이
@@ -95,11 +92,8 @@ C89에 있던 것들이고, 새로 들어온 것은 손에 꼽는다.
 읽는다. `size_t`를 `%d`로 찍는 코드가 64비트에서 조용히 어긋나는 이유가
 이것이다 — 8바이트를 넣었는데 4바이트만 꺼내 읽는다.
 
-#align(center, table(
+#dtable(
   columns: 3,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left, left),
   [*데이터형*], [*출력 서식*], [*메모*],
   [`int`], [`%d` `%i`], [기본형],
   [`unsigned int`], [`%u` `%x` `%o`], [비트를 볼 때는 16진],
@@ -114,7 +108,7 @@ C89에 있던 것들이고, 새로 들어온 것은 손에 꼽는다.
   [`char *`], [`%s`], [NUL 종단이어야 한다],
   [`void *`], [`%p`], [형식은 구현 정의(implementation-defined)],
   [`bool`], [`%d`], [0 또는 1로 찍힌다],
-))
+)
 
 #misconception[
   "`float`을 찍을 때는 `%f`, `double`은 `%lf`"
@@ -161,11 +155,8 @@ C89에 있던 것들이고, 새로 들어온 것은 손에 꼽는다.
 멈춘 경우다. `set`의 `%15[^,]`는 "쉼표가 아닌 글자를 최대 15개"라는
 뜻으로, 구분자가 있는 줄을 자를 때 쓴다.
 
-#align(center, table(
+#dtable(
   columns: 3,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left, left),
   [*데이터형*], [*입력 서식*], [*인자*],
   [`int`], [`%d`], [`int *`],
   [`unsigned`], [`%u` `%x`], [`unsigned *`],
@@ -179,7 +170,7 @@ C89에 있던 것들이고, 새로 들어온 것은 손에 꼽는다.
   [단어], [`%99s`], [`char[100]` — 폭 필수],
   [글자 집합], [`%15[^,]`], [`char[16]`],
   [건너뛰기], [`%*d`], [읽되 저장하지 않는다],
-))
+)
 
 #realcase[
   서식 하나가 무너뜨린 것 — 형식 문자열 취약점

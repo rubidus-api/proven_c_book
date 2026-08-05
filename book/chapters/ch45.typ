@@ -52,11 +52,8 @@
 *원래 타입 그대로 가지 않기* 때문이다. 25장에서 본 기본 인자
 승격(default argument promotion)이 여기서 실제로 일어난다.
 
-#align(center, table(
+#dtable(
   columns: 3,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left, left),
   [*넘긴 것*], [*실제로 도착하는 것*], [*그래서*],
   [`char`, `signed char`, `unsigned char`], [`int`], [`va_arg(ap, char)`는 틀렸다],
   [`short`, `unsigned short`], [`int`], [`va_arg(ap, int)`로 꺼낸다],
@@ -64,7 +61,7 @@
   [`float`], [`double`], [`va_arg(ap, float)`는 틀렸다],
   [`int` 이상의 정수], [그대로], [—],
   [포인터], [그대로], [단 널 상수는 캐스트가 필요하다],
-))
+)
 
 규칙을 한 줄로 줄이면 이렇다 — *`int`보다 좁은 정수는 `int`가 되고,
 `float`은 `double`이 된다.* 그래서 `printf`에 `float` 전용 서식이 없고
@@ -83,16 +80,13 @@
 그래서 모든 가변 인자 함수는 그 정보를 *바깥에서* 얻어야 하고, 방법은
 결국 셋뿐이다.
 
-#align(center, table(
+#dtable(
   columns: 3,
-  stroke: 0.5pt + rgb("#cccccc"),
-  inset: 5pt,
-  align: (left, left, left),
   [*방식*], [*예*], [*깨지는 방식*],
   [명세 문자열이 알려 준다], [`printf("%d %s", ...)`], [서식과 인자가 어긋나면 UB. 서식이 변수면 검사도 불가],
   [개수·타입을 인자로 받는다], [`sum_n(3, a, b, c)`], [개수를 잘못 세면 없는 인자를 꺼낸다],
   [끝 표지를 약속한다], [`execl(..., (char *)NULL)`], [표지를 빠뜨리면 멈추지 않는다],
-))
+)
 
 세 방식 모두 *사람이 약속을 지켜야* 성립한다는 공통점이 있다. 컴파일러가
 검사해 줄 정보가 애초에 존재하지 않기 때문이다. 47장에서 이것을 "C가

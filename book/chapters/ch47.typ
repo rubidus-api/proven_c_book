@@ -233,11 +233,8 @@ qsort(a, n, sizeof *a, cmp);   /* cmp 는 const void* 를 받는다 */
 여섯을 한 표로 모으면 이 부의 지도가 된다.
 
 #recap[
-  #align(center, table(
-    columns: 3,
-    stroke: 0.5pt + rgb("#cccccc"),
-    inset: 5pt,
-    align: (left, left, left),
+  #dtable(
+  columns: 3,
     [*문제*], [*C가 주는 것*], [*필요한 것*],
     [버퍼 넘침·잘림], [크기를 모르는 문자열 함수], [길이를 지니고 다니는 문자열, 자르지 않는 쓰기],
     [확인되지 않은 실패], [센티널 값과 `errno`], [값으로 오는 에러, 버리면 컴파일 거부],
@@ -245,7 +242,7 @@ qsort(a, n, sizeof *a, cmp);   /* cmp 는 const void* 를 받는다 */
     [불분명한 소유권], [네 가지를 뜻하는 `char *`], [소유와 빌림이 다른 타입],
     [검사되지 않는 콜백], [`void *` 인터페이스], [문서화된 계약과 최악 보장 알고리즘],
     [바이트의 숨은 타입], [앨리어싱 규칙 위반의 UB], [규칙이 면제하는 바이트 타입],
-  ))
+)
 ]
 
 #qa[

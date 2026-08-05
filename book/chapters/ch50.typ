@@ -140,11 +140,8 @@ void *p = malloc(count * sizeof(item_t));   /* count 가 크면 감긴다 */
 #recap[
   이 장의 어휘.
 
-  #align(center, table(
-    columns: 3,
-    stroke: 0.5pt + rgb("#cccccc"),
-    inset: 5pt,
-    align: (left, left, left),
+  #dtable(
+  columns: 3,
     [*이름*], [*무엇*], [*계약*],
     [`proven_byte_t`], [`unsigned char` 별칭], [표현을 보는 유일한 합법 창],
     [`proven_mem_view_t`], [읽기 전용 뷰(ptr+size)], [빌린 것 — 소유자보다 오래 살 수 없다],
@@ -152,7 +149,7 @@ void *p = malloc(count * sizeof(item_t));   /* count 가 크면 감긴다 */
     [`..._slice_checked`], [부분 뷰 만들기], [범위를 넘으면 에러, 자르지 않음],
     [`PROVEN_CKD_MUL/ADD`], [검사 산술], [넘치면 참 — 계산은 버린다],
     [`proven_mem_align_up`], [정렬 올림], [정렬은 2의 거듭제곱],
-  ))
+)
 ]
 
 기억을 *보는* 어휘를 갖췄다. 다음은 기억을 *얻는* 이야기다 — 그리고 그

@@ -154,11 +154,8 @@
 #recap[
   바깥 세계 요약.
 
-  #align(center, table(
-    columns: 3,
-    stroke: 0.5pt + rgb("#cccccc"),
-    inset: 5pt,
-    align: (left, left, left),
+  #dtable(
+  columns: 3,
     [*하는 일*], [*API*], [*조심할 것*],
     [열기·닫기], [`proven_fs_open/close`], [scratch 할당자 필요],
     [읽기], [`proven_fs_read`], [요청량 ≠ 읽은 양],
@@ -170,7 +167,7 @@
     [재현 난수], [`proven_xoshiro256ss_*`], [비밀에 쓰지 않는다],
     [비밀용 난수], [`proven_random_bytes`], [없으면 거짓 — 물러나지 않는다],
     [메모리 매핑], [`proven_mmap_*`], [이유가 있을 때만],
-  ))
+)
 ]
 
 이제 남은 것은 경계다 — 여러 일을 겹쳐 돌리는 방법, 그리고 운영체제가
