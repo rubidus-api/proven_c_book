@@ -37,19 +37,76 @@ that bug cannot be written.
 
 == Views — pointer and length as one
 
-The read-only view looks like this. Two slots of a struct are all of it.
+The vocabulary for pointing at memory is only three, and all are structs of two slots.
+The difference between the three is only *does it own* and *may it be changed*.
 
 ```c
+/* ① an owned lump — "this memory is mine, and one day I give it back" */
+typedef struct {
+    proven_byte_t *ptr;
+    proven_size_t  size;
+} proven_mem_t;
+
+/* ② a borrowed reading window — it only peers into somebody's memory */
 typedef struct {
     const proven_byte_t *ptr;
     proven_size_t        size;
 } proven_mem_view_t;
+
+/* ③ a borrowed writing window — it may change somebody's memory but not return it */
+typedef struct {
+    proven_byte_t *ptr;
+    proven_size_t  size;
+} proven_mem_mut_t;
 ```
 
-The writable edition (`proven_mem_mut_t`) is its twin with only the `const` removed.
-What this small struct does is one thing — *making sure the pointer and the length
-never part*. It is the answer to the problem chapter 37 called "the real problem of
-strings is carrying the length separately".
+One `const` divides ② from ③, and *the name* divides ① from the rest. What this small
+struct does is one thing — *making sure the pointer and the length never part*. It is
+the answer to the problem chapter 37 called "the real problem of strings is carrying
+the length separately".
+
+#dtable(
+  columns: 4,
+  [*type*], [*owns*], [*writes*], [*where it comes from*],
+  [`proven_mem_t`], [yes], [yes], [an allocator (chapter 73)],
+  [`proven_mem_view_t`], [no], [no], [`_as_view`, slicing, literals],
+  [`proven_mem_mut_t`], [no], [yes], [an allocation result, a stack array, slicing],
+)
+
+There are paired functions for obtaining a window from an owned lump too —
+`proven_mem_view_from_owned` and `proven_mem_mut_from_owned`. The `from_owned` in the
+name means "leave the ownership as it is and open only a window".
+
+#demo("examples/ch72/mem.c")
+
+The example runs the vocabulary of this section and the next once each. Five places to
+point at.
+
+*① A view is two words.* The output's `sizeof(mem_view_t)=16` is that (on 64-bit,
+pointer 8 + length 8). That it is larger than a bare pointer (8 bytes) is a view's only
+cost, and in exchange bounds checking becomes possible.
+
+*② Only the writing window can change things.* The example changed the first letter
+with `mut.ptr[0] = 'A'` and every later output begins with `A`. Try to change the same
+place through the reading view and it is *a compile error* — that is what the `const`
+does.
+
+*③ Slicing has two editions.* We look at them closely in the next section.
+
+*④ Copying and moving have boundaries too.* `proven_mem_copy(dst, dst_cap, src)`
+*compulsorily* takes the destination's capacity and, if the source does not fit, writes
+not one byte and returns `OUT_OF_BOUNDS` (the output's `copy 15 into 8`). If they may
+overlap it is `proven_mem_move` — chapter 57's `memcpy`/`memmove` distinction as it
+stands.
+
+*⑤ You can ask which lump a pointer belongs to.*
+`proven_range_contains_ptr` is that, and what is worth noticing is that *the
+implementation compares as integers*. Comparing pointers from different allocations
+with `<` or `>=` is outside the contract (chapter 35), so the library converts to
+`uintptr_t` and then checks. It is the function chapter 73's arena uses when confirming
+"is this pointer one I handed out".
+
+== Slicing — the operation used most in this part
 
 #demo("examples/ch72/view.c")
 
@@ -59,15 +116,45 @@ it returns an error (number 2 is `PROVEN_ERR_OUT_OF_BOUNDS`). Giving as much as 
 is looks kinder, but then the caller cannot know whether what was received is what
 was requested. It is blocking chapter 69's truncation problem from repeating here.
 
+Four functions form pairs — reading/writing × checked/unchecked.
+
+#dtable(
+  columns: 3,
+  [*function*], [*what it returns*], [*when*],
+  [`proven_mem_view_slice_checked`], [an `{err, view}` bundle], [the default. when the boundary is unknown],
+  [`proven_mem_view_slice_unchecked`], [a view (no check)], [a hot loop whose boundary is already confirmed],
+  [`proven_mem_mut_slice_checked`], [an `{err, mut}` bundle], [the default (writing)],
+  [`proven_mem_mut_slice_unchecked`], [a writing window (no check)], [the same],
+)
+
+The checked edition's contract is three lines. *If the length is nonzero and the
+pointer is null*, `INVALID_ARG`. *If `offset` exceeds the size, or `offset + size`
+exceeds it*, `OUT_OF_BOUNDS` — and it matters that this check is written not as
+`offset + size > view.size` but as `size > view.size - offset`. The former can wrap in
+the addition; the latter never can (the same spirit as the checked arithmetic later in
+this chapter). *If the size is 0* it returns an empty view with a null pointer and size
+0 — a safeguard against dereferencing a pointer to nothing.
+
 #qa[
   I saw the slicing function in two editions, `_checked` and `_unchecked` — why does
   the latter exist?
 ][
   For places where the boundary has *already been checked*. Redoing the same check
   every turn inside a loop is waste, so one checks once before the loop and uses the
-  unchecked edition inside. That the name carries `_unchecked` matters — the dangerous
-  choice can be made only through *a visible name*, and the default is always the
-  safe side. It is one form of chapter 45's "write the contract as code".
+  unchecked edition inside.
+
+  ```c
+  /* read in 8-byte pieces — the loop condition already guarantees the boundary */
+  for (proven_size_t off = 0; off + 8 <= buf.size; off += 8) {
+      proven_mem_view_t chunk = proven_mem_view_slice_unchecked(buf, off, 8);
+      process(chunk);
+  }
+  ```
+
+  That the name carries `_unchecked` matters — the dangerous choice can be made only
+  through *a visible name*, and the default is always the safe side. It is one form of
+  chapter 45's "write the contract as code", with the practical benefit too that
+  searching for `_unchecked` in review skims the dangerous places.
 ]
 
 #antipattern[
@@ -137,10 +224,27 @@ The alignment learned in chapter 6 becomes a practical tool here.
 address 13 to an 8-byte boundary it must be pushed to 16. This is exactly the
 calculation the next chapter's arena does every time it lays objects out in a row.
 
-`PROVEN_MAX_ALIGN` is "the strictest alignment that can hold any type", and
-`proven_is_pow2` confirms whether an alignment value is a power of two (alignment
-must always be a power of two — only then can the rounding up be calculated with bit
-operations).
+#dtable(
+  columns: 3,
+  [*name*], [*what*], [*note*],
+  [`proven_mem_align_up(a, n)`], [rounds `a` up to a multiple of `n`], [0 if it overflows or `n` is not a power of two],
+  [`proven_uintptr_align_up(p, n)`], [rounds an address up], [as an integer, instead of pointer arithmetic],
+  [`proven_is_pow2(n)`], [is it a power of two], [checking an alignment value],
+  [`PROVEN_MAX_ALIGN`], [`alignof(max_align_t)`], [usually 16. holds any type],
+  [`PROVEN_DEFAULT_ALIGNMENT`], [8], [the default for byte data such as strings and buffers],
+)
+
+*Reporting failure as 0* is these functions' peculiar contract. If the alignment is not
+a power of two or the rounding overflows they return 0, so the result must be checked
+for 0 before being used as a size. Inside the library the arena does that check for
+you, so you will call these directly only when making a data structure of your own.
+
+It is worth knowing too that the two constants have different uses. A byte array or a
+string is content with `PROVEN_DEFAULT_ALIGNMENT` (8), while *general allocation that
+does not know what type is coming* uses `PROVEN_MAX_ALIGN`. It is also why chapter 73's
+heap allocator divides the two — requests at or below the default alignment go to
+`malloc` (growth in place is then possible), and stricter requests to an aligned
+allocation.
 
 #recap[
   This chapter's vocabulary.
