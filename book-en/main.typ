@@ -8,10 +8,15 @@
 
 #set document(title: "Proven C Book " + book-version, author: "rubidus")
 #set page(paper: "a4", margin: (x: 2.2cm, y: 2.5cm), numbering: "1")
-#set text(font: ("Noto Serif CJK KR",), size: 10.5pt, lang: "en")
+// 영어판 본문은 라틴 Noto 로 조판한다. CJK 판(…CJK KR)의 라틴 자형은
+// 본디 다른 글꼴이라 영문 조판에는 맞지 않는다 — CJK 는 뒤에 두어
+// 이따금 인용되는 한글만 받는다.
+#set text(font: ("Noto Serif", "Noto Serif CJK KR"), size: 10.5pt, lang: "en")
 #set par(justify: true, leading: 0.78em, first-line-indent: (amount: 1em, all: true))
-#show heading: set text(font: ("Noto Sans CJK KR",))
-#show raw: set text(font: "D2Coding", size: 0.92em, ligatures: false)
+#show heading: set text(font: ("Noto Sans", "Noto Sans CJK KR"))
+// 코드는 영어권 독자에게 익숙한 라틴 고정폭(Noto Sans Mono)으로 짠다.
+// D2Coding 은 뒤에 두어 코드 안에 이따금 섞이는 한글만 받는다.
+#show raw: set text(font: ("Noto Sans Mono", "D2Coding"), size: 0.88em, ligatures: false)
 // 인쇄를 위해 구문 강조 색을 쓰지 않는다 (잉크·토너 절약)
 #set raw(theme: none)
 #set heading(numbering: none)
@@ -19,7 +24,7 @@
 #page(numbering: none)[
   #v(3.2cm)
   #align(center)[
-    #text(font: ("Noto Sans CJK KR",), size: 26pt, weight: "bold")[Proven C Book]
+    #text(font: ("Noto Sans", "Noto Sans CJK KR"), size: 26pt, weight: "bold")[Proven C Book]
     #v(0.6cm)
     #text(size: 13pt)[An Introduction to Modern C with the Proven C Library]
     #v(0.9cm)
@@ -49,6 +54,74 @@
   ])
 ]
 
+// ── 판권 — 한국어판과 같은 내용을 영어로 (book/main.typ 의 대응면) ──────
+#page(numbering: none)[
+  #v(1fr)
+  #set text(size: 9.5pt)
+  #set par(justify: false, first-line-indent: 0em, leading: 0.85em, spacing: 0.95em)
+  #show link: it => text(fill: black, it)
+
+  #block(width: 100%)[
+    #text(size: 11pt, weight: "bold", font: ("Noto Sans", "Noto Sans CJK KR"))[
+      Proven C Book
+    ]
+    #linebreak()
+    #text(size: 9.5pt)[An Introduction to Modern C with the Proven C Library]
+  ]
+
+  #v(0.45cm)
+
+  #grid(
+    columns: (5.6em, 1fr),
+    row-gutter: 0.62em,
+    column-gutter: 0.8em,
+    text(fill: rgb("#555555"))[author], [rubidus],
+    text(fill: rgb("#555555"))[contact], link("mailto:rubidus@gmail.com")[rubidus\@gmail.com],
+    text(fill: rgb("#555555"))[repository], link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book],
+    text(fill: rgb("#555555"))[edition], [#book-version — #book-status],
+    text(fill: rgb("#555555"))[last updated], [#book-updated],
+  )
+
+  #v(0.5cm)
+  #line(length: 100%, stroke: 0.5pt + rgb("#999999"))
+  #v(0.45cm)
+
+  #block(width: 100%)[
+    *The text* — Creative Commons Attribution-NonCommercial-ShareAlike 4.0
+    International (CC BY-NC-SA 4.0). You may share and adapt it freely so long as
+    you credit the source; commercial use is not permitted, and adaptations must
+    carry the same licence.
+    #linebreak()
+    #text(size: 9pt, fill: rgb("#555555"))[https://creativecommons.org/licenses/by-nc-sa/4.0/]
+  ]
+
+  #v(0.35cm)
+
+  #block(width: 100%)[
+    *The example code* — the MIT licence, so that what you learn here can go into
+    your own programs without constraint. The proven library used in the examples
+    is under its own licence.
+  ]
+
+  #v(0.35cm)
+
+  #block(width: 100%)[
+    Every demonstration in this book prints output really obtained by compiling and
+    running the code. The typesetting is done with Typst.
+  ]
+
+  #v(0.5cm)
+  #line(length: 100%, stroke: 0.5pt + rgb("#999999"))
+  #v(0.45cm)
+
+  #block(width: 100%)[
+    *This book keeps being corrected.* What you are reading is the edition numbered
+    above; corrections and additions follow it. *The newest edition and the record of
+    what changed are on the author's GitHub* — if you hold an old copy, look there
+    first. Reports of errors and suggestions are received in the same place.
+  ]
+]
+
 #let parts = (
   ("Part I — Ground", none, (1, 2, 3)),
   ("Part II — How computing works", "parts/part02.typ", (4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)),
@@ -75,11 +148,11 @@
     by-num.insert(str(n), h)
   }
   block(width: 100%)[
-    #text(font: ("Noto Sans CJK KR",), size: 15pt, weight: "bold")[Contents]
+    #text(font: ("Noto Sans", "Noto Sans CJK KR"), size: 15pt, weight: "bold")[Contents]
     #v(0.5em)
     #for (part-title, intro, chs) in parts {
       block(above: 0.9em, below: 0.35em)[
-        #text(font: ("Noto Sans CJK KR",), size: 10.5pt, weight: "bold", part-title)
+        #text(font: ("Noto Sans", "Noto Sans CJK KR"), size: 10.5pt, weight: "bold", part-title)
       ]
       for i in chs {
         let h = by-num.at(str(i), default: none)
@@ -133,7 +206,7 @@ The Korean edition is at:
   let have = chs.filter(c => c in translated)
   pagebreak(weak: true)
   align(center + horizon)[
-    #text(font: ("Noto Sans CJK KR",), size: 20pt, weight: "bold", part-title)
+    #text(font: ("Noto Sans", "Noto Sans CJK KR"), size: 20pt, weight: "bold", part-title)
     #if intro != none and have.len() > 0 {
       v(1.2cm)
       block(width: 80%, align(left, include intro))
@@ -162,7 +235,7 @@ The Korean edition is at:
 
 // ── Appendices ──────────────────────────────────────
 #pagebreak(weak: true)
-#align(center + horizon, text(font: ("Noto Sans CJK KR",), size: 20pt, weight: "bold", "Appendices"))
+#align(center + horizon, text(font: ("Noto Sans", "Noto Sans CJK KR"), size: 20pt, weight: "bold", "Appendices"))
 #pagebreak(weak: true)
 #set heading(numbering: none)
 #include "appendix/a1-operators.typ"
