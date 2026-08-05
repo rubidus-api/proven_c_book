@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>73 모던 C 총정리 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,4vw,4rem) 5rem; }
+.wrap { max-width:min(100%, 105ch); margin:0 auto; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.75rem 0; } a { color:var(--link); }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
+pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
+      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+pre code { background:none; padding:0; }
+table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
+        display:block; overflow-x:auto; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+th { background:var(--box-bg); font-weight:700; }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
+       border-left:3px solid var(--box-rule); border-radius:2px; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
+.organizer { border-left-style:double; border-left-width:6px; }
+.deepqa { border-left-style:dashed; }
+.qa-q { background:transparent; border-left:3px solid var(--fg); }
+.qa-a { background:transparent; border-left:1px solid var(--rule); }
+.misconception { border-left-width:5px; }
+.antipattern { border-left-style:dotted; border-left-width:5px; }
+.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
+.mathbox { font-size:.95rem; }
+.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
+.platform { border-left-style:double; }
+.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.toc { columns:2 22rem; column-gap:2.4rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
+<a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-372">73 모던 C 총정리</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>마지막 장이다. 72장에서 실전의 지형까지 둘러보았으니, 이제 지나온 길을 정리한다. 이 책에서 자연스럽게 써 온 C23의 얼굴들을 모아 회고 하고, 모던 C의 관행을 한 장의 지침으로 정리하며, 여기서 어디로 갈 수 있는지 이야기한다. 전권 회고 문답으로 책을 닫는다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>1장에서 이 책은 “옛 어법의 관성으로 쓰인 입문서가 아니라 오늘의 C에서 출발하는 입문서”를 표방했다. 그러면 이 책을 다 읽은 지금, 독자가 배운 C는 옛 C와 무엇이 다른가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>문법의 목록이 다른 것이 아니라 <strong>기준이 다르다.</strong> 옛 어법의 책은 “이렇게 쓰면 동작한다”를 가르치고, 이 책은 “이렇게 쓰면 계약 안이다”를 가르쳤다 — 초기화하고 쓰기(20장), 경계와 크기를 함께 다루기(33장), 실패를 값으로 확인하기(42장), 계약 밖의 지름길을 피하기(43장), 도구로 검사하기(15장). C23의 새 문법들은 그 기준을 <strong>더 쉽게 지키게</strong> 해 주는 도구로 등장했다. 아래 회고가 그 목록이다.</p></div></div><h3 id="loc-373">73.1 회고 — 이미 써 온 C23</h3><p>이 책은 새 표준을 따로 소개하지 않고, 필요한 자리에서 자연스럽게 썼다. 모아 보면 이만큼이다.</p><table><tr><th><strong>C23의 것</strong></th><th><strong>처음 만난 곳</strong></th><th><strong>무엇을 쉽게 만들었나</strong></th></tr><tr><td><code>bool</code>·<code>true</code>·<code>false</code> 키워드</td><td>26장</td><td>헤더 없이 판단을 값으로</td></tr><tr><td><code>nullptr</code></td><td>31장</td><td><code>NULL</code>의 모호함 제거</td></tr><tr><td>2의 보수 확정</td><td>5장</td><td>부호 표현의 이식성 고민 종료</td></tr><tr><td><code>[[nodiscard]]</code></td><td>35·42장</td><td>실패 확인을 잊는 실수를 컴파일러가 차단</td></tr><tr><td><code>[[fallthrough]]</code></td><td>27장</td><td>switch 폴스루의 의도를 문서로</td></tr><tr><td><code>ckd_add</code> 계열</td><td>43장</td><td>오버플로를 UB가 아니라 값으로</td></tr><tr><td><code>alignof</code></td><td>32장</td><td>정렬 요구를 언어 차원에서 질의</td></tr><tr><td>삼중자 제거</td><td>7장</td><td>문자 코드 시대의 흉터 정리</td></tr><tr><td><code>va_start</code>의 완화</td><td>46장</td><td>가변 인자의 군더더기 제거</td></tr></table><p>한 방향이 보인다 — <strong>계약을 더 명시적으로, 실수를 더 빨리 잡히게.</strong> 1장에서 “C 자신도 변화의 조짐을 보이고 있다”고 한 것의 구체적 내용이 이 표다.</p><h3 id="loc-374">73.2 모던 C 관행 — 한 장의 지침</h3><p>이 책 전체를 실무 수칙으로 압축하면 이렇다.</p><p><strong>빌드와 도구.</strong> 경고를 켠다(<code>-Wall -Wextra</code>). 시험 실행은 새니타이저와 함께(ASan·UBSan). 가능하면 두 컴파일러로 교차 검증한다(15장).</p><p><strong>선언과 타입.</strong> 선언과 동시에 초기화한다. 바꾸지 않을 것은 <code>const</code>로 둔다. 크기가 계약인 자리에는 <code>&lt;stdint.h></code>의 고정 폭 타입을 쓴다. 크기·인덱스는 <code>size_t</code> 계열로 일관되게(25장의 부호 섞임 함정).</p><p><strong>기억.</strong> 경계는 언제나 명시적으로 — 배열과 길이는 함께 다닌다. 포인터는 쓰기 전에 유효성을 확인한다. 동적 할당은 소유자를 정하고, 해제 후에는 포인터를 비운다. 가능하면 자동 수명으로 해결한다(36·37장).</p><p><strong>오류.</strong> 실패는 값으로 알리고, 반환값은 확인한다. 내부 불변식은 assert, 바깥에서 온 것은 실행 중 검사(42장).</p><p><strong>계약.</strong> “내 컴퓨터에서 돌았다”가 아니라 “추상 기계 위에서 옳은가”로 판단한다(12·43장).</p><p><strong>부품.</strong> 표준 라이브러리의 계약을 알고 고르고, 반복되는 위험 지대에는 검사가 내장된 부품을 얹는다(48장·제12부).</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>여기서 어디로 가면 좋은가?</p></div><div class="dev qa-a"><p class="dev-label">답 세 갈래를 권한다. <strong>깊이</strong> — 이 책이 문을 열어 둔 곳들: 자료구조와 알고리즘(38장의 연결 구조), 동시성(10장의 멀티코어와 C11 원자), 시스템 프로그래밍(파일·네트워크는 플랫폼 API의 세계다). <strong>너비</strong> — 이웃 언어들: C++·Rust·Zig를 볼 때, 이 책에서 배운 기억·계약·표현의 감각이 그대로 통역된다(1장에서 예고한 대로다). <strong>실전</strong> — 72장에서 이름을 든 프로젝트들의 소스를 직접 읽는 것. SQLite나 curl 같은 잘 쓰인 C 코드는 이 책의 모든 주제가 실물로 살아 있는 교재다.</p><p>그리고 표준 문서 자체가 이제 읽을 수 있는 텍스트가 되었다는 것도 기억해 둘 만하다 — “계약서”라는 관점으로 보면, 그 무뚝뚝한 문서가 왜 그렇게 쓰였는지 이해된다.</p></div></div><h3 id="loc-375">73.3 다음에 읽을 책, 그리고 표준 문서</h3><p>여기서 멈추지 않을 독자를 위해 읽을거리를 따로 모아 두었다 — <strong>부록 D</strong>가 그것이다. C는 입문서 다음 칸이 유난히 비어 있는 언어인데, 최근 몇 해 사이 그 칸을 메우는 책들이 나오고 있다. 부록에는 그 책들의 장단점과 함께, 이 책이 내내 “계약서”라 불러 온 표준 문서를 실제로 구하는 방법 (구입과 무료 초안 내려받기)을 적어 두었다.</p><h3 id="loc-376">73.4 마지막으로</h3><p>이 책은 2장에서 컴퓨터를 세 부품으로 그리는 것으로 시작했다. 그 그림은 곧 정직하게 무너졌고 — 기억은 사다리가 되고, 실행은 겹쳐지고, 편집자가 끼어들었다 — 그 자리에 남은 것이 <strong>계약</strong>이었다. C를 안다는 것은 문법을 외우는 일이 아니라 그 계약을 읽을 줄 아는 일이라는 것, 이 책이 하고 싶었던 말은 그것 하나다.</p><p>읽는 것만으로 여기까지 온 독자에게, 이제 남은 것은 하나뿐이다 — 읽은 것을 자기 코드로 써 보는 것. 좋은 여정이 되기를.</p>
+<div class="nav"><a href="ch72.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec76.html">다음 →</a></div>
+</div></main></body></html>

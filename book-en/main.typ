@@ -91,12 +91,12 @@ Until a chapter arrives here, the complete text is the Korean edition:
   ("Part V — Declarations: how names are made", none, (20, 21, 22)),
   ("Part VI — Values and flow", none, (23, 24, 25, 26, 27, 28, 29)),
   ("Part VII — Memory", none, (30, 31, 32, 33, 34, 35, 36, 37)),
-  ("Part VIII — The shape of data", none, (38, 39)),
-  ("Part IX — Precision", none, (40, 41, 42)),
-  ("Part X — Structure", none, (43, 44, 45, 46, 47)),
-  ("Part XI — Reading the standard library", "parts/part11s.typ", (48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60)),
-  ("Part XII — proven — fundamentals, verified", "parts/part12.typ", (61, 62, 63, 64, 65, 66, 67, 68, 69, 70)),
-  ("Part XIII — Closing", none, (71, 72)),
+  ("Part VIII — The shape of data", none, (38, 39, 40)),
+  ("Part IX — Precision", none, (41, 42, 43)),
+  ("Part X — Structure", none, (44, 45, 46, 47, 48)),
+  ("Part XI — Reading the standard library", "parts/part11s.typ", (49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61)),
+  ("Part XII — proven — fundamentals, verified", "parts/part12.typ", (62, 63, 64, 65, 66, 67, 68, 69, 70, 71)),
+  ("Part XIII — Closing", none, (72, 73)),
 )
 
 #for (part-title, intro, chs) in parts {

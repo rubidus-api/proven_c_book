@@ -94,7 +94,7 @@ char  ≤  short  ≤  int  ≤  long  ≤  long long
   [`FLT_RADIX`], [지수의 밑], [2],
 )
 
-`DBL_EPSILON`은 40장에서 실수를 비교할 때 다시 만난다 — "같다"를 판단하는
+`DBL_EPSILON`은 41장에서 실수를 비교할 때 다시 만난다 — "같다"를 판단하는
 기준을 세울 때 쓰는 값이다.
 
 #demo("examples/ch23/limits.c")

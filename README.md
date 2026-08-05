@@ -11,7 +11,7 @@ C를 처음 배우는 사람을 위한 한국어 책이다. 문법 목록이 아
 - 한국어: [PDF](dist/proven_c_book-v0.1.1-ko.pdf) · [웹으로 읽기](https://rubidus-api.github.io/proven_c_book/ko/)
 - English: [웹으로 읽기](https://rubidus-api.github.io/proven_c_book/en/) — 번역 진행 중(머리말·1–7장; 웹판이 최신이고 [PDF](dist/proven_c_book-v0.1.1-en.pdf)는 v0.1.1 릴리스 시점판이다)
 - 묶음 내려받기: [ko zip](dist/proven_c_book-v0.1.1-ko.zip) · [en zip](dist/proven_c_book-v0.1.1-en.zip) · [전체 zip](dist/proven_c_book-v0.1.1-all.zip)
-- 13부 72장 + 부록 A~E + 찾아보기, 약 302쪽 (저장소 최신본. 릴리스 자산은 v0.1.1 시점판이다)
+- 13부 73장 + 부록 A~E + 찾아보기, 약 310쪽 (저장소 최신본. 릴리스 자산은 v0.1.1 시점판이다)
 - 이 저장소가 최신본이다. 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 이 책의 특징

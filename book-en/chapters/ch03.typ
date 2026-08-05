@@ -164,7 +164,7 @@ wrong, but *reading each other's letters verbatim causes accidents*.
   You can — put a multi-byte number in memory and read just its first slot as a
   single byte. If the first slot holds the least significant piece, it is
   little-endian. Actually doing this check in C is the demonstration in
-  chapter 39 (unions) — that is where we get the tool for reading the same
+  chapter 40 (unions) — that is where we get the tool for reading the same
   storage through different eyes.
 ]
 
