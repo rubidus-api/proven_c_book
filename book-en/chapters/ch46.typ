@@ -7,13 +7,6 @@
   ([chapter 45, Errors and contracts], [what it means to break a contract]),
 )
 
-#organizer[
-  We face head on the world this book has kept deferring under the name "outside
-  the contract". What UB exactly is and why it exists, why it is not "a little
-  dangerous" but "anything at all is possible" — and how to avoid and catch it in
-  practice. The contract narrative begun in Part II is completed here.
-]
-
 #deepqa[
   Chapter 13 said that violating strict aliasing is "the act of telling the
   compiler something untrue as if it were true." Then what has the standard
@@ -25,6 +18,13 @@
   "dangerous behaviour, but it mostly works as expected", whereas in the eye of the
   contract the whole program *loses its meaning*. That difference is this chapter
   entire.
+]
+
+#organizer[
+  We face head on the world this book has kept deferring under the name "outside
+  the contract". What UB exactly is and why it exists, why it is not "a little
+  dangerous" but "anything at all is possible" — and how to avoid and catch it in
+  practice. The contract narrative begun in Part II is completed here.
 ]
 
 #chapter-questions()

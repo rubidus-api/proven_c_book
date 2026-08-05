@@ -7,14 +7,6 @@
   ([chapter 46, Undefined behaviour], [after a contract is broken]),
 )
 
-#organizer[
-  We look in one place at the four headers used when a program *has gone wrong*.
-  The global holding an error number, the assertion that catches contract
-  violations, signals flying in from outside, and the jump that skips over the
-  stack. Why the discipline set up in chapter 45, "errors are values", matters so
-  much becomes clear on seeing the real shape of the alternatives.
-]
-
 #deepqa[
   Chapter 45 said C's ways of reporting an error are only three — the return value,
   global state, and stopping the program. Then exactly when can the global called
@@ -26,6 +18,14 @@
   after the function has reported failure". Second, the value may be overwritten by
   the next library call at any time — so once read it is stored at once. These two
   rules are the price of the design that carries errors in global state.
+]
+
+#organizer[
+  We look in one place at the four headers used when a program *has gone wrong*.
+  The global holding an error number, the assertion that catches contract
+  violations, signals flying in from outside, and the jump that skips over the
+  stack. Why the discipline set up in chapter 45, "errors are values", matters so
+  much becomes clear on seeing the real shape of the alternatives.
 ]
 
 #chapter-questions()

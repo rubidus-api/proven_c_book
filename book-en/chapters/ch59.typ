@@ -6,14 +6,6 @@
   ([chapter 9, Characters and text], [letters and encodings]),
 )
 
-#organizer[
-  We look at the functions that handle a single character. It is the simplest
-  header in appearance, yet two of C's subtlest traps are here — that *passing a
-  `char` as it stands is outside the contract*, and that *the answer depends on the
-  global state called the locale*. Chapter 9's encoding story returns at the level
-  of functions.
-]
-
 #deepqa[
   Chapter 9 said a character is a number in a code chart and an encoding is the way
   of writing that number as bytes. Then what is a call like `isalpha('가')` asking?
@@ -23,6 +15,14 @@
   even if it did each byte would merely be looked at separately. This header is a
   tool of the ASCII days; to handle multibyte characters you need the wide-character
   family (`<wctype.h>`) or code that handles the encoding yourself.
+]
+
+#organizer[
+  We look at the functions that handle a single character. It is the simplest
+  header in appearance, yet two of C's subtlest traps are here — that *passing a
+  `char` as it stands is outside the contract*, and that *the answer depends on the
+  global state called the locale*. Chapter 9's encoding story returns at the level
+  of functions.
 ]
 
 #chapter-questions()

@@ -7,13 +7,6 @@
   ([chapter 36, Arrays], [several values under one name]),
 )
 
-#organizer[
-  We keep the promise put off in Part V with "declarations that make types come
-#idx("struct")  after we have a memory model." The type that binds several
-  values into one — the struct. Declaration and initialisation, the two access
-  notations (`.` and `->`), and how a struct travels as a value.
-]
-
 #deepqa[
   Chapter 23 said "a type is a set of values plus an agreement about operations",
   and every type used so far has been one that already existed (int, double, char,
@@ -25,6 +18,13 @@
   functions and laid out as an array. If chapter 36's array was *a repetition of
   the same type*, a struct is *a bundle of different types* — and the moment that
   bundle gets a name, the program's vocabulary grows.
+]
+
+#organizer[
+  We keep the promise put off in Part V with "declarations that make types come
+#idx("struct")  after we have a memory model." The type that binds several
+  values into one — the struct. Declaration and initialisation, the two access
+  notations (`.` and `->`), and how a struct travels as a value.
 ]
 
 #chapter-questions()

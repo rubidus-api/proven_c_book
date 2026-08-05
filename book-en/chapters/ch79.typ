@@ -7,14 +7,6 @@
   ([chapter 17, Setting up a development environment], [setting up the tools]),
 )
 
-#organizer[
-  Before closing the book we look round the world beyond these pages. The two
-  essential tools of the field (make and git), the representative projects that run
-  in pure C even today and why they chose C, what C does in embedded work, and how
-  C's limits are crossed in practice. It is a map of where the language this book has
-  taught actually stands.
-]
-
 #deepqa[
   Chapter 48 said that for a multi-file program the practice is to make each file
   into an object file and then only link again. In a project with hundreds of files a
@@ -23,6 +15,14 @@
   *A build tool.* Write down the dependencies between files and it looks at what has
   changed and makes only what needs remaking. The classic of the C world and still its
   standard is `make`, and this chapter begins with that tool.
+]
+
+#organizer[
+  Before closing the book we look round the world beyond these pages. The two
+  essential tools of the field (make and git), the representative projects that run
+  in pure C even today and why they chose C, what C does in embedded work, and how
+  C's limits are crossed in practice. It is a map of where the language this book has
+  taught actually stands.
 ]
 
 #chapter-questions()

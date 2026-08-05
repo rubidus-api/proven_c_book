@@ -7,13 +7,6 @@
   ([chapter 26, Integers], [the finiteness of integers]),
 )
 
-#organizer[
-#idx("division")  We keep the promise deferred in chapter 20 — the truth about
-  integer division `/` and remainder `%`, including the rule for negative
-  numbers. And the bit operations learned as concepts in chapter 7 join as C
-  operators. The first step into conversions is taken here too.
-]
-
 #deepqa[
   Chapter 20 only announced that "7 / 2 is not 3.5." Answering for yourself with
   chapter 7's knowledge — why *can* the result of dividing integer containers
@@ -23,6 +16,13 @@
   and 4 and nothing in between — so division between integers must give an
   integer, and the fractional part must be *discarded* one way or the other. The
   question is "which way", and that rule is this chapter's first section.
+]
+
+#organizer[
+#idx("division")  We keep the promise deferred in chapter 20 — the truth about
+  integer division `/` and remainder `%`, including the rule for negative
+  numbers. And the bit operations learned as concepts in chapter 7 join as C
+  operators. The first step into conversions is taken here too.
 ]
 
 #chapter-questions()

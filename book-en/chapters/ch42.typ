@@ -7,16 +7,6 @@
   ([chapter 36, Arrays], [arrays and passing by value]),
 )
 
-#organizer[
-  If chapter 41 was the syntax of the struct, this chapter is *how to use it*.
-#idx("compound literal")  The notation for referring to a struct inside a
-  struct, the temporary struct made and handed over on the spot (the compound
-  literal), the idiom of "order-free named arguments" built from it, and the
-#idx("padding")  padding that gets in between members and how to remove it or
-  force it. Finally we measure the only road for passing an array by value, and
-  its price.
-]
-
 #deepqa[
   Chapter 41 said a struct is a value, so assigning copies it whole and passing it
   to a function sends a copy. But chapter 36 said that passing an array to a
@@ -30,6 +20,16 @@
   struct." This chapter's second example shows that contrast by measurement — the
   side passed by value leaves the original untouched, and the side that decayed
   into a pointer changes it.
+]
+
+#organizer[
+  If chapter 41 was the syntax of the struct, this chapter is *how to use it*.
+#idx("compound literal")  The notation for referring to a struct inside a
+  struct, the temporary struct made and handed over on the spot (the compound
+  literal), the idiom of "order-free named arguments" built from it, and the
+#idx("padding")  padding that gets in between members and how to remove it or
+  force it. Finally we measure the only road for passing an array by value, and
+  its price.
 ]
 
 #chapter-questions()

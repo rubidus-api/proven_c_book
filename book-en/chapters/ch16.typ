@@ -7,14 +7,6 @@
   ([chapter 4, A simple model of the machine], [the machine executes only machine code]),
 )
 
-#organizer[
-  We watch the four-stage relay by which the text `hello.c` becomes an
-#idx("linking")  executable — preprocessing, compiling, assembling, linking.
-  It is the general picture, true on any platform and with any compiler (gcc,
-  clang). The two "orders on credit" from chapter 15 (what `#include` really is,
-  where `printf` comes from) are settled here.
-]
-
 #deepqa[
   Chapter 4 spoke of the staircase of abstraction — layers stacked from
   transistors up to languages. Then from which floor to which floor is the
@@ -26,6 +18,14 @@
   notation for machine code), a layer that stamps that into real machine
   instructions, and a layer that joins the pieces into one lump. This chapter is
   a tour of those four landings.
+]
+
+#organizer[
+  We watch the four-stage relay by which the text `hello.c` becomes an
+#idx("linking")  executable — preprocessing, compiling, assembling, linking.
+  It is the general picture, true on any platform and with any compiler (gcc,
+  clang). The two "orders on credit" from chapter 15 (what `#include` really is,
+  where `printf` comes from) are settled here.
 ]
 
 #chapter-questions()

@@ -8,14 +8,6 @@
   ([chapter 79, C in practice], [the tools of practice]),
 )
 
-#organizer[
-  The last chapter. Chapter 79 looked round the terrain of practice, so now we gather
-  up the road travelled. We look back over the faces of C23 this book has used
-  naturally, organise the practices of modern C into a single sheet of guidance, and
-  talk about where one can go from here. The book closes with a retrospective
-  question and answer over the whole.
-]
-
 #deepqa[
   Chapter 1 declared this book "not an introduction written by the inertia of old
   usage but an introduction setting out from today's C". Then, now that the book has
@@ -28,6 +20,14 @@
   (chapter 45), avoid shortcuts outside the contract (chapter 46), check with tools
   (chapter 17). C23's new syntax appeared as tools that make that criterion *easier to
   keep*. The retrospect below is that list.
+]
+
+#organizer[
+  The last chapter. Chapter 79 looked round the terrain of practice, so now we gather
+  up the road travelled. We look back over the faces of C23 this book has used
+  naturally, organise the practices of modern C into a single sheet of guidance, and
+  talk about where one can go from here. The book closes with a retrospective
+  question and answer over the whole.
 ]
 
 #chapter-questions()

@@ -7,15 +7,6 @@
   ([chapter 36, Arrays], [handling memory in bulk]),
 )
 
-#organizer[
-  The header in which the most accidents have happened in C. Functions that do not
-  take a size, `strncpy` which is not safe despite its name, copying that touches
-  overlapping regions, `strtok` which destroys the original and hides state — the
-  dangers of strings learned in chapter 37 take concrete shape here function by
-  function. We also see the real portability of the non-standard alternatives (the
-  `strlcpy` family).
-]
-
 #deepqa[
   Chapter 37 said a C string is "up to the NUL", so its length must be counted
   every time, and chapter 54 said functions that do not take a size are the first
@@ -27,6 +18,15 @@
   fills all the spare places with zeros, and if there is not enough room it does
   not attach a NUL. Both properties go against the expectations of "string
   copying". This chapter's first example shows it before your eyes.
+]
+
+#organizer[
+  The header in which the most accidents have happened in C. Functions that do not
+  take a size, `strncpy` which is not safe despite its name, copying that touches
+  overlapping regions, `strtok` which destroys the original and hides state — the
+  dangers of strings learned in chapter 37 take concrete shape here function by
+  function. We also see the real portability of the non-standard alternatives (the
+  `strlcpy` family).
 ]
 
 #chapter-questions()

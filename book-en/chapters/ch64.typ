@@ -7,14 +7,6 @@
   ([chapter 39, Lifetime and storage duration], [lifetime and sharing]),
 )
 
-#organizer[
-#idx("atomic operations")  We see what happens when several strands touch the same
-  memory at once, and learn the tool C11 brought into that place — atomic types and
-  operations. Why a data race is *outside the contract* rather than "slow", why
-#idx("data race")  `volatile` is not the answer, and when to touch and when to
-  leave alone the difficult handle called the memory order.
-]
-
 #deepqa[
   Chapter 12 said the CPU does several things in one beat and even executes out of
   order, and chapter 11 said each core carries its own cache. Then if two strands
@@ -25,6 +17,14 @@
   and write the same value — one increment vanishes whole. On top of that, caches
   differ per core, so the lag of "written but not visible to the other" is
   compounded. This chapter's first example actually counts that loss out.
+]
+
+#organizer[
+#idx("atomic operations")  We see what happens when several strands touch the same
+  memory at once, and learn the tool C11 brought into that place — atomic types and
+  operations. Why a data race is *outside the contract* rather than "slow", why
+#idx("data race")  `volatile` is not the answer, and when to touch and when to
+  leave alone the difficult handle called the memory order.
 ]
 
 #chapter-questions()

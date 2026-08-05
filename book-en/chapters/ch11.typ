@@ -7,15 +7,6 @@
   ([chapter 5, Words and addresses], [the address space]),
 )
 
-#organizer[
-  A chapter that begins with a confession — how bold a simplification the
-#idx("register")  three-part picture of chapter 4 really was, and a repair of
-  that picture. The registers that were inside the CPU all along, the large
-  memory outside, and the multi-layered cache that pushed into the widening
-#idx("cache")  speed gap between them — you will learn that memory is not one
-  thing but a ladder.
-]
-
 #deepqa[
   Chapter 4 said "the CPU fetches the next thing to do from memory and does it."
   So does the calculation itself happen on memory — does the sum of slot 100 and
@@ -25,6 +16,15 @@
   on memory. Calculation happens in a separate space *inside* the CPU. That
   space was not drawn in chapter 4's picture at all. Now it is time to be
   honest.
+]
+
+#organizer[
+  A chapter that begins with a confession — how bold a simplification the
+#idx("register")  three-part picture of chapter 4 really was, and a repair of
+  that picture. The registers that were inside the CPU all along, the large
+  memory outside, and the multi-layered cache that pushed into the widening
+#idx("cache")  speed gap between them — you will learn that memory is not one
+  thing but a ladder.
 ]
 
 #chapter-questions()

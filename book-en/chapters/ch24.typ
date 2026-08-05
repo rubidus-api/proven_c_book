@@ -7,14 +7,6 @@
   ([chapter 23, Declaring variables], [the split between declaration and definition]),
 )
 
-#organizer[
-  Chapter 21 taught how to *call* a function — now how to *make* one. The
-#idx("function prototype")  distinction between definition and declaration (a
-  prototype), parameters and `return`, and the first step into scope. And at the
-  end of this chapter the credit carried since chapter 15 — `int main(void)` and
-  `return 0` — is settled in full.
-]
-
 #deepqa[
   Chapter 16 said "the compilation stage is satisfied with a *declaration* (an
   announcement), and it is the linker that finds and joins the body." That
@@ -27,6 +19,14 @@
   work. Once we have made the second kind in this chapter, even the identity of
   what `#include` was fetching (a bundle of declarations) is threaded onto one
   line.
+]
+
+#organizer[
+  Chapter 21 taught how to *call* a function — now how to *make* one. The
+#idx("function prototype")  distinction between definition and declaration (a
+  prototype), parameters and `return`, and the first step into scope. And at the
+  end of this chapter the credit carried since chapter 15 — `int main(void)` and
+  `return 0` — is settled in full.
 ]
 
 #chapter-questions()

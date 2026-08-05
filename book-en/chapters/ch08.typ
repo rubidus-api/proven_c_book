@@ -6,15 +6,6 @@
   ([chapter 7, Representing integers], [the limits that appear when numbers are held in fixed bits]),
 )
 
-#organizer[
-  The next rung on the ladder of representation. You will be able to tell apart
-#idx("floating point")  the two ways of putting a number with a decimal point
-  into the lockers — fixed point and floating point — and you will meet
-#idx("IEEE 754")  IEEE 754, the contract that unified a chaos of floating-point
-  formats. One of the most important facts in this book — that a computer's
-  numbers are finite and approximate — takes its place here.
-]
-
 #deepqa[
   Chapter 7 got as far as signed integers in bits — including three competing
   ways of holding negatives, settled on two's complement. But they are all
@@ -26,6 +17,15 @@
   point is when we read this?" splits into two: pinning the point down (fixed)
   and carrying the point along in the data (floating). This chapter is the story
   of those two branches.
+]
+
+#organizer[
+  The next rung on the ladder of representation. You will be able to tell apart
+#idx("floating point")  the two ways of putting a number with a decimal point
+  into the lockers — fixed point and floating point — and you will meet
+#idx("IEEE 754")  IEEE 754, the contract that unified a chaos of floating-point
+  formats. One of the most important facts in this book — that a computer's
+  numbers are finite and approximate — takes its place here.
 ]
 
 #chapter-questions()

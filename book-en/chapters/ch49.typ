@@ -7,14 +7,6 @@
   ([chapter 19, The structure of a program], [where a macro sits]),
 )
 
-#organizer[
-  We open head on the layer chapter 16 passed over as "a text tool that does not
-  know C". The identity of the macro, the principle and idioms of the two
-#idx("translation phases")  operators `#` and `##`, their traps, and the whole of
-  the *translation phases* the standard pins down for source becoming a program.
-  It is the grammar of the "second language" living inside a C source file.
-]
-
 #deepqa[
   Chapter 19 said lines beginning with `#` are not statements and have no
 #idx("preprocessor")  semicolon, and that the reason is "the preprocessor is a
@@ -27,6 +19,14 @@
   ignorance is the preprocessor's power (it can produce any fragment of code
   whatever) and its danger (it upholds neither grammar nor meaning). This chapter
   sees the power and the danger together.
+]
+
+#organizer[
+  We open head on the layer chapter 16 passed over as "a text tool that does not
+  know C". The identity of the macro, the principle and idioms of the two
+#idx("translation phases")  operators `#` and `##`, their traps, and the whole of
+  the *translation phases* the standard pins down for source becoming a program.
+  It is the grammar of the "second language" living inside a C source file.
 ]
 
 #chapter-questions()

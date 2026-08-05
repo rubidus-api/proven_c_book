@@ -6,14 +6,6 @@
   ([chapter 30, Deciding], [flow that forks on a condition]),
 )
 
-#organizer[
-  We take a program's real power — repetition — into our hands. The three
-  siblings of the loop (`while`, `for`, `do-while`), new operators (`++`, `+=`),
-#idx("Duff's device")  and the frame of thought for reading and writing loops
-  correctly (the invariant). And we finally meet the reunion booked in
-  chapter 12 — Duff's device.
-]
-
 #deepqa[
   Chapter 4 said "even simple steps, taken billions of times a second, can build
   anything however complicated." But our programs up to chapter 30 flow from top
@@ -25,6 +17,14 @@
   both, C becomes a language that can write down everything computable
   (theoretically so as well — all chapter 4's model of computation demands is
   "sequence, branch, repetition").
+]
+
+#organizer[
+  We take a program's real power — repetition — into our hands. The three
+  siblings of the loop (`while`, `for`, `do-while`), new operators (`++`, `+=`),
+#idx("Duff's device")  and the frame of thought for reading and writing loops
+  correctly (the invariant). And we finally meet the reunion booked in
+  chapter 12 — Duff's device.
 ]
 
 #chapter-questions()

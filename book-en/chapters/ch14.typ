@@ -7,16 +7,6 @@
   ([chapter 4, A simple model of the machine], [the simple machine model]),
 )
 
-#organizer[
-  The conclusion of Part II. The scattered pieces — memory that became a
-  ladder, execution that overlaps, the compiler that acts as an editor — are
-  gathered into one thesis: C is not a nickname for machine code but the
-  language of an abstract machine, and must therefore be approached abstractly.
-  We see why the increasingly strict rules about pointers (provenance) follow
-  from that, and close the part by contrasting CPU and GPU to ask which
-  machine's language C really is.
-]
-
 #deepqa[
   Chapter 13 said "what a C programmer deals with is not the real machine."
   Then was it wasted labour to look so closely at the real machine — clocks,
@@ -29,6 +19,16 @@
   machine to understand why the abstract machine has that shape, and you must
   know the abstract machine not to be shaken by the real machine's vortex
   (chapters 11–13). The two pictures are not rivals but a pair.
+]
+
+#organizer[
+  The conclusion of Part II. The scattered pieces — memory that became a
+  ladder, execution that overlaps, the compiler that acts as an editor — are
+  gathered into one thesis: C is not a nickname for machine code but the
+  language of an abstract machine, and must therefore be approached abstractly.
+  We see why the increasingly strict rules about pointers (provenance) follow
+  from that, and close the part by contrasting CPU and GPU to ask which
+  machine's language C really is.
 ]
 
 #chapter-questions()

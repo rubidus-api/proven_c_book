@@ -7,14 +7,6 @@
   ([chapter 2, The regions of memory], [the map of memory regions]),
 )
 
-#organizer[
-  You will be able to draw a computer as a simple picture of three parts — a
-  place that calculates, a place that remembers, and something that keeps
-#idx("bit")  time. You will learn what a bit, the smallest unit of information,
-  is and why base two of all things. And you will see how a language called C
-  was born in the days of that simple machine.
-]
-
 #deepqa[
   Chapter 1 said that C is still alive inside operating systems, embedded
   devices and the infrastructure of the internet. How is a language past fifty
@@ -25,6 +17,14 @@
   century, the skeleton of how they work is remarkably unchanged. This chapter
   looks straight at that skeleton. As long as the skeleton stays, the language
   of the skeleton stays too.
+]
+
+#organizer[
+  You will be able to draw a computer as a simple picture of three parts — a
+  place that calculates, a place that remembers, and something that keeps
+#idx("bit")  time. You will learn what a bit, the smallest unit of information,
+  is and why base two of all things. And you will see how a language called C
+  was born in the days of that simple machine.
 ]
 
 #chapter-questions()

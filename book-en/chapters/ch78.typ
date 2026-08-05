@@ -7,14 +7,6 @@
   ([chapter 67, A program's map of memory], [when there is no OS]),
 )
 
-#organizer[
-  The last chapter of Part XII. We see the two ways of running several things
-#idx("coroutine")  overlapped (stackless coroutines and the job system), why
-  allocators and pointer provenance become a problem in a program running along
-  several strands, and what shape this library takes in a place with no operating
-  system at all. The last section is *when it is better not to use it*.
-]
-
 #deepqa[
   Chapter 12 said cores became several because of the clock's limits, and that
   accidents such as false sharing arise. Then how many different meanings does the
@@ -26,6 +18,14 @@
   calculating at the same moment. The former is a problem of *structure*, the latter a
   problem of *performance*. This chapter's coroutines treat the former and the job
   system the latter.
+]
+
+#organizer[
+  The last chapter of Part XII. We see the two ways of running several things
+#idx("coroutine")  overlapped (stackless coroutines and the job system), why
+  allocators and pointer provenance become a problem in a program running along
+  several strands, and what shape this library takes in a place with no operating
+  system at all. The last section is *when it is better not to use it*.
 ]
 
 #chapter-questions()

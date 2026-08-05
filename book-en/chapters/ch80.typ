@@ -7,16 +7,6 @@
   ([chapter 67, A program's map of memory], [memory in embedded systems]),
 )
 
-#organizer[
-#idx("embedded")  What people who write C that runs on chips carry with them.
-  The compilers that differ by vendor (IAR, Arm, TI, Microchip, Renesas, SDCC
-  and others), and the tools that sit beside make and git — build tools, debug
-  probes and on-chip debugging, how to see a log on a machine with no screen,
-  simulators, static analysis and unit testing, and the tools that measure size.
-  There is no need to install any of it now. The point is *to know the names and
-  what they are for.*
-]
-
 #deepqa[
   Chapter 18 said that numerically the largest branch of the world's C compilers
   is embedded. Why is that — cannot gcc alone target them all?
@@ -29,6 +19,16 @@
   the responsibility is the business of specialist firms. Third, *code size*. On
   a chip with tens of KiB of memory, a few per cent of size decides whether a
   product exists.
+]
+
+#organizer[
+#idx("embedded")  What people who write C that runs on chips carry with them.
+  The compilers that differ by vendor (IAR, Arm, TI, Microchip, Renesas, SDCC
+  and others), and the tools that sit beside make and git — build tools, debug
+  probes and on-chip debugging, how to see a log on a machine with no screen,
+  simulators, static analysis and unit testing, and the tools that measure size.
+  There is no need to install any of it now. The point is *to know the names and
+  what they are for.*
 ]
 
 #chapter-questions()

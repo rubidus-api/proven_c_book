@@ -7,15 +7,6 @@
   ([chapter 5, Words and addresses], [the relation between address and value]),
 )
 
-#organizer[
-  You will learn that a compiler does not translate source code "as written" —
-  that as long as the meaning is kept it rearranges, deletes and rewrites at
-  will. You will meet the basis of that freedom, the notion of the observable
-#idx("abstract machine")  result, and the abstract machine, a virtual machine
-  living in the standard document. We also see how C99 and C11 refined this
-  contract.
-]
-
 #deepqa[
   At the end of chapter 12 the compiler was called "a layer holding the right to
   rework anything as long as the meaning is kept." But chapter 5 called C "an
@@ -27,6 +18,15 @@
   the meaning survives. How and why early C's sense of "direct correspondence"
   collapsed is this chapter, and that collapse is the final piece that made C an
   abstract language.
+]
+
+#organizer[
+  You will learn that a compiler does not translate source code "as written" —
+  that as long as the meaning is kept it rearranges, deletes and rewrites at
+  will. You will meet the basis of that freedom, the notion of the observable
+#idx("abstract machine")  result, and the abstract machine, a virtual machine
+  living in the standard document. We also see how C99 and C11 refined this
+  contract.
 ]
 
 #chapter-questions()

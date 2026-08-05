@@ -7,14 +7,6 @@
   ([chapter 36, Arrays], [arrays and subscripts]),
 )
 
-#organizer[
-#idx("string")  C's string faced head on — its identity as a char array plus
-  NUL termination, the special circumstances of string literals, the real cost of
-  measuring length, and the practical matter of "character count ≠ byte count"
-  that Hangul brings out. The last of the three nulls (the NUL character) gets
-  its formal treatment here.
-]
-
 #deepqa[
   Chapter 9 said the string representation C chose is NUL termination, "planting
   a marker at the end", and foreshadowed its three prices (the length must be
@@ -27,6 +19,14 @@
   to just before that marker* — that is all. There is no separate string type. An
   array, and an agreement. This chapter treats the use and the cost of that
   agreement.
+]
+
+#organizer[
+#idx("string")  C's string faced head on — its identity as a char array plus
+  NUL termination, the special circumstances of string literals, the real cost of
+  measuring length, and the practical matter of "character count ≠ byte count"
+  that Hangul brings out. The last of the three nulls (the NUL character) gets
+  its formal treatment here.
 ]
 
 #chapter-questions()

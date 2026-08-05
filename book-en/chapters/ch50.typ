@@ -7,14 +7,6 @@
   ([chapter 28, Implicit conversions], [the default argument promotions]),
 )
 
-#organizer[
-  We open the secret of how `printf` could take any number of arguments. The four
-  tools of `<stdarg.h>`, why this device is not type-safe, its history (from K&R's
-  `varargs` through C89's `stdarg` to C23's tidying), and today's alternatives.
-  Why chapter 22's "the format is a contract" was such a strict contract is
-  revealed here.
-]
-
 #deepqa[
 #idx("variadic arguments")  Chapter 28 taught that values crossing into variadic
   arguments undergo default promotions (float→double, small integers→int). But why
@@ -27,6 +19,14 @@
   everything unified into larger types" to reduce the confusion. This chapter is
   the story of how values are taken out at that "place that does not know types",
   and what it costs.
+]
+
+#organizer[
+  We open the secret of how `printf` could take any number of arguments. The four
+  tools of `<stdarg.h>`, why this device is not type-safe, its history (from K&R's
+  `varargs` through C89's `stdarg` to C23's tidying), and today's alternatives.
+  Why chapter 22's "the format is a contract" was such a strict contract is
+  revealed here.
 ]
 
 #chapter-questions()

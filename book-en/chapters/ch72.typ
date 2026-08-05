@@ -8,14 +8,6 @@
   ([chapter 65, How to ask about overflow], [arithmetic that does not overflow]),
 )
 
-#organizer[
-  We see the four basic vocabularies the whole library stands on — the type that
-#idx("view")  points at raw bytes, the *view* binding pointer and length into one,
-  size calculation that does not wrap, and alignment. Chapter 69's sixth bug (the
-  hidden type of bytes) and chapter 36's boundary problem obtain their answer at the
-  level of types here.
-]
-
 #deepqa[
   Chapter 35 said that pointers to a character type (`char*`, `signed char*`,
   `unsigned char*`) alone have the privilege of
@@ -27,6 +19,14 @@
   `unsigned char`. Second, *do not lose the range you are peering into* — carry a
   pointer alone and you forget where your land ends, which is chapter 36's boundary
   trespass. proven's basic vocabulary is these two each made into a type.
+]
+
+#organizer[
+  We see the four basic vocabularies the whole library stands on — the type that
+#idx("view")  points at raw bytes, the *view* binding pointer and length into one,
+  size calculation that does not wrap, and alignment. Chapter 69's sixth bug (the
+  hidden type of bytes) and chapter 36's boundary problem obtain their answer at the
+  level of types here.
 ]
 
 #chapter-questions()

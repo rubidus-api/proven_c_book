@@ -7,14 +7,6 @@
   ([chapter 29, Booleans and comparison], [the type of true and false]),
 )
 
-#organizer[
-#idx("bool")  We treat the most conspicuous change C23 made to the language. Why
-#idx("nullptr")  things long imitated with macros in headers — `bool`, `true`,
-  `false`, `static_assert`, `alignas`, `thread_local` — rose to being keywords,
-  what `nullptr` was newly made to prevent, what rules and limits come with them,
-  and in what order to move existing code over.
-]
-
 #deepqa[
   Chapter 63 passed over in a table only that C23 made `<stdbool.h>` effectively
   unnecessary and that `nullptr` came in. But why put into the language what worked
@@ -26,6 +18,14 @@
   has a type, can be diagnosed, and nobody can redefine it. Where that difference
   really prevents accidents is this chapter's content — and `nullptr` in particular
   is not a renaming but *a new type*.
+]
+
+#organizer[
+#idx("bool")  We treat the most conspicuous change C23 made to the language. Why
+#idx("nullptr")  things long imitated with macros in headers — `bool`, `true`,
+  `false`, `static_assert`, `alignas`, `thread_local` — rose to being keywords,
+  what `nullptr` was newly made to prevent, what rules and limits come with them,
+  and in what order to move existing code over.
 ]
 
 #chapter-questions()

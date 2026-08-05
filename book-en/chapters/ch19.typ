@@ -7,13 +7,6 @@
   ([chapter 13, Compiler optimisation], [the contract of the abstract machine]),
 )
 
-#organizer[
-  Part IV has one goal — to read one piece of chapter 15's hello world
-  *completely*. The first step is the skeleton of a program: comments,
-  statements, blocks, and why the `#include` line is not a statement. By the
-  end of this chapter the outward appearance of C source is no longer strange.
-]
-
 #deepqa[
   Chapter 4 said the machine is a repetition of "fetching the next thing to do
   from memory and doing it." Then what, on the source-code side, corresponds to
@@ -25,6 +18,13 @@
   course, as chapter 13 taught, the compiler may rearrange the inner business;
   but the *observable result* is guaranteed to be the same as "one statement at
   a time, top to bottom." So the reader may safely read with this picture.
+]
+
+#organizer[
+  Part IV has one goal — to read one piece of chapter 15's hello world
+  *completely*. The first step is the skeleton of a program: comments,
+  statements, blocks, and why the `#include` line is not a statement. By the
+  end of this chapter the outward appearance of C source is no longer strange.
 ]
 
 #chapter-questions()

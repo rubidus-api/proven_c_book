@@ -7,14 +7,6 @@
   ([chapter 56, The traps of reading and writing], [bounds and truncation]),
 )
 
-#organizer[
-  The last chapter of this part. We skim the headers C99, C11 and C23 added to the
-  standard library, and then see the whole story of this language's most famous
-  failed attempt — annex K, which tried to bring "safe functions" into the
-  standard. Why `gets_s` and `strcpy_s` are not widely used, and what is different
-  about Microsoft's functions of the same names.
-]
-
 #deepqa[
   Chapter 54 said the speed at which headers grow is the same as the language's
   speed of change, and chapter 56 said `gets`'s funeral took twenty years. Then
@@ -25,6 +17,14 @@
   refused to adopt it. What was confirmed on the machine that made this book is the
   same — the "annex K: not present in this implementation" the example printed. The
   latter part of this chapter is that story.
+]
+
+#organizer[
+  The last chapter of this part. We skim the headers C99, C11 and C23 added to the
+  standard library, and then see the whole story of this language's most famous
+  failed attempt — annex K, which tried to bring "safe functions" into the
+  standard. Why `gets_s` and `strcpy_s` are not widely used, and what is different
+  about Microsoft's functions of the same names.
 ]
 
 #chapter-questions()

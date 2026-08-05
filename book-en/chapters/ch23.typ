@@ -7,13 +7,6 @@
   ([chapter 19, The structure of a program], [where a declaration sits]),
 )
 
-#organizer[
-#idx("variable")  Part V's subject is "how names are made." The first step is
-  declaring a variable — agreeing a type and a name, holding a value, and
-  changing it. One new operator joins: assignment `=`. And that this `=` is *not*
-  the equals sign of mathematics is this chapter's most important sentence.
-]
-
 #deepqa[
   Chapter 5 said memory is lockers with numbers (addresses). But no address has
   appeared even once in the C code we have written — so how has the program been
@@ -24,6 +17,13 @@
   the compiler and we call by name — a name is a human's nickname for an
   address. This chapter teaches how to make that name; meeting the real address
   behind the nickname again is Part VII (chapter 33).
+]
+
+#organizer[
+#idx("variable")  Part V's subject is "how names are made." The first step is
+  declaring a variable — agreeing a type and a name, holding a value, and
+  changing it. One new operator joins: assignment `=`. And that this `=` is *not*
+  the equals sign of mathematics is this chapter's most important sentence.
 ]
 
 #chapter-questions()

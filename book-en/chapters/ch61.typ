@@ -7,14 +7,6 @@
   ([chapter 53, The terrain of the standard library], [the contract the standard settles]),
 )
 
-#organizer[
-  The header the standard settled unusually little of. The standard says neither
-  what `time_t` is nor how time zones are handled. We look at the traps that arise
-  in those gaps — the year with 1900 subtracted, the month starting from 0,
-  functions that return a static buffer, and the fact that *there is no monotonic
-  clock in the standard for measuring elapsed time*.
-]
-
 #deepqa[
   Bringing forward a story to be treated in Part XII: calendar time and elapsed
   time were said to be different things. Then what is used in standard C to measure
@@ -27,6 +19,14 @@
   not require a monotonic clock. Accurate elapsed measurement is the part of
   POSIX's `clock_gettime(CLOCK_MONOTONIC, …)` or Windows'
   `QueryPerformanceCounter` — that is, of *a platform API*.
+]
+
+#organizer[
+  The header the standard settled unusually little of. The standard says neither
+  what `time_t` is nor how time zones are handled. We look at the traps that arise
+  in those gaps — the year with 1900 subtracted, the month starting from 0,
+  functions that return a static buffer, and the fact that *there is no monotonic
+  clock in the standard for measuring elapsed time*.
 ]
 
 #chapter-questions()

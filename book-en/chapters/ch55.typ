@@ -7,13 +7,6 @@
   ([chapter 22, Output], [output in reality]),
 )
 
-#organizer[
-  We look at the floor beneath the header used most. How a stream is really opened
-  and closed, when the buffer is emptied, where failure shows itself — and the
-  misuse of `feof`, the place introductory books get wrong over and over. The
-  notion of a stream learned in chapter 10 becomes an API here.
-]
-
 #deepqa[
   Chapter 10 said a stream is "a band whose other end the program does not know",
   and that this is why the same program serves screen, file and other programs
@@ -28,6 +21,13 @@
   usually line-buffered, and when redirected to a file it turns into full
   buffering — meaning *the moment at which the same program's output appears
   changes with what it is connected to*, and that is this chapter's first trap.
+]
+
+#organizer[
+  We look at the floor beneath the header used most. How a stream is really opened
+  and closed, when the buffer is emptied, where failure shows itself — and the
+  misuse of `feof`, the place introductory books get wrong over and over. The
+  notion of a stream learned in chapter 10 becomes an API here.
 ]
 
 #chapter-questions()

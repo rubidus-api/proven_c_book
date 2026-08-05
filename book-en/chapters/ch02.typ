@@ -6,14 +6,6 @@
   ([chapter 1, Setting the scene], [programming is writing a list of simple instructions]),
 )
 
-#organizer[
-#idx("memory regions")  We first learn that the memory a program uses is not one
-  lump but is divided into *a few regions of different purpose*. Code, fixtures, the
-  workbench (the stack), the warehouse (the heap) — learn only the names and
-  characters first and nearly every later chapter is read upon this map. Not one piece
-  of C syntax appears yet.
-]
-
 #deepqa[
   Chapter 1 said programming is "writing a list of simple instructions". Then where
   are those instructions, and the values the instructions handle, during execution?
@@ -23,6 +15,14 @@
   has different rules. Some regions stay as they are until the program ends, some live
   only while one function runs, and some the programmer borrows and gives back
   personally. Draw this map first and all the later stories find their places.
+]
+
+#organizer[
+#idx("memory regions")  We first learn that the memory a program uses is not one
+  lump but is divided into *a few regions of different purpose*. Code, fixtures, the
+  workbench (the stack), the warehouse (the heap) — learn only the names and
+  characters first and nearly every later chapter is read upon this map. Not one piece
+  of C syntax appears yet.
 ]
 
 #chapter-questions()

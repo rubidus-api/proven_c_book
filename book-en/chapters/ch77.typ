@@ -7,13 +7,6 @@
   ([chapter 25, Input], [input]),
 )
 
-#organizer[
-  From here we touch the operating system. Opening, reading and writing files,
-  buffered streams, reading and formatting time, and random numbers — those random
-  numbers that become entirely different things according to the purpose. Chapter 10's
-  story of streams and chapter 25's story of input are completed here as real APIs.
-]
-
 #deepqa[
   Chapter 10's design had a stream be one where "the program does not know what it is
   connected to", and chapter 53 said `fopen` reports failure with null. Then what
@@ -26,6 +19,13 @@
   actually written*, and `proven_fs_write_all` repeats until all is written and then
   reports only success or failure. What most code wants is the latter, and the former
   remains so as not to hide that fact.
+]
+
+#organizer[
+  From here we touch the operating system. Opening, reading and writing files,
+  buffered streams, reading and formatting time, and random numbers — those random
+  numbers that become entirely different things according to the purpose. Chapter 10's
+  story of streams and chapter 25's story of input are completed here as real APIs.
 ]
 
 #chapter-questions()

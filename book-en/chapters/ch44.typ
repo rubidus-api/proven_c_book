@@ -6,13 +6,6 @@
   ([chapter 8, Representing numbers], [the contract called IEEE 754]),
 )
 
-#organizer[
-  The world of approximation learned on the page in chapter 8 finally comes down
-#idx("comparing reals")  into C code. Choosing between `float` and `double`, the
-  correct way to compare (epsilon — absolute and relative), and the special values
-  (infinity, NaN). Chapter 8's three incidents are confirmed by execution results.
-]
-
 #deepqa[
   Chapter 8 said `0.1 + 0.2` and `0.3` are neighbours one final bit (1 ulp) apart,
   and that comparison must change into "are they close enough?". Then how is the
@@ -24,6 +17,13 @@
   meaningless. So practice keeps two — *absolute error* (for near 0) and
   *relative error* (proportional to size). This chapter's demonstration shows both
   side by side.
+]
+
+#organizer[
+  The world of approximation learned on the page in chapter 8 finally comes down
+#idx("comparing reals")  into C code. Choosing between `float` and `double`, the
+  correct way to compare (epsilon — absolute and relative), and the special values
+  (infinity, NaN). Chapter 8's three incidents are confirmed by execution results.
 ]
 
 #chapter-questions()
@@ -69,8 +69,19 @@ falls on the NaN side. Today's mainstream compilers on x86-64 and AArch64 behave
 that way, but it is not something the standard forces on every implementation.
 
 #platform("Where this distinction actually bites")[
-  If an implementation declares that it follows IEC 60559 (the annex F macros),
-  the behaviour above becomes a contract. Where it does not — some embedded
+  The mark by which an implementation declares that it follows IEC 60559 for
+  binary floating point is `__STDC_IEC_60559_BFP__` (BFP = binary floating
+  point). Where that macro is defined, annex F semantics are a contract and the
+  behaviour above may be expected. Decimal floating point is marked separately,
+  by `__STDC_IEC_60559_DFP__`.
+
+  It must not be confused with the similarly named
+  `__STDC_IEC_60559_BF16_TYPES__` — that is a *separate* feature mark, about
+  whether bfloat16 types are provided, and has nothing to do with the semantics
+  of ordinary binary floating-point operations. And note further that *a type
+  having the same format as IEC 60559 and the operations following annex F are
+  two different questions* — the former is what `__STDC_IEC_60559_TYPES__`
+  speaks to; what is needed here is the latter. Where it does not — some embedded
   toolchains, and builds that deliberately switch annex F semantics off with
   something like `-ffast-math` — the guarantee of infinity and NaN goes away.
   *Portable code screens out a zero divisor first.*

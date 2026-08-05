@@ -8,15 +8,6 @@
   ([chapter 13, Compiler optimisation], [strict aliasing]),
 )
 
-#organizer[
-#idx("union")  The device for seeing the same memory through a different eye —
-  the union. And this is a chapter of representation too: we run the endianness
-#idx("padding")  demonstration booked in chapter 5 and confirm with our own eyes
-  the hidden gaps (padding) in a struct. It is where this book's refrain, the
-  separation of representation from abstraction, rings out loudest for the last
-  time.
-]
-
 #deepqa[
   Chapter 13 said the old technique of "reading a float's bits through uint32's
   eye" violates strict aliasing, and that the correct methods are memcpy or a
@@ -27,6 +18,15 @@
   largest member, and at any moment only one thing is really held. Chapter 5's
   perspective, "seeing the same bits through this eye and through that", made into
   syntax.
+]
+
+#organizer[
+#idx("union")  The device for seeing the same memory through a different eye —
+  the union. And this is a chapter of representation too: we run the endianness
+#idx("padding")  demonstration booked in chapter 5 and confirm with our own eyes
+  the hidden gaps (padding) in a struct. It is where this book's refrain, the
+  separation of representation from abstraction, rings out loudest for the last
+  time.
 ]
 
 #chapter-questions()

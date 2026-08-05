@@ -7,13 +7,6 @@
   ([chapter 16, The general shape of compilation], [a library is linked in]),
 )
 
-#organizer[
-#idx("standard library")  We spread out a map of the standard library we have
-  merely been using until now — what toolboxes there are, and what to trust and
-  what to beware of. And why this library has its "thin and old" appearance, down
-  to the historical reason.
-]
-
 #deepqa[
   Chapter 16 said the linker finds `printf`'s body in the standard library and
   joins it up, and chapter 38 said `gets` was *removed* from the standard. Who
@@ -25,6 +18,13 @@
   The speed of change is as slow as the language's, and removing something is far
   slower still — the reason `gets`'s funeral took decades, and the key to this
   library's character.
+]
+
+#organizer[
+#idx("standard library")  We spread out a map of the standard library we have
+  merely been using until now — what toolboxes there are, and what to trust and
+  what to beware of. And why this library has its "thin and old" appearance, down
+  to the historical reason.
 ]
 
 #chapter-questions()

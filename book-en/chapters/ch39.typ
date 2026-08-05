@@ -7,13 +7,6 @@
   ([chapter 2, The regions of memory], [the stack and the static region]),
 )
 
-#organizer[
-  We draw the map of memory — where a variable lives, when it is born and when it
-#idx("stack")  dies. Automatic and static lifetime, the ledger called the stack,
-  and the accident to be most careful of in this part (keeping the address of
-  something that has vanished).
-]
-
 #deepqa[
   Chapter 24 taught scope — the range in which a name is *visible*. But
   chapter 38 used the phrase "the return ledger of a function call". Are a name
@@ -24,6 +17,13 @@
   run-time notion (from when to when that memory is valid). Usually they travel
   together, but the moment they diverge is an accident — the name has gone and
   the address remains (see the misconception box below).
+]
+
+#organizer[
+  We draw the map of memory — where a variable lives, when it is born and when it
+#idx("stack")  dies. Automatic and static lifetime, the ledger called the stack,
+  and the accident to be most careful of in this part (keeping the address of
+  something that has vanished).
 ]
 
 #chapter-questions()

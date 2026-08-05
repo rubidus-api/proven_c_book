@@ -7,13 +7,6 @@
   ([chapter 23, Declaring variables], [a type is the shape of the vessel]),
 )
 
-#organizer[
-#idx("integer types")  Part VI forges values and governs flow. Its first chapter
-  faces C's integers head on — how the world of representation learned in
-  chapter 7 appears as C's family of types, what face overflow wears in
-  practice, and the modern C practice (`<stdint.h>`).
-]
-
 #deepqa[
   Chapter 7 said that overflow of unsigned integers is "defined wrap-around"
   while signed overflow is outside the contract. But is the `int` we made in
@@ -25,6 +18,13 @@
   came near the ±2.1 billion container, but it is time to draw that boundary
   exactly. The kinds and sizes of containers, where the boundary lies, and the
   rule when it is crossed — that is this chapter.
+]
+
+#organizer[
+#idx("integer types")  Part VI forges values and governs flow. Its first chapter
+  faces C's integers head on — how the world of representation learned in
+  chapter 7 appears as C's family of types, what face overflow wears in
+  practice, and the modern C practice (`<stdint.h>`).
 ]
 
 #chapter-questions()

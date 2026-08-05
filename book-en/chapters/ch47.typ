@@ -7,15 +7,6 @@
   ([chapter 19, The structure of a program], [the skeleton of a program]),
 )
 
-#organizer[
-#idx("main")  We face head on the `main` that chapter 14 passed over as merely
-  "the agreed starting point". The *three forms* the standard permits, the exact
-  contract of the command-line arguments `argc` and `argv`, and where the returned
-#idx("exit status")  value goes and what it becomes — including the conventions
-  of Linux, Windows and embedded targets. Why `void main()` is wrong is settled
-  here too.
-]
-
 #deepqa[
   Chapter 3 said a process leaves one number, the *exit status*, as it ends, and
   chapter 14's hello world ended with `return 0;`. So who receives that 0, and
@@ -26,6 +17,15 @@
   it end well?" from that one number and decide what to do next. So `main`'s return
   value is not decoration but *the program's last conversation with the outside
   world*.
+]
+
+#organizer[
+#idx("main")  We face head on the `main` that chapter 14 passed over as merely
+  "the agreed starting point". The *three forms* the standard permits, the exact
+  contract of the command-line arguments `argc` and `argv`, and where the returned
+#idx("exit status")  value goes and what it becomes — including the conventions
+  of Linux, Windows and embedded targets. Why `void main()` is wrong is settled
+  here too.
 ]
 
 #chapter-questions()

@@ -6,14 +6,6 @@
   ([chapter 4, A simple model of the machine], [the simple machine model that points at memory by address]),
 )
 
-#organizer[
-  You will be able to draw memory as a long corridor of numbered lockers. That
-#idx("word")  number is the address, and how many slots the machine handles at
-#idx("endianness")  once is the word. You will learn to tell apart, in
-  pictures, the two orders for storing a number that spans several slots —
-  little-endian and big-endian.
-]
-
 #deepqa[
   Chapter 4 said that a single byte distinguishes only 256 cases, and that
   larger numbers are held by joining several bytes together. So how does the
@@ -25,6 +17,14 @@
   here I shall read four slots as one number." Chapter 4's misconception — the
   separation of what is stored from how it is read — gets its first real
   workout here.
+]
+
+#organizer[
+  You will be able to draw memory as a long corridor of numbered lockers. That
+#idx("word")  number is the address, and how many slots the machine handles at
+#idx("endianness")  once is the word. You will learn to tell apart, in
+  pictures, the two orders for storing a number that spans several slots —
+  little-endian and big-endian.
 ]
 
 #chapter-questions()
@@ -43,11 +43,19 @@ number, a character, or a fragment of something larger is known neither to the
 slot nor to the corridor — the interpretation of the reader decides.
 
 There is one important fact about addresses that is not visible at first
-glance. *An address is itself a number.* A locker number is just an integer,
-and being an integer, it can be put inside another locker. "In slot 347, write
-the number 512" — nothing strange about it. This ordinary idea later becomes
-C's most famous concept, the *pointer* (chapter 33). For now it is enough to
-take away "an address is a number too, so it can be written down anywhere."
+glance. *An address can be handled as a value.* A locker number is something
+that can be written down, and being writable it can be put inside another
+locker. "In slot 347, write the number 512" — nothing strange about it. This
+ordinary idea later becomes C's most famous concept, the *pointer* (chapter 33).
+
+Let us separate two layers here. In the *simple model* being drawn now, an
+address may be pictured as a number, an integer — the corridor and the lockers
+are drawn that way. But *in the C language a pointer value is not an integer
+type.* It is a value that can be copied and compared, yet of its own kind, one
+that drags along what type it points at and where it came from. The reason is
+seen later in this chapter ("Is this number a real address?"), and treated
+properly in chapters 33 and 35. What to take away now is one line — *an address
+is a value, and there is a dedicated type for holding it.*
 
 #qa[
   How long is the corridor — how many lockers are there?

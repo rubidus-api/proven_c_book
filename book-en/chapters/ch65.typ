@@ -7,13 +7,6 @@
   ([chapter 46, Undefined behaviour], [overflow is outside the contract]),
 )
 
-#organizer[
-#idx("checked arithmetic")  We learn the checked arithmetic C23 brought in. Why
-  hand-written code that "checks after calculating whether it overflowed" is
-  dangerous, exactly what `ckd_add`, `ckd_sub` and `ckd_mul` promise, and how to
-  move the size calculations of existing code onto this tool.
-]
-
 #deepqa[
   Chapter 7 said unsigned overflow is defined wrap-round while signed overflow is
   outside the contract, and chapter 58 said `calloc` checks the product of the
@@ -26,6 +19,13 @@
   (chapter 13's editor), and with unsigned values the idiom that inserts a division
   is hard to read and easy to get wrong. C23 tidied this place up at the level of
   the language.
+]
+
+#organizer[
+#idx("checked arithmetic")  We learn the checked arithmetic C23 brought in. Why
+  hand-written code that "checks after calculating whether it overflowed" is
+  dangerous, exactly what `ckd_add`, `ckd_sub` and `ckd_mul` promise, and how to
+  move the size calculations of existing code onto this tool.
 ]
 
 #chapter-questions()

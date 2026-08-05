@@ -7,13 +7,6 @@
   ([chapter 32, The meaning of a function], [copying values alone cannot change the original]),
 )
 
-#organizer[
-  Part VII is this book's second mountain — memory. We walk chapter 5's locker
-#idx("pointer")  corridor again, this time in C's syntax. The first chapter
-  faces head on the type that handles addresses as values, the *pointer* — `&`,
-  `*` and `sizeof`, settling every credit carried since chapter 25.
-]
-
 #deepqa[
   Chapter 32 said "the proper method for a function to change a variable outside
   is to copy and pass the variable's *address* as a value." Unfolding that with
@@ -30,6 +23,13 @@
   the provenance — which object it came from. Chapter 6's remark that "the same
   number need not be the same pointer" begins here, and chapter 35 finishes it
   properly under the name of provenance.
+]
+
+#organizer[
+  Part VII is this book's second mountain — memory. We walk chapter 5's locker
+#idx("pointer")  corridor again, this time in C's syntax. The first chapter
+  faces head on the type that handles addresses as values, the *pointer* — `&`,
+  `*` and `sizeof`, settling every credit carried since chapter 25.
 ]
 
 #chapter-questions()
@@ -178,10 +178,20 @@ Nor is this only in the past tense.
 #realcase("Now, and ahead")[
   *CHERI and Arm Morello.* Real hardware in which a pointer is a bundle of
   address, bounds and permissions (a capability). The address is 64 bits but the
-  pointer is *128*, and `sizeof(void *)` is 16. A pointer converted to an integer
-  and back loses its permissions and cannot be used — the place where chapter
-  35's provenance stops being a standards quibble and becomes a rule of the
-  hardware.
+  pointer is *128*, and `sizeof(void *)` is 16.
+
+  Two things must be told apart here. *A round trip through the official
+  passage, `uintptr_t`, is supported* — CHERI C's `uintptr_t` is designed to
+  carry not only the address but the provenance (the permissions and bounds), so
+  converting a pointer to that type and back yields a pointer that can be used.
+  This is why CHERI porting guides say "use `uintptr_t` instead of `long`". What
+  cannot be used is *a pointer made from an ordinary integer with no provenance,
+  or assembled by playing with the bits*: it gets no valid tag.
+
+  So what CHERI blocks is not the act of converting to an integer but *forging a
+  pointer out of an address with no provenance* — the place where chapter 35's
+  provenance stops being a standards quibble and becomes a rule of the hardware,
+  and the reason the standard guarantees only the `uintptr_t` round trip.
 
   *Machines that use the high bits of an address.* AArch64's TBI (Top Byte
   Ignore) and MTE, and x86-64's LAM, leave the pointer's *size* alone and carry a

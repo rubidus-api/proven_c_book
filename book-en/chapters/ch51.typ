@@ -7,14 +7,6 @@
   ([chapter 36, Arrays], [a name decaying into a value]),
 )
 
-#organizer[
-  Until now a function has been "a thing you call". In this chapter we handle a
-  function *as a value* — put it in a variable, pass it as an argument, lay several
-  out in an array. Along the way we see an old rule of C (*a function name decays
-  into a pointer*), the strange syntax that rule makes, and how to build object
-  orientation by hand with this tool.
-]
-
 #deepqa[
   Chapter 36 said an array name decays into the address of its first element, and
   chapter 50 said a variadic function loses type information. Then what does a
@@ -26,6 +18,14 @@
   alone is the exception. And `&function` gives the same pointer in the end anyway.
   So the strange situation arises in which `f`, `&f` and `*f` are all the same
   value — which is this chapter's first example.
+]
+
+#organizer[
+  Until now a function has been "a thing you call". In this chapter we handle a
+  function *as a value* — put it in a variable, pass it as an argument, lay several
+  out in an array. Along the way we see an old rule of C (*a function name decays
+  into a pointer*), the strange syntax that rule makes, and how to build object
+  orientation by hand with this tool.
 ]
 
 #chapter-questions()

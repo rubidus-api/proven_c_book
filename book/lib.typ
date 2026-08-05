@@ -32,6 +32,28 @@
   #body
 ]
 
+// ── 장 서두 4종 (RFC-0008 §2) ────────────────────────
+// 넷은 하나의 시각 단위다: 굵은 왼쪽 세로선이 서두 전체를 묶고, 라벨은
+// 회색 대문자풍 굵은 글씨로 통일한다. 아이콘은 쓰지 않는다(대체 글꼴 사고
+// 방지). 안에서는 얇은 규칙선으로 칸을 가른다.
+#let _open-rule = 3pt + rgb("#111111")
+#let _open-label(t) = text(
+  weight: "bold", size: 0.9em, fill: rgb("#3a3a3a"), tracking: 0.06em, upper(t),
+)
+#let _open-block(label, body, first: false) = block(
+  width: 100%,
+  inset: (left: 12pt, right: 2pt, top: if first { 7pt } else { 8pt }, bottom: 8pt),
+  stroke: (left: _open-rule, top: if first { none } else { 0.4pt + rgb("#c8c8c8") }),
+  above: if first { 1.1em } else { 0pt },
+  below: 0pt,
+  breakable: false,
+)[
+  #set par(first-line-indent: 0em, leading: 0.78em)
+  #_open-label(label)
+  #v(3pt)
+  #body
+]
+
 // 3.1 문답 (즉문즉답) — 기본 리듬
 #let qa(q, a) = block(width: 100%, above: 1.15em, below: 1.15em, breakable: true)[
   #set par(first-line-indent: 0em)
@@ -45,14 +67,12 @@
 ]
 
 // 3.2 심화 문답 (장 서두 회고 전용)
-#let deepqa(q, a) = block(width: 100%, above: 1.15em, below: 1.15em, breakable: true)[
-  #set par(first-line-indent: 0em)
-  #block(inset: (x: 11pt, y: 7pt), width: 100%, below: 6pt,
-    stroke: (left: (thickness: 2pt, paint: black, dash: "dashed")))[
-    #text(weight: "bold")[#_L.back] #h(5pt) #q
-  ]
-  #block(inset: (x: 11pt, y: 7pt), width: 100%, stroke: (left: 0.5pt + black))[
-    #text(weight: "bold")[#_L.a] #h(5pt) #a
+// ② 인출 문답 — 선행 개념을 표시하는 데 그치지 않고 실제로 꺼내 보게 한다
+#let deepqa(q, a) = _open-block(_L.back)[
+  #block(below: 5pt, width: 100%)[#q]
+  #block(width: 100%, inset: (left: 10pt),
+    stroke: (left: 2pt + rgb("#999999")))[
+    #text(weight: "bold", size: 0.92em, fill: rgb("#3a3a3a"))[#_L.a] #h(5pt) #a
   ]
 ]
 
@@ -138,25 +158,23 @@
   #body
 ]
 
-// 장 서두 선행조직자
-#let organizer(body) = block(width: 100%, inset: (x: 10pt, y: 7pt),
-  stroke: (top: 1.5pt + black, bottom: 0.5pt + black))[
-  #set par(first-line-indent: 0em)
-  #text(weight: "bold", size: 0.96em)[#_L.organizer] #v(4pt) #body
+// ③ 이 장이 끝나면
+#let organizer(body) = _open-block(_L.organizer, body)
+
+// 서두를 닫는 굵은 규칙선 — 마지막 칸이 그린다
+#let _open-close = block(width: 100%, above: 0pt, below: 1.3em)[
+  #line(length: 100%, stroke: 1.2pt + rgb("#111111"))
 ]
 
 // 3.7 기댄 것 (RFC-0006 §3.1) — 이 장이 어느 장의 무슨 개념 위에 서는가.
 // 번호만 쓰지 않고 개념 이름을 함께 적는다. 항목은 (참조, 개념) 쌍이다.
-#let prereq(..items) = block(
-  width: 100%, inset: (x: 11pt, y: 9pt), above: 1.15em, below: 1.15em,
-  stroke: (left: (thickness: 2pt, paint: rgb("#666666"), dash: "dotted")),
-)[
-  #set par(first-line-indent: 0em)
-  #text(weight: "bold", size: 0.96em, fill: rgb("#444444"))[#_L.prereq]
-  #v(5pt)
+// ① 이 장이 기대는 것 — 항목당 한 줄로 압축한다(재평가 §7.3: 서두가 길다)
+#let prereq(..items) = _open-block(_L.prereq, first: true)[
   #for (where, what) in items.pos() {
-    block(below: 4pt, width: 100%)[
-      #text(weight: "bold")[#where] #h(6pt) #text(fill: rgb("#333333"))[#what]
+    block(below: 5pt, width: 100%)[
+      #text(weight: "bold")[#where]
+      #h(5pt) #text(fill: rgb("#555555"))[·] #h(5pt)
+      #text(fill: rgb("#333333"))[#what]
     ]
   }
 ]
@@ -169,20 +187,19 @@
   let sel = selector(<qa-q>).after(here())
   let sel = if nexts.len() > 0 { sel.before(nexts.first().location()) } else { sel }
   let qs = query(sel)
-  if qs.len() >= min {
-    block(
-      width: 100%, inset: (x: 11pt, y: 9pt), above: 1.15em, below: 1.15em,
-      stroke: (left: 0.5pt + black, rest: (thickness: 0.5pt, paint: rgb("#999999"), dash: "densely-dotted")),
-    )[
-      #set par(first-line-indent: 0em)
-      #text(weight: "bold", size: 0.96em)[#_L.questions]
-      #v(5pt)
+  if qs.len() < min {
+    // 질문이 없으면 서두를 여기서 닫는다
+    _open-close
+  } else {
+    _open-block(_L.questions)[
       #for (i, m) in qs.enumerate() {
-        block(below: 4pt, width: 100%)[
-          #text(fill: rgb("#666666"))[#(i + 1).] #h(4pt) #m.value
+        block(below: 4pt, width: 100%, inset: (left: 14pt))[
+          #place(left, dx: -14pt, text(fill: rgb("#777777"), weight: "bold")[#(i + 1)])
+          #m.value
         ]
       }
     ]
+    _open-close
   }
 }
 

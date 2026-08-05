@@ -7,14 +7,6 @@
   ([chapter 19, The structure of a program], [where statements and expressions sit]),
 )
 
-#organizer[
-  We go inside the statement. How to write values in source code (literals), how
-  to weave values into calculations (operators and expressions), and the order
-  of calculation (precedence and parentheses) — but, following this book's
-  principle, only the minimal set: addition, subtraction, multiplication and
-  parentheses. That alone takes us surprisingly far.
-]
-
 #deepqa[
   Chapters 7 and 8 taught how to hold numbers *in the machine* (two's
   complement, IEEE 754). So when a number is written *in source code* — when you
@@ -26,6 +18,14 @@
   executable. A notation for a value written in source is called a *literal* —
   meaning "as the letters say." That the bridge between the world of letters and
   the world of bits is the compiler — chapter 16's relay is at work here too.
+]
+
+#organizer[
+  We go inside the statement. How to write values in source code (literals), how
+  to weave values into calculations (operators and expressions), and the order
+  of calculation (precedence and parentheses) — but, following this book's
+  principle, only the minimal set: addition, subtraction, multiplication and
+  parentheses. That alone takes us surprisingly far.
 ]
 
 #chapter-questions()

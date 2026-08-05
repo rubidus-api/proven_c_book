@@ -6,16 +6,6 @@
   ([chapter 16, The general shape of compilation], [the four stages: preprocess, compile, assemble, link]),
 )
 
-#organizer[
-  We equip the tools to run chapter 16's relay on our own computer. The general
-  account, true on any platform, is the main text; concrete installation steps
-  tied to one operating system are isolated in "platform note" boxes — the boxes
-  use Windows as this book's example platform, and the text continues if you
-#idx("debugger")  skip them. After the compiler and the editor come the
-  debugger, which stops a program to look inside, its blind spots, and the net
-#idx("sanitizer")  that catches bugs while the program runs (sanitizers).
-]
-
 #deepqa[
   Chapter 16 worked at the command line, asking the compiler for things like
   `-E` and `-S`. These days everything can be done by clicking — so why the
@@ -28,6 +18,16 @@
   button is exactly these commands — someone who knows the bottom does not get
   lost when switching tools. That is why this book takes the command line as its
   reference.
+]
+
+#organizer[
+  We equip the tools to run chapter 16's relay on our own computer. The general
+  account, true on any platform, is the main text; concrete installation steps
+  tied to one operating system are isolated in "platform note" boxes — the boxes
+  use Windows as this book's example platform, and the text continues if you
+#idx("debugger")  skip them. After the compiler and the editor come the
+  debugger, which stops a program to look inside, its blind spots, and the net
+#idx("sanitizer")  that catches bugs while the program runs (sanitizers).
 ]
 
 #chapter-questions()

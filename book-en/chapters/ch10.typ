@@ -6,15 +6,6 @@
   ([chapter 9, Characters and text], [letters too are in the end an agreement about bytes]),
 )
 
-#organizer[
-  You will learn why a computer's input and output has the shape of "characters
-  flowing one line at a time." The answer lies in the age of paper — punched
-  cards, line printers, and the typewriter-like printing terminal. The origin of
-  the two characters `\n` and of the odd name `tty` unravels here too. By the
-  end of this chapter you will understand in advance what the `printf` of your
-  first program is talking to.
-]
-
 #deepqa[
   Chapter 9 said that the control characters — instructions to a device, such as
   "advance the paper one line" — live in a corner of the character table. Why
@@ -24,6 +15,15 @@
   A letter was not drawn on a screen but physically struck onto paper, and
   "next line" was an actual motion of mechanical parts. Look at the devices of
   that era and everything about the shape of today's input and output unravels.
+]
+
+#organizer[
+  You will learn why a computer's input and output has the shape of "characters
+  flowing one line at a time." The answer lies in the age of paper — punched
+  cards, line printers, and the typewriter-like printing terminal. The origin of
+  the two characters `\n` and of the odd name `tty` unravels here too. By the
+  end of this chapter you will understand in advance what the `printf` of your
+  first program is talking to.
 ]
 
 #chapter-questions()

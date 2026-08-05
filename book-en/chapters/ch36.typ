@@ -7,13 +7,6 @@
   ([chapter 11, Memory divides], [memory is a run of adjacent slots]),
 )
 
-#organizer[
-  Contiguous memory — the array. Declaration and traversal, the real relationship
-#idx("buffer overrun")  between arrays and pointers (the notorious "decay"), and
-  the life-or-death rule of the boundary. Chapter 25's `char line[100]` credit is
-  settled here.
-]
-
 #deepqa[
   Chapter 11 said a cache line carries "sixty-four neighbouring slots as one
   box", and that this is why code scanning an array in order is fast. Then what
@@ -25,6 +18,13 @@
   (element $i$ = start address + $i times$ slot size). This property of
   "calculable neighbours" is the root of both the array's power (immediate
   access, cache friendliness) and its danger (miscalculating the boundary).
+]
+
+#organizer[
+  Contiguous memory — the array. Declaration and traversal, the real relationship
+#idx("buffer overrun")  between arrays and pointers (the notorious "decay"), and
+  the life-or-death rule of the boundary. Chapter 25's `char line[100]` credit is
+  settled here.
 ]
 
 #chapter-questions()

@@ -7,13 +7,6 @@
   ([chapter 53, The terrain of the standard library], [the printf contract]),
 )
 
-#organizer[
-  The answer to chapter 69's third bug — the mismatch of format and argument. How the
-  typeless placeholder `{}` obtains type safety, what `_Generic` does beneath it, and
-  how failure appears as a value in the opposite direction, parsing. It is the
-  alternative to the `printf` and `scanf` taken apart in chapter 53.
-]
-
 #deepqa[
   Chapter 50 said type information does not ride along into variadic arguments, and
   chapter 53 said that is why the format string alone settles "how the stack is to be
@@ -26,6 +19,13 @@
   to an expression's type. The run-time cost is zero, and unlike the implicit
 #idx("implicit conversion")  conversion rules learned in chapter 28, here the type is
   *preserved*.
+]
+
+#organizer[
+  The answer to chapter 69's third bug — the mismatch of format and argument. How the
+  typeless placeholder `{}` obtains type safety, what `_Generic` does beneath it, and
+  how failure appears as a value in the opposite direction, parsing. It is the
+  alternative to the `printf` and `scanf` taken apart in chapter 53.
 ]
 
 #chapter-questions()

@@ -7,14 +7,6 @@
   ([chapter 20, Expressions], [how a value is handed over]),
 )
 
-#organizer[
-  Part VI's finish. *How* values cross over in a function call (copying),
-#idx("side effect")  the formal rules of side effects and evaluation order
-  (collecting chapter 20's seed), recursion as a new kind of repetition, and the
-  conditional operator `?:`. The seed planted at the end — the perspective of the
-  contract — blooms in Part IX.
-]
-
 #deepqa[
   Chapter 24 said a parameter is "a variable declaration that receives the
   material." Then if that parameter is *changed* inside the function — does the
@@ -25,6 +17,14 @@
   variable that received a copy of the material's value, and nothing done inside
   the function touches the original. A demonstration is quicker than words — here
   it is.
+]
+
+#organizer[
+  Part VI's finish. *How* values cross over in a function call (copying),
+#idx("side effect")  the formal rules of side effects and evaluation order
+  (collecting chapter 20's seed), recursion as a new kind of repetition, and the
+  conditional operator `?:`. The seed planted at the end — the perspective of the
+  contract — blooms in Part IX.
 ]
 
 #chapter-questions()

@@ -7,14 +7,6 @@
   ([chapter 68, Inside the allocator], [inside the allocator]),
 )
 
-#organizer[
-  The answer to chapter 69's fourth bug — unclear ownership. The *allocator* that
-#idx("allocator")  handles the source of memory as a value, the *arena* that returns
-#idx("arena")  things of the same lifetime all at once, and the rule that divides
-  owning from borrowing by type. The dangers of the heap learned in chapter 40 are
-  organised here into design.
-]
-
 #deepqa[
   Chapter 40 said memory obtained with `malloc` must be `free`d by somebody exactly
   once, and that settling that "somebody" is the program's design. Then is there a
@@ -25,6 +17,14 @@
   that information to the signature with one rule — *a function that does not take an
   allocator as an argument does not allocate.* If this rule is kept, reading the
   signature alone tells you "this function may take memory".
+]
+
+#organizer[
+  The answer to chapter 69's fourth bug — unclear ownership. The *allocator* that
+#idx("allocator")  handles the source of memory as a value, the *arena* that returns
+#idx("arena")  things of the same lifetime all at once, and the rule that divides
+  owning from borrowing by type. The dangers of the heap learned in chapter 40 are
+  organised here into design.
 ]
 
 #chapter-questions()

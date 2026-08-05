@@ -6,14 +6,6 @@
   ([chapter 5, Words and addresses], [an address is a number attached to a slot of memory]),
 )
 
-#organizer[
-  Three pieces of corner knowledge about the locker corridor. Why locker 0 is
-#idx("alignment")  special, why a large piece of luggage cannot go into just any
-  number (alignment), and the trick of hiding information in the last digits of
-  a number (tagged pointers). The three different things all called "null" are
-  first told apart here as well.
-]
-
 #deepqa[
   Chapter 5 said "an address is a number too, so it can be written down in
   another locker." But suppose you want to record that there is *no address
@@ -25,6 +17,14 @@
 #idx("null pointer")  That agreed value is the *null pointer*. But why was locker 0 free to be
   left empty in the first place — that story is the first section of this
   chapter.
+]
+
+#organizer[
+  Three pieces of corner knowledge about the locker corridor. Why locker 0 is
+#idx("alignment")  special, why a large piece of luggage cannot go into just any
+  number (alignment), and the trick of hiding information in the last digits of
+  a number (tagged pointers). The three different things all called "null" are
+  first told apart here as well.
 ]
 
 #chapter-questions()

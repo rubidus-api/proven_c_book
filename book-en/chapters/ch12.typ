@@ -7,14 +7,6 @@
   ([chapter 11, Memory divides], [the layers of memory]),
 )
 
-#organizer[
-  If the cache reduced waiting, this time it is the machinery that overlaps
-#idx("pipeline")  execution itself — pipelining, branch prediction, and the
-  multicore turn forced by the limits of the clock. We also look at the strange
-  accident that arrives with several cores (false sharing). Alongside, we see how
-  C came to write its first contract (C89) in the same era of turmoil.
-]
-
 #deepqa[
   The exchange in chapter 4 promised that "the number of steps (the clock) is
   not the whole story — doing several things in one step is the real weapon of a
@@ -26,6 +18,14 @@
   same time — while one instruction is being calculated, fetch the next and
   decode the one after. That is this chapter's first piece of machinery: the
   pipeline.
+]
+
+#organizer[
+  If the cache reduced waiting, this time it is the machinery that overlaps
+#idx("pipeline")  execution itself — pipelining, branch prediction, and the
+  multicore turn forced by the limits of the clock. We also look at the strange
+  accident that arrives with several cores (false sharing). Alongside, we see how
+  C came to write its first contract (C89) in the same era of turmoil.
 ]
 
 #chapter-questions()

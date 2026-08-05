@@ -7,15 +7,6 @@
   ([chapter 40, Dynamic memory], [allocating and giving back]),
 )
 
-#organizer[
-  A drawer named, exactly as it says, "the standard library". Functions that turn
-  strings into numbers, random numbers, dynamic allocation, program termination,
-  sorting and binary search are all in here together. In place of anything in
-  common there are many traps — in particular *conversion functions with no way to
-  report failure* and *the subtle differences between the terminating functions*
-  are this chapter's two axes.
-]
-
 #deepqa[
   Chapter 25 read input with `fgets` and parsed it with `sscanf`, and chapter 53
   said `sscanf` does not tell you "where and why it failed". Then what is the most
@@ -25,6 +16,15 @@
   value, *where it stopped* (the end pointer), and whether the range was exceeded
   (`errno` being `ERANGE`). `atoi` tells none of them. Its name is short so it
   appears often in introductions, but it is a function not used in the field.
+]
+
+#organizer[
+  A drawer named, exactly as it says, "the standard library". Functions that turn
+  strings into numbers, random numbers, dynamic allocation, program termination,
+  sorting and binary search are all in here together. In place of anything in
+  common there are many traps — in particular *conversion functions with no way to
+  report failure* and *the subtle differences between the terminating functions*
+  are this chapter's two axes.
 ]
 
 #chapter-questions()

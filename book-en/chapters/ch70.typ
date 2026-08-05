@@ -7,15 +7,6 @@
   ([chapter 69, The five bugs shipped for fifty years], [the five bugs]),
 )
 
-#organizer[
-  The first chapter that actually uses proven. We first see why this library has no
-  `configure`, no package manager and no shared library to link — and what that
-  choice gives and takes away — and then run a first program. The third bug seen in
-  chapter 69 (format mismatch) already disappears in this first program. Then we follow
-  *the whole life of one object* (make it, use it, give it back) and set up the three
-  rules needed to read the rest of this part.
-]
-
 #deepqa[
   Chapter 48 made a multi-file program and learned about headers, object files and
 #idx("the compilation process")  linking, and chapter 16 saw the four runners of
@@ -28,6 +19,15 @@
   the call from the *declaration* (the header) and the linker finds and joins the
   *definition* — exactly chapter 48's picture. proven took the former road, and the
   next section is why.
+]
+
+#organizer[
+  The first chapter that actually uses proven. We first see why this library has no
+  `configure`, no package manager and no shared library to link — and what that
+  choice gives and takes away — and then run a first program. The third bug seen in
+  chapter 69 (format mismatch) already disappears in this first program. Then we follow
+  *the whole life of one object* (make it, use it, give it back) and set up the three
+  rules needed to read the rest of this part.
 ]
 
 #chapter-questions()

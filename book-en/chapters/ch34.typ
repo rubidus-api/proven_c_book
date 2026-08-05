@@ -7,13 +7,6 @@
   ([chapter 33, Objects, addresses, pointers], [a pointer is a value that points at something]),
 )
 
-#organizer[
-  The three nulls whose faces we learned in chapter 6 — the null pointer,
-  `NULL`/`nullptr`, and the NUL character — get formal treatment in syntax and
-  practical rules. How to handle "empty" is the first chapter of the pointer
-  safety code.
-]
-
 #deepqa[
   Chapter 6 showed the history that "a null pointer's internal representation
   need not be 0" (the Prime 50, the CDC Cyber 180). Then does the comparison
@@ -26,6 +19,13 @@
   (the 0 in the source) and the representation (the bits in the machine). What
   does break is another kind of code — code that assumes *at the bit level* that
   "the representation is 0." We see that trap shortly.
+]
+
+#organizer[
+  The three nulls whose faces we learned in chapter 6 — the null pointer,
+  `NULL`/`nullptr`, and the NUL character — get formal treatment in syntax and
+  practical rules. How to handle "empty" is the first chapter of the pointer
+  safety code.
 ]
 
 #chapter-questions()

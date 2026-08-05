@@ -7,15 +7,6 @@
   ([chapter 36, Arrays], [the array declarator]),
 )
 
-#organizer[
-#idx("reading declarations")  C's most notorious place — we learn how to read a
-  declaration such as `char *(*table[4])(int)`. There are only two principles:
-  reading *from the outside in*, and reading *from the innermost name outward*.
-  That the two have different uses, and how to unfold this rough declaration in
-#idx("typedef")  layers with `typedef`. Finally we introduce a tool that does the
-  job for you.
-]
-
 #deepqa[
   While learning function pointers in chapter 51 a declaration like
   `int (*(*s)(void))(int);` appeared, and we passed on saying only "it is hard to
@@ -28,6 +19,15 @@
   int". This principle is elegant in the simple cases, but once `*` and `[]` and
   `()` overlap, parentheses intrude because of precedence and it quickly turns
   rough. Hence the separate need for *rules for reading*.
+]
+
+#organizer[
+#idx("reading declarations")  C's most notorious place — we learn how to read a
+  declaration such as `char *(*table[4])(int)`. There are only two principles:
+  reading *from the outside in*, and reading *from the innermost name outward*.
+  That the two have different uses, and how to unfold this rough declaration in
+#idx("typedef")  layers with `typedef`. Finally we introduce a tool that does the
+  job for you.
 ]
 
 #chapter-questions()

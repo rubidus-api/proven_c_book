@@ -1,6 +1,6 @@
 #import "../../book/lib.typ": *
 
-= Appendix E — Bibliography and sources
+= Bibliography and sources
 
 Gathered here are the works this book leans on and the sources of the incidents given
 as cases in the body. How to obtain the standard document is in appendix D.

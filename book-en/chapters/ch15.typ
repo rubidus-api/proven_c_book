@@ -6,12 +6,6 @@
   ([chapter 10, The origin of streams], [streams — output is something poured out]),
 )
 
-#organizer[
-  At last, the first program. We run one six-line C program on the page and
-  read it aloud, line by line. It is normal not to understand all of it yet —
-  what counts as "on credit" and when the debt is paid is settled here.
-]
-
 #deepqa[
   Chapter 10 said a computer's input and output is "a band of characters flowing
   a line at a time" (a stream), and that every program is given the flow called
@@ -22,6 +16,12 @@
   merely today's "paper" attached to the end of that band (remember that it is a
   descendant of the glass Teletype). What the first program does is exactly this
   — let one line of greeting flow onto standard output.
+]
+
+#organizer[
+  At last, the first program. We run one six-line C program on the page and
+  read it aloud, line by line. It is normal not to understand all of it yet —
+  what counts as "on credit" and when the debt is paid is settled here.
 ]
 
 #chapter-questions()

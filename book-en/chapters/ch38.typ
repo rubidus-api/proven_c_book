@@ -7,14 +7,6 @@
   ([chapter 37, Strings], [a string only marks its end]),
 )
 
-#organizer[
-  Chapter 25 foreshadowed "why safe input is difficult", and chapters 33 and 37
-  taught the roots of that danger (the boundary, NUL termination). This chapter
-  completes the dissection of the accident — and the guest promised in chapter 1,
-  this book's underlying library *proven*, finally appears. Exactly as promised:
-  "at the point where the need has proved itself."
-]
-
 #deepqa[
   Chapter 37's gets was expelled for not taking the container's size, and
   chapter 25's fgets is safe because it takes one. Then does "taking the size"
@@ -26,6 +18,14 @@
   counterpart deliberately crafts input aimed at the boundary (chapter 22's
   format-string attack was a taste). Safe input is the sum of [blocking overflow +
   handling failure explicitly], and this chapter's two pillars are those two.
+]
+
+#organizer[
+  Chapter 25 foreshadowed "why safe input is difficult", and chapters 33 and 37
+  taught the roots of that danger (the boundary, NUL termination). This chapter
+  completes the dissection of the accident — and the guest promised in chapter 1,
+  this book's underlying library *proven*, finally appears. Exactly as promised:
+  "at the point where the need has proved itself."
 ]
 
 #chapter-questions()

@@ -7,16 +7,6 @@
   ([chapter 2, The regions of memory], [the regions of memory]),
 )
 
-#organizer[
-#idx("stack size")  We redraw at a larger scale the map of memory sketched in
-  chapter 39. What is absent from the C standard and present only in the operating
-  system — the stack and its limit — is confirmed on Linux and on Windows, and we
-#idx("bss")  see what relation `data`, `bss` and the read-only region have to the
-  executable file. Then we go down into the world with no operating system and see
-  in detail how memory is laid out on Arm Cortex-M, AVR and PIC — and what the
-  startup code does.
-]
-
 #deepqa[
   Chapter 39 said "in the C standard there is neither the word stack nor any
   promise about its size", and that it settles only the automatic storage duration
@@ -29,6 +19,16 @@
   places for stack and heap, and *the startup code* does the remaining trimming.
   With no operating system the startup code takes on the last two entirely — that is
   the embedded world, and the latter half of this chapter is that story.
+]
+
+#organizer[
+#idx("stack size")  We redraw at a larger scale the map of memory sketched in
+  chapter 39. What is absent from the C standard and present only in the operating
+  system — the stack and its limit — is confirmed on Linux and on Windows, and we
+#idx("bss")  see what relation `data`, `bss` and the read-only region have to the
+  executable file. Then we go down into the world with no operating system and see
+  in detail how memory is laid out on Arm Cortex-M, AVR and PIC — and what the
+  startup code does.
 ]
 
 #chapter-questions()

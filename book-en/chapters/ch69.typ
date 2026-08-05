@@ -8,14 +8,6 @@
   ([chapter 53, The terrain of the standard library], [the traps of the standard library]),
 )
 
-#organizer[
-  This part's statement of the problem. We confirm with actually running code why C
-  has kept shipping the same five classes of bug for half a century — that it is not
-  the programmer's carelessness but *the shape of the API*. Only after all five have
-  been seen does the name proven appear again. Not introducing the tool first is
-  this part's principle.
-]
-
 #deepqa[
   Chapter 37 said the functions handling strings "do not know the size of the
   vessel", and chapter 45 said "a failure not confirmed becomes a thing that never
@@ -30,6 +22,14 @@
   road of *placing better functions beside them*. So the choice comes over to the
   programmer — it is, in effect, a language in which knowing what is dangerous and
   choosing accordingly is itself skill.
+]
+
+#organizer[
+  This part's statement of the problem. We confirm with actually running code why C
+  has kept shipping the same five classes of bug for half a century — that it is not
+  the programmer's carelessness but *the shape of the API*. Only after all five have
+  been seen does the name proven appear again. Not introducing the tool first is
+  this part's principle.
 ]
 
 #qa[

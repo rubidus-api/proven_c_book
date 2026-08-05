@@ -7,15 +7,6 @@
   ([chapter 5, Words and addresses], [words and bytes]),
 )
 
-#organizer[
-  The first rung on the ladder of representation. You will see how unsigned
-#idx("two's complement")  integers are circular (modular) numbers, how three ways of
-  holding negative numbers in bits competed until two's complement settled it —
-  and what C23 finally pinned down. Add numbers that overflow and shifting bits
-#idx("overflow")  wholesale, and the background knowledge about integers is
-  complete.
-]
-
 #deepqa[
   Chapter 5 said that several bytes are joined to hold a large number, and we
   even saw endianness (the order of storing). But every number so far has been
@@ -27,6 +18,15 @@
   *read* certain bit patterns as negative. That there was more than one way to
   make that agreement, and how the competition ended, is the heart of this
   chapter.
+]
+
+#organizer[
+  The first rung on the ladder of representation. You will see how unsigned
+#idx("two's complement")  integers are circular (modular) numbers, how three ways of
+  holding negative numbers in bits competed until two's complement settled it —
+  and what C23 finally pinned down. Add numbers that overflow and shifting bits
+#idx("overflow")  wholesale, and the background knowledge about integers is
+  complete.
 ]
 
 #chapter-questions()

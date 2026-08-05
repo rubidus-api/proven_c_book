@@ -7,14 +7,6 @@
   ([chapter 24, Declaring and defining functions], [declaration and definition]),
 )
 
-#organizer[
-  Every program so far has been one file. Now it grows into several —
-#idx("translation unit")  the division of labour between header and source, the
-  notion of the translation unit, the linkage of names (external and internal),
-  and how to read link errors. Chapter 16's relay and chapter 24's distinction
-  between declaration and definition come together here.
-]
-
 #deepqa[
   Chapter 24 said "write prototypes at the top of the file and the definitions may
   be anywhere below — and, more importantly, they may be in another file."
@@ -26,6 +18,14 @@
   promise that "a function of this name with this signature exists somewhere", and
   the vessel that carries that promise is the header file. This chapter sees that
   division of labour in the flesh.
+]
+
+#organizer[
+  Every program so far has been one file. Now it grows into several —
+#idx("translation unit")  the division of labour between header and source, the
+  notion of the translation unit, the linkage of names (external and internal),
+  and how to read link errors. Chapter 16's relay and chapter 24's distinction
+  between declaration and definition come together here.
 ]
 
 #chapter-questions()

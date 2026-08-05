@@ -7,17 +7,6 @@
   ([chapter 67, A program's map of memory], [a program's map of memory]),
 )
 
-#organizer[
-#idx("allocator")  We open the inside of the `malloc` chapter 40 passed over saying
-  only "it is expensive". How an allocator manages free pieces (bins, boundary
-  tags, coalescing), why there is a cache per strand, what fragmentation is and why
-#idx("fragmentation")  it does not recover. Then the alternatives that can be
-  swapped in for the standard `malloc` (jemalloc, tcmalloc, mimalloc, snmalloc) and
-  the alternative standard libraries (musl, picolibc and others), and the arenas and
-  pools that change the very shape of allocation. The end of this chapter is the
-  door to Part XII.
-]
-
 #deepqa[
   Chapter 40 said one `malloc` is "a trip to the warehouse office", and
   chapter 67 showed where in the address space that warehouse lies. Then what
@@ -28,6 +17,17 @@
   latter with a header attached to each block. How these two ledgers are designed
   settles an allocator's performance and security entire. This chapter is the map of
   that design.
+]
+
+#organizer[
+#idx("allocator")  We open the inside of the `malloc` chapter 40 passed over saying
+  only "it is expensive". How an allocator manages free pieces (bins, boundary
+  tags, coalescing), why there is a cache per strand, what fragmentation is and why
+#idx("fragmentation")  it does not recover. Then the alternatives that can be
+  swapped in for the standard `malloc` (jemalloc, tcmalloc, mimalloc, snmalloc) and
+  the alternative standard libraries (musl, picolibc and others), and the arenas and
+  pools that change the very shape of allocation. The end of this chapter is the
+  door to Part XII.
 ]
 
 #chapter-questions()

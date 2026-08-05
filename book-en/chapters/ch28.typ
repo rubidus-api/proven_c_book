@@ -7,14 +7,6 @@
   ([chapter 27, Integer operations], [an operation happens between one type]),
 )
 
-#organizer[
-  When C makes values of different types meet, it converts them *silently*. This
-#idx("integer promotion")  chapter gathers those invisible conversions in one
-  place — integer promotion, the usual arithmetic conversions, and the default
-  promotions of variadic arguments. Scattered, each is a riddle; gathered, they
-  are one system of rules.
-]
-
 #deepqa[
   Chapter 7 taught sign extension (widening 8 bits to 16), and the end of
   chapter 27 brushed past "the value in a smaller container is automatically
@@ -25,6 +17,14 @@
   *does not happen on small integer types*. Everything is widened to int (or
   something larger) before the calculation, and the result is that wider type.
   Why that is, and how far it goes, is this chapter.
+]
+
+#organizer[
+  When C makes values of different types meet, it converts them *silently*. This
+#idx("integer promotion")  chapter gathers those invisible conversions in one
+  place — integer promotion, the usual arithmetic conversions, and the default
+  promotions of variadic arguments. Scattered, each is a riddle; gathered, they
+  are one system of rules.
 ]
 
 #chapter-questions()

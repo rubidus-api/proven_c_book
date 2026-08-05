@@ -7,13 +7,6 @@
 
 = Dynamic memory
 
-#organizer[
-  Part VII's last place — memory whose size is settled at run time and which is
-#idx("dynamic allocation")  kept alive as long as you wish. `malloc` and `free`,
-  the notion of ownership, and this world's three representative accidents (leak,
-  double free, use after free). The map of memory is completed here.
-]
-
 #deepqa[
   Chapter 39 taught automatic lifetime (dies with the function) and static
   lifetime (lives for the whole program). Then memory that is "sized according to
@@ -24,6 +17,13 @@
 #idx("heap")  *allocated storage duration*, the warehouse commonly called the
   *heap*. The rule of this place differs decisively from the other two — *the
   programmer directly orders its birth and its death.*
+]
+
+#organizer[
+  Part VII's last place — memory whose size is settled at run time and which is
+#idx("dynamic allocation")  kept alive as long as you wish. `malloc` and `free`,
+  the notion of ownership, and this world's three representative accidents (leak,
+  double free, use after free). The map of memory is completed here.
 ]
 
 #chapter-questions()

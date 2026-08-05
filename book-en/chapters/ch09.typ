@@ -6,14 +6,6 @@
   ([chapter 8, Representing numbers], [a representation is an agreement, and agreements leave scars]),
 )
 
-#organizer[
-  How to put letters into the lockers — that a character is, in the end, a
-#idx("UTF-8")  number; what history that numbering table (the character code)
-  went through on its way to Unicode and UTF-8; and the scar that history left
-  in C's syntax (trigraphs). For a reader who writes Korean this chapter is
-  unusually vivid.
-]
-
 #deepqa[
   Chapter 8 said the decimal point is not in the bits but in an agreement. Then
   what about letters — is the shape "가" inside the bits?
@@ -22,6 +14,14 @@
   is numbers, and there is a separate *agreed numbering table* saying which
   number is which letter. To store a letter is to store a number, and text is a
   sequence of numbers. This chapter is the story of those tables.
+]
+
+#organizer[
+  How to put letters into the lockers — that a character is, in the end, a
+#idx("UTF-8")  number; what history that numbering table (the character code)
+  went through on its way to Unicode and UTF-8; and the scar that history left
+  in C's syntax (trigraphs). For a reader who writes Korean this chapter is
+  unusually vivid.
 ]
 
 #chapter-questions()

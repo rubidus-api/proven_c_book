@@ -7,13 +7,6 @@
   ([chapter 8, Representing numbers], [IEEE 754]),
 )
 
-#organizer[
-  We look at how real-number calculation reports failure. The mathematics of
-  approximation learned in chapters 8 and 44 becomes the contract of functions here
-  — calls outside the domain, results beyond the range, the properties of NaN and
-  infinity, and the hidden global state called the rounding mode.
-]
-
 #deepqa[
   Chapter 44 said not to compare reals with `==`, and chapter 8 said 0.1 is not
   exactly representable. Then how does a mathematical function tell you when it
@@ -26,6 +19,13 @@
   instead of `errno`, so to check portably you must be ready to look at both. In
   the field it is usually simpler to check the return value with `isnan` and
   `isinf`.
+]
+
+#organizer[
+  We look at how real-number calculation reports failure. The mathematics of
+  approximation learned in chapters 8 and 44 becomes the contract of functions here
+  — calls outside the domain, results beyond the range, the properties of NaN and
+  infinity, and the hidden global state called the rounding mode.
 ]
 
 #chapter-questions()

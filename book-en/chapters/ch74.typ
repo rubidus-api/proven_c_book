@@ -7,14 +7,6 @@
   ([chapter 9, Characters and text], [UTF-8 and bytes]),
 )
 
-#organizer[
-  The answer to chapter 69's first bug — string functions that do not know the size
-  of the vessel. Strings that carry their length, the distinction between owning and
-  borrowing, and this library's most contentious decision, *refuse rather than
-  truncate*. Chapter 9's story of encodings and chapter 37's story of boundaries
-  gather here into one.
-]
-
 #deepqa[
   Chapter 37 said that for a C string "up to the NUL" is the length, so to know the
   length it must be counted every time. Then what improves if the length is carried
@@ -27,6 +19,14 @@
   necessary when meeting a world that expects NUL termination, as `printf("%s")` does.
   This library keeps a NUL internally as well in order to remove that conversion cost
   — a compromise that has both.
+]
+
+#organizer[
+  The answer to chapter 69's first bug — string functions that do not know the size
+  of the vessel. Strings that carry their length, the distinction between owning and
+  borrowing, and this library's most contentious decision, *refuse rather than
+  truncate*. Chapter 9's story of encodings and chapter 37's story of boundaries
+  gather here into one.
 ]
 
 #chapter-questions()

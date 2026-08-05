@@ -1,6 +1,6 @@
 #import "../../book/lib.typ": *
 
-= Appendix F — How grammar is written (EBNF) and the whole C grammar
+= Appendix E — How grammar is written (EBNF) and the whole C grammar
 
 This appendix holds two things. EBNF, the *notation for writing* a programming
 language's grammar, and *the whole C grammar* read in that notation. What the parser

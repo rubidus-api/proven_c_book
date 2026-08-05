@@ -8,14 +8,6 @@
   ([chapter 72, The foundation], [views and bounds]),
 )
 
-#organizer[
-#idx("hash map")  The tools that hold many — the growing array, the intrusive list,
-  the ring buffer, the hash map. And as the answer to chapter 69's fifth bug
-  (unchecked callbacks) and the performance trap attached to that place, we see
-  sorting *guaranteed even in the worst case* and hashing that *withstands attack*.
-  Chapter 35's arrays and chapter 41's structs become practical components here.
-]
-
 #deepqa[
   Chapter 35 taught that a C array's size is settled at compile time, and chapter 40
   that it can be grown with `realloc`. Then where is it easiest to go wrong when
@@ -28,6 +20,14 @@
   leak). Third, *pointers after the growth* — a pointer that pointed at an element
   becomes invalid after reallocation. Rather than getting these three right afresh
   every time you make a container, it is better to use one made properly once.
+]
+
+#organizer[
+#idx("hash map")  The tools that hold many — the growing array, the intrusive list,
+  the ring buffer, the hash map. And as the answer to chapter 69's fifth bug
+  (unchecked callbacks) and the performance trap attached to that place, we see
+  sorting *guaranteed even in the worst case* and hashing that *withstands attack*.
+  Chapter 35's arrays and chapter 41's structs become practical components here.
 ]
 
 #chapter-questions()

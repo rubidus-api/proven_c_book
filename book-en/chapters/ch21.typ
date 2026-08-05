@@ -7,14 +7,6 @@
   ([chapter 19, The structure of a program], [the lump of work called a function]),
 )
 
-#organizer[
-  How to *make* a function is still some way off (chapter 24). This chapter is
-  how to *call* one — learn the three words call, argument and return value, and
-  hello world's heart, `printf("Hello, world!\n");`, reads as a complete
-  sentence. Employing workers other people made — half of programming is really
-  this.
-]
-
 #deepqa[
   At the end of chapter 20 we said "calling a function is itself an expression,
   and therefore becomes a value." Then the value 14, calculated from the
@@ -26,6 +18,14 @@
   and the function does its work with them and puts out a *result value*. The
   materials are called arguments, the result the return value — those two words
   are the whole of this chapter.
+]
+
+#organizer[
+  How to *make* a function is still some way off (chapter 24). This chapter is
+  how to *call* one — learn the three words call, argument and return value, and
+  hello world's heart, `printf("Hello, world!\n");`, reads as a complete
+  sentence. Employing workers other people made — half of programming is really
+  this.
 ]
 
 #chapter-questions()

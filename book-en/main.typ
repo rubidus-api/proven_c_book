@@ -263,9 +263,11 @@ The Korean edition is at:
 #include "appendix/a2-formats.typ"
 #include "appendix/a3-conversions.typ"
 #include "appendix/a4-reading.typ"
-#include "appendix/a5-bibliography.typ"
 #include "appendix/a6-grammar.typ"
 
 // ── Index ───────────────────────────────────────────
+#pagebreak(weak: true)
+#include "back/bibliography.typ"
+
 #pagebreak(weak: true)
 #include "back/index.typ"

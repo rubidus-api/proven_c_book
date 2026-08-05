@@ -7,13 +7,6 @@
   ([chapter 69, The five bugs shipped for fifty years], [the unchecked return value]),
 )
 
-#organizer[
-  We see the answer to chapter 69's second bug — unconfirmed failure. The way of
-  returning failure as a value, the bundle holding a value and an error together,
-  and the device that makes the compiler protest if an error is thrown away. The
-  discipline set up in chapter 45, "errors are values", hardens here into a type.
-]
-
 #deepqa[
   Chapter 45 said C's ways of reporting an error are only three — the return value,
   global state, and stopping the program — and that of these the return value is the
@@ -25,6 +18,13 @@
   and use the return value for status alone, or *hold both in one struct* and return
   them together. proven uses the second and third together — and the third is
   possible because, as learned in chapter 41, a C struct can be returned by value.
+]
+
+#organizer[
+  We see the answer to chapter 69's second bug — unconfirmed failure. The way of
+  returning failure as a value, the bundle holding a value and an error together,
+  and the device that makes the compiler protest if an error is thrown away. The
+  discipline set up in chapter 45, "errors are values", hardens here into a type.
 ]
 
 #chapter-questions()

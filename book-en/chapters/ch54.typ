@@ -6,14 +6,6 @@
   ([chapter 53, The terrain of the standard library], [the character of the standard library]),
 )
 
-#organizer[
-  We spread into a table every header the C standard settles, without missing one.
-  Which header entered in which edition, what can be used even without an
-  operating system, and in what order the remaining chapters of this part walk
-  those regions. It is the chapter that redraws chapter 53's terrain map at a
-  larger scale.
-]
-
 #deepqa[
   Chapter 53 said the standard library is "thin and old", and that the standard
   pins down not only the grammar but the list of libraries and the contract of each
@@ -25,6 +17,14 @@
   list — *once something enters it stays effectively forever, and so it takes long
   to let anything in*. It is the other side of the story of `gets`'s funeral taking
   decades (chapter 38).
+]
+
+#organizer[
+  We spread into a table every header the C standard settles, without missing one.
+  Which header entered in which edition, what can be used even without an
+  operating system, and in what order the remaining chapters of this part walk
+  those regions. It is the chapter that redraws chapter 53's terrain map at a
+  larger scale.
 ]
 
 #chapter-questions()

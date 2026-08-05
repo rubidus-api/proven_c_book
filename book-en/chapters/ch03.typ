@@ -6,15 +6,6 @@
   ([chapter 2, The regions of memory], [the map that divides memory into code, static, stack and heap]),
 )
 
-#organizer[
-#idx("process")  We divide the *program* that exists as a file from the *process*
-  that has been run and is alive. What the operating system gives a process (an
-  address space of its own, open files, an exit status), and how a process is born —
-#idx("fork")  the Unix family's `fork` and Windows' way — seen briefly. *What
-  appears here is not the C standard.* It is also the chapter that first draws the
-  boundary between what the standard promises and what the operating system gives.
-]
-
 #deepqa[
   Chapter 2 said a program's memory divides into code, static, stack and heap. But
   when, and by whom, are those regions prepared?
@@ -25,6 +16,15 @@
   spreading out the real memory, setting up the workbench, and leaping to the first
   instruction — that is running, and one set brought to life that way is called a
   *process*.
+]
+
+#organizer[
+#idx("process")  We divide the *program* that exists as a file from the *process*
+  that has been run and is alive. What the operating system gives a process (an
+  address space of its own, open files, an exit status), and how a process is born —
+#idx("fork")  the Unix family's `fork` and Windows' way — seen briefly. *What
+  appears here is not the C standard.* It is also the chapter that first draws the
+  boundary between what the standard promises and what the operating system gives.
 ]
 
 #chapter-questions()

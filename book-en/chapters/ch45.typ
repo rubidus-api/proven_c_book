@@ -7,14 +7,6 @@
   ([chapter 38, Safe input, and the appearance of proven], [the idiom of safe input]),
 )
 
-#organizer[
-#idx("contract")  The seed of the contract planted in chapter 32 grows — what a
-  function demands and what it promises (preconditions and postconditions), how
-  failure is reported (C's way: errors are values), and the devices that force
-  that value to be checked. The design idea of proven, seen in chapter 38, is
-  organised here into principles.
-]
-
 #deepqa[
   At the end of chapter 32 the `fact` function was said to stand on an "implicit
   promise" (n at least 0; overflow at 13 or above). But that promise was written
@@ -26,6 +18,14 @@
   contract is in neither documentation nor code, a violation passes silently and
   goes off later somewhere unrelated. This chapter is the story of ways to *make
   the contract visible*.
+]
+
+#organizer[
+#idx("contract")  The seed of the contract planted in chapter 32 grows — what a
+  function demands and what it promises (preconditions and postconditions), how
+  failure is reported (C's way: errors are values), and the devices that force
+  that value to be checked. The design idea of proven, seen in chapter 38, is
+  organised here into principles.
 ]
 
 #chapter-questions()

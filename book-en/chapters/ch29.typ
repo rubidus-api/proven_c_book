@@ -7,13 +7,6 @@
   ([chapter 28, Implicit conversions], [the promotion rules]),
 )
 
-#organizer[
-#idx("boolean")  The world of true and false as values — C23's `bool`, the
-  comparison operators, and the logical operators with their special property
-#idx("condition")  (short-circuit evaluation). The "condition" the next
-  chapter's branching will ask about is made here.
-]
-
 #deepqa[
   Chapter 23 announced that `=` (putting) and `==` (comparing) use separate
   symbols. Then what is the *result* of a comparison like `3 < 5` — an
@@ -24,6 +17,13 @@
   named `bool` and its values `true` and `false`. That a comparison is not a
   "question" but *an expression computing a bool value* — that perspective is
   this chapter's centre, and in the next chapter branching consumes that value.
+]
+
+#organizer[
+#idx("boolean")  The world of true and false as values — C23's `bool`, the
+  comparison operators, and the logical operators with their special property
+#idx("condition")  (short-circuit evaluation). The "condition" the next
+  chapter's branching will ask about is made here.
 ]
 
 #chapter-questions()

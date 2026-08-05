@@ -8,13 +8,6 @@
   ([chapter 14, And so C is an abstract language], [the contract of the abstract machine]),
 )
 
-#organizer[
-  Two deep rules that bind pointers — the constraint chapter 6's alignment places
-  on pointer casts (and the privilege belonging to `char*` alone), and a
-  practical feel for the provenance (the tag of origin) foreshadowed in
-  chapter 14. Short, but the most "contract-like" of this part's safety rules.
-]
-
 #deepqa[
   Chapter 6 taught the alignment rule that "a four-byte load goes at a multiple
   of four." But a pointer is merely a variable holding a number — why can it not
@@ -27,6 +20,13 @@
   or on some machines a bus fault on the spot. In the standard's eye, *the cast
   to a type with stricter alignment is already outside the contract*. A pointer's
   type is both an eye and a contract.
+]
+
+#organizer[
+  Two deep rules that bind pointers — the constraint chapter 6's alignment places
+  on pointer casts (and the privilege belonging to `char*` alone), and a
+  practical feel for the provenance (the tag of origin) foreshadowed in
+  chapter 14. Short, but the most "contract-like" of this part's safety rules.
 ]
 
 #chapter-questions()

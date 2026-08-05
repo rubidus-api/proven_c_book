@@ -7,14 +7,6 @@
   ([chapter 10, The origin of streams], [a stream runs both ways]),
 )
 
-#organizer[
-  We complete chapter 22's promise — with somewhere to store a value (a
-  variable), we take input. The way this book teaches from the start is exactly
-  modern practice: *read a whole line, then interpret that line.* Separating
-  reading from interpreting — that two-stage structure is the source of both
-  convenience and safety. Part V is completed here.
-]
-
 #deepqa[
   Chapter 10 said input, like output, is "a band of characters flowing a line at
   a time", and that human input naturally comes in lines ending with Enter (line
@@ -26,6 +18,14 @@
   receive *a whole line* and then find the values it needs inside it. Lifting a
   line out of the band of characters, and interpreting the lifted line — split
   those two and each becomes simple.
+]
+
+#organizer[
+  We complete chapter 22's promise — with somewhere to store a value (a
+  variable), we take input. The way this book teaches from the start is exactly
+  modern practice: *read a whole line, then interpret that line.* Separating
+  reading from interpreting — that two-stage structure is the source of both
+  convenience and safety. Part V is completed here.
 ]
 
 #chapter-questions()

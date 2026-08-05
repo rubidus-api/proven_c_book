@@ -7,16 +7,6 @@
   ([chapter 17, Setting up a development environment], [setting up the tools]),
 )
 
-#organizer[
-#idx("compiler")  A map of which C compilers exist besides the gcc and clang
-  installed in chapter 17, and where each is used. The big three of desktops and
-  servers, the small tidy alternative on Windows (Pelles C), the vendor
-  compilers that sell performance, the doorway to the embedded world covered at
-  the end of the book, and, as an aside, the tidy Windows alternative
-  (Pelles C). Only what is *currently in service* is listed — and
-  the names that have retired, or are retiring, are named as such.
-]
-
 #deepqa[
   Chapter 16 said compilation is a four-step relay of preprocessing,
   translation, assembling and linking, and chapter 17 installed gcc or clang as
@@ -30,6 +20,16 @@
   standard is supported* and *the character of the diagnostics*. The standard may
   be the same, but the tools are many and each is good in a different place —
   mapping that is this chapter.
+]
+
+#organizer[
+#idx("compiler")  A map of which C compilers exist besides the gcc and clang
+  installed in chapter 17, and where each is used. The big three of desktops and
+  servers, the small tidy alternative on Windows (Pelles C), the vendor
+  compilers that sell performance, the doorway to the embedded world covered at
+  the end of the book, and, as an aside, the tidy Windows alternative
+  (Pelles C). Only what is *currently in service* is listed — and
+  the names that have retired, or are retiring, are named as such.
 ]
 
 #chapter-questions()

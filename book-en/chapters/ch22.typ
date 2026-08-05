@@ -7,14 +7,6 @@
   ([chapter 19, The structure of a program], [the skeleton of a program]),
 )
 
-#organizer[
-#idx("format string")  `printf` faced head on — the frame called a format
-  string, the blanks `%d` and `%s`, and matching the format against the
-  materials. By the end of this chapter Part IV's goal is achieved: one piece of
-  hello world becomes, apart from two lines still on credit, all known
-  sentences.
-]
-
 #deepqa[
   Chapter 10 said that printing terminals naturally worked by *line buffering* —
   waiting until a line's worth had gathered before striking the paper. Does
@@ -28,6 +20,14 @@
   the paper typewriter disappeared, its rhythm lives on as software's default —
   the commotion this habit causes in practice ("my output isn't showing!") and
   how to govern it are met when we take up input and output properly.
+]
+
+#organizer[
+#idx("format string")  `printf` faced head on — the frame called a format
+  string, the blanks `%d` and `%s`, and matching the format against the
+  materials. By the end of this chapter Part IV's goal is achieved: one piece of
+  hello world becomes, apart from two lines still on credit, all known
+  sentences.
 ]
 
 #chapter-questions()

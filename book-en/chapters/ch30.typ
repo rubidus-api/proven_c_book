@@ -6,14 +6,6 @@
   ([chapter 29, Booleans and comparison], [the result of a comparison is true or false]),
 )
 
-#organizer[
-  The program meets a fork. `if`, which takes a different road according to a
-  condition, and `switch`, which spreads several branches at once — we learn both
-  branching devices. This is the chapter in which chapter 4's model of
-  computation ("if the result is zero, jump over there") finally appears with the
-  face of C syntax.
-]
-
 #deepqa[
   Chapter 12 foreshadowed the instinct that "an `if` is not free" — a mispredicted
   branch pays the penalty of flushing the pipeline. Should a programmer then
@@ -25,6 +17,14 @@
   regular fork is cheap, a random one expensive (the sorted-array episode). It is
   knowledge to be taken out only in the very small amount of code where
   performance matters; the branching learned today may be used freely.
+]
+
+#organizer[
+  The program meets a fork. `if`, which takes a different road according to a
+  condition, and `switch`, which spreads several branches at once — we learn both
+  branching devices. This is the chapter in which chapter 4's model of
+  computation ("if the result is zero, jump over there") finally appears with the
+  face of C syntax.
 ]
 
 #chapter-questions()
