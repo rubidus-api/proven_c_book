@@ -142,6 +142,67 @@ story.
   on.
 ]
 
+== Borrowing in one dimension, using it as two
+
+Chapter 36 showed real multidimensional arrays such as `int m[3][4]`. But when
+the size is settled at run time that syntax cannot be used, and so the commonest
+shape in practice is *to borrow one run and read it along two axes*.
+
+The heart of it is one line of arithmetic. Borrow `rows × cols` slots at once and
+find slot `(i, j)` as `i * cols + j`. That is exactly the layout of a real
+two-dimensional array (row-major, chapter 36) — so the performance is the same
+and the cache behaves the same way (chapter 11).
+
+#demo("examples-en/ch40/flat2d.c")
+
+Three things need care here.
+
+*First, do not scatter the subscript arithmetic by hand.* Write
+`p[i * cols + j]` all over the code and the moment one place forgets `cols` it
+quietly reads a different slot. Shut it inside one macro, as the example does,
+and there is one place to fix. When writing the macro, keep chapter 49's rules —
+*wrap every argument in parentheses*, and raise the product to `size_t` to avoid
+overflow.
+
+```c
+#define AT(p, cols, i, j)  ((p)[(size_t)(i) * (size_t)(cols) + (size_t)(j)])
+```
+
+*Second, the size computation itself can overflow.* `rows * cols * sizeof(int)`
+is a product of three numbers, easy to overflow, and an overflow means *borrowing
+a small vessel and using it as a large array* — the worst kind of accident. The
+example checks with `ckd_mul` (chapters 46 and 65) first and does not even attempt
+the allocation if it overflows.
+
+*Third, nail down the order of rows and columns in the documentation.*
+`AT(g, cols, 1, 2)` and `AT(g, cols, 2, 1)` are different slots. Half the mistakes
+come from here, so name the parameters `rows` and `cols` plainly and write the
+order down.
+
+#qa[
+  Could an array of pointers (`int **`) not be used, keeping the `m[i][j]` syntax?
+][
+  It can, and it is a common method — allocate each row separately and hold their
+  addresses in an array. The price is high, though.
+
+  *The memory is scattered.* With rows far apart, chapter 11's locality breaks and
+  the cache hit rate falls. *There are many allocations.* One `malloc` per row,
+  that many failure paths, and freeing must run in reverse just as many times.
+  *There is one more indirection.* `m[i][j]` follows an address twice.
+
+  And decisively, *`int[3][4]` and `int **` are different types.* Pass the name of
+  a real two-dimensional array to a function taking `int **` and it is a compile
+  error; force it through with a cast and it is outside the contract — because,
+  as chapter 36 showed, `int m[3][4]` decays to `int (*)[4]`, not to `int **`.
+  This misunderstanding is the most frequent accident with multidimensional
+  arrays.
+
+  In short — *a real two-dimensional array when the size is fixed; a
+  one-dimensional allocation plus a subscript macro (or a VLA parameter,
+  chapter 36) when it is settled at run time*; and `int **` when the rows have
+  genuinely different lengths (a ragged array).
+]
+
 == Ownership — who is responsible for giving it back
 
 The address `malloc` gave can be copied into several variables and can travel

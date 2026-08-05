@@ -76,6 +76,50 @@ that way, but it is not something the standard forces on every implementation.
   *Portable code screens out a zero divisor first.*
 ]
 
+=== Opening the bits directly
+
+Having seen the layout in chapter 8, we now print the bits of real values and
+check them. To move a representation we use `memcpy` rather than a union — by
+chapter 43's rule that is the safest passage for "moving a value", and compilers
+mostly make the copy disappear.
+
+#demo("examples-en/ch44/bits.c")
+
+Five things from the output are worth pointing at.
+
+*First, `1.0` is remarkably tidy.* The exponent field holds 1023 (the bias
+itself, so the actual exponent is 0) and the fraction is all zeros — the hidden
+bit alone makes $1.0 times 2^0$. `2.0` raises the exponent by one, `0.5` lowers
+it by one, and flipping the sign bit gives `-1.0`.
+
+*Second, `0.1` shows the cut mark of an unending fraction.* Its fraction ends in
+`999999999999a`, and that final `a` is the trace of *rounding*. It is chapter 8's
+mathematics box — "it does not come out even in binary" — laid bare in bits.
+
+*Third, `0.1 + 0.2` and `0.3` differ by one last bit.* The two bit patterns end
+`...3334` and `...3333`, exactly one apart. That is why the `==` comparison is
+false, and why this chapter talks about tolerances.
+
+*Fourth, the identity of one ULP becomes visible.* Adding the integer 1 to the
+bits of `1.0` gives the very next real number, and the difference is
+`DBL_EPSILON` ($2^{-52}$). "The smallest distinguishable difference near 1.0"
+turns out to be a single bit.
+
+*Fifth, the subnormals appear at the floor.* Halve the smallest normal number and
+the exponent cannot go lower, so *zeros begin to fill the front of the fraction*
+instead — that state, with the exponent field all zeros, is a subnormal. Precision
+is given up little by little on the way down to zero, and when the last bit
+disappears the value becomes zero. This design, fading out instead of falling
+abruptly to zero, is called *gradual underflow*.
+
+#platform("subnormals can be slow")[
+  Arithmetic on subnormals is far slower than on normal numbers on some hardware
+  (tens of times, on some machines). So signal processing and game engines
+  sometimes switch on a mode that flushes subnormals to zero — a trade of a
+  little accuracy for the removal of a worst-case stall. Standard C has no
+  portable way to switch that mode on (it is a compiler option or a platform API).
+]
+
 NaN has one famous property — *it is not even equal to itself.* If `x != x` is
 true then x is NaN, and that is the classic idiom for detecting NaN (today one
 uses `isnan()`). Being a value that breaks the basic property of the relation

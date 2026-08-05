@@ -92,6 +92,63 @@ the number of digits in the kernel is finite, so anything beyond them is
   of the approximation.
 ]
 
+== How the bits are really divided
+
+Let us take "the significand and the exponent are stored together" all the way
+down to the bit layout. IEEE 754 divides a value into three pieces — the *sign*
+(1 bit), the *exponent*, and the *fraction*.
+
+#dtable(
+  columns: 5,
+  [*format*], [*total*], [*sign*], [*exponent*], [*fraction*],
+  [`float` (single)], [32 bits], [1], [8], [23],
+  [`double` (double)], [64 bits], [1], [11], [52],
+)
+
+The rules for reading the three pieces are these.
+
+- *Sign*: 0 for positive, 1 for negative. It is a separate bit, unrelated to the
+  magnitude, which is why *`-0.0` exists* — a zero whose sign bit alone is 1.
+- *Exponent*: negative exponents must fit too, so a *bias* is added before
+  storing. `float` adds 127, `double` adds 1023. A stored 1023 means an actual
+  exponent of 0; a stored 1019 means $-4$.
+- *Fraction*: in a normalised number the leading digit is always 1, so *that 1 is
+  not stored* (the hidden bit). Hence `double` stores 52 bits and yet carries 53
+  bits of precision.
+
+So the value of a normal number is recovered as
+
+$ (-1)^"sign" times 1."fraction" times 2^("stored exponent" - "bias") $
+
+The two ends of the exponent range are reserved for special meanings.
+
+#dtable(
+  columns: 3,
+  [*exponent bits*], [*fraction*], [*meaning*],
+  [all zero], [0], [zero (`+0.0` or `-0.0` by the sign bit)],
+  [all zero], [non-zero], [*subnormal* — the hidden bit is taken as 0, filling in densely near zero],
+  [all one], [0], [infinity ($plus.minus infinity$ by the sign)],
+  [all one], [non-zero], [NaN — "not a number"],
+  [anything else], [anything], [a normal number — the formula above],
+)
+
+This table is the origin of the properties met in chapter 44. That NaN is not
+equal to itself, that infinity comes out of overflow, that `+0.0 == -0.0` while
+their bits differ — all of it comes from this layout. Chapter 44 confirms each of
+them by *printing the actual bits*.
+
+#qa[
+  Why bias the exponent — why not store it in two's complement?
+][
+  It could be stored that way. The bias has a practical advantage, though — *read
+  the bits (apart from the sign) as an integer and the ordering of the reals comes
+  out right.* The exponent sits in the high bits, and thanks to the bias a smaller
+  exponent gives a smaller bit pattern, so two positive numbers of the same sign
+  compare correctly even when their patterns are read as unsigned integers. The
+  hardware's comparison circuits get simpler and work like sorting gets faster. A
+  two's complement exponent would break that property.
+]
+
 == Three incidents caused by approximation
 
 Let us look ahead, numerically, at the faces "faithful approximation" wears in
