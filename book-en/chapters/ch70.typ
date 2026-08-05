@@ -6,7 +6,9 @@
   The first chapter that actually uses proven. We first see why this library has no
   `configure`, no package manager and no shared library to link — and what that
   choice gives and takes away — and then run a first program. The third bug seen in
-  chapter 69 (format mismatch) already disappears in this first program.
+  chapter 69 (format mismatch) already disappears in this first program. Then we follow
+  *the whole life of one object* (make it, use it, give it back) and set up the three
+  rules needed to read the rest of this part.
 ]
 
 #deepqa[
@@ -88,6 +90,111 @@ and precision seen in chapter 53. `>` is right alignment, `<` left alignment, `.
 to three decimal places. That the alignment symbol comes first is what differs from
 `printf`.
 
+== Three rules — the key to this whole part
+
+The functions ahead number more than a hundred, but the rules for reading their
+signatures are only three. Get these three into your hand and you can read half of any
+function you have never seen, without the documentation.
+
++ *Only a function that takes an allocator as an argument takes memory.* If
+  `proven_allocator_t` appears in the signature it means "this function may allocate",
+  and if it does not, it takes *not one byte*. So which functions are usable in
+  embedded work and which are not divide before your eyes (chapter 73).
++ *Failure comes as a value.* If there is no result to return it gives a single
+  `proven_err_t`; if there is, an `{err, value}` bundle. Before checking `err` you do
+  not look at `value` (chapter 71).
++ *Give a thing back with the allocator you made it with.* What was obtained with
+  `_create` is let go with `_destroy`, and what has `view` in its name is borrowed and
+  is not destroyed (chapters 72 and 73).
+
+The naming rules have almost no exceptions either.
+
+#dtable(
+  columns: 3,
+  [*shape of the name*], [*meaning*], [*example*],
+  [`_create`], [obtain a new object from an allocator — returns a bundle], [`proven_u8str_create`],
+  [`_borrow`], [lay an object over somebody's memory — no allocation], [`proven_u8str_borrow`],
+  [`_destroy`], [give it back with the allocator it was made with], [`proven_u8str_destroy`],
+  [`_as_`], [see the same thing through another eye — no copying], [`proven_u8str_as_view`],
+  [`_view`], [borrowed. it is not destroyed], [`proven_u8str_view_t`],
+  [`_checked`], [check the boundary and error if it is broken], [`..._slice_checked`],
+  [`_unchecked`], [skip the check — for places the caller has already confirmed], [`..._slice_unchecked`],
+  [`_grow`], [enlarge if short — which is why it takes an allocator], [`proven_u8str_append_grow`],
+  [`_or_panic`], [panic on failure. for places with nobody to return to], [`proven_arena_alloc_or_panic`],
+)
+
+== The life of one object
+
+Rather than reading three lines of rules, it is quicker to follow one real thing to
+the end. The program below holds the whole course of *making, using and giving back* a
+string object on one screen.
+
+#demo("examples/ch70/first.c")
+
+Six places to point at.
+
+*① It took an allocator as an argument.* That `build_line`'s first argument is an
+allocator is the declaration that "this function may take memory". The caller settles
+whether to give it the heap or an arena (chapter 73).
+
+*② Making returns a bundle.* `proven_u8str_create` gives a
+`proven_result_u8str_t` (that is, `{err, value}`). Before checking `err` you do not
+take `value` out — that order is the whole of chapter 71.
+
+*③ The capacity is "by content".* The 64 of `create(alloc, 64)` is *the number of
+bytes of content to hold*, and the library internally takes one more byte for the NUL.
+That is how `as_cstr` can hand out a C string without copying.
+
+*④ The failure path gives back too.* If formatting fails, the string taken so far is
+returned with `destroy` before the error is raised. Grow this pattern and it becomes
+chapter 71's `goto` cleanup idiom.
+
+*⑤ The place where ownership passes is explicit.* `*out = line;` is that place. After
+this line the string's owner is the caller, and the responsibility to destroy it is the
+caller's too.
+
+*⑥ Destroying empties the struct.* That the length prints as 0 after `destroy` is the
+evidence. It is so that the returned buffer is not still pointed at, and the contract
+that *a destroyed object is not used again* stands as it is.
+
+#antipattern[
+  The four mistakes a beginner meets on the first day
+][
+  ```c
+  /* ① taking value out without checking */
+  proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* rubbish on failure */
+
+  /* ② destroying with a different allocator */
+  proven_u8str_destroy(other_alloc, &s);                     /* contract violation */
+
+  /* ③ holding a view longer than its original */
+  proven_u8str_view_t v = proven_u8str_as_view(&s);
+  proven_u8str_destroy(alloc, &s);
+  proven_println("{}", PROVEN_ARG(v));                       /* reads a dead place */
+
+  /* ④ forgetting PROVEN_ARG */
+  proven_println("count={}", count);                         /* does not compile */
+  ```
+  Of the four only ④ is caught by the compiler. The other three are blocked *by a human
+  keeping the rules*, which is why the previous section said to get the three rules into
+  your hand. ③ in particular is met again in chapter 74, and once more when an arena is
+  reset.
+]
+
+#qa[
+  Must an object be made with `_create`? What about where there is no heap?
+][
+  No. Most objects come with *a borrowing edition* as well.
+  `proven_u8str_borrow(buf, sizeof buf)` lays a string over a stack or static array —
+  it takes no allocator, so it takes not one byte, and therefore needs no `destroy`
+  either (the caller is already the owner). Embedded code handles strings this way
+  (chapter 74), and several of this book's examples run so.
+
+  There is a middle form too. Take the memory once in a large piece, lay an arena over
+  it and hand out from there (chapter 73) — then `malloc` is never called once while the
+  `_create` family can be used as it is.
+]
+
 #qa[
   How does `PROVEN_ARG` find out the type? Does C not lack function overloading?
 ][
@@ -124,6 +231,44 @@ to three decimal places. That the alignment symbol comes first is what differs f
   are all different, *the most portable unit of distribution is source*.
 ]
 
+== Attaching it to your own project — a minimal Makefile
+
+To avoid typing the two lines above every time, use chapter 79's `make`. Supposing the
+library has been put whole into `vendor/proven`, this much suffices.
+
+```make
+CC      = cc
+CFLAGS  = -std=c23 -Wall -Wextra -Werror -O2 -Ivendor/proven/include
+VSRC    = $(wildcard vendor/proven/src/proven/*.c) \
+          $(wildcard vendor/proven/platform/*.c)
+VOBJ    = $(VSRC:.c=.o)
+
+app: app.o $(VOBJ)
+	$(CC) $^ -lm -o $@
+
+clean:
+	rm -f app app.o $(VOBJ)
+```
+
+Only three things need be known. *`-I`* tells it where to find `<proven.h>`
+(chapter 48). *`platform/`* is the thin layer that calls the operating system, so when
+going to bare metal only this line is removed (chapter 78). *`-lm`* joins the
+mathematical functions that real-number formatting uses — take reals out of the
+formatter (chapter 78's `PROVEN_FMT_NO_FLOAT`) and this is not needed either.
+
+#platform[
+  On Windows and in embedded work
+][
+  *MSVC* — this library requires C23. Recent updates of Visual Studio 2022 support a
+  good deal of it with `/std:clatest`, but the surest road is to use `clang-cl` or
+  MinGW-w64 (GCC) on Windows too (chapter 18's terrain).
+
+  *Embedded* — leave out `platform/` and compile only `src/proven/*.c`. There being no
+  heap, `proven_heap_allocator()` returns an unusable value (all zeros), and an arena
+  laid over a static array is used instead (chapter 73). The detailed procedure is
+  chapter 78.
+]
+
 #recap[
   This chapter in summary.
 
@@ -131,8 +276,12 @@ to three decimal places. That the alignment symbol comes first is what differs f
   columns: 2,
     [*what*], [*how*],
     [header], [one `#include <proven.h>`],
-    [build], [compile `src/proven/*.c` together with the program],
+    [build], [compile `src/proven/*.c` with the program (`-I` for the header path, `-lm`)],
     [OS dependence], [only in `platform/` (build without it if absent)],
+    [rule ①], [only a function that takes an allocator takes memory],
+    [rule ②], [failure comes as a value — check `err`, then `value`],
+    [rule ③], [destroy with the allocator it was made with. a `view` is not destroyed],
+    [making], [`_create` (allocates) / `_borrow` (over somebody's buffer, no allocation)],
     [output], [`proven_println("... {} ...", PROVEN_ARG(x))`],
     [format specification], [`{:>8}` `{:<8}` `{:.3}` — after the colon],
     [the price], [a `PROVEN_ARG` per argument, a syntax unlike the familiar `%d`],

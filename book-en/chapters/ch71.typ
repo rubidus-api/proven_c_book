@@ -30,11 +30,72 @@ The rule is simple. *A function that can fail must return the failure as a value
 - If there is a result to return, it returns an `{err, value}` bundle — with a name
   per type, such as `proven_result_u8str_t` or `proven_result_size_t`.
 
-`proven_err_t` is an enumeration and success is `PROVEN_OK` (0). Failures have a
-name per kind — `PROVEN_ERR_NOMEM` (out of memory),
-`PROVEN_ERR_OUT_OF_BOUNDS` (out of room), `PROVEN_ERR_NOT_FOUND`,
-`PROVEN_ERR_INVALID_ARG`, `PROVEN_ERR_IO`, `PROVEN_ERR_EOF` and so on. The check is
-always the single `proven_is_ok(err)`.
+`proven_err_t` is an enumeration and success is `PROVEN_OK` (0). The check is always
+the single `proven_is_ok(err)` — writing `err == 0` would work too, but using the name
+lets the code survive a later change of representation.
+
+=== Every error code
+
+Failures have a name per kind, and there are sixteen in all. They are not to be
+memorised; it is enough to know *what branches exist* — most code divides only success
+from failure, and looks at the branch only when attempting recovery.
+
+#dtable(
+  columns: 3,
+  [*code*], [*what happened*], [*mainly where*],
+  [`PROVEN_OK`], [success (0)], [—],
+  [`ERR_NOMEM`], [the allocator could not hand out memory], [`_create`, `_grow`],
+  [`ERR_OUT_OF_BOUNDS`], [outside the vessel — refused rather than truncated], [`append`, `slice`, array indexing],
+  [`ERR_INVALID_ENCODING`], [the UTF-8/UTF-16 was broken], [string conversion, `hex`/`base64`],
+  [`ERR_INVALID_ARG`], [an argument is outside the contract (null, 0, an unusable allocator)], [almost every entry point],
+  [`ERR_IO`], [the outside world failed], [files and streams],
+  [`ERR_NOT_FOUND`], [what was sought is not there], [map lookup, opening a file],
+  [`ERR_INVALID_STATE`], [it cannot be done in the present state], [a closed stream, a destroyed object],
+  [`ERR_NEED_MORE`], [more input is needed before judging], [parsers and decoders],
+  [`ERR_OVERFLOW`], [a size calculation overflowed], [`create`, container growth],
+  [`ERR_UNSUPPORTED`], [this environment does not have that facility], [OS features under freestanding],
+  [`ERR_AGAIN`], [not now — try again], [non-blocking I/O],
+  [`ERR_EOF`], [the end was reached], [reading],
+  [`ERR_BUSY`], [somebody else is using it], [locks, the job queue],
+  [`ERR_PERMISSION`], [there is no permission], [files],
+  [`ERR_INVALID_FORMAT`], [the format was wrong], [parsing, format strings],
+)
+
+#demo("examples/ch71/codes.c")
+
+The latter part of the example shows this table in the flesh. Try to put twelve bytes
+into an eight-byte vessel and `OUT_OF_BOUNDS` comes — *and the original is left
+untouched* (the length is still 0). Give an unusable allocator and it is caught as
+`INVALID_ARG` before anything is made. Slicing outside the range too is a refusal, not
+"as much as there is".
+
+Two things are worth taking from here. First, *`ERR_INVALID_ARG` is usually a bug in my
+own code* — not a failure of the outside world but a contract violation, so it is to be
+mended rather than recovered from. Second, `ERR_EOF` and `ERR_AGAIN` are *part of the
+normal flow*. In a reading loop EOF is not an error but the ending condition
+(chapter 77).
+
+=== The kinds of result bundle
+
+A function with a value to return has one bundle per type. The naming rule being the
+same, the list need not be memorised — inside a `proven_result_XXX_t` there are always
+just `err` and `value`.
+
+#dtable(
+  columns: 3,
+  [*bundle*], [*the type of `value`*], [*where it is returned*],
+  [`proven_result_size_t`], [`proven_size_t`], [lengths, counts, bytes written],
+  [`proven_result_mem_mut_t`], [`proven_mem_mut_t`], [allocators (chapters 72 and 73)],
+  [`proven_result_mem_view_t`], [`proven_mem_view_t`], [slicing (chapter 72)],
+  [`proven_result_u8str_t`], [`proven_u8str_t`], [making a string (chapter 74)],
+  [`proven_result_buf_t`], [`proven_buf_t`], [making a buffer],
+  [`proven_result_cstr_t`], [`const char *`], [exporting as a C string (chapter 74)],
+  [`proven_fmt_result_t`], [(amount written and amount needed)], [formatting (chapter 75)],
+)
+
+Only the last row is of a different grain. For formatting, "success or failure" is not
+enough — if it was truncated you must know *how much more was needed* — so beside `err`
+it carries two numbers as well (we look at it closely in chapter 75).
 
 #demo("examples/ch71/errval.c")
 
@@ -139,6 +200,49 @@ with what has been gathered so far" becomes possible.
   recovery of "throw away only this request and take the next".
 ]
 
+== Raising a failure upward — together with the cleanup
+
+Receiving errors as values raises one practical problem at once. *If it fails in the
+middle, who gives back what has been taken so far?* In a language with exceptions the
+stack unwinds and destructors handle it, but C has no such device (chapter 62). So an
+idiom is needed.
+
+#demo("examples/ch71/cleanup.c")
+
+This example deliberately inserts a failing allocator (once the *budget* runs out it
+necessarily gives `NOMEM`) and runs all three cases — failure from the first
+allocation, one taken and failure at the second, and everything succeeding. The middle
+case is the heart of it. `x` has already been taken while `y` failed, so simply
+returning here is *a leak*.
+
+The pattern comes to three.
+
++ *Mark what you hold with a flag* — one boolean such as `has_x`. If the resources are
+  several, so are the flags.
++ *On failure everything gathers at one place* — `goto done`. That use chapter 62
+  called "disciplined `goto`".
++ *Clean up in reverse order of taking* — what was taken later is given back first.
+
+It is worth noticing too that after ownership passes with `*out = y;` on the success
+path, `y` is not destroyed thereafter. *You must be able to point at the place where
+ownership passes with a single line of code* — a function that cannot is usually one of
+blurred design.
+
+#qa[
+  Is deliberately making a failing allocator of any use in practice too?
+][
+  Of great use. The out-of-memory path is almost never executed in a real program, so
+  in most codebases it is *the least tested path*. And a leak or double free there is
+  the hardest of all to diagnose.
+
+  As chapter 73 will show, an allocator is simply a value, so a shell that "fails from
+  the nth call" can be made in ten lines, as in the example, and inserted. Raise n from
+  1 and run the tests and you can pass through *every failure point* once, and running
+  it with ASan or Valgrind (chapter 17) makes that path's leaks show themselves plainly.
+  It is the place where the decision that the library does not call `malloc` directly
+  comes back as testability.
+]
+
 == When there is nobody to return to — the panic
 
 To return an error as a value there must be *somebody to return it to*. But in a
@@ -148,8 +252,42 @@ that is not a failure but means *the program's logic is already wrong*.
 
 For such places the library has a panic path. It is the same spirit as chapter 45's
 `assert`, differing in that the way it is handled can be swapped out so as to be
-usable in embedded work too (chapter 78). The distinction is best remembered like
-this.
+usable in embedded work too (chapter 78).
+
+There are only two doors.
+
+```c
+void proven_panic(const char *msg);                       /* raise a panic */
+void proven_set_panic_handler(proven_panic_handler_t h);  /* swap the handler */
+```
+
+The default handler *does not return* — it stops the program on the spot (the
+implementation is `__builtin_trap()`). And this swapping is what pays in embedded work.
+On a board with no console there is nowhere to print a message, so a handler is
+registered that lights an LED, kicks the watchdog, or reboots.
+
+```c
+static void my_panic(const char *msg) {
+    (void)msg;
+    board_led_on(LED_FAULT);
+    for (;;) { }          /* it does not go back */
+}
+/* at the program's starting place */
+proven_set_panic_handler(my_panic);
+```
+
+*A handler must not return.* If it returns, the validity of what an `_or_panic`
+function gave back is not guaranteed — a panic is the declaration that "from here the
+program's premises are broken". The exception is test code deliberately using a
+returning handler to confirm the panic path, and even then the value after it is not
+used.
+
+The places where the library itself calls a panic can be counted on the fingers — the
+functions with `_or_panic` in the name (chapter 73's arena allocation is
+representative) and a few places where the contract is plainly already broken. Everything
+else is returned as a value.
+
+The distinction is best remembered like this.
 
 #recap[
   #dtable(
