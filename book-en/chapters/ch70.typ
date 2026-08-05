@@ -1,301 +1,303 @@
 #import "../../book/lib.typ": *
 
-= Getting started — there is nothing to install
+= Inside the allocator — the heap, alternative allocators, alternative standard libraries
 
 #prereq(
-  ([chapter 48, Several files], [several files and linking]),
-  ([chapter 69, The five bugs shipped for fifty years], [the five bugs]),
+  ([chapter 41, Dynamic memory], [dynamic allocation]),
+  ([chapter 69, A program's map of memory], [a program's map of memory]),
 )
 
 #deepqa[
-  Chapter 48 made a multi-file program and learned about headers, object files and
-#idx("the compilation process")  linking, and chapter 16 saw the four runners of
-  the compilation relay. Then what exactly is "using a library" in that picture?
+  Chapter 41 said one `malloc` is "a trip to the warehouse office", and
+  chapter 69 showed where in the address space that warehouse lies. Then what
+  ledgers exactly does that office keep inside?
 ][
-  One of two things. *Compiling it together*, or *linking something compiled
-  separately*. The former road is handing somebody else's source to the compiler
-  along with mine; the latter is handing the linker a lump that has already become
-  object code (a static `.a` or a shared `.so`/`.dll`). Either way the compiler makes
-  the call from the *declaration* (the header) and the linker finds and joins the
-  *definition* — exactly chapter 48's picture. proven took the former road, and the
-  next section is why.
+  It writes two things down — *which piece is free* and *how many bytes each piece
+  is*. The classic answer manages the former with lists by size (bins) and the
+  latter with a header attached to each block. How these two ledgers are designed
+  settles an allocator's performance and security entire. This chapter is the map of
+  that design.
 ]
 
 #organizer[
-  The first chapter that actually uses proven. We first see why this library has no
-  `configure`, no package manager and no shared library to link — and what that
-  choice gives and takes away — and then run a first program. The third bug seen in
-  chapter 69 (format mismatch) already disappears in this first program. Then we follow
-  *the whole life of one object* (make it, use it, give it back) and set up the three
-  rules needed to read the rest of this part.
+#idx("allocator")  We open the inside of the `malloc` chapter 41 passed over saying
+  only "it is expensive". How an allocator manages free pieces (bins, boundary
+  tags, coalescing), why there is a cache per strand, what fragmentation is and why
+#idx("fragmentation")  it does not recover. Then the alternatives that can be
+  swapped in for the standard `malloc` (jemalloc, tcmalloc, mimalloc, snmalloc) and
+  the alternative standard libraries (musl, picolibc and others), and the arenas and
+  pools that change the very shape of allocation. The end of this chapter is the
+  door to Part XII.
 ]
 
 #chapter-questions()
 
-== The choice of having nothing to install
+== Ledger ① — the header attached to each block
 
-proven has no installation procedure. Compile the source you have obtained together
-with your program and that is all. There are only two directories that matter.
-
-- `src/proven/` — the portable body. The operating system is not called here.
-- `platform/` — a thin layer that makes system calls. It is the only part that must
-  be changed when moving to a new machine.
-
-In an environment with no operating system (embedded) it is built without
-`platform/`. This separation settled the shape of the whole library — the demand
-"it must run anywhere" becomes the discipline "keep neither hidden allocation nor
-hidden global state".
-
-#qa[
-  Why not distribute it as a package? Installing would be more convenient.
-][
-  It is a trade of price for gain. What is lost is convenience — it cannot be got
-  through a system package, and updating becomes not "raising a version" but
-  "fetching new source". What is gained is control. The library cannot differ from
-  the source you are looking at now, compilation options you did not choose do not
-  come attached, and links do not break because a distribution built it with
-  different settings. Above all, it is *the only model that works both in a hosted
-  environment and on bare metal* — embedded work has no package manager to begin
-  with.
-]
-
-== How this book's examples are built
-
-To state it honestly, this book's proven examples are compiled as follows. The
-library's source is made into object files once and linked with the example.
+`free(p)` does not take a size. And yet it must know how many bytes are being
+returned. The answer is simple — *the size is written just before the address that
+was returned.*
 
 ```text
-$ cc -std=c23 -O1 -Ivendor/proven/include -c vendor/proven/src/proven/*.c
-$ cc -std=c23 -Wall -Wextra -Werror -Ivendor/proven/include \
-     hello.c vendor-obj/*.o -lm -o hello
+        ┌────────────┬──────────────────────────┐
+        │ header     │ the place given to you   │
+        │ size·flags │ ← the address malloc gave│
+        └────────────┴──────────────────────────┘
 ```
 
-The first line handles the body, the second my program. `-I` tells it where to find
-headers (chapter 48), `-lm` joins the mathematical functions. These two lines are
-what this book's verification script really runs every time, and every execution
-result printed on these pages is the output of a program made that way.
+This header explains two facts seen in chapter 41. *Even a request for 1 byte
+consumes far more* (the header plus alignment padding), and *making countless small
+pieces makes the management information as large as the data.*
 
-== The first program
+The classic design (the dlmalloc family) lays one more layer on top of this. It
+writes the size *at the end of the block too* — a *boundary tag*. Then from any
+block the size of "the block just before" can be known at once, so *coalescing* with
+a neighbouring free piece on release finishes in constant time. It is the most basic
+device for preventing pieces from scattering finely.
 
-One `#include <proven.h>` opens the whole library.
+#misconception[
+  "A heap block's header is an internal matter, no need to care"
+][
+  It is worth caring about for two reasons.
 
-#demo("examples-en/ch70/hello.c")
+  First, *security*. The header being right beside the user data, one buffer
+  overflow can overwrite a neighbouring block's header. Then the allocator's ledger
+  tells lies, and an attacker can make "the next `malloc` return the address I want".
+  The whole family of techniques called heap exploitation grows from this place. So
+  modern allocators put defences in — scrambling the free list's pointers with the
+  address (safe-linking), inserting marks that notice a double free, or putting the
+  header entirely away from the user data (mimalloc and snmalloc below go in that
+  direction).
 
-We read it line by line. `proven_println` takes a format and arguments and prints
-one line to standard output — so far the same as `printf`. What differs is the
-*placeholder*.
+  Second, *memory accounting*. The answer to "why do a million 100-byte pieces eat
+  160 MB rather than 100 MB" is this header and the alignment padding.
+]
 
-- `{}` has no type in it. It is neither `%d` nor `%s` but simply `{}`.
-- The type comes *from the argument*. `PROVEN_ARG(x)` looks at `x`'s type and wraps
-  the value with a fitting tag attached.
-- So chapter 69's third bug — the mismatch of format and argument — *structurally*
-  cannot happen. The type is not written twice, so there is no place for them to go
-  out of step.
+== Ledger ② — lists by size and caches per strand
 
-What is written after the colon, as in `{:>8}`, corresponds to the width, alignment
-and precision seen in chapter 53. `>` is right alignment, `<` left alignment, `.3` is
-to three decimal places. That the alignment symbol comes first is what differs from
-`printf`.
-
-== Three rules — the key to this whole part
-
-The functions ahead number more than a hundred, but the rules for reading their
-signatures are only three. Get these three into your hand and you can read half of any
-function you have never seen, without the documentation.
-
-+ *Only a function that takes an allocator as an argument takes memory.* If
-  `proven_allocator_t` appears in the signature it means "this function may allocate",
-  and if it does not, it takes *not one byte*. So which functions are usable in
-  embedded work and which are not divide before your eyes (chapter 73).
-+ *Failure comes as a value.* If there is no result to return it gives a single
-  `proven_err_t`; if there is, an `{err, value}` bundle. Before checking `err` you do
-  not look at `value` (chapter 71).
-+ *Give a thing back with the allocator you made it with.* What was obtained with
-  `_create` is let go with `_destroy`, and what has `view` in its name is borrowed and
-  is not destroyed (chapters 72 and 73).
-
-The naming rules have almost no exceptions either.
+Keep the free pieces in one long list and every request must scan the whole list. So
+the lists are divided by size — these are *bins*. Taking glibc's allocator as an
+example, there are roughly these layers.
 
 #dtable(
   columns: 3,
-  [*shape of the name*], [*meaning*], [*example*],
-  [`_create`], [obtain a new object from an allocator — returns a bundle], [`proven_u8str_create`],
-  [`_borrow`], [lay an object over somebody's memory — no allocation], [`proven_u8str_borrow`],
-  [`_destroy`], [give it back with the allocator it was made with], [`proven_u8str_destroy`],
-  [`_as_`], [see the same thing through another eye — no copying], [`proven_u8str_as_view`],
-  [`_view`], [borrowed. it is not destroyed], [`proven_u8str_view_t`],
-  [`_checked`], [check the boundary and error if it is broken], [`..._slice_checked`],
-  [`_unchecked`], [skip the check — for places the caller has already confirmed], [`..._slice_unchecked`],
-  [`_grow`], [enlarge if short — which is why it takes an allocator], [`proven_u8str_append_grow`],
-  [`_or_panic`], [panic on failure. for places with nobody to return to], [`proven_arena_alloc_or_panic`],
+  [*layer*], [*what*], [*why*],
+  [tcache], [a small cache kept separately per strand], [to take pieces out at once without locking],
+  [fastbin], [singly linked lists of small sizes], [quick reuse without coalescing],
+  [smallbin], [lists by exact size], [finding is constant time],
+  [largebin], [sorted lists by range], [to choose a fitting size],
+  [unsorted bin], [a temporary place for the just-freed], [to reuse as it is for the next request],
+  [top chunk], [the lump remaining at the very end of the heap], [when short, it is cut from here],
 )
 
-== The life of one object
+The heart of it is the *cache per strand* (tcache). If several strands touch the
+same ledger it becomes slow through locking (chapter 66), so each strand keeps a
+small drawer of its own and takes from there first. Only when the drawer is empty
+does it go to the shared ledger. It is the common design of today's fast allocators,
+differing only in name (tcache, thread cache, mimalloc's local heap) while the idea
+is the same.
 
-Rather than reading three lines of rules, it is quicker to follow one real thing to
-the end. The program below holds the whole course of *making, using and giving back* a
-string object on one screen.
+Two things seen in chapter 69 attach here. When the heap is short it is enlarged
+with `brk` (for small requests), and large requests are received separately through
+`mmap`. And releasing a large block may return it to the operating system, while
+small ones are mostly only marked in the ledger.
 
-#demo("examples-en/ch70/first.c")
+== Fragmentation — memory grows though there is no leak
 
-Six places to point at.
+#idx("fragmentation")*Fragmentation* has two faces.
 
-*① It took an allocator as an argument.* That `build_line`'s first argument is an
-allocator is the declaration that "this function may take memory". The caller settles
-whether to give it the heap or an arena (chapter 73).
+*Internal fragmentation* — the waste arising from giving a piece larger than the
+request. Request 24 bytes and be given a 32-byte slot and 8 bytes die. It is the
+fate of allocators that use size classes, and speed is gained in exchange.
 
-*② Making returns a bundle.* `proven_u8str_create` gives a
-`proven_result_u8str_t` (that is, `{err, value}`). Before checking `err` you do not
-take `value` out — that order is the whole of chapter 71.
+*External fragmentation* — the state in which the total free space is ample but
+there is no *contiguous* large lump, so a large request fails. If small pieces are
+lodged among the large ones, those large pieces cannot be joined.
 
-*③ The capacity is "by content".* The 64 of `create(alloc, 64)` is *the number of
-bytes of content to hold*, and the library internally takes one more byte for the NUL.
-That is how `as_cstr` can hand out a C string without copying.
+This is the identity of the phenomenon "there is no leak and yet memory keeps
+growing". It appears especially in long-running servers, and the cause is usually
+*allocating things of different lifetimes mixed together* — one long-lived small
+object lodged in the middle of a large empty region ties up that whole region.
 
-*④ The failure path gives back too.* If formatting fails, the string taken so far is
-returned with `destroy` before the error is raised. Grow this pattern and it becomes
-chapter 71's `goto` cleanup idiom.
-
-*⑤ The place where ownership passes is explicit.* `*out = line;` is that place. After
-this line the string's owner is the caller, and the responsibility to destroy it is the
-caller's too.
-
-*⑥ Destroying empties the struct.* That the length prints as 0 after `destroy` is the
-evidence. It is so that the returned buffer is not still pointed at, and the contract
-that *a destroyed object is not used again* stands as it is.
-
-#antipattern[
-  The four mistakes a beginner meets on the first day
-][
-  ```c
-  /* ① taking value out without checking */
-  proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* rubbish on failure */
-
-  /* ② destroying with a different allocator */
-  proven_u8str_destroy(other_alloc, &s);                     /* contract violation */
-
-  /* ③ holding a view longer than its original */
-  proven_u8str_view_t v = proven_u8str_as_view(&s);
-  proven_u8str_destroy(alloc, &s);
-  proven_println("{}", PROVEN_ARG(v));                       /* reads a dead place */
-
-  /* ④ forgetting PROVEN_ARG */
-  proven_println("count={}", count);                         /* does not compile */
-  ```
-  Of the four only ④ is caught by the compiler. The other three are blocked *by a human
-  keeping the rules*, which is why the previous section said to get the three rules into
-  your hand. ③ in particular is met again in chapter 74, and once more when an arena is
-  reset.
-]
-
-#qa[
-  Must an object be made with `_create`? What about where there is no heap?
-][
-  No. Most objects come with *a borrowing edition* as well.
-  `proven_u8str_borrow(buf, sizeof buf)` lays a string over a stack or static array —
-  it takes no allocator, so it takes not one byte, and therefore needs no `destroy`
-  either (the caller is already the owner). Embedded code handles strings this way
-  (chapter 74), and several of this book's examples run so.
-
-  There is a middle form too. Take the memory once in a large piece, lay an arena over
-  it and hand out from there (chapter 73) — then `malloc` is never called once while the
-  `_create` family can be used as it is.
-]
-
-#qa[
-  How does `PROVEN_ARG` find out the type? Does C not lack function overloading?
-][
-  It uses a device that came in with C11, `_Generic` — the syntax that chooses one
-  of several things *at compile time* according to an expression's type.
-  `PROVEN_ARG(x)` makes a small struct with an integer tag attached if `x` is an
-  `int`, a real tag if a `double`, a string tag if a `const char *`. It is not
-  determining the type at run time but *using as it stands what the compiler already
-  knows*, so there is no cost. The syntax and the whole formatting rules are treated
-  head on in chapter 75.
-]
-
-#misconception[
-  "Using a library makes the program heavy"
-][
-  A frequently heard worry, and it depends on the character of the language and the
-  library. In C, a library compiled together as source leaves *what is not used out
-  of the executable* — because the linker does not put in an object file that is not
-  referenced (chapter 16's linking stage). Moreover proven has no initialisation code
-  running at startup, no global state being registered, and no thread quietly rising.
-  Becoming heavy is not the price of using a library but what happens when a
-  framework takes over the program's structure.
-]
+#dtable(
+  columns: 2,
+  [*how to mitigate it*], [*explanation*],
+  [gather things of similar lifetime], [an arena does exactly this (below)],
+  [things of the same size into a pool], [no pieces arise],
+  [take long-lived objects early], [taken at startup, they do not lodge in the middle],
+  [change the allocator], [there are ones with different purge and shrink policies (below)],
+  [periodic restarts], [an honest last resort — really used],
+)
 
 #realcase[
-  The practice of distributing as source — SQLite in one file
+  Why RSS does not go down
 ][
-  This distribution model is not a peculiar choice of proven's alone. SQLite, the
-  most widely used database engine in the world, provides as its official
-  distribution form an *amalgamation* joining dozens of source files into one huge
-  `.c` file — fetch it, compile it with your program, and that is all. The `stb`
-  family of libraries, famous for image and font handling, is a single header file
-  entire. The reason is the same in every case. In a world where build environments
-  are all different, *the most portable unit of distribution is source*.
+  There is a conversation that recurs in operations. "There seems to be a memory
+  leak — the request has ended and the process memory (RSS) does not go down." And
+  yet checking with tools shows no leak.
+
+  The reason is, as seen in chapter 41, that `free` is not a return to the operating
+  system, and two more things compound it. First, even to return it *the end side of
+  the heap must be empty* to shrink (if even one live block sits below the top chunk
+  it cannot shrink). Second, the allocator judges that being sparing with returns is
+  advantageous — another request will come soon.
+
+  Hence a rule of observation in the field. *When diagnosing a memory problem do not
+  look at RSS alone* — look together at the allocator's statistics (`malloc_info`,
+  say) and at the number and size distribution of live allocations. And if you really
+  want to give it back there is a road of asking explicitly (glibc's `malloc_trim`,
+  the purge settings of jemalloc and mimalloc).
 ]
 
-== Attaching it to your own project — a minimal Makefile
+== Swapping out the standard `malloc` — alternative allocators
 
-To avoid typing the two lines above every time, use chapter 79's `make`. Supposing the
-library has been put whole into `vendor/proven`, this much suffices.
+The allocator alone can be changed without mending the program. `malloc` and `free`
+are, after all, names, so linking another implementation (statically) or inserting
+it at run time (Linux's `LD_PRELOAD`) makes that one be used.
 
-```make
-CC      = cc
-CFLAGS  = -std=c23 -Wall -Wextra -Werror -O2 -Ivendor/proven/include
-VSRC    = $(wildcard vendor/proven/src/proven/*.c) \
-          $(wildcard vendor/proven/platform/*.c)
-VOBJ    = $(VSRC:.c=.o)
+#dtable(
+  columns: 3,
+  [*allocator*], [*where it came from*], [*character*],
+  [glibc malloc (ptmalloc)], [GNU], [the default. balanced. improved with tcache],
+  [jemalloc], [FreeBSD → Meta], [size classes and arenas. strong on suppressing fragmentation and on statistics],
+  [TCMalloc], [Google], [centred on per-strand caches. multi-strand throughput],
+  [mimalloc], [Microsoft], [relatively new (2019–). small and fast, with a safety-minded header layout],
+  [snmalloc], [MS Research], [a design that passes cross-strand frees as messages],
+  [scudo], [LLVM], [security-hardened. the default on Android],
+)
 
-app: app.o $(VOBJ)
-	$(CC) $^ -lm -o $@
-
-clean:
-	rm -f app app.o $(VOBJ)
-```
-
-Only three things need be known. *`-I`* tells it where to find `<proven.h>`
-(chapter 48). *`platform/`* is the thin layer that calls the operating system, so when
-going to bare metal only this line is removed (chapter 78). *`-lm`* joins the
-mathematical functions that real-number formatting uses — take reals out of the
-formatter (chapter 78's `PROVEN_FMT_NO_FLOAT`) and this is not needed either.
+How much difference does changing make — *it depends on the workload* is the honest
+answer. On a server with many strands and a flood of small allocations tens of per
+cent can change, while in a single-strand computational program there is almost no
+difference. So the rule is one: *measure, then change.* And before changing, trying
+chapter 41's first prescription — not allocating at all in the hot loop — is usually
+the greater gain.
 
 #platform[
-  On Windows and in embedded work
+  How swapping is actually done
 ][
-  *MSVC* — this library requires C23. Recent updates of Visual Studio 2022 support a
-  good deal of it with `/std:clatest`, but the surest road is to use `clang-cl` or
-  MinGW-w64 (GCC) on Windows too (chapter 18's terrain).
+  - *At run time* — `LD_PRELOAD=/usr/lib/libjemalloc.so ./program` (Linux). Neither
+    the code nor the build is touched.
+  - *At link time* — join it as `-ljemalloc` and that `malloc` is used.
+  - *Windows* — the above do not work. It is common to use the CRT's heap, or to
+    link the allocator as a library and call its API directly from your own code.
+  - *The road that works anywhere* — writing the code from the start so that it
+    *takes an allocator as an argument*. This chapter's last section and Part XII
+    are that way.
+]
 
-  *Embedded* — leave out `platform/` and compile only `src/proven/*.c`. There being no
-  heap, `proven_heap_allocator()` returns an unusable value (all zeros), and an arena
-  laid over a static array is used instead (chapter 73). The detailed procedure is
-  chapter 78.
+== Alternative standard libraries
+
+There is also the choice of swapping out one layer larger than the allocator — the
+standard library implementation itself. It is the flesh of chapter 55's "the
+standard is a list and the implementations are several".
+
+#dtable(
+  columns: 3,
+  [*implementation*], [*where it is used*], [*character*],
+  [glibc], [mainstream Linux distributions], [the most features. large and rich in extensions],
+  [musl], [containers, static linking, Alpine], [small and simple. advantageous for static linking],
+  [uClibc-ng], [small embedded Linux], [features chosen and cut down],
+  [picolibc], [bare metal, RTOS], [a small one split off from newlib and avr-libc],
+  [newlib(-nano)], [the default of embedded toolchains], [it comes with `arm-none-eabi-gcc`],
+  [Bionic], [Android], [security-minded (the scudo allocator)],
+  [UCRT], [Windows], [the runtime MSVC and MinGW use],
+)
+
+The criteria for choosing are mostly three — *size* (embedded, containers), *the
+convenience of static linking* (musl's strength), and *the breadth of features*
+(glibc's strength). And what one runs into when moving is mostly not standard C but
+*extensions*: functions only glibc has, locale handling, subtle differences in
+threads and signals. Chapter 55's conclusion — "use only what is in the standard and
+it ports" — pays here.
+
+== Alternatives that change the shape — arenas, pools, and the allocator as an argument
+
+Until now the story has been *making the same `malloc` better*. There is another
+road. It is changing *the very shape* of allocation.
+
+*Arena (region, bump allocator).* Take a large lump once, and when a request comes
+merely push a pointer forward. Allocation is one addition and so nearly free, and
+release *is not done individually* — when the work is done the pointer is returned to
+the beginning and the whole is thrown away. There is no fragmentation, the time is
+constant, and release cannot be forgotten. In exchange, individual release is given
+up.
+
+This way fits perfectly "things of the same lifetime". One request of a web server,
+one function of a compiler, one frame of a game — for each unit of work with a clear
+beginning and end, keep one arena and reset it when it ends. It really is widely
+used (Apache's memory pools and PostgreSQL's memory contexts are the same idea).
+
+*Pool (slab).* An allocator that handles only pieces of the same size. Slots cut in
+advance are managed as a list, so allocation and release are one list operation each,
+and there is no internal fragmentation either. It fits data structures with tens of
+thousands of nodes, or the fixed-object management of embedded work seen in
+chapter 69.
+
+*Taking the allocator as an argument.* For the two above to have force, a library
+must *ask the caller* "where shall I get memory from". So modern C libraries make a
+bundle of allocation functions into one value and take it as an argument. The table
+of function pointers learned in chapter 53 does exactly this work here.
+
+#realcase[
+  proven's memory model — a trailer for the next part
+][
+  The library this book has leaned on uses exactly this design. proven handles the
+  allocator as one value (`proven_allocator_t`) — inside it are the `alloc`,
+  `realloc` and `free` function pointers and a context (`ctx`), exactly
+  chapter 53's vtable. And there are three providers that make that value.
+
+  - `proven_heap_allocator()` — the standard `malloc` wrapped in that interface.
+  - `proven_arena_create(backing)` — takes *memory already secured* and makes it a
+    bump allocator. It is returned whole with `proven_arena_reset` and fitted into
+    the same interface with `proven_arena_as_allocator`.
+  - `proven_pool_init(...)` — lays a pool of same-size pieces over a backing
+    allocator.
+
+  This structure gives three things. First, *the same data-structure code runs on
+  the heap, on an arena and in a pool* — where memory comes from is settled by an
+  argument. Second, the embedded norm seen in chapter 69 (no dynamic allocation) can
+  be kept — give a static array as the arena's backing and `malloc` is never called
+  once. Third, failure comes back as a value (`proven_result_mem_mut_t`) — instead of
+  checking for null you check the result.
+
+  We meet these three as real code in Part XII. The heap's circumstances seen in
+  this chapter — that it is expensive, fragments, can fail, and is sometimes
+  forbidden outright in embedded work — are the whole reason for that design.
+]
+
+#qa[
+  Then should `malloc` no longer be used?
+][
+  No. `malloc` is still the right answer as the general-purpose tool for handling
+  *things of assorted lifetimes*. The knack is fitting the tool to the purpose.
+
+  - the lifetime equals a unit of work → *an arena*
+  - the sizes are all the same → *a pool*
+  - lifetimes and sizes are assorted → *`malloc`* (or an allocator wrapping it)
+  - real-time or safety-critical → *static allocation*, plus the two above
+
+  And whichever is used, chapter 41's discipline stands — settle the ownership,
+  confirm failure, and check with tools (ASan, Valgrind).
 ]
 
 #recap[
-  This chapter in summary.
-
   #dtable(
-  columns: 2,
-    [*what*], [*how*],
-    [header], [one `#include <proven.h>`],
-    [build], [compile `src/proven/*.c` with the program (`-I` for the header path, `-lm`)],
-    [OS dependence], [only in `platform/` (build without it if absent)],
-    [rule ①], [only a function that takes an allocator takes memory],
-    [rule ②], [failure comes as a value — check `err`, then `value`],
-    [rule ③], [destroy with the allocator it was made with. a `view` is not destroyed],
-    [making], [`_create` (allocates) / `_borrow` (over somebody's buffer, no allocation)],
-    [output], [`proven_println("... {} ...", PROVEN_ARG(x))`],
-    [format specification], [`{:>8}` `{:<8}` `{:.3}` — after the colon],
-    [the price], [a `PROVEN_ARG` per argument, a syntax unlike the familiar `%d`],
-)
+    columns: 2,
+    [*to remember*], [*the point*],
+    [the header], [the size is written just before the user's place — an overflow breaks the ledger],
+    [boundary tags], [writing the size at both ends makes coalescing with a neighbour constant time],
+    [bins], [lists by size. the per-strand cache (tcache) avoids locking],
+    [internal/external fragmentation], [waste vs. no *contiguous* large lump left],
+    [RSS], [it may not go down even after `free` — distinguish it from a leak],
+    [alternative allocators], [jemalloc, TCMalloc, mimalloc, snmalloc, scudo. *measure, then change*],
+    [alternative libcs], [musl, picolibc, newlib, Bionic — a trade of size, static linking and features],
+    [arena], [only pushing, and throwing the whole away. for things of the same lifetime],
+    [pool], [the same size only. no fragmentation],
+    [the allocator as an argument], [the same code runs on heap, arena or pool alike (Part XII)],
+  )
 ]
 
-The first program has run. Yet the `proven_println` just used can in fact fail too —
-because the band going to the screen may break (chapter 10). This function returns an
-error but *does not compel a check*, and that choice itself is a good entrance to
-understanding this library's error model. The next chapter is that.
+We have walked the terrain of the standard library and opened even the warehouse
+beneath it. The next part is the attempt to handle all these traps and costs *by
+design* — proven, the library this book has leaned on.

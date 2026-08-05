@@ -2,10 +2,10 @@
 
 = Appendix B — printf and scanf formats in full
 
-Chapter 22 learned the minimal set (`%d`, `%s`, `%%`) and chapter 53 dissected the
+Chapter 22 learned the minimal set (`%d`, `%s`, `%%`) and chapter 55 dissected the
 format string. This appendix is a place *for looking things up* — read only the line
 you need. One rule goes first: if the format and the argument's type go out of step it
-is outside the contract (undefined behaviour) (chapters 42 and 53).
+is outside the contract (undefined behaviour) (chapters 43 and 55).
 
 == The skeletons of a format specification
 
@@ -62,12 +62,12 @@ side by side.
 )
 
 `%.*s` is a form used often in this book — because a string that carries its length
-separately (chapters 50 and 74's views) can be printed as it is, without NUL
+separately (chapters 52 and 76's views) can be printed as it is, without NUL
 termination.
 
 One thing must be kept, though. *The width or precision argument that `*` takes is of
 type `int`.* Pass a length carried as a `size_t` (as views mostly do) straight in and
-the variadic argument's type goes out of step — the very mismatch seen in chapter 50.
+the variadic argument's type goes out of step — the very mismatch seen in chapter 52.
 The canonical form checks the length and then casts.
 
 ```c
@@ -77,7 +77,7 @@ if (v.size <= INT_MAX)
 
 == Length modifiers — the place that tells the type's width
 
-Type information does not ride along into variadic arguments (chapter 50), so this
+Type information does not ride along into variadic arguments (chapter 52), so this
 letter is itself the contract. Get it wrong and the stack is read wrongly.
 
 #dtable(
@@ -97,7 +97,7 @@ letter is itself the contract. Get it wrong and the stack is read wrongly.
 
 Reals need particular care. In *output* a `float` becomes a `double` by the default
 promotion, so `%f` alone suffices and `%lf` means the same. In *input* there is no
-promotion, so `%f` must be `float *` and `%lf` `double *` without fail (chapter 53's
+promotion, so `%f` must be `float *` and `%lf` `double *` without fail (chapter 55's
 misconception box).
 
 == Formats for fixed-width integers
@@ -156,12 +156,12 @@ c; `%[^,\n]` gathers characters that are neither a comma nor a newline. Range no
   already ended it is `EOF` (a negative value), and that differs in meaning from "the
   format was wrong" (0).
 - *A failed argument is not touched.* Use it without checking and you mistake the
-  previous value for new input (chapter 69's counterexample is that).
+  previous value for new input (chapter 71's counterexample is that).
 - *Only `%c` and `%[` do not skip whitespace.* The accident of a newline left from the
   previous line going into the next `%c` arises here — put a space in front, as in
   `" %c"`, and it skips.
 - *It does not report overflow.* Giving `99999999999` to a `%d` is outside the
-  contract. If a range check is needed, use the `strtol` family or chapter 75's
+  contract. If a range check is needed, use the `strtol` family or chapter 77's
   scanner.
 
 == The return values organised
@@ -179,7 +179,7 @@ c; `%[^,\n]` gathers characters that are neither a comma nor a newline. Range no
 
 `snprintf`'s return value rule matters especially — being *the number of characters
 needed, not the number written*, the truncation check is
-`need >= (int)sizeof buf` (chapter 69).
+`need >= (int)sizeof buf` (chapter 71).
 
 == A collection of common mistakes
 
@@ -188,7 +188,7 @@ needed, not the number written*, the truncation check is
   [*wrong code*], [*what happens*], [*the mend*],
   [`printf("%d", sz)` — a `size_t`], [the width goes out of step on 64-bit], [`%zu`],
   [`printf("%s", 42)`], [it reads an integer as an address — collapse], [`%d`],
-  [`printf(user)`], [the format string vulnerability (chapter 53)], [`printf("%s", user)`],
+  [`printf(user)`], [the format string vulnerability (chapter 55)], [`printf("%s", user)`],
   [`scanf("%d", n)`], [a value was passed, not an address], [`&n`],
   [`scanf("%s", buf)`], [it writes past the boundary], [specify a width, as in `%63s`],
   [`scanf("%f", &d)` — a `double`], [only half is filled], [`%lf`],

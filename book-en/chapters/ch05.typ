@@ -46,7 +46,7 @@ There is one important fact about addresses that is not visible at first
 glance. *An address can be handled as a value.* A locker number is something
 that can be written down, and being writable it can be put inside another
 locker. "In slot 347, write the number 512" — nothing strange about it. This
-ordinary idea later becomes C's most famous concept, the *pointer* (chapter 33).
+ordinary idea later becomes C's most famous concept, the *pointer* (chapter 34).
 
 Let us separate two layers here. In the *simple model* being drawn now, an
 address may be pictured as a number, an integer — the corridor and the lockers
@@ -54,7 +54,7 @@ are drawn that way. But *in the C language a pointer value is not an integer
 type.* It is a value that can be copied and compared, yet of its own kind, one
 that drags along what type it points at and where it came from. The reason is
 seen later in this chapter ("Is this number a real address?"), and treated
-properly in chapters 33 and 35. What to take away now is one line — *an address
+properly in chapters 34 and 36. What to take away now is one line — *an address
 is a value, and there is a dedicated type for holding it.*
 
 #qa[
@@ -84,7 +84,7 @@ Take it, though, as *a loose phrase*. Inside one CPU there are registers and
 paths of different widths together (floating-point and vector registers of 128,
 256 or 512 bits are common), the address width may differ from the register
 width, and the width the language gives to `long` or to a pointer is a further
-choice again (chapter 33 shows the cases). Moreover, *some instruction sets use
+choice again (chapter 34 shows the cases). Moreover, *some instruction sets use
 the word "word" differently* — in x86 documentation a word is traditionally 16
 bits, 32 bits is a doubleword and 64 bits a quadword.
 
@@ -188,7 +188,7 @@ wrong, but *reading each other's letters verbatim causes accidents*.
   You can — put a multi-byte number in memory and read just its first slot as a
   single byte. If the first slot holds the least significant piece, it is
   little-endian. Actually doing this check in C is the demonstration in
-  chapter 43 (unions) — that is where we get the tool for reading the same
+  chapter 44 (unions) — that is where we get the tool for reading the same
   storage through different eyes.
 ]
 
@@ -210,7 +210,7 @@ There were times when a number was not even one number. In the 8086's segmented
 scheme an address was two pieces, "segment:offset", and several notations named
 the same physical slot (`0x0000:0x0010` and `0x0001:0x0000` are the same place).
 Some machines put program memory and data memory in altogether separate address
-spaces (the Harvard architecture — the small chips of chapter 80 still do).
+spaces (the Harvard architecture — the small chips of chapter 82 still do).
 
 And sometimes what rides inside the number is not a number at all.
 
@@ -241,7 +241,7 @@ And sometimes what rides inside the number is not a number at all.
 This is why C did not define an address as "just an integer". It made it a
 *value* that can be copied and compared, but one that drags along what type it
 points at and where it came from. Why that decision was necessary becomes clear
-once pointers arrive in chapter 33 and provenance in chapter 35.
+once pointers arrive in chapter 34 and provenance in chapter 36.
 
 #qa[
   So is the locker picture we have learned so far wrong?
@@ -254,7 +254,7 @@ once pointers arrive in chapter 33 and provenance in chapter 35.
   The moments for unfolding what was folded come separately: when measuring
   performance and reasoning about caches (chapter 11), when asking why programs
   cannot touch one another (chapters 3 and 11), and when asking "may I turn an
-  address into an integer and make what I like of it" (chapter 35).
+  address into an integer and make what I like of it" (chapter 36).
 ]
 
 == The archetype of C is here

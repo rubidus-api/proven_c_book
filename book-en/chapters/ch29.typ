@@ -97,7 +97,7 @@ The idioms of practice have hardened into three shapes.
 
 - *Gatekeeper* — `if (p != nullptr && p->count > 0)`. If the left is false the
   dereference on the right never happens at all (this one line blocks chapter
-  34's null dereference).
+  35's null dereference).
 - *Filling a default* — `ok = load(&cfg) || load_default(&cfg);` If the left
   succeeds the right is not even attempted.
 - *Deferring an expensive check* — `if (cheap_check(x) && expensive_check(x))`.

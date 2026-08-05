@@ -1,348 +1,242 @@
 #import "../../book/lib.typ": *
 
-= Objects, addresses, pointers
+= Assignment and side effects
 
 #prereq(
-  ([chapter 5, Words and addresses], [an address is a value]),
-  ([chapter 32, The meaning of a function], [copying values alone cannot change the original]),
+  ([chapter 23, Declaring a variable], [putting a value under a name]),
+  ([chapter 32, The meaning of a function], [side effects and evaluation order]),
+  ([chapter 28, Implicit conversions], [when values of different types meet]),
 )
 
 #deepqa[
-  Chapter 32 said "the proper method for a function to change a variable outside
-  is to copy and pass the variable's *address* as a value." Unfolding that with
-  chapter 5's knowledge — on what grounds can an address be "copied as a value"?
+  Chapter 32 said that calls with side effects should be given their own
+  statements. But assignment is itself a side effect — `x = 1;` changes the object
+  x. Why, then, have we used assignment so freely all along?
 ][
-  On the ground that an address is *a value that can be handled like a number*
-  (chapter 5) — a locker number can be written down elsewhere, copied and handed
-  over. In C the type of that "variable holding an address" is the pointer. What
-  we learn today is not a new concept but dressing chapter 5's idea in syntax.
-
-  One thing should be nailed down in advance. That it can be copied and compared
-  does not make *a pointer an integer.* C keeps pointers as a different kind of
-  value from integers and attaches a contract to them: the type pointed at, and
-  the provenance — which object it came from. Chapter 6's remark that "the same
-  number need not be the same pointer" begins here, and chapter 35 finishes it
-  properly under the name of provenance.
+  Because each statement had *one* side effect. `x = 1;` changes one object, and
+  there is a sequence point at the end of the statement, so by the time the next
+  statement begins it is over. The danger starts when *two or more side effects*
+  are packed into one expression — as in `a[i] = i++`. This chapter draws that
+  line exactly.
 ]
 
 #organizer[
-  Part VII is this book's second mountain — memory. We walk chapter 5's locker
-#idx("pointer")  corridor again, this time in C's syntax. The first chapter
-  faces head on the type that handles addresses as values, the *pointer* — `&`,
-  `*` and `sizeof`, settling every credit carried since chapter 25.
+#idx("assignment")  The last chapter of this part is the operator used most often
+  and understood most shallowly: *assignment*. That it is an expression, that the
+  left side is evaluated too, that compound assignment evaluates the left side
+  only once, and where the contract ends. The vocabulary built here carries into
+  chapter 45's gathering of the operators and chapter 48's undefined behaviour.
 ]
 
 #chapter-questions()
 
-== Three notations — declaration, &, \*
+== Assignment is an expression, not a statement
 
-Pointer syntax is three pieces and no more.
+`x = 1` looks like a command, but it is an *expression* — it yields a value. That
+value is "the assigned value, converted to the type of the left side", and so it
+can be placed inside another expression.
 
-*Declaration* — `int *p;` declares "a variable p holding the address of an int."
-The knack of reading it is from the back: "p is a pointer (`*p`), and at the place
-it points there is an int."
+#demo("examples-en/ch33/assign.c")
 
-*Taking an address* — `&n` is the value "n's address." The `&` brushed past in
-chapter 25's `sscanf(..., &n)` has finally got its formal name — the operator
-that detaches the number tag of the locker called n.
+The first two lines of the output confirm it. In `x = (y = 7) + 1` the expression
+`(y = 7)` has the value 7, and adding 1 makes x 8. `p = q = r = 5` makes all three
+5 by the same principle — assignment is *right-associative*, so it groups as
+`p = (q = (r = 5))` and the value of the inner assignment is handed outward.
 
-#idx("dereference")*Dereference* — `*p` means "go to the address written in p
-and *that slot*." In a reading position it reads that slot's value; on the left
-of an assignment it writes to that slot. That the `*` of a declaration, the `*`
-of an expression (dereference) and the `*` of multiplication use the same
-character is C's notorious thrift — position is the only way to tell them apart.
-
-The demonstration shows all three at once, including chapter 32's homework — the
-proper method by which a function changes an original.
-
-#demo("examples-en/ch33/ptr.c")
-
-Read the route of `set_to(&n, 99)` exactly and half of pointers is done — ① `&n`
-(the value that is an address) is *copied* into the parameter `target`
-(chapter 32's copy-by-value rule is untouched!), and ② inside the function
-`*target = value` goes to that address and writes into the original slot. The
-world of copying values was not broken at all — *what was copied happened to be
-an address.*
-
-== sizeof — asking the size of a container
-
-The last deferred credit — `sizeof` is the operator that puts out the *size in
-bytes* of a type or an object (its value is of type `size_t`, an unsigned integer
-just for sizes, printed with `%zu`). Chapter 25's
-`fgets(line, sizeof line, stdin)` now reads completely: "tell fgets the number of
-bytes in the container called line." Being an operator rather than a function,
-its value is mostly settled at compile time, and it works on a type
-(`sizeof(int)`) as well as on an object (`sizeof line`).
-
-#qa[
-  How large is a pointer variable itself — what is `sizeof p`?
-][
-  In this book's verified environment (x86-64 Linux) it is *8 bytes*, and so it
-  is in most of today's mainstream 64-bit environments. In that environment, too,
-  every object pointer has the same size whatever it points at (`int*` or
-  `double*`).
-
-  *That, however, is not a guarantee of the standard.* The standard settles
-  neither the size nor the representation of a pointer. There is no rule that
-  different object pointer types must share a size and a representation
-  (machines really existed on which `char*` was larger than other pointers), and
-  a function pointer is not required to have the same representation as an
-  object pointer either. "Word size" is not a word of the C standard but a
-  matter of the machine. So code that needs the size never writes a number: it
-  asks with `sizeof p`.
-
-  Then why distinguish the types? Because when dereferencing, the type decides
-  "how many bytes at that address, and through what eye, to read." Chapter 5's
-  refrain (what knows the lump is the reading side) is the reason pointer types
-  exist.
-]
+One thing should be nailed down. *The result of an assignment is not an lvalue.*
+`(a = b) = c` does not compile. This differs from C++, and it is enough to
+remember that "assignment yields a value, but not a place".
 
 #misconception[
-  "Pointers are a difficult and dangerous advanced feature"
+  "`if (x = 0)` tests whether x is 0"
 ][
-  The notoriety is real but half of it is misunderstanding. The concept itself is
-  as we just saw — "write down a number and go by the number" — an ordinary story
-  for anyone who knows the locker corridor. The real source of the notoriety is
-  not the concept but *the price of breaking the rules*: code that follows an
-  empty pointer (next chapter), or invents a number in someone else's land
-  (chapters 35 and 36), or keeps the number of a slot that has vanished
-  (chapters 39 and 40),
-  causes accidents quietly, late and largely. That is why all the remaining
-  chapters of this part are chapters of "rules" — the concept ended today, and
-  now we learn the safety code.
+  This is the oldest typo accident in C. `x = 0` is an *expression* whose value is
+  0, so the `if` always sees false. Far from being tested, x is *changed* to 0.
+  Comparison is `==`.
+
+  There are three defences. First, turn compiler warnings on — gcc's
+  `-Wparentheses` points at an assignment in a condition (if it was intended,
+  write `if ((x = f()))` with an extra pair of parentheses to say "on purpose").
+  Second, there is the old practice of putting the constant on the left
+  (`if (0 == x)`, the so-called Yoda condition), but it reads badly and this book
+  does not recommend it. Third, and most reliable, is *the habit of not assigning
+  in a condition*.
 ]
+
+== Assignment does two things
+
+Split what `E1 = E2` does and it comes to this.
+
++ *It computes a value* — `E2` is evaluated and converted to the type of `E1`.
++ *It changes an object* — that value is written into the place `E1` denotes.
+  This is the *side effect*.
+
+Keeping the two apart is the key to this chapter. The *value* of the expression
+can be used at once, but *when the side effect actually happens* is another
+question. The standard says only that the side effect must be complete by the
+next sequence point; when within that span it happens is not settled.
 
 #qa[
-  Printing a variable's address would be interesting — why did the demonstration
-  not print address values?
+  Why is `x = x + 1` safe, then? Does it not read x and change x as well?
 ][
-  It can be done — `printf("%p", (void *)&n)` is the format. It was left out for
-  honesty's sake: address values *differ on every run*. Modern operating systems
-  place a program at a different position each time for security (address space
-  layout randomisation, ASLR — a defence so that an attacker cannot know
-  addresses in advance). Every result printed in this book is a real capture, and
-  putting in a value that changes every time would make "the same result"
-  impossible to guarantee. The *value* of an address does not matter; the
-  *relations* between addresses (same, different, adjacent) do — which is why the
-  demonstration printed `p == &n`.
+  Because the reading and the changing are one each. Written exactly, the rule is:
+  *within one sequence point, modifying the same object twice, or modifying it
+  and reading its value for a purpose other than determining the new value, is
+  outside the contract.*
+
+  In `x = x + 1`, x is read *in order to determine the new value*, which is
+  allowed. In `a[i] = i++`, by contrast, the `i` on the left is read not to
+  determine i's new value but *to determine where to write* — and that is outside
+  the contract.
 ]
 
-== What kind of number is an address — name, size, order
+== The left side is evaluated too
 
-We have said several times that a pointer cannot be seen as "just a number".
-What kind of number is it, then? Splitting the uses of number into three makes
-the answer sharp.
+This is what beginners miss most often. The left of `=` is not a "value" but *a
+computation that decides where to write*, and that computation runs.
+
+The second block of the example confirms it. Running
+`a[where()] = what();` calls *both* `where()` and `what()`. The left computes "how
+to find that place", the right computes "what to write".
+
+Which of the two is computed first? *The standard does not settle it
+(unspecified).* A compiler may compute the right first or the left first. If both
+computations have side effects, the result can differ with that order — the trap
+of the next section.
+
+#platform("compilers really do differ")[
+  The same code being evaluated in different orders by gcc and clang does happen.
+  Change the optimisation level and it can differ within one compiler. This is a
+  prime example of a place where "on my machine it comes out this way" is not
+  evidence — *unspecified* means both roads are correct, not that one was chosen
+  and will be kept.
+]
+
+== Compound assignment — the left side is evaluated once
+
+`E1 op= E2` is *not the same as* `E1 = E1 op E2`. The standard says the only
+difference is that `E1` is evaluated once — and that one line of difference
+matters in practice.
+
+Look at the third block of the example. In `a[where()] += 1;`, `where()` is called
+*once*. Spelled out as `a[where()] = a[where()] + 1;` it would have been called
+twice, reading one slot and writing another.
 
 #dtable(
   columns: 3,
-  [*use of number*], [*what it means*], [*examples*],
-  [nominal], [it only *distinguishes*. Neither size nor order means anything], [a bus number, a shirt number],
-  [ordinal], [there is a *before and after*. The size of a difference may mean nothing], [a rank, a floor],
-  [cardinal], [it *counts* a size. Adding and subtracting mean something], [three apples, 12 bytes],
+  [*shape*], [*left-side evaluations*], [*note*],
+  [`a[f()] = a[f()] + 1`], [2], [with a side effect in `f`, it reads one slot and writes another],
+  [`a[f()] += 1`], [1], [the recommended shape],
+  [`*p++ += 1`], [1], [still hard to read — better split up],
 )
 
-An address is not one of the three: it is *all three, and none of them wholly.*
-
-- *As a nominal number*: the most basic use. `&x` is the *name* of the object x,
-  and whether two addresses are the same may always be asked (which is why `==`
-  and `!=` are allowed even between different objects, appendix A). This is
-  exactly what a locker number does.
-- *As an ordinal number*: within one array, before and after mean something.
-  `&a[1] < &a[2]` is true, and on that rest sorting, searching and bounds
-  checks. But *between different arrays the question cannot be asked* — which is
-  why ordering them is outside the contract (appendix A). What has an order is
-  not addresses in general but addresses *within one object*.
-- *As a cardinal number*: the difference of two addresses counts — not bytes but
-  *elements* (chapter 36). `&a[4] - &a[1]` is 3, meaning "three elements lie
-  between". And this subtraction, too, means something only within one array.
-
-In short: *an address may always be used as a nominal number; as an ordinal or a
-cardinal number only within one object.* Half the strangeness of C's pointer
-rules lives here — we learned numbers as things that are all three at once, while
-an address is whichever of the three the context allows.
-
-#figure-svg("pointer-parts", caption: [The three things that travel with one pointer value. The same address does not make the same pointer.])
-
-=== Why an integer, of all things
-
-Naming an object could have been done otherwise — a name string, an index into a
-table, a handle; languages and operating systems have done all of these. C chose
-an integer for a simple reason: *the machine was already doing it that way.* As
-chapters 4 and 5 showed, a machine address is a number, adding to it gives the
-neighbouring slot, and CPUs have circuitry that computes "base + index × size" in
-one step. Choose an integer and arrays, strings and struct access all follow *for
-free*.
-
-That choice became C's power and its danger. The power is expressiveness — arrays
-arrive with no extra syntax (chapter 36), and memory can be handled in bulk
-(chapter 72). The danger is the illusion that the number may be handled *like any
-other number*.
-
-=== The abstraction has thickened with time
-
-Pointers were not always as delicate as they are now. In early C a pointer was
-close to a transcription of the machine address, and it was common practice to
-convert one to an integer, play with it and convert back. Machines were simple
-then — memory was one layer, instructions ran in the order written, and the
-compiler did not greatly rearrange what a person had written.
-
-Since then the layers underneath have thickened.
-
-- *Memory split into levels* (chapter 11) — registers, caches, DRAM, and above
-  them virtual addresses and page tables. The number a program sees has already
-  been translated.
-- *Execution began to overlap* (chapter 12) — pipelines, out-of-order execution,
-  branch prediction. "In the order written" is no longer true.
-- *The compiler became an editor* (chapter 13) — it rewrites code wholesale so
-  long as the observable behaviour is kept. One of the premises that rewriting
-  rests on is "this pointer does not touch that object".
-
-The thicker those layers grew, the more the language had to ask of pointers. For
-a compiler to reorder on the premise that "distinct objects do not touch one
-another", it needs a promise that the program will not break that premise. So
-pointers have drifted away from being *numbers* and been refined into *located
-values with a contract* — the alignment rules (chapter 35), provenance
-(chapter 35), and the rule against forming an address outside its array
-(chapter 36) are all clauses in that direction.
+There are ten compound assignments — `+= -= *= /= %= <<= >>= &= ^= |=`. Do not
+forget that the grey zones of each operation come along unchanged: `x /= 0` is
+still outside the contract, and so is `x <<= 40` (chapter 27).
 
 #qa[
-  Is "an address is an integer" wrong, then?
+  Are `x += 1`, `x++` and `++x` not the same thing in the end?
 ][
-  It is more accurate to say it is half right. At the layer of *representation*,
-  addresses on today's mainstream machines are represented as integers, which is
-  why the standard provides the passage through `uintptr_t` (chapter 35). But at
-  the layer of the *language* a pointer is not an integer type, and clauses
-  attach to it that no integer has — where it came from, how far it may go, what
-  alignment it stands on.
+  The *effect on the object* is the same. What differs is the *value of the
+  expression* — `++x` and `x += 1` yield the value after the change, `x++` the
+  value before it. In a statement that discards the value (`x++;`) all three are
+  identical, so in practice it is a matter of taste.
 
-  The place where the difference shows most clearly is addition and subtraction.
-  An integer's `+1` always adds one; a pointer's `+1` moves *by the size of the
-  type pointed at* (chapter 36), and if the result leaves the range of the
-  original object it is outside the contract by the computation alone. The same
-  sign follows different rules. Even `p - q`, unremarkable for integers, means
-  nothing if the two pointers came from different arrays.
-
-  So this book uses two sentences together — *an address is represented as an
-  integer; a pointer is not an integer.* The first is a matter of the machine,
-  the second a matter of the contract.
+  One practical difference exists. `x += n` can add any value, and on a pointer it
+  moves by elements (chapter 37). And a habit inherited from C++ — "use `++x` when
+  the value is not used" — is widespread, though in C there is no performance
+  difference.
 ]
 
-== The size of a pointer is not one number
+== Where the contract ends
 
-Here is why the answer above said "8 bytes on this machine" so carefully. The
-widespread belief runs: *"a pointer is just an address, so within one machine
-they are all the same size."* On the x86-64 Linux we use today that is true,
-which is why the belief is so rarely contradicted. But the C standard never
-promised it, and real machines have broken it more than once.
+Now the famous expressions can be judged. The code below *carries no output* —
+printing the result of an expression outside the contract would leave the false
+knowledge "on this compiler it comes out like this" (chapter 48's principle).
 
-What the standard actually promises is much narrower.
+```c
+int i = 0, a[4] = {0};
 
-- *`void *` and the character-type pointers (`char *`, `signed char *`,
-  `unsigned char *`) have the same representation and alignment requirements as
-  each other.* Those four go together.
-- Pointers to structures share a representation with one another; so do pointers
-  to unions.
-- *Beyond that, nothing is promised.* There is no rule that `int *` and
-  `double *` must be the same size, and none that an object pointer and a
-  function pointer must share a representation.
+i = i++;              /* outside the contract — i is modified twice */
+a[i] = i++;           /* outside — modified, and read to decide the place */
+i = ++i + i++;        /* outside — modified twice */
+a[i++] = i;           /* outside — the same reason */
+printf("%d %d", i++, i++);  /* outside — no sequence point between arguments */
+```
 
-Why leave it so loose — because machines really were different.
+These, by contrast, are fine.
 
-#realcase("Machines where pointer sizes differed within one program")[
-  *Word-addressed machines.* On the Cray, the Data General Nova, the Prime 50,
-  Honeywell hardware and their like, an address named a *word* rather than a
-  *byte*. Which byte within the word had to be carried separately, so `char *`
-  was larger than `int *`, or the same size with a different bit layout. C's
-  narrow rule — that only `void *` and `char *` share a representation — was
-  written to accommodate that world.
+```c
+i = i + 1;            /* the read is to determine the new value */
+a[i] = i;             /* one object changed, a[i]; i is only read */
+i++, i++;             /* the comma *operator* has a sequence point */
+x = (i++) && (i++);   /* so does && */
+f(i++);               /* one argument cannot overlap */
+```
 
-  *Segmented x86 (16-bit DOS and Windows).* `near` pointers (a 16-bit offset)
-  and `far`/`huge` pointers (32-bit segment:offset) lived in the same program.
-  Which was which was decided by the *memory model* — in the medium model code
-  pointers were far and data pointers near; in the compact model the reverse.
-  That is, `sizeof(void (*)())` and `sizeof(void *)` differed inside one program.
+#antipattern("gathering side effects into one expression")[
+  ```c
+  a[i] = ++i + i++;        /* outside the contract. Asking "what value" is the wrong question */
+  ```
+  Meeting such code, read it not as "what is the result" but as *"this code has no
+  meaning"*. Outside the contract does not mean the value is strange; it means the
+  compiler may generate anything at all and owes you no diagnostic (chapter 48).
 
-  *Harvard-architecture microcontrollers.* On AVR, PIC and some DSPs, code and
-  data live in entirely separate address spaces. Function pointers have a
-  different width from data pointers, and reading a constant out of flash needs
-  separate instructions and a separate kind of pointer (AVR's `__flash`, the
-  `PROGMEM` idiom). Chapter 80's embedded story stands on this ground.
-
-  *IBM AS/400 (OS/400).* Pointers were 128 bits with a tag inside them, and the
-  hardware refused forged ones. Code that converts an address to an integer and
-  plays with it does not work here.
+  The safe shape splits the statements.
+  ```c
+  int t = i + 1;            /* whatever was intended, settle the value first */
+  i = t + 1;                /* then change the object */
+  a[i] = t;
+  ```
 ]
 
-Nor is this only in the past tense.
-
-#realcase("Now, and ahead")[
-  (No need to memorise the names here either. Keep only *"the size and
-  representation of a pointer are settled by the machine and the build"*.)
-
-  *CHERI and Arm Morello.* Real hardware in which a pointer is a bundle of
-  address, bounds and permissions (a capability). The address is 64 bits but the
-  pointer is *128*, and `sizeof(void *)` is 16.
-
-  Two things must be told apart here. *A round trip through the official
-  passage, `uintptr_t`, is supported* — CHERI C's `uintptr_t` is designed to
-  carry not only the address but the provenance (the permissions and bounds), so
-  converting a pointer to that type and back yields a pointer that can be used.
-  This is why CHERI porting guides say "use `uintptr_t` instead of `long`". What
-  cannot be used is *a pointer made from an ordinary integer with no provenance,
-  or assembled by playing with the bits*: it gets no valid tag.
-
-  So what CHERI blocks is not the act of converting to an integer but *forging a
-  pointer out of an address with no provenance* — the place where chapter 35's
-  provenance stops being a standards quibble and becomes a rule of the hardware,
-  and the reason the standard guarantees only the `uintptr_t` round trip.
-
-  *Machines that use the high bits of an address.* AArch64's TBI (Top Byte
-  Ignore) and MTE, and x86-64's LAM, leave the pointer's *size* alone and carry a
-  tag in the top byte. A modern demonstration that the same size does not make
-  "pointer = address value" true (chapter 6's tagged pointers).
-
-  *Same CPU, different ABI.* x86-64's x32 ABI uses 64-bit instructions while
-  keeping pointers at 32 bits. WebAssembly has wasm32 and wasm64 side by side.
-  Even with the machine fixed, the *build target* changes the size.
+#realcase("compilers know about this place")[
+  gcc and clang catch the common cases with `-Wsequence-point` and
+  `-Wunsequenced`. Obvious ones such as `i = i++;` are usually caught, but cases
+  that pass through a function call or reach the same object through a pointer are
+  missed — the problem is hard to decide statically. So tools are an aid; knowing
+  the rule comes first.
 ]
 
-#misconception[
-  "Every machine is 64-bit these days, so `sizeof(void *)` is 8"
-][
-  In the environment that runs this book's examples it is indeed 8. But the
-  moment that 8 is *written into the code*, that code can no longer travel to any
-  of the worlds above. Two accidents are common — declaring the slot that holds a
-  pointer in a struct as `long` or `int`, and computing the size of an array of
-  pointers as `n * 8`. Both run quietly on x86-64 and collapse on a 32-bit build
-  or on CHERI.
+== The conversion hidden in an assignment
 
-  The rule is simple. *Always ask `sizeof` for a size*, use `uintptr_t` if a
-  pointer must be held as an integer (chapter 35), and do not put a function
-  pointer into a `void *`. The C standard does not guarantee that conversion —
-  POSIX demands it separately, for the sake of `dlsym`.
+An assignment puts the right-hand value in *converted to the left-hand type*.
+Chapter 28's conversion rules apply here quietly, and quietly is the danger.
+
+The fourth block of the example shows it. In `c = (char)321` the value is cut to
+65, and the value of the assignment expression is that 65 — *not what was put in
+but what went in*. That `(int)d` is 3 after `d = 3.9` is the same story
+(truncation toward zero, chapter 27).
+
+#dtable(
+  columns: 3,
+  [*assignment*], [*what happens*], [*verdict*],
+  [`char c = 300;`], [narrowed in the way the implementation settles], [*implementation-defined* — the value does not fit],
+  [`int n = 3.9;`], [truncated toward zero to 3], [fine, but confirm the intent],
+  [`unsigned u = -1;`], [wraps to the maximum], [fine (unsigned is modular)],
+  [`int n = 3e30;`], [a real that does not fit an `int` → *outside the contract*], [UB],
+  [`float f = 0.1;`], [narrowed from double to single], [fine; precision is lost (chapter 46)],
+)
+
+Turning on `-Wconversion` makes the compiler point at such places. It is a noisy
+option, hard to switch on across a whole project, but *keeping it on for new code*
+is a good habit.
+
+#recap[
+  #dtable(
+    columns: 2,
+    [*to remember*], [*the point*],
+    [assignment is an expression], [it yields a value — but not an lvalue],
+    [right-associative], [`a = b = c` is `a = (b = c)`],
+    [the left side is evaluated], [in `a[f()] = g()`, `f` is certainly called],
+    [order of the two sides], [*unspecified* — the compiler decides],
+    [compound assignment], [evaluates the left side *once*],
+    [where the contract ends], [modifying the same object twice within one sequence point, or modifying it and reading it for another purpose],
+    [the hidden conversion], [the right side goes in converted to the left type],
+  )
 ]
 
-#qa[
-  Then why can `void *` be used as "the container that holds any pointer"?
-][
-  Because the standard promised exactly that one thing. *Any object pointer
-  converted to `void *` and back to its original type compares equal to the
-  original.* That is why `malloc` returns a `void *` and why `qsort` takes its
-  comparator through `void *`. Two cautions: the promise covers *object*
-  pointers only (function pointers are left out), and a `void *` knows nothing of
-  the size of what it points at, so it can be neither dereferenced nor used in
-  arithmetic (some compilers allow addition, but that is an extension).
-
-  `char *` holds a different privilege — it may look into the representation of
-  any object, byte by byte. Put the two side by side: *`void *` is the passage
-  that "forgets what is pointed at", and `char *` is the passage that "reads
-  anything as bytes".* That the standard nails these two to the same
-  representation is no accident either — on word-addressed machines these were
-  precisely the pointers that had to carry the widest address. The detailed rules,
-  and their price, continue in chapter 35.
-]
-
-The concept of the pointer is in place. The next chapter is this part's first
-safety rule — how to handle "points nowhere." The three nulls whose faces we
-learned in chapter 6 get their formal treatment, this time in syntax and
-practical rules.
+Part VI is over — we forged values (chapters 26–28), governed flow
+(chapters 29–31), and gained the meaning of functions and of assignment
+(chapters 32–33). The next part is this book's second mountain, *memory*: back to
+chapter 5's locker corridor, this time walking it in C's syntax.

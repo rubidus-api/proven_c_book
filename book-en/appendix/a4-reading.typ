@@ -136,9 +136,9 @@ conventions that help in reading.
 
 - "shall" is a requirement, "shall not" a prohibition. *Break a shall in a constraints
   clause and a diagnostic follows; break a shall outside the constraints and it is
-  undefined behaviour* (chapter 46).
+  undefined behaviour* (chapter 48).
 - Annex J gathers the *lists* of undefined, unspecified and implementation-defined
   behaviour. It is a good place for skimming all at once the three grey zones treated
-  in chapter 46.
+  in chapter 48.
 - The "EXAMPLE" at the end of each clause, and the footnotes, are explanation, not
   normative. Where there is a dispute, the sentences of the body are the criterion.

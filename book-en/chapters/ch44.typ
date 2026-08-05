@@ -1,173 +1,219 @@
 #import "../../book/lib.typ": *
 
-= Real numbers — the mathematics of approximation
+= Unions and representation
 
 #prereq(
-  ([chapter 8, Representing numbers], [the contract called IEEE 754]),
+  ([chapter 42, Structs], [the layout of a struct]),
+  ([chapter 5, Words and addresses], [seeing a representation as bytes]),
+  ([chapter 13, Compiler optimisation], [strict aliasing]),
 )
 
 #deepqa[
-  Chapter 8 said `0.1 + 0.2` and `0.3` are neighbours one final bit (1 ulp) apart,
-  and that comparison must change into "are they close enough?". Then how is the
-  criterion of "enough" — the epsilon — decided?
+  Chapter 13 said the old technique of "reading a float's bits through uint32's
+  eye" violates strict aliasing, and that the correct methods are memcpy or a
+  union. Then what exactly is a union, that it stands in that place?
 ][
-  That it must vary with the size of the values is the lesson of chapter 8's third
-  incident. Near 0 the ticks are dense so a small fixed value will do, but around
-  $10^16$ the tick spacing itself exceeds 1 and the same criterion becomes
-  meaningless. So practice keeps two — *absolute error* (for near 0) and
-  *relative error* (proportional to size). This chapter's demonstration shows both
-  side by side.
+  *A type whose several members share the same memory.* If a struct lays members
+  side by side (chapter 42), a union lays them *overlapping* — its size fits the
+  largest member, and at any moment only one thing is really held. Chapter 5's
+  perspective, "seeing the same bits through this eye and through that", made into
+  syntax.
 ]
 
 #organizer[
-  The world of approximation learned on the page in chapter 8 finally comes down
-#idx("comparing reals")  into C code. Choosing between `float` and `double`, the
-  correct way to compare (epsilon — absolute and relative), and the special values
-  (infinity, NaN). Chapter 8's three incidents are confirmed by execution results.
+#idx("union")  The device for seeing the same memory through a different eye —
+  the union. And this is a chapter of representation too: we run the endianness
+#idx("padding")  demonstration booked in chapter 5 and confirm with our own eyes
+  the hidden gaps (padding) in a struct. It is where this book's refrain, the
+  separation of representation from abstraction, rings out loudest for the last
+  time.
 ]
 
 #chapter-questions()
 
-== Choosing a type, and comparing
+== The union — laying things over one another
 
-#demo("examples-en/ch44/eps.c")
+The syntax is a twin of the struct's. Change `struct` to `union`:
 
-The first three lines are the execution check of chapter 8's first incident —
-`==` is false, and printed to twenty digits the two numbers diverge at the end.
-Use `near_abs` (absolute error) and it becomes true.
+```c
+union bits32 {
+    uint32_t as_int;
+    float    as_float;
+};
+```
 
-The latter part checks the third incident (absorption) — add 1 to $10^16$ and the
-value is unchanged, because at that size the gap between representable neighbours
-is already wider than 1 (chapter 8's tick calculation). Here the right tool is not
-absolute error but `near_rel` (relative error).
+Member access is the same (`u.as_int`). The only difference is the layout of
+memory — the two members share the same four bytes, so write to `as_float` and
+read `as_int` and you see *the same bits under a different interpretation*. The C
+standard permits this "read through a member other than the one written" (type
+punning) for unions in particular — unlike chapter 13's pointer-cast approach, it
+is inside the contract, which is the decisive difference (though the caution
+remains that the value read may not be a valid value of that type).
 
-Reduced to practical rules there are three. *The default is `double`* — as
-chapter 8 showed, the room in precision is of a different order, and `float` is
-chosen only where memory and bandwidth are tight. *Do not use `==`* — code asking
-whether two reals are equal is almost always suspect (there are exceptions, such
-as comparing against an integer or against 0, but they must be judged
-consciously). *The tolerance comes from the problem* — it is decided by looking at
-the nature of the calculation and the size of the values; there is no magic
-constant.
+== Representation with our own eyes — endianness and padding
 
-== Special values — infinity and NaN
+Chapter 5 booked "actually doing this check in C is this chapter's
+demonstration." Now we pay. Here, instead of a union, we use the most portable
+method — the eye of bytes (`unsigned char`) learned in chapter 36, and `memcpy`.
 
-IEEE 754 (chapter 8) defines special values besides ordinary numbers. *Infinity*
-(positive and negative) comes out of overflow or division by zero, and *NaN* (Not
-a Number) means "not a number" — the result of an undefinable operation such as
-$0/0$ or the square root of a negative.
+#demo("examples-en/ch44/endian.c")
 
-One thing has to be stated exactly here. Integer division by zero is outside the
-contract (chapter 27), and floating-point division by zero is commonly said to
-"be defined and give infinity". *That, however, is not a promise of the C
-language itself.* The standard's rule for division leaves the behaviour
-undefined when the second operand is zero — for reals as much as for integers.
-Infinity appears in implementations that support IEC 60559 (that is, IEEE 754)
-semantics. In such an implementation, dividing a finite non-zero value by zero
-gives a signed infinity and raises the divide-by-zero exception, while $0/0$
-falls on the NaN side. Today's mainstream compilers on x86-64 and AArch64 behave
-that way, but it is not something the standard forces on every implementation.
+The first part is exactly chapter 5's picture. `0x12345678` sits in memory in the
+order `78 56 34 12` — meaning this book's verification machine is little-endian,
+and chapter 5's diagram is confirmed in the flesh. (Run this example on a
+big-endian machine and `12 34 56 78` is printed and the verdict sentence changes
+— the code stays the same.)
 
-#platform("Where this distinction actually bites")[
-  The mark by which an implementation declares that it follows IEC 60559 for
-  binary floating point is `__STDC_IEC_60559_BFP__` (BFP = binary floating
-  point). Where that macro is defined, annex F semantics are a contract and the
-  behaviour above may be expected. Decimal floating point is marked separately,
-  by `__STDC_IEC_60559_DFP__`.
-
-  It must not be confused with the similarly named
-  `__STDC_IEC_60559_BF16_TYPES__` — that is a *separate* feature mark, about
-  whether bfloat16 types are provided, and has nothing to do with the semantics
-  of ordinary binary floating-point operations. And note further that *a type
-  having the same format as IEC 60559 and the operations following annex F are
-  two different questions* — the former is what `__STDC_IEC_60559_TYPES__`
-  speaks to; what is needed here is the latter. Where it does not — some embedded
-  toolchains, and builds that deliberately switch annex F semantics off with
-  something like `-ffast-math` — the guarantee of infinity and NaN goes away.
-  *Portable code screens out a zero divisor first.*
-]
-
-=== Opening the bits directly
-
-Having seen the layout in chapter 8, we now print the bits of real values and
-check them. To move a representation we use `memcpy` rather than a union — by
-chapter 43's rule that is the safest passage for "moving a value", and compilers
-mostly make the copy disappear.
-
-#demo("examples-en/ch44/bits.c")
-
-Five things from the output are worth pointing at.
-
-*First, `1.0` is remarkably tidy.* The exponent field holds 1023 (the bias
-itself, so the actual exponent is 0) and the fraction is all zeros — the hidden
-bit alone makes $1.0 times 2^0$. `2.0` raises the exponent by one, `0.5` lowers
-it by one, and flipping the sign bit gives `-1.0`.
-
-*Second, `0.1` shows the cut mark of an unending fraction.* Its fraction ends in
-`999999999999a`, and that final `a` is the trace of *rounding*. It is chapter 8's
-mathematics box — "it does not come out even in binary" — laid bare in bits.
-
-*Third, `0.1 + 0.2` and `0.3` differ by one last bit.* The two bit patterns end
-`...3334` and `...3333`, exactly one apart. That is why the `==` comparison is
-false, and why this chapter talks about tolerances.
-
-*Fourth, the identity of one ULP becomes visible.* Adding the integer 1 to the
-bits of `1.0` gives the very next real number, and the difference is
-`DBL_EPSILON` ($2^{-52}$). "The smallest distinguishable difference near 1.0"
-turns out to be a single bit.
-
-*Fifth, the subnormals appear at the floor.* Halve the smallest normal number and
-the exponent cannot go lower, so *zeros begin to fill the front of the fraction*
-instead — that state, with the exponent field all zeros, is a subnormal. Precision
-is given up little by little on the way down to zero, and when the last bit
-disappears the value becomes zero. This design, fading out instead of falling
-abruptly to zero, is called *gradual underflow*.
-
-#platform("subnormals can be slow")[
-  Arithmetic on subnormals is far slower than on normal numbers on some hardware
-  (tens of times, on some machines). So signal processing and game engines
-  sometimes switch on a mode that flushes subnormals to zero — a trade of a
-  little accuracy for the removal of a worst-case stall. Standard C has no
-  portable way to switch that mode on (it is a compiler option or a platform API).
-]
-
-NaN has one famous property — *it is not even equal to itself.* If `x != x` is
-true then x is NaN, and that is the classic idiom for detecting NaN (today one
-uses `isnan()`). Being a value that breaks the basic property of the relation
-"equality", NaN mixed into sorting or searching algorithms produces strange
-results — which is why checking for NaN at the boundary is the practice when
-handling real-number data.
+The second part is the struct's hidden circumstances. A struct holding one `char`
+(1 byte) and one `int` (4 bytes) has size 8, not 5 — because chapter 6's
+alignment rule inserted three bytes of *padding* after the `char`. The int member
+must start at a multiple of four for the machine to grab it in one handful
+(chapter 6). So one practical habit follows — *lay the large members first and
+the gaps shrink.* In code handling millions of structs this one layout decision
+governs memory and cache efficiency (chapter 11). The layout rules, and the ways
+to remove gaps or force alignment (`pack`, `alignas`), were treated in detail in
+chapter 43 — the purpose here is to confirm with our own eyes that the gap
+*really exists*.
 
 #realcase[
-  The accumulation of 0.1 seconds — the Patriot missile incident
+  The secret spilled by a gap — padding information leaks in kernels
 ][
-  There is an event in which chapter 8's "small discrepancies accumulate" led
-  directly to human lives. In the 1991 Gulf War a Patriot air-defence system
-  failed to intercept an incoming missile and 28 people died, and the heart of the
-  cause analysis was floating-point error. The system counted time in units of 0.1
-  seconds — and as chapter 8 showed, 0.1 is an infinite fraction in binary, so a
-  minute error arises each time it is held. Because that system used a 24-bit
-  container the error was relatively large, and after 100 hours of continuous
-  operation without a reboot the accumulated error reached about 0.34 seconds. In
-  those 0.34 seconds the target moved more than 500 metres, and the tracking window
-  was looking at the wrong piece of sky. "Approximation is faithful but not
-  harmless" — the heaviest confirmation of chapter 8's lesson.
+  Padding looks harmless, being empty space nobody uses, but through the eye of
+  security it is *uninitialised memory*. When an operating system kernel copies a
+  struct whole to a user program, those gaps cross over too — and although every
+  member was filled in, the gaps contain *the remains of other data* that happened
+  to be there. An attacker can gather these crumbs to glimpse the contents or
+  address layout of kernel memory, and that becomes the foothold for the next
+  attack. Major kernels including Linux have fixed dozens of information-leak
+  vulnerabilities of this class, and today's response is simple — a struct handed
+  to userspace is *wiped to zero whole before its members are filled*. It is the
+  moment chapter 23's rule of "initialise at the point of declaration" extends
+  even to invisible blanks.
+]
+
+#misconception[
+  "You can just write a struct to a file or send it over a network as it is"
+][
+  A tempting thought, and one much attempted — storing a struct's bytes whole
+  makes the code short. But the two facts this chapter has just shown block it:
+  byte order differs by machine (endianness), and the size and position of the
+  gaps differ by compiler and platform (padding). A file written on one machine
+  breaks on another — chapter 5's NUXI incident reproduced in the world of file
+  formats. The right answer is *serialisation*: writing explicit code that writes
+  and reads members one at a time, in an agreed size and byte order (network byte
+  order — chapter 5). Representation is the machine's business and files and
+  communication are a world of agreements — the bridge between the two worlds must
+  be laid by hand.
 ]
 
 #qa[
-  Should real numbers then not be used for things like money?
+  When, then, is a union the standard thing to use?
 ][
-  Not using them is the standard — this is exactly the place for the fixed point
-  learned in chapter 8. Handle amounts as real numbers in units of won and
-  discrepancies at the 0.1-won level accumulate until the ledger does not balance,
-  so the practice of financial software is to compute in *integers of the smallest
-  unit* and put the decimal point in only when displaying. Reduced to a rule —
-  *integers (fixed point) where the exact decimal value matters, floating point
-  for physical quantities and scientific computation.* It is fitting the tool to
-  the problem, and the grounds for that judgement are the nature of representation
-  learned in chapter 8 and here.
+  In two places. First, the *looking into representation* (type punning) just
+  seen — low-level code inspecting floating-point bits or viewing a hardware
+  register through several eyes. Second, and more common, the *tagged union*:
+  putting into a struct both a union and a mark (a tag) saying "which member is
+  valid now", to represent alternative data such as "this value is an integer, or
+  a real number, or a string." It is the basic tool of interpreters' value
+  representations and configuration-file parsers — and chapter 6's tagged pointer
+  was the same idea at the bit level. Modern languages' enumerations (Rust's enum,
+  Swift's associated values) lifted this pattern to the level of the language.
 ]
 
-We can handle the world of approximation in C. The next chapter is this part's
-central subject — how a program deals with the fact that a computation can fail:
-the story of errors and contracts.
+== Bit fields — cutting up one word
+
+Write a colon and a number after a struct member and it becomes a *bit field* —
+you specify directly how many bits that member occupies. Overlay a union on that
+and you have both "the eye that sees it whole as one word" and "the eye that sees
+it divided into fields" at once.
+
+#demo("examples-en/ch44/bitfield.c")
+
+The first part is the typical pattern for handling a hardware register. Write to
+a field as in `r.f.mode = 5` and the value goes into the bit positions without
+library help, and reading `r.raw` shows the result as one word. The reverse —
+writing `r.raw` whole and reading the fields — works too; the output's third line
+is the check.
+
+Convenient though it looks, *the price in portability* is large, because much is
+not fixed by the standard.
+
+- *The order the bits are laid in* — whether they fill from the low end or the
+  high end is implementation-defined. So the same declaration may produce
+  different layouts on different compilers.
+- *Fields crossing a boundary* — whether a field straddling a storage unit is
+  allowed is also up to the implementation. So is how much padding is inserted.
+- *Sign* — a plain `int x : 1;` is a signed one-bit field, so its values are 0 and
+  −1. If that was not the intention, `unsigned` must be stated.
+- *Its address cannot be taken* — `&` cannot be applied to a bit field. Nor can
+  they be made into an array.
+- *It is not atomic* — if two threads touch two fields sitting in the same word,
+  an accident of the same family as chapter 12's false sharing occurs.
+
+#misconception[
+  "Bit fields can represent a file or network format directly"
+][
+  The commonest misunderstanding, and a fixture of portability accidents. A file
+  format or protocol has *the layout of its bytes and bits fixed by
+  specification*, whereas a bit field's layout is fixed by the implementation.
+  Change compiler or move to another machine and the fields are read at the wrong
+  places — worse still when endianness (the previous section) is layered on. The
+  proper method for an external format is *laying out a byte array and extracting
+  directly with shifts and masks* (chapter 7). Regard bit fields strictly as *a
+  way of saving memory within one program*.
+]
+
+That is why bit fields are not recommended today. The reason to know the syntax
+nonetheless is clear — you still meet them in the register definitions of embedded
+SDKs, in the flag bundles of old codebases, and in kernel data structures.
+*Be able to read them, but think twice before writing new ones* is the practical
+instinct.
+
+== The practical pattern of mixing structs and unions
+
+The latter part of the example is a different story. It is a *tagged union* — a
+struct holding a tag and a union together — the pattern named in the exchange
+above.
+
+```c
+struct message {
+    enum msg_kind kind;      /* the tag telling which eye to look with */
+    unsigned      flags : 4; /* small states — bit fields earn their place here */
+    unsigned      urgent : 1;
+    union {                  /* an anonymous union (C11) */
+        int  number;
+        char text[16];
+        struct { int x, y; } point;
+    };
+};
+```
+
+Three things are layered here. The tag, the state flags saved by bit fields, and
+an *anonymous union* (C11). With no name, members can be used one step more
+directly, as `m->number`, which makes a tagged union far more readable.
+
+There is only one discipline and it is everything — *read only the member the tag
+says.* If `kind` is `MSG_TEXT` and you read `number`, it becomes the "looking
+through another eye" of this chapter's first section and gives a meaningless
+value. So code handling such data is almost always made to pass through *a single
+`switch` on the tag*, like the example's `show`. Gather the access in one place
+and the place to keep the discipline is one place too.
+
+That `sizeof(struct message)` came out as 24 bytes is worth reading as well — a
+4-byte tag plus the word holding the bit fields plus the 16-byte union, with
+padding (the previous section) added for alignment. Representation always takes
+*a little more* than what was declared.
+
+== Closing Part VIII
+
+We have the two syntaxes for making types — the struct that lays things side by
+side (chapter 42) and the union that lays them over one another (chapter 44). And
+along the way we confirmed the realities of representation (endianness, padding)
+with our own eyes. Part II's background knowledge has been fully collected into
+syntax.
+
+The next part is the part of precision — chapter 8's mathematics of approximation
+comes down into C's floating types (chapter 46), the perspective of the contract
+whose seed was planted in chapter 32 grows into error handling (chapter 47), and
+we meet head on the world "outside the contract" that this book has foreshadowed
+throughout — undefined behaviour (chapter 48).

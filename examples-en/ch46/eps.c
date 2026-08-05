@@ -1,0 +1,30 @@
+#include <math.h>
+#include <stdio.h>
+
+/* absolute error: used for comparisons near 0 */
+bool near_abs(double a, double b, double eps)
+{
+    return fabs(a - b) < eps;
+}
+
+/* relative error: as values grow the spacing grows, so the tolerance scales with size */
+bool near_rel(double a, double b, double rel)
+{
+    double scale = fabs(a) > fabs(b) ? fabs(a) : fabs(b);
+    return fabs(a - b) <= rel * scale;
+}
+
+int main(void)
+{
+    double sum = 0.1 + 0.2;
+
+    printf("0.1 + 0.2 == 0.3 ?      %d\n", sum == 0.3);
+    printf("compare with absolute eps? %d\n", near_abs(sum, 0.3, 1e-9));
+    printf("%.20f\n", sum);
+    printf("%.20f\n", 0.3);
+
+    double big = 1e16;
+    printf("1e16 + 1 == 1e16 ?      %d  (gap wider than 1)\n", big + 1 == big);
+    printf("compare with relative eps? %d\n", near_rel(big + 1, big, 1e-12));
+    return 0;
+}

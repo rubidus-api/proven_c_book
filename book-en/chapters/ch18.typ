@@ -43,7 +43,7 @@ Today most desktop and server C runs on these three.
 number of CPUs it can target — x86, Arm and RISC-V of course, but also embedded
 chips such as AVR, MSP430, SuperH and PowerPC, all in one lineage. It is why
 embedded vendors so often fill the inside of their own tools with gcc
-(chapter 80).
+(chapter 82).
 
 *Clang/LLVM*. A later arrival from the 2000s, built on LLVM, which was designed
 so that a compiler could be *used as components*. It made its name with friendly
@@ -114,7 +114,7 @@ firms that sell that certification along with the tools. IAR, Arm's Keil family,
 TI, Microchip, Renesas, Green Hills, Wind River — and the free-software SDCC for
 8-bit chips. This terrain only makes sense together with the whole toolset (debug
 probes, on-chip debugging, static analysis), so it gets its own chapter at the
-end of the book (chapter 80).
+end of the book (chapter 82).
 
 == An aside — Pelles C, the tidy alternative on Windows
 
@@ -182,7 +182,7 @@ web posts, *read them with their era in mind.*
 The *Dev-C++ with TDM-GCC* combination in particular was used for years in
 schools and academies, so material about it is still plentiful. The problem is
 that the combination carries a compiler several versions behind — syntax from
-C11 onwards, and the C23 keywords (chapter 63), often do not work. If you are
+C11 onwards, and the C23 keywords (chapter 65), often do not work. If you are
 starting now, the two routes of chapter 17 (LLVM clang, or gcc from MSYS2) are
 what to take. A good share of the walls met while following an old textbook —
 "why does this syntax not work?" — are the age of the tool.
@@ -220,7 +220,7 @@ what to take. A good share of the walls met while following an old textbook —
     [Clang/LLVM], [a compiler used as components. the base of the tool ecosystem],
     [MSVC], [the Windows standard. C11 and C17, C23 in progress],
     [`icx`, AOCC, `nvc`, Open XL], [vendors' performance compilers. mostly LLVM-based],
-    [the embedded family], [chapter 80],
+    [the embedded family], [chapter 82],
     [Pelles C], [a Windows-only freeware bundle, up to C23. an aside],
     [retired names], [`icc`, Turbo C, Watcom, Dev-C++, TDM-GCC],
   )
@@ -243,7 +243,7 @@ standard and the checking tools.
 
 The map of compilers is spread out. Its widest region — the compilers of
 embedded work and the tools beside them — only makes sense together with the
-whole toolset, so it gets its own chapter at the end of the book (chapter 80).
+whole toolset, so it gets its own chapter at the end of the book (chapter 82).
 
 Part III is over. We read the first program (chapter 15), watched the relay that
 turns it into an executable (chapter 16), equipped the tools (chapter 17) and

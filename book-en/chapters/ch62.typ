@@ -1,201 +1,177 @@
 #import "../../book/lib.typ": *
 
-= Diagnosis and control — `<errno.h>`, `<assert.h>`, `<signal.h>`, `<setjmp.h>`
+= Numbers — `<math.h>`, `<fenv.h>`, `<tgmath.h>`
 
 #prereq(
-  ([chapter 45, Errors and contracts], [reporting an error as a value]),
-  ([chapter 46, Undefined behaviour], [after a contract is broken]),
+  ([chapter 46, Real numbers], [the mathematics of approximation]),
+  ([chapter 8, Representing numbers], [IEEE 754]),
 )
 
 #deepqa[
-  Chapter 45 said C's ways of reporting an error are only three — the return value,
-  global state, and stopping the program. Then exactly when can the global called
-  `errno` be believed?
+  Chapter 46 said not to compare reals with `==`, and chapter 8 said 0.1 is not
+  exactly representable. Then how does a mathematical function tell you when it
+  receives "input it cannot calculate"?
 ][
-  It can be believed *only right after a failure has been confirmed.* The
-  standard's rule is two-layered. First, a successful call may also put a value in
-  `errno` — so the order must not be "nonzero means failure" but "read the reason
-  after the function has reported failure". Second, the value may be overwritten by
-  the next library call at any time — so once read it is stored at once. These two
-  rules are the price of the design that carries errors in global state.
+  There are two paths. It gives NaN or an infinity as the *return value*, and at
+  the same time leaves the reason in *`errno`* — `EDOM` for outside the domain,
+  `ERANGE` when the result exceeds the representable range. But an implementation
+  may choose to report through the floating-point exception flags (`<fenv.h>`)
+  instead of `errno`, so to check portably you must be ready to look at both. In
+  the field it is usually simpler to check the return value with `isnan` and
+  `isinf`.
 ]
 
 #organizer[
-  We look in one place at the four headers used when a program *has gone wrong*.
-  The global holding an error number, the assertion that catches contract
-  violations, signals flying in from outside, and the jump that skips over the
-  stack. Why the discipline set up in chapter 45, "errors are values", matters so
-  much becomes clear on seeing the real shape of the alternatives.
+  We look at how real-number calculation reports failure. The mathematics of
+  approximation learned in chapters 8 and 46 becomes the contract of functions here
+  — calls outside the domain, results beyond the range, the properties of NaN and
+  infinity, and the hidden global state called the rounding mode.
 ]
 
 #chapter-questions()
 
-== `errno` — the price of carrying errors in a global
+== The properties of NaN and infinity
 
-#demo("examples-en/ch62/errno_demo.c")
+#demo("examples-en/ch62/math.c")
 
-The output shows the rules exactly. Set it to 0 just before the call, read it
-after confirming failure, and store it before doing anything else. Merely slipping
-one line of `printf` in between can change the value.
+Four things to point out in the output.
 
-`errno` looks like a variable but is *a macro*. In a program running along several
-strands each strand must see a different value, so the implementation defines it
-as a macro pointing at thread-local storage.
+*① NaN is not equal to itself.* IEEE 754 settled it so. Hence the old idiom that
+if `x != x` is true then `x` is NaN, while the standard function is `isnan(x)`.
+Because of this property, sorting an array containing NaN with `qsort` breaks the
+comparator's total order and the result collapses (chapter 60).
+
+*② Dividing a real by zero is not outside the contract.* Unlike integer division
+(chapter 27), in an IEEE 754 environment it yields an infinity or a NaN. But the
+same holds that *the very fact of dividing by zero is usually a bug*.
+
+*③ `sqrt(-1)` is `EDOM`, `exp(1000)` is `ERANGE`.* The former is outside the
+domain, the latter a case where the result exceeded the representable range. If you
+mean to look at `errno`, set it to 0 just before the call (chapter 64).
+
+*④ 0.0 and −0.0 are equal under `==`.* But the sign bit differs, and `1/0.0` and
+`1/-0.0` are +∞ and −∞ respectively. If the sign must be distinguished, use
+`signbit`.
+
+#misconception[
+  "Comparing reals is safe if you use an epsilon"
+][
+  The epsilon comparison learned in chapter 46 is not omnipotent. Absolute error
+  (`fabs(a-b) < eps`) becomes meaningless when the values are large — near 1e9,
+  1e-9 is not even representable — and relative error collapses near zero. The
+  prescription in the field is *settling a tolerance that fits the situation*, not
+  using a universal constant. And it is better to ask first whether it can be
+  handled with integers or fixed point so that the comparison is not needed at all
+  (chapter 8's story of calculating money).
+]
+
+#qa[
+  How do the functions of `math.h` report failure — the return value alone cannot say?
+][
+  In three ways. *Outside the domain* (say `sqrt(-1)`) they return NaN and set
+  `errno` to `EDOM`. *Beyond the range* (say `exp(1000)`) they return infinity and
+  set `ERANGE`. And the floating-point exception flags of `<fenv.h>` are raised.
+
+  The trouble is that *how far each of the three is honoured varies between
+  implementations*. So the practical idiom is to clear `errno = 0` before the call
+  and check immediately after (chapter 64). To inspect the value itself use
+  `isnan` and `isinf` — they say what they mean, unlike tricks such as `x != x`.
+]
+
+== Functions often got wrong
 
 #dtable(
   columns: 3,
-  [*function*], [*what it does*], [*note*],
-  [`strerror(n)`], [error number → a sentence], [★ a static buffer. not thread-safe],
-  [`perror(s)`], [`s: reason` to `stderr`], [the habit of attaching a context string],
-  [`strerror_r`], [fills a caller's buffer], [POSIX. there are two editions, hence confusion],
-  [`strerror_s`], [the same intent], [annex K (chapter 63)],
+  [*function*], [*what it does*], [*trap*],
+  [`pow(x, y)`], [raising to a power], [used for an integer power it can be slow and inexact],
+  [`round`, `nearbyint`], [rounding], [`round` goes away from zero, `nearbyint` follows the current mode],
+  [`floor`, `ceil`, `trunc`], [cutting to an integer], [the direction differs for negatives],
+  [`fmod`, `remainder`], [the remainder], [their sign rules differ from each other],
+  [`abs`, `fabs`], [absolute value], [★ `abs` is for integers. used on a real it truncates],
+  [`atan2(y, x)`], [angle], [the argument order is `y, x`],
+  [`isnan`, `isinf`], [classification], [they are macros — they cannot be used as function pointers],
 )
 
-The error numbers the standard names are only three — `EDOM` (domain), `ERANGE`
-(range), `EILSEQ` (encoding). The rest, such as `ENOENT` and `EACCES`, are settled
-by POSIX or the platform. That is, *code comparing `errno` values is that much less
-portable*.
+`pow(x, 2)` is widely used, but for an integer square `x * x` is faster and exact.
+The compiler often optimises it, but not always.
 
-#qa[
-  Why was `assert` made to switch off wholesale with `NDEBUG` — is it not better to always check?
-][
-  Because what `assert` checks is *the programmer's assumption, not the user's
-  input*. "By the time we are here, p is not null" must be true whenever the code
-  is right; if it is false, that is a bug. The original design puts such checks
-  densely during development and removes their cost from the shipped build.
+The mistake of using `abs` on a real is especially quiet. `<stdlib.h>`'s `abs`
+takes an `int`, so `abs(-1.5)` turns −1.5 into 1. Today's compilers warn, but it is
+easy to miss in a file that does not include `<math.h>`.
 
-  Two things follow. First, *no side effects inside `assert`* — `assert(pop(&s) == 3)`
-  disappears entirely in the release build. Second, checks on user input, file
-  contents and network data must be made by *code that always runs*, not by
-  `assert`. In chapter 45's vocabulary of contracts, `assert` confirms
-  preconditions *during development*; reporting failure as a value is another job.
-]
+== Rounding modes and floating-point exceptions — `<fenv.h>`
 
-== `assert` — the cheapest way to write a contract as code
+Floating-point operations have two pieces of *hidden global state*.
 
-The macro learned in chapter 45. Pinning down the rules again:
+*The rounding mode* — the default is "to the nearest value, ties to even". It can
+be changed with `fesetround`, and once changed every subsequent real operation is
+affected.
 
-- `assert` confirms *an invariant internal to the program*. Things like "if we got
-  this far, p is not null".
-- *It is not used to check values that came from outside.* User input, file
-  contents and network data are checked with `if` and handled as errors.
-- If `NDEBUG` is defined it *vanishes entirely* (chapter 17). So an expression with
-  side effects must not be put in it.
+*The exception flags* — flags are raised when division by zero, overflow,
+inexactness and so on occur. They are read with `fetestexcept` and cleared with
+`feclearexcept`. They are finer than `errno`, but to use this facility
+`#pragma STDC FENV_ACCESS ON` must be turned on — and then the compiler refrains
+from reordering real operations, so optimisation is reduced.
 
 #antipattern[
-  Making `assert` do work
+  Turning on `-ffast-math` and checking for NaN
 ][
-  ```c
-  assert(fclose(f) == 0);      /* in a release build the fclose itself vanishes */
-  assert(i++ < n);             /* there arises a build in which i is not incremented */
+  ```sh
+  cc -O2 -ffast-math app.c        # tells the compiler "take it that NaN and infinity do not exist"
   ```
-  Separate the check from the side effect.
   ```c
-  int rc = fclose(f);
-  assert(rc == 0);
-  (void)rc;                    /* prevents an unused warning in release */
+  if (isnan(x)) { /* this branch can vanish entirely */ }
   ```
+  Options of the `-ffast-math` family tell the compiler it may assume
+  associativity and ignore the existence of NaN and −0.0. Speed is gained, but *the
+  checking code can vanish under optimisation* — the real-number edition of the
+  "bug that appears only in release" seen in chapter 17. In a program where
+  numerical accuracy matters, not turning it on is the default.
 ]
 
-C11 brought in `static_assert` (in C23 it can be used without `_Static_assert`).
-It confirms at compile time, so the run-time cost is zero, and it is used on
-`sizeof` and constant conditions.
+== Type-generic — `<tgmath.h>`
 
-```c
-static_assert(sizeof(int) >= 4, "this code assumes a 32-bit int");
-```
+`sqrt` is for `double`, `sqrtf` for `float`, `sqrtl` for `long double`. Include
+`<tgmath.h>` and the edition fitting the argument's type is chosen by `sqrt(x)`
+alone — the representative case of the `_Generic` seen in chapter 52 being used in
+the standard library.
 
-== Signals — interference flying in from outside
-
-`<signal.h>` handles events coming from outside the program (Ctrl+C, a wrong
-memory access, an arithmetic error). The signals the standard settles are only six
-(`SIGINT`, `SIGSEGV`, `SIGFPE`, `SIGILL`, `SIGABRT`, `SIGTERM`); the rest are the
-platform's.
-
-The heart of it is the fact that *there is almost nothing that can be done inside a
-handler.* What the standard permits is about this much.
-
-- assigning a value to a variable of type `volatile sig_atomic_t`
-- calling `_Exit` or `abort`
-- setting the handler for the same signal again
-
-Neither `printf` nor `malloc` may be called — because the signal can cut in while
-those functions are halfway through executing (they are not *async-signal-safe*).
-The idiom in the field is "the handler only raises a flag; the real handling
-happens in the main flow."
-
-```c
-static volatile sig_atomic_t stop = 0;
-static void on_int(int sig) { (void)sig; stop = 1; }
-/* in the main loop: while (!stop) { ... } */
-```
-
-#misconception[
-  "`SIGSEGV` can be caught and the program kept running"
-][
-  It can be caught but it cannot be kept running. `SIGSEGV` is a signal that comes
-  *after the contract has already been broken* (chapter 46's undefined behaviour).
-  Return normally from the handler and the same instruction is executed again and
-  repeats endlessly, or it runs on over a damaged state. Leaving a stack trace for
-  debugging and ending with `_Exit` is the realistic best, and "recovery" is mending
-  the code so that the access is not made in the first place.
-]
-
-== Non-local jumps — `setjmp`/`longjmp`
-
-A device that remembers the present place with `setjmp` and comes back later from
-somewhere deep with `longjmp`. It is an attempt to make something like exceptions
-in a language that has none, and the price is correspondingly large.
-
-- The only local variables whose values can be believed after a `longjmp` are those
-  declared `volatile`. The rest may have been in registers, so their values are
-  undetermined.
-- *Cleanup code does not run.* The resources (files, memory) held by the functions
-  skipped over leak as they are. Because there is no device like C++'s destructors.
-- If the function that called `setjmp` has already returned, `longjmp` is outside
-  the contract.
-- Escaping from a signal handler with `longjmp` is especially dangerous.
-
-So the conclusion in the field is usually "do not use it". If there is a place for
-it, it is confined to structures such as an interpreter's error recovery or a
-parser's deep failure, where *the resources to clean up are bound into a single
-arena* (Part XII's arena makes that condition).
+It is convenient but has a price. Being macros, they cannot be passed as function
+pointers, and there may be implementations that evaluate the argument twice, so
+putting in an expression with side effects is dangerous.
 
 #realcase[
-  The shape of code made by the way of handling errors
+  The same calculation, a different answer — the history of excess precision
 ][
-  Write the same program three ways and its shape splits like this.
+  x86's old floating-point unit (x87) calculated internally in 80 bits. So it
+  happened that the same `double` operation differed depending on whether it was
+  still in a register or had been stored to memory — change the optimisation level
+  and the result changed minutely, and `x == y` that had been true could become
+  false.
 
-  - *Return value + `errno`*: an `if` attaches to every call and the error paths
-    are visible. Cumbersome, but the flow is honest.
-  - *`setjmp`/`longjmp`*: the body becomes clean but a human must remember all the
-    resource cleanup, and where control jumps to is not visible in the code.
-  - *`goto cleanup`*: the compromise most widely settled in C codebases. On failure
-    everything gathers at one place and cleans up in reverse order. The Linux
-    kernel pinned this pattern down as a convention, and it is exactly the
-    disciplined use meant by chapter 29's "use goto with restraint".
-
-  All three solve the same problem of "handling failure as a value and not
-  forgetting the cleanup". Part XII's library lays a fourth answer on top — *making
-  failure into a type*.
+  C99 made this circumstance explicit with `FLT_EVAL_METHOD`, and today's 64-bit
+  x86 uses SSE so the problem has greatly diminished. But the possibility of "the
+  same code, a different answer" still remains in compilation options and the
+  target machine — the reason chapter 46 said "real-number calculation needs
+  reproducibility looked after separately."
 ]
 
 #recap[
-  Diagnosis and control in summary.
+  Numbers in summary.
 
   #dtable(
     columns: 3,
-    [*tool*], [*where it is used*], [*rule*],
-    [`errno`], [the reason a library call failed], [0 just before, read after confirming failure, store at once],
-    [`assert`], [internal invariants], [no side effects, not used for checking input],
-    [`static_assert`], [compile-time assumptions], [zero cost],
-    [`signal`], [external events such as Ctrl+C], [only a flag in the handler],
-    [`SIGSEGV`], [—], [catching it does not allow recovery],
-    [`setjmp`/`longjmp`], [special recovery], [values undetermined unless `volatile`, no cleanup],
-    [the practical idiom], [cleanup on failure], [gather at one place with `goto cleanup`],
+    [*situation*], [*what to use*], [*what to beware of*],
+    [checking for NaN], [`isnan`], [`x == NaN` is always false],
+    [checking for infinity], [`isinf`], [dividing a real by zero is not UB],
+    [the kind of a value], [`fpclassify`], [the existence of subnormal numbers],
+    [domain and range errors], [the return value + `errno`], [`errno = 0` just before the call],
+    [integer squares], [`x * x`], [`pow(x, 2)`],
+    [absolute value of a real], [`fabs`], [`abs` (for integers)],
+    [per-type functions], [`<tgmath.h>`], [macros — no arguments with side effects],
+    [fast-math options], [off by default], [checking code vanishes],
   )
 ]
 
-That is as far as the headers that existed from the C89 days. The next chapter is
-what the standard has added since — and the story of what became of the attempt to
-make "safe functions".
+We have passed numbers. The next chapter is time — a place with unusually much
+that the standard does not settle for you.

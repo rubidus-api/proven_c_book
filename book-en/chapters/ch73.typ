@@ -1,333 +1,335 @@
 #import "../../book/lib.typ": *
 
-= Allocation is a parameter
+= Errors are values
 
 #prereq(
-  ([chapter 40, Dynamic memory], [dynamic memory]),
-  ([chapter 68, Inside the allocator], [inside the allocator]),
+  ([chapter 47, Errors and contracts], [errors as values]),
+  ([chapter 71, The five bugs shipped for fifty years], [the unchecked return value]),
 )
 
 #deepqa[
-  Chapter 40 said memory obtained with `malloc` must be `free`d by somebody exactly
-  once, and that settling that "somebody" is the program's design. Then is there a
-  way to know from a function alone whether "this function allocates memory"?
+  Chapter 47 said C's ways of reporting an error are only three — the return value,
+  global state, and stopping the program — and that of these the return value is the
+  most honest. Then how does one say both "it failed" and "here is the result" with a
+  single return value?
 ][
-  In standard C there is not. `malloc` can be called anywhere, so any function can
-  allocate in secret, and the signature does not say so. proven's answer is to return
-  that information to the signature with one rule — *a function that does not take an
-  allocator as an argument does not allocate.* If this rule is kept, reading the
-  signature alone tells you "this function may take memory".
+  There are three ways. Mix an *impossible value* into the result's place (null,
+  `-1` — that trap seen in chapter 71), take the result out as an *output parameter*
+  and use the return value for status alone, or *hold both in one struct* and return
+  them together. proven uses the second and third together — and the third is
+  possible because, as learned in chapter 42, a C struct can be returned by value.
 ]
 
 #organizer[
-  The answer to chapter 69's fourth bug — unclear ownership. The *allocator* that
-#idx("allocator")  handles the source of memory as a value, the *arena* that returns
-#idx("arena")  things of the same lifetime all at once, and the rule that divides
-  owning from borrowing by type. The dangers of the heap learned in chapter 40 are
-  organised here into design.
+  We see the answer to chapter 71's second bug — unconfirmed failure. The way of
+  returning failure as a value, the bundle holding a value and an error together,
+  and the device that makes the compiler protest if an error is thrown away. The
+  discipline set up in chapter 47, "errors are values", hardens here into a type.
 ]
 
 #chapter-questions()
 
-== An allocator is a value
+== Two shapes of return
 
-`proven_allocator_t` is one struct — a context pointer and three function pointers
-(allocate, reallocate, free). There is no special global and no registration
-procedure. Being simply a value, it can be passed as an argument, held in a struct,
-and returned from a function. The *virtual function table* seen in chapter 51 is here
-as it stands.
+The rule is simple. *A function that can fail must return the failure as a value.*
 
-```c
-typedef struct {
-    void *ctx;                        /* this allocator's state (for an arena, the arena) */
-    proven_alloc_fn_t   alloc_fn;
-    proven_realloc_fn_t realloc_fn;
-    proven_free_fn_t    free_fn;
-} proven_allocator_t;
-```
+- If there is no result to return, it returns a single `proven_err_t`.
+- If there is a result to return, it returns an `{err, value}` bundle — with a name
+  per type, such as `proven_result_u8str_t` or `proven_result_size_t`.
 
-The three functions' signatures write the contract down as they stand.
+`proven_err_t` is an enumeration and success is `PROVEN_OK` (0). The check is always
+the single `proven_is_ok(err)` — writing `err == 0` would work too, but using the name
+lets the code survive a later change of representation.
 
-```c
-proven_result_mem_mut_t (*alloc_fn)(void *ctx, proven_size_t size,
-                                    proven_size_t align);
-proven_result_mem_mut_t (*realloc_fn)(void *ctx, void *old_ptr,
-                                      proven_size_t old_size,
-                                      proven_size_t new_size,
-                                      proven_size_t align);
-void                    (*free_fn)(void *ctx, void *ptr);
-```
+=== Every error code
 
-*Why pass `old_size` and `align` too.* The standard `realloc` does not ask the old size
-— because the allocator wrote it into the block's header (chapter 68). But an arena has
-no header. Not making a place to write the size is why an arena is fast, so the choice
-was for *the caller to tell it* instead. This decision is what lets a "headerless
-allocator" fit the same interface.
-
-Four things from the contract must be remembered.
-
-+ *`align` must be a power of two.* And *a block must be reallocated and freed with the
-  same alignment it was allocated with.* Because the heap allocator handles requests at
-  or below the default alignment differently from stricter ones (chapter 72) — handing
-  a block back in a different alignment class is outside the contract.
-+ *`size == 0` is `INVALID_ARG`.* A zero-byte allocation is treated as a caller's bug.
-  Before this rule the heap said `NOMEM` (a lie — nothing was out of memory) and the
-  arena returned a valid pointer, so *the answer differed per allocator*. Generic code
-  cannot be written on a rule like that.
-+ *A reallocation with `new_size == 0` is a free* — it gives a null pointer and
-  `PROVEN_OK`.
-+ *Reallocation is failure-atomic.* On failure `old_ptr` is still valid and its contents
-  untouched — chapter 58's `realloc` leak counterexample blocked at the level of the
-  interface.
-
-And every function that allocates has this shape.
-
-```c
-proven_result_u8str_t proven_u8str_create(proven_allocator_t alloc,
-                                          proven_size_t limit);
-void                  proven_u8str_destroy(proven_allocator_t alloc,
-                                           proven_u8str_t *str);
-```
-
-*Destroy with the allocator given at creation* — that is the whole of the ownership
-rule.
-
-== Swapping the three sources
-
-#demo("examples-en/ch73/three.c")
-
-Look at the `make_list` function. This function *does not know* whether the memory it
-uses comes from `malloc`, from a static array, or from a recycling bin. The caller
-settles it, and the same code runs identically over all three.
-
-Three things can be read in the output.
-
-*① An arena's usage is visible.* That `arena.offset` is 129 means exactly 129 bytes
-(128 of content + 1 NUL) went out for one string. A number that cannot be known on the
-heap can be counted in an arena — in embedded work this transparency pays when setting
-a memory budget.
-
-*② Reset makes individual release meaningless.* The usage did not fall although
-`destroy` was called (an arena's `free` does nothing), and one `reset` took it to 0.
-"Instead of giving back individually, give the whole back" is this picture.
-
-*③ When it runs dry it refuses as a value.* Requesting 128 bytes from a 64-byte arena
-gave back `NOMEM` (1). It neither collapses nor quietly falls back to the heap.
-
-#qa[
-  Besides `heap`, `arena` and `pool`, can I make an allocator myself?
-][
-  Of course. Chapter 71's example already did — a testing allocator that "fails from the
-  nth call" made of three functions and inserted. The only rule is keeping the contract
-  above.
-
-  The cases for making one in practice are mostly these. *Instrumentation* — a shell
-  counting allocations and peak usage. *Testing* — failing on purpose, painting freed
-  memory with 0xDD. *Debugging* — recording the place (file and line) of an allocation.
-  *Special resources* — obtaining from shared memory or a DMA-capable region, places
-  `malloc` cannot give.
-
-  All four take the shape of *wrapping an existing allocator*. They hold a backing
-  allocator inside, do their own work and pass it on. Chapter 71's example is the model.
-]
-
-#qa[
-  Why is this such an important property? Most of the time the heap will be used
-  anyway.
-][
-  Because three things follow at once. First, *the same code runs in an environment
-  with no heap* — such is embedded work (chapter 78), and such is inside a kernel.
-  Second, *testing becomes easy* — insert an allocator that fails on purpose and you
-  can test "does this code recover properly when memory runs short". Third, *the
-  caller can choose the performance* — for data that lives briefly and dies all at
-  once, an arena is far faster than the heap. The moment the library calls `malloc`
-  directly, all three of these vanish.
-]
-
-== The arena — things of the same lifetime, all at once
-
-Chapter 40 taught the heap's three dangers (leak, double free, use after free). All
-three come from *individual release*. Then what if individual release were removed —
-that is the arena's idea.
-
-An arena takes one large lump of memory and, whenever a request comes, cuts from the
-front. There is a release function but it does nothing. Instead there is *reset* — it
-returns everything at once.
-
-That the struct has only two slots shows this simplicity as it stands.
-
-```c
-typedef struct {
-    proven_mem_mut_t backing;   /* the memory that backs it (borrowed) */
-    proven_size_t    offset;    /* how far it has been handed out */
-} proven_arena_t;
-```
-
-*An arena does not own its memory.* That `backing` is a writing window (`mem_mut_t`) is
-that declaration — a static array, a stack array, or a lump received once from the heap
-is prepared by the caller, and the arena only cuts on top of it. So
-`proven_arena_destroy` *does nothing* (there is nothing borrowed to give back). If the
-lump came from the heap, returning it is still the caller's part.
-
-The life cycle is four steps.
+Failures have a name per kind, and there are sixteen in all. They are not to be
+memorised; it is enough to know *what branches exist* — most code divides only success
+from failure, and looks at the branch only when attempting recovery.
 
 #dtable(
   columns: 3,
-  [*step*], [*function*], [*what happens*],
-  [making], [`proven_arena_create(backing)`], [`offset = 0`. no allocation],
-  [handing out], [`proven_arena_alloc(&a, n)`], [aligns and pushes `offset`],
-  [taking back], [`proven_arena_reset(&a)`], [`offset = 0` — everything becomes invalid],
-  [ending], [`proven_arena_destroy(&a)`], [the formal partner. it does nothing],
+  [*code*], [*what happened*], [*mainly where*],
+  [`PROVEN_OK`], [success (0)], [—],
+  [`ERR_NOMEM`], [the allocator could not hand out memory], [`_create`, `_grow`],
+  [`ERR_OUT_OF_BOUNDS`], [outside the vessel — refused rather than truncated], [`append`, `slice`, array indexing],
+  [`ERR_INVALID_ENCODING`], [the UTF-8/UTF-16 was broken], [string conversion, `hex`/`base64`],
+  [`ERR_INVALID_ARG`], [an argument is outside the contract (null, 0, an unusable allocator)], [almost every entry point],
+  [`ERR_IO`], [the outside world failed], [files and streams],
+  [`ERR_NOT_FOUND`], [what was sought is not there], [map lookup, opening a file],
+  [`ERR_INVALID_STATE`], [it cannot be done in the present state], [a closed stream, a destroyed object],
+  [`ERR_NEED_MORE`], [more input is needed before judging], [parsers and decoders],
+  [`ERR_OVERFLOW`], [a size calculation overflowed], [`create`, container growth],
+  [`ERR_UNSUPPORTED`], [this environment does not have that facility], [OS features under freestanding],
+  [`ERR_AGAIN`], [not now — try again], [non-blocking I/O],
+  [`ERR_EOF`], [the end was reached], [reading],
+  [`ERR_BUSY`], [somebody else is using it], [locks, the job queue],
+  [`ERR_PERMISSION`], [there is no permission], [files],
+  [`ERR_INVALID_FORMAT`], [the format was wrong], [parsing, format strings],
 )
 
-The allocation function has four editions. Choose the one that fits.
+#demo("examples-en/ch73/codes.c")
+
+The latter part of the example shows this table in the flesh. Try to put twelve bytes
+into an eight-byte vessel and `OUT_OF_BOUNDS` comes — *and the original is left
+untouched* (the length is still 0). Give an unusable allocator and it is caught as
+`INVALID_ARG` before anything is made. Slicing outside the range too is a refusal, not
+"as much as there is".
+
+Two things are worth taking from here. First, *`ERR_INVALID_ARG` is usually a bug in my
+own code* — not a failure of the outside world but a contract violation, so it is to be
+mended rather than recovered from. Second, `ERR_EOF` and `ERR_AGAIN` are *part of the
+normal flow*. In a reading loop EOF is not an error but the ending condition
+(chapter 79).
+
+=== The kinds of result bundle
+
+A function with a value to return has one bundle per type. The naming rule being the
+same, the list need not be memorised — inside a `proven_result_XXX_t` there are always
+just `err` and `value`.
 
 #dtable(
-  columns: 2,
-  [*function*], [*when to use it*],
-  [`proven_arena_alloc(&a, size)`], [the default. cuts at the default alignment],
-  [`proven_arena_alloc_aligned(&a, size, align)`], [data where alignment matters (SIMD, DMA)],
-  [`proven_arena_alloc_or_panic(&a, size)`], [places where failure should stop the program],
-  [`proven_arena_realloc_aligned(...)`], [grows in place if it is the last block],
+  columns: 3,
+  [*bundle*], [*the type of `value`*], [*where it is returned*],
+  [`proven_result_size_t`], [`proven_size_t`], [lengths, counts, bytes written],
+  [`proven_result_mem_mut_t`], [`proven_mem_mut_t`], [allocators (chapters 74 and 75)],
+  [`proven_result_mem_view_t`], [`proven_mem_view_t`], [slicing (chapter 74)],
+  [`proven_result_u8str_t`], [`proven_u8str_t`], [making a string (chapter 76)],
+  [`proven_result_buf_t`], [`proven_buf_t`], [making a buffer],
+  [`proven_result_cstr_t`], [`const char *`], [exporting as a C string (chapter 76)],
+  [`proven_fmt_result_t`], [(amount written and amount needed)], [formatting (chapter 77)],
 )
 
-The `_or_panic` family exists for the reason given in chapter 71 — where the memory
-budget has been calculated in advance (embedded work is representative), "the arena is
-short" is not a failure to recover from but *a design error*, so demanding a check every
-time is rather noise.
+Only the last row is of a different grain. For formatting, "success or failure" is not
+enough — if it was truncated you must know *how much more was needed* — so beside `err`
+it carries two numbers as well (we look at it closely in chapter 77).
 
-The `realloc` has one interesting property. An arena having no header, ordinary
-reallocation is "cut anew and copy", but *if the block being grown happens to be the
-last one handed out* it can grow in place simply by pushing `offset`. It is why code
-that appends to a string a little at a time is fast on an arena, and why calling
-chapter 74's `proven_u8str_reserve` in advance pays especially on an arena (an
-intervening allocation breaks the property).
+#demo("examples-en/ch73/errval.c")
 
-#demo("examples-en/ch73/arena.c")
-
-There really are many places this model fits. The temporary data made while handling
-one request, a game's calculation results used for one frame, the syntax tree made
-while parsing one file — all data *born at different moments but dying at the same
-one*. For such data, individual release is only cost and risk.
-
-#recap[
-  A comparison of the three sources of memory.
-
-  #dtable(
-  columns: 4,
-    [], [*heap*], [*arena*], [*pool*],
-    [how it gives], [arbitrary sizes], [cuts from the front], [fixed-size slots],
-    [individual release], [yes], [no (reset)], [yes (return the slot)],
-    [fragmentation], [can arise], [none], [none],
-    [speed], [ordinary], [very fast], [very fast],
-    [where it fits], [assorted lifetimes], [a group of the same lifetime], [the same size repeatedly],
-)
-]
-
-#idx("pool")The pool (`proven_pool_t`) is the third branch. It is used where objects
-of the same size are repeatedly made and unmade — a game's bullets, a server's
-connection objects, a parser's nodes. The slot size being fixed there is no
-fragmentation, and a returned slot is reused at once. A pool too becomes an allocator
-through `proven_pool_as_allocator`, so the previous example's `build` function runs
-on it as it is.
+This example contains all of this chapter's syntax. `make_greeting` sends the result
+out through an output parameter (`out`) and used the return value for status alone —
+on failure it passes it up as it is. And `proven_u8str_create` returns a bundle, so
+`made.value` is taken out *only after checking*. The order must not be reversed.
 
 #antipattern[
-  Destroying with a different allocator
+  Taking out `value` before checking
 ][
   ```c
-  proven_result_u8str_t r = proven_u8str_create(proven_heap_allocator(), 64);
-  ...
-  proven_u8str_destroy(proven_arena_as_allocator(&arena), &r.value);  /* wrong */
+  proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* dangerous */
   ```
-  It amounts to giving back to an arena what was obtained from `malloc`. This rule
-  cannot be enforced by the library — an allocator is simply a value, and which value
-  is passed is settled by the caller. So the practice in the field is *to carry the
-  allocator along with the data structure*, or to narrow the scope so that only one is
-  used within a module.
+  It finishes in one line and looks clean, but what comes into your hand on failure
+  is *a meaningless value*. The bundle's contract is "`value` has meaning only when
+  `err` is `PROVEN_OK`", so this code has skipped the contract. That on failure a
+  struct filled with zeros usually arrives and it does not die immediately is rather
+  the danger — the accident is put off until much later (that pattern from
+  chapter 71).
 ]
 
-#misconception[
-  "Use an arena and you need not care about releasing"
+The output of the second call compresses this part's theme. On trying to put
+`"Hello, world"` into a capacity of 8 bytes, the library, *instead of putting in as
+much as fits and declaring success*, wrote nothing and returned a failure. It is the
+exact opposite choice from `snprintf`'s quiet truncation seen in chapter 71.
+
+== Throw it away and the compiler protests
+
+Returning the error as a value is not enough by itself. As seen in chapter 71, a
+return value *can be thrown away*. So functions for which failure is meaningful have
+C23's #idx("nodiscard")`[[nodiscard]]` attached (we saw the name in chapter 47).
+Throw the result away and the compiler really says this.
+
+```text
+warning: ignoring return value of ‘proven_u8str_append’,
+         declared with attribute ‘nodiscard’ [-Wunused-result]
+    5 |     proven_u8str_append(&s, proven_u8str_view_from_cstr("hi"));
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+note: declared here
+  123 | [[nodiscard]] proven_err_t proven_u8str_append(...);
+```
+
+If the `-Werror` recommended in chapter 17 is turned on, this is not a warning but a
+*build failure*. What was "checking is optional" has become "it does not compile
+unless you check".
+
+Of course there are times when you really do want to ignore it. Then `(void)` is put
+in front.
+
+```c
+(void)proven_u8str_append(&s, view);   /* ignored knowingly */
+```
+
+#qa[
+  If it can be ignored with `(void)`, is it not compulsory after all?
 ][
-  Individual release disappears but *the lifetime remains as it was.* The moment the
-  arena is reset, every piece cut on it becomes invalid at once, so data that must
-  still be alive after the reset must not be put in the arena. Chapter 72's "a view
-  cannot outlive its owner" has grown here to arena scale. What an arena removes is
-  the *number of times* one releases, not the *thinking* about lifetime.
-
-  ```c
-  proven_u8str_t name;
-  for (int i = 0; i < n; i++) {
-      proven_arena_reset(&per_request);        /* taken back per request */
-      handle(proven_arena_as_allocator(&per_request), &name);
-  }
-  use(&name);        /* ← dangerous. what name pointed at has already gone back */
-  ```
-
-  The discipline in the field is one — *call the arena's lifetime and the lifetime of
-  the data on it by the same name.* "the request arena", "the frame arena", "the file
-  arena". Then which data must survive the reset shows itself in the name alone, and
-  data that must cross over is copied to *a longer-lived allocator*.
-]
-
-== Which to choose
-
-#dtable(
-  columns: 4,
-  [*situation*], [*what to choose*], [*why*], [*caution*],
-  [data of assorted lifetimes], [the heap], [general-purpose. individual release possible], [cost and fragmentation (chapter 68)],
-  [data born and dying with a unit of work], [an arena], [allocation is one addition, release one reset], [everything invalid after a reset],
-  [the same struct by the thousand], [a pool], [no fragmentation, immediate reuse], [one size only],
-  [an environment with no heap at all], [a static array + an arena], [`malloc` is never called once], [the budget must be calculated in advance],
-  [testing the out-of-memory path], [a failing shell (chapter 71)], [it runs the path that never otherwise runs], [for testing only],
-)
-
-In practice these four are *layered*. The program as a whole uses the heap, while
-handling one request uses a request arena, and a data structure making thousands of
-nodes inside it lays a pool on top. That all three share the same interface, so that
-layering needs no special device, is the value of this design.
-
-== Owning and borrowing, and state that points at itself
-
-Now we return to chapter 69's fourth bug. The problem of `char *` meaning four things
-#idx("owning and borrowing")is solved by dividing the type in two.
-
-- *Owned* — things such as `proven_u8str_t` and `proven_array_t`. Obtained with
-  `_create` and let go with `_destroy`.
-- *Borrowed* — `proven_u8str_view_t`, `proven_mem_view_t`. Never destroyed. When the
-  owner vanishes they become invalid with it.
-
-That "must I release this?" can be answered from the signature alone is the whole of
-this distinction and its purpose.
-
-There is one more rule attached. *State that points at itself is not copied.*
-Chapter 41 taught that struct assignment is a shallow copy. Copy an object that holds
-inside a pointer to its own buffer that way, and the copy's pointer still points at
-the original, so two objects share the same memory and destroying both is a double
-free. So such objects are not copied by value but passed by pointer.
-
-#realcase[
-  The spread of the allocator-as-argument design
-][
-  This way is not proven's invention but is close to the recent consensus of systems
-  programming. In Zig, almost every allocating API of the standard library takes an
-  allocator as an argument and "no hidden allocation" is the language's motto. In Rust
-  too, attaching an allocator to a container is on its way into the standard, and
-  C++'s `std::pmr` arose from the same problem-consciousness. The reason is the same
-  in every case — in games, embedded work, kernels and high-performance servers,
-  *choosing the source of memory* is the heart of both performance and safety.
+  Because the purpose of the compulsion is not "to prevent ignoring" but *"to make
+  ignoring visible"*. An error thrown away with no mark is invisible in code review,
+  while a line with `(void)` attached becomes a declaration that "this failure is
+  deliberately ignored". The very fact that it must be typed is the heart of it — it
+  cannot be done by accident, only on purpose.
 ]
 
 #qa[
-  Then what is the price?
+  But chapter 72's `proven_println` had no such mark. Why is screen output alone an
+  exception?
 ][
-  One more parameter attaches to the signature. And a new design problem arises of
-  *how far the allocator is to be carried* — whether to pass it to every function or
-  to hold it in a struct. In a small program this can look like nothing but tiresome
-  formality. Its value shows itself after the program grows, or when the code must be
-  moved to a place where the heap cannot be used.
+  Because contracts have grades too. The failure of a write going to the console has
+  conventionally been ignored (have you ever seen code that checks `printf`'s return
+  value?), and making every line of output carry a `(void)` would bury the code in
+  noise. So this library placed output in the grade that *returns the error but does
+  not compel a check*. Conversely, the functions on the *input* side do have the mark
+  — ignore the failure of a read and you treat "data not read" as though it had been
+  read, replaying chapter 71's second bug exactly. Where to attach the mark is itself
+  a design judgement.
 ]
 
-We have set up the rules for obtaining and letting go of memory. From the next chapter
-come the real components that rise on top of it — first, the strings this book warned
-about all through chapter 37.
+== What remains after a failure — failure atomicity
+
+There is a question that naturally arises after receiving an error. *What state is
+the object the failed function was touching in now?*
+
+#idx("failure atomicity")The library's answer is *failure atomicity* — unless the
+documentation says otherwise, a failed operation leaves the target in the state it
+was in before being touched. If memory runs short while growing an array the existing
+elements are still alive, and if there is not enough room while appending to a string
+the original content stands. The second call of the example just now is that case —
+it failed, but no half-written string was left.
+
+Why does this matter? Without failure atomicity a caller can do nothing after a
+failure *but throw the object away*. With it, "give up this addition and carry on
+with what has been gathered so far" becomes possible.
+
+#misconception[
+  "If it fails we will end the program anyway, so what does the state matter"
+][
+  For a short-running command-line tool that may be so. But long-running programs —
+  servers, editors, games, firmware — must not die on one failure. If the whole server
+  went down because handling one request failed for lack of memory, that would be the
+  greater accident. Failure atomicity is the minimal condition that makes possible the
+  recovery of "throw away only this request and take the next".
+]
+
+== Raising a failure upward — together with the cleanup
+
+Receiving errors as values raises one practical problem at once. *If it fails in the
+middle, who gives back what has been taken so far?* In a language with exceptions the
+stack unwinds and destructors handle it, but C has no such device (chapter 64). So an
+idiom is needed.
+
+#demo("examples-en/ch73/cleanup.c")
+
+This example deliberately inserts a failing allocator (once the *budget* runs out it
+necessarily gives `NOMEM`) and runs all three cases — failure from the first
+allocation, one taken and failure at the second, and everything succeeding. The middle
+case is the heart of it. `x` has already been taken while `y` failed, so simply
+returning here is *a leak*.
+
+The pattern comes to three.
+
++ *Mark what you hold with a flag* — one boolean such as `has_x`. If the resources are
+  several, so are the flags.
++ *On failure everything gathers at one place* — `goto done`. That use chapter 64
+  called "disciplined `goto`".
++ *Clean up in reverse order of taking* — what was taken later is given back first.
+
+It is worth noticing too that after ownership passes with `*out = y;` on the success
+path, `y` is not destroyed thereafter. *You must be able to point at the place where
+ownership passes with a single line of code* — a function that cannot is usually one of
+blurred design.
+
+#qa[
+  Is deliberately making a failing allocator of any use in practice too?
+][
+  Of great use. The out-of-memory path is almost never executed in a real program, so
+  in most codebases it is *the least tested path*. And a leak or double free there is
+  the hardest of all to diagnose.
+
+  As chapter 75 will show, an allocator is simply a value, so a shell that "fails from
+  the nth call" can be made in ten lines, as in the example, and inserted. Raise n from
+  1 and run the tests and you can pass through *every failure point* once, and running
+  it with ASan or Valgrind (chapter 17) makes that path's leaks show themselves plainly.
+  It is the place where the decision that the library does not call `malloc` directly
+  comes back as testability.
+]
+
+== When there is nobody to return to — the panic
+
+To return an error as a value there must be *somebody to return it to*. But in a
+place where the contract itself is broken there is no such somebody — if, for
+example, a null arrived in a place where there is no reason whatever to pass a null,
+that is not a failure but means *the program's logic is already wrong*.
+
+For such places the library has a panic path. It is the same spirit as chapter 47's
+`assert`, differing in that the way it is handled can be swapped out so as to be
+usable in embedded work too (chapter 80).
+
+There are only two doors.
+
+```c
+void proven_panic(const char *msg);                       /* raise a panic */
+void proven_set_panic_handler(proven_panic_handler_t h);  /* swap the handler */
+```
+
+The default handler *does not return* — it stops the program on the spot (the
+implementation is `__builtin_trap()`). And this swapping is what pays in embedded work.
+On a board with no console there is nowhere to print a message, so a handler is
+registered that lights an LED, kicks the watchdog, or reboots.
+
+```c
+static void my_panic(const char *msg) {
+    (void)msg;
+    board_led_on(LED_FAULT);
+    for (;;) { }          /* it does not go back */
+}
+/* at the program's starting place */
+proven_set_panic_handler(my_panic);
+```
+
+*A handler must not return.* If it returns, the validity of what an `_or_panic`
+function gave back is not guaranteed — a panic is the declaration that "from here the
+program's premises are broken". The exception is test code deliberately using a
+returning handler to confirm the panic path, and even then the value after it is not
+used.
+
+The places where the library itself calls a panic can be counted on the fingers — the
+functions with `_or_panic` in the name (chapter 75's arena allocation is
+representative) and a few places where the contract is plainly already broken. Everything
+else is returned as a value.
+
+The distinction is best remembered like this.
+
+#recap[
+  #dtable(
+  columns: 3,
+    [*situation*], [*example*], [*the library's handling*],
+    [failure of the outside world], [out of memory, file not found, out of room], [return the error as a value],
+    [the caller's contract violation], [a null that must not be, reusing a destroyed object], [panic (or undefined)],
+    [failure that may be ignored], [console output failure], [return the error but do not compel],
+)
+]
+
+#realcase[
+  Other languages that chose errors as values
+][
+  This design is not C's invention alone but a current common to recent systems
+  languages. Go has functions return a result and an error side by side, and Rust
+  wraps success and failure in the single `Result` type and warns if it is ignored.
+  Both are languages that decided not to use exceptions, and the reason is the same —
+  *the error paths must be visible in the shape of the code*. Exceptions are
+  convenient but erase from the signature "which failure jumps where from here".
+  Three different languages, in effect, found the answer to the second row of
+  chapter 71's table from the same direction.
+]
+
+#qa[
+  What is the price of this way?
+][
+  `if`s multiply. There being no device like exceptions to sweep a deep failure up in
+  one go, code that checks and passes upward attaches at every place a failure is
+  met. That is half the reason the `make_greeting` of the example just now runs to
+  some twenty lines. In exchange one thing is gained — *where and what can fail is
+  visible in the code as it stands.* That there is no hidden failure is the thing
+  this library sells.
+]
+
+Knowing the shape of errors, we now go down to what those errors protect — memory
+itself. The next chapter is bytes and views, and size calculation that does not
+overflow.

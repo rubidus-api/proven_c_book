@@ -1,177 +1,247 @@
 #import "../../book/lib.typ": *
 
-= Numbers — `<math.h>`, `<fenv.h>`, `<tgmath.h>`
+= The drawer of odds and ends — `<stdlib.h>`
 
 #prereq(
-  ([chapter 44, Real numbers], [the mathematics of approximation]),
-  ([chapter 8, Representing numbers], [IEEE 754]),
+  ([chapter 55, The terrain of the standard library], [the terrain of the standard library]),
+  ([chapter 41, Dynamic memory], [allocating and giving back]),
 )
 
 #deepqa[
-  Chapter 44 said not to compare reals with `==`, and chapter 8 said 0.1 is not
-  exactly representable. Then how does a mathematical function tell you when it
-  receives "input it cannot calculate"?
+  Chapter 25 read input with `fgets` and parsed it with `sscanf`, and chapter 55
+  said `sscanf` does not tell you "where and why it failed". Then what is the most
+  accurate way to turn one string into an integer?
 ][
-  There are two paths. It gives NaN or an infinity as the *return value*, and at
-  the same time leaves the reason in *`errno`* — `EDOM` for outside the domain,
-  `ERANGE` when the result exceeds the representable range. But an implementation
-  may choose to report through the floating-point exception flags (`<fenv.h>`)
-  instead of `errno`, so to check portably you must be ready to look at both. In
-  the field it is usually simpler to check the return value with `isnan` and
-  `isinf`.
+  The `strtol` family. This function tells three things at once — the converted
+  value, *where it stopped* (the end pointer), and whether the range was exceeded
+  (`errno` being `ERANGE`). `atoi` tells none of them. Its name is short so it
+  appears often in introductions, but it is a function not used in the field.
 ]
 
 #organizer[
-  We look at how real-number calculation reports failure. The mathematics of
-  approximation learned in chapters 8 and 44 becomes the contract of functions here
-  — calls outside the domain, results beyond the range, the properties of NaN and
-  infinity, and the hidden global state called the rounding mode.
+  A drawer named, exactly as it says, "the standard library". Functions that turn
+  strings into numbers, random numbers, dynamic allocation, program termination,
+  sorting and binary search are all in here together. In place of anything in
+  common there are many traps — in particular *conversion functions with no way to
+  report failure* and *the subtle differences between the terminating functions*
+  are this chapter's two axes.
 ]
 
 #chapter-questions()
 
-== The properties of NaN and infinity
+== Conversion — why `atoi` is abandoned
 
-#demo("examples-en/ch60/math.c")
+#demo("examples-en/ch60/convert.c")
 
-Four things to point out in the output.
+Put the output side by side and the difference is clear.
 
-*① NaN is not equal to itself.* IEEE 754 settled it so. Hence the old idiom that
-if `x != x` is true then `x` is NaN, while the standard function is `isnan(x)`.
-Because of this property, sorting an array containing NaN with `qsort` breaks the
-comparator's total order and the result collapses (chapter 58).
+- `atoi("abc")` is 0. But `atoi("0")` is 0 too — *failure and success cannot be
+  distinguished.*
+- `atoi("42abc")` is 42. It quietly ignores the rubbish attached behind.
+- `atoi("99999999999999999999")` came out as −1. The standard says only that this
+  case is *undefined behaviour* — −1 came out by accident; any value at all could
+  come out and nothing is guaranteed.
 
-*② Dividing a real by zero is not outside the contract.* Unlike integer division
-(chapter 27), in an IEEE 754 environment it yields an infinity or a NaN. But the
-same holds that *the very fact of dividing by zero is usually a bug*.
+`strtol` distinguished, for the same inputs, "not a number", "characters left
+over" and "out of range" separately. The checking code looks long, but that length
+is precisely *the real complexity of handling a string that came from outside*.
 
-*③ `sqrt(-1)` is `EDOM`, `exp(1000)` is `ERANGE`.* The former is outside the
-domain, the latter a case where the result exceeded the representable range. If you
-mean to look at `errno`, set it to 0 just before the call (chapter 62).
-
-*④ 0.0 and −0.0 are equal under `==`.* But the sign bit differs, and `1/0.0` and
-`1/-0.0` are +∞ and −∞ respectively. If the sign must be distinguished, use
-`signbit`.
-
-#misconception[
-  "Comparing reals is safe if you use an epsilon"
+#antipattern[
+  Reading user input with `atoi`
 ][
-  The epsilon comparison learned in chapter 44 is not omnipotent. Absolute error
-  (`fabs(a-b) < eps`) becomes meaningless when the values are large — near 1e9,
-  1e-9 is not even representable — and relative error collapses near zero. The
-  prescription in the field is *settling a tolerance that fits the situation*, not
-  using a universal constant. And it is better to ask first whether it can be
-  handled with integers or fixed point so that the comparison is not needed at all
-  (chapter 8's story of calculating money).
+  ```c
+  int port = atoi(argv[1]);      /* "0" and "bad input" are the same value */
+  ```
+  Mended, it goes like this.
+  ```c
+  errno = 0;
+  char *end;
+  long v = strtol(argv[1], &end, 10);
+  if (end == argv[1] || *end != '\0') { /* not a number */ }
+  else if (errno == ERANGE || v < 1 || v > 65535) { /* out of range */ }
+  else port = (int)v;
+  ```
+  *Setting `errno` to 0 just before the call* is the convention (chapter 64).
+  Without it you read the value a previous call left behind.
 ]
+
+Real conversion is the same. `atof` cannot report failure, while `strtod` gives an
+end pointer and `ERANGE`. Moreover `strtod` may, according to the locale, read the
+decimal point as `,` rather than `.` (chapter 61) — a point always to be remembered
+when parsing a data format.
 
 #qa[
-  How do the functions of `math.h` report failure — the return value alone cannot say?
+  Why does `qsort` take its comparison through two `void *` — would knowing the type not be faster?
 ][
-  In three ways. *Outside the domain* (say `sqrt(-1)`) they return NaN and set
-  `errno` to `EDOM`. *Beyond the range* (say `exp(1000)`) they return infinity and
-  set `ERANGE`. And the floating-point exception flags of `<fenv.h>` are raised.
-
-  The trouble is that *how far each of the three is honoured varies between
-  implementations*. So the practical idiom is to clear `errno = 0` before the call
-  and check immediately after (chapter 62). To inspect the value itself use
-  `isnan` and `isinf` — they say what they mean, unlike tricks such as `x != x`.
+  Because the standard library must sort *an array of any type at all*. C has no
+  generics, so the only passage that erases a type is `void *` (chapter 34), and
+  the price is a cast and a dereference inside the comparator every time. The
+  price is not only speed. Where the type has been erased, a mistake gets no help
+  from the compiler: pass the wrong element size, or write a comparator that takes
+  `int` where it must take `int*`, and it collapses quietly. That is why chapter
+  78's `proven_array_sort` pins the type with a macro, and why chapter 71 counts
+  "the unchecked callback" among the five bugs.
 ]
 
-== Functions often got wrong
+== Dynamic allocation — four functions and their contracts
+
+We organise what chapter 41 taught, function by function.
 
 #dtable(
   columns: 3,
-  [*function*], [*what it does*], [*trap*],
-  [`pow(x, y)`], [raising to a power], [used for an integer power it can be slow and inexact],
-  [`round`, `nearbyint`], [rounding], [`round` goes away from zero, `nearbyint` follows the current mode],
-  [`floor`, `ceil`, `trunc`], [cutting to an integer], [the direction differs for negatives],
-  [`fmod`, `remainder`], [the remainder], [their sign rules differ from each other],
-  [`abs`, `fabs`], [absolute value], [★ `abs` is for integers. used on a real it truncates],
-  [`atan2(y, x)`], [angle], [the argument order is `y, x`],
-  [`isnan`, `isinf`], [classification], [they are macros — they cannot be used as function pointers],
+  [*function*], [*what it does*], [*contract and traps*],
+  [`malloc(n)`], [allocate n bytes], [the content is undetermined. null on failure],
+  [`calloc(k, n)`], [allocate k×n bytes + fill with zeros], [★ *the implementation* checks the multiplication for overflow],
+  [`realloc(p, n)`], [change the size], [★ on failure the original is kept — assigning the return value straight to the original leaks],
+  [`free(p)`], [release], [null is safe. freeing twice is outside the contract],
+  [`aligned_alloc(a, n)`], [aligned allocation (C11)], [n must be a multiple of a],
 )
 
-`pow(x, 2)` is widely used, but for an integer square `x * x` is faster and exact.
-The compiler often optimises it, but not always.
-
-The mistake of using `abs` on a real is especially quiet. `<stdlib.h>`'s `abs`
-takes an `int`, so `abs(-1.5)` turns −1.5 into 1. Today's compilers warn, but it is
-easy to miss in a file that does not include `<math.h>`.
-
-== Rounding modes and floating-point exceptions — `<fenv.h>`
-
-Floating-point operations have two pieces of *hidden global state*.
-
-*The rounding mode* — the default is "to the nearest value, ties to even". It can
-be changed with `fesetround`, and once changed every subsequent real operation is
-affected.
-
-*The exception flags* — flags are raised when division by zero, overflow,
-inexactness and so on occur. They are read with `fetestexcept` and cleared with
-`feclearexcept`. They are finer than `errno`, but to use this facility
-`#pragma STDC FENV_ACCESS ON` must be turned on — and then the compiler refrains
-from reordering real operations, so optimisation is reduced.
+`calloc`'s multiplication check is where it is useful. `malloc(k * n)` may have the
+product wrap round as seen in chapter 59, but for `calloc(k, n)` the standard
+requires the implementation to check for overflow and return null. *If sizes must
+be multiplied, `calloc` is the safer choice.*
 
 #antipattern[
-  Turning on `-ffast-math` and checking for NaN
+  Assigning `realloc`'s return value straight to the original
 ][
-  ```sh
-  cc -O2 -ffast-math app.c        # tells the compiler "take it that NaN and infinity do not exist"
-  ```
   ```c
-  if (isnan(x)) { /* this branch can vanish entirely */ }
+  buf = realloc(buf, new_size);   /* on failure the original address is lost → a leak */
+  if (!buf) return -1;
   ```
-  Options of the `-ffast-math` family tell the compiler it may assume
-  associativity and ignore the existence of NaN and −0.0. Speed is gained, but *the
-  checking code can vanish under optimisation* — the real-number edition of the
-  "bug that appears only in release" seen in chapter 17. In a program where
-  numerical accuracy matters, not turning it on is the default.
+  The correct idiom goes through a temporary variable.
+  ```c
+  char *tmp = realloc(buf, new_size);
+  if (!tmp) { /* buf is still valid — it can be cleaned up or gone on using */ return -1; }
+  buf = tmp;
+  ```
+  It is why chapter 58's line-reading example used this idiom.
 ]
 
-== Type-generic — `<tgmath.h>`
+`realloc` has two more peculiar rules. `realloc(NULL, n)` is the same as
+`malloc(n)`, and *`realloc(p, 0)` is not to be used.* Its status changed from
+edition to edition — up to C17 it was *implementation-defined* and marked as
+deprecated, and in C23 it became outright *undefined behaviour* (proposal N2464).
+It is a place where implementations diverged so far that the standard gave up on
+settling it.
 
-`sqrt` is for `double`, `sqrtf` for `float`, `sqrtl` for `long double`. Include
-`<tgmath.h>` and the edition fitting the argument's type is chosen by `sqrt(x)`
-alone — the representative case of the `_Generic` seen in chapter 50 being used in
-the standard library.
+What this change leaves in practice is one line — *to release, use `free(p)`.* Code
+that reallocates to a size that may become 0 must filter that case first.
 
-It is convenient but has a price. Being macros, they cannot be passed as function
-pointers, and there may be implementations that evaluate the argument twice, so
-putting in an expression with side effects is dangerous.
+```c
+proven_err_t resize(char **buf, size_t n) {
+    if (n == 0) { free(*buf); *buf = nullptr; return OK; }  /* never pass 0 */
+    char *tmp = realloc(*buf, n);
+    ...
+}
+```
+
+== Termination — the difference between four ways
+
+#dtable(
+  columns: 3,
+  [*way*], [*cleanup*], [*where it is used*],
+  [`return` (in main)], [the same as `exit`], [normal termination],
+  [`exit(status)`], [runs `atexit`, flushes and closes streams], [normal termination (from deep inside)],
+  [`quick_exit(status)`], [runs only `at_quick_exit`, no flush], [quick termination (C11)],
+  [`_Exit(status)`], [does nothing], [special places such as a child process],
+  [`abort()`], [no cleanup, an abnormal-termination signal], [an unrecoverable error],
+)
+
+The heart of it is *the buffer*. `exit` empties the streams while `_Exit` and
+`abort` do not — the "output vanishing" accident seen in chapter 58 happens here.
+It is also why the last log of a program dying by `abort` is not seen.
+
+Functions registered with `atexit` are called in the *reverse* order of
+registration, and the standard guarantees registration of at least 32. Calling
+`exit` again inside a registered function is outside the contract.
+
+== Sorting and searching — `qsort` and `bsearch`
+
+The functions chapter 56 foretold. Written out exactly, the contract is this.
+
+- The comparator is `int cmp(const void *a, const void *b)` and returns a
+  negative, zero or positive value. *Making it by subtraction can overflow* —
+  `return *x - *y;` is wrong for large values.
+  `return (*x > *y) - (*x < *y);` is the safe idiom.
+- The comparator must be a *total order* (chapter 71). If it is inconsistent the
+  result is not merely jumbled — it can trespass outside the array.
+- `qsort` is *not a stable sort.* The relative order of equal values is not
+  preserved. If it is needed, lay the original index on top in the comparator to
+  break ties.
+- Worst-case performance is settled by the implementation. The standard guarantees
+  nothing — the reason chapter 56's complexity attack was possible.
+- `bsearch` presumes *a sorted array*. If it is not sorted the result is
+  meaningless.
+
+== Random numbers — the limits of `rand`
+
+`rand` returns a number from 0 to `RAND_MAX`. `RAND_MAX` is guaranteed only to be
+at least 32767, so if a larger range is needed it must be composed.
+
+#antipattern[
+  Making a range with `rand() % n`
+][
+  ```c
+  int dice = rand() % 6 + 1;      /* the values are not even */
+  ```
+  If `RAND_MAX + 1` is not a multiple of `n`, the values at the front come out
+  more often. If the range is small the bias is small too, but as `n` grows it
+  becomes noticeable. Moreover some old implementations had poor quality in the low
+  bits, so `% 2` even came out alternating.
+
+  If an even distribution is needed, use *rejection sampling* — throw away a value
+  that exceeds the range and draw again. And *never use it for secrets* (Part XII's
+  random number story).
+]
+
+Give no seed with `srand` and it is the same as `srand(1)` — the same sequence
+every time. `srand(time(NULL))` is a common idiom, but two processes started in the
+same second get the same sequence.
+
+== The environment and processes
+
+`getenv` returns an environment variable, but that string *must not be modified*
+and may not be valid after a subsequent `setenv`-like call. If the value is needed,
+copy it.
+
+`system` raises a shell and executes a command. If user input is mixed into that
+string it becomes *command injection* — the same class as the classic
+vulnerability of web applications. Within the standard there is no alternative, and
+the right answer is to use a platform API (`posix_spawn`, `CreateProcess`) and pass
+the arguments as an array.
 
 #realcase[
-  The same calculation, a different answer — the history of excess precision
+  A real bug made by subtraction in a `qsort` comparator
 ][
-  x86's old floating-point unit (x87) calculated internally in 80 bits. So it
-  happened that the same `double` operation differed depending on whether it was
-  still in a register or had been stored to memory — change the optimisation level
-  and the result changed minutely, and `x == y` that had been true could become
-  false.
+  A comparator of the form `return a - b;` is the most common mistake in sorting
+  code. If the values are near `INT_MIN` the subtraction overflows and the sign
+  flips, and the sort quietly gives a wrong result — since the signed overflow
+  learned in chapter 7 is outside the contract, the symptom even changes with the
+  compiler's optimisation.
 
-  C99 made this circumstance explicit with `FLT_EVAL_METHOD`, and today's 64-bit
-  x86 uses SSE so the problem has greatly diminished. But the possibility of "the
-  same code, a different answer" still remains in compilation options and the
-  target machine — the reason chapter 44 said "real-number calculation needs
-  reproducibility looked after separately."
+  This pattern has been reported repeatedly in kernels, databases and game engines
+  alike, common enough that static analysis tools catch it with a rule of their
+  own. The mend is one line — do not subtract, compare.
 ]
 
 #recap[
-  Numbers in summary.
+  `<stdlib.h>` in summary.
 
   #dtable(
     columns: 3,
-    [*situation*], [*what to use*], [*what to beware of*],
-    [checking for NaN], [`isnan`], [`x == NaN` is always false],
-    [checking for infinity], [`isinf`], [dividing a real by zero is not UB],
-    [the kind of a value], [`fpclassify`], [the existence of subnormal numbers],
-    [domain and range errors], [the return value + `errno`], [`errno = 0` just before the call],
-    [integer squares], [`x * x`], [`pow(x, 2)`],
-    [absolute value of a real], [`fabs`], [`abs` (for integers)],
-    [per-type functions], [`<tgmath.h>`], [macros — no arguments with side effects],
-    [fast-math options], [off by default], [checking code vanishes],
+    [*what you want to do*], [*what to use*], [*what to avoid*],
+    [string → integer], [`strtol` + end pointer + `errno`], [`atoi`],
+    [string → real], [`strtod` (mind the locale)], [`atof`],
+    [allocate an array], [`calloc(k, n)`], [`malloc(k * n)`],
+    [change the size], [`realloc` via a temporary variable], [assigning straight to the original],
+    [normal termination], [`return`/`exit`], [`_Exit` (buffer loss)],
+    [sorting], [`qsort` + a total-order comparator], [a subtracting comparator, assuming stability],
+    [random numbers], [rejection sampling, a generator fit for the purpose], [`rand() % n`, using it for secrets],
+    [external commands], [an argument array through a platform API], [joining input into `system`],
   )
 ]
 
-We have passed numbers. The next chapter is time — a place with unusually much
-that the standard does not settle for you.
+The drawer is tidied. The next chapter is the functions that handle a single
+character — and the fact that those functions are tied to the global state called
+the locale.

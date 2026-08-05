@@ -53,7 +53,7 @@ result goes out as `return`'s value, and there is no other channel.
   original. In chapter 25 the `&` of `sscanf(line, "%d", &n)` was doing exactly
   this — the copy-by-value rule intact (an address is a value too — chapter 5!),
   with the effect of "modifying the original." The syntax of that proper method
-  is chapter 33's pointers.
+  is chapter 34's pointers.
 ]
 
 == "Call by value" and "call by reference" — pinning the terms down
@@ -92,9 +92,9 @@ Get the terms right and there is genuinely less to be confused about. Three
 frequent questions unravel with the same single rule.
 
 - *Is an array not copied when passed?* — the array's name decays into the
-  address of its first element (chapter 36) and *that address is copied* across.
+  address of its first element (chapter 37) and *that address is copied* across.
   Not an exception to the rule but an application of it.
-- *Is a struct copied whole when passed?* — yes (chapter 41). Which is why the
+- *Is a struct copied whole when passed?* — yes (chapter 42). Which is why the
   practice of passing a pointer arose for large ones.
 - *How do I let a function change the caller's pointer itself?* — pass the
   pointer's address (`int **`). An answer that follows naturally once you know the
@@ -136,7 +136,7 @@ printf("%d %d\n", i, i++);   /* changed while separately read — outside the co
 
 Such expressions go beyond unspecified (one of several orders happens) to
 outright *undefined behaviour* — the standard guarantees nothing about the result
-(chapter 46). There is no rule to memorise, only a pattern to remember: *change
+(chapter 48). There is no rule to memorise, only a pattern to remember: *change
 one variable only once in one statement.* That chapter 17's UBSan and the
 compiler warnings catch this pattern well is a reassuring backstop.
 
@@ -145,7 +145,7 @@ compiler warnings catch this pattern well is a reassuring backstop.
   — the cost would not be trivial.
 ][
   Yes, semantically it is a copy — and that cost is the reason for the practice of
-  passing pointers (treated with structs in chapter 41). But there are two
+  passing pointers (treated with structs in chapter 42). But there are two
   provisos. First, *copying a small value is effectively free* — as chapter 11
   taught, arguments usually cross in registers, so passing a few integers involves
   not even a trip to memory. Second, chapter 13's editor intervenes — if the
@@ -169,11 +169,11 @@ rooms each with its own n (5, 4, 3, 2, 1). Without the isolation made by value
 copying and scope, recursion does not stand.
 
 Recursion is the natural expression for work that splits into "the same problem,
-smaller" (searching tree structures is the representative — chapter 41 onwards),
+smaller" (searching tree structures is the representative — chapter 42 onwards),
 and every recursion can also be written as a loop (recall the loop version of
 factorial in chapter 31). Which is better is decided by the shape of the problem
 — and recursion brings with it the physical problem of space for the "layered
-calls", whose identity (the stack) is met in chapter 39.
+calls", whose identity (the stack) is met in chapter 40.
 
 == The last operator, and the seed of the contract
 
@@ -212,8 +212,8 @@ Code like `cond ? 3 : "three"` does not compile at all, and combinations that do
 compile, like `cond ? 1 : 2.0`, do so *after both sides are converted to the same
 type*. The principle that an expression's value has one static type (chapter 23)
 is kept here too. If you need a choice that splits types, there are only two ways
-— make a type holding "one of several types" with chapter 43's tagged union, or
-choose the branch at compile time with chapter 50's `_Generic`.
+— make a type holding "one of several types" with chapter 44's tagged union, or
+choose the branch at compile time with chapter 52's `_Generic`.
 
 There is one more convenience rule on the pointer side. If one side is a null
 pointer constant the result takes the other side's pointer type — the example's
@@ -237,7 +237,7 @@ appendix A.
   [shift], [`<< >>`], [shifting at least the width is outside the contract (chapter 7)],
   [assignment], [`=` and compound `+= -= *= /= %= &= |= ^= <<= >>=`], [compound assignment evaluates the left side only once],
   [conditional], [`?: `], [a fork in an expression's place. the type is unified (this chapter)],
-  [memory], [`& * [] . ->`], [address, dereference, subscript, member (chapters 30, 33 and 41)],
+  [memory], [`& * [] . ->`], [address, dereference, subscript, member (chapters 30, 34 and 42)],
   [size and alignment], [`sizeof alignof`], [they ask a type, not a value. mostly not evaluated],
   [conversion], [`(type)`], [explicit conversion. only when needed (chapters 24 and 28)],
   [comma], [`,`], [evaluates the left and discards it; the right becomes the value],
@@ -262,10 +262,11 @@ promise* — "n must be zero or more (a negative never reaches the floor), and a
 places on its material (preconditions) and what it promises about the result
 (postconditions) — begin to look at functions through this lens and each one
 appears as a little *contract*. That perspective is the root of error handling
-(chapter 45) and of proven's design philosophy (chapter 38), and it is faced head
+(chapter 47) and of proven's design philosophy (chapter 39), and it is faced head
 on in Part IX.
 
-Part VI is over — we forged values (chapters 26–28), governed flow
-(chapters 29–31), and gained the meaning of functions (chapter 32). The next part
-is this book's second mountain, *memory* — back to chapter 5's locker corridor,
-this time walking it in C's syntax. Pointers are waiting.
+With the meaning of functions in hand, one chapter remains to close this part.
+The vocabulary just built — side effects and evaluation order — is now applied to
+the operator used most often of all. The next chapter is *assignment*: an
+operator used daily and understood shallowly, and the place where C's most famous
+contract violations gather.

@@ -1,202 +1,319 @@
 #import "../../book/lib.typ": *
 
-= The embedded toolbox — compilers and the tools beside them
+= The boundaries — running things overlapped, and when there is no OS
 
 #prereq(
-  ([chapter 18, The compiler landscape], [the terrain of compilers]),
-  ([chapter 67, A program's map of memory], [memory in embedded systems]),
+  ([chapter 66, Operations that do not split], [operations that do not split]),
+  ([chapter 69, A program's map of memory], [when there is no OS]),
 )
 
 #deepqa[
-  Chapter 18 said that numerically the largest branch of the world's C compilers
-  is embedded. Why is that — cannot gcc alone target them all?
+  Chapter 12 said cores became several because of the clock's limits, and that
+  accidents such as false sharing arise. Then how many different meanings does the
+  phrase "doing several things at once" have?
 ][
-  Three reasons. First, *there are chips gcc does not know* — when a company
-  invents its own instruction set, the compiler that knows that chip is made by
-  that company. Second, *certification*. The safety standards of automotive,
-  aerospace and medical devices demand evidence that "this compiler has been
-  qualified against the standard", and selling that qualification together with
-  the responsibility is the business of specialist firms. Third, *code size*. On
-  a chip with tens of KiB of memory, a few per cent of size decides whether a
-  product exists.
+  At least two. *Concurrency* is several tasks progressing by turns while waiting for
+  each other, and it holds even with one core — such is a server doing other work
+  while waiting for input and output. *Parallelism* is several cores really
+  calculating at the same moment. The former is a problem of *structure*, the latter a
+  problem of *performance*. This chapter's coroutines treat the former and the job
+  system the latter.
 ]
 
 #organizer[
-#idx("embedded")  What people who write C that runs on chips carry with them.
-  The compilers that differ by vendor (IAR, Arm, TI, Microchip, Renesas, SDCC
-  and others), and the tools that sit beside make and git — build tools, debug
-  probes and on-chip debugging, how to see a log on a machine with no screen,
-  simulators, static analysis and unit testing, and the tools that measure size.
-  There is no need to install any of it now. The point is *to know the names and
-  what they are for.*
+  The last chapter of Part XII. We see the two ways of running several things
+#idx("coroutine")  overlapped (stackless coroutines and the job system), why
+  allocators and pointer provenance become a problem in a program running along
+  several strands, and what shape this library takes in a place with no operating
+  system at all. The last section is *when it is better not to use it*.
 ]
 
 #chapter-questions()
 
-== The embedded compilers
+== Stackless coroutines — overlapping without threads
 
-Only those currently in service. Since the point is recognising names, a table
-will do.
+If a function can do some work, stop, and later start again *from that place*, much
+becomes easy. Because the code can be written in order instead of a state machine
+being written by hand.
 
-#dtable(
-  columns: 3,
-  [*compiler*], [*chips targeted*], [*character*],
-  [IAR Embedded Workbench], [Arm, RISC-V, 8051, MSP430, AVR, RX, RL78, RH850 and many more], [commercial. known for certification (automotive, medical) and code size],
-  [Arm Compiler for Embedded (`armclang`)], [the Arm Cortex family], [commercial (included in Keil MDK). Clang-based],
-  [TI Arm Clang (`tiarmclang`)], [TI's Arm cores], [free. Clang-based, with TI extensions],
-  [MPLAB XC8 / XC-DSC / XC32], [Microchip PIC, AVR, SAM], [usable free of charge. XC32 covers Arm and MIPS],
-  [Renesas CC-RX / CC-RL], [Renesas RX, RL78], [commercial. Renesas chips only],
-  [Green Hills Optimizing Compilers], [Arm, PowerPC, RISC-V and others], [commercial. a long-standing power in the safety market],
-  [Wind River Diab], [Arm, PowerPC and others], [commercial. aerospace and automotive certification],
-  [SDCC], [8051, STM8, Z80, 6502, PDK and other 8-bit], [free software. the standard for small chips],
-  [`arm-none-eabi-gcc` and other GCC ports], [Arm, RISC-V, AVR, MSP430 …], [free software. the default inside vendor SDKs],
-  [Clang/LLVM embedded builds], [Arm, RISC-V], [the common base of the vendor compilers],
-)
+#demo("examples-en/ch80/coro.c")
 
-Two currents show. One is the same as in chapter 18 — *nearly every new compiler
-is LLVM-based* (Arm's `armclang`, TI's `tiarmclang`, Microchip's new XC32). The
-other is *becoming free*. Compilers that required a paid key to enable
-optimisation used to be common; Microchip removed that restriction in recent
-editions.
+The heart of it is the last line — the state this coroutine remembers is *4 bytes*.
+There is no separate stack, no thread and no allocation. It is a tidying up of an old
+knack in C in which macros make re-entry points with `switch` and `case` (a cousin of
+Duff's device — that syntax seen in chapter 30 is used again here).
 
-#platform[
-  Look at the chip vendor's SDK first
+The price is clear too. *Local variables do not survive* — stop and come back and they
+are gone, so state that must be maintained has to be kept in a struct. It is why the
+example kept `sent` as a struct member. And, being implemented with `switch`,
+`PROVEN_CORO_YIELD` cannot be put inside another `switch`.
+
+Even so the reason this model is loved in embedded work is plain. If one task is
+4 bytes, hundreds may be raised with no burden, and since no stack is taken separately
+the memory usage can be calculated at compile time.
+
+#misconception[
+  "A coroutine is a light version of a thread"
 ][
-  In practice the starting point is often not choosing a compiler but getting
-  *the development bundle the chip company provides* (its SDK) — ST's
-  STM32Cube, NXP's MCUXpresso, Espressif's ESP-IDF, Nordic's nRF Connect SDK and
-  the like. Inside them a compiler (usually GCC or Clang), a linker script,
-  startup code, peripheral libraries and debugging configuration already come
-  paired. Choosing tools one by one from scratch is something you do after
-  learning why that bundle looks the way it does.
+  What they do is entirely different. Threads are switched by the operating system
+  *cutting in as it pleases* (pre-emption), while a coroutine stops only where it
+  itself wrote `YIELD` (co-operation). So race conditions do not arise between
+  coroutines — because two coroutines never run at the same moment. There is a price
+  in exchange. If one coroutine calculates long without yielding, all the rest starve.
+  And coroutines cannot use several cores — which is why the next section's job system
+  exists separately.
 ]
 
-== The tools beside make and git
+== The job system — using several cores
 
-Now for the tools. On an embedded developer's desk there are several beyond make
-and git. Grouped by what they do:
+`proven_job_sys_t` is a small system equipped with a queue of work and worker threads.
+Its characteristic is that the queue's size is *fixed* — if it overflows, submission
+fails, and that failure comes as a value. The judgement is that an infinitely growing
+queue is merely a device for putting the problem off until memory is exhausted.
 
-*① Assembling the build.* `make` is still the base, but today's practice puts a
-*generator* on top. `CMake` is the de facto standard (it produces build files
-and is commonly paired with `Ninja`, a fast executor, behind it), and `Meson` is
-used too. Higher-level tools that manage libraries, boards and toolchains
-wholesale include `PlatformIO` (many boards with one command), the Zephyr
-project's `west`, and Espressif's `idf.py`. Projects with many configuration
-options, like a kernel, switch features on and off with `Kconfig` and describe
-the hardware layout in a *device tree*.
+There are five doors, and their order is itself the contract.
 
-*② Burning it onto the chip and stopping it.* To flash a program onto a chip and
-halt it mid-execution to look inside, you need a small piece of hardware called
-a *debug probe*. SEGGER's `J-Link`, ST's `ST-Link` and the standard
-`CMSIS-DAP` family are common. The software joining probe to computer is
-`OpenOCD`, `pyOCD` or the vendor's own server, and on top of that chapter 17's
-`gdb` works just as before — except that this is remote debugging, with the
-program running *on another machine*. Chip and probe are connected by a few
-wires called JTAG or SWD.
+```c
+proven_job_sys_t *sys;
+proven_err_t e = proven_job_system_init(alloc, 4, 256, &sys);  /* ① 4 workers, queue 256 */
+bool ok = proven_job_submit(sys, routine, arg);                /* ② submit (false if full) */
+bool did = proven_job_execute_one(sys);                        /* ③ this thread handles one too */
+proven_job_system_close(sys);                                  /* ④ take no more */
+proven_job_system_destroy(sys);                                /* ⑤ join the workers and clean up */
+```
 
-*③ Seeing a log on a machine with no screen.* Embedded boards usually have no
-screen, so where `printf` output goes becomes a question. The traditional answer
-is to send it out of a *serial port* (UART) and receive it on a computer with a
-terminal program (`picocom`, `minicom`, `screen`, `PuTTY`). The Arm family has
-two faster routes — `ITM`/`SWO`, which floats characters out over the debug
-line, and SEGGER's `RTT`, in which the probe peeks at a memory buffer. There is
-also *semihosting*, where the debugger performs host I/O on the target's behalf,
-but it is slow and used only for testing.
+That it is an *opaque type* stands out — the inside of `proven_job_sys_t` is not in the
+header and it is handled only by pointer (the opaque type of chapter 54 in the flesh).
+Platform resources such as threads and locks are inside, and their layout is not to be
+exposed to user code.
+
+That ④ and ⑤ are divided is a contract too. *Closing* is "no more submissions are
+taken", and *destroying* is "wait for the workers to finish and then clean up". Between
+them, the header requires the producer threads to be joined.
+
+`proven_job_execute_one` is a little special. It lets *the submitting side handle one
+item of work itself* — so when submission fails because the queue is full, instead of
+merely waiting one can handle one and try again (a simple form of work stealing).
 
 #antipattern[
-  Using `printf` anywhere in embedded code
+  Overlapping closing with submitting
 ][
-  The `printf` debugging habit formed on a host (chapter 17) brings three
-  problems in embedded work. *Size* — the whole format interpreter is linked in
-  and eats tens of KiB. *Speed* — pushing one character at a time over a UART
-  costs milliseconds. *Timing* — that delay changes the real-time behaviour, so
-  the bug disappears the moment you print: the classic situation.
-
-  So practice uses lighter alternatives: a reduced `printf` handling integers
-  only, a scheme that sends *only a number* instead of putting the format string
-  on the chip, or a nearly free channel such as the RTT above. It is also why
-  chapter 17's "learn the debugger" is especially valuable in embedded work.
+  ```c
+  /* thread A */                    /* thread B */
+  proven_job_submit(sys, job);      proven_job_system_destroy(sys);
+  ```
+  A pattern the header explicitly forbids. The correct order is *close, join all the
+  producers, then destroy*. Such ordering contracts are not solved by hiding a lock
+  inside the data structure — rather, a hidden lock increases the code that "mistakenly
+  believes it works". It is also why this library puts no locks in its containers and
+  pins down that *shared mutation is synchronised by the caller*.
 ]
 
-*④ Running it without the machine.* When the hardware does not exist yet, or
-many boards must be tested automatically, you use a *simulator*. `QEMU` imitates
-various boards, and `Renode` can imitate several devices and even a network
-together, which makes it common in test automation (CI). Vendor IDEs often ship
-an instruction-level simulator too.
+== Threads, allocators, and provenance
 
-*⑤ Having the code read for you.* Embedded software is hard to fix once shipped
-(the product leaves your hands), so *static analysis* has great value. Free
-tools include `cppcheck` and `clang-tidy` (and the compiler's own
-`-Wall -Wextra`); commercial ones commonly used are `PC-lint Plus`,
-`PVS-Studio`, `Polyspace` and `Coverity`. In the automotive industry the ability
-to check conformance to a set of coding rules called `MISRA C` is especially
-important — an approach of "using only the subset of C that has been decided as
-allowed."
+In a program running along several strands the allocator demands special care. If two
+threads use one arena together, the simple action seen in chapter 75 of "cutting from
+the front" becomes a race at once. The prescription is mostly *one per thread* — and
+then no synchronisation is needed at all.
 
-*⑥ Testing.* Code that runs on a chip is unit-tested too. For C, `Unity` (with
-its build tool `Ceedling`) and `CppUTest` are widely used, and it is the practice
-to compile logic that does not touch hardware *on the host* and test it there —
-where you can turn on checkers like `-fsanitize=address,undefined`
-(chapter 17), receiving in place of the chip the checks it cannot give you.
+Pointer *provenance*, whose name only was seen in chapter 14, becomes practical here
+too. Since even at the same address it matters which allocation a pointer came from,
+giving a block obtained from one allocator back to another is a contract violation
+(as in chapter 75's counterexample) even if the address happens to match. The library's
+name came from here.
 
-*⑦ Measuring size and layout.* Memory is small, so "how much went in" is
-measured constantly. Binary tools such as `size`, `nm`, `objdump` and `readelf`
-are the basics, and you read the *map file* the linker leaves to see what
-occupies the space. Tools such as `bloaty` and `puncover` present that analysis
-nicely. To convert into a format for the chip you use `objcopy`
-(ELF → bin/hex) or `srec_cat`.
+== When there is no OS — freestanding
 
-*⑧ Seeing the signals with your eyes.* A moment comes when software tools alone
-will not do. When you must see what signal is leaving a pin, out come the
-*logic analyser* (the free software `sigrok`/PulseView supports inexpensive
-hardware) and the oscilloscope. That half of the "the code is right but it does
-not work" problems are wiring and power is an old proverb of this world.
+This is the constraint that most shaped this library. It is the demand to run in the
+very environment chapter 55 gave as the reason the standard library is thin — a place
+with no operating system, no heap and no files.
+
+#idx("freestanding")What changes in a freestanding build is this.
+
+- `platform/` is not included at all. Files, time and OS randomness disappear.
+- Allocation is done with an arena over a static buffer (chapter 75). There is no
+  `malloc`.
+- Strings are handled with `_borrow` over stack and static buffers (chapter 76).
+- The panic handler is registered by you — there may be no console to print to, so it
+  becomes a matter of lighting an LED, kicking a watchdog or rebooting.
+- Real-number formatting uses large-integer arithmetic, so it can be taken out whole
+  if it is not needed.
+
+Why the disciplines of the earlier chapters — "take the allocator as an argument", "a
+view is borrowed", "no hidden globals" — were so persistent shows itself here. Those
+disciplines were not a taste but *the minimum condition for running in this
+environment*.
+
+=== The actual build procedure
+
+Left in words alone it stays vague, so here is the order.
+
++ *Take `platform/` out of the compilation list.* Leave only `src/proven/*.c`. Files,
+  time, OS randomness, streams, mmap and the job system go out with it.
++ *Define `PROVEN_FREESTANDING`* (`-DPROVEN_FREESTANDING=1`). `proven_heap_allocator()`
+  then returns *an unusable value* (all zeros), and if it is used by mistake
+  `proven_alloc_is_valid` says false.
++ *Take the backing memory statically.* Put one array where the linker script knows it
+  and lay an arena over it (chapter 75).
++ *Register a panic handler.* There being no console, one of an LED, a watchdog or a
+  reboot (chapter 73's example).
++ *Take out what is not needed.* If real-number formatting is not used,
+  `-DPROVEN_FMT_NO_FLOAT` strips the large-integer arithmetic code out whole.
+
+```c
+/* the skeleton of a freestanding program */
+static proven_byte_t g_pool[8 * 1024];      /* the memory budget is settled here */
+
+int main(void)
+{
+    proven_set_panic_handler(board_panic);
+    proven_arena_t arena = proven_arena_create(
+        (proven_mem_mut_t){ .ptr = g_pool, .size = sizeof g_pool });
+    proven_allocator_t alloc = proven_arena_as_allocator(&arena);
+
+    for (;;) {
+        proven_arena_reset(&arena);          /* taken back each turn */
+        handle_one_event(alloc);
+    }
+}
+```
+
+These twenty lines contain all of this part's discipline — *the allocator is an
+argument*, *lifetime is per arena*, *`main` does not return* (chapter 49), and *the
+memory budget is written as a number in the source*.
 
 #realcase[
-  Compiler Explorer — a museum of compilers opened in a browser
+  The same code in two worlds — and its price
 ][
-  One tool that needs no installation. The website `godbolt.org` (Compiler
-  Explorer) lets you write C on the left and shows, immediately on the right,
-  *what machine code that code becomes*. You can compare across compilers and
-  versions (from gcc 4 to the newest, clang, MSVC, embedded arm targets —
-  hundreds of them) and optimisation options.
-
-  It is the easiest way to *see with your own eyes* what chapter 13 (compiler
-  optimisation) called "the editor rewriting the code" — `x * 2` becoming a
-  shift, the outputs of `-O0` and `-O2` being utterly different, a loop
-  disappearing entirely, all visible in seconds. In embedded work it is also
-  used to check "how many bytes of instruction does this code become."
+  Keeping as one set the code that runs both in embedded work and on a host really is
+  of great value. If a protocol parser can be tested on a PC and put into the firmware
+  as it stands, the time spent floundering on a board with no debugging environment
+  shrinks greatly. It is why many embedded teams keep a separate "test build that runs
+  on the host", and what makes that structure possible is exactly the design of
+  *confining platform dependence to one layer*. The price is that the API becomes a
+  little more formal — code that works anywhere is specialised to nowhere.
 ]
 
+== Where this library stands — what it is, and what it is not
+
+Before closing the part its place has to be made clear. The design seen so far —
+taking an allocator as a parameter, returning failure as a value, views that
+carry a length, refusing rather than truncating — was not invented by proven.
+Zig's allocator parameter, Rust's `Result` and slices, recent C++'s `span` and
+`expected`, and the in-house C conventions of many companies have all moved in
+the same direction. There is considerable common ground about it.
+
+*proven, however, is not that common ground itself.* It is *one attempt* to
+implement that direction in C23 — neither a standard nor an industry component.
+The distinction matters for a simple reason: the direction has been verified in
+many places, this implementation has not yet. What to take from this part is the
+direction rather than the code, and if you do take the code, take it knowing what
+follows.
+
+=== What has been verified so far
+
+What this book has put in print is exactly this much.
+
+#dtable(
+  columns: 2,
+  [*confirmed*], [*not confirmed*],
+  [this book's 94 examples build and run under GCC 14 and Clang 22], [behaviour under other compilers (MSVC, older GCC)],
+  [they all pass on x86-64 Linux], [continuous verification on other systems and architectures],
+  [the contracts of the API the examples use match the documentation], [coverage of the whole API],
+  [the platform layer has two branches, POSIX and Win32], [continuous automated verification of the Win32 branch],
+)
+
+That is, what this book vouches for is that *the code printed here runs in this
+environment* — not that the whole library is verified in every environment. The
+book claims no more than that.
+
+=== Stability — what may still change
+
+proven is not at 1.0. The edition this book uses is a snapshot of the
+`v26.07.23b` line, and that means:
+
+- *The API may change.* Names and signatures are still being tidied. There is no
+  guarantee that this book's examples compile unchanged against the next edition.
+- *No ABI is promised.* Struct layouts may change, so mixing pre-compiled
+  binaries is not advisable at this stage; building from source alongside your
+  own code is safer.
+- *Pin the edition.* If you use it in earnest, vendor a specific snapshot into
+  your repository (as this book does under `vendor/proven`) and move it
+  deliberately.
+
+=== What is not there yet
+
+Set down honestly, the following are absent or thin in this edition.
+
+- *Performance and size comparisons.* No benchmarks against the standard library
+  or other C libraries are published. That is why this book makes no performance
+  claim — a performance claim without data is advertising.
+- *Outside users.* There is little record of use in projects beyond the author's.
+- *A wide platform matrix.* The freestanding branch is designed for, but the list
+  of continuously verified targets is narrow.
+- *A long compatibility history.* The trust an old library earns — "it has been
+  carried across many editions already" — accumulates only with time.
+
 #qa[
-  Must all of this be learned before starting embedded work?
+  Then what is this part to be read for?
 ][
-  No. The minimum bundle to start is four things — *the chip company's SDK*, *a
-  compiler* (usually inside the SDK), *one debug probe*, and *a serial
-  terminal*. The rest grows one at a time as the need arises. The purpose of
-  this chapter is not to make you memorise a list but to let you recognise, when
-  you later meet those names, *which slot the tool sits in*.
+  Two things. One is *how to read a design* — the eye that asks, of whatever
+  library you meet, "how does it report failure, who supplies the memory, where
+  is the length, what happens at the boundary?" That eye remains whether or not
+  you use proven.
+
+  The other is *grounds for a choice*. If, looking at the table above, you judge
+  that it is too early for your project, that too is the result of reading this
+  part properly. It means the same as the preface saying that deciding you do not
+  need proven is a fine outcome too.
+]
+
+== When it is better not to use it
+
+We close honestly. There are cases where this library is not the answer.
+
+- *Short, script-like programs* — for a twenty-line tool, ownership discipline and
+  allocator parameters are mere formality. The standard library is enough.
+- *A codebase that already has other conventions* — a large project mostly already has
+  its own string, container and error conventions. Mix two conventions and conversion
+  code arises at every boundary, and those boundaries become the places of new bugs.
+- *Places like C++ and Rust where the language already solves the problem* — in an
+  environment where the language handles ownership and error propagation, there is
+  little reason to lay a C library on top.
+- *Work that one standard function finishes* — exactly as this book said in
+  chapter 55. The right attitude is neither "do not use it" nor "use it
+  unconditionally" but *knowing the contract and choosing*.
+
+#qa[
+  Then what remains of what was learned in this part if proven is not used?
+][
+  Almost all of it. Strings that carry their length, writes that refuse rather than
+  truncate, errors that come back as values, allocation visible in the signature, the
+  distinction of owning and borrowing, size calculation done with checked arithmetic,
+  comparators that keep a total order, hashes that assume adversarial input — these are
+  not a library but *design principles*, and they can be applied by hand to any C code.
+  Open chapter 71's table again and the right-hand column is entirely such items. What
+  this part really wanted to sell is not the code but that column.
 ]
 
 #recap[
+  A summary of the whole of Part XII — problems and answers.
+
   #dtable(
-    columns: 2,
-    [*what it does*], [*tools*],
-    [assembling the build], [CMake, Ninja, Meson; PlatformIO, west, idf.py; Kconfig],
-    [burning and halting], [J-Link, ST-Link, CMSIS-DAP + OpenOCD, pyOCD + gdb],
-    [seeing logs], [UART + terminal, ITM/SWO, RTT, (slow) semihosting],
-    [running without hardware], [QEMU, Renode, vendor simulators],
-    [having code read], [cppcheck, clang-tidy; PC-lint Plus, PVS-Studio; MISRA],
-    [testing], [Unity, Ceedling, CppUTest; sanitizers on the host],
-    [measuring size], [size, nm, objdump, readelf; map files; bloaty, puncover],
-    [seeing signals], [logic analyser (sigrok), oscilloscope],
-    [inspecting machine code], [Compiler Explorer (godbolt.org)],
-  )
+  columns: 3,
+    [*chapter 71's problem*], [*the answer*], [*chapter*],
+    [strings that do not know the size], [views (ptr+size), refusing rather than truncating], [chapters 74 and 76],
+    [unconfirmed failure], [errors as values, `[[nodiscard]]`], [chapter 73],
+    [format mismatch], [`{}` and `PROVEN_ARG` (`_Generic`)], [chapter 77],
+    [unclear ownership], [the allocator parameter, owning versus borrowing], [chapter 75],
+    [unchecked callbacks], [documented contracts, introsort, keyed hashes], [chapter 78],
+    [the hidden type of bytes], [`proven_byte_t`], [chapter 74],
+    [environments with no OS], [separating the platform layer, static arenas], [chapter 80],
+)
 ]
 
-We have looked round the embedded desk. After chapter 18's map of compilers and
-chapter 79's toolbox, the tools of the place where C is rooted most deeply have
-their names too.
-
-Now the last chapter. It retraces the road this book has travelled, gathers the
-practices of modern C into a single page of guidance, and closes.
+With this, the promise this book made in chapter 1 has been kept — showing C's problems
+first, and showing one answer to them through to the end. The two remaining chapters
+are the story beyond these pages. In the next chapter we look round the terrain of
+practice (build tools, version control, real projects), and in the last we gather up the
+road this book has travelled.

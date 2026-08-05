@@ -1,335 +1,281 @@
 #import "../../book/lib.typ": *
 
-= Errors are values
+= The five bugs shipped for fifty years
 
 #prereq(
-  ([chapter 45, Errors and contracts], [errors as values]),
-  ([chapter 69, The five bugs shipped for fifty years], [the unchecked return value]),
+  ([chapter 47, Errors and contracts], [errors and contracts]),
+  ([chapter 38, Strings], [the danger of strings]),
+  ([chapter 55, The terrain of the standard library], [the traps of the standard library]),
 )
 
 #deepqa[
-  Chapter 45 said C's ways of reporting an error are only three — the return value,
-  global state, and stopping the program — and that of these the return value is the
-  most honest. Then how does one say both "it failed" and "here is the result" with a
-  single return value?
+  Chapter 38 said the functions handling strings "do not know the size of the
+  vessel", and chapter 47 said "a failure not confirmed becomes a thing that never
+  happened". Then why do such problems still remain — is half a century not more
+  than enough time to mend them?
 ][
-  There are three ways. Mix an *impossible value* into the result's place (null,
-  `-1` — that trap seen in chapter 69), take the result out as an *output parameter*
-  and use the return value for status alone, or *hold both in one struct* and return
-  them together. proven uses the second and third together — and the third is
-  possible because, as learned in chapter 41, a C struct can be returned by value.
+  Not because they cannot be mended but because mending them *breaks all the code
+  already written*. The moment one more size parameter is put into `strcpy`'s
+  signature, every C program in the world stops compiling. The standard is an
+  institution that must protect existing code (chapter 55's reason for "thin and
+  old" appears here too), so instead of removing dangerous functions it has taken the
+  road of *placing better functions beside them*. So the choice comes over to the
+  programmer — it is, in effect, a language in which knowing what is dangerous and
+  choosing accordingly is itself skill.
 ]
 
 #organizer[
-  We see the answer to chapter 69's second bug — unconfirmed failure. The way of
-  returning failure as a value, the bundle holding a value and an error together,
-  and the device that makes the compiler protest if an error is thrown away. The
-  discipline set up in chapter 45, "errors are values", hardens here into a type.
+  This part's statement of the problem. We confirm with actually running code why C
+  has kept shipping the same five classes of bug for half a century — that it is not
+  the programmer's carelessness but *the shape of the API*. Only after all five have
+  been seen does the name proven appear again. Not introducing the tool first is
+  this part's principle.
+]
+
+#qa[
+  Then are these five a list of mistakes beginners make?
+][
+  No. These are mistakes *the skilled keep making too*, and that point matters. If
+  people who know the whole grammar still slip in the same places, the cause is not
+  the person but *the shape of the tool*. A function that does not take a size has
+  no way of checking a size, and a function whose return value may be thrown away
+  with nothing happening will one day be thrown away. This chapter takes that
+  "shape" apart one at a time.
 ]
 
 #chapter-questions()
 
-== Two shapes of return
+== One — string functions do not know the size of the vessel
 
-The rule is simple. *A function that can fail must return the failure as a value.*
+The oldest and most exploited class. Exactly as seen in chapter 38.
 
-- If there is no result to return, it returns a single `proven_err_t`.
-- If there is a result to return, it returns an `{err, value}` bundle — with a name
-  per type, such as `proven_result_u8str_t` or `proven_result_size_t`.
+```c
+char buf[64];
+strcpy(buf, name);            /* how long is name? strcpy does not ask */
+strcat(buf, ", welcome!");    /* and how much room is left now? */
+```
 
-`proven_err_t` is an enumeration and success is `PROVEN_OK` (0). The check is always
-the single `proven_is_ok(err)` — writing `err == 0` would work too, but using the name
-lets the code survive a later change of representation.
+`strcpy`'s signature has no destination size. What is not there cannot be checked,
+so this function will happily write to the 200th byte of a 64-byte vessel. What gets
+wrecked depends on what the compiler placed after it, and commonly that is the
+function's return address (recall chapter 40's picture of the stack).
 
-=== Every error code
+The modern prescription is to use the editions that take a size — `snprintf` is
+representative. And here is a second trap. Functions that take a size *quietly
+truncate* when it overflows.
 
-Failures have a name per kind, and there are sixteen in all. They are not to be
-memorised; it is enough to know *what branches exist* — most code divides only success
-from failure, and looks at the branch only when attempting recovery.
+#demo("examples-en/ch71/truncate.c")
 
-#dtable(
-  columns: 3,
-  [*code*], [*what happened*], [*mainly where*],
-  [`PROVEN_OK`], [success (0)], [—],
-  [`ERR_NOMEM`], [the allocator could not hand out memory], [`_create`, `_grow`],
-  [`ERR_OUT_OF_BOUNDS`], [outside the vessel — refused rather than truncated], [`append`, `slice`, array indexing],
-  [`ERR_INVALID_ENCODING`], [the UTF-8/UTF-16 was broken], [string conversion, `hex`/`base64`],
-  [`ERR_INVALID_ARG`], [an argument is outside the contract (null, 0, an unusable allocator)], [almost every entry point],
-  [`ERR_IO`], [the outside world failed], [files and streams],
-  [`ERR_NOT_FOUND`], [what was sought is not there], [map lookup, opening a file],
-  [`ERR_INVALID_STATE`], [it cannot be done in the present state], [a closed stream, a destroyed object],
-  [`ERR_NEED_MORE`], [more input is needed before judging], [parsers and decoders],
-  [`ERR_OVERFLOW`], [a size calculation overflowed], [`create`, container growth],
-  [`ERR_UNSUPPORTED`], [this environment does not have that facility], [OS features under freestanding],
-  [`ERR_AGAIN`], [not now — try again], [non-blocking I/O],
-  [`ERR_EOF`], [the end was reached], [reading],
-  [`ERR_BUSY`], [somebody else is using it], [locks, the job queue],
-  [`ERR_PERMISSION`], [there is no permission], [files],
-  [`ERR_INVALID_FORMAT`], [the format was wrong], [parsing, format strings],
-)
-
-#demo("examples-en/ch71/codes.c")
-
-The latter part of the example shows this table in the flesh. Try to put twelve bytes
-into an eight-byte vessel and `OUT_OF_BOUNDS` comes — *and the original is left
-untouched* (the length is still 0). Give an unusable allocator and it is caught as
-`INVALID_ARG` before anything is made. Slicing outside the range too is a refusal, not
-"as much as there is".
-
-Two things are worth taking from here. First, *`ERR_INVALID_ARG` is usually a bug in my
-own code* — not a failure of the outside world but a contract violation, so it is to be
-mended rather than recovered from. Second, `ERR_EOF` and `ERR_AGAIN` are *part of the
-normal flow*. In a reading loop EOF is not an error but the ending condition
-(chapter 77).
-
-=== The kinds of result bundle
-
-A function with a value to return has one bundle per type. The naming rule being the
-same, the list need not be memorised — inside a `proven_result_XXX_t` there are always
-just `err` and `value`.
-
-#dtable(
-  columns: 3,
-  [*bundle*], [*the type of `value`*], [*where it is returned*],
-  [`proven_result_size_t`], [`proven_size_t`], [lengths, counts, bytes written],
-  [`proven_result_mem_mut_t`], [`proven_mem_mut_t`], [allocators (chapters 72 and 73)],
-  [`proven_result_mem_view_t`], [`proven_mem_view_t`], [slicing (chapter 72)],
-  [`proven_result_u8str_t`], [`proven_u8str_t`], [making a string (chapter 74)],
-  [`proven_result_buf_t`], [`proven_buf_t`], [making a buffer],
-  [`proven_result_cstr_t`], [`const char *`], [exporting as a C string (chapter 74)],
-  [`proven_fmt_result_t`], [(amount written and amount needed)], [formatting (chapter 75)],
-)
-
-Only the last row is of a different grain. For formatting, "success or failure" is not
-enough — if it was truncated you must know *how much more was needed* — so beside `err`
-it carries two numbers as well (we look at it closely in chapter 75).
-
-#demo("examples-en/ch71/errval.c")
-
-This example contains all of this chapter's syntax. `make_greeting` sends the result
-out through an output parameter (`out`) and used the return value for status alone —
-on failure it passes it up as it is. And `proven_u8str_create` returns a bundle, so
-`made.value` is taken out *only after checking*. The order must not be reversed.
+Look at the third line. What was to be made was
+`/var/log/service/http/access.log`, and what remained in hand is
+`/var/log/service/http/a`. The program neither stopped nor warned. If this string is
+a file path it opens the wrong file, if a command it becomes a different command, if
+a log the record of an accident is cut without a sound. *A truncated path is not a
+short path but a wrong path.*
 
 #antipattern[
-  Taking out `value` before checking
+  Treating truncation as success
 ][
   ```c
-  proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* dangerous */
+  snprintf(path, sizeof path, "%s/%s", dir, name);
+  open_file(path);          /* nobody asked whether it was truncated */
   ```
-  It finishes in one line and looks clean, but what comes into your hand on failure
-  is *a meaningless value*. The bundle's contract is "`value` has meaning only when
-  `err` is `PROVEN_OK`", so this code has skipped the contract. That on failure a
-  struct filled with zeros usually arrives and it does not die immediately is rather
-  the danger — the accident is put off until much later (that pattern from
-  chapter 69).
+  `snprintf` in fact gives the answer — it returns *the length that would have been
+  needed*. If that value is at least the vessel's size it was truncated (the
+  example's last line is that check). The problem is that this check is *optional*.
+  Throw the return value away and the compiler says nothing. That leads straight
+  into the second bug.
 ]
 
-The output of the second call compresses this part's theme. On trying to put
-`"Hello, world"` into a capacity of 8 bytes, the library, *instead of putting in as
-much as fits and declaring success*, wrote nothing and returned a failure. It is the
-exact opposite choice from `snprintf`'s quiet truncation seen in chapter 69.
+#realcase[
+  The compiler catches only what it can see
+][
+  Something that really happened while making this example. At first `snprintf` was
+  called directly inside `main` with literal arguments, and gcc caught it.
 
-== Throw it away and the compiler protests
+  ```text
+  error: ‘%s’ directive output truncated writing 10 bytes
+         into a region of size 2 [-Werror=format-truncation=]
+  note: ‘snprintf’ output 33 bytes into a destination of size 24
+  ```
 
-Returning the error as a value is not enough by itself. As seen in chapter 69, a
-return value *can be thrown away*. So functions for which failure is meaningful have
-C23's #idx("nodiscard")`[[nodiscard]]` attached (we saw the name in chapter 45).
-Throw the result away and the compiler really says this.
+  An excellent diagnosis. Yet moving the same call inside a function called
+  `build_path` made the warning *vanish*. The moment a function boundary is crossed
+  the compiler cannot know the real lengths of `dir` and `name`. In a real program
+  strings come from files or from the network, so cases where the compiler can help
+  are rather rare. A warning is a free review, not a guarantee (chapter 17).
+]
 
-```text
-warning: ignoring return value of ‘proven_u8str_append’,
-         declared with attribute ‘nodiscard’ [-Wunused-result]
-    5 |     proven_u8str_append(&s, proven_u8str_view_from_cstr("hi"));
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-note: declared here
-  123 | [[nodiscard]] proven_err_t proven_u8str_append(...);
-```
-
-If the `-Werror` recommended in chapter 17 is turned on, this is not a warning but a
-*build failure*. What was "checking is optional" has become "it does not compile
-unless you check".
-
-Of course there are times when you really do want to ignore it. Then `(void)` is put
-in front.
+== Two — there is no device that makes you confirm failure
 
 ```c
-(void)proven_u8str_append(&s, view);   /* ignored knowingly */
+char *p = malloc(n);
+p[0] = 'x';                   /* malloc gives null on failure */
 ```
 
-#qa[
-  If it can be ignored with `(void)`, is it not compulsory after all?
-][
-  Because the purpose of the compulsion is not "to prevent ignoring" but *"to make
-  ignoring visible"*. An error thrown away with no mark is invisible in code review,
-  while a line with `(void)` attached becomes a declaration that "this failure is
-  deliberately ignored". The very fact that it must be typed is the heart of it — it
-  cannot be done by accident, only on purpose.
-]
+C's ways of reporting failure are two. Return a *sentinel value* (null, `-1`, `EOF`),
+or leave the reason in the global variable `errno`. Neither can compel a check. Code
+that throws the return value away is perfectly legal, and `errno` is global state
+that must be read at exactly the right moment, before the next call overwrites it
+(chapter 55).
 
-#qa[
-  But chapter 70's `proven_println` had no such mark. Why is screen output alone an
-  exception?
-][
-  Because contracts have grades too. The failure of a write going to the console has
-  conventionally been ignored (have you ever seen code that checks `printf`'s return
-  value?), and making every line of output carry a `(void)` would bury the code in
-  noise. So this library placed output in the grade that *returns the error but does
-  not compel a check*. Conversely, the functions on the *input* side do have the mark
-  — ignore the failure of a read and you treat "data not read" as though it had been
-  read, replaying chapter 69's second bug exactly. Where to attach the mark is itself
-  a design judgement.
-]
+#demo("examples-en/ch71/unchecked.c")
 
-== What remains after a failure — failure atomicity
-
-There is a question that naturally arises after receiving an error. *What state is
-the object the failed function was touching in now?*
-
-#idx("failure atomicity")The library's answer is *failure atomicity* — unless the
-documentation says otherwise, a failed operation leaves the target in the state it
-was in before being touched. If memory runs short while growing an array the existing
-elements are still alive, and if there is not enough room while appending to a string
-the original content stands. The second call of the example just now is that case —
-it failed, but no half-written string was left.
-
-Why does this matter? Without failure atomicity a caller can do nothing after a
-failure *but throw the object away*. With it, "give up this addition and carry on
-with what has been gathered so far" becomes possible.
+That `careless typo` returned 8080 is this section's heart. There was a typo in the
+configuration and the program *quietly fell back to the default*. On the surface
+nothing happened, and months later only the question "why is the setting not taking
+effect?" remains. That `strtol("abc")` gives 0 is the same pattern — failure and "a
+real 0" come back as the same value.
 
 #misconception[
-  "If it fails we will end the program anyway, so what does the state matter"
+  "Failure is exceptional, so it can be handled later"
 ][
-  For a short-running command-line tool that may be so. But long-running programs —
-  servers, editors, games, firmware — must not die on one failure. If the whole server
-  went down because handling one request failed for lack of memory, that would be the
-  greater accident. Failure atomicity is the minimal condition that makes possible the
-  recovery of "throw away only this request and take the next".
+  The premise that failure is rare is wrong to begin with. A file may not exist,
+  input carries typos, disks fill, networks break — every place where the program
+  touches the outside world is a point of failure. And the real reason "later" is
+  dangerous lies elsewhere. Code that ignored a failure *does not stop but keeps
+  running*. A wrong value flows into the next calculation, into the function after
+  that, and by the time the problem finally shows itself it blows up far from its
+  cause. Chapter 47's "fail early" returns here.
 ]
 
-== Raising a failure upward — together with the cleanup
+== Three — `printf` believes exactly what you tell it
 
-Receiving errors as values raises one practical problem at once. *If it fails in the
-middle, who gives back what has been taken so far?* In a language with exceptions the
-stack unwinds and destructors handle it, but C has no such device (chapter 62). So an
-idiom is needed.
+Chapter 55 took the grammar of the format string apart. That grammar has one
+structural weakness — *the type is written twice*. Once in the format (`%d`) and
+once in the argument (the variable's type). If the two go out of step the language
+cannot prevent it, because as seen in chapter 52 type information does not ride
+along into variadic arguments.
 
-#demo("examples-en/ch71/cleanup.c")
+Today's compilers catch this. The real message is like this.
 
-This example deliberately inserts a failing allocator (once the *budget* runs out it
-necessarily gives `NOMEM`) and runs all three cases — failure from the first
-allocation, one taken and failure at the second, and everything succeeding. The middle
-case is the heart of it. `x` has already been taken while `y` failed, so simply
-returning here is *a leak*.
+```text
+warning: format ‘%d’ expects argument of type ‘int’,
+         but argument 2 has type ‘double’ [-Wformat=]
+    3 |     printf("%d\n", 3.0);
+      |             ~^     ~~~
+      |              |     |
+      |              int   double
+```
 
-The pattern comes to three.
+But only this far. The moment the format becomes a *variable* — the moment a
+multilingual message is taken from a table or a log format is received from a
+configuration — the compiler has nothing left to look at.
 
-+ *Mark what you hold with a flag* — one boolean such as `has_x`. If the resources are
-  several, so are the flags.
-+ *On failure everything gathers at one place* — `goto done`. That use chapter 62
-  called "disciplined `goto`".
-+ *Clean up in reverse order of taking* — what was taken later is given back first.
-
-It is worth noticing too that after ownership passes with `*out = y;` on the success
-path, `y` is not destroyed thereafter. *You must be able to point at the place where
-ownership passes with a single line of code* — a function that cannot is usually one of
-blurred design.
-
-#qa[
-  Is deliberately making a failing allocator of any use in practice too?
+#antipattern[
+  Code that takes the format as a variable
 ][
-  Of great use. The out-of-memory path is almost never executed in a real program, so
-  in most codebases it is *the least tested path*. And a leak or double free there is
-  the hardest of all to diagnose.
-
-  As chapter 73 will show, an allocator is simply a value, so a shell that "fails from
-  the nth call" can be made in ten lines, as in the example, and inserted. Raise n from
-  1 and run the tests and you can pass through *every failure point* once, and running
-  it with ASan or Valgrind (chapter 17) makes that path's leaks show themselves plainly.
-  It is the place where the decision that the library does not call `malloc` directly
-  comes back as testability.
+  ```c
+  const char *fmt = load_message("greeting");   /* a format taken from a table */
+  printf(fmt, count);                           /* no warning. no check either */
+  ```
+  Not a single warning comes from this code. Because a way of knowing whether format
+  and arguments match does not exist at compile time. Worst is when the format is
+  *user input*, which becomes the format string vulnerability seen in chapter 55.
 ]
 
-== When there is nobody to return to — the panic
-
-To return an error as a value there must be *somebody to return it to*. But in a
-place where the contract itself is broken there is no such somebody — if, for
-example, a null arrived in a place where there is no reason whatever to pass a null,
-that is not a failure but means *the program's logic is already wrong*.
-
-For such places the library has a panic path. It is the same spirit as chapter 45's
-`assert`, differing in that the way it is handled can be swapped out so as to be
-usable in embedded work too (chapter 78).
-
-There are only two doors.
+== Four — who frees this
 
 ```c
-void proven_panic(const char *msg);                       /* raise a panic */
-void proven_set_panic_handler(proven_panic_handler_t h);  /* swap the handler */
+char *s = build_message();    /* must this be freed? the type says nothing */
 ```
 
-The default handler *does not return* — it stops the program on the spot (the
-implementation is `__builtin_trap()`). And this swapping is what pays in embedded work.
-On a board with no console there is nowhere to print a message, so a handler is
-registered that lights an LED, kicks the watchdog, or reboots.
+As learned in chapter 41, dynamically taken memory must be released by somebody
+exactly once. Yet a `char *` a function returned may be any of four things.
+
+- Just allocated — it must be freed.
+- Pointing at a buffer the caller gave — it must not be freed.
+- A string literal in a read-only place — freeing it is an accident.
+- A static buffer the next call will overwrite — it must neither be freed nor held
+  for long (chapter 55's `strtok` was such).
+
+The types of the four cases are *all the same*. The answer is in the documentation,
+and documentation goes out of step with code as a matter of course. Here arise
+chapter 41's three accidents — a leak (nobody frees), a double free (both free), and
+use after free (somebody still points at it after freeing).
+
+#antipattern[
+  An API whose type does not state ownership
+][
+  ```c
+  const char *lookup(int code);        /* a literal? an allocation? a static buffer? */
+  char       *format_time(time_t t);   /* must this be freed? */
+  ```
+  It cannot be known from the name and type alone. *Every place* that uses this API
+  must remember the documentation, and if even one forgets it becomes one of the
+  three accidents above. That the discipline is entrusted to human memory is the
+  essence of the problem.
+]
+
+== Five — a callback nobody can type-check for you
 
 ```c
-static void my_panic(const char *msg) {
-    (void)msg;
-    board_led_on(LED_FAULT);
-    for (;;) { }          /* it does not go back */
-}
-/* at the program's starting place */
-proven_set_panic_handler(my_panic);
+qsort(a, n, sizeof *a, cmp);   /* cmp takes const void* */
 ```
 
-*A handler must not return.* If it returns, the validity of what an `_or_panic`
-function gave back is not guaranteed — a panic is the declaration that "from here the
-program's premises are broken". The exception is test code deliberately using a
-returning handler to confirm the panic path, and even then the value after it is not
-used.
+`qsort` takes a comparison function through a `void *` interface in order to sort any
+type. In a language with no generics this is nearly the only way, but the price is
+*the complete abandonment of type checking*. Whatever you cast to inside the
+comparator, the compiler believes you.
 
-The places where the library itself calls a panic can be counted on the fingers — the
-functions with `_or_panic` in the name (chapter 73's arena allocation is
-representative) and a few places where the contract is plainly already broken. Everything
-else is returned as a value.
+#demo("examples-en/ch71/cmp_bad.c")
 
-The distinction is best remembered like this.
+The `first-char` comparator's types match perfectly, it compiles without a single
+warning, and it does not die. It is only that `peach` and `pear` are in the wrong
+order — seeing only the first letter, the two were judged "equal" and the rest was
+left to chance. This class of bug is found last of all, because it gives *a quietly
+wrong answer*.
+
+#realcase[
+  Attacks aiming at a data structure's worst case
+][
+  There is a performance trap in the same place. Widely used sorting and hashing
+  implementations are fast on average but slow down sharply on particular inputs, and
+  the technique of an attacker deliberately making such inputs to paralyse a server
+  (an algorithmic complexity attack) was organised in a 2003 paper and used in real
+  attacks. Attacks of the same family aiming at hash collisions brought down several
+  web frameworks at once in 2011. They were events showing that a data structure's
+  *worst case* is itself a security problem, and so today's libraries take as their
+  defaults sorting with a guarantee even in the worst case (introsort) and hashes
+  using a random seed — we see them in the flesh in chapter 78.
+]
+
+== And a sixth — bytes have types
+
+We said five, but one more must be added to be fair. It is the strict aliasing seen
+in chapter 13. A hand-written parser that peers into a byte buffer through pointers
+of different widths runs perfectly at `-O0` and quietly gives a different answer at
+`-O2`. It is the representative of the "bug that appears only in release" seen in
+chapter 17, and the clause to which the Linux kernel surrendered with a single flag.
+
+Gathering the six into one table gives this part's map.
 
 #recap[
   #dtable(
   columns: 3,
-    [*situation*], [*example*], [*the library's handling*],
-    [failure of the outside world], [out of memory, file not found, out of room], [return the error as a value],
-    [the caller's contract violation], [a null that must not be, reusing a destroyed object], [panic (or undefined)],
-    [failure that may be ignored], [console output failure], [return the error but do not compel],
+    [*problem*], [*what C gives*], [*what is needed*],
+    [buffer overflow and truncation], [string functions that do not know the size], [strings that carry their length, writes that do not truncate],
+    [unconfirmed failure], [sentinel values and `errno`], [errors that come as values, a compile refusal if discarded],
+    [format mismatch], [a `printf` that believes the format string], [placeholders that take the type from the argument],
+    [unclear ownership], [a `char *` that means four things], [different types for owning and borrowing],
+    [unchecked callbacks], [the `void *` interface], [documented contracts and worst-case-guaranteed algorithms],
+    [the hidden type of bytes], [UB on breaking the aliasing rule], [a byte type the rule exempts],
 )
 ]
 
-#realcase[
-  Other languages that chose errors as values
-][
-  This design is not C's invention alone but a current common to recent systems
-  languages. Go has functions return a result and an error side by side, and Rust
-  wraps success and failure in the single `Result` type and warns if it is ignored.
-  Both are languages that decided not to use exceptions, and the reason is the same —
-  *the error paths must be visible in the shape of the code*. Exceptions are
-  convenient but erase from the signature "which failure jumps where from here".
-  Three different languages, in effect, found the answer to the second row of
-  chapter 69's table from the same direction.
-]
-
 #qa[
-  What is the price of this way?
+  Would it not be better to use another language entirely to avoid such problems?
 ][
-  `if`s multiply. There being no device like exceptions to sweep a deep failure up in
-  one go, code that checks and passes upward attaches at every place a failure is
-  met. That is half the reason the `make_greeting` of the example just now runs to
-  some twenty lines. In exchange one thing is gained — *where and what can fail is
-  visible in the code as it stands.* That there is no hidden failure is the thing
-  this library sells.
+  That too is an answer, and many places really went that road (chapter 1). But the
+  places where C must be used still remain — operating systems, firmware, the floor
+  layer other languages lean on, and projects where decades of code have already
+  piled up. What can be done in such places is *not to change the language but to
+  change the shape of the API*. The right-hand column of the table above is not a
+  list of items requiring a new language but things that can be made by design within
+  C. From the next chapter we see that design.
 ]
 
-Knowing the shape of errors, we now go down to what those errors protect — memory
-itself. The next chapter is bytes and views, and size calculation that does not
-overflow.
+The library that implements that right-hand column as it stands is the proven this
+book has leaned on. We first met it in chapter 39 and its name has come up a few
+times since, but treating it head on begins now. The next chapter is installation and
+a first program — and why this library has the shape of "nothing to install".

@@ -16,7 +16,7 @@
   attach a human-readable name to them." The numbers (addresses) are managed by
   the compiler and we call by name — a name is a human's nickname for an
   address. This chapter teaches how to make that name; meeting the real address
-  behind the nickname again is Part VII (chapter 33).
+  behind the nickname again is Part VII (chapter 34).
 ]
 
 #organizer[
@@ -58,7 +58,7 @@ year later.
 first value in when you declare.* The slot of a variable declared without
 initialisation holds whatever rubbish bits happened to be left there
 (chapter 5 — a slot is always full of something), and reading that is a
-representative path to an accident. Formal treatment is in chapter 38, but the
+representative path to an accident. Formal treatment is in chapter 39, but the
 habit starts now.
 
 == Assignment — the side effect that changes state

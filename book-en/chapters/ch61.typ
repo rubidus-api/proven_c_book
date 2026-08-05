@@ -1,175 +1,179 @@
 #import "../../book/lib.typ": *
 
-= Time — `<time.h>`
+= Characters and locales — `<ctype.h>`, `<locale.h>`, `<wchar.h>`
 
 #prereq(
-  ([chapter 41, Structs], [values bundled in a struct]),
-  ([chapter 53, The terrain of the standard library], [the contract the standard settles]),
+  ([chapter 9, Characters and text], [letters and encodings]),
 )
 
 #deepqa[
-  Bringing forward a story to be treated in Part XII: calendar time and elapsed
-  time were said to be different things. Then what is used in standard C to measure
-  exactly "whether three seconds have passed"?
+  Chapter 9 said a character is a number in a code chart and an encoding is the way
+  of writing that number as bytes. Then what is a call like `isalpha('가')` asking?
 ][
-  With the standard alone there is no way to measure it exactly. `time` is in
-  seconds and can go backwards when the system adjusts the clock, and `clock`
-  measures not wall-clock time but *the CPU time the process used* (so it does not
-  grow while waiting for input and output). C11 brought in `timespec_get` but does
-  not require a monotonic clock. Accurate elapsed measurement is the part of
-  POSIX's `clock_gettime(CLOCK_MONOTONIC, …)` or Windows'
-  `QueryPerformanceCounter` — that is, of *a platform API*.
+  It is a wrongly thrown question. The functions of `<ctype.h>` judge *one byte*. In
+  UTF-8 "가" is three bytes, so it cannot go in as an argument to begin with, and
+  even if it did each byte would merely be looked at separately. This header is a
+  tool of the ASCII days; to handle multibyte characters you need the wide-character
+  family (`<wctype.h>`) or code that handles the encoding yourself.
 ]
 
 #organizer[
-  The header the standard settled unusually little of. The standard says neither
-  what `time_t` is nor how time zones are handled. We look at the traps that arise
-  in those gaps — the year with 1900 subtracted, the month starting from 0,
-  functions that return a static buffer, and the fact that *there is no monotonic
-  clock in the standard for measuring elapsed time*.
+  We look at the functions that handle a single character. It is the simplest
+  header in appearance, yet two of C's subtlest traps are here — that *passing a
+  `char` as it stands is outside the contract*, and that *the answer depends on the
+  global state called the locale*. Chapter 9's encoding story returns at the level
+  of functions.
 ]
 
 #chapter-questions()
 
-== Three representations of time
+== The first trap — do not pass a `char` as it stands
 
-#dtable(
-  columns: 3,
-  [*type or function*], [*what*], [*to know*],
-  [`time_t`], [calendar time (usually seconds since 1970)], [★ the standard settles only "an arithmetic type"],
-  [`struct tm`], [split into year, month, day, hour, minute, second], [the field rules are a trap],
-  [`clock_t`], [the CPU time the process used], [divide by `CLOCKS_PER_SEC`],
-  [`struct timespec`], [seconds + nanoseconds (C11)], [`timespec_get`],
-)
+#demo("examples-en/ch61/ctype.c")
 
-That the standard did not settle what `time_t` is matters. In most implementations
-it is seconds since 1970-01-01 UTC, but that is *a practice*, not a guarantee of
-the standard. So portable code does not calculate with `time_t`'s internal value
-directly but takes the difference with `difftime`.
+Every function of `<ctype.h>` takes an `int`. And the argument value the standard
+requires is *a value representable as an `unsigned char`, or `EOF`*.
 
-#qa[
-  Why do so many types exist for time — would one count of seconds not do?
-][
-  Because three different jobs are involved. `time_t` is an opaque value naming
-  *one moment*; `struct tm` is the *calendar notation* people read (year, month,
-  day, hour, minute, second); `clock_t` is a scale for measuring *elapsed time*.
-  Turning a moment into a calendar is a hard computation full of time zones,
-  daylight saving and leap seconds, so the standard keeps the two in separate
-  types and lets `localtime` and `mktime` bridge them.
+The problem is that implementations where `char` is signed are common
+(chapter 26). As the example's output shows, put a 0xC7 byte in a `char` and it
+becomes −57, and passing that straight to `isalpha` is passing *a value that is not
+permitted* — outside the contract. Real implementations are mostly built as array
+indexes, so the accident of reading before the array with a negative index occurs.
 
-  The accidents in practice happen exactly at that border — subtracting two
-  `time_t` values gives seconds, but adding to the fields of a `struct tm`
-  directly produces an unnormalised date. Date arithmetic must go through
-  `mktime`.
-]
+The idiom is one.
 
-== The traps of `struct tm`
+```c
+isalpha((unsigned char)c)
+toupper((unsigned char)c)
+```
 
-#demo("examples-en/ch61/timefns.c")
-
-Two fields are famous traps.
-
-- `tm_year` is *the value with 1900 subtracted*. 2026 is 126.
-- `tm_mon` is *from 0*. August is 7.
-
-With `tm_mday` (from 1), `tm_wday` (Sunday is 0) and `tm_yday` (from 0) the rules
-are all different, so when filling them by hand it is better to keep a table
-beside you.
-
-`mktime` does two things — it turns a `struct tm` into a `time_t`, and it
-*normalises the struct*. In the example, adding 30 to `tm_mday` exceeded the range
-and yet it was tidied into 4 September thanks to that. Not doing date arithmetic
-yourself but using this property is the canonical way.
-
-`tm_isdst` is easy to forget too. Putting in −1 means "I do not know, judge for
-yourself", and putting 0 or 1 in wrongly puts you an hour out.
+That `EOF` is a valid argument is worth remembering too — that is why the argument
+type is `int` and not `char` (the same root as chapter 57's `fgetc` story).
 
 #antipattern[
-  Carrying around the result of `localtime`
+  Passing a `char` as it stands
 ][
   ```c
-  struct tm *a = localtime(&t1);
-  struct tm *b = localtime(&t2);   /* what a pointed at has been overwritten */
-  printf("%d %d\n", a->tm_hour, b->tm_hour);   /* both are t2's time */
+  char *p = line;
+  while (*p) { if (isspace(*p)) ... ; p++; }   /* outside the contract at bytes ≥ 0x80 */
   ```
-  `localtime`, `gmtime`, `ctime` and `asctime` return *an internal static buffer*
-  (those functions chapter 53 brushed past by name only). The next call overwrites
-  the previous result, and in a program running along several strands they wreck
-  each other's results.
-
-  There are two prescriptions. *Copy it* immediately on receipt, or use the edition
-  in which the caller gives the buffer (`localtime_r` and `gmtime_r` are POSIX,
-  `localtime_s` is annex K and MSVC). To keep portability with the standard alone,
-  copying is the right answer.
+  Unless there is a guarantee that only ASCII arrives, always convert.
+  ```c
+  while (*p) { if (isspace((unsigned char)*p)) ... ; p++; }
+  ```
+  In a program handling Korean, Japanese or European text, this one line divides a
+  real accident from no accident.
 ]
 
-== Printing to a string — `strftime`
+#qa[
+  If a program only ever handles ASCII, can locales and wide characters be ignored?
+][
+  It looks that way for a while, and then two places catch you. First, programs
+  mostly receive other people's input — nothing stops a file name, a user name or
+  a pasted string from carrying Korean or an emoji. Second, the locale changes
+  *even the handling of ASCII*. The famous case is the Turkish locale, where
+  `toupper('i')` becomes the dotted capital `İ`; in a locale whose decimal point
+  is a comma, even `printf("%f")` prints differently.
 
-Unlike `printf`, `strftime` takes the buffer size and *returns 0 if it does not
-fit*. The example's small buffer is that case. If the return value is 0 the
-buffer's content is undetermined, so it must not be used.
+  So this book's advice is not "you may ignore it" but *"be aware of the moment
+  you step outside the default locale."* A design that handles bytes as they are,
+  like chapter 76's UTF-8 views, shrinks the problem the most.
+]
 
-`asctime` and `ctime` are better not used. Besides returning a static buffer, the
-form is fixed (`"Wed Aug  5 13:45:30 2026\n"`) and it can overflow when the year
-exceeds four digits, so C23 marked them for retirement.
+== The second trap — the locale
+
+The judgements of `<ctype.h>` depend on *the current locale*. The default is the
+`"C"` locale, and calling `setlocale(LC_ALL, "")` changes it to the locale the
+environment variables settle. From that moment the set of bytes for which
+`isalpha` returns true may differ.
+
+What the locale changes is not only character classification.
 
 #dtable(
   columns: 3,
-  [*specifier*], [*meaning*], [*note*],
-  [`%Y`, `%m`, `%d`], [year, month, day], [the ISO date is `%Y-%m-%d`],
-  [`%H`, `%M`, `%S`], [hour, minute, second], [24-hour],
-  [`%F`, `%T`], [`%Y-%m-%d`, `%H:%M:%S`], [C99],
-  [`%z`, `%Z`], [time-zone offset and name], [locale- and platform-dependent],
-  [`%s`], [epoch seconds], [★ not standard (a POSIX extension)],
-  [`%c`, `%x`, `%X`], [locale notation], [for humans. not used for machines],
+  [*category*], [*what changes*], [*where to beware*],
+  [`LC_CTYPE`], [character classification, case conversion], [`isalpha`, `toupper`],
+  [`LC_NUMERIC`], [the decimal point character], [★ `printf("%f")`, `strtod`],
+  [`LC_COLLATE`], [string sorting order], [`strcoll`, `strxfrm`],
+  [`LC_TIME`], [date and time notation], [`strftime` (chapter 63)],
+  [`LC_MONETARY`], [currency notation], [`localeconv`],
 )
 
-== Time zones and summer time — what the standard does not handle
-
-The time zones standard C knows are only two, "local" and "UTC", and there is not
-even a standard way to *change* the local time zone (POSIX's `TZ` environment
-variable is the practice). To handle an arbitrary time zone a library is needed.
-
-Summer time is trickier still. On a transition day there arise times that do not
-exist (the hour skipped in spring) and times that exist twice (the hour repeated in
-autumn). What `mktime` returns when given such input is settled by the
-implementation.
+`LC_NUMERIC` is especially dangerous. In German and French locales the decimal
+point is a comma, so `printf("%f", 3.14)` prints `3,140000` and
+`strtod("3.14", …)` stops at 3. It means that *numbers to be shown to a human* and
+*numbers to be written to a file or protocol* must follow different rules.
 
 #realcase[
-  Real accidents time has called down
+  The pattern in which a locale wrecked data
 ][
-  Time is a regular in quiet accidents. In 2012 and 2015, when *leap seconds* were
-  inserted, several server programs burned CPU at 100% or froze — because kernels
-  and applications had not assumed a situation in which "one second comes twice".
+  It really has happened repeatedly that the same program writes `3.14` on the
+  developer's machine (an English locale) and `3,14` on the user's machine (a
+  German locale). A CSV file fails to parse column by column, a configuration file
+  cannot be read back after being saved, or the JSON two countries' servers
+  exchange goes out of step.
 
-  The limit of a *32-bit `time_t`* overflows on 19 January 2038 (the day
-  chapter 26's overflow appears on a worldwide scale). In embedded and old systems
-  it is an ongoing task even now, and so the transition to a 64-bit `time_t` has
-  long been under way.
+  The prescription is clear. *Numbers a machine will read are handled by a path
+  that does not depend on the locale* — keep the `"C"` locale, handle the notation
+  of the digits yourself, or use locale-independent functions. It is also why C11's
+  `<uchar.h>` and several libraries lay a separate path to avoid this problem.
+]
 
-  *Code that measures elapsed time in local time* loses or gains an hour on every
-  summer-time transition day. A log's timestamps go backwards, a timeout becomes an
-  hour long, a scheduler runs the same job twice. The prescription is always the
-  same — *a monotonic clock for elapsed time, UTC for records, local time only when
-  showing it to a human*.
+#misconception[
+  "If `setlocale` is not called there is no locale problem"
+][
+  Broadly right, but there is an exception. *Another library* the program uses may
+  call `setlocale` (GUI toolkits commonly do), and from that moment my code's
+  `printf("%f")` is affected too. Moreover the locale is *process-global*, so in a
+  program running along several strands it becomes a race. Thread-local locales
+  such as POSIX's `uselocale` and `newlocale` arose for that reason, but they are
+  not in standard C.
+]
+
+== Wide characters — `<wchar.h>`, `<wctype.h>`, `<uchar.h>`
+
+C95 brought in `wchar_t` and its functions. The idea was "one character as one
+unit", but reality betrayed the idea.
+
+- The *size of `wchar_t` differs by implementation.* Linux has 4 bytes (close to
+  UTF-32), Windows 2 bytes (it being UTF-16, characters of the supplementary
+  planes become two units). That is, "one character = one `wchar_t`" does not hold
+  everywhere.
+- The conversion functions (`mbstowcs` and so on) *depend on the locale.* To handle
+  a UTF-8 string the locale must be UTF-8.
+- So portable programs often choose, instead of wide characters, to *handle the
+  UTF-8 byte sequence as it is*.
+
+The `char16_t` and `char32_t` of `<uchar.h>`, added by C11, have fixed sizes and so
+avoid this problem. But library support is thin, so in the field a dedicated
+Unicode library is still used, or it is handled by hand.
+
+#platform[
+  Windows and UTF-16
+][
+  The "W" family of Windows API functions takes UTF-16 (`wchar_t`). So a Windows
+  program must go between UTF-8 and UTF-16 at the boundary, and it must not be
+  forgotten that this conversion can fail (unpaired surrogates). It is the place
+  where chapter 17's chain-of-encodings story is replayed at the API layer, and the
+  `u16` family treated in Part XII's string chapter is exactly the tool that lays
+  this bridge.
 ]
 
 #recap[
-  Time in summary.
+  Characters and locales in summary.
 
   #dtable(
     columns: 3,
-    [*what you want to do*], [*what to use*], [*what to beware of*],
-    [the current time], [`time(NULL)`], [in seconds. it can go backwards],
-    [splitting it up], [`localtime`/`gmtime` + *copy at once*], [the static buffer],
-    [date arithmetic], [add to the fields and `mktime`], [do not calculate seconds by hand],
-    [to a string], [`strftime`], [a return of 0 = failure],
-    [difference], [`difftime`], [`t2 - t1` is not portable],
-    [measuring elapsed time], [the platform's monotonic clock], [`time` and `localtime` forbidden],
-    [storing and transmitting], [UTC + ISO 8601], [do not store local time],
-    [not to be used], [`asctime`, `ctime`], [static buffer, fixed form, to be retired in C23],
+    [*situation*], [*rule*], [*if got wrong*],
+    [calling `<ctype.h>`], [convert with `(unsigned char)`], [a negative argument — outside the contract],
+    [handling `EOF`], [the argument type is `int`], [confusion with 0xFF],
+    [multibyte characters], [judging byte by byte is meaningless], [a judgement on a split character],
+    [numeric input and output], [a locale-independent path for machines], [the decimal point changes and parsing fails],
+    [sorting], [`strcoll` for humans], [`strcmp` is not dictionary order],
+    [`wchar_t`], [the size differs by implementation], [miscounting characters on Windows],
+    [recommended], [UTF-8 byte sequences + conversion only at the boundary], [—],
   )
 ]
 
-We have passed time. The next chapter is the tools used when a program *has gone
-wrong* — error numbers, assertions, signals, and non-local jumps.
+We have passed the world of the single character. The next chapter is the world of
+numbers — how real-number calculation reports failure in the standard library.

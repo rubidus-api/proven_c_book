@@ -1,252 +1,317 @@
 #import "../../book/lib.typ": *
 
-= The outside world — files, streams, time, random numbers
+= Formatting and parsing — not writing the type twice
 
 #prereq(
-  ([chapter 55, Streams in reality], [streams]),
-  ([chapter 25, Input], [input]),
+  ([chapter 52, Variadic functions], [variadic arguments and the format string]),
+  ([chapter 55, The terrain of the standard library], [the printf contract]),
 )
 
 #deepqa[
-  Chapter 10's design had a stream be one where "the program does not know what it is
-  connected to", and chapter 53 said `fopen` reports failure with null. Then what
-  failure is most often missed in a file API?
+  Chapter 52 said type information does not ride along into variadic arguments, and
+  chapter 55 said that is why the format string alone settles "how the stack is to be
+  read". Then what is needed to take the type from the argument?
 ][
-  *The partial write.* A failure to open is conspicuous, but the case of `write`
-  returning without writing all that was requested is easy to forget — it really
-  happens when the disk fills, when a signal cuts in, or when the other end is a pipe.
-  So this library has two editions. `proven_fs_write` returns *the number of bytes
-  actually written*, and `proven_fs_write_all` repeats until all is written and then
-  reports only success or failure. What most code wants is the latter, and the former
-  remains so as not to hide that fact.
+  Catch the type *at the call site* and send it along with the value. That is, do not
+  pass the argument as it is but wrap it into a `{type tag, value}` bundle. The
+  remaining problem is "how is the type tag attached automatically", and the answer is
+  C11's `_Generic` — the device that chooses different code at compile time according
+  to an expression's type. The run-time cost is zero, and unlike the implicit
+#idx("implicit conversion")  conversion rules learned in chapter 28, here the type is
+  *preserved*.
 ]
 
 #organizer[
-  From here we touch the operating system. Opening, reading and writing files,
-  buffered streams, reading and formatting time, and random numbers — those random
-  numbers that become entirely different things according to the purpose. Chapter 10's
-  story of streams and chapter 25's story of input are completed here as real APIs.
+  The answer to chapter 71's third bug — the mismatch of format and argument. How the
+  typeless placeholder `{}` obtains type safety, what `_Generic` does beneath it, and
+  how failure appears as a value in the opposite direction, parsing. It is the
+  alternative to the `printf` and `scanf` taken apart in chapter 55.
 ]
 
 #chapter-questions()
 
-== The life of one file
+== `{}` — the placeholder with no type
 
-A file is the first resource in this part that touches *the outside world*. The
-discipline of making and giving back is the same as in the earlier chapters, but the
-kinds of failure are far more numerous.
+The rules are only three.
 
-#demo("examples-en/ch77/fslife.c")
+- `{}` — put the next argument here. The type is not written.
+- `{:...}` — after the colon write the format specification (width, alignment,
+  digits).
+- `{{` `}}` — the brace characters themselves.
 
-The life cycle is four steps, and at each step failure comes as a value.
+There being no `%d`, there is no place for a `%d` and a `double` to go out of step.
+The possibility of mismatch seen in chapter 55 is removed at the level of syntax.
 
-#dtable(
-  columns: 3,
-  [*step*], [*function*], [*to know*],
-  [opening], [`proven_fs_open(scratch, path, mode)`], [*a scratch allocator* is needed (for path conversion)],
-  [writing, reading], [`_write`/`_write_all`, `_read`], [amount requested ≠ amount handled],
-  [nailing it down], [`proven_fs_sync(file)`], [closing alone does not leave it on the disk],
-  [closing], [`proven_fs_close(file)`], [it has a return value — there is something to check],
-)
+=== The whole grammar after the colon
 
-*The mode weaves bit flags.* Instead of a string like the standard `fopen`'s `"w+b"`,
-named values are joined with `|`.
+The order of the specifiers is fixed, and every one may be omitted.
 
-#dtable(
-  columns: 2,
-  [*flag*], [*meaning*],
-  [`PROVEN_FS_READ`], [reading],
-  [`PROVEN_FS_WRITE`], [writing],
-  [`PROVEN_FS_APPEND`], [appending at the end],
-  [`PROVEN_FS_CREATE`], [create it if absent],
-  [`PROVEN_FS_TRUNC`], [empty it if present],
-  [`PROVEN_FS_CREATE_NEW`], [★ *fail if it already exists* — creating anew without a race],
-)
-
-Two things are better than string modes. First, *the combination is visible* — there is
-no need to memorise what `"a+"` exactly is. Second, things absent from string modes,
-such as `CREATE_NEW`, can be expressed. When making a lock file or a temporary file,
-"fail if it already exists" is the only road that blocks a race condition (recall
-chapter 56's `tmpnam` story).
-
-*Handles travel by value.* That the functions take a `proven_file_t` by value rather
-than by pointer is the mark of it, because what is inside is about one integer
-descriptor. So the discipline of not using that value again after closing is still a
-human's part.
-
-=== The convenience functions that read and write in one go
-
-In half the cases in practice the file is small and may be handled whole. Then opening,
-reading and closing need not be woven by hand.
+#align(center, block(inset: (y: 4pt))[
+  `{:` `[fill][align]` `[sign]` `[#]` `[0]` `[width]` `[.precision]` `[type]` `}`
+])
 
 #dtable(
   columns: 3,
-  [*function*], [*what it does*], [*caution*],
-  [`proven_fs_read_all(alloc, path)`], [the whole file as bytes], [a large file eats memory],
-  [`proven_fs_read_all_u8str(alloc, path)`], [the whole file as a string], [the same. it does not check the encoding],
-  [`proven_fs_write_file(scratch, path, data)`], [writing it whole], [die in the middle and a half-written file is left],
-  [`proven_fs_write_file_atomic(...)`], [write to a temporary and swap], [★ no half-written file is left],
-  [`proven_fs_write_file_durable(...)`], [atomic + `sync`], [it survives a power cut. the slowest],
+  [*place*], [*what may be written*], [*meaning*],
+  [fill], [any character], [the character filling the spare places. it comes *before* the alignment symbol],
+  [align], [`<` `>` `^`], [left, right, centre. the default is right for numbers, left otherwise],
+  [sign], [`+`], [attach a sign to positives too],
+  [alternative form], [`#`], [attach the `0x`, `0b`, `0` prefix],
+  [zero fill], [`0`], [put before the width to fill with zeros (it goes after the sign)],
+  [width], [a number], [the minimum number of characters. it does not cut if over],
+  [precision], [`.number`], [decimal places for reals],
+  [type], [`x X o b f e g`], [hexadecimal (lower, upper), octal, binary, fixed, exponential, shortest],
 )
 
-The difference between the last three rows matters in practice. Code that overwrites a
-configuration file or saved data, *if it dies in the middle, leaves a file that is
-neither the original nor the new one*, and the standard practice that prevents it is
-"write to a temporary file and rename" (renaming is atomic within the same file system).
-`_atomic` does that work for you, and `_durable` hangs a `sync` on it as well so that it
-survives a power cut.
+They correspond to chapter 55's `printf` formats but differ in three ways. *The
+alignment symbol comes first* (`{:<10}` instead of `%-10s`), *the fill character can be
+chosen* (`{:*>8}`), and *there is no type letter* (`%d`'s `d` has gone — the type comes
+from the argument).
 
-#demo("examples-en/ch77/fileio.c")
+#demo("examples-en/ch77/spec.c")
 
-Several things stand out.
+The example shows this table in the flesh, a line at a time. A few points.
 
-*The path is a view too.* `proven_u8str_view_from_cstr("...")` — wherever the string
-came from, it is handled as a pointer and a length (chapter 74).
+*① The fill is written before the alignment.* `{:*>8}` is "fill with asterisks, align
+right". Swap the order (`{:>*8}`) and it does not mean anything.
 
-*Opening needs an allocator.* The signature's first argument is a `scratch` allocator,
-because temporary memory may be needed to turn the path into the form the operating
-system requires. Chapter 73's rule is honestly kept here too — *if it can allocate, it
-takes an allocator*.
+*② The 0 of `{:08}` goes after the sign.* Zero-fill `-42` to a width of 8 and it is
+`-0000042`, not `000000-42` — the same rule as `%08d` seen in chapter 55.
 
-*What is read becomes a view.* Bind the buffer and the number of bytes read and from
-then on all of chapter 74's tools can be used. That is what the example used to divide
-the lines, and copying never happened once.
+*③ The default notation for reals differs from `printf`'s.* Very large and very small
+numbers are printed by `printf("%f")` as `100000000000000000000.000000` or `0.000000`,
+while this library uses exponential notation, `1.000000e+20` and `5.000000e-07`. The
+side that *does not lose information* was taken as the default, and it is a difference
+to know before comparing two logs. If fixed notation is needed, force it with `{:f}`.
 
-#antipattern[
-  Trusting `size` and assuming that much was read
-][
-  ```c
-  proven_result_size_t sz = proven_fs_size(f);
-  proven_byte_t *buf = malloc(sz.value);
-  (void)proven_fs_read(f, (proven_mem_mut_t){ buf, sz.value });
-  process(buf, sz.value);      /* was that much really read? */
-  ```
-  A file's size and *the amount this read brought* are different. From pipes,
-  terminals and networks it comes a little at a time, and even a file may end in the
-  middle. The number `read` returned must be used, and that is why this library returns
-  the read result as a bundle. The fact chapter 25 stated — "input is not a keyboard
-  but a stream" — becomes a practical rule here.
-]
+*④ `{:g}` gives the shortest notation that round-trips.* That `3.14159` comes out as it
+stands is that result — the notation keeping the "read it back and it is the same value"
+property seen in chapter 8.
 
-== Streams — reading and writing with a buffer
+=== Printing a type the library has never heard of
 
-System calls are expensive. Call `write` one byte at a time and that cost accumulates
-as it stands. So standard C's `FILE*` kept a buffer (chapter 10's story of line
-buffering), and proven puts a *stream* in the same place — differing in two ways.
+What can go into `{}` is only the types in the `_Generic` list. Then how is my own
+struct printed — *give it one function that draws.*
 
-- *The caller gives the buffer.* The stream does not allocate in secret.
-- *The failure of a flush comes as a value.* It is not quietly swallowed on closing.
+```c
+static proven_err_t render_frac(proven_fmt_sink_t out, const void *obj)
+{
+    const frac_t *f = obj;
+    /* ... make it ... */
+    return proven_fmt_put(out, view);      /* and send it out */
+}
 
-These two aim at the same problem. In buffered writing the real failure shows itself
-not in `write` but in the *flush*, and missing that failure creates data that "was
-believed successful but is not on the disk". It is also the place databases and file
-systems are most careful about (the reason `proven_fs_sync` exists separately).
+proven_arg_t a = proven_arg_custom(&half, render_frac);
+proven_println("{} and |{:>8}|", PROVEN_ARG(a), PROVEN_ARG(a));
+```
 
-== Time — two different clocks
+`proven_fmt_sink_t` is "a hole that receives bytes", and `proven_fmt_put` sends them
+out. As the example's output shows, *width and alignment apply to a user type too*.
 
-Two different things are mixed together in time.
+There is one contract to know here. *The drawing function is called twice per `{}`* —
+once with a counting sink (because the width and alignment must be calculated) and once
+for real. So this function must be *deterministic* and must not mutate its target. If
+the two results disagree the library returns `INVALID_ARG` rather than print a misaligned
+field. It is the price paid for aligning without allocating.
 
-- *Calendar time* — a time a human reads, like "5 August 2026, 09:00". It is used for
-  showing to users and leaving in records. Time zones, leap seconds and summer time are
-  entangled in it.
-- *Monotonic time* — a scale that does not go backwards. It is used for measuring
-  *elapsed time*.
+#demo("examples-en/ch77/fmt.c")
 
-Mix the two and you get the famous bug. Measure elapsed time with a calendar clock and
-the moment the system adjusts the time or summer time changes, *a negative elapsed
-time* comes out. Let that value into a timeout calculation and it waits forever or
-expires at once.
+This example formats not to the screen but *into a string* — the `proven_println`
+seen in chapter 72 is the edition connecting this machinery to standard output. Three
+things can be pointed out.
 
-Date formatting uses the format syntax seen in chapter 53 as it is — named
-placeholders with width and fill specified, as in `"{year}-{month:0>2}-{day:0>2}"`.
-Unlike `strftime`'s `%Y-%m-%d`, the difference is that *there is no need to memorise
-what symbol means what*.
+*First, formatting too can fail.* `example.org:8080` cannot go into an 8-byte vessel,
+so it was refused. Chapter 76's principle stands here too — rather than truncate, it
+returns a failure. The opposite default from `snprintf`.
 
-#misconception[
-  "Time is just a number, so adding and subtracting is fine"
-][
-  Not in calendar time. A day is not always 86400 seconds (a summer-time transition
-  day is 23 or 25 hours), the lengths of months differ, and time zones change by
-  political decision. "A month later" is not arithmetic but a calendar rule. The
-  difference of *monotonic* times, on the other hand, may be handled as a plain number
-  — that is one more reason to use a monotonic clock for measuring elapsed time.
-]
+*Second, the format specification syntax is a little different.* The `>` of `{:>10}`
+is right alignment, `{:<10}` left alignment, `{:.3}` three decimal places. They
+correspond to chapter 55's `%10s`, `%-10s` and `%.3f`, differing in that *there is no
+type letter*.
 
-== Random numbers — the purpose settles the thing
+*Third, it rounds but keeps the number of digits.* `load=0.42` is what `{:.2}` made.
 
-Few tools are as much "the same name, different demands" as random numbers. The
-library does not hide this but divides it into three.
+=== Which formatting function to use
 
-#demo("examples-en/ch77/rng.c")
+Chapter 76's three kinds are here in formatting too. Organised in a table there is
+nothing to choose over.
 
-*Reproducible random numbers* (`proven_xoshiro256ss_t`) are for simulation, games and
-testing. The same seed gives the same sequence — the very reason the example's two
-lines are identical, and also the property that lets a failed test be reproduced. They
-are fast but *predictable*, so they are never used for secrets.
+#dtable(
+  columns: 4,
+  [*function*], [*when short*], [*allocator*], [*where it is used*],
+  [`proven_println(fmt, …)`], [—], [not needed], [one line to the screen],
+  [`proven_print(fmt, …)`], [—], [not needed], [without a line break],
+  [`proven_eprint(fmt, …)`], [—], [not needed], [to standard error],
+  [`proven_u8str_append_fmt`], [refuses (the original stands)], [not needed], [a fixed buffer. the default],
+  [`proven_u8str_append_fmt_trunc`], [as much as fits], [not needed], [places that may be cut, such as a log line],
+  [`proven_u8str_append_fmt_grow`], [grows], [needed], [when the length is unknown],
+  [`proven_u8str_append_fmt_with_scratch`], [grows], [needed (+ scratch)], [when the temporary memory is to be given separately],
+)
 
-*Random numbers for secrets* (`proven_random_bytes`) come from the operating system's
-cryptographic source of randomness. They are used for values *an attacker must not
-guess* — keys, tokens, session identifiers.
+All of them return a `proven_fmt_result_t`, and this bundle has two more numbers beside
+`err`.
 
-The third is the compromise between the two, `proven_chacha_rng_t`, which takes a seed
-once from the OS source of randomness and then continues a cryptographically secure
-sequence quickly.
+```c
+typedef struct {
+    proven_err_t  err;
+    proven_size_t written;    /* the number of bytes actually written */
+    proven_size_t required;   /* the number of bytes needed to write it all */
+} proven_fmt_result_t;
+```
 
-#realcase[
-  The accidents predictable random numbers made
-][
-  Accidents breaking this distinction have happened repeatedly. An online card game
-  whose hands were predicted because it used the time as a seed, a case where session
-  identifiers made with a fast random generator let one into somebody else's account,
-  and, representatively, the 2008 incident in which Debian's OpenSSL patch deleted the
-  entropy-gathering code so that *the number of generable keys shrank to a few tens of
-  thousands*. The last required every key already made to be discarded. The lesson is
-  summed up in one line of the library's documentation — *random numbers for secrets
-  come only from a cryptographic source of randomness.*
-]
+`required` is the same information as `snprintf`'s return value seen in chapter 55. The
+difference is *that it sits in a named slot* — with `snprintf` a human had to remember
+the convention "if the return value is at least the buffer size it was truncated", while
+here `err` already says that and `required` answers "so how much was needed". In the
+output of the example `spec.c`, `written=7 required=10` is that use — how much to enlarge
+the buffer by is known as it stands.
 
 #qa[
-  What becomes of random numbers for secrets if there is no operating system?
+  What exactly does `PROVEN_ARG` do?
 ][
-  They cannot be obtained, so `proven_random_bytes` *returns a falsehood* — and this is
-  an important design decision. Many libraries slip back to the time or an address
-  value in this situation, and then you have the worst state of "believed safe but
-  predictable". This library does not fall back; it declares failure. If the board has a
-  real source of entropy (a hardware random number generator) it can be registered and
-  used. *Rather than quietly give something bad, say there is none* — another face of
-  the principle met continually in this part.
+  It chooses on the argument's type with `_Generic` and makes a small struct with a
+  tag fitting that type attached. Carried over in concept alone it has this shape.
+
+  ```c
+  #define PROVEN_ARG(x) _Generic((x),          \
+      int:          proven_arg_i32,            \
+      double:       proven_arg_f64,            \
+      const char *: proven_arg_cstr,           \
+      bool:         proven_arg_bool            \
+      /* ... */ )(x)
+  ```
+
+  `_Generic` chooses the branch *at compile time*, so there is no run-time cost of
+  determining the type. And passing a type not in the list is *a compile error* — the
+  exact opposite of chapter 55's `printf`, which accepted anything.
 ]
 
-== Memory mapping
+#antipattern[
+  Passing a value without `PROVEN_ARG`
+][
+  ```c
+  proven_println("count={}", count);        /* it does not compile */
+  ```
+  A raw value rather than a bundle was passed, so the types do not match and the build
+  fails. It can feel tiresome, but this is the point of the design — *forget to wrap
+  it and the program is not made.* Herein lies the difference from `printf`, which
+  compiles even when you forget and goes strange during execution.
+]
 
-There is one more way of reading a file. Hanging the file whole *in the address space*
-and accessing it with a pointer — `proven_mmap_*` is that window. It is advantageous
-when reading a large file by roaming randomly over it, and it is used when several
-processes share the same file.
+#misconception[
+  "The placeholder has no type, so it must be slow"
+][
+  The opposite. `printf` interprets the format string letter by letter *during
+  execution* and decides what to take out next. `{}` scans the format too, but each
+  argument's type is already settled by its tag, so there is no guessing. Above all,
+  there being no UB from type mismatch, no defensive code is needed either. The
+  difference in cost is mostly negligible, and this library's real-number formatting
+  has rather taken more care over accuracy — reproducing exactly the rounding rules of
+  `%f` seen in chapter 55 is the more awkward task.
+]
 
-The price is clear too. If the file is truncated while the mapped region is being
-touched, the program can receive a signal and die, and portability is lower than the
-file API's. So this tool is not "what is used by default" but "what is chosen when
-there is a reason".
+== The opposite direction — the scanner
+
+Parsing is formatting's mirror, but the character of failure differs. Formatting
+fails only when the vessel is too small, while parsing fails *whenever the input
+differs from expectation*. And as seen in chapter 55, `sscanf` tells only "how many
+succeeded" — it does not say where or why it stopped.
+
+#idx("scanner")proven's scanner is an object with a cursor. It is placed over a view
+and reads onward one at a time. Each read gives its result as a bundle.
+
+```c
+typedef struct {
+    proven_u8str_view_t view;     /* the input being read (borrowed) */
+    proven_size_t       cursor;   /* how far it has read */
+} proven_scan_t;
+```
+
+That there are only two slots says two things. First, *the scanner does not own the
+input* — it is only a cursor laid over a view, so making it allocates nothing and there
+is no destroying. Second, *the cursor can be saved and restored by hand*. Copy the whole
+struct, and on failure put it back, so a parser that "looks a few characters ahead to
+judge" is not hard to write.
+
+```c
+proven_scan_t save = sc;         /* a mark to go back to */
+proven_result_i64_t n = proven_scan_i64(&sc);
+if (!proven_is_ok(n.err)) sc = save;   /* it failed, so let it never have happened */
+```
+
+There are six reading functions, and all of them push the cursor forward.
+
+#dtable(
+  columns: 3,
+  [*function*], [*what it reads*], [*what it returns*],
+  [`proven_scan_i64(&sc)`], [a signed integer], [`{err, val}`],
+  [`proven_scan_u64(&sc)`], [an unsigned integer], [`{err, val}`],
+  [`proven_scan_f64(&sc)`], [a real], [`{err, val}`],
+  [`proven_scan_str(&sc)`], [a word up to whitespace], [`{err, view}` — *a view into the original*],
+  [`proven_scan_skip_whitespace(&sc)`], [skips whitespace], [—],
+  [`proven_scan_skip_until(&sc, t)`], [skips until `t` appears], [`err` (the cursor stands if absent)],
+)
+
+That `proven_scan_str` *returns a view without copying* matters — chapter 76's "text
+handling without copying" holds in parsing too. In exchange that view is valid only
+while the original input is alive (chapter 74).
+
+#demo("examples-en/ch77/lines.c")
+
+That three inputs divided into three branches is the heart of it. `bob thirty` had
+its name read but stopped at the age, and the line of whitespace only failed from the
+name. With `sscanf` both would have been lumped together as "one item succeeded" or
+"0".
+
+Having a cursor has another advantage. *How far it has read* can be known, so the
+remaining part can be handled another way or the position can be carried in an error
+message. It is the answer to the problem chapter 25 named when parsing a line with
+`sscanf`: "you cannot know how many characters were consumed."
+
+#qa[
+  Does the scanner have a format string too?
+][
+  It does — it is used as
+  `proven_scan_fmt_cursor(&sc, "{}:{}", PROVEN_SCAN_ARG(&host),
+  PROVEN_SCAN_ARG(&port))`. It is symmetrical with formatting, and the arguments are
+  wrapped addresses of the places to hold the results. But there is one caution the
+  header states honestly — if it fails in the middle of the format, *the values filled
+  in up to that point have already been changed*. The failure atomicity learned in
+  chapter 73 is not guaranteed here, so if it is really needed the cursor and the
+  destinations must be saved beforehand and restored. Writing the contract in the
+  documentation rather than hiding it is this library's way.
+]
+
+#realcase[
+  What happens when a parser is lenient
+][
+  There is a problem that has come to light repeatedly in the handling of HTTP
+  requests. If a server and a proxy interpret the same request *slightly differently*,
+  an attacker can slip a second request in through that gap (request smuggling). The
+  cause was differences such as one side generously letting odd whitespace in a header
+  pass while the other refused strictly. The lesson is exactly the same as
+  chapter 76's story of encodings — *do not read ambiguous input as something mended;
+  refuse it.* A parser that returns failure as a value is also a parser equipped with
+  the means to express that refusal.
+]
 
 #recap[
-  The outside world in summary.
+  Formatting and parsing in summary.
 
   #dtable(
   columns: 3,
-    [*what it does*], [*API*], [*to beware of*],
-    [open and close], [`proven_fs_open/close`], [needs a scratch allocator],
-    [reading], [`proven_fs_read`], [amount requested ≠ amount read],
-    [writing], [`proven_fs_write` / `_write_all`], [partial writes],
-    [nailing it to the disk], [`proven_fs_sync`], [flush ≠ sync],
-    [buffered I/O], [`proven_stream_*`], [the caller gives the buffer],
-    [the current time], [`proven_time_now_datetime`], [not used for measuring elapsed time],
-    [date formatting], [`proven_time_u8_fmt`], [named placeholders such as `{year}`],
-    [reproducible random], [`proven_xoshiro256ss_*`], [not used for secrets],
-    [random for secrets], [`proven_random_bytes`], [a falsehood if absent — it does not fall back],
-    [memory mapping], [`proven_mmap_*`], [only when there is a reason],
+    [*what it does*], [*API*], [*note*],
+    [one line to the screen], [`proven_println(fmt, ARG…)`], [returns an error but does not compel],
+    [format into a string], [`proven_u8str_append_fmt(&s, …)`], [refuses if short],
+    [permitting truncation], [`…_append_fmt_trunc`], [states the intent in the name],
+    [growing as it goes], [`…_append_fmt_grow(alloc, …)`], [needs an allocator],
+    [wrapping an argument], [`PROVEN_ARG(x)`], [`_Generic` — a type not listed is a compile error],
+    [starting a scanner], [`proven_scan_init(view)`], [an object with a cursor],
+    [reading one at a time], [`proven_scan_i64/f64/str`], [result and failure as a bundle],
+    [reading by format], [`proven_scan_fmt_cursor(…)`], [beware partial changes on mid-way failure],
 )
 ]
 
-What remains now is the boundaries — the way of running several things overlapped, and
-the place with no operating system at all. The last chapter closes this part.
+The vocabulary for holding, making and reading back strings is equipped. Next are the
+tools that *hold many* — growing arrays, lists, ring buffers, hash maps, and the
+algorithms with "a guarantee even in the worst case" foretold in chapter 71.

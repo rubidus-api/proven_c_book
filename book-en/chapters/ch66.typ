@@ -1,279 +1,279 @@
 #import "../../book/lib.typ": *
 
-= From macro to keyword — `bool`, `nullptr` and their companions
+= Operations that do not split — `<stdatomic.h>`
 
 #prereq(
-  ([chapter 63, What the new standards added, and the `*_s` controversy], [what the standards added]),
-  ([chapter 29, Booleans and comparison], [the type of true and false]),
+  ([chapter 11, Memory divides], [the cache and the layers of memory]),
+  ([chapter 40, Lifetime and storage duration], [lifetime and sharing]),
 )
 
 #deepqa[
-  Chapter 63 passed over in a table only that C23 made `<stdbool.h>` effectively
-  unnecessary and that `nullptr` came in. But why put into the language what worked
-  fine as macros — is it not merely a change of name?
+  Chapter 12 said the CPU does several things in one beat and even executes out of
+  order, and chapter 11 said each core carries its own cache. Then if two strands
+  increase the same variable by 1 at once — is the result 2?
 ][
-  It is not merely a change of name. A macro is *the preprocessor changing letters*
-  and so has neither type nor scope, and the user can `#undef` it or define it again
-  with another meaning. A keyword is *a grammatical element of the language*, so it
-  has a type, can be diagnosed, and nobody can redefine it. Where that difference
-  really prevents accidents is this chapter's content — and `nullptr` in particular
-  is not a renaming but *a new type*.
+  It may not be. `x = x + 1` is not one step to the machine but *three* (read, add,
+  write), and if two strands interleave these three steps they read the same value
+  and write the same value — one increment vanishes whole. On top of that, caches
+  differ per core, so the lag of "written but not visible to the other" is
+  compounded. This chapter's first example actually counts that loss out.
 ]
 
 #organizer[
-#idx("bool")  We treat the most conspicuous change C23 made to the language. Why
-#idx("nullptr")  things long imitated with macros in headers — `bool`, `true`,
-  `false`, `static_assert`, `alignas`, `thread_local` — rose to being keywords,
-  what `nullptr` was newly made to prevent, what rules and limits come with them,
-  and in what order to move existing code over.
+#idx("atomic operations")  We see what happens when several strands touch the same
+  memory at once, and learn the tool C11 brought into that place — atomic types and
+  operations. Why a data race is *outside the contract* rather than "slow", why
+#idx("data race")  `volatile` is not the answer, and when to touch and when to
+  leave alone the difficult handle called the memory order.
 ]
 
 #chapter-questions()
 
-== What was promoted
+== The lost update — confirmed with the eyes
 
-#demo("examples-en/ch66/keywords.c")
+#demo("examples-en/ch66/atomic.c")
 
-We organise it in one table. On the left is the shape up to C17, on the right C23.
+Four strands turned the same loop 200,000 times each. The expected value is
+800,000, but the unprotected `long` did not even get near it. The vanished share
+differs on every run — and this non-determinism is precisely the character of this
+class of bug. *A loss that does not reproduce.*
 
-#dtable(
-  columns: 3,
-  [*before*], [*C23*], [*the header it required*],
-  [`_Bool` + the `bool` macro], [the keyword `bool`], [`<stdbool.h>`],
-  [the `true`, `false` macros (= 1, 0)], [the keywords `true`, `false` (of type bool)], [`<stdbool.h>`],
-  [`_Static_assert`], [`static_assert`], [`<assert.h>`],
-  [`_Alignas`, `_Alignof`], [`alignas`, `alignof`], [`<stdalign.h>`],
-  [`_Thread_local`], [`thread_local`], [`<threads.h>`],
-  [the `NULL` macro], [`nullptr` (a new type)], [`<stddef.h>` and others],
-  [(none)], [`constexpr`], [—],
-  [(a GCC extension)], [`typeof`, `typeof_unqual`], [—],
-)
-
-The headers still exist and including them is harmless — the principle that the
-standard does not break old code (chapter 56's `gets` story) was kept here too. But
-newly written code has no reason to include them.
-
-== `bool` — what does it prevent
-
-C long had no true-false type. It was imitated with `int`, and every project had
-`typedef int BOOL;` and `#define TRUE 1` rolling about. C99 brought in `_Bool` and
-`<stdbool.h>` attached a pretty name to it, and C23 raised that to a keyword.
-
-What differs between `bool` and `int` is not the name but *the conversion rule*.
-
-- *Every nonzero value is narrowed to 1.* The example's `bool b = 42;` printing `1`
-  is that. `int i = 42` is 42 as it stands.
-- So *comparing two truths is true.* The classic bug of the `int`-imitation days
-  vanishes here.
-
-#antipattern[
-  Comparing truth with `1`
-][
-  ```c
-  int a = isupper('A');      /* any nonzero value, depending on the implementation */
-  int b = isupper('B');
-  if (a == b) { … }          /* both are true, yet the values may differ and it be false */
-  if (a == 1) { … }          /* worse */
-  ```
-  As seen in chapter 59, the classification functions of `<ctype.h>` promise only
-  "a nonzero value". To compare truths, narrow to *truth values* rather than
-  values.
-  ```c
-  bool a = isupper('A');     /* normalised to 1 here */
-  bool b = isupper('B');
-  if (a == b) { … }          /* safe */
-  ```
-]
-
-#qa[
-  What format is used when printing a `bool` with `printf`?
-][
-  There is no dedicated format. A `bool` goes over as a variadic argument and is
-  promoted to `int` (chapter 50's promotion rule), so `%d` is used — the example did
-  so. Printing words a human can read with `%s` and the ternary operator is a
-  common practice too.
-
-  The place to beware is the `scanf` side. There being no format that takes a
-  `bool` directly, it must be received as an `int` and moved. And `sizeof(bool)` is
-  usually 1, but *the standard does not promise it is 1* — do not assume this value
-  when calculating a struct layout (chapter 41).
-]
-
-Two remaining traps of `bool`. First, using `bool` in a *bit-field* works fine even
-with a width of 1, but the layout is implementation-defined (chapter 41). Second,
-an array of `bool` uses one byte per element — it is not compressed into bits like
-C++'s `vector<bool>`. To compress into bits, write the masks by hand (chapter 27)
-or use the tools of `<stdbit.h>`.
-
-== `nullptr` — not a renaming
-
-Chapter 6 distinguished the null triplets. `NULL` is *a macro*, and its definition
-is `0` or `((void *)0)` depending on the implementation. This freedom bore real
-accidents.
-
-*Accident 1 — the size goes out of step in variadic arguments.* A variadic function
-does not know the arguments' types and so reads the bits as they came (chapter 50).
-On an implementation where `NULL` is defined as `0`, writing
-`execl("/bin/ls", "ls", NULL)` sends an *`int` 0*, and on a machine where pointers
-are 8 bytes the upper 4 bytes remain as rubbish. The function, failing to recognise
-the end of the list, runs away. That is why old code had to write `(char *)0`.
-`nullptr` is always of pointer size, so it does not have this problem.
-
-*Accident 2 — whether it is an integer or a pointer blurs.* On an implementation
-where `NULL` is `0`, `foo(NULL)` is indistinguishable from passing the integer 0.
-In code that branches by type with `_Generic` (chapter 50), this ambiguity becomes
-an accident as it stands. `nullptr` has *a type of its own* called `nullptr_t`, so
-the branch is clear.
-
-*Accident 3 — going out of step with C++.* C++ brought in `nullptr` first, in 2011,
-for the same reasons. There were places in headers crossing the two languages
-(chapter 48) where `NULL`'s meaning divided, and C23's adopting the same word
-narrowed that gap.
-
-#dtable(
-  columns: 3,
-  [], [`NULL`], [`nullptr`],
-  [identity], [a macro (implementation-defined)], [a keyword, of type `nullptr_t`],
-  [variadic arguments], [dangerous (size goes out of step)], [safe],
-  [`_Generic` branching], [ambiguous], [clear],
-  [comparing with an integer], [`NULL == 0` may work], [not possible — diagnosed],
-  [conversion to `bool`], [—], [possible (false)],
-  [redefinition], [possible (`#undef`)], [not possible],
-)
-
-A few rules to pin down. `nullptr` converts to *any object pointer type* and to a
-function pointer too (chapter 51). Two `nullptr`s, and a `nullptr` and any pointer,
-can be compared with `==` and `!=`. Converted to `bool` it is false. But *it cannot
-be compared with an integer* and does not convert to an integer — `nullptr == 0` is
-subject to diagnosis. The language has, in effect, cut the old intuition that "a
-null pointer is the same thing as the integer 0".
+The atomic variable's side is exactly 800,000 every time. Because
+`atomic_fetch_add` performs "read-add-write" as *one lump that cannot be split*.
+The name atom means just that — that which is not split further.
 
 #misconception[
-  "Using `nullptr` reduces null-dereference accidents"
+  "A race condition is a probabilistic performance problem where the value is
+  occasionally off"
 ][
-  It is a different kind of problem. What `nullptr` prevents is accidents coming
-  from *the way null is written* (size going out of step, type ambiguity), not
-  accidents of dereferencing null. Confirming whether a pointer is null is still a
-  human's part (chapter 34), and reducing that burden is the part not of the
-  language but of design — data structures that do not make nulls in the first
-  place, conventions that report failure through the return value (Part XII).
+  Wrong in two layers. First, it is not that the value goes off but that *the
+  contract breaks*. The standard from C11 onward settles it thus — if two strands
+  touch the same memory at once, at least one of them writing, and it is neither
+  atomic nor ordered, that is a *data race* and the whole program is undefined
+  behaviour (chapter 48). It means there is no guarantee that it ends at the level
+  of "one value being wrong".
+
+  Second, the compiler optimises on this premise. Assuming there is no race, it
+  puts the variable in a register, and then however much the other side changes the
+  value this loop *sees the old value forever*. This really is the common identity
+  of the infinite loop that "works in a debug build and hangs in release"
+  (chapter 17's release-only bug is replayed here).
 ]
 
-== The remaining promotions and the new words
+== Why `volatile` is not the answer
 
-*`static_assert`* — checks a condition at compile time and, if it is broken,
-*translation fails*. The example's first line is that. It differs in character from
-the run-time `assert` (chapter 62) — this one is a tool asking "does this code hold
-on this machine", used for pinning assumptions about type sizes, alignment and
-struct layout into the code. In C23 the message may be omitted.
+In code that has long used C one often sees the practice of exchanging signals
+between strands with `volatile int flag;`. It is a wrong practice now. What
+`volatile` promises is one thing only — *the compiler will not remove or merge
+these accesses*. As will be seen in chapter 48, its purpose was hardware registers
+(places whose value changes from outside).
 
-*`alignas`, `alignof`* — the words for handling in the language the alignment seen
-in chapter 6. They are used to lay things out to fit a cache line (chapter 11's
-avoidance of false sharing) or to meet an alignment the hardware requires.
+There are two things `volatile` does not promise. *Atomicity* — the `x++` of a
+`volatile long x;` is still three steps and splits. And *ordering and visibility* —
+it does not prevent the CPU from changing the order of writes or from being late to
+show them to another core.
 
-*`thread_local`* — makes a variable that exists separately per strand. It is a tool
-for avoiding the problem of sharing seen in chapter 64 *by not sharing*. `errno` is
-in fact implemented this way (chapter 62).
+#dtable(
+  columns: 4,
+  [], [*not split*], [*visibility between cores*], [*blocks reordering*],
+  [`volatile`], [no], [no], [no (against other accesses)],
+  [`_Atomic`], [yes], [yes], [yes (as much as the chosen order)],
+  [a mutex], [yes (the whole region)], [yes], [yes],
+)
 
-*`constexpr`* — as seen in the example, it makes a real constant. A `const int` is
-not a constant *expression* and so could not be used for an array size or a `case`
-label (chapter 23), and that place was long the part of `#define`. `constexpr`
-reclaims that place with a typed name — this chapter's theme of macros being
-promoted into the language is repeated here too.
+Summed up: *`volatile` for hardware registers, atomic types or mutexes for sharing
+between strands.* Java's and C\#'s `volatile` share only the name and differ in
+meaning (there it really does guarantee visibility), so bringing the habits of
+those languages into C is a common passage to accidents.
 
-*`typeof`* — takes an expression's type down as it is. What had been used as a GCC
-extension for over thirty years became standard. It is especially handy when
-declaring a temporary variable inside a macro.
+== Atomic types and operations
 
-#realcase[
-  The story of the underscored names — why `_Bool` looks like that
+Using them is simple. Attach `_Atomic` before the type, or use the names the header
+gives (`atomic_int`, `atomic_long`, `atomic_bool`, `atomic_size_t` …).
+
+```c
+#include <stdatomic.h>
+atomic_int  counter = 0;      /* = _Atomic int */
+_Atomic long total;
+```
+
+The operations are called as functions (or macros of those names). Using the
+ordinary operators (`++`, `+=`) also behaves atomically, but *the fact of being
+atomic is not visible in the code* and so is easy for a reader to miss, which is
+why the explicit functions are recommended.
+
+#dtable(
+  columns: 3,
+  [*operation*], [*what it does*], [*where it is used*],
+  [`atomic_load`], [read], [seeing the current value],
+  [`atomic_store`], [write], [setting a value],
+  [`atomic_fetch_add`, `_sub`], [add and return *the previous value*], [counters and statistics],
+  [`atomic_fetch_or`, `_and`, `_xor`], [bit manipulation], [sets of flags],
+  [`atomic_exchange`], [swap and return the previous value], [replacing in place],
+  [`atomic_compare_exchange_strong`], [change only if equal to the expected value (CAS)], [lock-free data structures],
+  [`atomic_compare_exchange_weak`], [the same, but it may fail in vain], [inside a loop],
+  [`atomic_flag_test_and_set`], [the most primitive test-and-set], [spinlocks],
+)
+
+That `fetch_add` returns *the previous value* is a place often confused. To obtain
+"which number this is", use the return value; to know "how much it is now", it is
+the return value plus the increment, or a separate `atomic_load` — and the latter
+may change again in the meantime.
+
+#antipattern[
+  Believing that several atomic operations make their bundle atomic too
 ][
-  Why was it not called `bool` from the start? Because if the standard makes a new
-  keyword, all existing code already using that word as a name breaks. The world had
-  mountains of code containing `typedef int bool;` or `struct bool { … };`.
-
-  So the standard uses *a name space reserved so that users cannot use it* — names
-  beginning with one underscore and a capital letter. `_Bool`, `_Static_assert`,
-  `_Alignas`, `_Atomic` (chapter 64) and `_Generic` are all products of this rule.
-  And headers laid pretty names on top as macros, so that *only those who included
-  them* used the short names. Old code that did not include them breaks in nothing.
-
-  C23's promotion is the judgement that "enough time has passed that the short names
-  may now be used". Even so the underscored names are still alive, and the two names
-  point at the same thing. It is a case where the standard's habit of not breaking
-  old code remains even in the names — the same character as chapter 56's `gets`
-  story, and a decision in the opposite direction.
-]
-
-== How to move existing code over
-
-There is no need to change it all at once. Fix an order and there is almost no
-risk.
-
-+ *First settle the compiler edition.* Check whether `-std=c23` (or `c2x`) can be
-  used, and whether it works on all the target platforms. If even one does not, go
-  to the shell strategy of number 5 below.
-+ *Clear away your own `BOOL`, `TRUE`, `FALSE`.* Delete the project header's
-  `typedef int BOOL;` and change it to `bool`. While doing so, look together for
-  *places that were comparing values* (the counterexample above) — it is rather a
-  place where bugs come to light.
-+ *Change `NULL` to `nullptr`.* Mechanical substitution finishes most of it, but
-  check two places by hand. Variadic calls (a real bug is mended here), and code
-  that used `NULL` like the integer 0 (a compile error arises here — which is a good
-  thing).
-+ *Take `_Static_assert`, `_Alignas` and `_Thread_local` to the names without
-  underscores.* They are different notations for the same thing, so there is no
-  risk. Then tidy away the now unnecessary `<stdbool.h>` and `<stdalign.h>`
-  includes.
-+ *If old editions must be supported too, put the shells in one place.* The same as
-  what was done in chapter 65.
-
   ```c
-  #if __STDC_VERSION__ < 202311L
-  #  include <stdbool.h>
-  #  define nullptr ((void *)0)      /* not a complete substitute — see the caution below */
-  #  define static_assert _Static_assert
-  #endif
+  if (atomic_load(&count) < LIMIT)      /* ① read and */
+      atomic_fetch_add(&count, 1);      /* ② add — somebody cuts in between */
   ```
-
-  This `nullptr` shell *cannot imitate the type as well.* In code doing `_Generic`
-  branching or type checking it may behave differently from expectations, so if
-  there is such code it is right to raise the edition rather than use the shell.
+  If another strand raises the value between ① and ②, the limit is exceeded.
+  *Atomicity is a property of one operation, not of a region.* To protect a region,
+  bind it with a CAS loop or use a mutex.
+  ```c
+  int cur = atomic_load(&count);
+  do {
+      if (cur >= LIMIT) break;                 /* limit check and update as one lump */
+  } while (!atomic_compare_exchange_weak(&count, &cur, cur + 1));
+  ```
+  That on failure *the current value comes back held in `cur`* is the heart of this
+  idiom. So there is no need to read again inside the loop.
+]
 
 #qa[
-  For a project that must keep compiling with an old standard, is this chapter
-  somebody else's story?
+  What differs between `compare_exchange`'s strong and weak? Why is there a
+  separate edition that "fails in vain"?
 ][
-  No — two things remain. First, *the ability to read*. New code and libraries have
-  begun using these words, so when a `constexpr` or a `nullptr` appears you must
-  know its meaning. Second, *what to mend now*. Places passing `NULL` into variadic
-  arguments with the cast left out, places comparing truth with `== 1`, places
-  making constants with `#define` and losing the type — these are already dangerous
-  under the old standard too. C23's words merely have the language block that danger
-  for you; the danger itself was there all along.
+  Some CPUs (the ARM family and others) implement CAS as a pair of instructions,
+  "reserve and later write conditionally". If the reservation is broken in between
+  by an interrupt or by cache circumstances, it comes back as a failure even though
+  the value equalled the expectation — that is a *spurious failure*. `weak` exposes
+  this failure as it is and in exchange is faster, while `strong` retries
+  internally to guarantee "failure only when the value differed" and in exchange is
+  a little slower.
+
+  The rule is simple. *`weak` inside a loop, `strong` when trying only once without
+  a loop.* Since the loop will turn again anyway, a spurious failure is harmless
+  and only the gain remains.
+]
+
+== Memory order — not touching it is the default
+
+If no order is specified, as in `atomic_fetch_add(&x, 1)`, the strongest order,
+*sequential consistency* (`memory_order_seq_cst`), is used. It means every strand
+sees the order of atomic operations as one consistent story, and it is the model
+easiest for a human to reason about. In exchange it is the most expensive.
+
+C provides six orders. We learn their faces from a table — *most programs need only
+the default.*
+
+#dtable(
+  columns: 3,
+  [*order*], [*guarantee*], [*where it is used*],
+  [`seq_cst`], [one order globally], [the default. if in doubt, this],
+  [`acquire`], [later accesses cannot rise above it], [taking a lock, reads on the consumer side],
+  [`release`], [earlier accesses cannot sink below it], [releasing a lock, writes on the producer side],
+  [`acq_rel`], [both, in a read-modify-write operation], [state transitions with CAS],
+  [`relaxed`], [atomicity only. no ordering guarantee], [pure counters and statistics],
+  [`consume`], [effectively abandoned (implementations raise it to acquire)], [not used],
+)
+
+The two most common practical uses are these. First, *the producer-consumer flag*:
+fill the data and then raise the flag with `release`, and the consumer sees the
+flag with `acquire` and then reads the data. This pair guarantees "if the flag is
+visible the data is visible too." Second, *a pure statistics counter*: only the
+final sum need be right and there is no need to order it against other data, so
+`relaxed` is exactly the right tool.
+
+#antipattern[
+  Switching to `relaxed` for performance, just to see
+][
+  ```c
+  atomic_store_explicit(&ready, 1, memory_order_relaxed);   /* the flag */
+  ```
+  `relaxed` guarantees *only the atomicity of this variable*. There is no guarantee
+  that the data filled in beforehand is visible to the other side, so the consumer
+  can see the flag raised and yet read *the data from before it was filled*. Such
+  code mostly runs fine on x86 and then appears as an unreproducible bug on an ARM
+  device — because the reordering each piece of hardware permits differs.
+
+  The rule: *when a flag and data form a pair, `release`/`acquire`.* Until you
+  understand that pair, leave the default as it is. The time lost far exceeds the
+  nanoseconds saved here.
+]
+
+== The phrase "lock-free"
+
+That is what the example's last line asked with `atomic_is_lock_free`. If an atomic
+type is handled by a single CPU instruction it is *lock-free*, and if not the
+library uses a hidden lock behind the scenes. On today's mainstream machines
+integers of pointer size or smaller are mostly lock-free. Wrap a large struct in
+`_Atomic`, on the other hand, and — the syntax passes but — a hidden lock attaches
+and performance can become unexpectedly bad.
+
+#misconception[
+  "Atomic operations are always faster than a mutex"
+][
+  Mostly right when contention is low, but it reverses when contention is heavy. If
+  several cores fight over the same cache line, that line keeps travelling between
+  the cores (chapter 11's false sharing is replayed here). A CAS loop turns again
+  on every failure, and when contention is heavy this retrying is waste entire — a
+  mutex puts the failing strand to sleep while spinning burns a core.
+
+  And *writing lock-free data structures yourself* is a task of another order of
+  difficulty. The ABA problem (a value going from A to B and back to A, fooling the
+  CAS), when memory may be reclaimed, progress guarantees — these are topics for a
+  paper each. The right answer in the field is usually this: *atomic types for
+  counters and flags, a verified library or a mutex for data structures.*
+]
+
+== Where to use it and where not to
+
+#dtable(
+  columns: 3,
+  [*situation*], [*recommended tool*], [*reason*],
+  [statistics counters], [`atomic_fetch_add` (`relaxed`)], [no ordering is needed],
+  [a shutdown-request flag], [`atomic_bool` + `release`/`acquire`], [it pairs with data],
+  [initialising exactly once], [`call_once` (`<threads.h>`) or CAS], [do not write double-checked locking by hand],
+  [invariants over several values], [a mutex], [atomicity is per single variable],
+  [sharing a large struct], [a mutex], [an `_Atomic` struct means a hidden lock],
+  [sharing with a signal handler], [`sig_atomic_t` or a lock-free atomic type], [chapter 64's restrictions],
+  [hardware registers], [`volatile`], [it is not sharing between strands],
+)
+
+#realcase[
+  Why C11 brought in a memory model
+][
+  In the standard before C11 there was *no concept at all of there being several
+  strands.* Threads were the business of a library (POSIX threads and the like),
+  and the language defined optimisation on the premise that "a program flows in one
+  stream". In that gap questions piled up which nobody could answer exactly — must
+  the compiler assume another strand sees this write, is this reordering legal, is
+  this mutex-less code wrong.
+
+  Around 2004 Java tidied up its memory model first, and C++11 and C11 continued
+  that current by introducing *a memory model at the level of the language*. What
+  entered then was the definition of a data race, atomic types, and the six memory
+  orders. That we can today say in one line "a data race is undefined behaviour" is
+  thanks to that tidying — before it there was not even a language in which to write
+  that sentence.
 ]
 
 #recap[
   #dtable(
     columns: 2,
     [*to remember*], [*the point*],
-    [the meaning of promotion], [macro (letter substitution) → keyword (type, diagnosis, no redefinition)],
-    [`bool`], [it *normalises* nonzero values to 1 — comparing truths becomes safe],
-    [printing a `bool`], [`%d` (promoted to `int` in variadic arguments)],
-    [`nullptr`], [not a name but *a new type*. it prevents variadic and `_Generic` accidents],
-    [`nullptr`'s limits], [no comparison with or conversion to an integer. false as a `bool`],
-    [`constexpr`], [reclaims `#define` constants with a typed name],
-    [underscored names], [a product of the reserved name space, to avoid breaking old code],
-    [the order of moving], [check the edition → remove your own BOOL → substitute NULL → tidy underscores → shells],
+    [data race], [not slowness but *outside the contract*. optimisation changes the code],
+    [`volatile`], [not a tool for sharing between strands. it is for hardware],
+    [the default order], [`seq_cst`. leaving it as it is is mostly the right answer],
+    [`fetch_add`], [it returns *the previous value*],
+    [two operations], [bundling them is not atomic — a CAS loop or a mutex],
+    [`weak`/`strong`], [`weak` if inside a loop],
+    [lock-free], [mostly yes for small integers. a hidden lock for large structs],
+    [data structures], [do not write them yourself],
   )
 ]
 
-Across thirteen chapters we have walked the terrain of the standard library and the
-newest standard. We have seen what the standard promises and what it does not,
-where it is slippery and why.
-
-The two remaining chapters of this part go one layer down. The place chapter 40
-passed over saying only "it is expensive" — what map a program's memory is laid out
-on in an operating system and in an embedded chip respectively (chapter 67), and
-what an allocator actually does in the heap region of that map (chapter 68). Those
-two chapters become the ground for understanding the next part's design.
+We have seen operations that do not split. The next chapter is a tool in the
+opposite direction — C23's checked arithmetic, which asks according to the contract
+whether an operation *overflowed its vessel*.

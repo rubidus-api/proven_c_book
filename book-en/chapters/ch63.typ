@@ -1,214 +1,175 @@
 #import "../../book/lib.typ": *
 
-= What the new standards added, and the `*_s` controversy
+= Time — `<time.h>`
 
 #prereq(
-  ([chapter 54, The whole map of the standard library], [the whole map of the standard library]),
-  ([chapter 56, The traps of reading and writing], [bounds and truncation]),
+  ([chapter 42, Structs], [values bundled in a struct]),
+  ([chapter 55, The terrain of the standard library], [the contract the standard settles]),
 )
 
 #deepqa[
-  Chapter 54 said the speed at which headers grow is the same as the language's
-  speed of change, and chapter 56 said `gets`'s funeral took twenty years. Then
-  where are the "safe functions" the standard brought in to fill that place?
+  Bringing forward a story to be treated in Part XII: calendar time and elapsed
+  time were said to be different things. Then what is used in standard C to measure
+  exactly "whether three seconds have passed"?
 ][
-  Mostly *nowhere*. C11 brought in dozens of functions such as `gets_s` and
-  `strcpy_s` as annex K, but it was *optional* and the major implementations
-  refused to adopt it. What was confirmed on the machine that made this book is the
-  same — the "annex K: not present in this implementation" the example printed. The
-  latter part of this chapter is that story.
+  With the standard alone there is no way to measure it exactly. `time` is in
+  seconds and can go backwards when the system adjusts the clock, and `clock`
+  measures not wall-clock time but *the CPU time the process used* (so it does not
+  grow while waiting for input and output). C11 brought in `timespec_get` but does
+  not require a monotonic clock. Accurate elapsed measurement is the part of
+  POSIX's `clock_gettime(CLOCK_MONOTONIC, …)` or Windows'
+  `QueryPerformanceCounter` — that is, of *a platform API*.
 ]
 
 #organizer[
-  The last chapter of this part. We skim the headers C99, C11 and C23 added to the
-  standard library, and then see the whole story of this language's most famous
-  failed attempt — annex K, which tried to bring "safe functions" into the
-  standard. Why `gets_s` and `strcpy_s` are not widely used, and what is different
-  about Microsoft's functions of the same names.
+  The header the standard settled unusually little of. The standard says neither
+  what `time_t` is nor how time zones are handled. We look at the traps that arise
+  in those gaps — the year with 1900 subtracted, the month starting from 0,
+  functions that return a static buffer, and the fact that *there is no monotonic
+  clock in the standard for measuring elapsed time*.
 ]
 
 #chapter-questions()
 
-== What C99 added
+== Three representations of time
 
 #dtable(
   columns: 3,
-  [*header*], [*what*], [*its position today*],
-  [`<stdint.h>`], [fixed-width integers (`int32_t` and so on)], [effectively compulsory. chapter 26],
-  [`<inttypes.h>`], [the format macros for those types], [the `PRId32` family. appendix B],
-  [`<stdbool.h>`], [`bool`, `true`, `false`], [unnecessary, having become keywords in C23],
-  [`<complex.h>`], [complex numbers], [optional. support is uneven],
-  [`<fenv.h>`], [the floating-point environment], [chapter 60],
-  [`<tgmath.h>`], [type-generic mathematics], [chapter 60],
+  [*type or function*], [*what*], [*to know*],
+  [`time_t`], [calendar time (usually seconds since 1970)], [★ the standard settles only "an arithmetic type"],
+  [`struct tm`], [split into year, month, day, hour, minute, second], [the field rules are a trap],
+  [`clock_t`], [the CPU time the process used], [divide by `CLOCKS_PER_SEC`],
+  [`struct timespec`], [seconds + nanoseconds (C11)], [`timespec_get`],
 )
 
-`<stdint.h>` is this list's winner. A standard way to express "exactly 32 bits"
-finally arose, and the practice of every project keeping its own `typedef` until
-then was tidied away.
+That the standard did not settle what `time_t` is matters. In most implementations
+it is seconds since 1970-01-01 UTC, but that is *a practice*, not a guarantee of
+the standard. So portable code does not calculate with `time_t`'s internal value
+directly but takes the difference with `difftime`.
 
 #qa[
-  If annex K's `*_s` functions failed, what fills their place now?
+  Why do so many types exist for time — would one count of seconds not do?
 ][
-  Not one thing but three, sharing it out. *Compiler diagnostics* (warnings and
-  hardened builds such as `_FORTIFY_SOURCE`), *sanitizers* (chapter 17), and
-  *API designs that carry the length along*. The last is the direction this book
-  has pushed, and chapters 72 and 74 are its implementation.
+  Because three different jobs are involved. `time_t` is an opaque value naming
+  *one moment*; `struct tm` is the *calendar notation* people read (year, month,
+  day, hour, minute, second); `clock_t` is a scale for measuring *elapsed time*.
+  Turning a moment into a calendar is a hard computation full of time zones,
+  daylight saving and leap seconds, so the standard keeps the two in separate
+  types and lets `localtime` and `mktime` bridge them.
 
-  The lesson is that safety does not arrive by appending `_s` to a function name.
-  What actually worked was making failure impossible to ignore, putting the bounds
-  inside the type, and making the checks something a tool can perform. That is how
-  chapter 69 arranges the five bugs.
+  The accidents in practice happen exactly at that border — subtracting two
+  `time_t` values gives seconds, but adding to the fields of a `struct tm`
+  directly produces an unnormalised date. Date arithmetic must go through
+  `mktime`.
 ]
 
-== What C11 added
+== The traps of `struct tm`
+
+#demo("examples-en/ch63/timefns.c")
+
+Two fields are famous traps.
+
+- `tm_year` is *the value with 1900 subtracted*. 2026 is 126.
+- `tm_mon` is *from 0*. August is 7.
+
+With `tm_mday` (from 1), `tm_wday` (Sunday is 0) and `tm_yday` (from 0) the rules
+are all different, so when filling them by hand it is better to keep a table
+beside you.
+
+`mktime` does two things — it turns a `struct tm` into a `time_t`, and it
+*normalises the struct*. In the example, adding 30 to `tm_mday` exceeded the range
+and yet it was tidied into 4 September thanks to that. Not doing date arithmetic
+yourself but using this property is the canonical way.
+
+`tm_isdst` is easy to forget too. Putting in −1 means "I do not know, judge for
+yourself", and putting 0 or 1 in wrongly puts you an hour out.
+
+#antipattern[
+  Carrying around the result of `localtime`
+][
+  ```c
+  struct tm *a = localtime(&t1);
+  struct tm *b = localtime(&t2);   /* what a pointed at has been overwritten */
+  printf("%d %d\n", a->tm_hour, b->tm_hour);   /* both are t2's time */
+  ```
+  `localtime`, `gmtime`, `ctime` and `asctime` return *an internal static buffer*
+  (those functions chapter 55 brushed past by name only). The next call overwrites
+  the previous result, and in a program running along several strands they wreck
+  each other's results.
+
+  There are two prescriptions. *Copy it* immediately on receipt, or use the edition
+  in which the caller gives the buffer (`localtime_r` and `gmtime_r` are POSIX,
+  `localtime_s` is annex K and MSVC). To keep portability with the standard alone,
+  copying is the right answer.
+]
+
+== Printing to a string — `strftime`
+
+Unlike `printf`, `strftime` takes the buffer size and *returns 0 if it does not
+fit*. The example's small buffer is that case. If the return value is 0 the
+buffer's content is undetermined, so it must not be used.
+
+`asctime` and `ctime` are better not used. Besides returning a static buffer, the
+form is fixed (`"Wed Aug  5 13:45:30 2026\n"`) and it can overflow when the year
+exceeds four digits, so C23 marked them for retirement.
 
 #dtable(
   columns: 3,
-  [*header*], [*what*], [*its position today*],
-  [`<stdatomic.h>`], [atomic operations and memory orders], [the foundation of concurrency. chapter 12's story],
-  [`<threads.h>`], [threads, mutexes, condition variables], [★ adoption is slow — pthreads are usually used],
-  [`<stdalign.h>`], [`alignas`, `alignof`], [keywords in C23],
-  [`<stdnoreturn.h>`], [`noreturn`], [to be retired in C23, in favour of `[[noreturn]]`],
-  [`<uchar.h>`], [`char16_t`, `char32_t`], [chapter 59],
+  [*specifier*], [*meaning*], [*note*],
+  [`%Y`, `%m`, `%d`], [year, month, day], [the ISO date is `%Y-%m-%d`],
+  [`%H`, `%M`, `%S`], [hour, minute, second], [24-hour],
+  [`%F`, `%T`], [`%Y-%m-%d`, `%H:%M:%S`], [C99],
+  [`%z`, `%Z`], [time-zone offset and name], [locale- and platform-dependent],
+  [`%s`], [epoch seconds], [★ not standard (a POSIX extension)],
+  [`%c`, `%x`, `%X`], [locale notation], [for humans. not used for machines],
 )
 
-`<threads.h>`'s circumstance is interesting. Though it is in the standard, glibc
-long did not provide it, so portable code still uses POSIX threads. It is a case
-showing that *entering the standard and becoming usable are different things*.
+== Time zones and summer time — what the standard does not handle
 
-== What C23 added
+The time zones standard C knows are only two, "local" and "UTC", and there is not
+even a standard way to *change* the local time zone (POSIX's `TZ` environment
+variable is the practice). To handle an arbitrary time zone a library is needed.
 
-#demo("examples-en/ch63/newheaders.c")
-
-`<stdckdint.h>` is this edition's practical winner. It reports the wrap-round of
-the size calculations seen in chapter 57 *as a value* — `ckd_add`, `ckd_sub` and
-`ckd_mul` return true on overflow, and the result may be treated as "unusable"
-rather than as the wrapped value.
-
-`<stdbit.h>` is new too. Bit manipulations such as counting leading zeros, counting
-set bits and rounding up to a power of two have become standard functions — until
-then a place that leaned on compiler builtins (`__builtin_clz` and the like).
-
-Besides these, C23 promoted `bool`, `true`, `false`, `static_assert` and
-`thread_local` to keywords, brought in `nullptr` (chapter 34), and effectively
-retired compatibility headers such as `<stdbool.h>` and `<stdnoreturn.h>`.
-
-== Annex K — the failed attempt at "safe functions"
-
-Now the main business of this chapter.
-
-In the early 2000s Microsoft put functions such as `strcpy_s` and `sprintf_s` into
-its compiler and began raising warnings on use of the existing functions. The
-proposal to make that design a standard entered C11 as *annex K*
-(bounds-checking interfaces).
-
-The core ideas were three.
-
-+ The destination size is *compulsorily* taken as an argument.
-+ When a problem arises it does not truncate and carry on but *returns an error*
-  (`errno_t`).
-+ When a contract violation is detected, the program's chosen *constraint handler*
-  is called.
-
-```c
-#define __STDC_WANT_LIB_EXT1__ 1
-#include <string.h>
-
-char dst[8];
-errno_t e = strcpy_s(dst, sizeof dst, src);   /* an error if it overflows */
-```
-
-The direction resembles what we organised in chapter 54 as "what is needed". Yet
-the result was a failure.
+Summer time is trickier still. On a transition day there arise times that do not
+exist (the hour skipped in spring) and times that exist twice (the hour repeated in
+autumn). What `mktime` returns when given such input is settled by the
+implementation.
 
 #realcase[
-  Why annex K was not adopted
+  Real accidents time has called down
 ][
-  In 2015, C standards committee document N1967, "Field Experience With Annex K",
-  surveyed the actual state. Its summary was cold — *it was not widely implemented,
-  it behaved differently where it was implemented, and there was no evidence that
-  it made real code safer*.
+  Time is a regular in quiet accidents. In 2012 and 2015, when *leap seconds* were
+  inserted, several server programs burned CPU at 100% or froze — because kernels
+  and applications had not assumed a situation in which "one second comes twice".
 
-  Concretely these were the circumstances.
+  The limit of a *32-bit `time_t`* overflows on 19 January 2038 (the day
+  chapter 26's overflow appears on a worldwide scale). In embedded and old systems
+  it is an ongoing task even now, and so the transition to a 64-bit `time_t` has
+  long been under way.
 
-  - *Microsoft's functions and the standard's functions are not the same.* The
-    names are the same while arguments and behaviour go out of step in places, so
-    code fitted to one side broke on the other.
-  - *Major implementations, glibc among them, did not adopt it.* That is still so
-    today — the reason the earlier example printed "not present in this
-    implementation".
-  - *The global state called the constraint handler* caused conflicts between
-    libraries.
-  - It merely changed existing code mechanically, while the real defects remained
-    *where the size is calculated wrongly*.
-
-  The committee went as far as discussing removing annex K, and in the end it was
-  settled to be kept but effectively not recommended. It is a representative case
-  showing how the expectation that "putting it in the standard makes things safe"
-  goes wrong in reality.
+  *Code that measures elapsed time in local time* loses or gains an hour on every
+  summer-time transition day. A log's timestamps go backwards, a timeout becomes an
+  hour long, a scheduler runs the same job twice. The prescription is always the
+  same — *a monotonic clock for elapsed time, UTC for records, local time only when
+  showing it to a human*.
 ]
-
-#misconception[
-  "Using functions with `_s` attached is safe"
-][
-  Three things must be checked. First, *is that function there* — the standard's
-  annex K is optional and is absent on most of the Unix family. Second, *which
-  edition is it* — the standard's and Microsoft's may differ. Third, *what becomes
-  safe* — it means the size is taken as an argument, not that the size you passed
-  is right. The mistake of passing `strlen` instead of `sizeof` is just as much an
-  accident in an `_s` function.
-
-  The realistic choice in portable code is still this — within the standard,
-  `snprintf` and explicit bounds checking; where the platform permits, the
-  `strlcpy` family; and for the repeated danger zones, components with checking
-  built in (Part XII).
-]
-
-#platform[
-  The `_s` functions met on Windows
-][
-  MSVC has long provided `strcpy_s`, `sprintf_s`, `fopen_s` and so on, and raises
-  the `C4996` warning when the existing functions are used. Defining
-  `_CRT_SECURE_NO_WARNINGS` to turn the warning off is the practice.
-
-  The point to beware of is that *these functions are not entirely the same as the
-  standard's annex K*. For example the behaviour on argument-validation failure and
-  the rules for return values may differ. So unless the code is Windows-only one
-  does not lean on the `_s` family, and cross-platform projects mostly choose to
-  keep a wrapper of their own.
-]
-
-== What this part leaves behind
-
-We have walked the standard library across ten chapters. Memorising function names
-was not the aim, so what remains to be kept is a few attitudes.
-
-+ *Read the contract first.* Does it take a size, how does it report failure, who
-  owns the pointer it returned.
-+ *Do not throw away return values.* Especially `fclose`, `snprintf` and the
-  `scanf` family.
-+ *Suspect global state.* `errno`, the locale, static buffers, the rounding mode.
-+ *Being in the standard does not make it safe.* `gets` survived twenty-two years.
-+ *Weigh platform extensions between the gain and portability.*
 
 #recap[
-  A table of the editions.
+  Time in summary.
 
   #dtable(
     columns: 3,
-    [*edition*], [*representative addition*], [*is it actually used*],
-    [C99], [`<stdint.h>`, `<inttypes.h>`], [yes — effectively compulsory],
-    [C99], [`<complex.h>`], [rarely],
-    [C11], [`<stdatomic.h>`], [yes — the foundation of concurrency],
-    [C11], [`<threads.h>`], [rarely — pthreads prevail],
-    [C11], [annex K (`*_s`)], [no — this chapter's story],
-    [C23], [`<stdckdint.h>`], [yes — the right answer for size calculations],
-    [C23], [`<stdbit.h>`], [growing],
-    [C23], [keyword promotion (`bool`, `nullptr` and so on)], [yes],
+    [*what you want to do*], [*what to use*], [*what to beware of*],
+    [the current time], [`time(NULL)`], [in seconds. it can go backwards],
+    [splitting it up], [`localtime`/`gmtime` + *copy at once*], [the static buffer],
+    [date arithmetic], [add to the fields and `mktime`], [do not calculate seconds by hand],
+    [to a string], [`strftime`], [a return of 0 = failure],
+    [difference], [`difftime`], [`t2 - t1` is not portable],
+    [measuring elapsed time], [the platform's monotonic clock], [`time` and `localtime` forbidden],
+    [storing and transmitting], [UTC + ISO 8601], [do not store local time],
+    [not to be used], [`asctime`, `ctime`], [static buffer, fixed form, to be retired in C23],
   )
 ]
 
-The bottom three lines of that table — `<stdatomic.h>`, `<stdckdint.h>` and
-keyword promotion — have only shown their faces. The three remaining chapters of
-this part treat those three in detail, one each. We begin with the foundation of
-concurrency.
+We have passed time. The next chapter is the tools used when a program *has gone
+wrong* — error numbers, assertions, signals, and non-local jumps.

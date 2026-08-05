@@ -1,223 +1,195 @@
 #import "../../book/lib.typ": *
 
-= Strings and memory — `<string.h>`
+= Streams in reality — `<stdio.h>` ①
 
 #prereq(
-  ([chapter 37, Strings], [a string is an array that only marks its end]),
-  ([chapter 36, Arrays], [handling memory in bulk]),
+  ([chapter 10, The origin of streams], [the origin of streams]),
+  ([chapter 22, Output], [output in reality]),
 )
 
 #deepqa[
-  Chapter 37 said a C string is "up to the NUL", so its length must be counted
-  every time, and chapter 54 said functions that do not take a size are the first
-  chronic illness. Then does using `strncpy` instead of `strcpy` cure that illness?
+  Chapter 10 said a stream is "a band whose other end the program does not know",
+  and that this is why the same program serves screen, file and other programs
+  alike. Then *when* do the bytes a program wrote actually arrive at their
+  destination?
 ][
-  It does not. Contrary to the impression the name gives, `strncpy` *was not
-  designed as a safe copying function.* Its original purpose was filling the
-  fixed-length fields of old Unix (a 14-byte directory entry name, say) — so it
-  fills all the spare places with zeros, and if there is not enough room it does
-  not attach a NUL. Both properties go against the expectations of "string
-  copying". This chapter's first example shows it before your eyes.
+  Usually not at once. The standard library keeps a *buffer* per stream, gathers
+  bytes there and sends them out in one go — because system calls are expensive (we
+  meet this again in Part XII). There are three ways of deciding when to empty it.
+  *Full buffering* is when the buffer fills, *line buffering* when a newline is
+  met, *unbuffered* is immediately. Standard output connected to a terminal is
+  usually line-buffered, and when redirected to a file it turns into full
+  buffering — meaning *the moment at which the same program's output appears
+  changes with what it is connected to*, and that is this chapter's first trap.
 ]
 
 #organizer[
-  The header in which the most accidents have happened in C. Functions that do not
-  take a size, `strncpy` which is not safe despite its name, copying that touches
-  overlapping regions, `strtok` which destroys the original and hides state — the
-  dangers of strings learned in chapter 37 take concrete shape here function by
-  function. We also see the real portability of the non-standard alternatives (the
-  `strlcpy` family).
+  We look at the floor beneath the header used most. How a stream is really opened
+  and closed, when the buffer is emptied, where failure shows itself — and the
+  misuse of `feof`, the place introductory books get wrong over and over. The
+  notion of a stream learned in chapter 10 becomes an API here.
 ]
 
 #chapter-questions()
 
-== The truth about `strncpy`
+== Open, write, close — failure can happen three times
 
-#demo("examples-en/ch57/strncpy.c")
+#demo("examples-en/ch57/streams.c")
 
-Two things come out.
+It is worth noticing that the example checks for failure in three places.
 
-*First, it fills all the spare places with zeros.* Put 3 characters into a 10-byte
-buffer and it writes zeros over the remaining seven. The bigger the buffer, the
-bigger the waste.
+*① `fopen`* — on failure it returns null. The reason is left in `errno`, and
+`perror` prints it as a sentence a human can read (chapter 64). The file may not
+exist, permission may be lacking, or too many files may be open.
 
-*Second, when it fits exactly or overflows it does not attach a NUL.* Put `abcd`
-into a 4-byte buffer and there is no room for the NUL, so what remains is *a byte
-array, not a string*. Print that with `%s` or pass it to `strlen` and it reads
-outside the buffer — the typical route of "I used the safe function and it blew
-up."
+*② Writing* — `fprintf` returns the number of characters printed and gives a
+negative value on failure. Code that checks it is rare, but if the disk fills or a
+pipe breaks it shows itself here.
 
-gcc really does catch this mistake. Here is the diagnosis received when first
-writing the example.
-
-```text
-error: ‘strncpy’ output truncated before terminating nul copying 4 bytes
-       from a string of the same length [-Werror=stringop-truncation]
-```
-
-But as seen in chapter 54, the compiler catches *only what it can see*. If the
-source's length is settled during execution, this warning does not appear.
+*③ `fclose`* — here is the real trap. It is the place where what remained in the
+buffer is finally sent out, so *it is common for a write failure to show itself
+for the first time on closing*. A program that must not lose data therefore always
+checks `fclose`'s return value.
 
 #antipattern[
-  Copying "safely" with `strncpy`
+  Ignoring the failure of closing
 ][
   ```c
-  char dst[32];
-  strncpy(dst, src, sizeof dst);      /* there may be no NUL */
-  printf("%s\n", dst);                 /* it reads outside the buffer */
+  fprintf(f, "%s\n", important);
+  fclose(f);                  /* nobody asked whether it failed */
+  puts("saved");              /* it may in fact not have been saved */
   ```
-  It must be mended at least like this.
-  ```c
-  strncpy(dst, src, sizeof dst - 1);
-  dst[sizeof dst - 1] = '\0';          /* close it by hand */
-  if (strlen(src) >= sizeof dst) { /* truncated — handle it */ }
-  ```
-  Three lines are needed, and leaving out even one of them is an accident. That is
-  why this function is assessed as "a safety device that is hard to use."
+  In buffered writing, the moment at which "it succeeded" may be said is *after
+  closing has succeeded*. If it must truly be nailed to the disk, flush with
+  `fflush` before closing and call the platform's synchronisation call (`fsync` and
+  the like) as well — that is what a database does.
 ]
 
-== Then what is used
+== How to know the end of a file — the misuse of `feof`
 
-Within the standard, the most practical tool for safely joining strings is in fact
-in `<stdio.h>`.
+The most widespread wrong answer is here.
 
-```c
-int need = snprintf(dst, sizeof dst, "%s", src);
-if (need < 0 || (size_t)need >= sizeof dst) { /* truncated */ }
-```
+#demo("examples-en/ch57/feof_bad.c")
 
-There is the criticism that it is slow (the cost of interpreting the format), but
-it is the only standard function that keeps the boundary while letting you *know
-about truncation*.
+Why is `while (!feof(f))` wrong? `feof` is *not a prophet but a recorder* — the
+mark saying "the end of the file was reached" is turned on only *after* a read has
+failed. So right after reading the last value it is still off, the loop turns once
+more, and the result of the failed read (= the previous value, unchanged) is used
+as it stands. That 30 was printed twice in the example is the evidence.
 
-#dtable(
-  columns: 4,
-  [*function*], [*status*], [*boundary*], [*can truncation be known*],
-  [`strcpy`, `strcat`], [standard], [none], [—],
-  [`strncpy`], [standard], [yes], [no (must be measured by hand)],
-  [`strncat`], [standard], [yes (but the argument is the *remaining room*)], [no],
-  [`snprintf`], [standard], [yes], [yes (the return value)],
-  [`strlcpy`, `strlcat`], [the BSD family, a C23 annex], [yes], [yes (the return value)],
-  [`strcpy_s`, `strcat_s`], [C11 annex K (optional)], [yes], [yes (an error return)],
-)
-
-`strncat`'s argument is a particular trap — the second argument is not *the
-destination's size* but *the number of bytes that may additionally be written*.
-`strncat(dst, src, sizeof dst)` is almost always wrong, and
-`sizeof dst - strlen(dst) - 1` is right.
-
-#realcase[
-  Why `strlcpy` was not standard
-][
-  OpenBSD put out `strlcpy` and `strlcat` in 1998. They take the destination's
-  size, always close with a NUL, and return *the length of the source* so that
-  truncation can be known. They spread through the BSD family and several
-  libraries, but glibc long refused to adopt them — the counter-argument being that
-  "an API that quietly permits truncation only moves the problem."
-
-  So code using `strlcpy` was long unportable on Linux, and every project came to
-  have its own edition. In 2023 glibc 2.38 finally added them and C23 brought in
-  functions of similar intent as an annex, but *the state in which you must check
-  the target platform's edition before saying "it can be used"* persists. It is a
-  representative case showing the gap between the standard and reality.
-]
-
-== Overlapping regions — `memcpy` and `memmove`
-
-#demo("examples-en/ch57/overlap.c")
-
-`memcpy`'s contract includes "the two regions must not overlap". Calling it with
-them overlapping is undefined behaviour, and in an optimised implementation values
-really do get scrambled — because there is no guarantee that bytes are moved in
-order (several bytes may be moved at once with SIMD, or moved from the back).
-
-If they may overlap, it is `memmove`. Contrary to the impression its name gives,
-it does not mean "moving" but *copying that is safe even when overlapping*.
-
-#misconception[
-  "`memcpy` is always faster than `memmove`"
-][
-  An old saying. Today the performance difference between the two is mostly
-  negligible, and in some implementations they converge on the same code. The
-  reason `memcpy` can be faster is that it can use the premise "they do not
-  overlap" in optimisation, and if that premise is set wrongly, what is lost (a
-  bug that is hard to find) is far greater than what is gained (a few nanoseconds).
-  *If there is the slightest possibility of overlap, `memmove`* — that is the
-  modern default.
-]
-
-== `strtok` — it destroys the original and hides state
-
-The last part of the example. `strtok` has two sins.
-
-*First, it destroys the original.* It makes tokens by overwriting the separators
-with NUL. So it cannot be used on a read-only string (a string literal) — using it
-there is outside the contract — and if the original is needed it must be copied
-first.
-
-*Second, it hides state inside the function.* That is why `NULL` is passed from
-the second call onward. That state is *singular*, so if another function calls
-`strtok` in the middle of cutting tokens the two wreck each other's traversal. In
-a program running along several strands it gets worse.
-
-There are three alternatives. Use an edition in which the caller holds the state,
-such as `strtok_r` (POSIX) or `strtok_s` (annex K); cut it yourself with `strcspn`
-and `strchr`; or use a tool that *does not touch the original*, like Part XII's
-view-based splitting.
-
-== The traps of the remaining functions
+The rule is one. *Control the loop by the reading function's return value.* `feof`
+and `ferror` are used after the loop ends, to tell "why did it end".
 
 #dtable(
   columns: 3,
-  [*function*], [*what it does*], [*to beware of*],
-  [`strlen`], [length], [with no NUL it runs away. $O(n)$ every time],
-  [`strcmp`], [comparison in dictionary order], [only the sign of the return value means anything. 0 is "equal"],
-  [`strncmp`], [compare the first n bytes], [if n exceeds the length it stops at the NUL],
-  [`strchr`, `strrchr`], [find a character], [if the sought character is `'\0'` it points at the end],
-  [`strstr`], [substring], [worst-case performance differs by implementation],
-  [`strspn`, `strcspn`], [length by a set of characters], [the heart of the cutting idiom],
-  [`memset`], [fill with a byte], [★ for erasing secrets it may vanish under optimisation],
-  [`memcmp`], [compare bytes], [★ it compares padding too. it must not be used to compare structs],
+  [*function*], [*success*], [*end or failure*],
+  [`fgets`], [the buffer pointer], [null — tell them apart with `feof`/`ferror`],
+  [`fscanf`], [the number of items filled], [0 (format mismatch) or `EOF`],
+  [`fgetc`], [the character read (an unsigned char as an int)], [`EOF`],
+  [`fread`], [the number of *elements* read], [fewer than requested means the end or an error],
 )
 
-The two starred entries are especially dangerous in practice.
-
-*Erasing a secret with `memset`* — the `memset(key, 0, len)` that erases after use
-may, if `key` is not read afterwards, be seen by the compiler as a "useless write"
-and deleted (chapter 13's optimisation story). C11 put `memset_s` in annex K for
-this, and each platform has a function such as `explicit_bzero` or
-`SecureZeroMemory`.
-
-*Comparing structs with `memcmp`* — because of the padding seen in chapter 41.
-Even for two structs holding the same values, if the padding bytes differ `memcmp`
-answers "different". The members must be compared one by one.
-
-#qa[
-  I hear `memcmp` is dangerous for comparing passwords too?
+#misconception[
+  "The result of `fgetc` may be put in a `char`"
 ][
-  Correct, for a different reason. `memcmp` returns the instant it meets a
-  differing byte, so *the time the comparison took leaks how much of the front
-  matched.* That means an attacker can measure time and get it right one byte at a
-  time (a timing attack). When comparing a secret, use a constant-time comparison
-  function that always takes the same time regardless of length — it is not in the
-  standard; cryptographic libraries provide it.
+  It may not. `fgetc` returns an `int`, and that value is either *a character in
+  0–255* or *`EOF`* (usually −1). The moment it goes into a `char` the two can no
+  longer be told apart — on an implementation where `char` is signed, a 0xFF byte
+  becomes −1 and is identical to `EOF`, and where it is unsigned, `EOF` becomes 255
+  and it never ends. So `int c; while ((c = fgetc(f)) != EOF)` is the canonical
+  form. This one line is also the idiom most often miscopied in introductions to C.
 ]
 
+== Lines longer than the buffer
+
+That is what the last part of the example shows. If the buffer is too small
+`fgets` reads *only that far* and stops — it is not an error. So without checking
+whether a newline is in there, what you believed to be "one line" may in fact be
+the front piece of a line.
+
+Read `one\n` with a 4-byte buffer and it comes split in two: `one` (no newline)
+and `\n` (a newline only). When code handling long lines in the field forgets this
+fact, one line is quietly processed as two records.
+
+#qa[
+  What is done when the line length is unknown?
+][
+  There are three roads. First, *a big enough buffer plus a newline check* — if
+  there is no newline, read the rest away or treat it as an error. Second, *reading
+  while growing it yourself* — gather one character at a time with `fgetc` and
+  enlarge the buffer when needed (chapter 41's dynamic allocation). Third, *a
+  function the platform gives* — POSIX's `getline` enlarges by itself, but it is
+  not standard. To write with the standard alone the second is the right answer,
+  and using a library so as not to write that code every time is Part XII's story.
+]
+
+== Text mode and binary mode
+
+That is the `b` attached to `fopen`'s second argument. On the Unix family there is
+no difference, but on Windows there is — text mode turns `\n` into `\r\n` when
+writing and turns it back when reading. So opening a binary file in text mode
+quietly changes the bytes.
+
+#platform[
+  Windows' line-ending conversion
+][
+  When handling binary data (images, compressed files, serialised structs) always
+  open with `"rb"` or `"wb"`. Open in text mode and a 0x0A byte grows into 0x0D
+  0x0A, and on reading it shrinks the other way — *the file's size and content
+  differ*. It is the place where the CR/LF story seen in chapter 9 is replayed in
+  the file API.
+
+  Conversely, opening a text file in binary mode on Windows leaves a `\r` at the
+  end of the line, so a line read with `fgets` ends with an invisible `\r` — the
+  cause of a failing comparison is often here.
+]
+
+#antipattern[
+  `fflush(stdin)`
+][
+  ```c
+  scanf("%d", &n);
+  fflush(stdin);      /* the intent is to empty the input buffer — it is outside the contract */
+  ```
+  `fflush` is a function for *output* streams. Using it on an input stream is
+  behaviour the standard does not define (some implementations merely support it as
+  an extension), and it cannot be used in portable code. To throw away the
+  remaining input you must read it away yourself.
+
+  ```c
+  int c;
+  while ((c = getchar()) != '\n' && c != EOF) { }
+  ```
+]
+
+== File position and size
+
+`fseek` and `ftell` handle position, but with restrictions. On a text stream the
+value `ftell` returns is *not guaranteed to be a byte offset*, and `fseek` is safe
+only with that value or with the combination of `SEEK_SET` and 0. On a large file
+`long` may be too small, so the non-standard `fseeko` and `ftello` (POSIX) or a
+platform API become necessary.
+
+The idiom "to learn a file's size, go to the end and `ftell`" is safe only in
+binary mode, and even then it is meaningless if the file is changing.
+
 #recap[
-  `<string.h>` in summary.
+  `<stdio.h>` streams in summary.
 
   #dtable(
     columns: 3,
-    [*what you want to do*], [*what to use*], [*what not to use*],
-    [copy a string], [`snprintf` (or the platform's `strlcpy`)], [`strcpy`, a careless `strncpy`],
-    [join], [`snprintf` in one go], [`strcat`, `strncat` with its confusing argument],
-    [copy that may overlap], [`memmove`], [`memcpy`],
-    [cut tokens], [`strcspn`/`strchr` or `strtok_r`], [`strtok`],
-    [compare structs], [compare member by member], [`memcmp` (padding)],
-    [compare secrets], [constant-time comparison], [`memcmp` (time leak)],
-    [erase secrets], [the platform's explicit function], [`memset` (vanishes under optimisation)],
+    [*place*], [*rule*], [*if got wrong*],
+    [`fopen`], [check for null], [null dereference],
+    [writing], [check the return value (optional), check `fclose` (compulsory)], [quiet data loss],
+    [loop control], [by the reading return value], [misuse of `feof` — the last value duplicated],
+    [`fgetc`], [put it in an `int`], [confusing `EOF` with 0xFF],
+    [`fgets`], [check for a newline], [a long line processed split],
+    [binary files], [`"rb"`/`"wb"`], [byte corruption on Windows],
+    [emptying input], [read it away yourself], [`fflush(stdin)` is outside the contract],
+    [position], [byte meaning only in binary mode], [misunderstanding in text mode],
   )
 ]
 
-We have passed the strings. The next chapter is the drawer of odds and ends and a
-treasury of accidents — `<stdlib.h>`.
+We have seen the skeleton of streams. The next chapter is the functions that
+actually read and write on top of it — and the story of a function *deleted* from
+the standard.

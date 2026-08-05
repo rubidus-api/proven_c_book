@@ -37,7 +37,7 @@ Arguments crossing into a place with no type in the prototype (`...`):
 - the `bool`, `char` and `short` families → `int` (or `unsigned int`)
 
 So `printf` has no float-specific format, and `%f` takes a double (chapters 19, 25 and
-50).
+52).
 
 == Integer conversion rank (the criterion of the conversion rules)
 
@@ -75,7 +75,7 @@ types), and at the same rank the signedness settles the result.
   [real → integer], [the fractional part is discarded (towards 0)], [outside the range it is outside the contract],
   [`double` → `float`], [the precision is reduced], [rounding error],
   [pointer → `void *`], [lossless], [only the type information is lost],
-  [`void *` → another pointer], [lossless], [outside the contract if the alignment does not match (chapter 35)],
+  [`void *` → another pointer], [lossless], [outside the contract if the alignment does not match (chapter 36)],
   [integer → pointer], [implementation-defined], [the provenance is lost (chapter 14)],
 )
 
@@ -104,6 +104,6 @@ Implicit conversion happens *without asking* in the following places.
   is outside the contract.
 - *Array → pointer*: in most contexts it decays into the address of the first element.
   The exceptions are being the operand of `sizeof`, being the operand of unary `&`, and
-  initialising an array from a string literal (chapters 36 and 37). `alignof` takes only
+  initialising an array from a string literal (chapters 37 and 38). `alignof` takes only
   *a type name*, so it does not belong in this list.
 - *Function → pointer*: a function name decays into a function pointer.

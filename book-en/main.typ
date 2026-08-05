@@ -1,7 +1,7 @@
 // Proven C Book — English edition. Build: scripts/build-book-en.sh
 #import "../book/lib.typ": *
 
-#let book-version = "v0.9.0"
+#let book-version = "v0.10.0"
 #let book-updated = "2026-08-06"
 #let book-status = "draft"
 #let book-repo = "https://github.com/rubidus-api/proven_c_book"
@@ -133,14 +133,14 @@
   ("Part III — The first program", none, (15, 16, 17, 18)),
   ("Part IV — A minimal toolbox", none, (19, 20, 21, 22)),
   ("Part V — Declarations: how names are made", none, (23, 24, 25)),
-  ("Part VI — Values and flow", none, (26, 27, 28, 29, 30, 31, 32)),
-  ("Part VII — Memory", none, (33, 34, 35, 36, 37, 38, 39, 40)),
-  ("Part VIII — The shape of data", none, (41, 42, 43)),
-  ("Part IX — Deep corners", none, (44, 45, 46)),
-  ("Part X — Structure", none, (47, 48, 49, 50, 51, 52, 53)),
-  ("Part XI — Reading the standard library", "parts/part11s.typ", (54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68)),
-  ("Part XII — proven — fundamentals, verified", "parts/part12.typ", (69, 70, 71, 72, 73, 74, 75, 76, 77, 78)),
-  ("Part XIII — Closing", none, (79, 80, 81)),
+  ("Part VI — Values and flow", none, (26, 27, 28, 29, 30, 31, 32, 33)),
+  ("Part VII — Memory", none, (34, 35, 36, 37, 38, 39, 40, 41)),
+  ("Part VIII — The shape of data", none, (42, 43, 44)),
+  ("Part IX — Deep corners", none, (45, 46, 47, 48)),
+  ("Part X — Structure", none, (49, 50, 51, 52, 53, 54, 55)),
+  ("Part XI — Reading the standard library", "parts/part11s.typ", (56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70)),
+  ("Part XII — proven — fundamentals, verified", "parts/part12.typ", (71, 72, 73, 74, 75, 76, 77, 78, 79, 80)),
+  ("Part XIII — Closing", none, (81, 82, 83)),
 )
 
 // 목차: 장만 나열하면 길어지므로 *부 단위로 묶어* 낸다.
@@ -197,7 +197,7 @@
 
 The Korean edition is the original. This English edition is translated from it
 chapter by chapter, and *chapter numbers are kept identical to the original*,
-so a cross-reference to "chapter 54" means the same chapter in both editions.
+so a cross-reference to "chapter 56" means the same chapter in both editions.
 All 13 parts, 81 chapters, appendices A–F and the index are now translated.
 
 The two editions are kept in step mechanically: `scripts/sync-status.py`

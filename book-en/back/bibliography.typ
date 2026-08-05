@@ -14,10 +14,10 @@ as cases in the body. How to obtain the standard document is in appendix D.
   9899:1990 (C89/C90) — for checking back through the editions. Drafts N2176, N1570,
   N1256.
 - IEEE 754 — the standard for floating-point arithmetic (the ground of chapters 8 and
-  44).
+  46).
 - The Unicode Standard — character sets, encodings and normalisation (chapter 9).
 - POSIX (IEEE Std 1003.1) — the system interfaces outside standard C (the background of
-  chapter 77).
+  chapter 79).
 
 == The language's history
 
@@ -34,17 +34,17 @@ as cases in the body. How to obtain the standard document is in appendix D.
   called down (chapter 28).
 - Apple's "goto fail" TLS validation defect (CVE-2014-1266) — a branch without braces
   (chapter 30).
-- The Morris internet worm (1988) — a buffer overflow through `gets` (chapters 37 and
-  56, and the incident mentioned in appendix D's van der Linden entry).
+- The Morris internet worm (1988) — a buffer overflow through `gets` (chapters 38 and
+  58, and the incident mentioned in appendix D's van der Linden entry).
 - The mass discovery of format string vulnerabilities (1999–2000) — wu-ftpd and others
-  (chapters 53 and 56).
+  (chapters 55 and 58).
 - Denial of service using hash collisions (many web frameworks, 2011) and the
   algorithmic complexity attack paper (2003) — cases of a data structure's worst case
-  becoming a security problem (chapters 69 and 76).
+  becoming a security problem (chapters 71 and 78).
 - The Debian OpenSSL random number defect (CVE-2008-0166) — predictable keys
-  (chapter 77).
+  (chapter 79).
 - The Linux kernel's adoption of `-fno-strict-aliasing` and removal of VLAs (2018) —
-  compromises of reality (chapters 13, 17 and 36).
+  compromises of reality (chapters 13, 17 and 37).
 
 == Tools and libraries
 

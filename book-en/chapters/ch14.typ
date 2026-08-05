@@ -65,7 +65,7 @@ to cultivate in every chapter that follows.
   between today's C code and the hardware stand an editor (the compiler) and a
   contract (the standard), and code written with a naive "direct manipulation"
   instinct — a shortcut outside the contract, say — breaks in the face of the
-  editor's discretion (chapter 13's vanished eraser, and chapter 46). The
+  editor's discretion (chapter 13's vanished eraser, and chapter 48). The
   accurate sentence is this: C is not a language that manipulates hardware
   directly but *a language that lets you meet the hardware through the contract
   called the abstract machine*.
@@ -92,8 +92,8 @@ into the text. The direction is consistent: the rules for pointers grow more
 explicit and stricter, that is, the clauses of the contract grow more precise.
 At an introductory stage there is no need to know the details of the clauses —
 plant only the instinct that "a pointer is not just a number; it has a
-lineage." The practical rules come in chapter 35, and the consequences of
-violating the contract in chapter 46.
+lineage." The practical rules come in chapter 36, and the consequences of
+violating the contract in chapter 48.
 
 #qa[
   Does chapter 6's tagged pointer — the trick of tucking a tag into the free

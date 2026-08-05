@@ -84,7 +84,7 @@ comes out fine. The format `%f` in fact expects a double, and the float argument
 arrived as a double after promotion (which is why printf has no float-specific
 format at all). The "contract between format and materials" learned in
 chapter 22 has this promotion rule as a hidden clause — the full contract, and
-how to write variadic functions yourself, is faced head on in chapter 50.
+how to write variadic functions yourself, is faced head on in chapter 52.
 
 #realcase[
   The conversion that destroyed a rocket — Ariane 5, 1996
@@ -107,13 +107,13 @@ how to write variadic functions yourself, is faced head on in chapter 50.
 #misconception[
   "A cast does not change the value, only the interpretation"
 ][
-  For pointer casts (chapter 35) that is broadly true, but *a cast between
+  For pointer casts (chapter 36) that is broadly true, but *a cast between
   arithmetic types changes the value itself*. `(int)3.9` becomes 3 (the
   fractional part discarded), `(char)300` does not fit the container and is
   truncated (chapter 7's narrowing), and `(unsigned)-1` becomes an enormous
   positive number. C's cast means not "read these bits as that type" but
   "*convert* this value into a value of that type" — if you want to leave the
-  bits alone and change only the eye, chapter 43's union or `memcpy` is that
+  bits alone and change only the eye, chapter 44's union or `memcpy` is that
   channel. Not writing the two demands with the same syntax is one of C's few
   kindnesses.
 ]

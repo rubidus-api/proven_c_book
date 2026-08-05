@@ -1,281 +1,344 @@
 #import "../../book/lib.typ": *
 
-= The five bugs shipped for fifty years
+= A program's map of memory — operating systems and embedded
 
 #prereq(
-  ([chapter 45, Errors and contracts], [errors and contracts]),
-  ([chapter 37, Strings], [the danger of strings]),
-  ([chapter 53, The terrain of the standard library], [the traps of the standard library]),
+  ([chapter 40, Lifetime and storage duration], [storage duration]),
+  ([chapter 2, The regions of memory], [the regions of memory]),
 )
 
 #deepqa[
-  Chapter 37 said the functions handling strings "do not know the size of the
-  vessel", and chapter 45 said "a failure not confirmed becomes a thing that never
-  happened". Then why do such problems still remain — is half a century not more
-  than enough time to mend them?
+  Chapter 40 said "in the C standard there is neither the word stack nor any
+  promise about its size", and that it settles only the automatic storage duration
+  and leaves the rest to the implementation. Then in a real program, who settles
+  that place?
 ][
-  Not because they cannot be mended but because mending them *breaks all the code
-  already written*. The moment one more size parameter is put into `strcpy`'s
-  signature, every C program in the world stops compiling. The standard is an
-  institution that must protect existing code (chapter 53's reason for "thin and
-  old" appears here too), so instead of removing dangerous functions it has taken the
-  road of *placing better functions beside them*. So the choice comes over to the
-  programmer — it is, in effect, a language in which knowing what is dangerous and
-  choosing accordingly is itself skill.
+  Three layers settle it between them. *The compiler and linker* divide the regions
+  inside the executable file (which variable goes to which region), *the operating
+  system* reads that file and spreads it into an address space, preparing the
+  places for stack and heap, and *the startup code* does the remaining trimming.
+  With no operating system the startup code takes on the last two entirely — that is
+  the embedded world, and the latter half of this chapter is that story.
 ]
 
 #organizer[
-  This part's statement of the problem. We confirm with actually running code why C
-  has kept shipping the same five classes of bug for half a century — that it is not
-  the programmer's carelessness but *the shape of the API*. Only after all five have
-  been seen does the name proven appear again. Not introducing the tool first is
-  this part's principle.
-]
-
-#qa[
-  Then are these five a list of mistakes beginners make?
-][
-  No. These are mistakes *the skilled keep making too*, and that point matters. If
-  people who know the whole grammar still slip in the same places, the cause is not
-  the person but *the shape of the tool*. A function that does not take a size has
-  no way of checking a size, and a function whose return value may be thrown away
-  with nothing happening will one day be thrown away. This chapter takes that
-  "shape" apart one at a time.
+#idx("stack size")  We redraw at a larger scale the map of memory sketched in
+  chapter 40. What is absent from the C standard and present only in the operating
+  system — the stack and its limit — is confirmed on Linux and on Windows, and we
+#idx("bss")  see what relation `data`, `bss` and the read-only region have to the
+  executable file. Then we go down into the world with no operating system and see
+  in detail how memory is laid out on Arm Cortex-M, AVR and PIC — and what the
+  startup code does.
 ]
 
 #chapter-questions()
 
-== One — string functions do not know the size of the vessel
+== Regions in the executable file, regions in the address space
 
-The oldest and most exploited class. Exactly as seen in chapter 37.
+Writing out again the order chapter 40's example showed, but this time separating
+*what is contained in the executable file* from *what arises when it runs*.
 
-```c
-char buf[64];
-strcpy(buf, name);            /* how long is name? strcpy does not ask */
-strcat(buf, ", welcome!");    /* and how much room is left now? */
-```
+#dtable(
+  columns: 4,
+  [*region*], [*is it in the file*], [*what lives there*], [*permissions*],
+  [`.text`], [yes], [machine instructions], [read, execute],
+  [`.rodata`], [yes], [string literals, `const` data], [read],
+  [`.data`], [yes (values too)], [globals and `static`s with a nonzero initial value], [read, write],
+  [`.bss`], [*only the size*], [globals and `static`s with a zero or no initial value], [read, write],
+  [heap], [no], [what `malloc` gave], [read, write],
+  [stack], [no], [local variables, return addresses], [read, write],
+)
 
-`strcpy`'s signature has no destination size. What is not there cannot be checked,
-so this function will happily write to the 200th byte of a 64-byte vessel. What gets
-wrecked depends on what the compiler placed after it, and commonly that is the
-function's return address (recall chapter 39's picture of the stack).
+That *`.bss` has only its size in the file* is the heart of this table (chapter 40
+showed the origin of the name). Filling with zeros happens at run time — with an
+operating system the kernel gives pages already filled with zeros, and without one
+the startup code turns the loop itself.
 
-The modern prescription is to use the editions that take a size — `snprintf` is
-representative. And here is a second trap. Functions that take a size *quietly
-truncate* when it overflows.
+One practical misunderstanding is resolved here. If you declared a big global array
+and the executable's size did not grow, that is normal (`.bss`). Conversely, give
+that array even one nonzero initial value — `int t[1000000] = {1};`, say — and the
+whole array goes to `.data` and the file grows by 4 MB.
 
-#demo("examples-en/ch69/truncate.c")
+== Linux's map
 
-Look at the third line. What was to be made was
-`/var/log/service/http/access.log`, and what remained in hand is
-`/var/log/service/http/a`. The program neither stopped nor warned. If this string is
-a file path it opens the wrong file, if a command it becomes a different command, if
-a log the record of an accident is cut without a sound. *A truncated path is not a
-short path but a wrong path.*
-
-#antipattern[
-  Treating truncation as success
-][
-  ```c
-  snprintf(path, sizeof path, "%s/%s", dir, name);
-  open_file(path);          /* nobody asked whether it was truncated */
-  ```
-  `snprintf` in fact gives the answer — it returns *the length that would have been
-  needed*. If that value is at least the vessel's size it was truncated (the
-  example's last line is that check). The problem is that this check is *optional*.
-  Throw the return value away and the compiler says nothing. That leads straight
-  into the second bug.
-]
-
-#realcase[
-  The compiler catches only what it can see
-][
-  Something that really happened while making this example. At first `snprintf` was
-  called directly inside `main` with literal arguments, and gcc caught it.
-
-  ```text
-  error: ‘%s’ directive output truncated writing 10 bytes
-         into a region of size 2 [-Werror=format-truncation=]
-  note: ‘snprintf’ output 33 bytes into a destination of size 24
-  ```
-
-  An excellent diagnosis. Yet moving the same call inside a function called
-  `build_path` made the warning *vanish*. The moment a function boundary is crossed
-  the compiler cannot know the real lengths of `dir` and `name`. In a real program
-  strings come from files or from the network, so cases where the compiler can help
-  are rather rare. A warning is a free review, not a guarantee (chapter 17).
-]
-
-== Two — there is no device that makes you confirm failure
-
-```c
-char *p = malloc(n);
-p[0] = 'x';                   /* malloc gives null on failure */
-```
-
-C's ways of reporting failure are two. Return a *sentinel value* (null, `-1`, `EOF`),
-or leave the reason in the global variable `errno`. Neither can compel a check. Code
-that throws the return value away is perfectly legal, and `errno` is global state
-that must be read at exactly the right moment, before the next call overwrites it
-(chapter 53).
-
-#demo("examples-en/ch69/unchecked.c")
-
-That `careless typo` returned 8080 is this section's heart. There was a typo in the
-configuration and the program *quietly fell back to the default*. On the surface
-nothing happened, and months later only the question "why is the setting not taking
-effect?" remains. That `strtol("abc")` gives 0 is the same pattern — failure and "a
-real 0" come back as the same value.
-
-#misconception[
-  "Failure is exceptional, so it can be handled later"
-][
-  The premise that failure is rare is wrong to begin with. A file may not exist,
-  input carries typos, disks fill, networks break — every place where the program
-  touches the outside world is a point of failure. And the real reason "later" is
-  dangerous lies elsewhere. Code that ignored a failure *does not stop but keeps
-  running*. A wrong value flows into the next calculation, into the function after
-  that, and by the time the problem finally shows itself it blows up far from its
-  cause. Chapter 45's "fail early" returns here.
-]
-
-== Three — `printf` believes exactly what you tell it
-
-Chapter 53 took the grammar of the format string apart. That grammar has one
-structural weakness — *the type is written twice*. Once in the format (`%d`) and
-once in the argument (the variable's type). If the two go out of step the language
-cannot prevent it, because as seen in chapter 50 type information does not ride
-along into variadic arguments.
-
-Today's compilers catch this. The real message is like this.
+On Linux, one program's address space is laid out roughly like this (on 64-bit).
 
 ```text
-warning: format ‘%d’ expects argument of type ‘int’,
-         but argument 2 has type ‘double’ [-Wformat=]
-    3 |     printf("%d\n", 3.0);
-      |             ~^     ~~~
-      |              |     |
-      |              int   double
+high address  ┌──────────────────────────┐
+              │ kernel region (no access)│
+              ├──────────────────────────┤
+              │ stack     ↓ (grows down)  │  default limit 8 MiB
+              │   ...  (a very wide gap)  │
+              │ mmap region ↓             │  shared libraries, big mallocs
+              │   ...                     │
+              │ heap      ↑ (grows up)    │  enlarged with brk
+              ├──────────────────────────┤
+              │ .bss / .data / .rodata    │
+              │ .text                     │
+low address   └──────────────────────────┘  around address 0 access is forbidden (chapter 6)
 ```
 
-But only this far. The moment the format becomes a *variable* — the moment a
-multilingual message is taken from a table or a log format is received from a
-configuration — the compiler has nothing left to look at.
+There are four things to take away.
 
-#antipattern[
-  Code that takes the format as a variable
+*① The stack limit is 8 MiB by default.* It is seen and changed with `ulimit -s`
+(chapter 40). This limit is not a *reservation* but an upper bound, so in reality
+pages attach as much as is used.
+
+*② Overflow dies at once — the guard page.* Below the stack there is a page marked
+as forbidden. The moment the stack touches that place a signal (SIGSEGV) arises and
+the program stops. It is the device that prevents the worst accident, "quietly
+overwriting somebody else's place".
+
+*③ Large allocations go not to the heap but through `mmap`.* The allocator cuts
+small requests out of the heap and, for large requests (glibc's default threshold
+is around 128 KiB), receives a whole new region from the kernel. So large blocks are
+sometimes really returned to the operating system on `free` — the exception to
+chapter 41's "`free` mostly does not return to the OS".
+
+*④ Addresses change on every run — ASLR.* Run chapter 40's example twice and the
+addresses differ. It is a security device (address space layout randomisation) to
+keep an attacker from knowing addresses in advance. So code that *records an address
+value and uses it on the next run* does not hold.
+
+#platform[
+  Each thread has its own stack
 ][
-  ```c
-  const char *fmt = load_message("greeting");   /* a format taken from a table */
-  printf(fmt, count);                           /* no warning. no check either */
-  ```
-  Not a single warning comes from this code. Because a way of knowing whether format
-  and arguments match does not exist at compile time. Worst is when the format is
-  *user input*, which becomes the format string vulnerability seen in chapter 53.
+  Make a strand (a thread) and one more stack arises with it. On Linux the default
+  size mostly follows the main thread's limit at 8 MiB, and it is settled with
+  `pthread_attr_setstacksize`. This fact leaves two things in practice — a design
+  making thousands of strands reserves that much *address space* (bearable on
+  64-bit but soon exhausted on 32-bit), and deep recursion inside a strand
+  overflows sooner than in the main thread.
 ]
 
-== Four — who frees this
+== Windows' map
 
-```c
-char *s = build_message();    /* must this be freed? the type says nothing */
-```
+The big picture is similar but the numbers and names differ.
 
-As learned in chapter 40, dynamically taken memory must be released by somebody
-exactly once. Yet a `char *` a function returned may be any of four things.
+#dtable(
+  columns: 3,
+  [], [*Linux*], [*Windows*],
+  [default stack], [8 MiB (a limit)], [*1 MiB* (reserved), the first commit is 4 KiB],
+  [specifying the stack size], [`ulimit -s`, `pthread_attr_setstacksize`], [the linker's `/STACK:reserve[,commit]`, a `CreateThread` argument],
+  [executable format], [ELF], [PE],
+  [large allocations], [`mmap`], [`VirtualAlloc` (called by the heap manager)],
+  [heap API], [`malloc` → `brk`/`mmap`], [`malloc` → `HeapAlloc` → `VirtualAlloc`],
+  [address randomisation], [ASLR], [ASLR (the same concept)],
+)
 
-- Just allocated — it must be freed.
-- Pointing at a buffer the caller gave — it must not be freed.
-- A string literal in a read-only place — freeing it is an accident.
-- A static buffer the next call will overwrite — it must neither be freed nor held
-  for long (chapter 53's `strtok` was such).
-
-The types of the four cases are *all the same*. The answer is in the documentation,
-and documentation goes out of step with code as a matter of course. Here arise
-chapter 40's three accidents — a leak (nobody frees), a double free (both free), and
-use after free (somebody still points at it after freeing).
-
-#antipattern[
-  An API whose type does not state ownership
-][
-  ```c
-  const char *lookup(int code);        /* a literal? an allocation? a static buffer? */
-  char       *format_time(time_t t);   /* must this be freed? */
-  ```
-  It cannot be known from the name and type alone. *Every place* that uses this API
-  must remember the documentation, and if even one forgets it becomes one of the
-  three accidents above. That the discipline is entrusted to human memory is the
-  essence of the problem.
-]
-
-== Five — a callback nobody can type-check for you
-
-```c
-qsort(a, n, sizeof *a, cmp);   /* cmp takes const void* */
-```
-
-`qsort` takes a comparison function through a `void *` interface in order to sort any
-type. In a language with no generics this is nearly the only way, but the price is
-*the complete abandonment of type checking*. Whatever you cast to inside the
-comparator, the compiler believes you.
-
-#demo("examples-en/ch69/cmp_bad.c")
-
-The `first-char` comparator's types match perfectly, it compiles without a single
-warning, and it does not die. It is only that `peach` and `pear` are in the wrong
-order — seeing only the first letter, the two were judged "equal" and the rest was
-left to chance. This class of bug is found last of all, because it gives *a quietly
-wrong answer*.
+*Windows' 1 MiB often makes trouble in practice.* There are three typical cases in
+which code that was fine on Linux dies of stack overflow on Windows — a large local
+array, deep recursion, and calls passing a large struct by value (chapter 43). The
+structure separating reservation from commitment is worth knowing too: the 1 MiB is
+merely *addresses held aside*, and physical memory attaches as much as is used. So
+reserving a large stack does not cost much if the actual usage is small.
 
 #realcase[
-  Attacks aiming at a data structure's worst case
+  "It works on Linux but dies on Windows"
 ][
-  There is a performance trap in the same place. Widely used sorting and hashing
-  implementations are fast on average but slow down sharply on particular inputs, and
-  the technique of an attacker deliberately making such inputs to paralyse a server
-  (an algorithmic complexity attack) was organised in a 2003 paper and used in real
-  attacks. Attacks of the same family aiming at hash collisions brought down several
-  web frameworks at once in 2011. They were events showing that a data structure's
-  *worst case* is itself a security problem, and so today's libraries take as their
-  defaults sorting with a guarantee even in the worst case (introsort) and hashes
-  using a random seed — we see them in the flesh in chapter 76.
+  An accident that comes up repeatedly in porting work. The cause is usually within
+  two lines.
+
+  ```c
+  void process(void) {
+      char buffer[4 * 1024 * 1024];   /* 4 MiB — passes within Linux's 8 MiB */
+      ...                             /* instant death in Windows' 1 MiB */
+  }
+  ```
+
+  There are three roads to mending it. Enlarge the stack with a linker option
+  (`/STACK:8388608`), turn the buffer `static` (though re-entrancy and thread safety
+  are lost), or move it to `malloc`. Which of the three is right is settled by that
+  buffer's character — if it is large and outlives the function, the heap; if it is
+  large but finished within the function, the heap or a larger stack; if it is small
+  and hot, the stack as it is.
 ]
 
-== And a sixth — bytes have types
+== The world with no operating system — freestanding implementations
 
-We said five, but one more must be added to be fair. It is the strict aliasing seen
-in chapter 13. A hand-written parser that peers into a byte buffer through pointers
-of different widths runs perfectly at `-O0` and quietly gives a different answer at
-`-O2`. It is the representative of the "bug that appears only in release" seen in
-chapter 17, and the clause to which the Linux kernel surrendered with a single flag.
+Now we go down to the side with no kernel, no virtual memory and no ASLR. It is the
+world of the *freestanding implementation* seen in chapter 55. Here most of the
+earlier picture vanishes and instead *physical addresses appear bare*.
 
-Gathering the six into one table gives this part's map.
+The common skeleton is this. A chip mostly has two kinds of memory — *flash*, which
+remains when the power is off (code and constants), and *RAM*, which vanishes when
+it is off (variables and the stack). And when the program starts, the *startup code*
+(often `crt0` or `Reset_Handler`) does three things.
 
-#recap[
-  #dtable(
-  columns: 3,
-    [*problem*], [*what C gives*], [*what is needed*],
-    [buffer overflow and truncation], [string functions that do not know the size], [strings that carry their length, writes that do not truncate],
-    [unconfirmed failure], [sentinel values and `errno`], [errors that come as values, a compile refusal if discarded],
-    [format mismatch], [a `printf` that believes the format string], [placeholders that take the type from the argument],
-    [unclear ownership], [a `char *` that means four things], [different types for owning and borrowing],
-    [unchecked callbacks], [the `void *` interface], [documented contracts and worst-case-guaranteed algorithms],
-    [the hidden type of bytes], [UB on breaking the aliasing rule], [a byte type the rule exempts],
++ *Copies `.data` from flash to RAM.* The initial values must survive the power
+  being off, so they are stored in flash, and the variables must be in RAM, so they
+  are moved at startup.
++ *Fills `.bss` with zeros.* The work the kernel did for us on Linux.
++ *Sets up the stack pointer and calls `main`.*
+
+These three lines show that C's promise of "an uninitialised global is 0" is *not
+free but work somebody does*. And this code mostly pairs with a linker script — a
+file in which a human writes down which region is placed at which address.
+
+=== Arm Cortex-M — the first word of the vector table is the stack
+
+The family most widely used in microcontrollers. The layout is mostly this.
+
+```text
+0x0800_0000  flash  ┌──────────────┐
+                    │ vector table │  [0] the initial stack pointer value
+                    │              │  [1] the address of Reset_Handler
+                    │ .text        │
+                    │ .rodata      │
+                    │ .data source │ → copied to RAM at startup
+                    └──────────────┘
+0x2000_0000  RAM    ┌──────────────┐
+                    │ .data        │
+                    │ .bss         │
+                    │ heap    ↑    │ (if used)
+                    │   ...        │
+                    │ stack   ↓    │ ← initial SP = the end of RAM
+                    └──────────────┘
+```
+
+Three characteristics to take away.
+
+*① The stack's starting address is embedded in the vector table.* On reset, a
+Cortex-M reads the first word at address 0 and takes it as the stack pointer, then
+reads the second word and jumps there. The stack's place is, in effect, *set up by
+the hardware reading it from the file*.
+
+*② There are two stack pointers.* MSP (main) and PSP (process). Used without an
+operating system (an RTOS) only MSP is used, but lay an RTOS on top and it divides
+them so that the kernel uses MSP and each task uses PSP. Each task has its own
+stack, and its size is *written as a number by a human when creating the task* —
+there is no such generosity as Linux's 8 MiB; it is usually a few hundred bytes to a
+few KiB.
+
+*③ There is a device to report overflow, or there is not.* Higher chips have a stack
+limit register (MSPLIM/PSPLIM) or an MPU and can catch overflow as an exception. On
+chips without them the stack quietly overwrites `.bss` — so a practice arose:
+painting the stack region beforehand with a particular value (`0xAA`, say) and later
+counting how much has been erased to measure the *maximum usage* (*stack painting*).
+Static analysis tools also calculate the worst-case depth from the call graph.
+
+=== AVR — Harvard architecture, so even constants are copied
+
+The 8-bit family widely known through the Arduino. The *Harvard architecture* seen
+in chapter 53 — where the address spaces of code and data are entirely different —
+becomes flesh here.
+
+```text
+flash (program space)         RAM (data space)
+┌───────────────────┐        ┌──────────────────┐
+│ vector table      │        │ .data            │ ← copied from flash
+│ .text             │        │ .bss             │
+│ .data's initial   │──────▶ │ heap ↑ (if used) │
+│ values (and       │        │  ...             │
+│ constants)        │        │ stack ↓          │ ← starts at RAMEND
+└───────────────────┘        └──────────────────┘
+```
+
+Two characteristics dominate practice.
+
+*① String constants eat RAM.* The address spaces being divided, flash cannot be read
+with an ordinary pointer. So the compiler takes the safe side — it copies even string
+literals into RAM. On a chip with only 2 KiB of RAM, this is where the situation
+arises of a few lines of log strings eating half the RAM. The solutions are
+`PROGMEM` and `pgm_read_byte`, and macros such as `F("...")` — instructions saying
+*"leave this constant in flash and read it with a special instruction"*. These are
+not standard C but extensions of the AVR tools.
+
+*② The stack and the heap grow facing each other in the same RAM.* The stack grows
+down from the end of RAM, the heap grows up from after `.bss`. When the two meet —
+they overwrite each other with no warning. There is nothing like a guard page. So
+the long-standing practice of the AVR world is *not to use dynamic allocation at
+all*.
+
+=== PIC — banks and the "compiled stack"
+
+Microchip's 8-bit family (PIC10/12/16/18) is different again in structure.
+
+*① The data memory is divided into banks.* The window that can be seen at once is
+small, so to touch a variable in another bank the bank-select register must be
+changed. The compiler inserts this for you, but if the variable layout is bad the
+bank-switching instructions multiply and the code grows larger and slower.
+
+*② There is no data stack in the hardware.* PIC10/12/16 have only a *call stack* (a
+hardware stack piling up return addresses) and its depth is fixed (eight levels,
+say; PIC18 has thirty-one). There is no stack to hold local variables. So the XC8
+compiler uses a method called the *compiled stack* — it allocates a place for each
+function's local variables *statically*, and functions that cannot be alive at the
+same time overlap in that place.
+
+*③ So recursion is forbidden by default.* If the place for local variables is
+static, the same function cannot be called overlapping itself. The call depth cannot
+exceed the hardware limit either. Since the compiler calculates "can this function
+call that one" from the call graph in order to divide the places, scattering
+function pointers about (chapter 53) leaves the compiler unable to know the graph
+and the layout worsens. PIC24, dsPIC and PIC32 are different — they have a real data
+stack and are closer to ordinary C.
+
+#dtable(
+  columns: 4,
+  [], [*Arm Cortex-M*], [*AVR*], [*PIC (8-bit)*],
+  [architecture], [von Neumann (unified addresses)], [Harvard], [Harvard + banks],
+  [stack], [down from the end of RAM, two SPs], [down from RAMEND], [only a hardware call stack],
+  [local variables], [the stack], [the stack], [*laid out statically* (a compiled stack)],
+  [recursion], [possible], [possible (dangerous)], [effectively impossible],
+  [constants], [read ordinarily], [`PROGMEM` needed], [special access needed],
+  [heap], [usable (not recommended)], [barely used], [barely used],
+  [overflow detection], [MPU, SPLIM (if present)], [none], [none],
 )
+
+#misconception[
+  "Can `malloc` not just be used in embedded work too?"
+][
+  It can be used, but here chapter 41's reasons weigh far more. First, *there is
+  nowhere to go on failure.* On a desktop you can take the null and terminate, but
+  for a brake system or a pacemaker "terminate" is not an answer. Second,
+  *fragmentation does not recover.* In a device running for months or years without
+  a reboot, a fragmented heap leads in the end to allocation failure. Third, *the
+  time is not constant.* Allocation time varies with the request and the heap's
+  state, so it does not fit real-time control that must finish within a settled
+  time.
+
+  So the norm of this world is *static allocation*. Take as much as is needed at
+  compile time and reuse it. Next most common are *pools* (making pieces of the same
+  size in advance and lending them out) and *arenas* (cutting from one lump and
+  throwing the whole away) — both are constant in time and free of fragmentation. It
+  is why MISRA and the safety standards forbid or strongly restrict dynamic
+  allocation, and the next chapter and Part XII treat those alternatives.
 ]
 
 #qa[
-  Would it not be better to use another language entirely to avoid such problems?
+  How is the stack size settled in embedded work? Can it not be taken generously as
+  on Linux?
 ][
-  That too is an answer, and many places really went that road (chapter 1). But the
-  places where C must be used still remain — operating systems, firmware, the floor
-  layer other languages lean on, and projects where decades of code have already
-  piled up. What can be done in such places is *not to change the language but to
-  change the shape of the API*. The right-hand column of the table above is not a
-  list of items requiring a new language but things that can be made by design within
-  C. From the next chapter we see that design.
+  In a world where the whole RAM is a few KiB there is no "generously". The method
+  in the field overlaps three things. *Calculation* — a static analysis tool obtains
+  the worst-case stack depth from the call graph (with recursion and function
+  pointers the calculation becomes impossible). *Measurement* — measure the real
+  maximum usage by the stack painting seen above and add a margin. *Protection* —
+  catch overflow as an exception with an MPU or a stack limit register.
+
+  And one design rule follows: *do not use deep recursion or large local arrays.*
+  The fact seen in chapter 43 that "passing a struct by value makes the stack jump
+  by that much" leads here straight to the product's failure.
 ]
 
-The library that implements that right-hand column as it stands is the proven this
-book has leaned on. We first met it in chapter 38 and its name has come up a few
-times since, but treating it head on begins now. The next chapter is installation and
-a first program — and why this library has the shape of "nothing to install".
+#recap[
+  #dtable(
+    columns: 2,
+    [*to remember*], [*the point*],
+    [`.bss`], [*only the size* in the file. filling with zeros happens at run time],
+    [Linux's stack], [8 MiB by default, `ulimit -s`. caught at once by the guard page],
+    [Windows' stack], [*1 MiB* by default (4 KiB committed), the linker's `/STACK`],
+    [porting accidents], [large local arrays and deep recursion die on Windows first],
+    [large allocations], [go separately through `mmap`/`VirtualAlloc`],
+    [freestanding], [the startup code copies `.data` + zeroes `.bss` + sets the SP],
+    [Cortex-M], [the vector table's first word is the initial SP. MSP/PSP],
+    [AVR], [Harvard — even constants eat RAM (`PROGMEM`). stack↔heap collision],
+    [8-bit PIC], [a compiled stack. recursion effectively impossible],
+    [embedded allocation], [static > pool > arena. `malloc` last],
+  )
+]
+
+The map is drawn. The next chapter opens one region of that map — the heap — to see
+what an allocator actually does, and what choices there are besides the standard
+`malloc`.

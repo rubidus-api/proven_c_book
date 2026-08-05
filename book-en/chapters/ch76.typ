@@ -1,310 +1,286 @@
 #import "../../book/lib.typ": *
 
-= Containers and algorithms
+= Strings and text
 
 #prereq(
-  ([chapter 41, Structs], [structs]),
-  ([chapter 40, Dynamic memory], [a growing array]),
-  ([chapter 72, The foundation], [views and bounds]),
+  ([chapter 38, Strings], [strings]),
+  ([chapter 9, Characters and text], [UTF-8 and bytes]),
 )
 
 #deepqa[
-  Chapter 35 taught that a C array's size is settled at compile time, and chapter 40
-  that it can be grown with `realloc`. Then where is it easiest to go wrong when
-  making a "growing array" yourself?
+  Chapter 38 said that for a C string "up to the NUL" is the length, so to know the
+  length it must be counted every time. Then what improves if the length is carried
+  along — and what is lost?
 ][
-  In three places. First, *calculating the size to grow to* — the multiplication
-  wrap-round seen in chapter 72 happens here. Second, *the state on failure* — when
-  `realloc` fails the original pointer is still valid, and the common code that
-  assigns the return value straight into the original variable loses that original (a
-  leak). Third, *pointers after the growth* — a pointer that pointed at an element
-  becomes invalid after reallocation. Rather than getting these three right afresh
-  every time you make a container, it is better to use one made properly once.
+  Three things are gained. The cost of counting the length vanishes ($O(n)$ becomes
+  $O(1)$), data with a zero byte in the middle can be handled, and above all *the
+  boundary can be checked* — without the length there is nothing to check. Two things
+  are lost. One string becomes two words rather than one, and conversion becomes
+  necessary when meeting a world that expects NUL termination, as `printf("%s")` does.
+  This library keeps a NUL internally as well in order to remove that conversion cost
+  — a compromise that has both.
 ]
 
 #organizer[
-#idx("hash map")  The tools that hold many — the growing array, the intrusive list,
-  the ring buffer, the hash map. And as the answer to chapter 69's fifth bug
-  (unchecked callbacks) and the performance trap attached to that place, we see
-  sorting *guaranteed even in the worst case* and hashing that *withstands attack*.
-  Chapter 35's arrays and chapter 41's structs become practical components here.
+  The answer to chapter 71's first bug — string functions that do not know the size
+  of the vessel. Strings that carry their length, the distinction between owning and
+  borrowing, and this library's most contentious decision, *refuse rather than
+  truncate*. Chapter 9's story of encodings and chapter 38's story of boundaries
+  gather here into one.
 ]
 
 #chapter-questions()
 
-== The life cycle of the four containers
+== Two types, one rule
 
-First we see the four on one screen. How making, putting in, traversing and giving back
-differ between them is all in this example.
+The string vocabulary is only two.
 
-#demo("examples-en/ch76/tour.c")
+- `proven_u8str_t` — an *owning* string. It has a buffer, a length and a capacity.
+- `proven_u8str_view_t` — a *borrowed* string. Only a pointer and a length.
 
-#dtable(
-  columns: 5,
-  [*container*], [*making*], [*allocation*], [*traversal*], [*giving back*],
-  [`array`], [`PROVEN_ARRAY_INIT(alloc, T, n)`], [grows], [by index], [`PROVEN_ARRAY_DESTROY`],
-  [`list`], [`proven_list_init(&l)`], [*none*], [`PROVEN_LIST_FOR_EACH`], [unnecessary],
-  [`ring`], [`PROVEN_RING_INIT(alloc, T, n)`], [once, fixed], [by popping], [`proven_ring_destroy`],
-  [`map`], [`PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)`], [grows (rehashing)], [by key lookup], [`proven_map_destroy`],
-)
+If the name has `view` in it, it is borrowed, and what is borrowed is not destroyed.
+The rule set up in chapter 75 applied to strings as it is. `u8` means UTF-8 — that
+encoding seen in chapter 9 is this library's default text representation.
 
-That only the list has no allocation stands out — because the node lives inside the
-data. So a list is the only container that *cannot fail for lack of memory*, and it is
-especially loved in embedded work (chapter 78).
-
-== The growing array
-
-`proven_array_t` is a byte buffer that knows the element size and alignment. Open it up
-and why the type is filled in by macros becomes clear.
+Open them up and why they were divided in two becomes clear.
 
 ```c
+/* the borrowed string — the same shape as chapter 74's mem_view_t */
 typedef struct {
-    proven_allocator_t alloc;       /* it remembers the allocator given at creation */
-    proven_byte_t     *data;        /* the byte buffer */
-    proven_size_t      len;         /* the number of elements held now */
-    proven_size_t      cap;         /* the number of elements it can hold */
-    proven_size_t      elem_size;   /* the size of one element */
-    proven_size_t      align;       /* the element's alignment requirement */
-} proven_array_t;
-```
+    const proven_byte_t *ptr;
+    proven_size_t        size;
+} proven_u8str_view_t;
 
-*That the array remembers the allocator* differs from strings. A string takes an
-allocator per operation (chapter 74), while an array takes one at creation and keeps it
-inside — making `push` pass an allocator every time it grows would make the code noisy.
-So the allocator is not given again at destruction either
-(`PROVEN_ARRAY_DESTROY(&arr)`).
-
-C having no generics, the type is filled in by macros.
-
-#demo("examples-en/ch76/arr.c")
-
-`PROVEN_ARRAY_INIT(alloc, int, 4)` means "an array to hold ints, initial capacity 4",
-and `PROVEN_ARRAY_PUSH` writes the type again to *check at compile time that it
-matches*. At the fifth element, which exceeded the capacity of 4, the array grew by
-itself — and that growth happens through the allocator (exactly chapter 73's rule; the
-array remembers the allocator it was given at creation).
-
-#antipattern[
-  Holding an element pointer and then pushing
-][
-  ```c
-  int *first = PROVEN_ARRAY_GET_MUT(&arr, int, 0);
-  (void)PROVEN_ARRAY_PUSH(&arr, int, 42);   /* the buffer may move here */
-  *first = 7;                               /* writes at the old address — use after free */
-  ```
-  When the array grows the contents move to a new buffer and a pointer to the old
-  address becomes invalid. It is the form in which the use after free learned in
-  chapter 40 appears on a container. The rule is one — *after changing a container,
-  obtain it again by index.* The habit of carrying an index rather than a pointer
-  becomes the defence here.
-]
-
-== The intrusive list — linking without allocation
-
-`proven_list_t` is an *intrusive* linked list — the node does not hold the data;
-rather a link field is planted inside the data struct. It amounts to putting one
-`proven_list_node_t link;` slot inside a `struct` made in chapter 41.
-
-```c
-typedef struct proven_list_node_t {
-    struct proven_list_node_t *next;
-    struct proven_list_node_t *prev;
-} proven_list_node_t;
-
+/* the owning string — one buffer and an "is it borrowed" flag */
 typedef struct {
-    proven_list_node_t head;      /* a sentinel pointing at itself */
-} proven_list_t;
+    proven_buf_t internal;   /* { ptr, len, cap } */
+    bool         borrowed;
+} proven_u8str_t;
 ```
 
-That `head` is a *sentinel* is this implementation's knack. In an empty list
-`head.next` and `head.prev` point at head itself, and so not one "is it null" check
-appears in the insertion and deletion code — a pattern the Linux kernel long used.
+The three slots of `proven_buf_t` state the string's character as they are. *`len` is
+the number of bytes of content held now*, *`cap` is the whole buffer's size*, and the
+difference between them is the spare room including the NUL's place. So
+`create(alloc, 64)` really takes 65 bytes — 64 is the limit of the *content* and one
+byte is the NUL's share. Thanks to that one byte `proven_u8str_as_cstr` can hand out a
+C string with neither copying nor allocation.
 
-What is good about it? *There is nothing to allocate separately* in order to put
-something in the list — because the node is the data. A list can be used even in an
-environment with no heap (chapter 78), and hanging the same object on two lists at
-once is a matter of keeping two link fields. The price is that the data struct must
-know about the list.
+The `borrowed` flag marks a string made with `_borrow`. When this flag is on,
+`_destroy` *releases nothing* and merely empties the struct — somebody else's memory
+cannot be given back.
 
-Getting back the other way is the problem, and one macro solves it.
-
-```c
-task_t *t = PROVEN_LIST_ENTRY(node, task_t, link);
-```
-
-It is the macro that *works the struct's starting address back* from the address of the
-`link` member — the `offsetof` seen in chapter 41 used here in the flesh. This one line
-returning from node to data is nearly the whole of the intrusive list.
-
-There are two traversal macros.
+There are three roads to obtaining a string.
 
 #dtable(
-  columns: 3,
-  [*macro*], [*what it does*], [*when*],
-  [`PROVEN_LIST_FOR_EACH(it, &l)`], [traverses from the front], [when only reading],
-  [`PROVEN_LIST_FOR_EACH_SAFE(it, tmp, &l)`], [holds the next node in advance], [★ when removing while traversing],
+  columns: 4,
+  [*function*], [*allocates*], [*destroy*], [*where it is used*],
+  [`proven_u8str_create(alloc, limit)`], [yes], [`_destroy` needed], [starting empty and filling it],
+  [`proven_u8str_create_from_view(alloc, v)`], [yes], [`_destroy` needed], [owning a copy of existing content],
+  [`proven_u8str_borrow(buf, cap)`], [no], [unnecessary (harmless)], [over a stack or static array. embedded],
 )
 
-The star matters. Remove a node during traversal and its `next` becomes meaningless, so
-the loop loses its way. The `_SAFE` edition turns with *the next node already in hand*,
-so removing the present node is safe. It is why the example used it when detaching item
-20.
+Only beware that `_borrow`'s `cap` is *the whole capacity including the NUL* — give it
+`buf[64]` and the content goes to 63 bytes.
 
-It is worth knowing too that both macros require the iteration variables to be
-*declared in advance* (`proven_list_node_t *node, *tmp;`). The macro does not put a
-declaration in the `for`'s initialiser — a kernel practice carried on from the C89 days.
-
-== The ring buffer — a stream of fixed size
-
-`proven_ring_t` is a fixed-size circular buffer. It is used where a producer and a
-consumer come and go, for the most recent N of a log, and for streams such as audio
-and sensor samples where *what has passed may be thrown away*. The size being fixed,
-what to do when it is full is part of the contract — and here too the default is to
-report rather than quietly overwrite (the example's `err=2` is that confirmation).
-
-There are only `push` and `pop`, and both *copy the element*. Putting in gives an
-address, and taking out gives the address of the place to receive it.
+Making a view from a literal is done with one macro.
 
 ```c
-int v = 42;
-proven_err_t e = proven_ring_push(&ring, &v);     /* copies the value in */
-int out;
-e = proven_ring_pop(&ring, &out);                 /* copies the value out */
+PROVEN_LIT("hello")        /* becomes { ptr, 5 } at compile time — no strlen */
+proven_u8str_view_from_cstr(p)   /* counts the length at run time */
 ```
 
-Thanks to this design no pointer into an element inside the ring leaks outward — holding
-a pointer in a circular buffer and having that place overwritten is a classic accident,
-and it was blocked by the interface.
+`PROVEN_LIT` draws the length from `sizeof("...") - 1`, so its *run-time cost is zero*.
+Using it for string literals is the practice, and `_from_cstr` for a C string whose
+length is unknown.
 
-== The hash map, and data structures under attack
+#demo("examples-en/ch76/ops.c")
 
-`proven_map_t` is an open-addressing hash map. Keys are integers or byte sequences,
-and string keys have two modes — *a borrowed key* (the caller keeps the bytes alive)
-and *an owned key* (the map copies and holds it). Chapter 73's owning-borrowing
-distinction appears here as it is too.
+The first line shows chapter 75's rule again. `proven_u8str_borrow` has no allocator —
+therefore it does not allocate. It is doing string operations on a 16-byte array taken
+on the stack, and this is exactly how strings are handled in embedded work without a
+heap.
 
-The kind of key is settled at creation.
+== Refuse, rather than truncate
 
-#dtable(
-  columns: 3,
-  [*creation macro*], [*key*], [*caution*],
-  [`PROVEN_MAP_INIT_INT(alloc, T, n)`], [an integer (`key.id`)], [the fastest],
-  [`PROVEN_MAP_INIT_U8_BORROWED(alloc, T, n)`], [a string (borrowed)], [★ the key bytes must outlive the map],
-  [`PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)`], [a string (copied)], [a copy cost on insertion. safe in exchange],
-)
+The second `append` is the most important single line of this part. On trying to
+attach `" world, and more"` after `"hello"` in a 16-byte vessel, the library *wrote
+nothing* and returned `PROVEN_ERR_OUT_OF_BOUNDS`. And as the next line shows, the
+original content `hello` stands as it was — the failure atomicity learned in
+chapter 73.
 
-The key is passed as one union — `.id` for an integer, `.str` for a string.
+It is the exact opposite of `snprintf`'s choice seen in chapter 71. Why not truncate?
 
-```c
-proven_map_key_t k = { .str = PROVEN_LIT("beta") };
-const int *v = proven_map_get(&map, k);      /* null if absent */
-```
-
-*Lookup answers with null.* The reason it returns a pointer rather than a bundle is
-that "absent" is not a failure but a normal answer (distinct from chapter 71's error
-branches). And that pointer *points inside the map*, so it becomes invalid the next time
-the map grows — the same rule as with arrays.
-
-There are three functions for putting in. `proven_map_set` (general),
-`proven_map_set_u8_owned` (copying a string key in), and
-`proven_map_set_with_scratch` (giving the temporary memory separately). The last is used
-when the temporary buffers of internal work such as rehashing are to be obtained from
-another allocator — a device for keeping dead memory from piling up when running a map
-on an arena.
-
-#demo("examples-en/ch76/wordcount.c")
-
-This one example contains all of this chapter's tools — it counts with a map, gathers
-into an array, sorts and prints. Chapter 74's views were used to cut the words, so
-string copying happens only once, when the map owns the key.
-
-#realcase[
-  HashDoS — when hash maps became a target of attack
-][
-  In 2011 several web frameworks collapsed at once through the same vulnerability. If
-  an attacker chose *keys that crowd into the same bucket* and sent thousands of them
-  as parameters in one request, insertion that had been $O(1)$ on average became
-  $O(n)$ and the whole degenerated to $O(n^2)$, so a few requests stopped a server. The
-  cause was that the hash function was public and collisions *could be calculated*.
-
-  Today's prescription is a *keyed hash* — draw a random secret per process and mix it
-  into the hash, and the attacker cannot precompute collisions. It is why proven's
-  `proven_map_create` uses SipHash-2-4 and a random seed by default for string keys,
-  and conversely why there is a separate `proven_map_create_trusted` using the faster
-  FNV-1a for cases where the keys all come from my own code. *The default is the safe
-  side, and the fast side states itself in the name* — the principle met repeatedly in
-  this part.
-]
+*Because a truncated value is not a short value but a different value.* A truncated
+path points at a different file, a truncated command is a different command, a
+truncated user name is a different person. Truncate and declare success and the caller
+cannot know whether what was received is what was requested. So this library *gives
+the decision back to the caller* — "there is not enough room. What shall we do?"
 
 #qa[
-  How much slower is a keyed hash? And where does the random secret come from if
-  there is no OS?
+  Still, are there not places where truncation is fine, such as one line of a log?
 ][
-  SipHash is slower than FNV-1a, but by an amount proportional to the string length,
-  and the share hash computation takes in the whole of a map operation is mostly not
-  large. The random secret is drawn once from the operating system's source of
-  randomness — and in an environment with no OS (chapter 78) there is nowhere to draw
-  it from, so it falls back to FNV-1a. The library does not hide this fact but writes
-  it in the documentation, and the grounds are clear: *where there is no attacker
-  there is no need for an attacker model either.* There exists no outsider choosing
-  keys inside your firmware.
+  There are. So there is a separate function that *explicitly writes only part* —
+  `proven_u8str_append_partial` returns the number of bytes that went in. That the
+  name is long and the return value different is the heart of it. Truncation is still
+  possible, but to do it you must *write it that way*. The principle that the default
+  is always the safe side and the dangerous choice can be made only through a visible
+  name (the same as chapter 74's `_unchecked`) is kept here too.
 ]
 
-== Sorting with a worst-case guarantee
+#antipattern[
+  Confusing growth with fixed capacity
+][
+  ```c
+  proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
+  proven_err_t e = proven_u8str_append_grow(alloc, &s, view);  /* dangerous */
+  ```
+  `_append` writes only within the capacity, while `_append_grow` asks the allocator
+  for more if there is not enough — which is why only the latter has an allocator
+  argument. The problem is demanding growth on a borrowed buffer (`_borrow`). A stack
+  array cannot grow, so this is a design error.
 
-The two problems seen in chapter 69 — the unchecked comparator, and the algorithm
-that collapses in the worst case — are treated together here.
+  In this case the library *does not quietly reallocate somebody else's memory* but
+  returns `OUT_OF_BOUNDS` — it succeeds while things fit and refuses the moment they
+  would not. The habit of reading signatures becomes the defence here as it stands —
+  *with an allocator it can grow, without one it cannot.*
+]
 
-#idx("introsort")`proven_array_sort` is *introsort*. It begins as a fast quicksort
-and, if the recursion becomes too deep, switches to heapsort. So the average is as
-fast as quicksort and $O(n log n)$ is *guaranteed* even in the worst case — the
-complexity attack seen in chapter 69 does not work. To carry the header's wording
-over as it is: "$O(n log n)$ is not an average but a guarantee."
+== Three kinds of writing — refuse, truncate, grow
 
-On the comparator side the language cannot help, so the contract is stated in the
-documentation and in examples. The example's `by_count_desc` is the model — descending
-by count, and *ties broken by the word*. It contrasts exactly with chapter 69's
-counterexample (the comparator that sees only the first letter).
+This library's string operations are made so that the kind can be known from the name
+alone. That kind is "what happens when there is not enough room".
+
+#dtable(
+  columns: 4,
+  [*kind*], [*shape of the name*], [*when short*], [*failure atomicity*],
+  [fixed capacity, atomic], [`_append`, `_insert`, `_replace_at`], [refuses (`OUT_OF_BOUNDS`)], [yes — the original stands],
+  [best effort, truncating], [`_append_partial`, `_append_fmt_trunc`], [writes as much as fits and reports], [no (deliberately)],
+  [growing], [`_append_grow`, `_insert_grow`, `_replace_at_grow`], [asks the allocator for more], [yes — the original stands if allocation fails],
+)
+
+All three kinds are needed because the right answer differs by place. Where a file path
+is being built truncation must not happen, so *refusing* is right; where a log line is
+fitted to the screen *truncating* is right; where the length is unknown *growing* is
+right. That the default (the short name) is refusal shows this design's attitude.
+
+== The operations that mend a string
+
+Appending alone is not enough. There are operations that mend the middle, delete, and
+rewrite.
+
+#demo("examples-en/ch76/edit.c")
+
+#dtable(
+  columns: 3,
+  [*function*], [*what it does*], [*contract*],
+  [`_insert(&s, i, v)`], [inserts at position `i`], [`i` ≤ length. it pushes the tail out],
+  [`_remove(&s, i, n)`], [deletes `n` bytes from `i`], [an error if it exceeds the range],
+  [`_replace_at(&s, i, old, v)`], [a range with other content], [the lengths may differ],
+  [`_replace_first(&s, off, t, r)`], [the first `t` found, into `r`], [★ if absent it returns *success*],
+  [`_reset(&s)`], [empties only the content], [the buffer and capacity stand],
+  [`_reserve(alloc, &s, n)`], [capacity up to `n` in advance], [it pays especially on an arena],
+  [`_append_byte(alloc, &s, b)`], [appends one byte], [grows if needed],
+)
+
+The starred contract of `_replace_first` needs care. *Not finding it is not an error but
+a success* — to distinguish "there was nothing to replace" from "it was replaced" you
+must first check with `proven_u8str_view_find`. That the example's "replacing what is
+not there" comes back as `err=0` is that confirmation.
+
+`_reset` and `_reserve` are a pair for performance. In code that builds a string afresh
+every frame or per request, *reusing the buffer instead of throwing it away* is
+`_reset`, and taking it in advance when you roughly know how large it will grow is
+`_reserve`. As seen in chapter 75, `_reserve` pays especially on an arena — take it
+large before another allocation intervenes and growth in place becomes possible.
+
+#qa[
+  Which should be the default, `_insert` or `_insert_grow`?
+][
+  *`_insert` where I settle the capacity*, *`_insert_grow` where I do not know how much
+  content there will be*. The criterion is simple — "is running short here *a bug*, or
+  *a thing that can happen*?"
+
+  If a protocol header is being assembled in a fixed-size buffer, running short is a bug,
+  and refusal is right there (and that error reveals the bug). If user input is being
+  appended, it can grow to any length, so growing is right. It is also why embedded code
+  uses only the editions without `_grow` — there, *unpredictable growth itself is
+  forbidden* (chapter 80).
+]
+
+== Finding and cutting — text handling without copying
+
+The example's ③ and ④ are a view's real usefulness. Obtaining a substring needs no
+copying — it merely calculates a new pointer into the original and a new length.
+While one CSV line was divided into three fields, not one allocation happened.
+
+This pattern is especially powerful in parsers. When parsing a line with `sscanf` in
+chapter 25 a buffer had to be prepared in advance to hold the result, whereas cutting
+with views leaves only *marks upon the original*. In exchange one more thing must be
+kept — as seen in chapter 74, *it is valid only while the original is alive*.
+
+There is a convention too in the value `find` returns when it does not find. It is
+not 0 or a negative number but a sentinel with a name, `PROVEN_INDEX_NOT_FOUND`.
+Chapter 71 spoke of the danger of sentinel values, and what differs here is that *it
+has a name and is documented* — a nameless magic number and a named contract are
+different things.
 
 #misconception[
-  "Ties may be handled however you like"
+  "Carrying the length means knowing the number of characters"
 ][
-  They may not. A comparator must form a *total order* — 0 if equal, consistently
-  greater and less, and the signs of `cmp(a,b)` and `cmp(b,a)` must be opposite. Break
-  this and the result is not merely jumbled; depending on the implementation it may
-  even *trespass outside the array* (because the partitioning algorithm judges its
-  boundaries from the comparison results). A comparator that returns anything at all
-  for ties is therefore a bug, not a taste.
+  No. The length is *the number of bytes*. As learned in chapter 9, one character in
+  UTF-8 is 1\~4 bytes, so the Korean "가" is 3 bytes and an emoji is 4. It is why the
+  example's output takes the trouble to state "(5 bytes)". So handling "the nth
+  character" is still delicate, and *cutting anywhere at a byte boundary* gives the
+  broken characters seen in chapter 9. What a string library solves is boundary
+  trespass, not the essential difficulty of encodings.
 ]
 
-== Bytes into letters — hashes and encodings
+== The boundary of two worlds — NUL termination and UTF-16
 
-We note the remaining tools in the same box too.
+Conversion is needed at every place where the outside world is met.
 
-- *Hashes by purpose* — for the map's internals (fast mixing), for integrity checking
-  (CRC-32), for cryptographic use (SHA-256), and the keyed hash seen above (SipHash).
-  The library distinguishes them because *the same word "hash" means entirely
-  different demands* — using SHA-256 where only speed is needed is waste, and using
-  FNV-1a where adversarial input comes is dangerous.
-- *hex and Base64* — two standards for moving bytes into text. The principle here is
-  the same. Wrong input (hex of odd length, wrong padding) is *not guessed at and
-  mended* but refused with `PROVEN_ERR_INVALID_ENCODING` (that norm from chapter 74).
+- `proven_u8str_as_cstr` — obtains a NUL-terminated pointer from an owning string.
+  A NUL being kept internally, there is neither copying nor allocation. It is used
+  when passing to `printf("%s")` or to a file API.
+- `proven_u8str_view_to_cstr` — makes a NUL-terminated string from a view. This one
+  *takes an allocator* — because a view may point into the middle of the original and
+  a NUL cannot be written in that place. The signature states the fact once again.
+- `proven_u16str_t` / `proven_u16str_view_t` — the bridge to the UTF-16 world. The
+  Windows API uses this encoding so conversion is needed, and conversion can fail
+  (unpaired surrogates and the like). So the result comes as a bundle.
+
+#realcase[
+  "Do not guess, refuse" — the principle of handling encodings
+][
+  The root of the text security problems seen in chapter 9 is mostly *the lenient
+  decoder*. Implementations that "read a wrong UTF-8 as something similar" have
+  several times been the passage to security incidents — decoders that permitted
+  overlong encodings in particular had their checks bypassed. So today's norm is one
+  sentence. *Do not read invalid input as something mended; refuse it.* proven's
+  encoding conversion stopping with `PROVEN_ERR_INVALID_ENCODING` is that norm
+  implemented, and this principle is exactly the same spirit as this chapter's "do not
+  truncate".
+]
 
 #recap[
-  Containers in summary.
+  The string vocabulary in summary.
 
   #dtable(
-  columns: 4,
-    [*tool*], [*shape*], [*where it fits*], [*caution*],
-    [`array`], [a growing contiguous array], [an ordered list], [pointers invalid after growth],
-    [`list`], [an intrusive linked list], [joining without allocation], [the data holds the link],
-    [`ring`], [fixed-size circular], [streams, the most recent N], [the contract when full],
-    [`map`], [open-addressing hash], [finding by key], [choose whether the key is owned],
-    [`array_sort`], [introsort], [sorting anything], [the comparator must be a total order],
-    [four hashes], [by purpose], [map, integrity, cryptography, anti-attack], [do not mix the purposes],
+  columns: 3,
+    [*function*], [*what it does*], [*failure and ownership*],
+    [`u8str_create(alloc, cap)`], [create an owning string], [returns a bundle, needs `_destroy`],
+    [`u8str_borrow(buf, cap)`], [a string over somebody's buffer], [no allocation, no destruction],
+    [`u8str_append(&s, v)`], [append within the capacity], [refuses if short (the original is preserved)],
+    [`u8str_append_partial`], [as much as fits], [returns the number of bytes put in],
+    [`u8str_append_grow(alloc,…)`], [grow it if short], [allocation may fail],
+    [`u8str_view_find`], [the position of a substring], [`PROVEN_INDEX_NOT_FOUND` if absent],
+    [`u8str_view_slice`], [a sub-view], [no copying — tied to the original's lifetime],
+    [`u8str_as_cstr`], [a NUL-terminated pointer], [no copying],
+    [`u8str_view_to_cstr`], [view → a C string], [needs an allocator],
 )
 ]
 
-That is as far as the world of pure computation — it all runs even with no operating
-system. In the next chapter we go outside. Files, streams, time, random numbers — the
-places that touch the OS.
+We can now hold and cut strings safely. But the work of *making* them remains —
+turning numbers and values into letters, and turning letters back into numbers. It is
+the place where chapter 71's third bug waits, and the place where this library's most
+conspicuously different syntax appears.

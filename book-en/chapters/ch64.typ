@@ -1,279 +1,201 @@
 #import "../../book/lib.typ": *
 
-= Operations that do not split — `<stdatomic.h>`
+= Diagnosis and control — `<errno.h>`, `<assert.h>`, `<signal.h>`, `<setjmp.h>`
 
 #prereq(
-  ([chapter 11, Memory divides], [the cache and the layers of memory]),
-  ([chapter 39, Lifetime and storage duration], [lifetime and sharing]),
+  ([chapter 47, Errors and contracts], [reporting an error as a value]),
+  ([chapter 48, Undefined behaviour], [after a contract is broken]),
 )
 
 #deepqa[
-  Chapter 12 said the CPU does several things in one beat and even executes out of
-  order, and chapter 11 said each core carries its own cache. Then if two strands
-  increase the same variable by 1 at once — is the result 2?
+  Chapter 47 said C's ways of reporting an error are only three — the return value,
+  global state, and stopping the program. Then exactly when can the global called
+  `errno` be believed?
 ][
-  It may not be. `x = x + 1` is not one step to the machine but *three* (read, add,
-  write), and if two strands interleave these three steps they read the same value
-  and write the same value — one increment vanishes whole. On top of that, caches
-  differ per core, so the lag of "written but not visible to the other" is
-  compounded. This chapter's first example actually counts that loss out.
+  It can be believed *only right after a failure has been confirmed.* The
+  standard's rule is two-layered. First, a successful call may also put a value in
+  `errno` — so the order must not be "nonzero means failure" but "read the reason
+  after the function has reported failure". Second, the value may be overwritten by
+  the next library call at any time — so once read it is stored at once. These two
+  rules are the price of the design that carries errors in global state.
 ]
 
 #organizer[
-#idx("atomic operations")  We see what happens when several strands touch the same
-  memory at once, and learn the tool C11 brought into that place — atomic types and
-  operations. Why a data race is *outside the contract* rather than "slow", why
-#idx("data race")  `volatile` is not the answer, and when to touch and when to
-  leave alone the difficult handle called the memory order.
+  We look in one place at the four headers used when a program *has gone wrong*.
+  The global holding an error number, the assertion that catches contract
+  violations, signals flying in from outside, and the jump that skips over the
+  stack. Why the discipline set up in chapter 47, "errors are values", matters so
+  much becomes clear on seeing the real shape of the alternatives.
 ]
 
 #chapter-questions()
 
-== The lost update — confirmed with the eyes
+== `errno` — the price of carrying errors in a global
 
-#demo("examples-en/ch64/atomic.c")
+#demo("examples-en/ch64/errno_demo.c")
 
-Four strands turned the same loop 200,000 times each. The expected value is
-800,000, but the unprotected `long` did not even get near it. The vanished share
-differs on every run — and this non-determinism is precisely the character of this
-class of bug. *A loss that does not reproduce.*
+The output shows the rules exactly. Set it to 0 just before the call, read it
+after confirming failure, and store it before doing anything else. Merely slipping
+one line of `printf` in between can change the value.
 
-The atomic variable's side is exactly 800,000 every time. Because
-`atomic_fetch_add` performs "read-add-write" as *one lump that cannot be split*.
-The name atom means just that — that which is not split further.
-
-#misconception[
-  "A race condition is a probabilistic performance problem where the value is
-  occasionally off"
-][
-  Wrong in two layers. First, it is not that the value goes off but that *the
-  contract breaks*. The standard from C11 onward settles it thus — if two strands
-  touch the same memory at once, at least one of them writing, and it is neither
-  atomic nor ordered, that is a *data race* and the whole program is undefined
-  behaviour (chapter 46). It means there is no guarantee that it ends at the level
-  of "one value being wrong".
-
-  Second, the compiler optimises on this premise. Assuming there is no race, it
-  puts the variable in a register, and then however much the other side changes the
-  value this loop *sees the old value forever*. This really is the common identity
-  of the infinite loop that "works in a debug build and hangs in release"
-  (chapter 17's release-only bug is replayed here).
-]
-
-== Why `volatile` is not the answer
-
-In code that has long used C one often sees the practice of exchanging signals
-between strands with `volatile int flag;`. It is a wrong practice now. What
-`volatile` promises is one thing only — *the compiler will not remove or merge
-these accesses*. As will be seen in chapter 46, its purpose was hardware registers
-(places whose value changes from outside).
-
-There are two things `volatile` does not promise. *Atomicity* — the `x++` of a
-`volatile long x;` is still three steps and splits. And *ordering and visibility* —
-it does not prevent the CPU from changing the order of writes or from being late to
-show them to another core.
-
-#dtable(
-  columns: 4,
-  [], [*not split*], [*visibility between cores*], [*blocks reordering*],
-  [`volatile`], [no], [no], [no (against other accesses)],
-  [`_Atomic`], [yes], [yes], [yes (as much as the chosen order)],
-  [a mutex], [yes (the whole region)], [yes], [yes],
-)
-
-Summed up: *`volatile` for hardware registers, atomic types or mutexes for sharing
-between strands.* Java's and C\#'s `volatile` share only the name and differ in
-meaning (there it really does guarantee visibility), so bringing the habits of
-those languages into C is a common passage to accidents.
-
-== Atomic types and operations
-
-Using them is simple. Attach `_Atomic` before the type, or use the names the header
-gives (`atomic_int`, `atomic_long`, `atomic_bool`, `atomic_size_t` …).
-
-```c
-#include <stdatomic.h>
-atomic_int  counter = 0;      /* = _Atomic int */
-_Atomic long total;
-```
-
-The operations are called as functions (or macros of those names). Using the
-ordinary operators (`++`, `+=`) also behaves atomically, but *the fact of being
-atomic is not visible in the code* and so is easy for a reader to miss, which is
-why the explicit functions are recommended.
+`errno` looks like a variable but is *a macro*. In a program running along several
+strands each strand must see a different value, so the implementation defines it
+as a macro pointing at thread-local storage.
 
 #dtable(
   columns: 3,
-  [*operation*], [*what it does*], [*where it is used*],
-  [`atomic_load`], [read], [seeing the current value],
-  [`atomic_store`], [write], [setting a value],
-  [`atomic_fetch_add`, `_sub`], [add and return *the previous value*], [counters and statistics],
-  [`atomic_fetch_or`, `_and`, `_xor`], [bit manipulation], [sets of flags],
-  [`atomic_exchange`], [swap and return the previous value], [replacing in place],
-  [`atomic_compare_exchange_strong`], [change only if equal to the expected value (CAS)], [lock-free data structures],
-  [`atomic_compare_exchange_weak`], [the same, but it may fail in vain], [inside a loop],
-  [`atomic_flag_test_and_set`], [the most primitive test-and-set], [spinlocks],
+  [*function*], [*what it does*], [*note*],
+  [`strerror(n)`], [error number → a sentence], [★ a static buffer. not thread-safe],
+  [`perror(s)`], [`s: reason` to `stderr`], [the habit of attaching a context string],
+  [`strerror_r`], [fills a caller's buffer], [POSIX. there are two editions, hence confusion],
+  [`strerror_s`], [the same intent], [annex K (chapter 65)],
 )
 
-That `fetch_add` returns *the previous value* is a place often confused. To obtain
-"which number this is", use the return value; to know "how much it is now", it is
-the return value plus the increment, or a separate `atomic_load` — and the latter
-may change again in the meantime.
-
-#antipattern[
-  Believing that several atomic operations make their bundle atomic too
-][
-  ```c
-  if (atomic_load(&count) < LIMIT)      /* ① read and */
-      atomic_fetch_add(&count, 1);      /* ② add — somebody cuts in between */
-  ```
-  If another strand raises the value between ① and ②, the limit is exceeded.
-  *Atomicity is a property of one operation, not of a region.* To protect a region,
-  bind it with a CAS loop or use a mutex.
-  ```c
-  int cur = atomic_load(&count);
-  do {
-      if (cur >= LIMIT) break;                 /* limit check and update as one lump */
-  } while (!atomic_compare_exchange_weak(&count, &cur, cur + 1));
-  ```
-  That on failure *the current value comes back held in `cur`* is the heart of this
-  idiom. So there is no need to read again inside the loop.
-]
+The error numbers the standard names are only three — `EDOM` (domain), `ERANGE`
+(range), `EILSEQ` (encoding). The rest, such as `ENOENT` and `EACCES`, are settled
+by POSIX or the platform. That is, *code comparing `errno` values is that much less
+portable*.
 
 #qa[
-  What differs between `compare_exchange`'s strong and weak? Why is there a
-  separate edition that "fails in vain"?
+  Why was `assert` made to switch off wholesale with `NDEBUG` — is it not better to always check?
 ][
-  Some CPUs (the ARM family and others) implement CAS as a pair of instructions,
-  "reserve and later write conditionally". If the reservation is broken in between
-  by an interrupt or by cache circumstances, it comes back as a failure even though
-  the value equalled the expectation — that is a *spurious failure*. `weak` exposes
-  this failure as it is and in exchange is faster, while `strong` retries
-  internally to guarantee "failure only when the value differed" and in exchange is
-  a little slower.
+  Because what `assert` checks is *the programmer's assumption, not the user's
+  input*. "By the time we are here, p is not null" must be true whenever the code
+  is right; if it is false, that is a bug. The original design puts such checks
+  densely during development and removes their cost from the shipped build.
 
-  The rule is simple. *`weak` inside a loop, `strong` when trying only once without
-  a loop.* Since the loop will turn again anyway, a spurious failure is harmless
-  and only the gain remains.
+  Two things follow. First, *no side effects inside `assert`* — `assert(pop(&s) == 3)`
+  disappears entirely in the release build. Second, checks on user input, file
+  contents and network data must be made by *code that always runs*, not by
+  `assert`. In chapter 47's vocabulary of contracts, `assert` confirms
+  preconditions *during development*; reporting failure as a value is another job.
 ]
 
-== Memory order — not touching it is the default
+== `assert` — the cheapest way to write a contract as code
 
-If no order is specified, as in `atomic_fetch_add(&x, 1)`, the strongest order,
-*sequential consistency* (`memory_order_seq_cst`), is used. It means every strand
-sees the order of atomic operations as one consistent story, and it is the model
-easiest for a human to reason about. In exchange it is the most expensive.
+The macro learned in chapter 47. Pinning down the rules again:
 
-C provides six orders. We learn their faces from a table — *most programs need only
-the default.*
-
-#dtable(
-  columns: 3,
-  [*order*], [*guarantee*], [*where it is used*],
-  [`seq_cst`], [one order globally], [the default. if in doubt, this],
-  [`acquire`], [later accesses cannot rise above it], [taking a lock, reads on the consumer side],
-  [`release`], [earlier accesses cannot sink below it], [releasing a lock, writes on the producer side],
-  [`acq_rel`], [both, in a read-modify-write operation], [state transitions with CAS],
-  [`relaxed`], [atomicity only. no ordering guarantee], [pure counters and statistics],
-  [`consume`], [effectively abandoned (implementations raise it to acquire)], [not used],
-)
-
-The two most common practical uses are these. First, *the producer-consumer flag*:
-fill the data and then raise the flag with `release`, and the consumer sees the
-flag with `acquire` and then reads the data. This pair guarantees "if the flag is
-visible the data is visible too." Second, *a pure statistics counter*: only the
-final sum need be right and there is no need to order it against other data, so
-`relaxed` is exactly the right tool.
+- `assert` confirms *an invariant internal to the program*. Things like "if we got
+  this far, p is not null".
+- *It is not used to check values that came from outside.* User input, file
+  contents and network data are checked with `if` and handled as errors.
+- If `NDEBUG` is defined it *vanishes entirely* (chapter 17). So an expression with
+  side effects must not be put in it.
 
 #antipattern[
-  Switching to `relaxed` for performance, just to see
+  Making `assert` do work
 ][
   ```c
-  atomic_store_explicit(&ready, 1, memory_order_relaxed);   /* the flag */
+  assert(fclose(f) == 0);      /* in a release build the fclose itself vanishes */
+  assert(i++ < n);             /* there arises a build in which i is not incremented */
   ```
-  `relaxed` guarantees *only the atomicity of this variable*. There is no guarantee
-  that the data filled in beforehand is visible to the other side, so the consumer
-  can see the flag raised and yet read *the data from before it was filled*. Such
-  code mostly runs fine on x86 and then appears as an unreproducible bug on an ARM
-  device — because the reordering each piece of hardware permits differs.
-
-  The rule: *when a flag and data form a pair, `release`/`acquire`.* Until you
-  understand that pair, leave the default as it is. The time lost far exceeds the
-  nanoseconds saved here.
+  Separate the check from the side effect.
+  ```c
+  int rc = fclose(f);
+  assert(rc == 0);
+  (void)rc;                    /* prevents an unused warning in release */
+  ```
 ]
 
-== The phrase "lock-free"
+C11 brought in `static_assert` (in C23 it can be used without `_Static_assert`).
+It confirms at compile time, so the run-time cost is zero, and it is used on
+`sizeof` and constant conditions.
 
-That is what the example's last line asked with `atomic_is_lock_free`. If an atomic
-type is handled by a single CPU instruction it is *lock-free*, and if not the
-library uses a hidden lock behind the scenes. On today's mainstream machines
-integers of pointer size or smaller are mostly lock-free. Wrap a large struct in
-`_Atomic`, on the other hand, and — the syntax passes but — a hidden lock attaches
-and performance can become unexpectedly bad.
+```c
+static_assert(sizeof(int) >= 4, "this code assumes a 32-bit int");
+```
+
+== Signals — interference flying in from outside
+
+`<signal.h>` handles events coming from outside the program (Ctrl+C, a wrong
+memory access, an arithmetic error). The signals the standard settles are only six
+(`SIGINT`, `SIGSEGV`, `SIGFPE`, `SIGILL`, `SIGABRT`, `SIGTERM`); the rest are the
+platform's.
+
+The heart of it is the fact that *there is almost nothing that can be done inside a
+handler.* What the standard permits is about this much.
+
+- assigning a value to a variable of type `volatile sig_atomic_t`
+- calling `_Exit` or `abort`
+- setting the handler for the same signal again
+
+Neither `printf` nor `malloc` may be called — because the signal can cut in while
+those functions are halfway through executing (they are not *async-signal-safe*).
+The idiom in the field is "the handler only raises a flag; the real handling
+happens in the main flow."
+
+```c
+static volatile sig_atomic_t stop = 0;
+static void on_int(int sig) { (void)sig; stop = 1; }
+/* in the main loop: while (!stop) { ... } */
+```
 
 #misconception[
-  "Atomic operations are always faster than a mutex"
+  "`SIGSEGV` can be caught and the program kept running"
 ][
-  Mostly right when contention is low, but it reverses when contention is heavy. If
-  several cores fight over the same cache line, that line keeps travelling between
-  the cores (chapter 11's false sharing is replayed here). A CAS loop turns again
-  on every failure, and when contention is heavy this retrying is waste entire — a
-  mutex puts the failing strand to sleep while spinning burns a core.
-
-  And *writing lock-free data structures yourself* is a task of another order of
-  difficulty. The ABA problem (a value going from A to B and back to A, fooling the
-  CAS), when memory may be reclaimed, progress guarantees — these are topics for a
-  paper each. The right answer in the field is usually this: *atomic types for
-  counters and flags, a verified library or a mutex for data structures.*
+  It can be caught but it cannot be kept running. `SIGSEGV` is a signal that comes
+  *after the contract has already been broken* (chapter 48's undefined behaviour).
+  Return normally from the handler and the same instruction is executed again and
+  repeats endlessly, or it runs on over a damaged state. Leaving a stack trace for
+  debugging and ending with `_Exit` is the realistic best, and "recovery" is mending
+  the code so that the access is not made in the first place.
 ]
 
-== Where to use it and where not to
+== Non-local jumps — `setjmp`/`longjmp`
 
-#dtable(
-  columns: 3,
-  [*situation*], [*recommended tool*], [*reason*],
-  [statistics counters], [`atomic_fetch_add` (`relaxed`)], [no ordering is needed],
-  [a shutdown-request flag], [`atomic_bool` + `release`/`acquire`], [it pairs with data],
-  [initialising exactly once], [`call_once` (`<threads.h>`) or CAS], [do not write double-checked locking by hand],
-  [invariants over several values], [a mutex], [atomicity is per single variable],
-  [sharing a large struct], [a mutex], [an `_Atomic` struct means a hidden lock],
-  [sharing with a signal handler], [`sig_atomic_t` or a lock-free atomic type], [chapter 62's restrictions],
-  [hardware registers], [`volatile`], [it is not sharing between strands],
-)
+A device that remembers the present place with `setjmp` and comes back later from
+somewhere deep with `longjmp`. It is an attempt to make something like exceptions
+in a language that has none, and the price is correspondingly large.
+
+- The only local variables whose values can be believed after a `longjmp` are those
+  declared `volatile`. The rest may have been in registers, so their values are
+  undetermined.
+- *Cleanup code does not run.* The resources (files, memory) held by the functions
+  skipped over leak as they are. Because there is no device like C++'s destructors.
+- If the function that called `setjmp` has already returned, `longjmp` is outside
+  the contract.
+- Escaping from a signal handler with `longjmp` is especially dangerous.
+
+So the conclusion in the field is usually "do not use it". If there is a place for
+it, it is confined to structures such as an interpreter's error recovery or a
+parser's deep failure, where *the resources to clean up are bound into a single
+arena* (Part XII's arena makes that condition).
 
 #realcase[
-  Why C11 brought in a memory model
+  The shape of code made by the way of handling errors
 ][
-  In the standard before C11 there was *no concept at all of there being several
-  strands.* Threads were the business of a library (POSIX threads and the like),
-  and the language defined optimisation on the premise that "a program flows in one
-  stream". In that gap questions piled up which nobody could answer exactly — must
-  the compiler assume another strand sees this write, is this reordering legal, is
-  this mutex-less code wrong.
+  Write the same program three ways and its shape splits like this.
 
-  Around 2004 Java tidied up its memory model first, and C++11 and C11 continued
-  that current by introducing *a memory model at the level of the language*. What
-  entered then was the definition of a data race, atomic types, and the six memory
-  orders. That we can today say in one line "a data race is undefined behaviour" is
-  thanks to that tidying — before it there was not even a language in which to write
-  that sentence.
+  - *Return value + `errno`*: an `if` attaches to every call and the error paths
+    are visible. Cumbersome, but the flow is honest.
+  - *`setjmp`/`longjmp`*: the body becomes clean but a human must remember all the
+    resource cleanup, and where control jumps to is not visible in the code.
+  - *`goto cleanup`*: the compromise most widely settled in C codebases. On failure
+    everything gathers at one place and cleans up in reverse order. The Linux
+    kernel pinned this pattern down as a convention, and it is exactly the
+    disciplined use meant by chapter 29's "use goto with restraint".
+
+  All three solve the same problem of "handling failure as a value and not
+  forgetting the cleanup". Part XII's library lays a fourth answer on top — *making
+  failure into a type*.
 ]
 
 #recap[
+  Diagnosis and control in summary.
+
   #dtable(
-    columns: 2,
-    [*to remember*], [*the point*],
-    [data race], [not slowness but *outside the contract*. optimisation changes the code],
-    [`volatile`], [not a tool for sharing between strands. it is for hardware],
-    [the default order], [`seq_cst`. leaving it as it is is mostly the right answer],
-    [`fetch_add`], [it returns *the previous value*],
-    [two operations], [bundling them is not atomic — a CAS loop or a mutex],
-    [`weak`/`strong`], [`weak` if inside a loop],
-    [lock-free], [mostly yes for small integers. a hidden lock for large structs],
-    [data structures], [do not write them yourself],
+    columns: 3,
+    [*tool*], [*where it is used*], [*rule*],
+    [`errno`], [the reason a library call failed], [0 just before, read after confirming failure, store at once],
+    [`assert`], [internal invariants], [no side effects, not used for checking input],
+    [`static_assert`], [compile-time assumptions], [zero cost],
+    [`signal`], [external events such as Ctrl+C], [only a flag in the handler],
+    [`SIGSEGV`], [—], [catching it does not allow recovery],
+    [`setjmp`/`longjmp`], [special recovery], [values undetermined unless `volatile`, no cleanup],
+    [the practical idiom], [cleanup on failure], [gather at one place with `goto cleanup`],
   )
 ]
 
-We have seen operations that do not split. The next chapter is a tool in the
-opposite direction — C23's checked arithmetic, which asks according to the contract
-whether an operation *overflowed its vessel*.
+That is as far as the headers that existed from the C89 days. The next chapter is
+what the standard has added since — and the story of what became of the attempt to
+make "safe functions".

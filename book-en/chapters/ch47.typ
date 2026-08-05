@@ -1,319 +1,151 @@
 #import "../../book/lib.typ": *
 
-= The three faces of `main` — entry point and exit status
+= Errors and contracts
 
 #prereq(
-  ([chapter 3, Programs and processes], [what it is to run as a process]),
-  ([chapter 19, The structure of a program], [the skeleton of a program]),
+  ([chapter 32, The meaning of a function], [how a function reports failure]),
+  ([chapter 39, Safe input, and the appearance of proven], [the idiom of safe input]),
 )
 
 #deepqa[
-  Chapter 3 said a process leaves one number, the *exit status*, as it ends, and
-  chapter 14's hello world ended with `return 0;`. So who receives that 0, and
-  what happens if a nonzero value is returned?
+  At the end of chapter 32 the `fact` function was said to stand on an "implicit
+  promise" (n at least 0; overflow at 13 or above). But that promise was written
+  nowhere in the code — does it then exist?
 ][
-  The receiver is *whoever ran this program* — the terminal's shell, a build tool,
-  a script, or another program that launched this one as a child. They judge "did
-  it end well?" from that one number and decide what to do next. So `main`'s return
-  value is not decoration but *the program's last conversation with the outside
-  world*.
+  It exists, but *in an unkept state* — and that is the heart of the problem. Every
+  function has an implicit contract: for what inputs it works properly
+  (preconditions), and what it guarantees on success (postconditions). If that
+  contract is in neither documentation nor code, a violation passes silently and
+  goes off later somewhere unrelated. This chapter is the story of ways to *make
+  the contract visible*.
 ]
 
 #organizer[
-#idx("main")  We face head on the `main` that chapter 14 passed over as merely
-  "the agreed starting point". The *three forms* the standard permits, the exact
-  contract of the command-line arguments `argc` and `argv`, and where the returned
-#idx("exit status")  value goes and what it becomes — including the conventions
-  of Linux, Windows and embedded targets. Why `void main()` is wrong is settled
-  here too.
+#idx("contract")  The seed of the contract planted in chapter 32 grows — what a
+  function demands and what it promises (preconditions and postconditions), how
+  failure is reported (C's way: errors are values), and the devices that force
+  that value to be checked. The design idea of proven, seen in chapter 39, is
+  organised here into principles.
 ]
 
 #chapter-questions()
 
-== The three forms the standard permits
+== Errors are values — C's way
 
-The C standard pins `main`'s definition down like this — the return type must be
-`int`, and the parameters must be *none*, or *two*, or *some other
-implementation-defined manner*. Hence three faces.
+Many modern languages have a separate channel for failure (exceptions); C has
+none. In C failure is *reported through the return value* — the function's result
+itself carries "did it succeed?" out with it. There are three conventions.
 
-#dtable(
-  columns: 3,
-  [*form*], [*when to use it*], [*status*],
-  [`int main(void)`], [when command-line arguments are not used], [standard],
-  [`int main(int argc, char *argv[])`], [when arguments are taken], [standard],
-  [other forms], [extended arguments such as `envp`], [*implementation-defined*],
-)
+- *A success/failure boolean* plus receiving the result through a pointer
+  (chapter 34's `&` idiom).
+- *A special value* marking failure — `malloc`'s null (chapter 41), `fgets`'s
+  null, a negative return, and so on.
+- *An error code* returned with 0 meaning success — the tradition of the system
+  call family.
 
-The second form's `char *argv[]` may equally be written `char **argv` (exactly
-chapter 37's rule that array parameters decay into pointers). The names are free
-too — `argc` and `argv` are only convention.
+We see the first in a demonstration. It is the fact learned in chapter 27, that
+division by zero is outside the contract, governed by a function's contract.
 
-The representative third form is
-`int main(int argc, char *argv[], char *envp[])`. Unix-family systems and Windows
-commonly support it, but it is *not standard*, and the portable road to reading
-environment variables is `getenv` (chapter 55).
+#demo("examples-en/ch47/errval.c")
 
-#antipattern[
-  `void main()`
-][
-  ```c
-  void main(void) { … }        /* not standard */
-  ```
-  A notation often seen in old textbooks and Turbo C-era code. The standard pinned
-  the return type to `int`, so this notation is *outside the contract in a hosted
-  environment*. Many compilers warn about it and some treat it as an error.
-
-  Only two exceptional circumstances need be known. First, in a *freestanding
-  implementation* (chapter 53) the name and form of the starting function are the
-  implementation's to decide, so there really are embedded compilers that
-  officially support `void main(void)` — there being nowhere to receive the return
-  value, they remove that code to save size. Second, that is *that compiler's
-  promise*, not the standard's. In hosted code it is always `int`.
-]
-
-== The contract of `argc` and `argv`
-
-#demo("examples-en/ch47/entry.c")
-
-What the standard promises is as follows, and these promises form the skeleton of
-argument-handling code.
-
-+ `argc` is *zero or more*. There may be no arguments at all.
-+ `argv[0]` is *the program name* — though if the name cannot be known it may be
-  an empty string. So code that computes a path trusting `argv[0]` unconditionally
-  is dangerous.
-+ `argv[1]` through `argv[argc-1]` are the actual arguments.
-+ *`argv[argc]` is necessarily a null pointer.* The example confirmed it. That is
-  why traversal taking null as the end marker, as in
-  `for (char **p = argv; *p; p++)`, works.
-+ These strings *may be modified* and are valid while the program runs.
-
-#qa[
-  Must the code that interprets arguments be written by hand? Things like `-v`
-  and `--help`.
-][
-  Two things must be divided first — *receiving the arguments* and *interpreting
-  them* are different jobs.
-
-  *Receiving them is in the standard.* The `argc` and `argv` just seen are that, and
-  on any platform the arguments come in through these two parameters. Nothing is
-  lacking in that place.
-
-  *It is the parser that is absent.* Rules for *interpreting* — "`-v` means verbose,
-  `--out FILE` is an option with a value attached, the rest are file names" — are not
-  provided by standard C at all. It means there is no function like `getopt` in
-  `<stdlib.h>`. So that work divides into three roads.
-
-  *Write it yourself* — for a short program this is enough. Scan `argv`,
-  distinguish with `strcmp`, and for arguments with an attached value read the next
-  slot. To convert to a number use `strtol`, not `atoi` (chapter 55).
-
-  *Platform tools* — the Unix family has POSIX's `getopt` (`<unistd.h>`) and GNU's
-  `getopt_long` (which handles the `--name` form), and glibc has `argp`, which even
-  builds the help text. All of them belong to the platform, not the standard.
-  Windows' C runtime has no `getopt`, so porting projects mostly put one `getopt`
-  implementation into the repository or use a parser of their own.
-
-  *A library* — as the scale grows (subcommands, generated help, merging with a
-  configuration file), use a library dedicated to argument parsing.
-
-  Whichever road, keep one rule: *arguments are input from outside.* Chapter 39's
-  rules for handling input — do not trust lengths, check the failure of numeric
-  conversion, do not concatenate paths blindly — apply just the same.
-]
-
-#platform[
-  How the arguments reach the program — Unix and Windows
-][
-  That `argv` is standard does not mean *the way it is made* is the same. The two
-  worlds are opposites.
-
-  *The Unix family* — the side launching the program passes *an array of strings* in
-  the first place (chapter 3's `execve`). The shell handles quotes and wildcards
-  first and cuts them into pieces, so the `argv` a program receives is already
-  divided. The kernel carries that array over to the new process as it is.
-
-  *Windows* — `CreateProcess` passes *one string* (chapter 3). That is, the dividing
-  is the receiving side's part. So the C runtime, in its startup code, cuts that one
-  line by rule and makes the `argv` it hands to `main` — `argc` and `argv` arriving as
-  the standard says is because the runtime does that work for you.
-
-  This difference leaves two things in practice. First, on Windows the *original
-  command line* can be seen directly and cut by hand if needed — `GetCommandLineW`
-  returns that one line and `CommandLineToArgvW` cuts it by the standard rules. To
-  receive Unicode arguments intact, using `wmain` (or those two functions) is the
-  practice. Second, *the cutting rules differ by platform* — the handling of quotes
-  and backslashes especially. Hence the advice, when launching another program and
-  building its arguments, to use APIs that *pass the arguments as an array rather than
-  joining a string by hand* (`posix_spawn`, and `CreateProcess`'s argument-assembly
-  rules) — the same grain as chapter 58's `system` counterexample.
-]
-
-== The value returned — three notations, one meaning
-
-There are three ways to end `main`, and all three mean the same thing.
-
-```c
-return 0;              /* explicit */
-return EXIT_SUCCESS;   /* the name from <stdlib.h>. its value is 0 */
-}                      /* just ending — since C99 the same as return 0; */
-```
-
-The last is a special case introduced in C99. *For `main` alone*, ending without a
-return value counts as having returned 0 (in other functions, not returning a
-value and then using it is outside the contract). The standard belatedly ratified
-what was common in C89-era code.
-
-To report failure, use `EXIT_FAILURE`. As the example confirmed, the common value
-is 1, but *the standard does not promise it is 1* — it is only "a nonzero value
-meaning failure." Returning any other number is *implementation-defined*.
-
-#dtable(
-  columns: 3,
-  [*way of ending*], [*what it does*], [*caution*],
-  [`return n;` (in main)], [the same as `exit(n)`], [all the cleanup procedures run],
-  [`exit(n)`], [end the program from anywhere], [runs `atexit` functions, flushes streams],
-  [`quick_exit(n)`], [quick termination (C11)], [only `at_quick_exit` runs],
-  [`_Exit(n)`], [immediate termination], [it does *not* clean up],
-  [`abort()`], [abnormal termination], [no cleanup. a core dump may be left],
-)
-
-The example's `atexit` shows that cleanup procedure — the registered function ran
-after `main` ended. Flushing open streams (chapter 55's buffers) is included in
-it. So *ending with `_Exit` or `abort` can lose output.*
+Three things to read. *The contract is written in comments* — what is demanded
+stands beside the code. *On failure the output argument is not touched* —
+"nothing is changed on failure" is part of the contract too. And
+*`[[nodiscard]]`* — the C23 notation by which the compiler warns if a call
+discards this return value. It is a brake on the freedom of chapter 21's "it is
+legal to discard a return value", saying "this one value must not be discarded."
+That is exactly why chapter 39's proven functions wear this notation.
 
 #misconception[
-  "Any number at all can be returned as the exit status"
+  "Error handling is an incidental chore that makes code untidy"
 ][
-  You may return it, but *there is no guarantee the receiver sees it as it is.*
-  Unix-family systems use only *the low eight bits* when conveying a child's exit
-  status. So the status of a program that ended with `return 300;`, seen from the
-  shell, is not 300 but 44 (300 − 256).
-
-  ```text
-  $ ./ex ; echo $?
-  44
-  ```
-
-  Windows conveys a 32-bit exit code as it is, so it has no such truncation. The
-  portable rule is one — *0 for success, 1 for failure, and otherwise only small
-  numbers in the range 0–125.* Do not send large or negative numbers out as a
-  status.
+  A common impression for a beginner, and C's error handling really is
+  conspicuously verbose — an `if` attaches to every call. But invert the
+  perspective and it is exactly the opposite: *the error path is half of the
+  program.* That a file may be missing, memory may run short, input may be
+  nonsense, is not an exceptional situation but ordinary reality. The evidence is
+  that the overwhelmingly common cause in real accident analyses is "the return
+  value was not checked" — code written only for the success path is code half
+  written. How to reduce the verbosity (gathering into a common cleanup point,
+  using a type that wraps failure) is a matter of technique; the principle of
+  *checking* is not a matter of compromise.
 ]
 
-== Conventions — who reads that number, and how
+== The contract in code — assert and defence
 
-#platform[
-  Linux and the Unix family
-][
-  The shell keeps the last command's status in `$?`. The conventions are:
+#idx("assert")There is a tool for writing a precondition as *code* rather than
+documentation — `assert(condition)` of `<assert.h>`. If the condition is false it
+stops the program at once and reports the location. Distinguishing its use
+exactly is important:
 
-  #dtable(
-    columns: 2,
-    [*value*], [*meaning*],
-    [0], [success],
-    [1], [a general failure],
-    [2], [a usage error (the convention of many tools)],
-    [126], [found but not executable, for permission and similar reasons (shell)],
-    [127], [command not found (shell)],
-    [128 + N], [killed by signal N (the shell's notation)],
-  )
+- *`assert` catches the programmer's mistakes* — an internal invariant meaning "if
+  we have reached here, this condition must be true" (the same word as
+  chapter 31's invariant). Practice is for it to be switched off in release builds
+  (`NDEBUG`).
+- *What came from outside is not for assert but for checking* — user input, file
+  contents and network data are things for which "being wrong is normal", so they
+  must always be checked at run time and handled with error values. Validating
+  input with assert becomes the accident of the check disappearing entirely in the
+  release build.
 
-  Thanks to these conventions a script can decide its flow from the status alone,
-  as in `if ./program; then …`, and `make` and CI notice failure. The BSD family
-  has a finer convention in `<sysexits.h>` (`EX_USAGE` 64 and so on), but it is not
-  widely used.
+This distinction is the contract's two faces — the inside (invariants I must
+keep) with assert, the outside (promises the other party may not keep) with checks
+and error values.
 
-  Caution: values of 128 and above are confusable with being killed by a signal, so
-  it is better for a program not to return them itself.
-]
+== const — the cheapest contract
 
-#platform[
-  Windows
-][
-  The same number is called the *exit code*, read as `%ERRORLEVEL%` in a batch
-  file and `$LASTEXITCODE` in PowerShell. To receive a child's code from a program
-  you use `GetExitCodeProcess`.
+There is one more tool for writing a contract in code. It is `const`, introduced
+in chapter 23 as "documentation saying I will not change this" and used in
+#idx("const")chapter 42 as the mark "this function does not touch the original."
+Seen again from this chapter's perspective, const is *the contract clause that
+can be written most cheaply* — adding one word in one place in a function
+signature promises the caller "your data is safe" and hands the compiler the job
+of watching over that promise.
 
-  Two differences. *It is not truncated to the low eight bits* (the full 32 bits),
-  and certain values can be read as overlapping with system error codes. An
-  ordinary program is still safest using 0 and 1.
-]
+Its effect spans three layers.
 
-#platform[
-  Embedded — there is nowhere to return to
-][
-  On a machine with no operating system there is nobody to receive a status when
-  `main` ends. So `main` in this world usually *does not end*.
+*① For people — the burden of reading falls.* The moment you see the signature
+`void render(const struct scene *s)`, it is settled that this function does not
+change scene. Not having to read the function's body — in a large codebase there
+is scarcely a more valuable saving. It is the substance of chapter 23's "the more
+of a piece of code that does not vary, the easier it is to read."
 
-  ```c
-  int main(void)
-  {
-      init();
-      for (;;) {            /* turns forever */
-          poll();
-      }
-  }
-  ```
+*② For the compiler — it becomes grounds for optimisation.* Chapter 13 showed the
+editor holding a value in a register, and the key to that judgement was "can this
+value change in the meantime?". const is a signal helping that judgement — though
+it must be stated exactly: *const is not itself a magic optimisation switch.*
+Data arriving through a pointer may still be changed by another route (aliasing),
+so const alone does not let the compiler be certain of everything. The definite
+gain is on the side of *objects actually declared const* (global constants,
+`static const` tables) — the compiler may plant the value directly in the code
+(constant propagation) or place it in a read-only region, making it unmodifiable
+outright (chapter 38's string literals lived in that place).
 
-  And if it does end, what happens is also the implementation's business — the
-  startup code may hold it in an infinite loop, reset the chip, or let it wander
-  anywhere. So embedded coding conventions often explicitly require that "`main`
-  does not return." That the entry point may not even be called `main` is exactly
-  as chapter 53 showed — the function the reset vector points at is the starting
-  point, and that function copies `.data`, fills `.bss` with zeros and then calls
-  `main` (chapter 67).
-]
+*③ For the layers of memory — sharing becomes safe.* Data that does not change
+*has no reason to be copied.* Many places may read the same thing together, and
+from chapter 11's cache perspective several cores may share and read the same
+cache line without any contention — because the false sharing of chapter 12 is an
+accident that requires *writing*. That is why the practice of passing large data
+as a `const` pointer instead of by value (chapter 42) is both safe and fast.
 
-#realcase[
-  The tool ecosystem built by one exit status
-][
-  It is interesting to see how much the single convention "0 is success" supports.
-  The shell's `&&` and `||`, `make` stopping when one rule fails, CI judging a build
-  failure, a container deciding a restart from a process's exit code, a test runner
-  counting passes and failures — all of it reads this one number.
-
-  The Unix philosophy of "joining small programs with text streams", seen in
-  chapter 9, in fact had one more channel. Data flows through streams, and
-  *success and failure flow through the exit status.* So making a program that
-  behaves like a tool requires two things: results to standard output, error
-  messages to standard error, and *success or failure always carried in the exit
-  status.*
-]
+So modern practice is simple — *make const the default and release only what must
+change.* Widening a contract costs; narrowing it takes one word.
 
 #qa[
-  If `main` is a special function, may it be called recursively or have its
-  address taken?
+  How does chapter 39's proven implement this principle?
 ][
-  In hosted C, `main` is grammatically an ordinary function, so both calling it and
-  taking its address are syntactically possible. But *the norm is not to* — C++
-  forbids it outright, and in C too it is a place entangled with startup code and
-  library initialisation, with nothing to gain. It is better for the reader as
-  well to treat the program's start as happening once.
-
-  Know one thing instead. That `main` is the starting point is a statement from
-  *the C program's point of view*. In reality, startup code (something like `crt0`)
-  runs before it, preparing the static region and gathering the arguments before
-  calling `main` (chapter 67). `main` is not "the first code that runs" but "the
-  first of the code we write that runs."
+  Three things follow this chapter's principles exactly. First, *failure appears
+  in the type* — it returns an `{err, val}` bundle, so writing code that "takes the
+  value out without asking whether it succeeded" becomes awkward instead. Second,
+  *it forces the check with `[[nodiscard]]`* — discard it and the compiler warns.
+  Third, *it takes boundaries and sizes as part of the contract* — blocking, at
+  the API level, the root of the boundary violations seen in chapters 36–38.
+  In summary: a design that writes the contract not in documentation but in
+  *types and signatures*. Regard it as implementing, as a component inside C, the
+  same direction as the concerns of Rust and Zig seen in chapter 1.
 ]
 
-#recap[
-  #dtable(
-    columns: 2,
-    [*to remember*], [*the point*],
-    [three forms], [`int main(void)`, `int main(int, char *[])`, implementation-defined],
-    [`void main()`], [not standard (embedded extensions are another matter)],
-    [`argv[0]`], [the program name — it may be empty],
-    [`argv[argc]`], [necessarily null. the end marker for traversal],
-    [ways of ending], [`return`/`exit` (they clean up) / `_Exit`, `abort` (they do not)],
-    [the C99 special case], [`main` returns 0 even when it ends without a value],
-    [the range of values], [small numbers 0–125. Unix conveys only the low eight bits],
-    [conventions], [0 success, 1 failure, 2 usage error (Unix)],
-    [embedded], [`main` usually does not return],
-  )
-]
-
-We have seen the program's beginning and end. Now we move on to the story of a
-program *divided across several files* — the place where chapter 16's linker
-appears again.
+We can handle contracts and errors. But there remains a world this book has kept
+deferring under the names "outside the contract" and "undefined behaviour". The
+next chapter faces that world head on — the most misunderstood and most expensive
+subject in C.

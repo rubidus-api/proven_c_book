@@ -74,14 +74,13 @@
   #set par(first-line-indent: 0em)
   #block(width: 100%, fill: rgb("#f0f0f0"), inset: (x: 9pt, y: 7pt), below: 0pt)[
     #metadata(q)<qa-q>
-    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 0.95em)[#label_q]
-    #h(6pt)
-    #text(weight: "bold")[#q]
+    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 0.95em)[
+      #label_q. #h(2pt) #q]
   ]
   #block(width: 100%, inset: (x: 9pt, top: 7pt, bottom: 2pt), above: 0pt)[
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
-          size: 0.9em, fill: rgb("#555555"))[#label_a]
-    #h(6pt) #a
+          size: 0.9em, fill: rgb("#555555"))[#label_a.]
+    #h(3pt) #a
   ]
 ]
 #let qa(q, a) = _qa(_L.q, _L.a, q, a)
@@ -92,7 +91,8 @@
   #block(below: 5pt, width: 100%)[#q]
   #block(width: 100%, inset: (left: 10pt),
     stroke: (left: 2pt + rgb("#999999")))[
-    #text(weight: "bold", size: 0.92em, fill: rgb("#3a3a3a"))[#_L.a] #h(5pt) #a
+    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
+          size: 0.92em, fill: rgb("#3a3a3a"))[#_L.a.] #h(3pt) #a
   ]
 ]
 

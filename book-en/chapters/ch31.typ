@@ -79,7 +79,7 @@ and is the least frequently seen of the three.
   correctness]. Even if you do not write it out every time, the habit of asking
   "what fact does not change in this loop?" becomes the eye that catches most
   loop bugs — turning one too few or one too many, the off-by-one. It is also the
-  first exercise in the perspective of code as contract (chapter 45).
+  first exercise in the perspective of code as contract (chapter 47).
 ]
 
 #qa[
@@ -118,7 +118,7 @@ case 1:      *to = *from++;
 }
 ```
 
-(The `*to` and `*from++` parts are chapter 33's pointer syntax, so for now look
+(The `*to` and `*from++` parts are chapter 34's pointer syntax, so for now look
 only at the outward shape — the point is the structure.) How to read it: the
 switch jumps *into the middle of a loop*. Remember chapter 30's fact that a
 `case` is only a label — a label stamped *inside* the body of a `do-while` is not

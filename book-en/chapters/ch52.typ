@@ -1,272 +1,289 @@
 #import "../../book/lib.typ": *
 
-= How to read a declaration — two readings and `typedef`
+= Variadic functions
 
 #prereq(
-  ([chapter 51, Functions as values], [the notation of a function pointer]),
-  ([chapter 36, Arrays], [the array declarator]),
+  ([chapter 22, Output], [printf, a variadic function]),
+  ([chapter 28, Implicit conversions], [the default argument promotions]),
 )
 
 #deepqa[
-  While learning function pointers in chapter 51 a declaration like
-  `int (*(*s)(void))(int);` appeared, and we passed on saying only "it is hard to
-  read, so use a `typedef`". But by what rule are such declarations built — why do
-  they twist like this?
+#idx("variadic arguments")  Chapter 28 taught that values crossing into variadic
+  arguments undergo default promotions (float→double, small integers→int). But why
+  is there a special promotion rule in that place alone?
 ][
-  Because a C declaration is not *writing down a type* but *writing down how that
-  name is used*. Dennis Ritchie's design principle was that declaration reflects
-  use. `int *p;` reads "*`*p` is an int*", and `int a[3];` reads "`a[3]` is an
-  int". This principle is elegant in the simple cases, but once `*` and `[]` and
-  `()` overlap, parentheses intrude because of precedence and it quickly turns
-  rough. Hence the separate need for *rules for reading*.
+  *Because the receiving side does not know the types.* An ordinary function has
+  its argument types written in its prototype (chapter 24) and the compiler makes
+  the two sides match. But the variadic position has only `...` in the prototype,
+  so there is nothing to match against — hence the agreement "let us at least send
+  everything unified into larger types" to reduce the confusion. This chapter is
+  the story of how values are taken out at that "place that does not know types",
+  and what it costs.
 ]
 
 #organizer[
-#idx("reading declarations")  C's most notorious place — we learn how to read a
-  declaration such as `char *(*table[4])(int)`. There are only two principles:
-  reading *from the outside in*, and reading *from the innermost name outward*.
-  That the two have different uses, and how to unfold this rough declaration in
-#idx("typedef")  layers with `typedef`. Finally we introduce a tool that does the
-  job for you.
+  We open the secret of how `printf` could take any number of arguments. The four
+  tools of `<stdarg.h>`, why this device is not type-safe, its history (from K&R's
+  `varargs` through C89's `stdarg` to C23's tidying), and today's alternatives.
+  Why chapter 22's "the format is a contract" was such a strict contract is
+  revealed here.
 ]
 
 #chapter-questions()
 
-== The two readings
+== The four tools
 
-One rule suffices to begin. The three symbols attaching beside the name in a
-declaration have different strengths.
+What `<stdarg.h>` gives is one type and three macros — `va_list` (the reader),
+`va_start` (begin), `va_arg` (take one out), `va_end` (close). Seen in a
+demonstration.
 
-- `[]` (array) and `()` (function) attach *to the right of the name*, and `*`
-  (pointer) attaches *to the left*.
-- The two on the right are *stronger* than the one on the left. So `int *a[3]` is
-  "an array of pointers", not "a pointer to an array".
-- To reverse the order, bind with parentheses — `int (*a)[3]`.
+#demo("examples-en/ch52/va.c")
 
-On this difference of strength the two readings arise.
+The key is the second argument of `va_arg(ap, int)` — *the programmer states the
+type of the value to take out.* The function does not know what arrived, so
+somebody must say "what I take out now is an int", and that somebody is the
+author who shares the agreement with the caller. Break the agreement — take out an
+int when a double really arrived — and it is outside the contract (chapter 48).
+It reads the wrong place in memory, so the value becomes rubbish or every
+subsequent extraction is thrown out of step.
 
-*Reading ① — from the innermost name outward (the right-left rule).* Find the
-identifier, start there, and go outward alternately, *looking right first and then
-left*. On meeting a parenthesis, read all of its inside and then step out. The
-charm of this method is that what you say as you read connects in English word
-order.
+And the function *does not know how many arguments there are* either. So a way to
+learn the count must be made into a calling convention, and the demonstration
+shows two practices — receiving the count as the first argument (`sum_n`), or
+agreeing on a marker value announcing the end (`sum_until_zero`). `printf` uses a
+third road: *the format string is a specification announcing both count and
+types.* That is the exact weight of chapter 22's "the format is a contract" —
+break that contract and printf goes rummaging through memory taking out arguments
+that do not exist (chapter 22's format string vulnerability was exactly this
+mechanism).
 
-*Reading ② — from the outside in.* Start from the type name (the leftmost thing,
-such as `int` or `char`) and wrap your way in asking "this is a what of a what".
-In a declaration with no identifier at all — the *abstract declarator* written in
-a cast or in `sizeof` — there is no name to start from, so this is the only road.
+== Default argument promotions — values crossing `...` get fatter
 
-The two readings arrive at the same conclusion. Use whichever suits the occasion.
+There is one more reason `va_arg` asks for a type. An argument crossing `...`
+*does not go as its original type*. The default argument promotion seen in
+chapter 28 really happens here.
 
-== Reading ① in practice — connecting it in English word order
+#dtable(
+  columns: 3,
+  [*what you passed*], [*what actually arrives*], [*so*],
+  [`char`, `signed char`, `unsigned char`], [`int` (★)], [`va_arg(ap, char)` is wrong],
+  [`short`, `unsigned short`], [`int` (★)], [take it out with `va_arg(ap, int)`],
+  [`bool`], [`int`], [the same],
+  [`float`], [`double`], [`va_arg(ap, float)` is wrong],
+  [integers at least as wide as `int`], [unchanged], [—],
+  [pointers], [unchanged], [but a null constant needs a cast],
+)
 
-#demo("examples-en/ch52/decl.c")
+The rule in one line — *integers narrower than `int` undergo integer promotion, and
+`float` becomes `double`.* That is why `printf` has no float-specific format
+(chapter 55), and why writing `va_arg(ap, float)` is a contract violation, taking
+out a type that never arrived.
 
-We read the example's declarations one at a time. What you say is most natural
-strung together in English — because C's declaration syntax was designed to follow
-English word order.
+One qualification attaches to the star in the table. The result of integer promotion
+is *almost always* `int`, but exactly it is "`int` if an `int` can represent every
+value of the original type, otherwise `unsigned int`" (chapter 28). On today's
+mainstream machines an `unsigned short` also fits in an `int` and so becomes `int`, but
+on an implementation where `short` and `int` have the same width an `unsigned short`
+promotes to `unsigned int`. Take it out there with `va_arg(ap, int)` and the signedness
+goes out of step — *the exact rule is that you must use the type actually promoted to.*
 
-*`int *pa[3];`*
+The trap when passing a null pointer comes from here too. On an implementation
+where `NULL` is defined as the integer `0`, an integer 0 rides into the `...`
+position, and if the receiving side takes it out with `va_arg(ap, char*)` the
+widths are out of step. That is why C23's `nullptr` (chapter 35) or an explicit
+cast (`(char *)0`) is used.
 
-+ Start from the identifier `pa` — "pa is"
-+ Look right: `[3]` — "array 3 of"
-+ The right is finished, so look left: `*` — "pointer to"
-+ What remains: `int` — "int"
+== The fundamental limit — the function knows nothing
 
-Read through: *"pa is array 3 of pointer to int"* — an array of three pointers.
-The example confirmed it with 24 bytes in total and 8 bytes per element.
+A variadic function *knows neither the number nor the types of the arguments that
+arrived.* The values are simply placed, with no information accompanying them to
+explain what they are. So every variadic function must obtain that information
+*from outside*, and there are only three ways in the end.
 
-*`int (*ap)[3];`*
+#dtable(
+  columns: 3,
+  [*method*], [*example*], [*how it breaks*],
+  [a specification string tells it], [`printf("%d %s", ...)`], [format and arguments out of step is UB. if the format is a variable, no check is possible],
+  [count and types are taken as arguments], [`sum_n(3, a, b, c)`], [miscount and it takes out arguments that are not there],
+  [an end marker is agreed], [`execl(..., (char *)NULL)`], [omit the marker and it does not stop],
+)
 
-+ Start from `ap` — "ap is"
-+ To the right is the end of the parenthesis, so we cannot go. Look left: `*` —
-  "pointer to"
-+ Step out of the parenthesis. Right again: `[3]` — "array 3 of"
-+ What remains: `int`
+All three share the property that they hold only *if a human keeps the
+agreement*, because the information for a compiler to check simply does not
+exist. That is why chapter 71 counts this among "the five bugs C has been
+shipping for fifty years."
 
-*"ap is pointer to array 3 of int"* — one pointer (8 bytes), and what it points at
-is a 12-byte array. That is the example's second line.
+== `_Generic` — catching the type at compile time
 
-*`char *(*table[4])(int);`* — this chapter's protagonist.
+C11 added one tool for this problem. `_Generic` is the syntax that *chooses one of
+several options at compile time according to an expression's type*.
 
-+ Start from `table` — "table is"
-+ Right: `[4]` — "array 4 of"
-+ Left: `*` — "pointer to"
-+ Outside the parenthesis, right: `(int)` — "function (int) returning"
-+ Left: `*` — "pointer to"
-+ What remains: `char`
+```c
+#define TYPE_NAME(x) _Generic((x), \
+    int:          "int",           \
+    double:       "double",        \
+    const char *: "string",        \
+    default:      "other")
+```
 
-*"table is array 4 of pointer to function (int) returning pointer to char"* — a
-table of functions taking one integer and giving back a string. The example
-actually put two functions in and called them.
+Three things to watch. First, the criterion for choosing is *the type*, not the
+value. Second, branches not chosen *are not even compiled* — so code valid only
+for one type can sit beside code valid only for another. Third, giving a type not
+in the list is *a compile error* unless there is a `default` — and that property
+is the heart of the next section.
+
+#demo("examples-en/ch52/generic.c")
+
+The latter part of the example is this chapter's conclusion. `ARG(x)` uses
+`_Generic` to learn the value's type and makes *a struct carrying the value
+together with a type tag*. Putting those in an array to pass means the function
+learns the count too — variadic arguments are not used at all. With no format
+string there is no place for format and arguments to disagree.
+
+== proven's `PROVEN_ARG` — the structure in the flesh
+
+The `proven_println("{}", PROVEN_ARG(x))` used in chapter 77 is exactly this
+structure. Taken apart, the real implementation is three pieces.
+
+*① A bundle carrying a type tag and a value.* The library represents one argument
+like this — an enumerated value saying what kind it is, and a union holding the
+value itself (exactly chapter 44's tagged union).
+
+```c
+typedef enum {
+    PROVEN_ARG_NONE, PROVEN_ARG_I32, PROVEN_ARG_U32,
+    PROVEN_ARG_I64,  PROVEN_ARG_U64, PROVEN_ARG_F64,
+    PROVEN_ARG_CSTR, PROVEN_ARG_STR_VIEW, PROVEN_ARG_PTR,
+    PROVEN_ARG_CHAR, PROVEN_ARG_BOOL, PROVEN_ARG_CUSTOM, /* ... */
+} proven_arg_type_t;
+```
+
+*② One construction function per type.* Small functions such as
+`proven_arg_i32(int v)` that take a value, attach the tag and return it. All are
+`static inline`, so there is no call cost.
+
+*③ A macro choosing among those functions with `_Generic`.* Here is the real
+header.
+
+```c
+#define PROVEN_ARG(x) _Generic((x),          \
+    _Bool:              proven_arg_bool,     \
+    char:               proven_arg_char,     \
+    signed char:        proven_arg_i32,      \
+    unsigned char:      proven_arg_u32,      \
+    short:              proven_arg_i32,      \
+    unsigned short:     proven_arg_u32,      \
+    int:                proven_arg_i32,      \
+    unsigned int:       proven_arg_u32,      \
+    long:               proven_arg_i64,      \
+    unsigned long:      proven_arg_u64,      \
+    long long:          proven_arg_i64,      \
+    unsigned long long: proven_arg_u64,      \
+    double:             proven_arg_f64,      \
+    float:              proven_arg_f64,      \
+    const char*:        proven_arg_cstr,     \
+    char*:              proven_arg_cstr,     \
+    void*:              proven_arg_ptr,      \
+    proven_u8str_view_t: proven_arg_str_view,\
+    proven_arg_t:       proven_arg_identity  \
+)(x)
+```
+
+The knack of reading it is the `(x)` on the last line. `_Generic` settles into
+*one function name*, and the `(x)` after it calls that function. That is,
+`PROVEN_ARG(n)` compiles to `proven_arg_i32(n)` if `n` is an `int`, and to
+`proven_arg_f64(n)` if it is a `double`.
+
+A few details of the design stand out.
+
+- *Narrow integers are gathered towards the fat side* — `short` and `signed char`
+  both go to `proven_arg_i32`. The same direction as the previous section's
+  default argument promotions, but here it is *the library, not the compiler*,
+  deciding explicitly.
+- *`float` is gathered into `double`* — for the same reason.
+- *`char` is kept separate* — there is a separate `proven_arg_char`, so
+  `char c = 'Z'` prints as the letter `Z` rather than the number 90. But
+  `PROVEN_ARG('Z')` still goes as 90, because `'Z'` is an `int` by C's rule — the
+  header records this limit honestly in a comment.
+- *`proven_arg_t` itself is in the list* — an identity branch, so that a value
+  already made into a bundle passes through unchanged when wrapped again.
+- *A type not in the list is a compile error* — there is no `default` branch. Pass
+  a struct by mistake and the build fails. The exact opposite choice from
+  `printf`, which accepted anything and collapsed at run time.
+
+The rest is simple. `proven_println("...", PROVEN_ARG(a), PROVEN_ARG(b))` binds
+the bundles into an *array literal* and passes it, with the count, to the real
+function. Nothing passes through a variadic position, so there is no promotion, no
+guessing at counts, and no format-argument mismatch.
 
 #qa[
-  I have heard of a "clockwise spiral rule" too — is it the same thing?
+  So has `_Generic` given C generics?
 ][
-  It is the same thing drawn to be easy to memorise, and it mostly works. But there
-  has long been the objection that the spiral rule, being *a summary of the
-  right-left rule*, is drawn confusingly for some forms. Written exactly, the rule
-  is this — *start from the identifier, read right as far as you can go, and when
-  you can go no further read left. Parentheses are the boundary.* Use the spiral
-  picture as a visual nickname for that sentence.
+  No. `_Generic` is a device for *choosing among functions that already exist*; it
+  does not create code per type. A function must be written by hand for each type
+  and the list maintained by hand. So it is used for *a finite, well-known set of
+  types*, as in the standard library's `<tgmath.h>` (choosing maths functions by
+  type) or this section's `PROVEN_ARG`. When real generics are needed, C still
+  stamps code out with macros (chapter 78's container macros) or passes `void *`
+  with a size (chapter 71's `qsort`).
 ]
 
-== Reading ② — when there is no name
+== History — from varargs to stdarg
 
-Casts and `sizeof` take a type written without a name. The last line of the
-example, `sizeof(char *(*)(int))`, is that. Such a form is called an *abstract
-declarator*, and the way to read it is simple — *find the place where the name
-ought to be, lay a name there, and read by reading ①.*
+This device's history is a miniature of C growing into a language of contracts.
 
-```c
-char *(*)(int)        /* there is no name */
-char *(*x)(int)       /* put x in the empty place and */
-                      /* "x is pointer to function (int) returning pointer to char" */
-```
+*Before the standard (the K&R days).* In the C of the era without prototypes
+(chapter 12), effectively no function had its argument count checked — a function
+like `printf` was nothing special. The way of taking arguments out was not
+portable either: each person used tricks such as walking the stack from the
+address of the first argument, and those tricks broke when machines appeared that
+passed arguments in registers rather than on the stack. Hence the Unix family's
+`<varargs.h>` — the first attempt at wrapping the tricks in macros to hide machine
+differences.
 
-The empty place is usually after the star of `(*)`, or before `[]` or `()`. Thanks
-to this knack, reading ①'s muscle can be used as it is.
+*C89 — `<stdarg.h>`.* As the standards committee introduced prototypes
+(chapters 10 and 24), variadic arguments got formal syntax too: write `...` in the
+prototype and take values out with the `va_*` macros. The decisive difference from
+the old `varargs` is that *at least one named argument is required* (`va_start`
+uses it as the reference point) — which is why signatures with the format first,
+like `printf(const char *fmt, ...)`, became standard.
 
-*Then when is reading ② used.* When the shells are several layers deep — as in a
-declaration taking a function pointer as an argument — and you want to know first
-which is the outermost.
-
-```c
-void qsort(void *base, size_t n, size_t size,
-           int (*cmp)(const void *, const void *));
-```
-
-Reading from the outside in, the skeleton is grasped first: "this is a function
-`qsort`, returning `void`, with four arguments of which the last is *a function
-pointer*." The details are then confirmed with reading ①. When reading somebody
-else's header in the field this order is the comfortable one.
-
-== `typedef` — dividing into layers and naming them
-
-The most practical answer to a rough declaration is *dividing it into layers by
-naming them*. The example's ④ is that demonstration.
-
-```c
-typedef char       *charptr;        /* pointer to char           */
-typedef charptr     handler(int);   /* function(int) returning charptr */
-typedef handler    *handler_ptr;    /* pointer to that function  */
-typedef handler_ptr table4[4];      /* array[4] of that pointer  */
-```
-
-Each of the four lines lays on just one layer. The final `table4` is *exactly the
-same type* as the example ③'s `char *(*table[4])(int)`, and the example's
-`static_assert` confirms it at compile time. In the field it is more common to
-name only one or two layers than to slice this finely.
-
-```c
-typedef char *(*handler_fn)(int);   /* when one layer is enough */
-handler_fn table[4];
-```
-
-#qa[
-  `typedef`'s syntax is odd — why is it not `typedef newname = type`?
-][
-  Because `typedef` is a word that comes in the position of a *storage-class
-  specifier*. Grammatically `typedef int count;` is placed where `static int
-  count;` or `extern int count;` would be. So read it like this — *"in the place
-  where this declaration would create a variable, a type name is created
-  instead."*
-
-  This understanding pays in practice. Seeing `typedef int arr[3];` unfolds as
-  "had there been no `typedef`, `arr` would have been an array variable of three
-  ints → therefore `arr` is the name of that type." The declaration reading is
-  reused as it is.
-]
-
-#antipattern[
-  Hiding a pointer behind a `typedef`
-][
-  ```c
-  typedef struct node *node;      /* that it is a pointer vanishes from the name */
-  void f(const node n);           /* what is the const attaching to? */
-  ```
-  `const node n` is not "what is pointed at is const" but *"the pointer itself is
-  const"* (`struct node *const`). It cannot be known from the name alone, so it is
-  commonly got wrong.
-
-  Practice splits in two. *Do not hide pointers* (recommended) — leave the type
-  name as `struct node` and write `struct node *`. Or if you do hide it, *mark it
-  in the name* — as in `node_ptr`. The Linux kernel's coding conventions pinned
-  down "do not use pointer `typedef`s" for the same reason.
-
-  There is an exception, though. When making an *opaque type* you hide it on
-  purpose — in a handle whose innards the user must not know (the position of
-  `FILE *`, say), hiding is the design. Just distinguish hiding from losing by
-  accident.
-]
+*C23 — tidying.* The restriction requiring a reference argument was relaxed
+(`va_start`'s second argument became optional), so a variadic function with no
+named argument can be written, and the old `varargs.h` vanished entirely into
+history. Over half a century it was refined from "unportable trick" through
+"standard macros" to "the excess removed."
 
 #misconception[
-  "`typedef` makes a new type"
+  "Variadic functions are convenient, so use them often"
 ][
-  It does not. `typedef` makes only an *alias*, treated as entirely the same as the
-  original type.
-
-  ```c
-  typedef int meters;
-  typedef int seconds;
-  meters  d = 10;
-  seconds t = 5;
-  d = t;              /* no warning — both are just int */
-  ```
-
-  If you hoped the compiler would catch the mistake of "assigning seconds to
-  metres", you will be disappointed. To distinguish types for real you must wrap
-  them in a struct — `struct meters { int v; };` and then the assignment becomes an
-  error (thanks to chapter 41's property that a struct is a value). A device like
-  C++'s strong type aliases does not exist in C.
+  Convenient though they look, variadic arguments in C are *the place where type
+  safety disappears*. The compiler does not check the arguments in the `...`
+  position and the receiving side has no way to guess the types. That the `printf`
+  family is even as safe as it is comes from compilers *specially* reading and
+  checking the format string (chapter 17's warnings), not from any general rule of
+  the language — a variadic function you write yourself has no such net. The
+  practical advice is clear: *do not make one unless it is truly necessary.* The
+  alternatives are usually better — if the count is fixed, just list the arguments;
+  if there are many, take an array and a length (chapter 37's practice); if the
+  kinds vary, take an explicit list of values with chapter 44's tagged union. The
+  modern taste in C library design is "variadic only where a tool's checking
+  attaches, as in logging and formatting."
 ]
-
-== Leaving it to a tool — `cdecl`
-
-A program that does this reading for you has existed for a long time. It is
-*`cdecl`*, which appeared in the 1980s and is still maintained (its current
-maintainer is Paul J. Lucas, GPLv3). Give it a declaration and it unfolds it into
-English; speak English and it builds the declaration.
-
-```text
-cdecl> explain char *(*table[4])(int)
-cdecl> declare table as array 4 of pointer to function (int) returning pointer to char
-```
-
-The first line does what we did by hand above, and the second is the opposite
-direction — *it builds a C declaration from what was said in English*. It can be
-installed as a package on Linux distributions (`cdecl`), and there is `cdecl.org`
-for using it in a browser without installing.
 
 #qa[
-  If a tool exists, must one bother learning to read by hand?
+  How do I make my own function that wraps a formatting function like `printf` —
+  a logging function, say?
 ][
-  It is worth learning for two reasons. First, *reading happens constantly while
-  opening a tool is occasional.* You do not open a browser every time you meet an
-  `int (*p)[3]` while skimming somebody's code. Second, there is *the writing
-  side*. A tool reads for you, but "what declaration should be written in this
-  place" is settled in the end by whoever knows the rules — and the usual right
-  answer is this chapter's conclusion: *do not write it roughly in one line;
-  divide it into layers with `typedef`.*
+  The standard has prepared `v`-prefixed partners for exactly that place —
+  `vprintf`, `vfprintf`, `vsnprintf` and so on, the versions that *take a
+  `va_list` directly*. Your function receives `...`, makes a reader with
+  `va_start`, and hands that reader over whole. If you want the format-checking
+  warning on your function too, the practice is to attach a compiler extension
+  notation (gcc's and clang's `format` attribute) — the pattern seen several times
+  in this book, of tools filling in the safety the language cannot give.
 ]
 
-#recap[
-  #dtable(
-    columns: 2,
-    [*to remember*], [*the point*],
-    [design principle], [a declaration reflects *use* — hence the twisting],
-    [difference of strength], [`[]`, `()` (right) are stronger than `*` (left). parentheses reverse it],
-    [reading ①], [start from the identifier → right first, then left → in English word order],
-    [reading ②], [from the outside in. essential for an abstract declarator with *no name*],
-    [abstract declarator], [lay a name in the empty place and read by reading ①],
-    [`typedef`], [a word in the storage-class position — a *type name* is created instead of a variable],
-    [`typedef`'s limit], [an alias only, not a new type. to distinguish, use a struct],
-    [hiding pointers], [not recommended (the meaning of `const` blurs). the exception is an opaque type],
-    [tool], [`cdecl` (explain/declare), `cdecl.org`],
-  )
-]
-
-We have gained the muscle for reading declarations. From the next chapter we enter
-the terrain of the standard library — the part where, on top of the language
-learned so far, we see what contracts and traps the functions the world has piled
-up over half a century carry.
+We know the identity of variadic arguments — it was how to pass several *values*
+to a function. The next chapter is its mirror image: how to handle a function
+itself as a value, the function pointer.

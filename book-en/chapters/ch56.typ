@@ -1,199 +1,162 @@
 #import "../../book/lib.typ": *
 
-= The traps of reading and writing — `<stdio.h>` ②
+= The whole map of the standard library
 
 #prereq(
-  ([chapter 55, Streams in reality], [the state of a stream]),
-  ([chapter 38, Safe input, and the appearance of proven], [safe input]),
+  ([chapter 55, The terrain of the standard library], [the character of the standard library]),
 )
 
 #deepqa[
-  Chapter 38 said `gets` was deleted from the standard, and chapter 53 said its
-  funeral took decades. Then what exactly was wrong with `gets`, and why did it
-  take so long?
+  Chapter 55 said the standard library is "thin and old", and that the standard
+  pins down not only the grammar but the list of libraries and the contract of each
+  function. Then exactly how many headers are there, and how has that list grown?
 ][
-  The problem is simple — *it does not take the size of the destination buffer.*
-  Its signature is only `char *gets(char *s)`, so there is no way at all to know
-  how much may be written, and if the input is long it necessarily overflows. It is
-  one of the rare functions for which "use it carefully and it is fine" does not
-  hold — a safe way to use it does not exist.
-
-  It took long because of the standard's character (chapter 54). Not breaking code
-  already written is the standard's duty, so C99 marked it "do not use"
-  (deprecated) and only C11 deleted it. For over twenty years in between, every
-  compiler spat warnings and yet compiled it.
+  Thirty-one as of C23. C89 began with fifteen, C95 added two concerning wide
+  characters, C99 nine, C11 five, and C23 a few more. That the speed of growth is
+  almost the same as the language's speed of change tells the character of this
+  list — *once something enters it stays effectively forever, and so it takes long
+  to let anything in*. It is the other side of the story of `gets`'s funeral taking
+  decades (chapter 39).
 ]
 
 #organizer[
-  We begin with the story of the only function ever *deleted* from the standard
-  library. Why `gets` died, what stands in its place, and what traps that
-  replacement carries in its turn. Then the remaining dangers of formatted input
-  and output, and how safe the functions known as safe really are.
+  We spread into a table every header the C standard settles, without missing one.
+  Which header entered in which edition, what can be used even without an
+  operating system, and in what order the remaining chapters of this part walk
+  those regions. It is the chapter that redraws chapter 55's terrain map at a
+  larger scale.
 ]
 
 #chapter-questions()
 
-== The death of `gets` and its successors
+== Freestanding and hosted — two worlds
 
-The hole the 1988 internet worm bored into was exactly this function (chapter 38).
-Today `gets` is not in the standard, and three remain in its place.
+The standard divides implementations in two. A *hosted implementation* is the
+ordinary environment running on top of an operating system, and a *freestanding
+implementation* is an environment with no operating system — firmware, a kernel, a
+bootloader.
 
-#dtable(
-  columns: 3,
-  [*function*], [*status*], [*assessment*],
-  [`gets`], [deleted in C11], [there is no way to use it. mend it wherever it is seen in old code],
-  [`fgets`], [standard], [the realistic standard solution. but truncation must be checked by hand],
-  [`gets_s`], [C11 annex K (optional)], [implementations barely exist — treated in chapter 63],
-)
-
-`fgets` is the right answer, but it is not the end in itself. As seen in
-chapter 55, if the buffer is too small it quietly reads only the front piece.
-
-#demo("examples-en/ch56/reading.c")
-
-The difference between the two approaches is clear. The fixed buffer split the
-long line into five pieces, while the edition that reads while growing returned
-the 34-byte line whole.
-
-The rules for reading code come to three in the end.
-
-+ Turn the loop on `fgets`'s return value (whether it is null).
-+ Check whether the line read has a newline and judge *whether it was truncated*.
-+ Erase the newline with `buf[strcspn(buf, "\n")] = '\0';` — this idiom is safer
-  than hand-written code based on `strlen`.
-
-#antipattern[
-  `scanf("%s", buf)` — reading a string without a width
-][
-  ```c
-  char name[32];
-  scanf("%s", name);        /* exactly the same danger as gets */
-  ```
-  Give `%s` no width and it writes without knowing the destination's size. Always
-  write *a number one less than the buffer size*, as in `scanf("%31s", name)` (for
-  the NUL). And that this number must be written by hand is this API's weakness —
-  change the buffer size and the format string must be mended with it, which is
-  easy to forget.
-]
-
-== The remaining traps of formatted input
-
-Chapter 53 took the grammar apart, so here we gather only the places where
-accidents happen.
-
-*First, not checking the return value.* The `scanf` family returns the number of
-items filled. Without checking it you end up using the *previous value* of the
-variable that failed (we see it in the flesh in chapter 69).
-
-*Second, leftover input.* After `scanf("%d", &n)` a newline remains in the input
-buffer. Call `fgets` in that state and it reads an empty line. Not mixing them is
-the best policy, and if you must mix, empty the rest of the line and move on.
-
-*Third, integer overflow.* Give `99999999999` to a `%d` and it is outside the
-contract. If the range must be checked, read with `strtol` (chapter 58).
-
-*Fourth, `%s` and the locale.* The definition of whitespace may change with the
-locale (chapter 59).
-
-#misconception[
-  "`snprintf` instead of `sprintf` is safe"
-][
-  Half right. `snprintf` is safe in that it does not overrun the buffer, but it
-  brings in the new danger of *quietly truncating*. And the meaning of its return
-  value is peculiar — it is not the number of characters written but *the number of
-  characters that would have been needed*.
-
-  ```c
-  int need = snprintf(buf, sizeof buf, "%s/%s", dir, name);
-  if (need < 0 || (size_t)need >= sizeof buf) {
-      /* truncated — this path must not be used as it is */
-  }
-  ```
-
-  Leave this check out and it becomes "I used the safe function and opened the
-  wrong file." We run this pattern for real in chapter 69.
-]
-
-== The traps on the output side
-
-*`printf`'s return value* — code that checks it is rare, but it fails in the
-situation of a broken pipe (`program | head`, say). For a program that keeps logs
-there is a value worth checking.
-
-*The format string vulnerability* — the one treated in chapter 53. The rule is
-one. The format string must always be a constant written by the program.
-
-*`%n`* — the conversion that *writes* the number of characters printed to where
-the argument points. Being the passage that promotes a format string vulnerability
-into an arbitrary memory write, several implementations block it by default today.
-There is almost no reason to use it.
-
-*Buffering and order* — mix `printf` (standard output, usually line-buffered) with
-`fprintf(stderr, ...)` (mostly unbuffered) and the order in which things appear on the
-screen can be reversed. Half of the occasions on which "the output vanished"
-during debugging are this, and the other half are cases where the buffer was not
-emptied just before a collapse.
-
-#realcase[
-  Why output vanishes — buffers and abnormal termination
-][
-  When a program dies by `abort` or a signal, the output remaining in the buffer
-  vanishes with it. That is why the inference "the last printed line came out, so
-  execution reached at least there" is dangerous — in reality several more lines
-  may have run and died trapped in the buffer.
-
-  The practice of sending debugging output to `stderr` came from here. What the
-  standard promises about `stderr` goes only as far as *"it is not fully buffered"*
-  (that is, it is unbuffered or line-buffered), and real implementations mostly make it
-  unbuffered. So the record right up to the moment of death is *likely* to survive, but
-  that is not a guarantee — it can be set again with `setvbuf`, and the manner of
-  abnormal termination changes the outcome too. It is also
-  the reason chapter 17 discussed debuggers and logs together.
-]
-
-== The remaining functions that handle files
+The difference between the two is exactly the difference in the header list. The
+headers a freestanding implementation must provide are only the following; the
+rest may or may not be there.
 
 #dtable(
   columns: 3,
-  [*function*], [*what it does*], [*to beware of*],
-  [`remove`], [delete a file], [implementation-defined for an open file],
-  [`rename`], [change a name], [if the target exists it fails or overwrites, depending on the implementation],
-  [`tmpfile`], [create a temporary file], [deleted automatically on closing. the only portable safe edition],
-  [`tmpnam`], [generate a temporary name], [★ a race condition — it can be intercepted between receiving the name and creating the file],
-  [`setvbuf`], [specify the buffering mode], [it may be called only right after opening the stream],
-  [`freopen`], [reconnect a stream], [used when turning `stdout` to a file],
+  [*header*], [*what*], [*note*],
+  [`<float.h>`], [the limits of real types], [defines values only],
+  [`<limits.h>`], [the limits of integer types], [defines values only],
+  [`<stdarg.h>`], [variadic arguments], [chapter 52],
+  [`<stdbool.h>`], [`bool`], [C99. effectively unnecessary in C23],
+  [`<stddef.h>`], [`size_t`, `NULL`, `offsetof`], [the most basic of the basics],
+  [`<stdint.h>`], [fixed-width integers], [C99],
+  [`<stdalign.h>`], [`alignas`, `alignof`], [C11. keywords in C23],
+  [`<stdnoreturn.h>`], [`noreturn`], [C11. to be retired in C23],
+  [`<iso646.h>`], [alternative spellings such as `and`, `or`], [C95],
+  [`<stdbit.h>`], [bit manipulation], [added in C23],
+  [`<stdckdint.h>`], [checked arithmetic], [added in C23],
 )
 
-`tmpnam` is in the standard, but not using it is the right answer — because
-another program can slip in between the returning of the name and the creating of
-a file with that name (the class of race called TOCTOU). Within the standard
-`tmpfile` is the answer, and if a platform API is permitted, `mkstemp` (POSIX).
+That C23 lengthened this list is worth noticing. The two that newly entered are *pure
+computation needing no operating system*, so they can be provided in a freestanding
+environment too, and what they do (counting bits and checking overflow) is especially
+handy in embedded work. That the list grows in the direction of "what works without an
+OS" shows this division's character too.
+
+And a whole header being required differs from only some of its declarations being
+required — `<string.h>`, for example, is not freestanding-required, but if an
+implementation provides it the contracts inside must follow the standard.
+
+That this list is short is the background of this whole book — in embedded work
+neither `printf` nor `malloc` is a given (Part XII's freestanding story begins
+here).
+
+== The whole list
+
+Every header the standard settles. "Edition" is the edition in which that header
+entered the standard, and the chapter of this part that treats it is written
+alongside.
+
+#dtable(
+  columns: 4,
+  [*header*], [*edition*], [*what it holds*], [*in this part*],
+  [`<assert.h>`], [C89], [`assert` — the diagnosis that catches contract violations], [chapter 64],
+  [`<complex.h>`], [C99], [complex arithmetic], [chapter 62],
+  [`<ctype.h>`], [C89], [character classification and conversion], [chapter 61],
+  [`<errno.h>`], [C89], [the error-number global], [chapter 64],
+  [`<fenv.h>`], [C99], [the floating-point environment (rounding, exceptions)], [chapter 62],
+  [`<float.h>`], [C89], [the limits of real types], [chapters 26, 62],
+  [`<inttypes.h>`], [C99], [formats and conversions for fixed-width integers], [appendix B, chapter 65],
+  [`<iso646.h>`], [C95], [alternative spellings of operators], [chapter 65],
+  [`<limits.h>`], [C89], [the limits of integer types], [chapter 26],
+  [`<locale.h>`], [C89], [locale settings], [chapter 61],
+  [`<math.h>`], [C89], [mathematical functions], [chapter 62],
+  [`<setjmp.h>`], [C89], [non-local jumps], [chapter 64],
+  [`<signal.h>`], [C89], [signal handling], [chapter 64],
+  [`<stdalign.h>`], [C11], [specifying and querying alignment], [chapter 65],
+  [`<stdarg.h>`], [C89], [variadic arguments], [chapter 52],
+  [`<stdatomic.h>`], [C11], [atomic operations], [chapter 66],
+  [`<stdbit.h>`], [C23], [bit manipulation (counting, rotating and so on)], [chapter 65],
+  [`<stdbool.h>`], [C99], [`bool`, `true`, `false`], [chapter 65],
+  [`<stdckdint.h>`], [C23], [arithmetic that checks for overflow], [chapters 48, 67],
+  [`<stddef.h>`], [C89], [`size_t`, `ptrdiff_t`, `NULL`, `offsetof`], [chapter 65],
+  [`<stdint.h>`], [C99], [fixed-width integer types], [chapters 26, 65],
+  [`<stdio.h>`], [C89], [stream input and output, files], [chapters 50, 58],
+  [`<stdlib.h>`], [C89], [conversion, random numbers, allocation, sorting, program termination], [chapter 60],
+  [`<stdnoreturn.h>`], [C11], [`noreturn`], [chapter 65],
+  [`<string.h>`], [C89], [strings and memory blocks], [chapter 59],
+  [`<tgmath.h>`], [C99], [type-generic mathematical functions], [chapter 62],
+  [`<threads.h>`], [C11], [threads, mutexes, condition variables], [chapter 65],
+  [`<time.h>`], [C89], [time and the calendar], [chapter 63],
+  [`<uchar.h>`], [C11], [UTF-16 and UTF-32 character types], [chapter 61],
+  [`<wchar.h>`], [C95], [wide-character input, output and strings], [chapter 61],
+  [`<wctype.h>`], [C95], [wide-character classification], [chapter 61],
+)
 
 #qa[
-  Then can "safe file handling" be written with standard I/O alone?
+  How many of these are actually used often?
 ][
-  Mostly it can. But there are clearly places where the standard gives no answer —
-  handling directories, file locking, atomic replacement (writing to a temporary
-  file and then renaming), permissions, symbolic links. All of these are the
-  territory of platform APIs, and so a serious program lays one thin layer over
-  standard I/O. Part XII's file layer is exactly that layer.
+  Most programs live on about five — `<stdio.h>`, `<stdlib.h>`, `<string.h>`,
+  `<stdint.h>`, and as needed `<math.h>` or `<time.h>`. The rest are things you
+  "know exist and look up when needed". So this part's aim too is not memorising
+  but *keeping the map in your head* — roughly where what is, and which regions are
+  slippery.
+]
+
+#misconception[
+  "If it is in the standard library it is a safe and portable function"
+][
+  Being in the standard means *it is everywhere*, not *it is safe*. `gets` was in
+  the 1989 standard and was deleted only in 2011 (chapter 58). `strncpy`, contrary
+  to its name, is not a safe copying function (chapter 59), and `atoi` has no way
+  at all to report failure (chapter 60). Some functions of *the same name even
+  behave differently according to the locale* (chapter 61). Using the standard
+  library means not "using what has been verified" but *"using what has a stated
+  contract"*, and reading that contract is still our part.
+]
+
+#realcase[
+  The accident one header called down — `<strings.h>` is not standard
+][
+  There is a place confusable by similarity of name. `<string.h>` is standard but
+  `<strings.h>` (plural) is POSIX. Functions such as `strcasecmp` and `bzero` are
+  in there, so code using it does not compile on Windows. Conversely `strlcpy` and
+  `strlcat` came out of OpenBSD and spread to several Unixes but *were not
+  standard* — only in C23 were functions of similar intent so much as discussed.
+  The guess "it is used a lot, so it must be standard" is a common beginning of
+  portability accidents.
 ]
 
 #recap[
-  Reading and writing in summary.
-
   #dtable(
-    columns: 3,
-    [*what you want to do*], [*what to use*], [*what to check*],
-    [read one line], [`fgets`], [whether null + whether there is a newline (truncation)],
-    [a line of unknown length], [an `fgetc` loop + reallocation], [preserve the original when `realloc` fails],
-    [print into a string], [`snprintf`], [return value ≥ buffer size means truncation],
-    [parse user input], [`fgets` + `strtol`/`sscanf`], [the item count and the range],
-    [temporary file], [`tmpfile`], [`tmpnam` is a race condition],
-    [debugging output], [`fprintf(stderr, …)`], [not fully buffered (mostly unbuffered) — likely to survive],
-    [never to be used], [`gets`, `%s` without a width, `%n`], [—],
+    columns: 2,
+    [*to remember*], [*the point*],
+    [number of headers], [thirty-one as of C23. grown from C89's fifteen],
+    [freestanding], [only eleven are guaranteed without an operating system (C23 added two)],
+    [speed of entering], [slow. the speed of leaving is slower],
+    [standard = safe], [no. standard = *the contract is written down*],
+    [`<strings.h>`], [not standard (POSIX). do not be fooled by the name],
   )
 ]
 
-We have crossed the minefield of input and output. The next chapter is another
-minefield just as famous — the string functions.
+The map is spread out, so we walk. The next two chapters are the region used the
+most and slipped in the most — stream input and output.
