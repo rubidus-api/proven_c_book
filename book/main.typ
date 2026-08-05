@@ -4,7 +4,7 @@
 #set document(title: "Proven C Book", author: "rubidus")
 #set page(paper: "a4", margin: (x: 2.2cm, y: 2.5cm), numbering: "1")
 #set text(font: ("Noto Serif CJK KR",), size: 10.5pt, lang: "ko")
-#set par(justify: true, leading: 0.78em, first-line-indent: 1em)
+#set par(justify: true, leading: 0.78em, first-line-indent: (amount: 1em, all: true))
 #show heading: set text(font: ("Noto Sans CJK KR",))
 // 코드 글꼴 = D2Coding (비리가처판, 리가처도 명시적으로 끔)
 #show raw: set text(font: "D2Coding", size: 0.92em, ligatures: false)

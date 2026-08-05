@@ -8,6 +8,7 @@
   stroke: (left: 2.5pt + accent),
   breakable: true,
 )[
+  #set par(first-line-indent: 0em)
   #if title != none [
     #text(fill: accent.darken(25%), weight: "bold", size: 0.92em)[#icon #title]
     #v(2pt)
@@ -17,6 +18,7 @@
 
 // 3.1 문답 (즉문즉답) — 기본 리듬
 #let qa(q, a) = block(width: 100%, inset: (y: 2pt), breakable: true)[
+  #set par(first-line-indent: 0em)
   #block(inset: (x: 10pt, y: 6pt), radius: 4pt, width: 100%,
     fill: rgb("#f0f4fa"), stroke: (left: 2.5pt + rgb("#3b6ea5")))[
     #text(fill: rgb("#2a5080"), weight: "bold")[문] #h(4pt) #q
@@ -28,6 +30,7 @@
 
 // 3.2 심화 문답 (장 서두 회고 전용)
 #let deepqa(q, a) = block(width: 100%, inset: (y: 2pt), breakable: true)[
+  #set par(first-line-indent: 0em)
   #block(inset: (x: 10pt, y: 6pt), radius: 4pt, width: 100%,
     fill: rgb("#f3eefa"), stroke: (left: 2.5pt + rgb("#7a4fa5")))[
     #text(fill: rgb("#5c3a80"), weight: "bold")[돌아보기] #h(4pt) #q
@@ -98,6 +101,7 @@
   fill: rgb("#eef3f2"), stroke: (left: 2.5pt + rgb("#3d7a78")),
   breakable: true,
 )[
+  #set par(first-line-indent: 0em)
   #text(fill: rgb("#2a5a58"), weight: "bold", size: 0.92em)[⊞ 플랫폼 노트 — #title]
   #v(2pt)
   #body
@@ -106,5 +110,6 @@
 // 장 서두 선행조직자
 #let organizer(body) = block(width: 100%, inset: (x: 10pt, y: 8pt), radius: 4pt,
   fill: rgb("#fafafa"), stroke: 0.5pt + rgb("#cccccc"))[
+  #set par(first-line-indent: 0em)
   #text(weight: "bold", size: 0.92em)[이 장이 끝나면] #v(2pt) #body
 ]
