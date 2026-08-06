@@ -167,8 +167,7 @@ handler_fn table[4];
   `typedef`'s syntax is odd — why is it not `typedef newname = type`?
 ][
   Because `typedef` is a word that comes in the position of a *storage-class
-  specifier*. Grammatically `typedef int count;` is placed where `static int
-  count;` or `extern int count;` would be. So read it like this — *"in the place
+  specifier*. Grammatically `typedef int count;` is placed where `static int count;` or `extern int count;` would be. So read it like this — *"in the place
   where this declaration would create a variable, a type name is created
   instead."*
 

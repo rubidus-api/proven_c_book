@@ -6,8 +6,7 @@
 
 == 정수 승격
 
-`bool`, `char`, `signed char`, `unsigned char`, `short`, `unsigned
-short`, 비트 필드가 산술에 참여하면:
+`bool`, `char`, `signed char`, `unsigned char`, `short`, `unsigned short`, 비트 필드가 산술에 참여하면:
 
 - 값들이 전부 `int`에 담기면 → `int`
 - 아니면 → `unsigned int`

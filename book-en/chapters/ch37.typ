@@ -12,8 +12,7 @@
   box", and that this is why code scanning an array in order is fast. Then what
   exactly is an "array" through the eye of memory?
 ][
-  Slots of the same type lined up *adjacent without gaps* — that is all. `int
-  a[5]` is five ints laid side by side at consecutive addresses, so knowing only
+  Slots of the same type lined up *adjacent without gaps* — that is all. `int a[5]` is five ints laid side by side at consecutive addresses, so knowing only
   the first slot's address and the type lets every other position be calculated
   (element $i$ = start address + $i times$ slot size). This property of
   "calculable neighbours" is the root of both the array's power (immediate

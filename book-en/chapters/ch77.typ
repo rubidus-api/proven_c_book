@@ -271,9 +271,14 @@ message. It is the answer to the problem chapter 25 named when parsing a line wi
 #qa[
   Does the scanner have a format string too?
 ][
-  It does — it is used as
-  `proven_scan_fmt_cursor(&sc, "{}:{}", PROVEN_SCAN_ARG(&host),
-  PROVEN_SCAN_ARG(&port))`. It is symmetrical with formatting, and the arguments are
+  It does. It is written like this.
+
+  ```c
+  proven_scan_fmt_cursor(&sc, "{}:{}",
+                         PROVEN_SCAN_ARG(&host), PROVEN_SCAN_ARG(&port));
+  ```
+
+  It is symmetrical with formatting, and the arguments are
   wrapped addresses of the places to hold the results. But there is one caution the
   header states honestly — if it fails in the middle of the format, *the values filled
   in up to that point have already been changed*. The failure atomicity learned in

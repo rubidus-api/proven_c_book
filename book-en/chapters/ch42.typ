@@ -172,8 +172,7 @@ the practice is to receive it as a const pointer, as in
   Writing `struct point` with `struct` every time is a nuisance — can it not be
   shortened?
 ][
-  Traditionally an alias has been made with `typedef` — `typedef struct point
-  point_t;` and the like. But this is a point where taste and schools divide
+  Traditionally an alias has been made with `typedef` — `typedef struct point point_t;` and the like. But this is a point where taste and schools divide
   (there is the counter-argument that an alias hides the information "this is a
   struct"), so this book writes `struct` so the identity is visible on the page.
   Either way, consistency is what matters.

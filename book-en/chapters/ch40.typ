@@ -218,8 +218,7 @@ that direction).
 #qa[
   What is that strange name `bss`? And why is it separated from `data`?
 ][
-  The name is an abbreviation of a 1950s assembler instruction, `Block Started by
-  Symbol` — the meaning was forgotten and only the name crossed half a century.
+  The name is an abbreviation of a 1950s assembler instruction, `Block Started by Symbol` — the meaning was forgotten and only the name crossed half a century.
 
   The reason for separating them is practical. Consider a large global whose
   *initial value is 0*, such as `int table[1000000];`. Put it in `data` and a

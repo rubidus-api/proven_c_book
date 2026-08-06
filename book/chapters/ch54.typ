@@ -159,8 +159,7 @@ handler_fn table[4];
   `typedef`의 문법이 이상하다 — 왜 `typedef 새이름 = 타입`이 아닌가?
 ][
   `typedef`가 *저장 클래스 지정자*의 자리에 오는 낱말이기 때문이다.
-  문법적으로 `typedef int count;`는 `static int count;`나 `extern int
-  count;`와 같은 자리에 놓인다. 그래서 이렇게 읽으면 된다 — *"이 선언에서
+  문법적으로 `typedef int count;`는 `static int count;`나 `extern int count;`와 같은 자리에 놓인다. 그래서 이렇게 읽으면 된다 — *"이 선언에서
   변수가 생길 자리에, 대신 타입 이름이 생긴다."*
 
   이 이해가 실전에서 값을 한다. `typedef int arr[3];`을 보면 "만약
