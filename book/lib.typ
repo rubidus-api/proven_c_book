@@ -264,6 +264,30 @@
 }
 #let _rel(path) = path.replace("examples-en/", "").replace("examples/", "")
 
+// 실행 결과·표준 입력의 긴 줄은 강제로 접는다 — 조판에서 raw 는 스스로 줄을
+// 바꾸지 않아서 긴 한 줄이 상자를 뚫고 나간다(81장의 깊이 200 출력이 그랬다).
+// 글자 단위(클러스터)로 잘라 UTF-8 을 깨뜨리지 않는다.
+// ★ 소스 코드에는 쓰지 않는다 — 낱말 한복판에서 잘리면 읽기 나쁘다.
+//   대신 원고의 예제 줄 길이를 scripts/check-example-width.py 가 지킨다.
+#let _wrap-cols = 88
+#let _hardwrap(s, width: _wrap-cols) = {
+  let lines = ()
+  for line in s.split("\n") {
+    let cl = line.clusters()
+    if cl.len() <= width {
+      lines.push(line)
+    } else {
+      let i = 0
+      while i < cl.len() {
+        let end = calc.min(i + width, cl.len())
+        lines.push(cl.slice(i, end).join())
+        i = end
+      }
+    }
+  }
+  lines.join("\n")
+}
+
 #let demo(path, show-output: true, stdin: false, highlight: none) = {
   // 시연 상자는 1×2 다 — 표제 줄(파일 경로 또는 "실행 결과")과 내용을
   // 가로선으로 가른다 (저자 지시 2026-08-06). HTML 도 같은 모양으로 낸다.
@@ -298,11 +322,11 @@
             raw(src, lang: "c", block: true))
       #if inp != none {
         cell(text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em,
-                  weight: "bold")[#_L.stdin], raw(inp, block: true))
+                  weight: "bold")[#_L.stdin], raw(_hardwrap(inp), block: true))
       }
       #if out != none {
         cell(text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em,
-                  weight: "bold")[#_L.output], raw(out, block: true))
+                  weight: "bold")[#_L.output], raw(_hardwrap(out), block: true))
       }
     ]
   }
@@ -501,13 +525,14 @@
   columns(2, gutter: 1.4em, {
     for t in terms.sorted() {
       let hs = hits.at(terms.position(x => x == t))
-      block(width: 100%, below: 0.42em, grid(
-        columns: (1fr, auto),
-        column-gutter: 0.6em,
-        align: (left, right),
-        t,
-        hs.map(h => link(h.loc, str(h.page))).join(", "),
-      ))
+      // 표제어와 쪽 번호를 점선으로 잇는다 — 차례와 같은 모양
+      // (저자 지시 2026-08-06). repeat 은 남는 자리를 점으로 채운다.
+      block(width: 100%, below: 0.42em)[
+        #t
+        #box(width: 1fr, inset: (x: 0.4em),
+          text(fill: rgb("#888888"), tracking: 0.3em, repeat[.]))
+        #hs.map(h => link(h.loc, str(h.page))).join(", ")
+      ]
     }
   })
 }

@@ -340,7 +340,8 @@ int main(void)
     proven_size_t n = 0;
     for (int k = 0; k < 200; k++) deep[n++] = '[';
     for (int k = 0; k < 200; k++) deep[n++] = ']';
-    proven_u8str_view_t deep_view = { .ptr = (const proven_byte_t *)deep, .size = n };
+    proven_u8str_view_t deep_view = {
+        .ptr = (const proven_byte_t *)deep, .size = n };
 
     run("depth 200, limit 32", deep_view, alloc, 32);
     run("depth 200, limit 256", deep_view, alloc, 256);
