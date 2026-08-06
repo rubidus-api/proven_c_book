@@ -98,15 +98,7 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body { padding:0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
-/* 복습 정리도 같은 모양으로 — 표제 줄과 본문을 가로선으로 가른다 */
-.recap { border:1px solid var(--fg); border-left:1px solid var(--fg);
-  padding:0; margin:1.15rem 0; }
-.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
-  border-bottom:1px solid var(--fg);
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-  font-size:.92rem; color:var(--fg); }
-.recap > *:not(.dev-label) { padding:0 .9rem; }
-.recap > figure.tbl { padding:.4rem .9rem; }
+
 .dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
        border-left:3px solid var(--box-rule); border-radius:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
@@ -118,16 +110,21 @@ figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
              font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
-/* 장 서두 — 넷이 하나의 테두리를 공유하고, 안에서는 가는 가로선으로 갈린다 */
-.chapter-head { border:1px solid var(--fg); margin:.2rem 0 1.5rem; }
-.chapter-head > div { border-top:1px solid var(--rule); padding:.6rem .9rem; }
-.chapter-head > div:first-child { border-top:none; }
-.chapter-head .dev { margin:0; padding:0; background:none; border:none;
-  border-radius:0; }
-.chapter-head .dev-label { margin:0 0 .15rem; }
-.chapter-head p { margin:.22rem 0; }
-.chapter-head .qa-a { border-left:2px solid var(--muted); padding-left:.7rem;
-  margin-top:.3rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06). */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open:first-of-type { margin-top:1rem; }
+.dev.open > .dev-label { margin:0; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > *:not(.dev-label) { padding:.1rem .9rem; margin:.3rem 0; }
+.dev.open > *:not(.dev-label):first-of-type { margin-top:.45rem; }
+.dev.open > *:not(.dev-label):last-child { margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem .9rem; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
@@ -141,6 +138,15 @@ figure.tbl { text-align:center; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
   background:none; }
 .qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; padding:0;
+  margin:1.15rem 0; background:none; }
+.dev.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > *:not(.dev-label) { padding:.2rem .9rem; }
+.dev.recap > figure.tbl { padding:.5rem .9rem; margin:0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -227,7 +233,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-44">44 공용체와 표현</h2><div class="chapter-head"><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div>42장 구조체 · 구조체의 배치</div><div>5장 워드와 주소 · 표현을 바이트로 본다</div><div>13장 컴파일러 최적화 · 엄격한 앨리어싱</div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div>13장에서 “float의 비트를 uint32의 눈으로 읽는” 옛 기법이 엄격한 앨리어싱 위반이며, 옳은 방법은 memcpy나 공용체라고 했다. 그러면 공용체란 정확히 무엇이길래 그 자리에 서는가?</div><div class="dev qa-a"><p class="dev-label">답</p><p>. <strong>여러 멤버가 같은 기억을 공유하는 타입</strong>이다. 구조체가 멤버들을 나란히 놓는다면(42장), 공용체는 멤버들을 <strong>겹쳐</strong> 놓는다 — 크기는 가장 큰 멤버에 맞고, 어느 순간에든 실제로 담긴 것은 하나다. “같은 비트를 이 눈으로도 저 눈으로도 본다”는 5장의 관점이 문법이 된 것이다.</p></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-76"></span>같은 기억을 다른 눈으로 보는 장치 — 공용체다. 그리고 이 장은 표현의 장이기도 하다: 5장에서 예약한 엔디안 관찰 시연을 실행하고, 구조체의 숨은 빈틈(패딩)을 눈으로 확인한다. 표현과 추상의 분리라는 이 책의 후렴구가 마지막으로 크게 울리는 자리다.</div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><p>공용체는 그러면 언제 쓰는 것이 정석인가?</p></div></div><div></div><h3>44.1 공용체 — 겹쳐 놓기</h3><p>문법은 구조체와 쌍둥이다. <code>struct</code>를 <code>union</code>으로 바꾸면 된다:</p><pre><code data-lang="c"><strong><span class="tok-t">union</span></strong> bits32 <span class="tok-x">{</span>
+<h2 id="loc-44">44 공용체와 표현</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div>42장 구조체 · 구조체의 배치</div><div>5장 워드와 주소 · 표현을 바이트로 본다</div><div>13장 컴파일러 최적화 · 엄격한 앨리어싱</div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div>13장에서 “float의 비트를 uint32의 눈으로 읽는” 옛 기법이 엄격한 앨리어싱 위반이며, 옳은 방법은 memcpy나 공용체라고 했다. 그러면 공용체란 정확히 무엇이길래 그 자리에 서는가?</div><div class="dev qa-a"><p class="dev-label">답</p><p>. <strong>여러 멤버가 같은 기억을 공유하는 타입</strong>이다. 구조체가 멤버들을 나란히 놓는다면(42장), 공용체는 멤버들을 <strong>겹쳐</strong> 놓는다 — 크기는 가장 큰 멤버에 맞고, 어느 순간에든 실제로 담긴 것은 하나다. “같은 비트를 이 눈으로도 저 눈으로도 본다”는 5장의 관점이 문법이 된 것이다.</p></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-76"></span>같은 기억을 다른 눈으로 보는 장치 — 공용체다. 그리고 이 장은 표현의 장이기도 하다: 5장에서 예약한 엔디안 관찰 시연을 실행하고, 구조체의 숨은 빈틈(패딩)을 눈으로 확인한다. 표현과 추상의 분리라는 이 책의 후렴구가 마지막으로 크게 울리는 자리다.</div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><p>공용체는 그러면 언제 쓰는 것이 정석인가?</p></div><div></div><h3>44.1 공용체 — 겹쳐 놓기</h3><p>문법은 구조체와 쌍둥이다. <code>struct</code>를 <code>union</code>으로 바꾸면 된다:</p><pre><code data-lang="c"><strong><span class="tok-t">union</span></strong> bits32 <span class="tok-x">{</span>
     <strong><span class="tok-t">uint32_t</span></strong> as_int<span class="tok-x">;</span>
     <strong><span class="tok-t">float</span></strong>    as_float<span class="tok-x">;</span>
 <span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>멤버 접근도 같다(<code>u.as_int</code>). 다른 것은 기억의 배치뿐이다 — 두 멤버가 같은 4바이트를 공유하므로, <code>as_float</code>에 쓰고 <code>as_int</code>로 읽으면 <strong>같은 비트를 다른 해석으로</strong> 보게 된다. C 표준은 이 “쓴 멤버와 다른 멤버로 읽기”(타입 퍼닝)를 공용체에 한해 허용한다 — 13장의 포인터 캐스트 방식과 달리 계약 안이라는 점이 결정적 차이다(다만 읽은 값이 그 타입의 유효한 값이 아닐 수 있다는 주의는 남는다).</p><h3>44.2 표현을 눈으로 — 엔디안과 패딩</h3><p>5장에서 “이 확인을 C로 실제로 해 보이는 것이 이 장의 시연”이라 예약해 두었다. 이제 갚는다. 여기서는 공용체 대신 가장 이식성 좋은 방법 — 36장에서 배운 바이트의 눈(<code>unsigned char</code>)과 <code>memcpy</code> — 을 쓴다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch44/endian.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
@@ -258,7 +264,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 memory order: 78 56 34 12
 this machine is little-endian
 1 + 4 = 5, but sizeof = 8
-</code></pre></div></div><p>첫 부분이 5장의 그림 그대로다. <code>0x12345678</code>이 메모리에 <code>78 56 34 12</code> 순서로 놓였다 — 이 책의 검증 기계는 리틀 엔디안이라는 뜻이고, 5장의 도해가 실물로 확인된 것이다. (빅 엔디안 기계에서 이 예제를 돌리면 <code>12 34 56 78</code>이 찍히고 판정 문장도 바뀐다 — 코드는 그대로다.)</p><p>둘째 부분은 구조체의 숨은 사정이다. <code>char</code> 하나(1바이트)와 <code>int</code> 하나(4바이트)를 담은 구조체의 크기가 5가 아니라 8이다 — 6장의 정렬 규칙 때문에 <code>char</code> 뒤에 3바이트의 <strong>패딩</strong>(padding, 빈틈)이 끼워진 것이다. int 멤버가 4의 배수 자리에서 시작해야 기계가 한 움큼에 집을 수 있기 때문이다(6장). 그래서 실무 관행 하나가 나온다 — <strong>큰 멤버부터 배치하면 빈틈이 줄어든다.</strong> 구조체 수백만 개를 다루는 코드에서는 이 배치 하나가 메모리와 캐시 효율(11장)을 좌우한다. 배치 규칙과, 빈틈을 없애거나 정렬을 강제하는 방법(<code>pack</code>·<code>alignas</code>)은 43장에서 자세히 다뤘다 — 여기서는 그 빈틈이 <strong>실제로 존재한다</strong>는 사실을 눈으로 확인하는 것이 목적이다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>빈틈이 흘린 비밀 — 커널의 패딩 정보 유출</p>패딩은 아무도 쓰지 않는 빈칸이라 무해해 보이지만, 보안의 눈으로 보면 <strong>초기화되지 않은 기억</strong>이다. 운영체제 커널이 구조체를 사용자 프로그램 에게 통째로 복사해 줄 때 이 빈틈이 함께 건너가는데 — 멤버들은 전부 채워 넣었어도 빈틈에는 그 자리에 남아 있던 <strong>다른 데이터의 잔해</strong>가 들어 있다. 공격자는 이 부스러기를 모아 커널 메모리의 내용이나 주소 배치를 엿볼 수 있고, 그것이 다음 공격의 발판이 된다. 리눅스를 비롯한 주요 커널들이 이 부류의 정보 유출 취약점을 수십 건 고쳐 왔고, 오늘의 대응은 단순하다 — 사용자에게 넘기는 구조체는 <strong>멤버를 채우기 전에 통째로 0으로 지운다</strong>. 23장에서 “선언과 동시에 초기화한다”고 한 규칙이, 보이지 않는 빈칸에까지 적용되는 순간이다.</div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“구조체를 그대로 파일에 쓰거나 네트워크로 보내면 된다”</strong></p>솔깃한 생각이고, 실제로 많이 시도된 방법이다 — 구조체의 바이트를 통째로 저장하면 코드가 짧아지니까. 그러나 이 장이 방금 보인 두 사실이 그것을 가로막는다: 바이트 순서가 기계마다 다르고(엔디안), 빈틈의 크기와 위치도 컴파일러·플랫폼마다 다르다(패딩). 한 기계에서 쓴 파일이 다른 기계에서 깨지는 것이다 — 5장의 NUXI 사건이 파일 형식의 세계에서 재현되는 셈이다. 정답은 <strong>직렬화</strong>(serialization)다: 멤버를 하나씩, 약속된 크기와 바이트 순서로(네트워크 바이트 순서 — 5장) 적고 읽는 코드를 명시적으로 쓰는 것. 표현은 기계의 사정이고, 파일과 통신은 약속의 세계라는 것 — 두 세계를 잇는 다리는 손으로 놓아야 한다.</div><div class="qa-box"><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 공용체는 그러면 언제 쓰는 것이 정석인가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 두 가지 자리다. 첫째, 방금 본 <strong>표현 들여다보기</strong>(타입 퍼닝) — 부동 소수점 비트를 검사하거나 하드웨어 레지스터를 여러 눈으로 보는 저수준 코드다. 둘째, 더 흔한 쓰임인 <strong>태그된 공용체</strong>(tagged union): 구조체 안에 “지금 어느 멤버가 유효한가”를 알리는 표시(태그)와 공용체를 함께 넣어, “이 값은 정수이거나, 실수이거나, 문자열이다” 같은 선택형 데이터를 표현하는 것이다. 인터프리터의 값 표현, 설정 파일 파서 같은 곳의 기본 도구이고 — 6장에서 본 태그 포인터가 비트 차원의 같은 발상이었다. 현대 언어들의 열거형(Rust의 enum, Swift의 associated value)이 이 패턴을 언어 차원으로 끌어올린 것이다.</p></div></div></div><h3>44.3 비트 필드 — 한 워드를 쪼개 쓰기</h3><p>구조체 멤버 뒤에 콜론과 수를 적으면 <strong>비트 필드</strong>(bit field)가 된다 — 그 멤버가 차지할 비트 수를 직접 지정하는 것이다. 여기에 공용체를 겹치면 “통째로 한 워드로 보는 눈”과 “필드로 나눠 보는 눈”을 동시에 갖게 된다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch44/bitfield.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+</code></pre></div></div><p>첫 부분이 5장의 그림 그대로다. <code>0x12345678</code>이 메모리에 <code>78 56 34 12</code> 순서로 놓였다 — 이 책의 검증 기계는 리틀 엔디안이라는 뜻이고, 5장의 도해가 실물로 확인된 것이다. (빅 엔디안 기계에서 이 예제를 돌리면 <code>12 34 56 78</code>이 찍히고 판정 문장도 바뀐다 — 코드는 그대로다.)</p><p>둘째 부분은 구조체의 숨은 사정이다. <code>char</code> 하나(1바이트)와 <code>int</code> 하나(4바이트)를 담은 구조체의 크기가 5가 아니라 8이다 — 6장의 정렬 규칙 때문에 <code>char</code> 뒤에 3바이트의 <strong>패딩</strong>(padding, 빈틈)이 끼워진 것이다. int 멤버가 4의 배수 자리에서 시작해야 기계가 한 움큼에 집을 수 있기 때문이다(6장). 그래서 실무 관행 하나가 나온다 — <strong>큰 멤버부터 배치하면 빈틈이 줄어든다.</strong> 구조체 수백만 개를 다루는 코드에서는 이 배치 하나가 메모리와 캐시 효율(11장)을 좌우한다. 배치 규칙과, 빈틈을 없애거나 정렬을 강제하는 방법(<code>pack</code>·<code>alignas</code>)은 43장에서 자세히 다뤘다 — 여기서는 그 빈틈이 <strong>실제로 존재한다</strong>는 사실을 눈으로 확인하는 것이 목적이다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>빈틈이 흘린 비밀 — 커널의 패딩 정보 유출</p>패딩은 아무도 쓰지 않는 빈칸이라 무해해 보이지만, 보안의 눈으로 보면 <strong>초기화되지 않은 기억</strong>이다. 운영체제 커널이 구조체를 사용자 프로그램 에게 통째로 복사해 줄 때 이 빈틈이 함께 건너가는데 — 멤버들은 전부 채워 넣었어도 빈틈에는 그 자리에 남아 있던 <strong>다른 데이터의 잔해</strong>가 들어 있다. 공격자는 이 부스러기를 모아 커널 메모리의 내용이나 주소 배치를 엿볼 수 있고, 그것이 다음 공격의 발판이 된다. 리눅스를 비롯한 주요 커널들이 이 부류의 정보 유출 취약점을 수십 건 고쳐 왔고, 오늘의 대응은 단순하다 — 사용자에게 넘기는 구조체는 <strong>멤버를 채우기 전에 통째로 0으로 지운다</strong>. 23장에서 “선언과 동시에 초기화한다”고 한 규칙이, 보이지 않는 빈칸에까지 적용되는 순간이다.</div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“구조체를 그대로 파일에 쓰거나 네트워크로 보내면 된다”</strong></p>솔깃한 생각이고, 실제로 많이 시도된 방법이다 — 구조체의 바이트를 통째로 저장하면 코드가 짧아지니까. 그러나 이 장이 방금 보인 두 사실이 그것을 가로막는다: 바이트 순서가 기계마다 다르고(엔디안), 빈틈의 크기와 위치도 컴파일러·플랫폼마다 다르다(패딩). 한 기계에서 쓴 파일이 다른 기계에서 깨지는 것이다 — 5장의 NUXI 사건이 파일 형식의 세계에서 재현되는 셈이다. 정답은 <strong>직렬화</strong>(serialization)다: 멤버를 하나씩, 약속된 크기와 바이트 순서로(네트워크 바이트 순서 — 5장) 적고 읽는 코드를 명시적으로 쓰는 것. 표현은 기계의 사정이고, 파일과 통신은 약속의 세계라는 것 — 두 세계를 잇는 다리는 손으로 놓아야 한다.</div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 공용체는 그러면 언제 쓰는 것이 정석인가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 두 가지 자리다. 첫째, 방금 본 <strong>표현 들여다보기</strong>(타입 퍼닝) — 부동 소수점 비트를 검사하거나 하드웨어 레지스터를 여러 눈으로 보는 저수준 코드다. 둘째, 더 흔한 쓰임인 <strong>태그된 공용체</strong>(tagged union): 구조체 안에 “지금 어느 멤버가 유효한가”를 알리는 표시(태그)와 공용체를 함께 넣어, “이 값은 정수이거나, 실수이거나, 문자열이다” 같은 선택형 데이터를 표현하는 것이다. 인터프리터의 값 표현, 설정 파일 파서 같은 곳의 기본 도구이고 — 6장에서 본 태그 포인터가 비트 차원의 같은 발상이었다. 현대 언어들의 열거형(Rust의 enum, Swift의 associated value)이 이 패턴을 언어 차원으로 끌어올린 것이다.</p></div></div><h3>44.3 비트 필드 — 한 워드를 쪼개 쓰기</h3><p>구조체 멤버 뒤에 콜론과 수를 적으면 <strong>비트 필드</strong>(bit field)가 된다 — 그 멤버가 차지할 비트 수를 직접 지정하는 것이다. 여기에 공용체를 겹치면 “통째로 한 워드로 보는 눈”과 “필드로 나눠 보는 눈”을 동시에 갖게 된다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch44/bitfield.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
 
 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 실무에서 흔한 모양: 장치 레지스터 한 워드를 필드로 나눠 보고,</span></em>

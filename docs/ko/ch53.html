@@ -98,15 +98,7 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body { padding:0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
-/* 복습 정리도 같은 모양으로 — 표제 줄과 본문을 가로선으로 가른다 */
-.recap { border:1px solid var(--fg); border-left:1px solid var(--fg);
-  padding:0; margin:1.15rem 0; }
-.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
-  border-bottom:1px solid var(--fg);
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-  font-size:.92rem; color:var(--fg); }
-.recap > *:not(.dev-label) { padding:0 .9rem; }
-.recap > figure.tbl { padding:.4rem .9rem; }
+
 .dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
        border-left:3px solid var(--box-rule); border-radius:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
@@ -118,16 +110,21 @@ figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
              font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
-/* 장 서두 — 넷이 하나의 테두리를 공유하고, 안에서는 가는 가로선으로 갈린다 */
-.chapter-head { border:1px solid var(--fg); margin:.2rem 0 1.5rem; }
-.chapter-head > div { border-top:1px solid var(--rule); padding:.6rem .9rem; }
-.chapter-head > div:first-child { border-top:none; }
-.chapter-head .dev { margin:0; padding:0; background:none; border:none;
-  border-radius:0; }
-.chapter-head .dev-label { margin:0 0 .15rem; }
-.chapter-head p { margin:.22rem 0; }
-.chapter-head .qa-a { border-left:2px solid var(--muted); padding-left:.7rem;
-  margin-top:.3rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06). */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open:first-of-type { margin-top:1rem; }
+.dev.open > .dev-label { margin:0; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > *:not(.dev-label) { padding:.1rem .9rem; margin:.3rem 0; }
+.dev.open > *:not(.dev-label):first-of-type { margin-top:.45rem; }
+.dev.open > *:not(.dev-label):last-child { margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem .9rem; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
@@ -141,6 +138,15 @@ figure.tbl { text-align:center; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
   background:none; }
 .qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; padding:0;
+  margin:1.15rem 0; background:none; }
+.dev.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > *:not(.dev-label) { padding:.2rem .9rem; }
+.dev.recap > figure.tbl { padding:.5rem .9rem; margin:0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -227,7 +233,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-53">53 함수를 값으로 — 함수 포인터</h2><div class="chapter-head"><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div>24장 함수 선언과 정의 · 함수의 이름</div><div>37장 배열 · 이름이 값으로 무너진다</div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div>37장에서 배열 이름이 첫 원소의 주소로 무너진다고 했고, 52장에서는 가변 인자 함수가 타입 정보를 잃는다고 했다. 그러면 <strong>함수 이름</strong>은 수식에서 무엇으로 평가되는가?</div><div class="dev qa-a"><p class="dev-label">답</p><p>. <strong>함수를 가리키는 포인터</strong>로 평가된다 — 배열과 같은 무너짐(decay)이 함수에도 있다. 예외는 <code>sizeof</code>와 <code>&amp;</code>의 피연산자일 때뿐인데, 함수에 <code>sizeof</code>를 쓰는 것은 애초에 금지이므로 사실상 <code>&amp;</code>만 예외다. 그리고 <code>&amp;함수</code>도 결국 같은 포인터를 준다. 그래서 <code>f</code>, <code>&amp;f</code>, <code>*f</code>가 전부 같은 값이 되는 기묘한 상황이 벌어진다 — 이 장의 첫 예제가 그것이다.</p></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p>지금까지 함수는 “부르는 것”이었다. 이 장에서는 함수를 <strong>값으로</strong> 다룬다 — 변수에 담고, 인자로 넘기고, 배열에 늘어놓는다. 그 과정에서 C의 오래된 규칙 하나(<strong>함수 이름은 포인터로 무너진다</strong>)와, 그 규칙이 만드는 기묘한 문법, 그리고 이 도구로 객체지향을 손수 짓는 방법까지 본다.</div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><p>그러면 C++의 가상 함수와 무엇이 다른가?</p></div></div><div></div><h3>53.1 이름은 포인터로 무너진다</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch53/funcptr.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2 id="loc-53">53 함수를 값으로 — 함수 포인터</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div>24장 함수 선언과 정의 · 함수의 이름</div><div>37장 배열 · 이름이 값으로 무너진다</div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div>37장에서 배열 이름이 첫 원소의 주소로 무너진다고 했고, 52장에서는 가변 인자 함수가 타입 정보를 잃는다고 했다. 그러면 <strong>함수 이름</strong>은 수식에서 무엇으로 평가되는가?</div><div class="dev qa-a"><p class="dev-label">답</p><p>. <strong>함수를 가리키는 포인터</strong>로 평가된다 — 배열과 같은 무너짐(decay)이 함수에도 있다. 예외는 <code>sizeof</code>와 <code>&amp;</code>의 피연산자일 때뿐인데, 함수에 <code>sizeof</code>를 쓰는 것은 애초에 금지이므로 사실상 <code>&amp;</code>만 예외다. 그리고 <code>&amp;함수</code>도 결국 같은 포인터를 준다. 그래서 <code>f</code>, <code>&amp;f</code>, <code>*f</code>가 전부 같은 값이 되는 기묘한 상황이 벌어진다 — 이 장의 첫 예제가 그것이다.</p></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p>지금까지 함수는 “부르는 것”이었다. 이 장에서는 함수를 <strong>값으로</strong> 다룬다 — 변수에 담고, 인자로 넘기고, 배열에 늘어놓는다. 그 과정에서 C의 오래된 규칙 하나(<strong>함수 이름은 포인터로 무너진다</strong>)와, 그 규칙이 만드는 기묘한 문법, 그리고 이 도구로 객체지향을 손수 짓는 방법까지 본다.</div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><p>그러면 C++의 가상 함수와 무엇이 다른가?</p></div><div></div><h3>53.1 이름은 포인터로 무너진다</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch53/funcptr.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 
@@ -353,6 +359,6 @@ binop_fn table<span class="tok-x">[</span><span class="tok-x">]</span> <strong><
   사각 넓이 12.00
 객체 크기: circle=16, rect=24 (표 포인터 8 바이트 포함)
 표 크기  : 24 (타입마다 하나만 존재)
-</code></pre></div></div><p>설계의 뼈대는 넷이다.</p><ol><li><strong>표는 타입마다 하나</strong>다(<code>static const</code>). 인스턴스마다 함수 포인터를 복사해 두면 객체가 커지고 캐시가 나빠진다 — 그래서 표는 분리해서 한 벌만 두고, 객체는 그 표를 가리키는 포인터 하나만 갖는다.</li><li><strong>기반 구조체를 첫 멤버로 둔다.</strong> 표준이 “구조체의 첫 멤버는 구조체 자신과 같은 주소에서 시작한다”고 보장하므로, <code>struct circle *</code>와 <code>struct shape *</code>를 안전하게 오갈 수 있다(42장).</li><li><strong>호출은 표를 통해</strong> 한다 — <code>s->vt->area(s)</code>. 이 한 줄이 C++의 가상 함수 호출이 하는 일과 정확히 같다.</li><li><strong>자기 자신을 첫 인자로</strong> 넘긴다. C++이 감춰 주는 <code>this</code>를 손으로 적는 것이다.</li></ol><p>출력의 마지막 두 줄이 비용을 보여 준다. 객체마다 늘어나는 것은 포인터 하나(8바이트)뿐이고, 표는 타입당 한 번만 존재한다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>GTK의 GObject — 실제로 쓰이는 손수 지은 객체 체계</p><p>이 방식이 장난감이 아니라는 증거가 GTK다. 리눅스 데스크톱의 주요 툴킷인 GTK는 순수 C로 쓰였고, 그 밑에 <strong>GObject</strong>라는 객체 체계를 두고 있다. 구조는 방금 본 것과 같은 뼈대 위에 서 있다.</p><ul><li>인스턴스 구조체의 첫 멤버가 <strong>클래스 구조체</strong>(우리의 vtable)를 가리킨다.</li><li>클래스 구조체에는 함수 포인터들이 늘어서 있고, 파생 클래스는 그중 일부를 자기 함수로 덮어써서 “재정의”한다.</li><li>상속은 기반 구조체를 첫 멤버로 두는 것으로 표현하고, 타입 변환은 검사를 곁들인 매크로(<code>GTK_WIDGET(x)</code> 같은)로 감싼다.</li><li>여기에 참조 계수, 시그널(관찰자 패턴), 속성 체계가 얹힌다.</li></ul><p>같은 설계를 다른 곳에서도 볼 수 있다. 리눅스 커널의 <code>struct file_operations</code> —파일 시스템마다 다른 <code>read</code>·<code>write</code> 함수를 담은 표— 가 정확히 vtable이고, Windows의 COM은 아예 이 규약을 ABI 수준에서 못박은 것이다.</p></div><div class="qa-box"><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 C++의 가상 함수와 무엇이 다른가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 개념은 같고 <strong>자동화의 정도</strong>가 다르다. C++은 컴파일러가 표를 만들고, 포인터를 심고, 생성자에서 연결하고, 타입 변환을 검사해 준다. C에서는 그 전부가 손일이고, 그래서 실수할 자리도 많다 — 표를 연결하지 않은 객체, 첫 멤버 규칙을 어긴 구조체, 파생 타입을 잘못 캐스트하는 코드.</p><p>대신 얻는 것도 분명하다. <strong>무엇이 어디에 있는지 전부 보인다.</strong> 표가 몇 개인지, 호출 한 번에 포인터를 몇 번 따라가는지, 객체가 몇 바이트인지 세어 볼 수 있다. 이 책이 내내 말해 온 “비용이 보이는 언어”의 성격이 객체지향에서도 그대로 나타나는 자리다.</p><p>덧붙여, C++의 가상 함수 표 배치는 <strong>표준이 정하지 않는다</strong>(ABI가 정한다). 그래서 C와 C++을 섞을 때 클래스 객체를 경계 너머로 넘기지 않고 <code>extern "C"</code> 함수와 단순 구조체만 주고받는 것이다(81장).</p></p></div></div></div><div class="dev recap"><p class="dev-label">복습 정리</p><p>함수 포인터 요약.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>규칙</strong></th><th><strong>내용</strong></th></tr><tr><td>무너짐</td><td>함수 이름은 값으로 쓰이면 포인터가 된다</td></tr><tr><td><code>f</code>·<code>&amp;f</code>·<code>*f</code></td><td>모두 같은 포인터. <code>&amp;&amp;f</code>는 문법 오류</td></tr><tr><td>호출 표기</td><td><code>p(x)</code>와 <code>(*p)(x)</code>는 동일</td></tr><tr><td>타입</td><td>반환형+매개변수. 다른 타입으로 캐스트해 호출하면 계약 밖</td></tr><tr><td><code>void *</code></td><td>함수 포인터와 서로 변환된다는 보장이 없다(하버드 구조)</td></tr><tr><td><code>dlsym</code></td><td>POSIX가 따로 보장. <code>*(void **)&amp;fn</code> 관용구</td></tr><tr><td>디스패치 표</td><td>분기 대신 자료로 고르기</td></tr><tr><td>vtable</td><td>표는 타입당 하나, 객체는 포인터 하나. 첫 멤버 규칙이 근거</td></tr><tr><td>실물</td><td>GObject(GTK), 커널의 <code>file_operations</code>, COM</td></tr></table></div><p class="float-caption">표 53.1</p></figure></div><p>함수를 값으로 다루는 법까지 갖췄다. 그런데 이 장에서 몇 번, 선언 자체가 읽기 어려워 <code>typedef</code>로 도망친 자리가 있었다 — <code>int (*(*s)(void))(int);</code> 같은 것들이다. 다음 장이 그 빚을 갚는다: C에서 가장 악명 높은 자리인 <strong>선언 읽기</strong>를, 두 가지 독법과 <code>typedef</code>로 정면 돌파한다.</p>
+</code></pre></div></div><p>설계의 뼈대는 넷이다.</p><ol><li><strong>표는 타입마다 하나</strong>다(<code>static const</code>). 인스턴스마다 함수 포인터를 복사해 두면 객체가 커지고 캐시가 나빠진다 — 그래서 표는 분리해서 한 벌만 두고, 객체는 그 표를 가리키는 포인터 하나만 갖는다.</li><li><strong>기반 구조체를 첫 멤버로 둔다.</strong> 표준이 “구조체의 첫 멤버는 구조체 자신과 같은 주소에서 시작한다”고 보장하므로, <code>struct circle *</code>와 <code>struct shape *</code>를 안전하게 오갈 수 있다(42장).</li><li><strong>호출은 표를 통해</strong> 한다 — <code>s->vt->area(s)</code>. 이 한 줄이 C++의 가상 함수 호출이 하는 일과 정확히 같다.</li><li><strong>자기 자신을 첫 인자로</strong> 넘긴다. C++이 감춰 주는 <code>this</code>를 손으로 적는 것이다.</li></ol><p>출력의 마지막 두 줄이 비용을 보여 준다. 객체마다 늘어나는 것은 포인터 하나(8바이트)뿐이고, 표는 타입당 한 번만 존재한다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>GTK의 GObject — 실제로 쓰이는 손수 지은 객체 체계</p><p>이 방식이 장난감이 아니라는 증거가 GTK다. 리눅스 데스크톱의 주요 툴킷인 GTK는 순수 C로 쓰였고, 그 밑에 <strong>GObject</strong>라는 객체 체계를 두고 있다. 구조는 방금 본 것과 같은 뼈대 위에 서 있다.</p><ul><li>인스턴스 구조체의 첫 멤버가 <strong>클래스 구조체</strong>(우리의 vtable)를 가리킨다.</li><li>클래스 구조체에는 함수 포인터들이 늘어서 있고, 파생 클래스는 그중 일부를 자기 함수로 덮어써서 “재정의”한다.</li><li>상속은 기반 구조체를 첫 멤버로 두는 것으로 표현하고, 타입 변환은 검사를 곁들인 매크로(<code>GTK_WIDGET(x)</code> 같은)로 감싼다.</li><li>여기에 참조 계수, 시그널(관찰자 패턴), 속성 체계가 얹힌다.</li></ul><p>같은 설계를 다른 곳에서도 볼 수 있다. 리눅스 커널의 <code>struct file_operations</code> —파일 시스템마다 다른 <code>read</code>·<code>write</code> 함수를 담은 표— 가 정확히 vtable이고, Windows의 COM은 아예 이 규약을 ABI 수준에서 못박은 것이다.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 C++의 가상 함수와 무엇이 다른가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 개념은 같고 <strong>자동화의 정도</strong>가 다르다. C++은 컴파일러가 표를 만들고, 포인터를 심고, 생성자에서 연결하고, 타입 변환을 검사해 준다. C에서는 그 전부가 손일이고, 그래서 실수할 자리도 많다 — 표를 연결하지 않은 객체, 첫 멤버 규칙을 어긴 구조체, 파생 타입을 잘못 캐스트하는 코드.</p><p>대신 얻는 것도 분명하다. <strong>무엇이 어디에 있는지 전부 보인다.</strong> 표가 몇 개인지, 호출 한 번에 포인터를 몇 번 따라가는지, 객체가 몇 바이트인지 세어 볼 수 있다. 이 책이 내내 말해 온 “비용이 보이는 언어”의 성격이 객체지향에서도 그대로 나타나는 자리다.</p><p>덧붙여, C++의 가상 함수 표 배치는 <strong>표준이 정하지 않는다</strong>(ABI가 정한다). 그래서 C와 C++을 섞을 때 클래스 객체를 경계 너머로 넘기지 않고 <code>extern "C"</code> 함수와 단순 구조체만 주고받는 것이다(81장).</p></p></div></div><div class="dev recap"><p class="dev-label">복습 정리</p><p>함수 포인터 요약.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>규칙</strong></th><th><strong>내용</strong></th></tr><tr><td>무너짐</td><td>함수 이름은 값으로 쓰이면 포인터가 된다</td></tr><tr><td><code>f</code>·<code>&amp;f</code>·<code>*f</code></td><td>모두 같은 포인터. <code>&amp;&amp;f</code>는 문법 오류</td></tr><tr><td>호출 표기</td><td><code>p(x)</code>와 <code>(*p)(x)</code>는 동일</td></tr><tr><td>타입</td><td>반환형+매개변수. 다른 타입으로 캐스트해 호출하면 계약 밖</td></tr><tr><td><code>void *</code></td><td>함수 포인터와 서로 변환된다는 보장이 없다(하버드 구조)</td></tr><tr><td><code>dlsym</code></td><td>POSIX가 따로 보장. <code>*(void **)&amp;fn</code> 관용구</td></tr><tr><td>디스패치 표</td><td>분기 대신 자료로 고르기</td></tr><tr><td>vtable</td><td>표는 타입당 하나, 객체는 포인터 하나. 첫 멤버 규칙이 근거</td></tr><tr><td>실물</td><td>GObject(GTK), 커널의 <code>file_operations</code>, COM</td></tr></table></div><p class="float-caption">표 53.1</p></figure></div><p>함수를 값으로 다루는 법까지 갖췄다. 그런데 이 장에서 몇 번, 선언 자체가 읽기 어려워 <code>typedef</code>로 도망친 자리가 있었다 — <code>int (*(*s)(void))(int);</code> 같은 것들이다. 다음 장이 그 빚을 갚는다: C에서 가장 악명 높은 자리인 <strong>선언 읽기</strong>를, 두 가지 독법과 <code>typedef</code>로 정면 돌파한다.</p>
 <div class="nav"><a href="ch52.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch54.html">다음 →</a></div>
 </div></main></body></html>

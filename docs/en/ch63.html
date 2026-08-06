@@ -98,15 +98,7 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body { padding:0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
-/* 복습 정리도 같은 모양으로 — 표제 줄과 본문을 가로선으로 가른다 */
-.recap { border:1px solid var(--fg); border-left:1px solid var(--fg);
-  padding:0; margin:1.15rem 0; }
-.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
-  border-bottom:1px solid var(--fg);
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-  font-size:.92rem; color:var(--fg); }
-.recap > *:not(.dev-label) { padding:0 .9rem; }
-.recap > figure.tbl { padding:.4rem .9rem; }
+
 .dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
        border-left:3px solid var(--box-rule); border-radius:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
@@ -118,16 +110,21 @@ figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
              font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
-/* 장 서두 — 넷이 하나의 테두리를 공유하고, 안에서는 가는 가로선으로 갈린다 */
-.chapter-head { border:1px solid var(--fg); margin:.2rem 0 1.5rem; }
-.chapter-head > div { border-top:1px solid var(--rule); padding:.6rem .9rem; }
-.chapter-head > div:first-child { border-top:none; }
-.chapter-head .dev { margin:0; padding:0; background:none; border:none;
-  border-radius:0; }
-.chapter-head .dev-label { margin:0 0 .15rem; }
-.chapter-head p { margin:.22rem 0; }
-.chapter-head .qa-a { border-left:2px solid var(--muted); padding-left:.7rem;
-  margin-top:.3rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06). */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open:first-of-type { margin-top:1rem; }
+.dev.open > .dev-label { margin:0; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > *:not(.dev-label) { padding:.1rem .9rem; margin:.3rem 0; }
+.dev.open > *:not(.dev-label):first-of-type { margin-top:.45rem; }
+.dev.open > *:not(.dev-label):last-child { margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem .9rem; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
@@ -141,6 +138,15 @@ figure.tbl { text-align:center; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
   background:none; }
 .qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; padding:0;
+  margin:1.15rem 0; background:none; }
+.dev.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > *:not(.dev-label) { padding:.2rem .9rem; }
+.dev.recap > figure.tbl { padding:.5rem .9rem; margin:0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -227,7 +233,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <a href="../ko/">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-63">63 Time — <code>&lt;time.h></code></h2><div class="chapter-head"><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div>chapter 42, Structs · values bundled in a struct</div><div>chapter 55, The terrain of the standard library · the contract the standard settles</div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div>Bringing forward a story to be treated in Part XII: calendar time and elapsed time were said to be different things. Then what is used in standard C to measure exactly “whether three seconds have passed”?</div><div class="dev qa-a"><p class="dev-label">A</p><p>. With the standard alone there is no way to measure it exactly. <code>time</code> is in seconds and can go backwards when the system adjusts the clock, and <code>clock</code> measures not wall-clock time but <strong>the CPU time the process used</strong> (so it does not grow while waiting for input and output). C11 brought in <code>timespec_get</code> but does not require a monotonic clock. Accurate elapsed measurement is the part of POSIX’s <code>clock_gettime(CLOCK_MONOTONIC, …)</code> or Windows’ <code>QueryPerformanceCounter</code> — that is, of <strong>a platform API</strong>.</p></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p>The header the standard settled unusually little of. The standard says neither what <code>time_t</code> is nor how time zones are handled. We look at the traps that arise in those gaps — the year with 1900 subtracted, the month starting from 0, functions that return a static buffer, and the fact that <strong>there is no monotonic clock in the standard for measuring elapsed time</strong>.</div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><p>Why do so many types exist for time — would one count of seconds not do?</p></div></div><div></div><h3>63.1 Three representations of time</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>type or function</strong></th><th><strong>what</strong></th><th><strong>to know</strong></th></tr><tr><td><code>time_t</code></td><td>calendar time (usually seconds since 1970)</td><td>★ the standard settles only “an arithmetic type”</td></tr><tr><td><code>struct tm</code></td><td>split into year, month, day, hour, minute, second</td><td>the field rules are a trap</td></tr><tr><td><code>clock_t</code></td><td>the CPU time the process used</td><td>divide by <code>CLOCKS_PER_SEC</code></td></tr><tr><td><code>struct timespec</code></td><td>seconds + nanoseconds (C11)</td><td><code>timespec_get</code></td></tr></table></div><p class="float-caption">Table 63.1</p></figure><p>That the standard did not settle what <code>time_t</code> is matters. In most implementations it is seconds since 1970-01-01 UTC, but that is <strong>a practice</strong>, not a guarantee of the standard. So portable code does not calculate with <code>time_t</code>’s internal value directly but takes the difference with <code>difftime</code>.</p><div class="qa-box"><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why do so many types exist for time — would one count of seconds not do?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Because three different jobs are involved. <code>time_t</code> is an opaque value naming <strong>one moment</strong>; <code>struct tm</code> is the <strong>calendar notation</strong> people read (year, month, day, hour, minute, second); <code>clock_t</code> is a scale for measuring <strong>elapsed time</strong>. Turning a moment into a calendar is a hard computation full of time zones, daylight saving and leap seconds, so the standard keeps the two in separate types and lets <code>localtime</code> and <code>mktime</code> bridge them.</p><p>The accidents in practice happen exactly at that border — subtracting two <code>time_t</code> values gives seconds, but adding to the fields of a <code>struct tm</code> directly produces an unnormalised date. Date arithmetic must go through <code>mktime</code>.</p></p></div></div></div><h3>63.2 The traps of <code>struct tm</code></h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch63/timefns.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2 id="loc-63">63 Time — <code>&lt;time.h></code></h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div>chapter 42, Structs · values bundled in a struct</div><div>chapter 55, The terrain of the standard library · the contract the standard settles</div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div>Bringing forward a story to be treated in Part XII: calendar time and elapsed time were said to be different things. Then what is used in standard C to measure exactly “whether three seconds have passed”?</div><div class="dev qa-a"><p class="dev-label">A</p><p>. With the standard alone there is no way to measure it exactly. <code>time</code> is in seconds and can go backwards when the system adjusts the clock, and <code>clock</code> measures not wall-clock time but <strong>the CPU time the process used</strong> (so it does not grow while waiting for input and output). C11 brought in <code>timespec_get</code> but does not require a monotonic clock. Accurate elapsed measurement is the part of POSIX’s <code>clock_gettime(CLOCK_MONOTONIC, …)</code> or Windows’ <code>QueryPerformanceCounter</code> — that is, of <strong>a platform API</strong>.</p></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p>The header the standard settled unusually little of. The standard says neither what <code>time_t</code> is nor how time zones are handled. We look at the traps that arise in those gaps — the year with 1900 subtracted, the month starting from 0, functions that return a static buffer, and the fact that <strong>there is no monotonic clock in the standard for measuring elapsed time</strong>.</div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><p>Why do so many types exist for time — would one count of seconds not do?</p></div><div></div><h3>63.1 Three representations of time</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>type or function</strong></th><th><strong>what</strong></th><th><strong>to know</strong></th></tr><tr><td><code>time_t</code></td><td>calendar time (usually seconds since 1970)</td><td>★ the standard settles only “an arithmetic type”</td></tr><tr><td><code>struct tm</code></td><td>split into year, month, day, hour, minute, second</td><td>the field rules are a trap</td></tr><tr><td><code>clock_t</code></td><td>the CPU time the process used</td><td>divide by <code>CLOCKS_PER_SEC</code></td></tr><tr><td><code>struct timespec</code></td><td>seconds + nanoseconds (C11)</td><td><code>timespec_get</code></td></tr></table></div><p class="float-caption">Table 63.1</p></figure><p>That the standard did not settle what <code>time_t</code> is matters. In most implementations it is seconds since 1970-01-01 UTC, but that is <strong>a practice</strong>, not a guarantee of the standard. So portable code does not calculate with <code>time_t</code>’s internal value directly but takes the difference with <code>difftime</code>.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why do so many types exist for time — would one count of seconds not do?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Because three different jobs are involved. <code>time_t</code> is an opaque value naming <strong>one moment</strong>; <code>struct tm</code> is the <strong>calendar notation</strong> people read (year, month, day, hour, minute, second); <code>clock_t</code> is a scale for measuring <strong>elapsed time</strong>. Turning a moment into a calendar is a hard computation full of time zones, daylight saving and leap seconds, so the standard keeps the two in separate types and lets <code>localtime</code> and <code>mktime</code> bridge them.</p><p>The accidents in practice happen exactly at that border — subtracting two <code>time_t</code> values gives seconds, but adding to the fields of a <code>struct tm</code> directly produces an unnormalised date. Date arithmetic must go through <code>mktime</code>.</p></p></div></div><h3>63.2 The traps of <code>struct tm</code></h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch63/timefns.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">time.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 

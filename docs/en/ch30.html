@@ -98,15 +98,7 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body { padding:0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
-/* 복습 정리도 같은 모양으로 — 표제 줄과 본문을 가로선으로 가른다 */
-.recap { border:1px solid var(--fg); border-left:1px solid var(--fg);
-  padding:0; margin:1.15rem 0; }
-.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
-  border-bottom:1px solid var(--fg);
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-  font-size:.92rem; color:var(--fg); }
-.recap > *:not(.dev-label) { padding:0 .9rem; }
-.recap > figure.tbl { padding:.4rem .9rem; }
+
 .dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
        border-left:3px solid var(--box-rule); border-radius:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
@@ -118,16 +110,21 @@ figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
              font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
-/* 장 서두 — 넷이 하나의 테두리를 공유하고, 안에서는 가는 가로선으로 갈린다 */
-.chapter-head { border:1px solid var(--fg); margin:.2rem 0 1.5rem; }
-.chapter-head > div { border-top:1px solid var(--rule); padding:.6rem .9rem; }
-.chapter-head > div:first-child { border-top:none; }
-.chapter-head .dev { margin:0; padding:0; background:none; border:none;
-  border-radius:0; }
-.chapter-head .dev-label { margin:0 0 .15rem; }
-.chapter-head p { margin:.22rem 0; }
-.chapter-head .qa-a { border-left:2px solid var(--muted); padding-left:.7rem;
-  margin-top:.3rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06). */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open:first-of-type { margin-top:1rem; }
+.dev.open > .dev-label { margin:0; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > *:not(.dev-label) { padding:.1rem .9rem; margin:.3rem 0; }
+.dev.open > *:not(.dev-label):first-of-type { margin-top:.45rem; }
+.dev.open > *:not(.dev-label):last-child { margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem .9rem; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
@@ -141,6 +138,15 @@ figure.tbl { text-align:center; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
   background:none; }
 .qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; padding:0;
+  margin:1.15rem 0; background:none; }
+.dev.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > *:not(.dev-label) { padding:.2rem .9rem; }
+.dev.recap > figure.tbl { padding:.5rem .9rem; margin:0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -227,7 +233,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <a href="../ko/">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-30">30 Deciding — if and switch</h2><div class="chapter-head"><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div>chapter 29, Booleans and comparison · the result of a comparison is true or false</div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div>Chapter 12 foreshadowed the instinct that “an <code>if</code> is not free” — a mispredicted branch pays the penalty of flushing the pipeline. Should a programmer then avoid branches?</div><div class="dev qa-a"><p class="dev-label">A</p><p>. No — branches are the skeleton of a program, and the predictor is right well over 90% of the time in everyday code. The use of that instinct is not “do not use branches” but <strong>knowing that the cost of a branch is not constant</strong> — a regular fork is cheap, a random one expensive (the sorted-array episode). It is knowledge to be taken out only in the very small amount of code where performance matters; the branching learned today may be used freely.</p></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p>The program meets a fork. <code>if</code>, which takes a different road according to a condition, and <code>switch</code>, which spreads several branches at once — we learn both branching devices. This is the chapter in which chapter 4′s model of computation (“if the result is zero, jump over there”) finally appears with the face of C syntax.</div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><p>I hear the braces may be omitted when a branch has only one statement — may they be?</p><p>An <code>if</code> ladder can do it all, so why is <code>switch</code> needed at all?</p></div></div><div></div><h3>30.1 if — when the condition is true</h3><p>The syntax is as it reads:</p><pre><code data-lang="c"><strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>condition<span class="tok-x">)</span> <span class="tok-x">{</span>
+<h2 id="loc-30">30 Deciding — if and switch</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div>chapter 29, Booleans and comparison · the result of a comparison is true or false</div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div>Chapter 12 foreshadowed the instinct that “an <code>if</code> is not free” — a mispredicted branch pays the penalty of flushing the pipeline. Should a programmer then avoid branches?</div><div class="dev qa-a"><p class="dev-label">A</p><p>. No — branches are the skeleton of a program, and the predictor is right well over 90% of the time in everyday code. The use of that instinct is not “do not use branches” but <strong>knowing that the cost of a branch is not constant</strong> — a regular fork is cheap, a random one expensive (the sorted-array episode). It is knowledge to be taken out only in the very small amount of code where performance matters; the branching learned today may be used freely.</p></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p>The program meets a fork. <code>if</code>, which takes a different road according to a condition, and <code>switch</code>, which spreads several branches at once — we learn both branching devices. This is the chapter in which chapter 4′s model of computation (“if the result is zero, jump over there”) finally appears with the face of C syntax.</div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><p>I hear the braces may be omitted when a branch has only one statement — may they be?</p><p>An <code>if</code> ladder can do it all, so why is <code>switch</code> needed at all?</p></div><div></div><h3>30.1 if — when the condition is true</h3><p>The syntax is as it reads:</p><pre><code data-lang="c"><strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>condition<span class="tok-x">)</span> <span class="tok-x">{</span>
     statements when the condition is <span class="tok-n">true</span>
 <span class="tok-x">}</span> <strong><span class="tok-k">else</span></strong> <span class="tok-x">{</span>
     statements when it is <span class="tok-n">false</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the else part may be omitted </span></em><em><span class="tok-c">*/</span></em>
@@ -254,7 +260,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-in"><p class="demo-head">Given on standard input</p><div class="demo-body"><pre><code>87
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>87: good
-</code></pre></div></div><p>The ladder is checked <strong>in order from the top</strong>, and only the first branch that becomes true is executed — that 87 stops at “우” and does not fall further down is that guarantee. So the order of the ladder is the logic itself: narrow conditions above, broad conditions below, is the standard.</p><div class="qa-box"><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> I hear the braces may be omitted when a branch has only one statement — may they be?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Grammatically they may — and this book recommends not doing it. A brace-less branch takes “only the next single statement” into the branch, and adding a line later while forgetting the missing braces is a classic path to accident. It really happened in Apple’s SSL library, where this pattern pushed verification code outside the branch and the security check was skipped entirely (the “goto fail” incident, 2014) — the day it was expensively proved that indentation is visible only to human eyes and not to the compiler (chapter 19). Always braces on a branch — the rule every example in this book follows.</p></div></div></div><h3>30.2 switch — a board that forks by value</h3><p>When the fork is not “which range” but “which <strong>value</strong>”, there is a dedicated device — <code>switch</code>.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch30/season.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+</code></pre></div></div><p>The ladder is checked <strong>in order from the top</strong>, and only the first branch that becomes true is executed — that 87 stops at “우” and does not fall further down is that guarantee. So the order of the ladder is the logic itself: narrow conditions above, broad conditions below, is the standard.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> I hear the braces may be omitted when a branch has only one statement — may they be?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Grammatically they may — and this book recommends not doing it. A brace-less branch takes “only the next single statement” into the branch, and adding a line later while forgetting the missing braces is a classic path to accident. It really happened in Apple’s SSL library, where this pattern pushed verification code outside the branch and the security check was skipped entirely (the “goto fail” incident, 2014) — the day it was expensively proved that indentation is visible only to human eyes and not to the compiler (chapter 19). Always braces on a branch — the rule every example in this book follows.</p></div></div><h3>30.2 switch — a board that forks by value</h3><p>When the fork is not “which range” but “which <strong>value</strong>”, there is a dedicated device — <code>switch</code>.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch30/season.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
 <span class="tok-x">{</span>
@@ -301,6 +307,6 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> falls through </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">default</span></strong><span class="tok-x">:</span>
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
-<span class="tok-x">}</span></code></pre><p>On entering a <code>switch</code>, execution <strong>jumps straight to the matching label</strong>. So the two lines at the head of the block are executed for no value at all. And yet the variable <code>i</code> <strong>exists</strong> — once the block has been entered, that block’s local variables get their places (chapter 40′s automatic storage duration).</p><p>The result is curious. If <code>expr</code> is 0 it jumps to <code>case 0:</code>, <code>i = 17</code> runs and 17 is printed; but <strong>if it is not 0</strong> it jumps straight to <code>default:</code> and <code>i</code> is read <strong>never having been initialised</strong> — the reading of an indeterminate value learned in chapter 48. And that with the initialising line sitting there in plain sight.</p><p>This example is in the standard not to say “write it this way” but to pin down <strong>the consequence of a <code>case</code> being merely a label</strong>. The rules in practice are two — <strong>do not put a declaration at the head of a <code>switch</code> block</strong>, and <strong>if a variable must be declared inside a <code>case</code>, make a block with braces</strong> (otherwise the compiler may refuse it as an initialisation jumped over by a case label).</p></div><div class="qa-box"><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> An <code>if</code> ladder can do it all, so why is <code>switch</code> needed at all?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> The difference between them is not expressive power but <strong>conveying intent</strong>. switch pins down in syntax the intent of “matching one value against several constants”, so the structure is visible both to the reader and to the compiler — the compiler may use that structure to produce fast code such as a jump table (a shape chapter 13′s editor likes), and the warning features can point out “a case missing from an enumeration”. Fork on a single value, use switch; on ranges or compound conditions, an if ladder — fitting the tool to the intent. And in the next chapter we finally meet the legendary code that abused (?) this fall-through property to its limit.</p></div></div></div><p>We have learned the fork — but a program’s real power comes not from forking but from <strong>repeating</strong>. The repetition of which chapter 4 said “even simple steps, <span id="idx-entry-56"></span>taken billions of times”, is taken into our hands in the next chapter.</p>
+<span class="tok-x">}</span></code></pre><p>On entering a <code>switch</code>, execution <strong>jumps straight to the matching label</strong>. So the two lines at the head of the block are executed for no value at all. And yet the variable <code>i</code> <strong>exists</strong> — once the block has been entered, that block’s local variables get their places (chapter 40′s automatic storage duration).</p><p>The result is curious. If <code>expr</code> is 0 it jumps to <code>case 0:</code>, <code>i = 17</code> runs and 17 is printed; but <strong>if it is not 0</strong> it jumps straight to <code>default:</code> and <code>i</code> is read <strong>never having been initialised</strong> — the reading of an indeterminate value learned in chapter 48. And that with the initialising line sitting there in plain sight.</p><p>This example is in the standard not to say “write it this way” but to pin down <strong>the consequence of a <code>case</code> being merely a label</strong>. The rules in practice are two — <strong>do not put a declaration at the head of a <code>switch</code> block</strong>, and <strong>if a variable must be declared inside a <code>case</code>, make a block with braces</strong> (otherwise the compiler may refuse it as an initialisation jumped over by a case label).</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> An <code>if</code> ladder can do it all, so why is <code>switch</code> needed at all?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> The difference between them is not expressive power but <strong>conveying intent</strong>. switch pins down in syntax the intent of “matching one value against several constants”, so the structure is visible both to the reader and to the compiler — the compiler may use that structure to produce fast code such as a jump table (a shape chapter 13′s editor likes), and the warning features can point out “a case missing from an enumeration”. Fork on a single value, use switch; on ranges or compound conditions, an if ladder — fitting the tool to the intent. And in the next chapter we finally meet the legendary code that abused (?) this fall-through property to its limit.</p></div></div><p>We have learned the fork — but a program’s real power comes not from forking but from <strong>repeating</strong>. The repetition of which chapter 4 said “even simple steps, <span id="idx-entry-56"></span>taken billions of times”, is taken into our hands in the next chapter.</p>
 <div class="nav"><a href="ch29.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch31.html">Next →</a></div>
 </div></main></body></html>

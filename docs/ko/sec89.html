@@ -98,15 +98,7 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body { padding:0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
-/* 복습 정리도 같은 모양으로 — 표제 줄과 본문을 가로선으로 가른다 */
-.recap { border:1px solid var(--fg); border-left:1px solid var(--fg);
-  padding:0; margin:1.15rem 0; }
-.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
-  border-bottom:1px solid var(--fg);
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-  font-size:.92rem; color:var(--fg); }
-.recap > *:not(.dev-label) { padding:0 .9rem; }
-.recap > figure.tbl { padding:.4rem .9rem; }
+
 .dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
        border-left:3px solid var(--box-rule); border-radius:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
@@ -118,16 +110,21 @@ figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
              font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
-/* 장 서두 — 넷이 하나의 테두리를 공유하고, 안에서는 가는 가로선으로 갈린다 */
-.chapter-head { border:1px solid var(--fg); margin:.2rem 0 1.5rem; }
-.chapter-head > div { border-top:1px solid var(--rule); padding:.6rem .9rem; }
-.chapter-head > div:first-child { border-top:none; }
-.chapter-head .dev { margin:0; padding:0; background:none; border:none;
-  border-radius:0; }
-.chapter-head .dev-label { margin:0 0 .15rem; }
-.chapter-head p { margin:.22rem 0; }
-.chapter-head .qa-a { border-left:2px solid var(--muted); padding-left:.7rem;
-  margin-top:.3rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06). */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open:first-of-type { margin-top:1rem; }
+.dev.open > .dev-label { margin:0; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > *:not(.dev-label) { padding:.1rem .9rem; margin:.3rem 0; }
+.dev.open > *:not(.dev-label):first-of-type { margin-top:.45rem; }
+.dev.open > *:not(.dev-label):last-child { margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem .9rem; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
@@ -141,6 +138,15 @@ figure.tbl { text-align:center; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
   background:none; }
 .qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; padding:0;
+  margin:1.15rem 0; background:none; }
+.dev.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > *:not(.dev-label) { padding:.2rem .9rem; }
+.dev.recap > figure.tbl { padding:.5rem .9rem; margin:0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -231,7 +237,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 &lt;number> ::= &lt;digit> | &lt;digit> &lt;number></code></pre><p>읽는 법은 이렇다. <code>::=</code>는 “ 는 다음과 같이 이루어진다”, <code>|</code>는 “또는”, 꺾쇠 안의 이름은 <strong>비단말</strong>(다른 규칙으로 더 풀리는 것), 그냥 적힌 글자는 <strong>단말</strong>(더 풀리지 않는 실제 글자)이다. 두 번째 줄은 재귀로 “숫자 하나, 또는 숫자 하나 뒤에 다시 수”라고 적어 <strong>한 자리 이상의 수</strong>를 정의한다.</p><span id="idx-entry-117"></span><p>BNF에는 반복과 선택을 적을 때마다 재귀를 써야 하는 불편이 있다. 그래서 확장한 것이 <strong>EBNF</strong>(Extended BNF)이고, 기호 몇 개가 더해졌다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>표기</strong></th><th><strong>뜻</strong></th><th><strong>예</strong></th></tr><tr><td><code>=</code> 또는 <code>::=</code></td><td>정의한다</td><td><code>digit = "0" | "1" ;</code></td></tr><tr><td><code>|</code></td><td>또는(선택)</td><td><code>sign = "+" | "-" ;</code></td></tr><tr><td><code>[ … ]</code></td><td>있어도 되고 없어도 된다(0 또는 1회)</td><td><code>[ sign ] number</code></td></tr><tr><td><code>{ … }</code></td><td>0회 이상 반복</td><td><code>digit { digit }</code></td></tr><tr><td><code>( … )</code></td><td>묶음</td><td><code>( "+" | "-" ) digit</code></td></tr><tr><td><code>" … "</code></td><td>단말(글자 그대로)</td><td><code>";"</code></td></tr><tr><td><code>;</code></td><td>규칙의 끝</td><td>—</td></tr></table></div><p class="float-caption">표 83.1</p></figure><p>같은 “한 자리 이상의 수”를 EBNF로 적으면 재귀가 사라진다.</p><pre><code data-lang="text">number = digit { digit } ;</code></pre><p>표준화된 EBNF(ISO/IEC 14977)가 있지만, 실제 문서들은 조금씩 다른 방언을 쓴다. 흔한 변형이 정규식에서 온 후위 기호들이다 — <code>?</code>(0 또는 1회), <code>*</code>(0회 이상), <code>+</code>(1회 이상).</p><h3>C 표준의 표기법 읽는 법</h3><p><strong>C 표준 문서는 EBNF를 쓰지 않는다.</strong> 대신 BNF에 가까운 표기를 쓰며, 규칙은 이런 모양이다.</p><pre><code data-lang="text">iteration-statement:
     while ( expression ) secondary-block
     do secondary-block while ( expression ) ;
-    for ( expression_opt ; expression_opt ; expression_opt ) secondary-block</code></pre><p>네 가지 규약만 알면 표준의 문법 절을 그대로 읽을 수 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>규약</strong></th><th><strong>뜻</strong></th></tr><tr><td><code>이름:</code> 뒤 들여쓴 각 줄</td><td>하나의 선택지(대안). <code>|</code>를 줄바꿈으로 대신한다</td></tr><tr><td><code>_opt</code> (표준에서는 아래첨자 opt)</td><td>그 요소는 없어도 된다</td></tr><tr><td><code>one of</code> 다음 목록</td><td>나열된 것 중 하나. 전부 단말이다</td></tr><tr><td>기울임체 이름</td><td>비단말. 다른 규칙으로 풀린다</td></tr></table></div><p class="float-caption">표 83.2</p></figure><p>이 부록에서는 아래첨자를 쓸 수 없으므로 표준의 opt를 <code>_opt</code>로 적는다. <code>for (;;)</code>가 왜 무한 루프로 성립하는지가 위 규칙 한 줄에 그대로 적혀 있다 — 세 자리가 모두 생략 가능하기 때문이다.</p><p>문법이 두 층으로 나뉘어 있다는 점도 미리 알아 두면 좋다. <strong>어휘 문법</strong>은 글자를 모아 토큰을 만드는 규칙이고, <strong>구문 문법</strong>은 그 토큰을 엮는 규칙이다 — 16장에서 본 렉서와 파서의 구분 그대로다. 전처리기는 아예 별도의 문법을 갖는다(51장의 번역 단계에서 이미 처리되어 사라지므로, 아래 A.2의 C 문법에는 <code>#include</code> 같은 것이 나오지 않는다).</p><div class="qa-box"><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 문법을 이렇게 적어 두면 무엇이 좋은가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 세 가지가 좋아진다.</p><p>첫째, <strong>모호함이 드러난다.</strong> 자연어로 “조건 뒤에 문장이 온다”고 쓰면 <code>if (a) if (b) x; else y;</code>에서 <code>else</code>가 어느 <code>if</code>에 붙는지 알 수 없지만, 문법으로 적으면 그 모호함이 규칙의 충돌로 드러난다(C는 “가장 가까운 <code>if</code>에 붙는다”로 정한다).</p><p>둘째, <strong>도구가 읽을 수 있다.</strong> 파서를 손으로 짜지 않고 문법에서 생성하는 도구들(yacc/bison, ANTLR 같은 것)이 이 표기를 입력으로 받는다.</p><p>셋째, <strong>사람이 확인할 수 있다.</strong> “이 자리에 이것을 적어도 되는가”라는 질문에 표준 문서가 답하는 방식이 바로 이 문법 절이다.</p></p></div></div></div><h3>A.1 어휘 문법</h3><h4>A.1.1 어휘 요소</h4><pre><code data-lang="text">token:
+    for ( expression_opt ; expression_opt ; expression_opt ) secondary-block</code></pre><p>네 가지 규약만 알면 표준의 문법 절을 그대로 읽을 수 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>규약</strong></th><th><strong>뜻</strong></th></tr><tr><td><code>이름:</code> 뒤 들여쓴 각 줄</td><td>하나의 선택지(대안). <code>|</code>를 줄바꿈으로 대신한다</td></tr><tr><td><code>_opt</code> (표준에서는 아래첨자 opt)</td><td>그 요소는 없어도 된다</td></tr><tr><td><code>one of</code> 다음 목록</td><td>나열된 것 중 하나. 전부 단말이다</td></tr><tr><td>기울임체 이름</td><td>비단말. 다른 규칙으로 풀린다</td></tr></table></div><p class="float-caption">표 83.2</p></figure><p>이 부록에서는 아래첨자를 쓸 수 없으므로 표준의 opt를 <code>_opt</code>로 적는다. <code>for (;;)</code>가 왜 무한 루프로 성립하는지가 위 규칙 한 줄에 그대로 적혀 있다 — 세 자리가 모두 생략 가능하기 때문이다.</p><p>문법이 두 층으로 나뉘어 있다는 점도 미리 알아 두면 좋다. <strong>어휘 문법</strong>은 글자를 모아 토큰을 만드는 규칙이고, <strong>구문 문법</strong>은 그 토큰을 엮는 규칙이다 — 16장에서 본 렉서와 파서의 구분 그대로다. 전처리기는 아예 별도의 문법을 갖는다(51장의 번역 단계에서 이미 처리되어 사라지므로, 아래 A.2의 C 문법에는 <code>#include</code> 같은 것이 나오지 않는다).</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 문법을 이렇게 적어 두면 무엇이 좋은가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 세 가지가 좋아진다.</p><p>첫째, <strong>모호함이 드러난다.</strong> 자연어로 “조건 뒤에 문장이 온다”고 쓰면 <code>if (a) if (b) x; else y;</code>에서 <code>else</code>가 어느 <code>if</code>에 붙는지 알 수 없지만, 문법으로 적으면 그 모호함이 규칙의 충돌로 드러난다(C는 “가장 가까운 <code>if</code>에 붙는다”로 정한다).</p><p>둘째, <strong>도구가 읽을 수 있다.</strong> 파서를 손으로 짜지 않고 문법에서 생성하는 도구들(yacc/bison, ANTLR 같은 것)이 이 표기를 입력으로 받는다.</p><p>셋째, <strong>사람이 확인할 수 있다.</strong> “이 자리에 이것을 적어도 되는가”라는 질문에 표준 문서가 답하는 방식이 바로 이 문법 절이다.</p></p></div></div><h3>A.1 어휘 문법</h3><h4>A.1.1 어휘 요소</h4><pre><code data-lang="text">token:
     keyword
     identifier
     constant

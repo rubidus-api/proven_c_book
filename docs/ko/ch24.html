@@ -98,15 +98,7 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body { padding:0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
-/* 복습 정리도 같은 모양으로 — 표제 줄과 본문을 가로선으로 가른다 */
-.recap { border:1px solid var(--fg); border-left:1px solid var(--fg);
-  padding:0; margin:1.15rem 0; }
-.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
-  border-bottom:1px solid var(--fg);
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-  font-size:.92rem; color:var(--fg); }
-.recap > *:not(.dev-label) { padding:0 .9rem; }
-.recap > figure.tbl { padding:.4rem .9rem; }
+
 .dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
        border-left:3px solid var(--box-rule); border-radius:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
@@ -118,16 +110,21 @@ figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
              font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
-/* 장 서두 — 넷이 하나의 테두리를 공유하고, 안에서는 가는 가로선으로 갈린다 */
-.chapter-head { border:1px solid var(--fg); margin:.2rem 0 1.5rem; }
-.chapter-head > div { border-top:1px solid var(--rule); padding:.6rem .9rem; }
-.chapter-head > div:first-child { border-top:none; }
-.chapter-head .dev { margin:0; padding:0; background:none; border:none;
-  border-radius:0; }
-.chapter-head .dev-label { margin:0 0 .15rem; }
-.chapter-head p { margin:.22rem 0; }
-.chapter-head .qa-a { border-left:2px solid var(--muted); padding-left:.7rem;
-  margin-top:.3rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06). */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open:first-of-type { margin-top:1rem; }
+.dev.open > .dev-label { margin:0; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+.dev.open > *:not(.dev-label) { padding:.1rem .9rem; margin:.3rem 0; }
+.dev.open > *:not(.dev-label):first-of-type { margin-top:.45rem; }
+.dev.open > *:not(.dev-label):last-child { margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem .9rem; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
@@ -141,6 +138,15 @@ figure.tbl { text-align:center; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
   background:none; }
 .qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; padding:0;
+  margin:1.15rem 0; background:none; }
+.dev.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > *:not(.dev-label) { padding:.2rem .9rem; }
+.dev.recap > figure.tbl { padding:.5rem .9rem; margin:0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -227,7 +233,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-24">24 함수 선언과 정의</h2><div class="chapter-head"><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div>21장 함수 사용 · 함수를 부르는 법</div><div>23장 변수 선언 · 선언과 정의의 구분</div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div>16장에서 “컴파일 단계는 <strong>선언</strong>(예고)만 있으면 만족하고, 몸통을 찾아 잇는 것은 링커”라고 했다. 그때의 “선언”과, 23장에서 배운 “변수 선언”은 같은 낱말을 쓴다 — 우연인가?</div><div class="dev qa-a"><p class="dev-label">답</p><p>. 우연이 아니다. C에서 <strong>선언</strong>이란 언제나 같은 일 — “컴파일러에게 이름과 그 생김새(타입)를 미리 알리는 것” — 이다. 변수 선언은 값의 이름을, 함수 선언은 일의 이름을 알린다. 이 장에서 그 두 번째 종류를 만들고 나면, <code>#include</code>가 가져오던 것의 정체(선언들의 묶음)까지 한 줄로 꿰어진다.</p></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p>21장에서 함수를 <strong>부르는</strong> 법을 배웠다 — 이제 <strong>만드는</strong> 법이다. 정의와 <span id="idx-entry-47"></span>선언(원형)의 구별, 매개변수와 <code>return</code>, 스코프의 첫걸음까지. 그리고 이 장의 끝에서, 15장부터 끌고 온 외상 — <code>int main(void)</code>와 <code>return 0</code> — 을 완전히 청산한다.</div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><p><code>main</code>도 함수라면, 우리가 <code>main()</code>이라고 직접 불러도 되는가?</p></div></div><div></div><h3>24.1 정의 — 일꾼을 만드는 문법</h3><p>21장의 <code>abs</code>나 <code>printf</code> 같은 일꾼을 이제 직접 만든다. 함수 <strong>정의</strong>의 문법은 이렇다:</p><pre><code data-lang="c">반환타입 <strong>이름</strong><span class="tok-x">(</span>매개변수 목록<span class="tok-x">)</span>
+<h2 id="loc-24">24 함수 선언과 정의</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div>21장 함수 사용 · 함수를 부르는 법</div><div>23장 변수 선언 · 선언과 정의의 구분</div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div>16장에서 “컴파일 단계는 <strong>선언</strong>(예고)만 있으면 만족하고, 몸통을 찾아 잇는 것은 링커”라고 했다. 그때의 “선언”과, 23장에서 배운 “변수 선언”은 같은 낱말을 쓴다 — 우연인가?</div><div class="dev qa-a"><p class="dev-label">답</p><p>. 우연이 아니다. C에서 <strong>선언</strong>이란 언제나 같은 일 — “컴파일러에게 이름과 그 생김새(타입)를 미리 알리는 것” — 이다. 변수 선언은 값의 이름을, 함수 선언은 일의 이름을 알린다. 이 장에서 그 두 번째 종류를 만들고 나면, <code>#include</code>가 가져오던 것의 정체(선언들의 묶음)까지 한 줄로 꿰어진다.</p></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p>21장에서 함수를 <strong>부르는</strong> 법을 배웠다 — 이제 <strong>만드는</strong> 법이다. 정의와 <span id="idx-entry-47"></span>선언(원형)의 구별, 매개변수와 <code>return</code>, 스코프의 첫걸음까지. 그리고 이 장의 끝에서, 15장부터 끌고 온 외상 — <code>int main(void)</code>와 <code>return 0</code> — 을 완전히 청산한다.</div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><p><code>main</code>도 함수라면, 우리가 <code>main()</code>이라고 직접 불러도 되는가?</p></div><div></div><h3>24.1 정의 — 일꾼을 만드는 문법</h3><p>21장의 <code>abs</code>나 <code>printf</code> 같은 일꾼을 이제 직접 만든다. 함수 <strong>정의</strong>의 문법은 이렇다:</p><pre><code data-lang="c">반환타입 <strong>이름</strong><span class="tok-x">(</span>매개변수 목록<span class="tok-x">)</span>
 <span class="tok-x">{</span>
     몸통 — 문장들의 목록
 <span class="tok-x">}</span></code></pre><p>시연부터 보면 빠르다. 정수를 받아 그 제곱을 돌려주는 일꾼이다:</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch24/fn.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
@@ -247,6 +253,6 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <span class="tok-x">{</span>
     <strong><span class="tok-x">...</span></strong>
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
-<span class="tok-x">}</span></code></pre><p>이것은 그냥 <strong>함수 정의</strong>다. 이름이 <code>main</code>이고, 매개변수 목록의 <code>void</code>는 “재료 없음”을 명시하는 표기이며, 반환타입은 <code>int</code> — 즉 “재료 없이 일하고 정수 하나를 내놓는 일꾼”이다. 특별한 것은 문법이 아니라 <strong>호출자</strong> 다: <code>main</code>을 부르는 것은 우리 코드가 아니라 <strong>운영체제</strong>다. 프로그램 실행이란 운영체제가 <code>main</code>을 호출하는 일이고, <code>return 0;</code>은 그 호출자에게 결과값을 돌려주는 것이다 — 관례로 0이 “무사히 마쳤음”, 0 아닌 값이 “문제 있었음”이다. 그 값은 버려지지 않는다 — 운영체제와 셸이 받아서, 프로그램들을 이어 붙인 자동화가 성공·실패를 가리는 데 쓴다(10장의 스트림처럼, 이것도 프로그램을 부품으로 잇는 장치다).</p><p>15장의 외상 장부가 이것으로 <strong>전부 청산되었다</strong>. 헬로 월드의 여섯 줄에 이제 모르는 것이 없다 — 전처리 지시, 함수 정의, 블록, 호출 수식문, 문자열 리터럴, 서식, 반환까지. 입문의 첫 산 하나를 넘은 것이다.</p><div class="qa-box"><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>main</code>도 함수라면, 우리가 <code>main()</code>이라고 직접 불러도 되는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 문법상 가능하지만 하지 않는 것이 관행이고, 할 이유도 없다 — <code>main</code>은 “운영체제가 부르는 입구”라는 역할이 본질이라서, 코드 안에서 다시 부르는 것은 건물의 정문을 방 안에 또 만드는 격이다. 재사용하고 싶은 일이 있다면 그 일을 별도 함수로 빼서 부르면 된다 — 사실 그것이 함수를 만드는 이유의 전부다: <strong>이름 붙일 가치가 있는 일에 이름을 붙이는 것.</strong></p></div></div></div><p>이름 붙은 값(23장)과 이름 붙은 일(24장)을 다 갖췄다. 이제 22장에서 미뤄 둔 마지막 약속을 지킬 수 있다 — 값을 담을 곳이 생겼으니, 드디어 <strong>입력</strong>이다.</p>
+<span class="tok-x">}</span></code></pre><p>이것은 그냥 <strong>함수 정의</strong>다. 이름이 <code>main</code>이고, 매개변수 목록의 <code>void</code>는 “재료 없음”을 명시하는 표기이며, 반환타입은 <code>int</code> — 즉 “재료 없이 일하고 정수 하나를 내놓는 일꾼”이다. 특별한 것은 문법이 아니라 <strong>호출자</strong> 다: <code>main</code>을 부르는 것은 우리 코드가 아니라 <strong>운영체제</strong>다. 프로그램 실행이란 운영체제가 <code>main</code>을 호출하는 일이고, <code>return 0;</code>은 그 호출자에게 결과값을 돌려주는 것이다 — 관례로 0이 “무사히 마쳤음”, 0 아닌 값이 “문제 있었음”이다. 그 값은 버려지지 않는다 — 운영체제와 셸이 받아서, 프로그램들을 이어 붙인 자동화가 성공·실패를 가리는 데 쓴다(10장의 스트림처럼, 이것도 프로그램을 부품으로 잇는 장치다).</p><p>15장의 외상 장부가 이것으로 <strong>전부 청산되었다</strong>. 헬로 월드의 여섯 줄에 이제 모르는 것이 없다 — 전처리 지시, 함수 정의, 블록, 호출 수식문, 문자열 리터럴, 서식, 반환까지. 입문의 첫 산 하나를 넘은 것이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>main</code>도 함수라면, 우리가 <code>main()</code>이라고 직접 불러도 되는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 문법상 가능하지만 하지 않는 것이 관행이고, 할 이유도 없다 — <code>main</code>은 “운영체제가 부르는 입구”라는 역할이 본질이라서, 코드 안에서 다시 부르는 것은 건물의 정문을 방 안에 또 만드는 격이다. 재사용하고 싶은 일이 있다면 그 일을 별도 함수로 빼서 부르면 된다 — 사실 그것이 함수를 만드는 이유의 전부다: <strong>이름 붙일 가치가 있는 일에 이름을 붙이는 것.</strong></p></div></div><p>이름 붙은 값(23장)과 이름 붙은 일(24장)을 다 갖췄다. 이제 22장에서 미뤄 둔 마지막 약속을 지킬 수 있다 — 값을 담을 곳이 생겼으니, 드디어 <strong>입력</strong>이다.</p>
 <div class="nav"><a href="ch23.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch25.html">다음 →</a></div>
 </div></main></body></html>
