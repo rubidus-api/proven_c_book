@@ -1,214 +1,177 @@
 #import "../../book/lib.typ": *
 
-= What the new standards added, and the `*_s` controversy
+= Numbers — `<math.h>`, `<fenv.h>`, `<tgmath.h>`
 
 #prereq(
-  ([chapter 57, The whole map of the standard library], [the whole map of the standard library]),
-  ([chapter 59, The traps of reading and writing], [bounds and truncation]),
+  ([chapter 47, Real numbers], [the mathematics of approximation]),
+  ([chapter 8, Representing numbers], [IEEE 754]),
 )
 
 #deepqa[
-  Chapter 57 said the speed at which headers grow is the same as the language's
-  speed of change, and chapter 59 said `gets`'s funeral took twenty years. Then
-  where are the "safe functions" the standard brought in to fill that place?
+  Chapter 47 said not to compare reals with `==`, and chapter 8 said 0.1 is not
+  exactly representable. Then how does a mathematical function tell you when it
+  receives "input it cannot calculate"?
 ][
-  Mostly *nowhere*. C11 brought in dozens of functions such as `gets_s` and
-  `strcpy_s` as annex K, but it was *optional* and the major implementations
-  refused to adopt it. What was confirmed on the machine that made this book is the
-  same — the "annex K: not present in this implementation" the example printed. The
-  latter part of this chapter is that story.
+  There are two paths. It gives NaN or an infinity as the *return value*, and at
+  the same time leaves the reason in *`errno`* — `EDOM` for outside the domain,
+  `ERANGE` when the result exceeds the representable range. But an implementation
+  may choose to report through the floating-point exception flags (`<fenv.h>`)
+  instead of `errno`, so to check portably you must be ready to look at both. In
+  the field it is usually simpler to check the return value with `isnan` and
+  `isinf`.
 ]
 
 #organizer[
-  The last chapter of this part. We skim the headers C99, C11 and C23 added to the
-  standard library, and then see the whole story of this language's most famous
-  failed attempt — annex K, which tried to bring "safe functions" into the
-  standard. Why `gets_s` and `strcpy_s` are not widely used, and what is different
-  about Microsoft's functions of the same names.
+  We look at how real-number calculation reports failure. The mathematics of
+  approximation learned in chapters 8 and 47 becomes the contract of functions here
+  — calls outside the domain, results beyond the range, the properties of NaN and
+  infinity, and the hidden global state called the rounding mode.
 ]
 
 #chapter-questions()
 
-== What C99 added
+== The properties of NaN and infinity
 
-#dtable(
-  columns: 3,
-  [*header*], [*what*], [*its position today*],
-  [`<stdint.h>`], [fixed-width integers (`int32_t` and so on)], [effectively compulsory. chapter 26],
-  [`<inttypes.h>`], [the format macros for those types], [the `PRId32` family. appendix B],
-  [`<stdbool.h>`], [`bool`, `true`, `false`], [unnecessary, having become keywords in C23],
-  [`<complex.h>`], [complex numbers], [optional. support is uneven],
-  [`<fenv.h>`], [the floating-point environment], [chapter 63],
-  [`<tgmath.h>`], [type-generic mathematics], [chapter 63],
-)
+#demo("examples-en/ch68/math.c")
 
-`<stdint.h>` is this list's winner. A standard way to express "exactly 32 bits"
-finally arose, and the practice of every project keeping its own `typedef` until
-then was tidied away.
+Four things to point out in the output.
 
-#qa[
-  If annex K's `*_s` functions failed, what fills their place now?
-][
-  Not one thing but three, sharing it out. *Compiler diagnostics* (warnings and
-  hardened builds such as `_FORTIFY_SOURCE`), *sanitizers* (chapter 17), and
-  *API designs that carry the length along*. The last is the direction this book
-  has pushed, and chapters 77 and 79 are its implementation.
+*① NaN is not equal to itself.* IEEE 754 settled it so. Hence the old idiom that
+if `x != x` is true then `x` is NaN, while the standard function is `isnan(x)`.
+Because of this property, sorting an array containing NaN with `qsort` breaks the
+comparator's total order and the result collapses (chapter 61).
 
-  The lesson is that safety does not arrive by appending `_s` to a function name.
-  What actually worked was making failure impossible to ignore, putting the bounds
-  inside the type, and making the checks something a tool can perform. That is how
-  chapter 74 arranges the five bugs.
-]
+*② Dividing a real by zero is not outside the contract.* Unlike integer division
+(chapter 27), in an IEEE 754 environment it yields an infinity or a NaN. But the
+same holds that *the very fact of dividing by zero is usually a bug*.
 
-== What C11 added
+*③ `sqrt(-1)` is `EDOM`, `exp(1000)` is `ERANGE`.* The former is outside the
+domain, the latter a case where the result exceeded the representable range. If you
+mean to look at `errno`, set it to 0 just before the call (chapter 70).
 
-#dtable(
-  columns: 3,
-  [*header*], [*what*], [*its position today*],
-  [`<stdatomic.h>`], [atomic operations and memory orders], [the foundation of concurrency. chapter 12's story],
-  [`<threads.h>`], [threads, mutexes, condition variables], [★ adoption is slow — pthreads are usually used],
-  [`<stdalign.h>`], [`alignas`, `alignof`], [keywords in C23],
-  [`<stdnoreturn.h>`], [`noreturn`], [to be retired in C23, in favour of `[[noreturn]]`],
-  [`<uchar.h>`], [`char16_t`, `char32_t`], [chapter 62],
-)
-
-`<threads.h>`'s circumstance is interesting. Though it is in the standard, glibc
-long did not provide it, so portable code still uses POSIX threads. It is a case
-showing that *entering the standard and becoming usable are different things*.
-
-== What C23 added
-
-#demo("examples-en/ch68/newheaders.c")
-
-`<stdckdint.h>` is this edition's practical winner. It reports the wrap-round of
-the size calculations seen in chapter 60 *as a value* — `ckd_add`, `ckd_sub` and
-`ckd_mul` return true on overflow, and the result may be treated as "unusable"
-rather than as the wrapped value.
-
-`<stdbit.h>` is new too. Bit manipulations such as counting leading zeros, counting
-set bits and rounding up to a power of two have become standard functions — until
-then a place that leaned on compiler builtins (`__builtin_clz` and the like).
-
-Besides these, C23 promoted `bool`, `true`, `false`, `static_assert` and
-`thread_local` to keywords, brought in `nullptr` (chapter 35), and effectively
-retired compatibility headers such as `<stdbool.h>` and `<stdnoreturn.h>`.
-
-== Annex K — the failed attempt at "safe functions"
-
-Now the main business of this chapter.
-
-In the early 2000s Microsoft put functions such as `strcpy_s` and `sprintf_s` into
-its compiler and began raising warnings on use of the existing functions. The
-proposal to make that design a standard entered C11 as *annex K*
-(bounds-checking interfaces).
-
-The core ideas were three.
-
-+ The destination size is *compulsorily* taken as an argument.
-+ When a problem arises it does not truncate and carry on but *returns an error*
-  (`errno_t`).
-+ When a contract violation is detected, the program's chosen *constraint handler*
-  is called.
-
-```c
-#define __STDC_WANT_LIB_EXT1__ 1
-#include <string.h>
-
-char dst[8];
-errno_t e = strcpy_s(dst, sizeof dst, src);   /* an error if it overflows */
-```
-
-The direction resembles what we organised in chapter 57 as "what is needed". Yet
-the result was a failure.
-
-#realcase[
-  Why annex K was not adopted
-][
-  In 2015, C standards committee document N1967, "Field Experience With Annex K",
-  surveyed the actual state. Its summary was cold — *it was not widely implemented,
-  it behaved differently where it was implemented, and there was no evidence that
-  it made real code safer*.
-
-  Concretely these were the circumstances.
-
-  - *Microsoft's functions and the standard's functions are not the same.* The
-    names are the same while arguments and behaviour go out of step in places, so
-    code fitted to one side broke on the other.
-  - *Major implementations, glibc among them, did not adopt it.* That is still so
-    today — the reason the earlier example printed "not present in this
-    implementation".
-  - *The global state called the constraint handler* caused conflicts between
-    libraries.
-  - It merely changed existing code mechanically, while the real defects remained
-    *where the size is calculated wrongly*.
-
-  The committee went as far as discussing removing annex K, and in the end it was
-  settled to be kept but effectively not recommended. It is a representative case
-  showing how the expectation that "putting it in the standard makes things safe"
-  goes wrong in reality.
-]
+*④ 0.0 and −0.0 are equal under `==`.* But the sign bit differs, and `1/0.0` and
+`1/-0.0` are +∞ and −∞ respectively. If the sign must be distinguished, use
+`signbit`.
 
 #misconception[
-  "Using functions with `_s` attached is safe"
+  "Comparing reals is safe if you use an epsilon"
 ][
-  Three things must be checked. First, *is that function there* — the standard's
-  annex K is optional and is absent on most of the Unix family. Second, *which
-  edition is it* — the standard's and Microsoft's may differ. Third, *what becomes
-  safe* — it means the size is taken as an argument, not that the size you passed
-  is right. The mistake of passing `strlen` instead of `sizeof` is just as much an
-  accident in an `_s` function.
-
-  The realistic choice in portable code is still this — within the standard,
-  `snprintf` and explicit bounds checking; where the platform permits, the
-  `strlcpy` family; and for the repeated danger zones, components with checking
-  built in (Part XII).
+  The epsilon comparison learned in chapter 47 is not omnipotent. Absolute error
+  (`fabs(a-b) < eps`) becomes meaningless when the values are large — near 1e9,
+  1e-9 is not even representable — and relative error collapses near zero. The
+  prescription in the field is *settling a tolerance that fits the situation*, not
+  using a universal constant. And it is better to ask first whether it can be
+  handled with integers or fixed point so that the comparison is not needed at all
+  (chapter 8's story of calculating money).
 ]
 
-#platform[
-  The `_s` functions met on Windows
+#qa[
+  How do the functions of `math.h` report failure — the return value alone cannot say?
 ][
-  MSVC has long provided `strcpy_s`, `sprintf_s`, `fopen_s` and so on, and raises
-  the `C4996` warning when the existing functions are used. Defining
-  `_CRT_SECURE_NO_WARNINGS` to turn the warning off is the practice.
+  In three ways. *Outside the domain* (say `sqrt(-1)`) they return NaN and set
+  `errno` to `EDOM`. *Beyond the range* (say `exp(1000)`) they return infinity and
+  set `ERANGE`. And the floating-point exception flags of `<fenv.h>` are raised.
 
-  The point to beware of is that *these functions are not entirely the same as the
-  standard's annex K*. For example the behaviour on argument-validation failure and
-  the rules for return values may differ. So unless the code is Windows-only one
-  does not lean on the `_s` family, and cross-platform projects mostly choose to
-  keep a wrapper of their own.
+  The trouble is that *how far each of the three is honoured varies between
+  implementations*. So the practical idiom is to clear `errno = 0` before the call
+  and check immediately after (chapter 70). To inspect the value itself use
+  `isnan` and `isinf` — they say what they mean, unlike tricks such as `x != x`.
 ]
 
-== What this part leaves behind
+== Functions often got wrong
 
-We have walked the standard library across ten chapters. Memorising function names
-was not the aim, so what remains to be kept is a few attitudes.
+#dtable(
+  columns: 3,
+  [*function*], [*what it does*], [*trap*],
+  [`pow(x, y)`], [raising to a power], [used for an integer power it can be slow and inexact],
+  [`round`, `nearbyint`], [rounding], [`round` goes away from zero, `nearbyint` follows the current mode],
+  [`floor`, `ceil`, `trunc`], [cutting to an integer], [the direction differs for negatives],
+  [`fmod`, `remainder`], [the remainder], [their sign rules differ from each other],
+  [`abs`, `fabs`], [absolute value], [★ `abs` is for integers. used on a real it truncates],
+  [`atan2(y, x)`], [angle], [the argument order is `y, x`],
+  [`isnan`, `isinf`], [classification], [they are macros — they cannot be used as function pointers],
+)
 
-+ *Read the contract first.* Does it take a size, how does it report failure, who
-  owns the pointer it returned.
-+ *Do not throw away return values.* Especially `fclose`, `snprintf` and the
-  `scanf` family.
-+ *Suspect global state.* `errno`, the locale, static buffers, the rounding mode.
-+ *Being in the standard does not make it safe.* `gets` survived twenty-two years.
-+ *Weigh platform extensions between the gain and portability.*
+`pow(x, 2)` is widely used, but for an integer square `x * x` is faster and exact.
+The compiler often optimises it, but not always.
+
+The mistake of using `abs` on a real is especially quiet. `<stdlib.h>`'s `abs`
+takes an `int`, so `abs(-1.5)` turns −1.5 into 1. Today's compilers warn, but it is
+easy to miss in a file that does not include `<math.h>`.
+
+== Rounding modes and floating-point exceptions — `<fenv.h>`
+
+Floating-point operations have two pieces of *hidden global state*.
+
+*The rounding mode* — the default is "to the nearest value, ties to even". It can
+be changed with `fesetround`, and once changed every subsequent real operation is
+affected.
+
+*The exception flags* — flags are raised when division by zero, overflow,
+inexactness and so on occur. They are read with `fetestexcept` and cleared with
+`feclearexcept`. They are finer than `errno`, but to use this facility
+`#pragma STDC FENV_ACCESS ON` must be turned on — and then the compiler refrains
+from reordering real operations, so optimisation is reduced.
+
+#antipattern[
+  Turning on `-ffast-math` and checking for NaN
+][
+  ```sh
+  cc -O2 -ffast-math app.c        # tells the compiler "take it that NaN and infinity do not exist"
+  ```
+  ```c
+  if (isnan(x)) { /* this branch can vanish entirely */ }
+  ```
+  Options of the `-ffast-math` family tell the compiler it may assume
+  associativity and ignore the existence of NaN and −0.0. Speed is gained, but *the
+  checking code can vanish under optimisation* — the real-number edition of the
+  "bug that appears only in release" seen in chapter 17. In a program where
+  numerical accuracy matters, not turning it on is the default.
+]
+
+== Type-generic — `<tgmath.h>`
+
+`sqrt` is for `double`, `sqrtf` for `float`, `sqrtl` for `long double`. Include
+`<tgmath.h>` and the edition fitting the argument's type is chosen by `sqrt(x)`
+alone — the representative case of the `_Generic` seen in chapter 53 being used in
+the standard library.
+
+It is convenient but has a price. Being macros, they cannot be passed as function
+pointers, and there may be implementations that evaluate the argument twice, so
+putting in an expression with side effects is dangerous.
+
+#realcase[
+  The same calculation, a different answer — the history of excess precision
+][
+  x86's old floating-point unit (x87) calculated internally in 80 bits. So it
+  happened that the same `double` operation differed depending on whether it was
+  still in a register or had been stored to memory — change the optimisation level
+  and the result changed minutely, and `x == y` that had been true could become
+  false.
+
+  C99 made this circumstance explicit with `FLT_EVAL_METHOD`, and today's 64-bit
+  x86 uses SSE so the problem has greatly diminished. But the possibility of "the
+  same code, a different answer" still remains in compilation options and the
+  target machine — the reason chapter 47 said "real-number calculation needs
+  reproducibility looked after separately."
+]
 
 #recap[
-  A table of the editions.
+  Numbers in summary.
 
   #dtable(
     columns: 3,
-    [*edition*], [*representative addition*], [*is it actually used*],
-    [C99], [`<stdint.h>`, `<inttypes.h>`], [yes — effectively compulsory],
-    [C99], [`<complex.h>`], [rarely],
-    [C11], [`<stdatomic.h>`], [yes — the foundation of concurrency],
-    [C11], [`<threads.h>`], [rarely — pthreads prevail],
-    [C11], [annex K (`*_s`)], [no — this chapter's story],
-    [C23], [`<stdckdint.h>`], [yes — the right answer for size calculations],
-    [C23], [`<stdbit.h>`], [growing],
-    [C23], [keyword promotion (`bool`, `nullptr` and so on)], [yes],
+    [*situation*], [*what to use*], [*what to beware of*],
+    [checking for NaN], [`isnan`], [`x == NaN` is always false],
+    [checking for infinity], [`isinf`], [dividing a real by zero is not UB],
+    [the kind of a value], [`fpclassify`], [the existence of subnormal numbers],
+    [domain and range errors], [the return value + `errno`], [`errno = 0` just before the call],
+    [integer squares], [`x * x`], [`pow(x, 2)`],
+    [absolute value of a real], [`fabs`], [`abs` (for integers)],
+    [per-type functions], [`<tgmath.h>`], [macros — no arguments with side effects],
+    [fast-math options], [off by default], [checking code vanishes],
   )
 ]
 
-The bottom three lines of that table — `<stdatomic.h>`, `<stdckdint.h>` and
-keyword promotion — have only shown their faces. The three remaining chapters of
-this part treat those three in detail, one each. We begin with the foundation of
-concurrency.
+We have passed numbers. The next chapter is time — a place with unusually much
+that the standard does not settle for you.

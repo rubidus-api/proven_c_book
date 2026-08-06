@@ -43,7 +43,7 @@ Today `gets` is not in the standard, and three remain in its place.
   [*function*], [*status*], [*assessment*],
   [`gets`], [deleted in C11], [there is no way to use it. mend it wherever it is seen in old code],
   [`fgets`], [standard], [the realistic standard solution. but truncation must be checked by hand],
-  [`gets_s`], [C11 annex K (optional)], [implementations barely exist — treated in chapter 68],
+  [`gets_s`], [C11 annex K (optional)], [implementations barely exist — treated in chapter 73],
 )
 
 `fgets` is the right answer, but it is not the end in itself. As seen in
@@ -83,7 +83,7 @@ accidents happen.
 
 *First, not checking the return value.* The `scanf` family returns the number of
 items filled. Without checking it you end up using the *previous value* of the
-variable that failed (we see it in the flesh in chapter 74).
+variable that failed (we see it in the flesh in chapter 79).
 
 *Second, leftover input.* After `scanf("%d", &n)` a newline remains in the input
 buffer. Call `fgets` in that state and it reads an empty line. Not mixing them is
@@ -111,7 +111,7 @@ locale (chapter 62).
   ```
 
   Leave this check out and it becomes "I used the safe function and opened the
-  wrong file." We run this pattern for real in chapter 74.
+  wrong file." We run this pattern for real in chapter 79.
 ]
 
 == The traps on the output side

@@ -1,322 +1,301 @@
 #import "../../book/lib.typ": *
 
-= Formatting and parsing — not writing the type twice
+= Getting started — there is nothing to install
 
 #prereq(
-  ([chapter 53, Variadic functions], [variadic arguments and the format string]),
-  ([chapter 56, The terrain of the standard library], [the printf contract]),
+  ([chapter 51, Several files], [several files and linking]),
+  ([chapter 79, The five bugs shipped for fifty years], [the five bugs]),
 )
 
 #deepqa[
-  Chapter 53 said type information does not ride along into variadic arguments, and
-  chapter 56 said that is why the format string alone settles "how the stack is to be
-  read". Then what is needed to take the type from the argument?
+  Chapter 51 made a multi-file program and learned about headers, object files and
+#idx("the compilation process")  linking, and chapter 16 saw the four runners of
+  the compilation relay. Then what exactly is "using a library" in that picture?
 ][
-  Catch the type *at the call site* and send it along with the value. That is, do not
-  pass the argument as it is but wrap it into a `{type tag, value}` bundle. The
-  remaining problem is "how is the type tag attached automatically", and the answer is
-  C11's `_Generic` — the device that chooses different code at compile time according
-  to an expression's type. The run-time cost is zero, and unlike the implicit
-#idx("implicit conversion")  conversion rules learned in chapter 28, here the type is
-  *preserved*.
+  One of two things. *Compiling it together*, or *linking something compiled
+  separately*. The former road is handing somebody else's source to the compiler
+  along with mine; the latter is handing the linker a lump that has already become
+  object code (a static `.a` or a shared `.so`/`.dll`). Either way the compiler makes
+  the call from the *declaration* (the header) and the linker finds and joins the
+  *definition* — exactly chapter 51's picture. proven took the former road, and the
+  next section is why.
 ]
 
 #organizer[
-  The answer to chapter 74's third bug — the mismatch of format and argument. How the
-  typeless placeholder `{}` obtains type safety, what `_Generic` does beneath it, and
-  how failure appears as a value in the opposite direction, parsing. It is the
-  alternative to the `printf` and `scanf` taken apart in chapter 56.
+  The first chapter that actually uses proven. We first see why this library has no
+  `configure`, no package manager and no shared library to link — and what that
+  choice gives and takes away — and then run a first program. The third bug seen in
+  chapter 79 (format mismatch) already disappears in this first program. Then we follow
+  *the whole life of one object* (make it, use it, give it back) and set up the three
+  rules needed to read the rest of this part.
 ]
 
 #chapter-questions()
 
-== `{}` — the placeholder with no type
+== The choice of having nothing to install
 
-The rules are only three.
+proven has no installation procedure. Compile the source you have obtained together
+with your program and that is all. There are only two directories that matter.
 
-- `{}` — put the next argument here. The type is not written.
-- `{:...}` — after the colon write the format specification (width, alignment,
-  digits).
-- `{{` `}}` — the brace characters themselves.
+- `src/proven/` — the portable body. The operating system is not called here.
+- `platform/` — a thin layer that makes system calls. It is the only part that must
+  be changed when moving to a new machine.
 
-There being no `%d`, there is no place for a `%d` and a `double` to go out of step.
-The possibility of mismatch seen in chapter 56 is removed at the level of syntax.
+In an environment with no operating system (embedded) it is built without
+`platform/`. This separation settled the shape of the whole library — the demand
+"it must run anywhere" becomes the discipline "keep neither hidden allocation nor
+hidden global state".
 
-=== The whole grammar after the colon
+#qa[
+  Why not distribute it as a package? Installing would be more convenient.
+][
+  It is a trade of price for gain. What is lost is convenience — it cannot be got
+  through a system package, and updating becomes not "raising a version" but
+  "fetching new source". What is gained is control. The library cannot differ from
+  the source you are looking at now, compilation options you did not choose do not
+  come attached, and links do not break because a distribution built it with
+  different settings. Above all, it is *the only model that works both in a hosted
+  environment and on bare metal* — embedded work has no package manager to begin
+  with.
+]
 
-The order of the specifiers is fixed, and every one may be omitted.
+== How this book's examples are built
 
-#align(center, block(inset: (y: 4pt))[
-  `{:` `[fill][align]` `[sign]` `[#]` `[0]` `[width]` `[.precision]` `[type]` `}`
-])
+To state it honestly, this book's proven examples are compiled as follows. The
+library's source is made into object files once and linked with the example.
+
+```text
+$ cc -std=c23 -O1 -Ivendor/proven/include -c vendor/proven/src/proven/*.c
+$ cc -std=c23 -Wall -Wextra -Werror -Ivendor/proven/include \
+     hello.c vendor-obj/*.o -lm -o hello
+```
+
+The first line handles the body, the second my program. `-I` tells it where to find
+headers (chapter 51), `-lm` joins the mathematical functions. These two lines are
+what this book's verification script really runs every time, and every execution
+result printed on these pages is the output of a program made that way.
+
+== The first program
+
+One `#include <proven.h>` opens the whole library.
+
+#demo("examples-en/ch80/hello.c")
+
+We read it line by line. `proven_println` takes a format and arguments and prints
+one line to standard output — so far the same as `printf`. What differs is the
+*placeholder*.
+
+- `{}` has no type in it. It is neither `%d` nor `%s` but simply `{}`.
+- The type comes *from the argument*. `PROVEN_ARG(x)` looks at `x`'s type and wraps
+  the value with a fitting tag attached.
+- So chapter 79's third bug — the mismatch of format and argument — *structurally*
+  cannot happen. The type is not written twice, so there is no place for them to go
+  out of step.
+
+What is written after the colon, as in `{:>8}`, corresponds to the width, alignment
+and precision seen in chapter 56. `>` is right alignment, `<` left alignment, `.3` is
+to three decimal places. That the alignment symbol comes first is what differs from
+`printf`.
+
+== Three rules — the key to this whole part
+
+The functions ahead number more than a hundred, but the rules for reading their
+signatures are only three. Get these three into your hand and you can read half of any
+function you have never seen, without the documentation.
+
++ *Only a function that takes an allocator as an argument takes memory.* If
+  `proven_allocator_t` appears in the signature it means "this function may allocate",
+  and if it does not, it takes *not one byte*. So which functions are usable in
+  embedded work and which are not divide before your eyes (chapter 83).
++ *Failure comes as a value.* If there is no result to return it gives a single
+  `proven_err_t`; if there is, an `{err, value}` bundle. Before checking `err` you do
+  not look at `value` (chapter 81).
++ *Give a thing back with the allocator you made it with.* What was obtained with
+  `_create` is let go with `_destroy`, and what has `view` in its name is borrowed and
+  is not destroyed (chapters 82 and 83).
+
+The naming rules have almost no exceptions either.
 
 #dtable(
   columns: 3,
-  [*place*], [*what may be written*], [*meaning*],
-  [fill], [any character], [the character filling the spare places. it comes *before* the alignment symbol],
-  [align], [`<` `>` `^`], [left, right, centre. the default is right for numbers, left otherwise],
-  [sign], [`+`], [attach a sign to positives too],
-  [alternative form], [`#`], [attach the `0x`, `0b`, `0` prefix],
-  [zero fill], [`0`], [put before the width to fill with zeros (it goes after the sign)],
-  [width], [a number], [the minimum number of characters. it does not cut if over],
-  [precision], [`.number`], [decimal places for reals],
-  [type], [`x X o b f e g`], [hexadecimal (lower, upper), octal, binary, fixed, exponential, shortest],
+  [*shape of the name*], [*meaning*], [*example*],
+  [`_create`], [obtain a new object from an allocator — returns a bundle], [`proven_u8str_create`],
+  [`_borrow`], [lay an object over somebody's memory — no allocation], [`proven_u8str_borrow`],
+  [`_destroy`], [give it back with the allocator it was made with], [`proven_u8str_destroy`],
+  [`_as_`], [see the same thing through another eye — no copying], [`proven_u8str_as_view`],
+  [`_view`], [borrowed. it is not destroyed], [`proven_u8str_view_t`],
+  [`_checked`], [check the boundary and error if it is broken], [`..._slice_checked`],
+  [`_unchecked`], [skip the check — for places the caller has already confirmed], [`..._slice_unchecked`],
+  [`_grow`], [enlarge if short — which is why it takes an allocator], [`proven_u8str_append_grow`],
+  [`_or_panic`], [panic on failure. for places with nobody to return to], [`proven_arena_alloc_or_panic`],
 )
 
-They correspond to chapter 56's `printf` formats but differ in three ways. *The
-alignment symbol comes first* (`{:<10}` instead of `%-10s`), *the fill character can be
-chosen* (`{:*>8}`), and *there is no type letter* (`%d`'s `d` has gone — the type comes
-from the argument).
+== The life of one object
 
-#demo("examples-en/ch80/spec.c")
+Rather than reading three lines of rules, it is quicker to follow one real thing to
+the end. The program below holds the whole course of *making, using and giving back* a
+string object on one screen.
 
-The example shows this table in the flesh, a line at a time. A few points.
+#demo("examples-en/ch80/first.c")
 
-*① The fill is written before the alignment.* `{:*>8}` is "fill with asterisks, align
-right". Swap the order (`{:>*8}`) and it does not mean anything.
+Six places to point at.
 
-*② The 0 of `{:08}` goes after the sign.* Zero-fill `-42` to a width of 8 and it is
-`-0000042`, not `000000-42` — the same rule as `%08d` seen in chapter 56.
+*① It took an allocator as an argument.* That `build_line`'s first argument is an
+allocator is the declaration that "this function may take memory". The caller settles
+whether to give it the heap or an arena (chapter 83).
 
-*③ The default notation for reals differs from `printf`'s.* Very large and very small
-numbers are printed by `printf("%f")` as `100000000000000000000.000000` or `0.000000`,
-while this library uses exponential notation, `1.000000e+20` and `5.000000e-07`. The
-side that *does not lose information* was taken as the default, and it is a difference
-to know before comparing two logs. If fixed notation is needed, force it with `{:f}`.
+*② Making returns a bundle.* `proven_u8str_create` gives a
+`proven_result_u8str_t` (that is, `{err, value}`). Before checking `err` you do not
+take `value` out — that order is the whole of chapter 81.
 
-*④ `{:g}` gives the shortest notation that round-trips.* That `3.14159` comes out as it
-stands is that result — the notation keeping the "read it back and it is the same value"
-property seen in chapter 8.
+*③ The capacity is "by content".* The 64 of `create(alloc, 64)` is *the number of
+bytes of content to hold*, and the library internally takes one more byte for the NUL.
+That is how `as_cstr` can hand out a C string without copying.
 
-=== Printing a type the library has never heard of
+*④ The failure path gives back too.* If formatting fails, the string taken so far is
+returned with `destroy` before the error is raised. Grow this pattern and it becomes
+chapter 81's `goto` cleanup idiom.
 
-What can go into `{}` is only the types in the `_Generic` list. Then how is my own
-struct printed — *give it one function that draws.*
+*⑤ The place where ownership passes is explicit.* `*out = line;` is that place. After
+this line the string's owner is the caller, and the responsibility to destroy it is the
+caller's too.
 
-```c
-static proven_err_t render_frac(proven_fmt_sink_t out, const void *obj)
-{
-    const frac_t *f = obj;
-    /* ... make it ... */
-    return proven_fmt_put(out, view);      /* and send it out */
-}
-
-proven_arg_t a = proven_arg_custom(&half, render_frac);
-proven_println("{} and |{:>8}|", PROVEN_ARG(a), PROVEN_ARG(a));
-```
-
-`proven_fmt_sink_t` is "a hole that receives bytes", and `proven_fmt_put` sends them
-out. As the example's output shows, *width and alignment apply to a user type too*.
-
-There is one contract to know here. *The drawing function is called twice per `{}`* —
-once with a counting sink (because the width and alignment must be calculated) and once
-for real. So this function must be *deterministic* and must not mutate its target. If
-the two results disagree the library returns `INVALID_ARG` rather than print a misaligned
-field. It is the price paid for aligning without allocating.
-
-#demo("examples-en/ch80/fmt.c")
-
-This example formats not to the screen but *into a string* — the `proven_println`
-seen in chapter 75 is the edition connecting this machinery to standard output. Three
-things can be pointed out.
-
-*First, formatting too can fail.* `example.org:8080` cannot go into an 8-byte vessel,
-so it was refused. Chapter 79's principle stands here too — rather than truncate, it
-returns a failure. The opposite default from `snprintf`.
-
-*Second, the format specification syntax is a little different.* The `>` of `{:>10}`
-is right alignment, `{:<10}` left alignment, `{:.3}` three decimal places. They
-correspond to chapter 56's `%10s`, `%-10s` and `%.3f`, differing in that *there is no
-type letter*.
-
-*Third, it rounds but keeps the number of digits.* `load=0.42` is what `{:.2}` made.
-
-=== Which formatting function to use
-
-Chapter 79's three kinds are here in formatting too. Organised in a table there is
-nothing to choose over.
-
-#dtable(
-  columns: 4,
-  [*function*], [*when short*], [*allocator*], [*where it is used*],
-  [`proven_println(fmt, …)`], [—], [not needed], [one line to the screen],
-  [`proven_print(fmt, …)`], [—], [not needed], [without a line break],
-  [`proven_eprint(fmt, …)`], [—], [not needed], [to standard error],
-  [`proven_u8str_append_fmt`], [refuses (the original stands)], [not needed], [a fixed buffer. the default],
-  [`proven_u8str_append_fmt_trunc`], [as much as fits], [not needed], [places that may be cut, such as a log line],
-  [`proven_u8str_append_fmt_grow`], [grows], [needed], [when the length is unknown],
-  [`proven_u8str_append_fmt_with_scratch`], [grows], [needed (+ scratch)], [when the temporary memory is to be given separately],
-)
-
-All of them return a `proven_fmt_result_t`, and this bundle has two more numbers beside
-`err`.
-
-```c
-typedef struct {
-    proven_err_t  err;
-    proven_size_t written;    /* the number of bytes actually written */
-    proven_size_t required;   /* the number of bytes needed to write it all */
-} proven_fmt_result_t;
-```
-
-`required` is the same information as `snprintf`'s return value seen in chapter 56. The
-difference is *that it sits in a named slot* — with `snprintf` a human had to remember
-the convention "if the return value is at least the buffer size it was truncated", while
-here `err` already says that and `required` answers "so how much was needed". In the
-output of the example `spec.c`, `written=7 required=10` is that use — how much to enlarge
-the buffer by is known as it stands.
-
-#qa[
-  What exactly does `PROVEN_ARG` do?
-][
-  It chooses on the argument's type with `_Generic` and makes a small struct with a
-  tag fitting that type attached. Carried over in concept alone it has this shape.
-
-  ```c
-  #define PROVEN_ARG(x) _Generic((x),          \
-      int:          proven_arg_i32,            \
-      double:       proven_arg_f64,            \
-      const char *: proven_arg_cstr,           \
-      bool:         proven_arg_bool            \
-      /* ... */ )(x)
-  ```
-
-  `_Generic` chooses the branch *at compile time*, so there is no run-time cost of
-  determining the type. And passing a type not in the list is *a compile error* — the
-  exact opposite of chapter 56's `printf`, which accepted anything.
-]
+*⑥ Destroying empties the struct.* That the length prints as 0 after `destroy` is the
+evidence. It is so that the returned buffer is not still pointed at, and the contract
+that *a destroyed object is not used again* stands as it is.
 
 #antipattern[
-  Passing a value without `PROVEN_ARG`
+  The four mistakes a beginner meets on the first day
 ][
   ```c
-  proven_println("count={}", count);        /* it does not compile */
+  /* ① taking value out without checking */
+  proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* rubbish on failure */
+
+  /* ② destroying with a different allocator */
+  proven_u8str_destroy(other_alloc, &s);                     /* contract violation */
+
+  /* ③ holding a view longer than its original */
+  proven_u8str_view_t v = proven_u8str_as_view(&s);
+  proven_u8str_destroy(alloc, &s);
+  proven_println("{}", PROVEN_ARG(v));                       /* reads a dead place */
+
+  /* ④ forgetting PROVEN_ARG */
+  proven_println("count={}", count);                         /* does not compile */
   ```
-  A raw value rather than a bundle was passed, so the types do not match and the build
-  fails. It can feel tiresome, but this is the point of the design — *forget to wrap
-  it and the program is not made.* Herein lies the difference from `printf`, which
-  compiles even when you forget and goes strange during execution.
+  Of the four only ④ is caught by the compiler. The other three are blocked *by a human
+  keeping the rules*, which is why the previous section said to get the three rules into
+  your hand. ③ in particular is met again in chapter 84, and once more when an arena is
+  reset.
+]
+
+#qa[
+  Must an object be made with `_create`? What about where there is no heap?
+][
+  No. Most objects come with *a borrowing edition* as well.
+  `proven_u8str_borrow(buf, sizeof buf)` lays a string over a stack or static array —
+  it takes no allocator, so it takes not one byte, and therefore needs no `destroy`
+  either (the caller is already the owner). Embedded code handles strings this way
+  (chapter 84), and several of this book's examples run so.
+
+  There is a middle form too. Take the memory once in a large piece, lay an arena over
+  it and hand out from there (chapter 83) — then `malloc` is never called once while the
+  `_create` family can be used as it is.
+]
+
+#qa[
+  How does `PROVEN_ARG` find out the type? Does C not lack function overloading?
+][
+  It uses a device that came in with C11, `_Generic` — the syntax that chooses one
+  of several things *at compile time* according to an expression's type.
+  `PROVEN_ARG(x)` makes a small struct with an integer tag attached if `x` is an
+  `int`, a real tag if a `double`, a string tag if a `const char *`. It is not
+  determining the type at run time but *using as it stands what the compiler already
+  knows*, so there is no cost. The syntax and the whole formatting rules are treated
+  head on in chapter 85.
 ]
 
 #misconception[
-  "The placeholder has no type, so it must be slow"
+  "Using a library makes the program heavy"
 ][
-  The opposite. `printf` interprets the format string letter by letter *during
-  execution* and decides what to take out next. `{}` scans the format too, but each
-  argument's type is already settled by its tag, so there is no guessing. Above all,
-  there being no UB from type mismatch, no defensive code is needed either. The
-  difference in cost is mostly negligible, and this library's real-number formatting
-  has rather taken more care over accuracy — reproducing exactly the rounding rules of
-  `%f` seen in chapter 56 is the more awkward task.
-]
-
-== The opposite direction — the scanner
-
-Parsing is formatting's mirror, but the character of failure differs. Formatting
-fails only when the vessel is too small, while parsing fails *whenever the input
-differs from expectation*. And as seen in chapter 56, `sscanf` tells only "how many
-succeeded" — it does not say where or why it stopped.
-
-#idx("scanner")proven's scanner is an object with a cursor. It is placed over a view
-and reads onward one at a time. Each read gives its result as a bundle.
-
-```c
-typedef struct {
-    proven_u8str_view_t view;     /* the input being read (borrowed) */
-    proven_size_t       cursor;   /* how far it has read */
-} proven_scan_t;
-```
-
-That there are only two slots says two things. First, *the scanner does not own the
-input* — it is only a cursor laid over a view, so making it allocates nothing and there
-is no destroying. Second, *the cursor can be saved and restored by hand*. Copy the whole
-struct, and on failure put it back, so a parser that "looks a few characters ahead to
-judge" is not hard to write.
-
-```c
-proven_scan_t save = sc;         /* a mark to go back to */
-proven_result_i64_t n = proven_scan_i64(&sc);
-if (!proven_is_ok(n.err)) sc = save;   /* it failed, so let it never have happened */
-```
-
-There are six reading functions, and all of them push the cursor forward.
-
-#dtable(
-  columns: 3,
-  [*function*], [*what it reads*], [*what it returns*],
-  [`proven_scan_i64(&sc)`], [a signed integer], [`{err, val}`],
-  [`proven_scan_u64(&sc)`], [an unsigned integer], [`{err, val}`],
-  [`proven_scan_f64(&sc)`], [a real], [`{err, val}`],
-  [`proven_scan_str(&sc)`], [a word up to whitespace], [`{err, view}` — *a view into the original*],
-  [`proven_scan_skip_whitespace(&sc)`], [skips whitespace], [—],
-  [`proven_scan_skip_until(&sc, t)`], [skips until `t` appears], [`err` (the cursor stands if absent)],
-)
-
-That `proven_scan_str` *returns a view without copying* matters — chapter 79's "text
-handling without copying" holds in parsing too. In exchange that view is valid only
-while the original input is alive (chapter 77).
-
-#demo("examples-en/ch80/lines.c")
-
-That three inputs divided into three branches is the heart of it. `bob thirty` had
-its name read but stopped at the age, and the line of whitespace only failed from the
-name. With `sscanf` both would have been lumped together as "one item succeeded" or
-"0".
-
-Having a cursor has another advantage. *How far it has read* can be known, so the
-remaining part can be handled another way or the position can be carried in an error
-message. It is the answer to the problem chapter 25 named when parsing a line with
-`sscanf`: "you cannot know how many characters were consumed."
-
-#qa[
-  Does the scanner have a format string too?
-][
-  It does. It is written like this.
-
-  ```c
-  proven_scan_fmt_cursor(&sc, "{}:{}",
-                         PROVEN_SCAN_ARG(&host), PROVEN_SCAN_ARG(&port));
-  ```
-
-  It is symmetrical with formatting, and the arguments are
-  wrapped addresses of the places to hold the results. But there is one caution the
-  header states honestly — if it fails in the middle of the format, *the values filled
-  in up to that point have already been changed*. The failure atomicity learned in
-  chapter 76 is not guaranteed here, so if it is really needed the cursor and the
-  destinations must be saved beforehand and restored. Writing the contract in the
-  documentation rather than hiding it is this library's way.
+  A frequently heard worry, and it depends on the character of the language and the
+  library. In C, a library compiled together as source leaves *what is not used out
+  of the executable* — because the linker does not put in an object file that is not
+  referenced (chapter 16's linking stage). Moreover proven has no initialisation code
+  running at startup, no global state being registered, and no thread quietly rising.
+  Becoming heavy is not the price of using a library but what happens when a
+  framework takes over the program's structure.
 ]
 
 #realcase[
-  What happens when a parser is lenient
+  The practice of distributing as source — SQLite in one file
 ][
-  There is a problem that has come to light repeatedly in the handling of HTTP
-  requests. If a server and a proxy interpret the same request *slightly differently*,
-  an attacker can slip a second request in through that gap (request smuggling). The
-  cause was differences such as one side generously letting odd whitespace in a header
-  pass while the other refused strictly. The lesson is exactly the same as
-  chapter 79's story of encodings — *do not read ambiguous input as something mended;
-  refuse it.* A parser that returns failure as a value is also a parser equipped with
-  the means to express that refusal.
+  This distribution model is not a peculiar choice of proven's alone. SQLite, the
+  most widely used database engine in the world, provides as its official
+  distribution form an *amalgamation* joining dozens of source files into one huge
+  `.c` file — fetch it, compile it with your program, and that is all. The `stb`
+  family of libraries, famous for image and font handling, is a single header file
+  entire. The reason is the same in every case. In a world where build environments
+  are all different, *the most portable unit of distribution is source*.
+]
+
+== Attaching it to your own project — a minimal Makefile
+
+To avoid typing the two lines above every time, use chapter 90's `make`. Supposing the
+library has been put whole into `vendor/proven`, this much suffices.
+
+```make
+CC      = cc
+CFLAGS  = -std=c23 -Wall -Wextra -Werror -O2 -Ivendor/proven/include
+VSRC    = $(wildcard vendor/proven/src/proven/*.c) \
+          $(wildcard vendor/proven/platform/*.c)
+VOBJ    = $(VSRC:.c=.o)
+
+app: app.o $(VOBJ)
+	$(CC) $^ -lm -o $@
+
+clean:
+	rm -f app app.o $(VOBJ)
+```
+
+Only three things need be known. *`-I`* tells it where to find `<proven.h>`
+(chapter 51). *`platform/`* is the thin layer that calls the operating system, so when
+going to bare metal only this line is removed (chapter 88). *`-lm`* joins the
+mathematical functions that real-number formatting uses — take reals out of the
+formatter (chapter 88's `PROVEN_FMT_NO_FLOAT`) and this is not needed either.
+
+#platform[
+  On Windows and in embedded work
+][
+  *MSVC* — this library requires C23. Recent updates of Visual Studio 2022 support a
+  good deal of it with `/std:clatest`, but the surest road is to use `clang-cl` or
+  MinGW-w64 (GCC) on Windows too (chapter 18's terrain).
+
+  *Embedded* — leave out `platform/` and compile only `src/proven/*.c`. There being no
+  heap, `proven_heap_allocator()` returns an unusable value (all zeros), and an arena
+  laid over a static array is used instead (chapter 83). The detailed procedure is
+  chapter 88.
 ]
 
 #recap[
-  Formatting and parsing in summary.
+  This chapter in summary.
 
   #dtable(
-  columns: 3,
-    [*what it does*], [*API*], [*note*],
-    [one line to the screen], [`proven_println(fmt, ARG…)`], [returns an error but does not compel],
-    [format into a string], [`proven_u8str_append_fmt(&s, …)`], [refuses if short],
-    [permitting truncation], [`…_append_fmt_trunc`], [states the intent in the name],
-    [growing as it goes], [`…_append_fmt_grow(alloc, …)`], [needs an allocator],
-    [wrapping an argument], [`PROVEN_ARG(x)`], [`_Generic` — a type not listed is a compile error],
-    [starting a scanner], [`proven_scan_init(view)`], [an object with a cursor],
-    [reading one at a time], [`proven_scan_i64/f64/str`], [result and failure as a bundle],
-    [reading by format], [`proven_scan_fmt_cursor(…)`], [beware partial changes on mid-way failure],
+  columns: 2,
+    [*what*], [*how*],
+    [header], [one `#include <proven.h>`],
+    [build], [compile `src/proven/*.c` with the program (`-I` for the header path, `-lm`)],
+    [OS dependence], [only in `platform/` (build without it if absent)],
+    [rule ①], [only a function that takes an allocator takes memory],
+    [rule ②], [failure comes as a value — check `err`, then `value`],
+    [rule ③], [destroy with the allocator it was made with. a `view` is not destroyed],
+    [making], [`_create` (allocates) / `_borrow` (over somebody's buffer, no allocation)],
+    [output], [`proven_println("... {} ...", PROVEN_ARG(x))`],
+    [format specification], [`{:>8}` `{:<8}` `{:.3}` — after the colon],
+    [the price], [a `PROVEN_ARG` per argument, a syntax unlike the familiar `%d`],
 )
 ]
 
-The vocabulary for holding, making and reading back strings is equipped. Next are the
-tools that *hold many* — growing arrays, lists, ring buffers, hash maps, and the
-algorithms with "a guarantee even in the worst case" foretold in chapter 74.
+The first program has run. Yet the `proven_println` just used can in fact fail too —
+because the band going to the screen may break (chapter 10). This function returns an
+error but *does not compel a check*, and that choice itself is a good entrance to
+understanding this library's error model. The next chapter is that.

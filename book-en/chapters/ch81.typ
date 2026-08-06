@@ -1,310 +1,335 @@
 #import "../../book/lib.typ": *
 
-= Containers and algorithms
+= Errors are values
 
 #prereq(
-  ([chapter 43, Structs], [structs]),
-  ([chapter 42, Dynamic memory], [a growing array]),
-  ([chapter 77, The foundation], [views and bounds]),
+  ([chapter 48, Errors and contracts], [errors as values]),
+  ([chapter 79, The five bugs shipped for fifty years], [the unchecked return value]),
 )
 
 #deepqa[
-  Chapter 36 taught that a C array's size is settled at compile time, and chapter 42
-  that it can be grown with `realloc`. Then where is it easiest to go wrong when
-  making a "growing array" yourself?
+  Chapter 48 said C's ways of reporting an error are only three — the return value,
+  global state, and stopping the program — and that of these the return value is the
+  most honest. Then how does one say both "it failed" and "here is the result" with a
+  single return value?
 ][
-  In three places. First, *calculating the size to grow to* — the multiplication
-  wrap-round seen in chapter 77 happens here. Second, *the state on failure* — when
-  `realloc` fails the original pointer is still valid, and the common code that
-  assigns the return value straight into the original variable loses that original (a
-  leak). Third, *pointers after the growth* — a pointer that pointed at an element
-  becomes invalid after reallocation. Rather than getting these three right afresh
-  every time you make a container, it is better to use one made properly once.
+  There are three ways. Mix an *impossible value* into the result's place (null,
+  `-1` — that trap seen in chapter 79), take the result out as an *output parameter*
+  and use the return value for status alone, or *hold both in one struct* and return
+  them together. proven uses the second and third together — and the third is
+  possible because, as learned in chapter 43, a C struct can be returned by value.
 ]
 
 #organizer[
-#idx("hash map")  The tools that hold many — the growing array, the intrusive list,
-  the ring buffer, the hash map. And as the answer to chapter 74's fifth bug
-  (unchecked callbacks) and the performance trap attached to that place, we see
-  sorting *guaranteed even in the worst case* and hashing that *withstands attack*.
-  Chapter 36's arrays and chapter 43's structs become practical components here.
+  We see the answer to chapter 79's second bug — unconfirmed failure. The way of
+  returning failure as a value, the bundle holding a value and an error together,
+  and the device that makes the compiler protest if an error is thrown away. The
+  discipline set up in chapter 48, "errors are values", hardens here into a type.
 ]
 
 #chapter-questions()
 
-== The life cycle of the four containers
+== Two shapes of return
 
-First we see the four on one screen. How making, putting in, traversing and giving back
-differ between them is all in this example.
+The rule is simple. *A function that can fail must return the failure as a value.*
 
-#demo("examples-en/ch81/tour.c")
+- If there is no result to return, it returns a single `proven_err_t`.
+- If there is a result to return, it returns an `{err, value}` bundle — with a name
+  per type, such as `proven_result_u8str_t` or `proven_result_size_t`.
+
+`proven_err_t` is an enumeration and success is `PROVEN_OK` (0). The check is always
+the single `proven_is_ok(err)` — writing `err == 0` would work too, but using the name
+lets the code survive a later change of representation.
+
+=== Every error code
+
+Failures have a name per kind, and there are sixteen in all. They are not to be
+memorised; it is enough to know *what branches exist* — most code divides only success
+from failure, and looks at the branch only when attempting recovery.
 
 #dtable(
-  columns: 5,
-  [*container*], [*making*], [*allocation*], [*traversal*], [*giving back*],
-  [`array`], [`PROVEN_ARRAY_INIT(alloc, T, n)`], [grows], [by index], [`PROVEN_ARRAY_DESTROY`],
-  [`list`], [`proven_list_init(&l)`], [*none*], [`PROVEN_LIST_FOR_EACH`], [unnecessary],
-  [`ring`], [`PROVEN_RING_INIT(alloc, T, n)`], [once, fixed], [by popping], [`proven_ring_destroy`],
-  [`map`], [`PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)`], [grows (rehashing)], [by key lookup], [`proven_map_destroy`],
+  columns: 3,
+  [*code*], [*what happened*], [*mainly where*],
+  [`PROVEN_OK`], [success (0)], [—],
+  [`ERR_NOMEM`], [the allocator could not hand out memory], [`_create`, `_grow`],
+  [`ERR_OUT_OF_BOUNDS`], [outside the vessel — refused rather than truncated], [`append`, `slice`, array indexing],
+  [`ERR_INVALID_ENCODING`], [the UTF-8/UTF-16 was broken], [string conversion, `hex`/`base64`],
+  [`ERR_INVALID_ARG`], [an argument is outside the contract (null, 0, an unusable allocator)], [almost every entry point],
+  [`ERR_IO`], [the outside world failed], [files and streams],
+  [`ERR_NOT_FOUND`], [what was sought is not there], [map lookup, opening a file],
+  [`ERR_INVALID_STATE`], [it cannot be done in the present state], [a closed stream, a destroyed object],
+  [`ERR_NEED_MORE`], [more input is needed before judging], [parsers and decoders],
+  [`ERR_OVERFLOW`], [a size calculation overflowed], [`create`, container growth],
+  [`ERR_UNSUPPORTED`], [this environment does not have that facility], [OS features under freestanding],
+  [`ERR_AGAIN`], [not now — try again], [non-blocking I/O],
+  [`ERR_EOF`], [the end was reached], [reading],
+  [`ERR_BUSY`], [somebody else is using it], [locks, the job queue],
+  [`ERR_PERMISSION`], [there is no permission], [files],
+  [`ERR_INVALID_FORMAT`], [the format was wrong], [parsing, format strings],
 )
 
-That only the list has no allocation stands out — because the node lives inside the
-data. So a list is the only container that *cannot fail for lack of memory*, and it is
-especially loved in embedded work (chapter 83).
+#demo("examples-en/ch81/codes.c")
 
-== The growing array
+The latter part of the example shows this table in the flesh. Try to put twelve bytes
+into an eight-byte vessel and `OUT_OF_BOUNDS` comes — *and the original is left
+untouched* (the length is still 0). Give an unusable allocator and it is caught as
+`INVALID_ARG` before anything is made. Slicing outside the range too is a refusal, not
+"as much as there is".
 
-`proven_array_t` is a byte buffer that knows the element size and alignment. Open it up
-and why the type is filled in by macros becomes clear.
+Two things are worth taking from here. First, *`ERR_INVALID_ARG` is usually a bug in my
+own code* — not a failure of the outside world but a contract violation, so it is to be
+mended rather than recovered from. Second, `ERR_EOF` and `ERR_AGAIN` are *part of the
+normal flow*. In a reading loop EOF is not an error but the ending condition
+(chapter 87).
 
-```c
-typedef struct {
-    proven_allocator_t alloc;       /* it remembers the allocator given at creation */
-    proven_byte_t     *data;        /* the byte buffer */
-    proven_size_t      len;         /* the number of elements held now */
-    proven_size_t      cap;         /* the number of elements it can hold */
-    proven_size_t      elem_size;   /* the size of one element */
-    proven_size_t      align;       /* the element's alignment requirement */
-} proven_array_t;
-```
+=== The kinds of result bundle
 
-*That the array remembers the allocator* differs from strings. A string takes an
-allocator per operation (chapter 79), while an array takes one at creation and keeps it
-inside — making `push` pass an allocator every time it grows would make the code noisy.
-So the allocator is not given again at destruction either
-(`PROVEN_ARRAY_DESTROY(&arr)`).
+A function with a value to return has one bundle per type. The naming rule being the
+same, the list need not be memorised — inside a `proven_result_XXX_t` there are always
+just `err` and `value`.
 
-C having no generics, the type is filled in by macros.
+#dtable(
+  columns: 3,
+  [*bundle*], [*the type of `value`*], [*where it is returned*],
+  [`proven_result_size_t`], [`proven_size_t`], [lengths, counts, bytes written],
+  [`proven_result_mem_mut_t`], [`proven_mem_mut_t`], [allocators (chapters 82 and 83)],
+  [`proven_result_mem_view_t`], [`proven_mem_view_t`], [slicing (chapter 82)],
+  [`proven_result_u8str_t`], [`proven_u8str_t`], [making a string (chapter 84)],
+  [`proven_result_buf_t`], [`proven_buf_t`], [making a buffer],
+  [`proven_result_cstr_t`], [`const char *`], [exporting as a C string (chapter 84)],
+  [`proven_fmt_result_t`], [(amount written and amount needed)], [formatting (chapter 85)],
+)
 
-#demo("examples-en/ch81/arr.c")
+Only the last row is of a different grain. For formatting, "success or failure" is not
+enough — if it was truncated you must know *how much more was needed* — so beside `err`
+it carries two numbers as well (we look at it closely in chapter 85).
 
-`PROVEN_ARRAY_INIT(alloc, int, 4)` means "an array to hold ints, initial capacity 4",
-and `PROVEN_ARRAY_PUSH` writes the type again to *check at compile time that it
-matches*. At the fifth element, which exceeded the capacity of 4, the array grew by
-itself — and that growth happens through the allocator (exactly chapter 78's rule; the
-array remembers the allocator it was given at creation).
+#demo("examples-en/ch81/errval.c")
+
+This example contains all of this chapter's syntax. `make_greeting` sends the result
+out through an output parameter (`out`) and used the return value for status alone —
+on failure it passes it up as it is. And `proven_u8str_create` returns a bundle, so
+`made.value` is taken out *only after checking*. The order must not be reversed.
 
 #antipattern[
-  Holding an element pointer and then pushing
+  Taking out `value` before checking
 ][
   ```c
-  int *first = PROVEN_ARRAY_GET_MUT(&arr, int, 0);
-  (void)PROVEN_ARRAY_PUSH(&arr, int, 42);   /* the buffer may move here */
-  *first = 7;                               /* writes at the old address — use after free */
+  proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* dangerous */
   ```
-  When the array grows the contents move to a new buffer and a pointer to the old
-  address becomes invalid. It is the form in which the use after free learned in
-  chapter 42 appears on a container. The rule is one — *after changing a container,
-  obtain it again by index.* The habit of carrying an index rather than a pointer
-  becomes the defence here.
+  It finishes in one line and looks clean, but what comes into your hand on failure
+  is *a meaningless value*. The bundle's contract is "`value` has meaning only when
+  `err` is `PROVEN_OK`", so this code has skipped the contract. That on failure a
+  struct filled with zeros usually arrives and it does not die immediately is rather
+  the danger — the accident is put off until much later (that pattern from
+  chapter 79).
 ]
 
-== The intrusive list — linking without allocation
+The output of the second call compresses this part's theme. On trying to put
+`"Hello, world"` into a capacity of 8 bytes, the library, *instead of putting in as
+much as fits and declaring success*, wrote nothing and returned a failure. It is the
+exact opposite choice from `snprintf`'s quiet truncation seen in chapter 79.
 
-`proven_list_t` is an *intrusive* linked list — the node does not hold the data;
-rather a link field is planted inside the data struct. It amounts to putting one
-`proven_list_node_t link;` slot inside a `struct` made in chapter 43.
+== Throw it away and the compiler protests
 
-```c
-typedef struct proven_list_node_t {
-    struct proven_list_node_t *next;
-    struct proven_list_node_t *prev;
-} proven_list_node_t;
+Returning the error as a value is not enough by itself. As seen in chapter 79, a
+return value *can be thrown away*. So functions for which failure is meaningful have
+C23's #idx("nodiscard")`[[nodiscard]]` attached (we saw the name in chapter 48).
+Throw the result away and the compiler really says this.
 
-typedef struct {
-    proven_list_node_t head;      /* a sentinel pointing at itself */
-} proven_list_t;
+```text
+warning: ignoring return value of ‘proven_u8str_append’,
+         declared with attribute ‘nodiscard’ [-Wunused-result]
+    5 |     proven_u8str_append(&s, proven_u8str_view_from_cstr("hi"));
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+note: declared here
+  123 | [[nodiscard]] proven_err_t proven_u8str_append(...);
 ```
 
-That `head` is a *sentinel* is this implementation's knack. In an empty list
-`head.next` and `head.prev` point at head itself, and so not one "is it null" check
-appears in the insertion and deletion code — a pattern the Linux kernel long used.
+If the `-Werror` recommended in chapter 17 is turned on, this is not a warning but a
+*build failure*. What was "checking is optional" has become "it does not compile
+unless you check".
 
-What is good about it? *There is nothing to allocate separately* in order to put
-something in the list — because the node is the data. A list can be used even in an
-environment with no heap (chapter 83), and hanging the same object on two lists at
-once is a matter of keeping two link fields. The price is that the data struct must
-know about the list.
-
-Getting back the other way is the problem, and one macro solves it.
+Of course there are times when you really do want to ignore it. Then `(void)` is put
+in front.
 
 ```c
-task_t *t = PROVEN_LIST_ENTRY(node, task_t, link);
+(void)proven_u8str_append(&s, view);   /* ignored knowingly */
 ```
 
-It is the macro that *works the struct's starting address back* from the address of the
-`link` member — the `offsetof` seen in chapter 43 used here in the flesh. This one line
-returning from node to data is nearly the whole of the intrusive list.
-
-There are two traversal macros.
-
-#dtable(
-  columns: 3,
-  [*macro*], [*what it does*], [*when*],
-  [`PROVEN_LIST_FOR_EACH(it, &l)`], [traverses from the front], [when only reading],
-  [`PROVEN_LIST_FOR_EACH_SAFE(it, tmp, &l)`], [holds the next node in advance], [★ when removing while traversing],
-)
-
-The star matters. Remove a node during traversal and its `next` becomes meaningless, so
-the loop loses its way. The `_SAFE` edition turns with *the next node already in hand*,
-so removing the present node is safe. It is why the example used it when detaching item
-20.
-
-It is worth knowing too that both macros require the iteration variables to be
-*declared in advance* (`proven_list_node_t *node, *tmp;`). The macro does not put a
-declaration in the `for`'s initialiser — a kernel practice carried on from the C89 days.
-
-== The ring buffer — a stream of fixed size
-
-`proven_ring_t` is a fixed-size circular buffer. It is used where a producer and a
-consumer come and go, for the most recent N of a log, and for streams such as audio
-and sensor samples where *what has passed may be thrown away*. The size being fixed,
-what to do when it is full is part of the contract — and here too the default is to
-report rather than quietly overwrite (the example's `err=2` is that confirmation).
-
-There are only `push` and `pop`, and both *copy the element*. Putting in gives an
-address, and taking out gives the address of the place to receive it.
-
-```c
-int v = 42;
-proven_err_t e = proven_ring_push(&ring, &v);     /* copies the value in */
-int out;
-e = proven_ring_pop(&ring, &out);                 /* copies the value out */
-```
-
-Thanks to this design no pointer into an element inside the ring leaks outward — holding
-a pointer in a circular buffer and having that place overwritten is a classic accident,
-and it was blocked by the interface.
-
-== The hash map, and data structures under attack
-
-`proven_map_t` is an open-addressing hash map. Keys are integers or byte sequences,
-and string keys have two modes — *a borrowed key* (the caller keeps the bytes alive)
-and *an owned key* (the map copies and holds it). Chapter 78's owning-borrowing
-distinction appears here as it is too.
-
-The kind of key is settled at creation.
-
-#dtable(
-  columns: 3,
-  [*creation macro*], [*key*], [*caution*],
-  [`PROVEN_MAP_INIT_INT(alloc, T, n)`], [an integer (`key.id`)], [the fastest],
-  [`PROVEN_MAP_INIT_U8_BORROWED(alloc, T, n)`], [a string (borrowed)], [★ the key bytes must outlive the map],
-  [`PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)`], [a string (copied)], [a copy cost on insertion. safe in exchange],
-)
-
-The key is passed as one union — `.id` for an integer, `.str` for a string.
-
-```c
-proven_map_key_t k = { .str = PROVEN_LIT("beta") };
-const int *v = proven_map_get(&map, k);      /* null if absent */
-```
-
-*Lookup answers with null.* The reason it returns a pointer rather than a bundle is
-that "absent" is not a failure but a normal answer (distinct from chapter 76's error
-branches). And that pointer *points inside the map*, so it becomes invalid the next time
-the map grows — the same rule as with arrays.
-
-There are three functions for putting in. `proven_map_set` (general),
-`proven_map_set_u8_owned` (copying a string key in), and
-`proven_map_set_with_scratch` (giving the temporary memory separately). The last is used
-when the temporary buffers of internal work such as rehashing are to be obtained from
-another allocator — a device for keeping dead memory from piling up when running a map
-on an arena.
-
-#demo("examples-en/ch81/wordcount.c")
-
-This one example contains all of this chapter's tools — it counts with a map, gathers
-into an array, sorts and prints. Chapter 79's views were used to cut the words, so
-string copying happens only once, when the map owns the key.
-
-#realcase[
-  HashDoS — when hash maps became a target of attack
+#qa[
+  If it can be ignored with `(void)`, is it not compulsory after all?
 ][
-  In 2011 several web frameworks collapsed at once through the same vulnerability. If
-  an attacker chose *keys that crowd into the same bucket* and sent thousands of them
-  as parameters in one request, insertion that had been $O(1)$ on average became
-  $O(n)$ and the whole degenerated to $O(n^2)$, so a few requests stopped a server. The
-  cause was that the hash function was public and collisions *could be calculated*.
-
-  Today's prescription is a *keyed hash* — draw a random secret per process and mix it
-  into the hash, and the attacker cannot precompute collisions. It is why proven's
-  `proven_map_create` uses SipHash-2-4 and a random seed by default for string keys,
-  and conversely why there is a separate `proven_map_create_trusted` using the faster
-  FNV-1a for cases where the keys all come from my own code. *The default is the safe
-  side, and the fast side states itself in the name* — the principle met repeatedly in
-  this part.
+  Because the purpose of the compulsion is not "to prevent ignoring" but *"to make
+  ignoring visible"*. An error thrown away with no mark is invisible in code review,
+  while a line with `(void)` attached becomes a declaration that "this failure is
+  deliberately ignored". The very fact that it must be typed is the heart of it — it
+  cannot be done by accident, only on purpose.
 ]
 
 #qa[
-  How much slower is a keyed hash? And where does the random secret come from if
-  there is no OS?
+  But chapter 80's `proven_println` had no such mark. Why is screen output alone an
+  exception?
 ][
-  SipHash is slower than FNV-1a, but by an amount proportional to the string length,
-  and the share hash computation takes in the whole of a map operation is mostly not
-  large. The random secret is drawn once from the operating system's source of
-  randomness — and in an environment with no OS (chapter 83) there is nowhere to draw
-  it from, so it falls back to FNV-1a. The library does not hide this fact but writes
-  it in the documentation, and the grounds are clear: *where there is no attacker
-  there is no need for an attacker model either.* There exists no outsider choosing
-  keys inside your firmware.
+  Because contracts have grades too. The failure of a write going to the console has
+  conventionally been ignored (have you ever seen code that checks `printf`'s return
+  value?), and making every line of output carry a `(void)` would bury the code in
+  noise. So this library placed output in the grade that *returns the error but does
+  not compel a check*. Conversely, the functions on the *input* side do have the mark
+  — ignore the failure of a read and you treat "data not read" as though it had been
+  read, replaying chapter 79's second bug exactly. Where to attach the mark is itself
+  a design judgement.
 ]
 
-== Sorting with a worst-case guarantee
+== What remains after a failure — failure atomicity
 
-The two problems seen in chapter 74 — the unchecked comparator, and the algorithm
-that collapses in the worst case — are treated together here.
+There is a question that naturally arises after receiving an error. *What state is
+the object the failed function was touching in now?*
 
-#idx("introsort")`proven_array_sort` is *introsort*. It begins as a fast quicksort
-and, if the recursion becomes too deep, switches to heapsort. So the average is as
-fast as quicksort and $O(n log n)$ is *guaranteed* even in the worst case — the
-complexity attack seen in chapter 74 does not work. To carry the header's wording
-over as it is: "$O(n log n)$ is not an average but a guarantee."
+#idx("failure atomicity")The library's answer is *failure atomicity* — unless the
+documentation says otherwise, a failed operation leaves the target in the state it
+was in before being touched. If memory runs short while growing an array the existing
+elements are still alive, and if there is not enough room while appending to a string
+the original content stands. The second call of the example just now is that case —
+it failed, but no half-written string was left.
 
-On the comparator side the language cannot help, so the contract is stated in the
-documentation and in examples. The example's `by_count_desc` is the model — descending
-by count, and *ties broken by the word*. It contrasts exactly with chapter 74's
-counterexample (the comparator that sees only the first letter).
+Why does this matter? Without failure atomicity a caller can do nothing after a
+failure *but throw the object away*. With it, "give up this addition and carry on
+with what has been gathered so far" becomes possible.
 
 #misconception[
-  "Ties may be handled however you like"
+  "If it fails we will end the program anyway, so what does the state matter"
 ][
-  They may not. A comparator must form a *total order* — 0 if equal, consistently
-  greater and less, and the signs of `cmp(a,b)` and `cmp(b,a)` must be opposite. Break
-  this and the result is not merely jumbled; depending on the implementation it may
-  even *trespass outside the array* (because the partitioning algorithm judges its
-  boundaries from the comparison results). A comparator that returns anything at all
-  for ties is therefore a bug, not a taste.
+  For a short-running command-line tool that may be so. But long-running programs —
+  servers, editors, games, firmware — must not die on one failure. If the whole server
+  went down because handling one request failed for lack of memory, that would be the
+  greater accident. Failure atomicity is the minimal condition that makes possible the
+  recovery of "throw away only this request and take the next".
 ]
 
-== Bytes into letters — hashes and encodings
+== Raising a failure upward — together with the cleanup
 
-We note the remaining tools in the same box too.
+Receiving errors as values raises one practical problem at once. *If it fails in the
+middle, who gives back what has been taken so far?* In a language with exceptions the
+stack unwinds and destructors handle it, but C has no such device (chapter 70). So an
+idiom is needed.
 
-- *Hashes by purpose* — for the map's internals (fast mixing), for integrity checking
-  (CRC-32), for cryptographic use (SHA-256), and the keyed hash seen above (SipHash).
-  The library distinguishes them because *the same word "hash" means entirely
-  different demands* — using SHA-256 where only speed is needed is waste, and using
-  FNV-1a where adversarial input comes is dangerous.
-- *hex and Base64* — two standards for moving bytes into text. The principle here is
-  the same. Wrong input (hex of odd length, wrong padding) is *not guessed at and
-  mended* but refused with `PROVEN_ERR_INVALID_ENCODING` (that norm from chapter 79).
+#demo("examples-en/ch81/cleanup.c")
+
+This example deliberately inserts a failing allocator (once the *budget* runs out it
+necessarily gives `NOMEM`) and runs all three cases — failure from the first
+allocation, one taken and failure at the second, and everything succeeding. The middle
+case is the heart of it. `x` has already been taken while `y` failed, so simply
+returning here is *a leak*.
+
+The pattern comes to three.
+
++ *Mark what you hold with a flag* — one boolean such as `has_x`. If the resources are
+  several, so are the flags.
++ *On failure everything gathers at one place* — `goto done`. That use chapter 70
+  called "disciplined `goto`".
++ *Clean up in reverse order of taking* — what was taken later is given back first.
+
+It is worth noticing too that after ownership passes with `*out = y;` on the success
+path, `y` is not destroyed thereafter. *You must be able to point at the place where
+ownership passes with a single line of code* — a function that cannot is usually one of
+blurred design.
+
+#qa[
+  Is deliberately making a failing allocator of any use in practice too?
+][
+  Of great use. The out-of-memory path is almost never executed in a real program, so
+  in most codebases it is *the least tested path*. And a leak or double free there is
+  the hardest of all to diagnose.
+
+  As chapter 83 will show, an allocator is simply a value, so a shell that "fails from
+  the nth call" can be made in ten lines, as in the example, and inserted. Raise n from
+  1 and run the tests and you can pass through *every failure point* once, and running
+  it with ASan or Valgrind (chapter 17) makes that path's leaks show themselves plainly.
+  It is the place where the decision that the library does not call `malloc` directly
+  comes back as testability.
+]
+
+== When there is nobody to return to — the panic
+
+To return an error as a value there must be *somebody to return it to*. But in a
+place where the contract itself is broken there is no such somebody — if, for
+example, a null arrived in a place where there is no reason whatever to pass a null,
+that is not a failure but means *the program's logic is already wrong*.
+
+For such places the library has a panic path. It is the same spirit as chapter 48's
+`assert`, differing in that the way it is handled can be swapped out so as to be
+usable in embedded work too (chapter 88).
+
+There are only two doors.
+
+```c
+void proven_panic(const char *msg);                       /* raise a panic */
+void proven_set_panic_handler(proven_panic_handler_t h);  /* swap the handler */
+```
+
+The default handler *does not return* — it stops the program on the spot (the
+implementation is `__builtin_trap()`). And this swapping is what pays in embedded work.
+On a board with no console there is nowhere to print a message, so a handler is
+registered that lights an LED, kicks the watchdog, or reboots.
+
+```c
+static void my_panic(const char *msg) {
+    (void)msg;
+    board_led_on(LED_FAULT);
+    for (;;) { }          /* it does not go back */
+}
+/* at the program's starting place */
+proven_set_panic_handler(my_panic);
+```
+
+*A handler must not return.* If it returns, the validity of what an `_or_panic`
+function gave back is not guaranteed — a panic is the declaration that "from here the
+program's premises are broken". The exception is test code deliberately using a
+returning handler to confirm the panic path, and even then the value after it is not
+used.
+
+The places where the library itself calls a panic can be counted on the fingers — the
+functions with `_or_panic` in the name (chapter 83's arena allocation is
+representative) and a few places where the contract is plainly already broken. Everything
+else is returned as a value.
+
+The distinction is best remembered like this.
 
 #recap[
-  Containers in summary.
-
   #dtable(
-  columns: 4,
-    [*tool*], [*shape*], [*where it fits*], [*caution*],
-    [`array`], [a growing contiguous array], [an ordered list], [pointers invalid after growth],
-    [`list`], [an intrusive linked list], [joining without allocation], [the data holds the link],
-    [`ring`], [fixed-size circular], [streams, the most recent N], [the contract when full],
-    [`map`], [open-addressing hash], [finding by key], [choose whether the key is owned],
-    [`array_sort`], [introsort], [sorting anything], [the comparator must be a total order],
-    [four hashes], [by purpose], [map, integrity, cryptography, anti-attack], [do not mix the purposes],
+  columns: 3,
+    [*situation*], [*example*], [*the library's handling*],
+    [failure of the outside world], [out of memory, file not found, out of room], [return the error as a value],
+    [the caller's contract violation], [a null that must not be, reusing a destroyed object], [panic (or undefined)],
+    [failure that may be ignored], [console output failure], [return the error but do not compel],
 )
 ]
 
-That is as far as the world of pure computation — it all runs even with no operating
-system. In the next chapter we go outside. Files, streams, time, random numbers — the
-places that touch the OS.
+#realcase[
+  Other languages that chose errors as values
+][
+  This design is not C's invention alone but a current common to recent systems
+  languages. Go has functions return a result and an error side by side, and Rust
+  wraps success and failure in the single `Result` type and warns if it is ignored.
+  Both are languages that decided not to use exceptions, and the reason is the same —
+  *the error paths must be visible in the shape of the code*. Exceptions are
+  convenient but erase from the signature "which failure jumps where from here".
+  Three different languages, in effect, found the answer to the second row of
+  chapter 79's table from the same direction.
+]
+
+#qa[
+  What is the price of this way?
+][
+  `if`s multiply. There being no device like exceptions to sweep a deep failure up in
+  one go, code that checks and passes upward attaches at every place a failure is
+  met. That is half the reason the `make_greeting` of the example just now runs to
+  some twenty lines. In exchange one thing is gained — *where and what can fail is
+  visible in the code as it stands.* That there is no hidden failure is the thing
+  this library sells.
+]
+
+Knowing the shape of errors, we now go down to what those errors protect — memory
+itself. The next chapter is bytes and views, and size calculation that does not
+overflow.

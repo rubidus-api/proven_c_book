@@ -158,7 +158,7 @@ keyword: one of
     _Noreturn      _Static_assert _Thread_local
 ```
 
-71장에서 다룬 승격이 이 목록에 그대로 보인다. `bool`·`true`·`false`·
+76장에서 다룬 승격이 이 목록에 그대로 보인다. `bool`·`true`·`false`·
 `nullptr`·`static_assert`·`alignas`·`thread_local`·`constexpr`·`typeof`가
 *키워드*로 올라와 있고, 그 아래 밑줄 이름들(`_Bool`, `_Alignas`, …)이
 옛 코드를 위해 그대로 남아 있다. 두 이름은 같은 것을 가리킨다.
@@ -388,7 +388,7 @@ predefined-constant: one of
 `\x41BC` 하나로 읽히고, 값이 `char`에 안 들어가면 계약 밖이다. 8진
 이스케이프는 반대로 최대 세 자리로 끊긴다.
 
-`predefined-constant`가 별도 규칙으로 있는 것이 C23의 변화다(71장) —
+`predefined-constant`가 별도 규칙으로 있는 것이 C23의 변화다(76장) —
 `true`·`false`·`nullptr`이 매크로가 아니라 *문법 요소*가 됐다.
 
 === A.1.6 문자열 리터럴
@@ -428,7 +428,7 @@ punctuator: one of
 키보드에 그 글자가 없던 시절의 유물이고, 삼중자(trigraph)와 달리 C23에도
 남아 있다.
 
-`::`이 새로 들어온 것은 71장의 속성 문법 때문이다(`[[gnu::packed]]`).
+`::`이 새로 들어온 것은 76장의 속성 문법 때문이다(`[[gnu::packed]]`).
 
 === A.1.8 헤더 이름
 
@@ -716,7 +716,7 @@ type-specifier-qualifier:
 41장에서 정리한 네 축이 이 몇 줄에 그대로 있다. `typedef`가
 *저장 클래스 지정자의 하나*라는 사실이 여기 보이고(55장), "저장 클래스는
 하나만"이라는 요구는 문법이 아니라 제약 조항이 못박는다. `constexpr`이
-저장 클래스 자리에 온 것도 71장에서 본 대로다.
+저장 클래스 자리에 온 것도 76장에서 본 대로다.
 
 *구조체와 공용체.*
 
@@ -815,7 +815,7 @@ typeof-specifier-argument:
 ```
 
 `_Atomic`이 두 자리에 나온다는 점이 헷갈리기 쉽다 — *한정자*로 쓰면
-`_Atomic int x;`이고, *타입 지정자*로 쓰면 `_Atomic(int) x;`다(69장).
+`_Atomic int x;`이고, *타입 지정자*로 쓰면 `_Atomic(int) x;`다(74장).
 
 `typeof`는 GCC 확장으로 30년 넘게 쓰이다 C23에서 표준이 됐다.
 `typeof_unqual`은 `const`·`volatile`을 벗겨 낸 판이라, 매크로에서 임시
@@ -1010,12 +1010,12 @@ balanced-token:
     괄호·대괄호·중괄호가 아닌 아무 토큰
 ```
 
-메시지 없는 `static_assert(cond);`가 C23의 추가다(65장).
+메시지 없는 `static_assert(cond);`가 C23의 추가다(70장).
 
 속성 문법은 C++에서 건너온 것으로, C23이 언어에 정식으로 들였다. 표준이
 정한 것은 `[[deprecated]]`, `[[fallthrough]]`, `[[maybe_unused]]`,
 `[[nodiscard]]`, `[[noreturn]]`, `[[unsequenced]]`, `[[reproducible]]`이고,
-컴파일러 확장은 접두사를 붙여 `[[gnu::packed]]`처럼 적는다. 76장에서 본
+컴파일러 확장은 접두사를 붙여 `[[gnu::packed]]`처럼 적는다. 81장에서 본
 `[[nodiscard]]`가 이 문법의 산물이다.
 
 `balanced-token`이 "괄호만 짝이 맞으면 아무 토큰이나"라고 열어 둔 덕에,
@@ -1095,7 +1095,7 @@ cleanup:            /* C17 까지는 문법 오류(뒤에 문장이 있어야 �
 }
 ```
 
-65장에서 본 `goto cleanup` 관용구가 마지막 라벨 뒤에 억지로 `;`를 넣지
+70장에서 본 `goto cleanup` 관용구가 마지막 라벨 뒤에 억지로 `;`를 넣지
 않아도 되게 됐다.
 
 나머지도 읽을거리가 있다.
@@ -1111,7 +1111,7 @@ cleanup:            /* C17 까지는 문법 오류(뒤에 문장이 있어야 �
 가까운 `if`에 붙는다"고 정한다. 30장에서 중괄호를 권한 이유다.
 
 *④ `case`의 라벨 값은 `constant-expression`이다* — 그래서 변수는 올 수
-없고, 71장의 `constexpr` 상수는 올 수 있다.
+없고, 76장의 `constexpr` 상수는 올 수 있다.
 
 === A.2.4 외부 정의
 
@@ -1314,7 +1314,7 @@ static const unsigned char logo[] = {
 매개변수 문법(`limit(…)`, `prefix(…)`, `if_empty(…)`)이 위의
 `pp-parameter`이고, 확장은 `gnu::` 같은 접두사를 붙인다.
 
-*`__has_include`* 는 70장에서 이미 쓴 그것이다 — 헤더가 있는지 물어보고
+*`__has_include`* 는 75장에서 이미 쓴 그것이다 — 헤더가 있는지 물어보고
 없으면 다른 길로 간다. `__has_c_attribute`는 속성 지원 여부를,
 `__has_embed`는 `#embed` 가능 여부를 묻는다.
 
@@ -1328,7 +1328,7 @@ LOG("%d", 42);          /* printf("%d", 42) — 쉼표가 붙는다 */
 ```
 
 인자가 없을 때 남는 쉼표 때문에 GCC 확장(`, ##__VA_ARGS__`)에 기대던
-자리가 표준으로 정리됐다. 80장에서 본 proven의 형식화 매크로가 이것을
+자리가 표준으로 정리됐다. 85장에서 본 proven의 형식화 매크로가 이것을
 쓴다.
 
 == 문법이 답하지 못하는 것

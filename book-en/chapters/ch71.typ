@@ -1,279 +1,598 @@
 #import "../../book/lib.typ": *
 
-= From macro to keyword — `bool`, `nullptr` and their companions
+= Signals — `<signal.h>`
 
 #prereq(
-  ([chapter 68, What the new standards added, and the `*_s` controversy], [what the standards added]),
-  ([chapter 29, Booleans and comparison], [the type of true and false]),
+  ([chapter 70, Diagnostics and control], [`errno` and the handler's restrictions]),
+  ([chapter 50, The three faces of `main`], [a program's start and end]),
+  ([chapter 3, Programs and processes], [the process as a container]),
 )
 
 #deepqa[
-  Chapter 68 passed over in a table only that C23 made `<stdbool.h>` effectively
-  unnecessary and that `nullptr` came in. But why put into the language what worked
-  fine as macros — is it not merely a change of name?
+  Chapter 70 said a signal handler may not call `printf` or `malloc`, and that
+  about all it may do is assign to a `volatile sig_atomic_t`. But a signal
+  ultimately calls *a function inside my own program* — why are the restrictions
+  so severe?
 ][
-  It is not merely a change of name. A macro is *the preprocessor changing letters*
-  and so has neither type nor scope, and the user can `#undef` it or define it again
-  with another meaning. A keyword is *a grammatical element of the language*, so it
-  has a type, can be diagnosed, and nobody can redefine it. Where that difference
-  really prevents accidents is this chapter's content — and `nullptr` in particular
-  is not a renaming but *a new type*.
+  *Because there is no telling when it will cut in.* A signal does not respect the
+  boundaries of functions. It can arrive while `malloc` has half-rewritten its
+  free list, or while `printf` has written half of a buffer. Call the same
+  function again from a handler in that state and the data structure breaks.
+
+  A signal, in other words, is *a third thing* — neither a thread nor a function
+  call. It stops the current flow, cuts in, and returns, so there is no way to know
+  "what is half-done right now". Every rule in this chapter follows from that one
+  sentence.
 ]
 
 #organizer[
-#idx("bool")  We treat the most conspicuous change C23 made to the language. Why
-#idx("nullptr")  things long imitated with macros in headers — `bool`, `true`,
-  `false`, `static_assert`, `alignas`, `thread_local` — rose to being keywords,
-  what `nullptr` was newly made to prevent, what rules and limits come with them,
-  and in what order to move existing code over.
+#idx("signal")  A close reading of one header, `<signal.h>`. Where it came from (a Unix
+  inheritance), the exact shape of its two functions with their arguments and
+  return values, what `sig_atomic_t` really is, the list of what a handler may do,
+  why memory cannot be allocated inside one, how the kernel saves and restores
+  registers, POSIX's `sigaction` and the inside of its structures, and how
+  servers, the JVM and garbage collectors actually use signals.
 ]
 
 #chapter-questions()
 
-== What was promoted
+== Where it came from — a Unix inheritance
 
-#demo("examples-en/ch71/keywords.c")
+C did not invent signals. Unix made them in the 1970s as "the cheapest way to
+tell a process something", and the C standard took only *the minimum that would
+hold anywhere*.
 
-We organise it in one table. On the left is the shape up to C17, on the right C23.
+Early Unix signals had a famous flaw. Once a handler ran, the disposition
+immediately reverted to the default (so the first line of a handler had to
+re-install itself), and if the same signal arrived in that gap the program died.
+Because of that window, the signals of the time were called *unreliable
+signals*.
 
-#dtable(
-  columns: 3,
-  [*before*], [*C23*], [*the header it required*],
-  [`_Bool` + the `bool` macro], [the keyword `bool`], [`<stdbool.h>`],
-  [the `true`, `false` macros (= 1, 0)], [the keywords `true`, `false` (of type bool)], [`<stdbool.h>`],
-  [`_Static_assert`], [`static_assert`], [`<assert.h>`],
-  [`_Alignas`, `_Alignof`], [`alignas`, `alignof`], [`<stdalign.h>`],
-  [`_Thread_local`], [`thread_local`], [`<threads.h>`],
-  [the `NULL` macro], [`nullptr` (a new type)], [`<stddef.h>` and others],
-  [(none)], [`constexpr`], [—],
-  [(a GCC extension)], [`typeof`, `typeof_unqual`], [—],
-)
-
-The headers still exist and including them is harmless — the principle that the
-standard does not break old code (chapter 59's `gets` story) was kept here too. But
-newly written code has no reason to include them.
-
-== `bool` — what does it prevent
-
-C long had no true-false type. It was imitated with `int`, and every project had
-`typedef int BOOL;` and `#define TRUE 1` rolling about. C99 brought in `_Bool` and
-`<stdbool.h>` attached a pretty name to it, and C23 raised that to a keyword.
-
-What differs between `bool` and `int` is not the name but *the conversion rule*.
-
-- *Every nonzero value is narrowed to 1.* The example's `bool b = 42;` printing `1`
-  is that. `int i = 42` is 42 as it stands.
-- So *comparing two truths is true.* The classic bug of the `int`-imitation days
-  vanishes here.
-
-#antipattern[
-  Comparing truth with `1`
-][
-  ```c
-  int a = isupper('A');      /* any nonzero value, depending on the implementation */
-  int b = isupper('B');
-  if (a == b) { … }          /* both are true, yet the values may differ and it be false */
-  if (a == 1) { … }          /* worse */
-  ```
-  As seen in chapter 62, the classification functions of `<ctype.h>` promise only
-  "a nonzero value". To compare truths, narrow to *truth values* rather than
-  values.
-  ```c
-  bool a = isupper('A');     /* normalised to 1 here */
-  bool b = isupper('B');
-  if (a == b) { … }          /* safe */
-  ```
-]
+4.2BSD produced a new interface that fixed this (the `sigvec` family), and that
+design was tidied into POSIX's `sigaction`. What the 1989 C standard took,
+however, was not the fixed one but *the common denominator* — which is why the
+old window is still in the standard's `signal` today.
 
 #qa[
-  What format is used when printing a `bool` with `printf`?
+  Why did the standard not take the better `sigaction`?
 ][
-  There is no dedicated format. A `bool` goes over as a variadic argument and is
-  promoted to `int` (chapter 53's promotion rule), so `%d` is used — the example did
-  so. Printing words a human can read with `%s` and the ternary operator is a
-  common practice too.
+  Because of C's long-standing principle: *take only what holds where there is no
+  operating system* (chapter 57). `sigaction` stands on operating-system notions —
+  processes, signal masks, restarting system calls. C must run on embedded chips
+  that have none of those, so the standard fixed only "if there is such a thing as
+  a signal, this much exists."
 
-  The place to beware is the `scanf` side. There being no format that takes a
-  `bool` directly, it must be received as an `int` and moved. And `sizeof(bool)` is
-  usually 1, but *the standard does not promise it is 1* — do not assume this value
-  when calculating a struct layout (chapter 43).
+  So this chapter is in two layers. *The standard layer* (works anywhere, with
+  gaps) and *the POSIX layer* (no gaps, but only on Unix-like systems). Practical
+  Unix code uses the latter almost without exception.
 ]
 
-Two remaining traps of `bool`. First, using `bool` in a *bit-field* works fine even
-with a width of 1, but the layout is implementation-defined (chapter 43). Second,
-an array of `bool` uses one byte per element — it is not compressed into bits like
-C++'s `vector<bool>`. To compress into bits, write the masks by hand (chapter 27)
-or use the tools of `<stdbit.h>`.
+== Two functions — the exact shape
 
-== `nullptr` — not a renaming
+The standard defines only two.
 
-Chapter 6 distinguished the null triplets. `NULL` is *a macro*, and its definition
-is `0` or `((void *)0)` depending on the implementation. This freedom bore real
-accidents.
+#dtable(
+  columns: 2,
+  keycol: false,
+  [*Declaration*], [*What it does*],
+  [`void (*signal(int sig, void (*func)(int)))(int);`], [Sets the disposition of signal `sig` to `func`, and returns *the previous one*],
+  [`int raise(int sig);`], [Sends signal `sig` to the caller itself],
+)
 
-*Accident 1 — the size goes out of step in variadic arguments.* A variadic function
-does not know the arguments' types and so reads the bits as they came (chapter 53).
-On an implementation where `NULL` is defined as `0`, writing
-`execl("/bin/ls", "ls", NULL)` sends an *`int` 0*, and on a machine where pointers
-are 8 bytes the upper 4 bytes remain as rubbish. The function, failing to recognise
-the end of the list, runs away. That is why old code had to write `(char *)0`.
-`nullptr` is always of pointer size, so it does not have this problem.
+Why `signal`'s declaration is rough was read by procedure in chapter 55 — *"a
+function taking a signal number and a handler, returning the previous handler."*
 
-*Accident 2 — whether it is an integer or a pointer blurs.* On an implementation
-where `NULL` is `0`, `foo(NULL)` is indistinguishable from passing the integer 0.
-In code that branches by type with `_Generic` (chapter 53), this ambiguity becomes
-an accident as it stands. `nullptr` has *a type of its own* called `nullptr_t`, so
-the branch is clear.
-
-*Accident 3 — going out of step with C++.* C++ brought in `nullptr` first, in 2011,
-for the same reasons. There were places in headers crossing the two languages
-(chapter 51) where `NULL`'s meaning divided, and C23's adopting the same word
-narrowed that gap.
+=== `signal`'s arguments and return value
 
 #dtable(
   columns: 3,
-  [], [`NULL`], [`nullptr`],
-  [identity], [a macro (implementation-defined)], [a keyword, of type `nullptr_t`],
-  [variadic arguments], [dangerous (size goes out of step)], [safe],
-  [`_Generic` branching], [ambiguous], [clear],
-  [comparing with an integer], [`NULL == 0` may work], [not possible — diagnosed],
-  [conversion to `bool`], [—], [possible (false)],
-  [redefinition], [possible (`#undef`)], [not possible],
+  [*Place*], [*What you give*], [*Meaning*],
+  [`sig`], [A signal number], [One of the standard six, or a value the implementation defines],
+  [`func`], [`SIG_DFL`], [Back to default handling (mostly termination)],
+  [`func`], [`SIG_IGN`], [Ignore — the signal arrives and nothing happens],
+  [`func`], [A function pointer], [Use that function as the handler],
+  [return], [The previous disposition], [`SIG_DFL`, `SIG_IGN` or the previous handler],
+  [return], [`SIG_ERR`], [Setting failed; `errno` then holds the reason],
 )
 
-A few rules to pin down. `nullptr` converts to *any object pointer type* and to a
-function pointer too (chapter 54). Two `nullptr`s, and a `nullptr` and any pointer,
-can be compared with `==` and `!=`. Converted to `bool` it is false. But *it cannot
-be compared with an integer* and does not convert to an integer — `nullptr == 0` is
-subject to diagnosis. The language has, in effect, cut the old intuition that "a
-null pointer is the same thing as the integer 0".
+*Not discarding the return value* is the first discipline. Miss a failure and the
+program dies quietly when the signal finally arrives.
+
+=== `raise`'s argument and return value
+
+`raise(sig)` sends the signal to the caller. It returns 0 on success and non-zero
+on failure. If a handler is installed it runs *before `raise` returns* — that is,
+synchronously.
+
+That is exactly what `abort` does: it raises `SIGABRT`, and terminates abnormally
+if there is no handler or the handler returns (chapter 62).
+
+#demo("examples-en/ch71/sig_basic.c")
+
+The demonstration shows four things in the flesh. *The previous value comes back*
+(first line), *`raise` calls the handler on the spot* (second), *`SIG_IGN` makes
+the signal vanish* (third), and the last one matters — *this implementation
+resets to `SIG_DFL` right after handling.*
+
+=== The six signals the standard defines
+
+#dtable(
+  columns: 3,
+  [*Name*], [*When it arrives*], [*Default action*],
+  [`SIGABRT`], [A call to `abort()`], [Abnormal termination],
+  [`SIGFPE`], [An arithmetic error (divide by zero, overflow, …)], [Abnormal termination],
+  [`SIGILL`], [Executing an invalid instruction], [Abnormal termination],
+  [`SIGINT`], [Interactive attention (usually Ctrl+C)], [Termination],
+  [`SIGSEGV`], [An invalid memory access], [Abnormal termination],
+  [`SIGTERM`], [A termination request], [Termination],
+)
+
+The standard does not fix the numeric values — the 2 and 15 the demonstration
+printed belong to this implementation. The rule is *use the names, never the
+numbers*.
+
+== What a handler may do
+
+The most important section in this chapter. The standard (§7.14.1.1) settles what
+is permitted inside a handler *by enumeration*. Outside that list is undefined
+behaviour.
+
+#dtable(
+  columns: 2,
+  [*What is permitted*], [*Condition*],
+  [*Assigning a value* to a `volatile sig_atomic_t` object], [Assigning, not reading],
+  [Handling lock-free atomic objects], [`<stdatomic.h>`, when lock-free (chapter 74)],
+  [Calling `abort`], [—],
+  [Calling `_Exit`], [—],
+  [Calling `quick_exit`], [—],
+  [Calling `signal`], [Only with *the signal number that invoked it*],
+)
+
+Every other standard library function is forbidden — `printf`, `malloc`,
+`strlen`, even `exit`. And touching objects with static or thread storage
+duration is forbidden too unless it falls under the first row.
 
 #misconception[
-  "Using `nullptr` reduces null-dereference accidents"
+  "Logging with `printf` in a handler is convenient"
 ][
-  It is a different kind of problem. What `nullptr` prevents is accidents coming
-  from *the way null is written* (size going out of step, type ambiguity), not
-  accidents of dereferencing null. Confirming whether a pointer is null is still a
-  human's part (chapter 35), and reducing that burden is the part not of the
-  language but of design — data structures that do not make nulls in the first
-  place, conventions that report failure through the return value (Part XII).
+  The most common and longest-lived accident. `printf` is a function with internal
+  buffers and locks, so cutting into its *intermediate state* breaks its data
+  structures. On a good day the output interleaves; on a bad one it deadlocks — a
+  signal arrives while `printf` holds a lock, the handler calls `printf` again, and
+  it waits for a lock it holds itself.
+
+  Worse, *it mostly works*. So the bug passes the tests, ships, and shows up as an
+  occasional freeze under load.
+
+  If something really must be printed from a handler on Unix, use `write` — a
+  function POSIX separately guarantees to be *async-signal-safe*. The second
+  demonstration does exactly that.
 ]
 
-== The remaining promotions and the new words
+=== What `sig_atomic_t` really is
 
-*`static_assert`* — checks a condition at compile time and, if it is broken,
-*translation fails*. The example's first line is that. It differs in character from
-the run-time `assert` (chapter 65) — this one is a tool asking "does this code hold
-on this machine", used for pinning assumptions about type sizes, alignment and
-struct layout into the code. In C23 the message may be omitted.
+`sig_atomic_t` is an integer type whose value *never appears half-written* even
+when a signal cuts in. Why does such a type need to exist? Because a large integer
+may be stored in two steps on some machines, and a signal arriving in between
+would see a half-changed value.
 
-*`alignas`, `alignof`* — the words for handling in the language the alignment seen
-in chapter 6. They are used to lay things out to fit a cache line (chapter 11's
-avoidance of false sharing) or to meet an alignment the hardware requires.
+`volatile` is there for a different reason. The compiler may decide "nothing in
+this loop changes `stop`" and delete the test altogether (chapter 14's
+optimisation). `volatile` says *really read it every time*. The two do different
+jobs, so *both* are needed — `volatile sig_atomic_t`.
 
-*`thread_local`* — makes a variable that exists separately per strand. It is a tool
-for avoiding the problem of sharing seen in chapter 69 *by not sharing*. `errno` is
-in fact implemented this way (chapter 65).
+#dtable(
+  columns: 3,
+  [*What*], [*What it prevents*], [*Without it*],
+  [`sig_atomic_t`], [Seeing a half-written value], [A partially updated value can be read],
+  [`volatile`], [The compiler eliding the read], [The loop never sees the flag],
+)
 
-*`constexpr`* — as seen in the example, it makes a real constant. A `const int` is
-not a constant *expression* and so could not be used for an array size or a `case`
-label (chapter 23), and that place was long the part of `#define`. `constexpr`
-reclaims that place with a typed name — this chapter's theme of macros being
-promoted into the language is repeated here too.
+Since C11, lock-free atomic types such as `atomic_int` may also be used in a
+handler (chapter 74). In a program with several threads that is the more accurate
+choice — `sig_atomic_t` guarantees only *signal versus main flow*, not thread
+against thread.
 
-*`typeof`* — takes an expression's type down as it is. What had been used as a GCC
-extension for over thirty years became standard. It is especially handy when
-declaring a temporary variable inside a macro.
+== Handlers and memory — why `malloc` is not on the list
 
-#realcase[
-  The story of the underscored names — why `_Bool` looks like that
-][
-  Why was it not called `bool` from the start? Because if the standard makes a new
-  keyword, all existing code already using that word as a name breaks. The world had
-  mountains of code containing `typedef int bool;` or `struct bool { … };`.
+The most keenly felt absence from the permitted list is memory allocation. To
+record anything inside a handler you need a vessel, and neither `malloc` nor
+`free` may be called. Seeing why at the machine level makes the rule stick.
 
-  So the standard uses *a name space reserved so that users cannot use it* — names
-  beginning with one underscore and a capital letter. `_Bool`, `_Static_assert`,
-  `_Alignas`, `_Atomic` (chapter 69) and `_Generic` are all products of this rule.
-  And headers laid pretty names on top as macros, so that *only those who included
-  them* used the short names. Old code that did not include them breaks in nothing.
+An allocator manages a data structure called the *free list* (chapter 42). One
+`malloc` is a multi-step update that detaches a piece from that list and rewrites
+the links of its neighbours. There is necessarily a moment when the update is
+half done, and a signal can cut in *at exactly that moment*.
 
-  C23's promotion is the judgement that "enough time has passed that the short names
-  may now be used". Even so the underscored names are still alive, and the two names
-  point at the same thing. It is a case where the standard's habit of not breaking
-  old code remains even in the names — the same character as chapter 59's `gets`
-  story, and a decision in the opposite direction.
-]
+#dtable(
+  columns: 2,
+  [*The moment it cuts in*], [*If the handler calls `malloc`*],
+  [The free-list links are half rewritten], [It follows a half-rewritten list and hands out the wrong piece],
+  [Just before the block's size is written], [A later `free` returns it with the wrong size],
+  [While the allocator's lock is held], [It waits for a lock it holds itself — deadlock],
+)
 
-== How to move existing code over
+The third row is the nastiest. Modern allocators keep an internal lock against
+being called from several threads at once. Let the thread holding that lock take
+a signal, and let the handler call `malloc` again, and the lock is never
+released. *The program does not die; it stops* — the hardest kind of accident to
+diagnose.
 
-There is no need to change it all at once. Fix an order and there is almost no
-risk.
-
-+ *First settle the compiler edition.* Check whether `-std=c23` (or `c2x`) can be
-  used, and whether it works on all the target platforms. If even one does not, go
-  to the shell strategy of number 5 below.
-+ *Clear away your own `BOOL`, `TRUE`, `FALSE`.* Delete the project header's
-  `typedef int BOOL;` and change it to `bool`. While doing so, look together for
-  *places that were comparing values* (the counterexample above) — it is rather a
-  place where bugs come to light.
-+ *Change `NULL` to `nullptr`.* Mechanical substitution finishes most of it, but
-  check two places by hand. Variadic calls (a real bug is mended here), and code
-  that used `NULL` like the integer 0 (a compile error arises here — which is a good
-  thing).
-+ *Take `_Static_assert`, `_Alignas` and `_Thread_local` to the names without
-  underscores.* They are different notations for the same thing, so there is no
-  risk. Then tidy away the now unnecessary `<stdbool.h>` and `<stdalign.h>`
-  includes.
-+ *If old editions must be supported too, put the shells in one place.* The same as
-  what was done in chapter 70.
-
-  ```c
-  #if __STDC_VERSION__ < 202311L
-  #  include <stdbool.h>
-  #  define nullptr ((void *)0)      /* not a complete substitute — see the caution below */
-  #  define static_assert _Static_assert
-  #endif
-  ```
-
-  This `nullptr` shell *cannot imitate the type as well.* In code doing `_Generic`
-  branching or type checking it may behave differently from expectations, so if
-  there is such code it is right to raise the edition rather than use the shell.
+There is one worse combination. Escaping from a handler with `longjmp`
+(chapter 72). Here the trouble comes without calling `malloc` again — because you
+*jump out still holding the lock*. From then on the main flow's first `malloc`
+hangs. Half the reason chapter 72 calls jumping from a handler dangerous is this.
 
 #qa[
-  For a project that must keep compiling with an old standard, is this chapter
-  somebody else's story?
+  Then what do you do when a handler really must record something?
 ][
-  No — two things remain. First, *the ability to read*. New code and libraries have
-  begun using these words, so when a `constexpr` or a `nullptr` appears you must
-  know its meaning. Second, *what to mend now*. Places passing `NULL` into variadic
-  arguments with the cast left out, places comparing truth with `== 1`, places
-  making constants with `#define` and losing the type — these are already dangerous
-  under the old standard too. C23's words merely have the language block that danger
-  for you; the danger itself was there all along.
+  *Take it in advance.* Allocate the vessel you need *before* installing the
+  handler, and let the handler only write into it. A static array is better still
+  — there is no allocation at all.
+
+  ```c
+  static char report[4096];               /* obtained up front */
+  static volatile sig_atomic_t report_len;
+  ```
+
+  If the amount to record is not bounded, it was never a job for a handler. Raise
+  a flag and hand it to the main flow. If something truly must be recorded now —
+  a crash report, where the next moment is certain death — put it in a
+  pre-allocated buffer and push it out with `write`. That is what Redis's crash
+  report, seen later, does.
+]
+
+== What a signal saves and restores — the register context and `errno`
+
+A handler cuts in halfway through a function and *returns to exactly that place*,
+even though half-computed values are scattered across the registers. How?
+
+*Because the operating system saves every register and restores them.* When
+delivering a signal the kernel builds a signal frame on the stack and puts the
+whole current register set into it (on Linux, `ucontext_t` is that vessel). When
+the handler returns, `sigreturn` puts those values back. So *whichever
+instruction boundary it cut in at, the computation carries on.*
+
+#demo("examples-en/ch71/sig_context.c")
+
+The third part of the demonstration confirms it. A signal taken in the middle of
+a thousand-round computation (at round 500) leaves the result equal to the one
+computed undisturbed.
+
+#qa[
+  Does `setjmp`/`longjmp` not do the same thing?
+][
+  No. This is the decisive difference between the two devices.
+
+  #dtable(
+    columns: 3,
+    keycol: false,
+    [], [*A signal*], [*`longjmp` (chapter 72)*],
+    [Who saves], [The kernel], [The `setjmp` macro],
+    [What is saved], [*Every* register], [Only the callee-saved ones (eight slots)],
+    [Where it returns], [The very instruction interrupted], [The place that called `setjmp`],
+    [Local variables], [All intact], [*No guarantee unless `volatile`*],
+  )
+
+  A signal, then, is *a complete context switch*, and `longjmp` is *a partial
+  restoration*. That is why a handler may return into the middle of an expression
+  while `longjmp` may only be used in the four contexts the standard fixes
+  (chapter 72).
+]
+
+=== `errno` is the exception — you must look after it yourself
+
+If the kernel looks after the registers, what is left? *State at the C level.*
+The one most often hit is `errno`.
+
+A handler that calls nothing but `write` still changes `errno` when that call
+fails. If the main flow was about to read the reason for a failed call, the value
+it reads is the one the signal left behind.
+
+The first part of the demonstration shows it in the flesh — `errno`, which was
+`ENOENT` (2) before the signal, came back as `EBADF` (9) after the handler. An
+attempt to open a missing file was turned into a bad-file-descriptor error.
+
+The prescription is two lines. *Save on the way in, restore on the way out.*
+
+```c
+static void on_signal(int sig) {
+    int saved = errno;          /* first line */
+    /* … raise a flag, write, … */
+    errno = saved;              /* last line */
+}
+```
+
+Code that omits it *mostly works* — the fault shows only when a signal happens to
+arrive at that moment. So it is better kept as a discipline.
+
+#platform[
+  Where the stack goes — the red zone and an alternate stack
+][
+  The kernel builds the signal frame *on the current stack*. Two pieces of
+  practical knowledge follow.
+
+  First, the x86-64 SysV convention has a 128-byte *red zone* below the stack
+  pointer that a function may use without growing the stack. The kernel skips
+  that zone when building a signal frame — otherwise it would overwrite the
+  interrupted function's temporaries. The practice of building kernel code with
+  `-mno-red-zone` comes from here.
+
+  Second, if the `SIGSEGV` came from *the stack overflowing*, there is no stack on
+  which to build the handler either. So POSIX provides `sigaltstack` to register a
+  separate stack for handlers, used by passing `SA_ONSTACK`. Tools that diagnose
+  stack overflow stand on this device.
+]
+
+== The working pattern — raise a flag and return at once
+
+Given so short a permitted list, handlers in practice converge on one shape.
+
+#demo("examples-en/ch71/sig_flag.c")
+
+*The handler only raises a flag. Judgement and cleanup belong to the main flow.*
+The demonstration's `serve` is that structure — it loops, sees the flags, and
+either reloads its configuration or cleans up and goes down. Printing, closing
+files and freeing all happen inside the loop.
+
+Three things make the pattern good. *It is safe* — the handler does one
+assignment, so it cannot leave the permitted list. *The moment is yours* — the
+main flow decides whether to finish the current request first. *It is testable* —
+raise the flag directly and the same path can be exercised without any signal.
+
+#realcase("Why the output order looked reversed")[
+  The first run of the demonstration printed the handler's output *before* the
+  `puts`. Not a bug but buffering — `printf` and `puts` accumulate in the stdout
+  buffer and flush later, while the handler's `write` goes straight out, bypassing
+  it (chapter 59's buffering).
+
+  That small observation re-explains the misconception above. The handler and the
+  main flow share a buffer but *do not write by the same rules*. So the
+  demonstration used `fflush` to line the order up, and practice avoids printing
+  from handlers altogether.
+]
+
+== POSIX's `sigaction` — filling the standard's gaps
+
+What Unix-like systems actually use is `sigaction`. It fills exactly three gaps in
+the standard `signal`.
+
+#dtable(
+  columns: 3,
+  [*Gap*], [*Standard `signal`*], [*`sigaction`*],
+  [Does the handler survive?], [Implementation-defined (it vanished in the demonstration)], [It stays, unless `SA_RESETHAND` is given],
+  [If the same signal arrives while handling], [Implementation-defined], [Blocked by default; `sa_mask` blocks more],
+  [Interrupted system calls], [Not settled], [Restarted automatically with `SA_RESTART`],
+)
+
+#demo("examples-en/ch71/sig_action.c")
+
+=== Inside `struct sigaction`
+
+This structure is this chapter's data-type story. POSIX fixes four members and
+does *not* fix their order (so it must be started with a designated initializer or
+`memset`).
+
+#dtable(
+  columns: 3,
+  [*Member*], [*Type*], [*What it is*],
+  [`sa_handler`], [`void (*)(int)`], [The plain handler, shaped like the standard's],
+  [`sa_sigaction`], [`void (*)(int, siginfo_t *, void *)`], [The one used with `SA_SIGINFO`; more information arrives],
+  [`sa_mask`], [`sigset_t`], [Signals blocked *while this handler runs*],
+  [`sa_flags`], [`int`], [Flags choosing the behaviour (below)],
+)
+
+`sa_handler` and `sa_sigaction` usually *overlap in a union* (chapter 44). So only
+one is filled, and the `SA_SIGINFO` flag says which.
+
+The four flags most often seen:
+
+#dtable(
+  columns: 2,
+  [*Flag*], [*Meaning*],
+  [`SA_SIGINFO`], [Use the three-argument handler — who sent it, and why],
+  [`SA_RESTART`], [Automatically restart system calls interrupted by the signal],
+  [`SA_NOCLDWAIT`], [Leave no zombie when a child ends (`SIGCHLD`)],
+  [`SA_RESETHAND`], [Reset to the default after one delivery, the old way],
+)
+
+=== `siginfo_t` — who sent it, and why
+
+With `SA_SIGINFO` the handler receives a `siginfo_t *`. The members most used:
+
+#dtable(
+  columns: 2,
+  [*Member*], [*What it is*],
+  [`si_signo`], [The signal number],
+  [`si_code`], [*Why* it came — `SI_USER` (kill), `SI_KERNEL`, `SI_TIMER`, …],
+  [`si_pid`], [The sending process's id],
+  [`si_uid`], [The sending user's id],
+  [`si_addr`], [For `SIGSEGV` and `SIGBUS`, *the address that faulted*],
+)
+
+The demonstration prints `si_code`. Raised at ourselves, Linux put `SI_TKILL`
+(−6) there — "sent by the same thread". The names and meanings of these values
+differ per implementation, so *check that platform's documentation before
+branching on one.*
+
+`si_addr` earns its keep in debugging. Record it in a `SIGSEGV` handler and you
+learn "which address it died touching" — though it cannot be printed from inside
+that handler (the permitted list), so raw bytes are usually written with `write`
+and the program ended with `_Exit`.
+
+=== Blocking a signal for a while — the mask
+
+`sigprocmask` declares "I will not receive this signal for now". A signal arriving
+while blocked does not vanish; it stays *pending* and is delivered the moment the
+block is lifted. The demonstration's last block is that scene — raised while
+blocked, the count stayed put; unblocked, it rose at once.
+
+Where this is needed is clear. When a signal must not cut in while a data
+structure is being fixed, block it for that stretch. It makes a *critical section*
+against signals as well.
+
+== Real uses
+
+Now to what signals actually do in practice.
+
+#dtable(
+  columns: 3,
+  [*Signal*], [*Use*], [*Representative case*],
+  [`SIGTERM`], [*A graceful shutdown request* — time to clean up], [`kill`'s default, container shutdown in Docker and Kubernetes],
+  [`SIGINT`], [The user's interruption (Ctrl+C)], [A command-line tool wrapping up its work],
+  [`SIGKILL`], [Kill at once — *cannot be caught*], [The last resort when graceful shutdown fails],
+  [`SIGHUP`], [Re-read configuration (by convention)], [nginx and Apache reloading without downtime],
+  [`SIGCHLD`], [A child has ended], [Shells and servers reaping zombies],
+  [`SIGPIPE`], [Wrote to a pipe whose reader is gone], [Servers mostly ignore it and handle `EPIPE`],
+  [`SIGWINCH`], [The terminal was resized], [`vim` and `top` redrawing the screen],
+  [`SIGUSR1`, `SIGUSR2`], [The application decides the meaning], [nginx's live binary upgrade, reopening log files],
+)
+
+=== Graceful shutdown — the most widely used pattern
+
+It became especially important in the container world. An orchestrator taking a
+container down sends `SIGTERM` first, and kills it with `SIGKILL` if it has not
+finished within the grace period (usually 30 seconds). So a server receiving
+`SIGTERM` must *stop accepting new requests, finish those in flight, close its
+connections and go down*.
+
+The flag pattern above does exactly this work. The handler only sets `stop = 1`
+and the main loop sees it and walks through the cleanup.
+
+=== `SIGPIPE` — the signal whose right answer is to ignore it
+
+Write to a pipe or socket whose reader has already gone and `SIGPIPE` arrives. The
+default action is *terminating the process* — for a web server, dying because a
+client closed a window.
+
+So network programs almost invariably begin like this:
+
+```c
+signal(SIGPIPE, SIG_IGN);   /* let write return -1/EPIPE instead of a signal */
+```
+
+Ignored, `write` returns the failure *as a value* (`errno == EPIPE`). Chapter 70's
+"failure as a value" is the better arrangement here too.
+
+=== Interrupted system calls — `EINTR`
+
+When a signal arrives, slow system calls such as `read` and `write` are *cut off*,
+return −1 and put `EINTR` in `errno`. Not knowing this produces the ghost bug of
+"reads sometimes fail".
+
+There are two prescriptions: give `SA_RESTART` so the kernel restarts them, or
+retry by hand.
+
+```c
+ssize_t n;
+do { n = read(fd, buf, len); } while (n < 0 && errno == EINTR);
+```
+
+`SA_RESTART` is not a cure-all either — some calls are not restarted (notably
+those with timeouts), so robust code keeps the retry loop as well.
+
+#realcase("The self-pipe trick and its descendants")[
+  Mixing signals with an event loop was a long-standing nuisance. A signal arriving
+  while waiting in `select` or `poll` breaks the loop, and almost nothing may be
+  done inside the handler.
+
+  So in the 1990s the *self-pipe trick* appeared. A program makes a pipe to itself,
+  and the handler writes a single byte into it (`write` is on the safe list). The
+  event loop then receives that as *an ordinary readable event* — the signal has
+  been turned into a file descriptor.
+
+  Today Linux offers `signalfd`, providing the idea in the kernel directly, and the
+  BSDs have `kqueue`'s `EVFILT_SIGNAL`. Different names, same idea — *turn a signal
+  from an asynchronous interruption into an event that queues.*
+]
+
+#qa[
+  In a program with several threads, where does a signal go?
+][
+  A delicate place, and without knowing the rules it becomes a bug that is hard to
+  reproduce.
+
+  A signal sent to the process (`kill`) is delivered to *any one thread that has
+  not blocked it* — which one is not fixed. `pthread_kill`, by contrast, goes to
+  the thread named. And while handlers are shared by the whole process, *the mask
+  is per thread*.
+
+  So the standard practice is this — *block the signal in every thread and let one
+  dedicated thread wait for it with `sigwait`*. The signal then turns from an
+  asynchronous interruption into an ordinary function return, and inside that
+  thread `printf` and `malloc` are free to use. It is the same idea as `signalfd`
+  above.
+]
+
+=== Which software uses signals, and why
+
+The reason for using signals differs from program to program, and those reasons
+make the device's place clear.
+
+#dtable(
+  columns: 3,
+  [*What*], [*What it uses them for*], [*Why it had to be a signal*],
+  [nginx, Apache], [`SIGHUP` to reload configuration, `SIGUSR2` to swap the executable], [The cheapest channel by which an operator gets *from outside to inside*. No port, no socket],
+  [PostgreSQL], [Query cancellation and shutdown requests (the handler only raises a flag)], [One process per connection, so a signal between processes *is* the means of communication],
+  [Redis], [`SIGSEGV`/`SIGBUS` handlers that print a crash report], [The *last chance* to record the state at the moment of death — into a pre-allocated buffer, out through `write`],
+  [The HotSpot JVM], [`SIGSEGV` for null checks and safepoints], [Removes the check from the normal path entirely and leaves the rare case to a hardware trap],
+  [WebAssembly runtimes], [`SIGSEGV`/`SIGBUS` trap handlers for out-of-bounds access], [Leaves bounds checking to guard pages, removing a compare from every access],
+  [The Boehm GC], [`mprotect` + `SIGSEGV` as a write barrier, signals to stop threads], [The only way to put a collector on a C program without help from the language],
+  [libuv, Node.js], [A dedicated thread and a pipe turn signals into events], [To mix with an event loop, a signal must become a file descriptor],
+  [CPython], [The handler only raises a flag; the bytecode loop checks it], [Interpreter state cannot be touched from a handler — the permitted list again],
+  [libcurl], [Ignores `SIGPIPE`; older versions used `SIGALRM` to time out name resolution], [A legacy of days with no other way to impose a timeout. Risky enough to deserve its own off switch (`CURLOPT_NOSIGNAL`)],
+)
+
+They sort into three groups. *Instructions arriving from outside* (nginx,
+PostgreSQL — the channel of operation), *lifting a hardware trap into user code*
+(the JVM, WebAssembly, the GC, Redis — emptying the normal path and signalling
+only the exception), and *turning signals into events* (libuv, CPython — the
+modern prescription for getting around the permitted list).
+
+The middle group is the interesting one. "Remove the null check and catch it with
+`SIGSEGV`" is the archetype of an optimization that *pushes the cost onto the
+rare case* — one instruction is deleted from the normal path at the price of a
+long trip through the kernel and a handler when the accident happens. It is the
+same calculation as chapter 11's "a rare branch may be expensive."
+
+#antipattern("cleaning up directly in the handler")[
+  ```c
+  static void on_term(int sig) {
+      (void)sig;
+      fclose(logfile);        /* standard library — forbidden */
+      free(buffer);           /* forbidden */
+      printf("bye\\n");        /* forbidden */
+      exit(0);                /* exit is forbidden too (_Exit is allowed) */
+  }
+  ```
+  All four are outside the permitted list. And this code is more dangerous for
+  *mostly working* — the trouble only surfaces under load or when signals crowd in.
+
+  The correct form is one flag.
+
+  ```c
+  static volatile sig_atomic_t stop;
+  static void on_term(int sig) { (void)sig; stop = 1; }
+  ```
 ]
 
 #recap[
   #dtable(
     columns: 2,
-    [*to remember*], [*the point*],
-    [the meaning of promotion], [macro (letter substitution) → keyword (type, diagnosis, no redefinition)],
-    [`bool`], [it *normalises* nonzero values to 1 — comparing truths becomes safe],
-    [printing a `bool`], [`%d` (promoted to `int` in variadic arguments)],
-    [`nullptr`], [not a name but *a new type*. it prevents variadic and `_Generic` accidents],
-    [`nullptr`'s limits], [no comparison with or conversion to an integer. false as a `bool`],
-    [`constexpr`], [reclaims `#define` constants with a typed name],
-    [underscored names], [a product of the reserved name space, to avoid breaking old code],
-    [the order of moving], [check the edition → remove your own BOOL → substitute NULL → tidy underscores → shells],
+    [*What to keep*], [*The point*],
+    [What it is], [Neither a thread nor a call — a third thing that cuts in unpredictably],
+    [The standard's scope], [Two functions (`signal`, `raise`) and six signals],
+    [`signal`'s return], [*The previous* disposition; `SIG_ERR` means failure],
+    [Inside a handler], [The permitted list is all there is — in practice, one assignment],
+    [`volatile sig_atomic_t`], [Both are needed: one against half values, one against optimisation],
+    [Allocation], [`malloc` is barred by the free list and the lock — obtain vessels *in advance*],
+    [Context], [The kernel restores every register. Only `errno` must be saved by hand],
+    [POSIX], [`sigaction` fills the three gaps (reset, re-entry, `EINTR`)],
+    [In practice], [Handler raises a flag, the main flow cleans up; ignore `SIGPIPE`],
+    [Modern alternatives], [`signalfd`, `kqueue`, a dedicated thread — turn signals into *events*],
   )
 ]
 
-Across thirteen chapters we have walked the terrain of the standard library and the
-newest standard. We have seen what the standard promises and what it does not,
-where it is slippery and why.
-
-The two remaining chapters of this part go one layer down. The place chapter 42
-passed over saying only "it is expensive" — what map a program's memory is laid out
-on in an operating system and in an embedded chip respectively (chapter 72), and
-what an allocator actually does in the heap region of that map (chapter 73). Those
-two chapters become the ground for understanding the next part's design.
+We have handled the interruption that arrives from outside. The next chapter is
+its opposite — the device with which a program cuts its own flow and leaps back
+up the stack, `setjmp` and `longjmp`.

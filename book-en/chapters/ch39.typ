@@ -90,7 +90,7 @@ implementation's kindness, not the language's guarantee.
 
 *C++ differs.* In C++ a string literal's type is `const char[N]`, and the first line
 above is *a compile error*. This item belongs in the list of "differences between the
-two languages" seen in chapter 85.
+two languages" seen in chapter 90.
 
 #qa[
   Why did C not attach `const`?
@@ -104,7 +104,7 @@ two languages" seen in chapter 85.
   *the standard is an institution that must protect existing code*, so when "the right
   type" and "code already written" collide it leans towards the latter. C++, first
   standardised in 1998, carried no such burden and could attach `const` from the start
-  (chapter 85's "siblings, not parent and child" is confirmed here too).
+  (chapter 90's "siblings, not parent and child" is confirmed here too).
 
   So discipline stands in for the language. *A pointer at a literal is always declared
   `const char *`.* Then what the type cannot do has been written in by a human, and from
@@ -222,7 +222,7 @@ managed under names. It contrasts with passing a variable, as in
 *concatenation finishes at compile time, so the result is still one literal.*
 
 *The standard library uses the same technique.* The format macros of `<inttypes.h>`
-seen in chapter 68 and appendix B stand exactly on this rule.
+seen in chapter 73 and appendix B stand exactly on this rule.
 
 ```c
 printf("total = %" PRIu64 "\n", total);

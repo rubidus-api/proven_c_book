@@ -120,7 +120,7 @@ address" but *counting in slots*. Only on a `char *` is 1 one byte; on an
 The first block of output shows the whole rule. The same `+ 1` moves a different
 distance for each type, and the distance is exactly `sizeof`. So `(char *)p + 1`
 and `p + 1` point at different places — which is where the idiom of casting to a
-character pointer to move by bytes comes from (chapter 77's views do this).
+character pointer to move by bytes comes from (chapter 82's views do this).
 
 The second block is *subtraction*. `&a[4] - &a[1]` is 3, not 12 — pointer
 subtraction gives a count of *elements*, not of bytes. And that is why the result

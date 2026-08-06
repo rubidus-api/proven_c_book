@@ -1,179 +1,166 @@
 #import "../../book/lib.typ": *
 
-= Characters and locales — `<ctype.h>`, `<locale.h>`, `<wchar.h>`
+= Character classification — `<ctype.h>`
 
 #prereq(
   ([chapter 9, Characters and text], [letters and encodings]),
+  ([chapter 26, Integers], [the signedness of `char`]),
 )
 
 #deepqa[
-  Chapter 9 said a character is a number in a code chart and an encoding is the way
-  of writing that number as bytes. Then what is a call like `isalpha('가')` asking?
+  Chapter 9 said a character is a number in a code table and an encoding is a way
+  of writing that number in bytes. What, then, is a call like `isalpha('가')`
+  asking?
 ][
-  It is a wrongly thrown question. The functions of `<ctype.h>` judge *one byte*. In
-  UTF-8 "가" is three bytes, so it cannot go in as an argument to begin with, and
-  even if it did each byte would merely be looked at separately. This header is a
-  tool of the ASCII days; to handle multibyte characters you need the wide-character
-  family (`<wctype.h>`) or code that handles the encoding yourself.
+  It is the wrong question. The functions of `<ctype.h>` judge *one byte*. In
+  UTF-8 "가" is three bytes, so it cannot even be passed as the argument, and if
+  it were, each byte would be looked at separately. This header is a tool from
+  the ASCII era.
+
+  So this chapter is short. The contract of twelve functions, and the rule broken
+  most often in all of C — *passing a `char` straight in is outside the
+  contract* — is all of it. The two large subjects waiting behind it, locales and
+  multibyte characters, belong to the next five chapters.
 ]
 
 #organizer[
-  We look at the functions that handle a single character. It is the simplest
-  header in appearance, yet two of C's subtlest traps are here — that *passing a
-  `char` as it stands is outside the contract*, and that *the answer depends on the
-  global state called the locale*. Chapter 9's encoding story returns at the level
-  of functions.
+#idx("character classification")  The functions that judge a single byte. A map of the twelve, the exact range of
+  values allowed as the argument, why `EOF` is mixed in among them, and the fact
+  that even this judgement is changed by the locale.
 ]
 
 #chapter-questions()
 
-== The first trap — do not pass a `char` as it stands
+== A map of the twelve functions
+
+`<ctype.h>` fixes eleven predicates and two conversions. The naming rule is
+simple — `is` asks a true-or-false question, `to` changes something.
+
+#dtable(
+  columns: 3,
+  [*Function*], [*True for*], [*In the "C" locale*],
+  [`isalpha`], [Letters], [`A`\~`Z`, `a`\~`z`],
+  [`isdigit`], [Digits], [`0`\~`9` — *these ten, regardless of locale*],
+  [`isalnum`], [Letters or digits], [The two above together],
+  [`isspace`], [Whitespace], [space, `\t`, `\n`, `\v`, `\f`, `\r`],
+  [`isblank`], [Whitespace within a line], [space, `\t`],
+  [`isupper`·`islower`], [Upper- and lower-case], [`A`\~`Z` / `a`\~`z`],
+  [`ispunct`], [Printing, and neither alphanumeric nor space], [`!`, `,`, `\#`, …],
+  [`isprint`], [Printing characters (space included)], [0x20\~0x7E],
+  [`isgraph`], [Printing and not a space], [0x21\~0x7E],
+  [`iscntrl`], [Control characters], [0x00\~0x1F, 0x7F],
+  [`isxdigit`], [Hexadecimal digits], [`0`\~`9`, `A`\~`F`, `a`\~`f`],
+  [`toupper`·`tolower`], [(conversion) to upper or lower case], [Returned unchanged if it does not apply],
+)
+
+`isdigit` is special. The standard nails the set of characters for which it is
+true to the ten from `0` to `9`, *regardless of the locale*. That contrasts with
+the other predicates, which may widen. It is the one thing code that parses
+numbers can lean on.
+
+== The first trap — never pass a `char` straight in
 
 #demo("examples-en/ch62/ctype.c")
 
-Every function of `<ctype.h>` takes an `int`. And the argument value the standard
-requires is *a value representable as an `unsigned char`, or `EOF`*.
+Every function in `<ctype.h>` takes an `int`. And the value the standard requires
+of that argument is *one representable as an `unsigned char`, or `EOF`*.
 
-The problem is that implementations where `char` is signed are common
-(chapter 26). As the example's output shows, put a 0xC7 byte in a `char` and it
-becomes −57, and passing that straight to `isalpha` is passing *a value that is not
-permitted* — outside the contract. Real implementations are mostly built as array
-indexes, so the accident of reading before the array with a negative index occurs.
+The trouble is that `char` is signed on many implementations (chapter 26). As the
+example prints, the byte 0xC7 held in a `char` becomes −57, and passing that
+straight into `isalpha` passes *a value that is not allowed* — outside the
+contract. Real implementations are usually built as array lookups, so it becomes
+a read from before the start of an array.
 
-The idiom is one.
+There is one idiom.
 
 ```c
 isalpha((unsigned char)c)
 toupper((unsigned char)c)
 ```
 
-That `EOF` is a valid argument is worth remembering too — that is why the argument
-type is `int` and not `char` (the same root as chapter 58's `fgetc` story).
-
 #antipattern[
-  Passing a `char` as it stands
+  Passing a `char` straight in
 ][
   ```c
   char *p = line;
-  while (*p) { if (isspace(*p)) ... ; p++; }   /* outside the contract at bytes ≥ 0x80 */
+  while (*p) { if (isspace(*p)) ... ; p++; }   /* outside the contract past 0x80 */
   ```
-  Unless there is a guarantee that only ASCII arrives, always convert.
+  Unless ASCII is guaranteed, always convert.
   ```c
   while (*p) { if (isspace((unsigned char)*p)) ... ; p++; }
   ```
-  In a program handling Korean, Japanese or European text, this one line divides a
-  real accident from no accident.
+  In a program that handles Korean, Japanese or European text, this one line is
+  the difference between an accident and none.
 ]
 
 #qa[
-  If a program only ever handles ASCII, can locales and wide characters be ignored?
+  If a program only ever sees ASCII, may the conversion be skipped?
 ][
-  It looks that way for a while, and then two places catch you. First, programs
-  mostly receive other people's input — nothing stops a file name, a user name or
-  a pasted string from carrying Korean or an emoji. Second, the locale changes
-  *even the handling of ASCII*. The famous case is the Turkish locale, where
-  `toupper('i')` becomes the dotted capital `İ`; in a locale whose decimal point
-  is a comma, even `printf("%f")` prints differently.
+  Programs in which "only ASCII arrives" actually holds are rarer than they look.
+  A program mostly takes *someone else's input* — file names, user names, pasted
+  strings, and there is no way to stop Korean or an emoji from being among them.
+  One command-line argument is enough to bring in a byte above 0x80.
 
-  So this book's advice is not "you may ignore it" but *"be aware of the moment
-  you step outside the default locale."* A design that handles bytes as they are,
-  like chapter 79's UTF-8 views, shrinks the problem the most.
+  And it costs nothing. An `(unsigned char)` conversion usually generates no
+  instruction at all — one of the few places where staying inside the contract is
+  free.
 ]
 
-== The second trap — the locale
+== The second trap — `EOF` is mixed in
 
-The judgements of `<ctype.h>` depend on *the current locale*. The default is the
-`"C"` locale, and calling `setlocale(LC_ALL, "")` changes it to the locale the
-environment variables settle. From that moment the set of bytes for which
-`isalpha` returns true may differ.
+There is a reason the argument type is `int` and not `char`. *`EOF` is a valid
+argument too.* What `fgetc` returns must be passable straight in (chapter 58), and
+that value may be a byte or may be `EOF`.
 
-What the locale changes is not only character classification.
+```c
+int c;
+while ((c = fgetc(f)) != EOF)
+    if (isalpha(c)) ...          /* what fgetc gave is already unsigned char or EOF */
+```
 
-#dtable(
-  columns: 3,
-  [*category*], [*what changes*], [*where to beware*],
-  [`LC_CTYPE`], [character classification, case conversion], [`isalpha`, `toupper`],
-  [`LC_NUMERIC`], [the decimal point character], [★ `printf("%f")`, `strtod`],
-  [`LC_COLLATE`], [string sorting order], [`strcoll`, `strxfrm`],
-  [`LC_TIME`], [date and time notation], [`strftime` (chapter 64)],
-  [`LC_MONETARY`], [currency notation], [`localeconv`],
-)
+Receive `c` as a `char` here and two things break at once — `EOF` becomes
+indistinguishable from the byte 0xFF, and the value can go negative and fall into
+the first trap. Chapter 58's rule, "always receive what `fgetc` returns in an
+`int`", comes back here.
 
-`LC_NUMERIC` is especially dangerous. In German and French locales the decimal
-point is a comma, so `printf("%f", 3.14)` prints `3,140000` and
-`strtod("3.14", …)` stops at 3. It means that *numbers to be shown to a human* and
-*numbers to be written to a file or protocol* must follow different rules.
+== The judgement depends on the locale
 
-#realcase[
-  The pattern in which a locale wrecked data
-][
-  It really has happened repeatedly that the same program writes `3.14` on the
-  developer's machine (an English locale) and `3,14` on the user's machine (a
-  German locale). A CSV file fails to parse column by column, a configuration file
-  cannot be read back after being saved, or the JSON two countries' servers
-  exchange goes out of step.
+The set of bytes for which `isalpha` is true is not fixed. *The current locale*
+(precisely, the `LC_CTYPE` category) settles it. A program starts in the `"C"`
+locale, so at first the basis is ASCII — but it can change the moment
+`setlocale` is called.
 
-  The prescription is clear. *Numbers a machine will read are handled by a path
-  that does not depend on the locale* — keep the `"C"` locale, handle the notation
-  of the digits yourself, or use locale-independent functions. It is also why C11's
-  `<uchar.h>` and several libraries lay a separate path to avoid this problem.
-]
+And it is not only the predicates. `toupper('i')` becoming the dotted capital
+`İ` in a Turkish locale is the famous case, and in a locale whose decimal point
+is a comma even the output of `printf("%f")` changes.
 
-#misconception[
-  "If `setlocale` is not called there is no locale problem"
-][
-  Broadly right, but there is an exception. *Another library* the program uses may
-  call `setlocale` (GUI toolkits commonly do), and from that moment my code's
-  `printf("%f")` is affected too. Moreover the locale is *process-global*, so in a
-  program running along several strands it becomes a race. Thread-local locales
-  such as POSIX's `uselocale` and `newlocale` arose for that reason, but they are
-  not in standard C.
-]
+*The locale is a subject in its own right.* By what rule its names are made,
+which standards fix them, and how much it changes are the next two chapters
+(chapters 63 and 64).
 
-== Wide characters — `<wchar.h>`, `<wctype.h>`, `<uchar.h>`
+== It means nothing for multibyte characters
 
-C95 brought in `wchar_t` and its functions. The idea was "one character as one
-unit", but reality betrayed the idea.
+One thing remains. The functions of this header look at *one byte*. "한" in UTF-8
+is three bytes, so no byte of it means anything on its own — passing 0xED to
+`isalpha` asks "is this fragment a letter?", and that question has no answer.
 
-- The *size of `wchar_t` differs by implementation.* Linux has 4 bytes (close to
-  UTF-32), Windows 2 bytes (it being UTF-16, characters of the supplementary
-  planes become two units). That is, "one character = one `wchar_t`" does not hold
-  everywhere.
-- The conversion functions (`mbstowcs` and so on) *depend on the locale.* To handle
-  a UTF-8 string the locale must be UTF-8.
-- So portable programs often choose, instead of wide characters, to *handle the
-  UTF-8 byte sequence as it is*.
-
-The `char16_t` and `char32_t` of `<uchar.h>`, added by C11, have fixed sizes and so
-avoid this problem. But library support is thin, so in the field a dedicated
-Unicode library is still used, or it is handled by hand.
-
-#platform[
-  Windows and UTF-16
-][
-  The "W" family of Windows API functions takes UTF-16 (`wchar_t`). So a Windows
-  program must go between UTF-8 and UTF-16 at the boundary, and it must not be
-  forgotten that this conversion can fail (unpaired surrogates). It is the place
-  where chapter 17's chain-of-encodings story is replayed at the API layer, and the
-  `u16` family treated in Part XII's string chapter is exactly the tool that lays
-  this bridge.
-]
+To judge a character made of several bytes, there are two roads. Convert to *wide
+characters* and use `<wctype.h>`'s `iswalpha` (chapters 65 and 66), or *work on
+the byte string as it is* and do only the judgements you need yourself
+(chapter 67). This book recommends the latter, and chapter 67 says why.
 
 #recap[
-  Characters and locales in summary.
-
   #dtable(
     columns: 3,
-    [*situation*], [*rule*], [*if got wrong*],
-    [calling `<ctype.h>`], [convert with `(unsigned char)`], [a negative argument — outside the contract],
-    [handling `EOF`], [the argument type is `int`], [confusion with 0xFF],
-    [multibyte characters], [judging byte by byte is meaningless], [a judgement on a split character],
-    [numeric input and output], [a locale-independent path for machines], [the decimal point changes and parsing fails],
-    [sorting], [`strcoll` for humans], [`strcmp` is not dictionary order],
-    [`wchar_t`], [the size differs by implementation], [miscounting characters on Windows],
-    [recommended], [UTF-8 byte sequences + conversion only at the boundary], [—],
+    [*Situation*], [*Rule*], [*If you get it wrong*],
+    [Calling `<ctype.h>`], [Convert with `(unsigned char)`], [A negative argument — outside the contract],
+    [Handling `fgetc`'s result], [Receive it in an `int`], [`EOF` confused with 0xFF],
+    [`isdigit`], [`0`\~`9` regardless of locale], [—],
+    [The other predicates], [They depend on `LC_CTYPE`], [Change the locale, change the answer],
+    [Multibyte characters], [Per-byte judgement is meaningless], [Judging a fragment of a letter],
   )
 ]
 
-We have passed the world of the single character. The next chapter is the world of
-numbers — how real-number calculation reports failure in the standard library.
+The judgement of a single byte is done. Now for the thing that governed it — *the
+locale*. The next chapter starts from what a locale is and by what rule a name
+like `ko_KR.UTF-8` is made.

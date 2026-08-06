@@ -1,286 +1,286 @@
 #import "../../book/lib.typ": *
 
-= Writing it three times — a tiny JSON
+= Strings and text
 
 #prereq(
-  ([chapter 76, Errors are values], [returning failure as a value]),
-  ([chapter 77, Foundations — byte, view, checked arithmetic], [borrowed slices and overflow checks]),
-  ([chapter 78, Allocation — allocators, arenas, pools], [where memory comes from]),
-  ([chapter 79, Strings], [refuse rather than truncate]),
+  ([chapter 39, Strings], [strings]),
+  ([chapter 9, Characters and text], [UTF-8 and bytes]),
 )
 
 #deepqa[
-  Part XII has walked through five contracts one at a time — errors are values,
-  a view is borrowed, the allocator is a parameter, state is not copied, refuse
-  rather than truncate. So what changes in code when all five apply *at once,
-  inside one program*?
+  Chapter 39 said that for a C string "up to the NUL" is the length, so to know the
+  length it must be counted every time. Then what improves if the length is carried
+  along — and what is lost?
 ][
-  What changes is not the syntax but *where things are written down*. Written in
-  plain C, container sizes, failure handling and the source of memory are
-  scattered through the code as convention; written with proven, the same things
-  come out in types, return values and parameters. Rather than describe the
-  difference, this chapter writes the same program several times and shows it.
+  Three things are gained. The cost of counting the length vanishes ($O(n)$ becomes
+  $O(1)$), data with a zero byte in the middle can be handled, and above all *the
+  boundary can be checked* — without the length there is nothing to check. Two things
+  are lost. One string becomes two words rather than one, and conversion becomes
+  necessary when meeting a world that expects NUL termination, as `printf("%s")` does.
+  This library keeps a NUL internally as well in order to remove that conversion cost
+  — a compromise that has both.
 ]
 
 #organizer[
-#idx("JSON")  The chapter that closes Part XII — an exercise without exercises. We write a
-  very small JSON reader and writer in three editions — plain C, proven, and an
-  extended proven that takes nesting — and watch where they part company. The
-  last one shows how to handle depth without recursion. No new syntax appears.
-  What appears is *choice*.
+  The answer to chapter 79's first bug — string functions that do not know the size
+  of the vessel. Strings that carry their length, the distinction between owning and
+  borrowing, and this library's most contentious decision, *refuse rather than
+  truncate*. Chapter 9's story of encodings and chapter 39's story of boundaries
+  gather here into one.
 ]
 
 #chapter-questions()
 
-== What we are building
+== Two types, one rule
 
-Build all of it and this becomes a parser textbook rather than this book. So the
-scope is narrowed like this.
+The string vocabulary is only two.
 
-#dtable(
-  columns: 2,
-  keycol: false,
-  [*In*], [*Out*],
-  [One flat object — `{ "key": value, ... }`], [Nesting (in the first two editions; the third solves it)],
-  [Four kinds of value — string, integer, boolean, null], [Reals, exponent notation],
-  [Reading and writing back (a round trip)], [`\u` escapes, comments],
-  [Where a failure happened], [Recovery, partial parses],
-)
+- `proven_u8str_t` — an *owning* string. It has a buffer, a length and a capacity.
+- `proven_u8str_view_t` — a *borrowed* string. Only a pointer and a length.
 
-Even narrowed, everything this part is about fits inside: the size of the
-container, pointing into someone else's memory, integer overflow, how failure is
-announced, and who provides the memory. Nesting is taken up in the last section
-by a *third edition* — without recursion, on an explicit stack.
+If the name has `view` in it, it is borrowed, and what is borrowed is not destroyed.
+The rule set up in chapter 83 applied to strings as it is. `u8` means UTF-8 — that
+encoding seen in chapter 9 is this library's default text representation.
 
-== The plain C edition
+Open them up and why they were divided in two becomes clear.
 
-#demo("examples-en/ch84/json_plain.c")
+```c
+/* the borrowed string — the same shape as chapter 82's mem_view_t */
+typedef struct {
+    const proven_byte_t *ptr;
+    proven_size_t        size;
+} proven_u8str_view_t;
 
-It will read as familiar. This is *the most common shape* such a thing takes in
-C: fixed-size arrays to hold it, `char` arrays to copy strings into, `-1` plus a
-`char err[]` to report failure.
+/* the owning string — one buffer and an "is it borrowed" flag */
+typedef struct {
+    proven_buf_t internal;   /* { ptr, len, cap } */
+    bool         borrowed;
+} proven_u8str_t;
+```
 
-This is not *bad* code. It is code that needs someone to keep it. The last line
-of the demonstration shows the price: given a value longer than the container,
-127 of 159 characters survived and the rest was *cut silently.* The single line
-`if (i + 1 < cap)` in `take_string` decided that, and the caller has no way of
-learning it happened.
+The three slots of `proven_buf_t` state the string's character as they are. *`len` is
+the number of bytes of content held now*, *`cap` is the whole buffer's size*, and the
+difference between them is the spare room including the NUL's place. So
+`create(alloc, 64)` really takes 65 bytes — 64 is the limit of the *content* and one
+byte is the NUL's share. Thanks to that one byte `proven_u8str_as_cstr` can hand out a
+C string with neither copying nor allocation.
 
-#dtable(
-  columns: 3,
-  [*Place*], [*What the code says*], [*What the code does not say*],
-  [Length of a value], [`char str[128]`], [What happens past 128 characters],
-  [Number of pairs], [`MAX_PAIRS 16`], [Who notices the seventeenth pair],
-  [Failure], [`return -1` + `err[]`], [What happens if the caller does not check],
-  [Numbers], [`strtol`], [That overflow must be read from `errno`],
-  [Memory], [A static array], [Whether the parser's usage is visible outside],
-)
+The `borrowed` flag marks a string made with `_borrow`. When this flag is on,
+`_destroy` *releases nothing* and merely empties the struct — somebody else's memory
+cannot be given back.
 
-The right-hand column is this code's *oral tradition*. It lives in comments, in
-convention and in someone's memory — not in the types.
-
-== The proven edition
-
-#demo("examples-en/ch84/json_proven.c")
-
-It reads the same grammar and writes the same result. But the right-hand column
-of that table has moved to the left.
-
-*Values are not copied.* A string value is a `proven_u8str_view_t` — a borrowed
-slice pointing into the source buffer (chapter 77). With no container there is
-nothing to overflow and nothing to truncate. In exchange one contract appears:
-*it is valid only while the source lives.* That contract is written in the type's
-name.
-
-*Failure arrives as a value.* `jresult` returns a `proven_err_t` together with
-*where it stopped*. The last two lines of the demonstration are that in the
-flesh: when there is no room for another pair it refuses instead of trimming
-(`err 1`), and a number too large to hold is refused rather than wrapped
-(`err 9`).
-
-*The source of memory is a parameter.* `json_parse` takes an arena
-(chapter 78). It does not know where the memory comes from and does not need to.
-Give it a static array and it runs without a heap; give it a heap allocator and
-it runs on the heap. Neither requires touching the parser.
-
-*Integer overflow is checked by hand.* `PROVEN_CKD_MUL` and `PROVEN_CKD_ADD`
-check at every carry. Not "return, then look at `errno`" but failure as a value
-at the moment of overflow.
+There are three roads to obtaining a string.
 
 #dtable(
-  columns: 3,
-  [*Place*], [*Plain C*], [*proven*],
-  [String value], [Copied into `char str[128]` — cut if longer], [Borrowed as a `view` — no cut, a lifetime contract],
-  [Number of pairs], [Fixed `MAX_PAIRS`], [A `cap` the caller chooses; `NOMEM` beyond it],
-  [Failure], [`-1` plus a written reason], [`proven_err_t` plus the byte it stopped at],
-  [Number parsing], [`strtol` + `errno` (easy to forget)], [Checked arithmetic at every digit],
-  [Memory], [Static array (the parser decides)], [An arena (the caller decides)],
-  [Writing], [`snprintf` — cut if it does not fit], [A growing `u8str` — failure if it does not fit],
+  columns: 4,
+  [*function*], [*allocates*], [*destroy*], [*where it is used*],
+  [`proven_u8str_create(alloc, limit)`], [yes], [`_destroy` needed], [starting empty and filling it],
+  [`proven_u8str_create_from_view(alloc, v)`], [yes], [`_destroy` needed], [owning a copy of existing content],
+  [`proven_u8str_borrow(buf, cap)`], [no], [unnecessary (harmless)], [over a stack or static array. embedded],
 )
 
-== One step further — nesting, without recursion
+Only beware that `_borrow`'s `cap` is *the whole capacity including the NUL* — give it
+`buf[64]` and the content goes to 63 bytes.
 
-The two editions so far read one flat object. Real JSON nests. How is that
-usually written? *Recursive descent*: when a value turns out to be an object,
-call yourself again to read what is inside. It is short and it reads well.
+Making a view from a literal is done with one macro.
 
-That brevity has a price attached. *The input decides the depth.* Nest a
-thousand deep and a thousand frames pile up; nest a hundred thousand deep and
-the stack gives way. It is chapter 40 exactly — the stack is narrow (a few MiB
-usually), and when it overflows the program dies with no way to check for it.
-For a parser reading files other people wrote, that is an *attack surface*.
+```c
+PROVEN_LIT("hello")        /* becomes { ptr, 5 } at compile time — no strlen */
+proven_u8str_view_from_cstr(p)   /* counts the length at run time */
+```
 
-So the extended edition uses no recursion. Both parsing and output are loops
-driven by an explicit stack. Depth becomes the length of an array, so crossing
-the limit can be *refused as a value* instead of collapsing the stack.
+`PROVEN_LIT` draws the length from `sizeof("...") - 1`, so its *run-time cost is zero*.
+Using it for string literals is the practice, and `_from_cstr` for a C string whose
+length is unknown.
 
-#demo("examples-en/ch84/json_nested.c")
+#demo("examples-en/ch84/ops.c")
 
-The last two lines of the output are the point of the design. Given the same
-200-deep input, a limit of 32 refuses at the 32nd level (`err 2`), and a limit
-of 256 reads it through and builds 200 nodes. *Neither run dies* — depth is a
-setting, not an incident.
+The first line shows chapter 83's rule again. `proven_u8str_borrow` has no allocator —
+therefore it does not allocate. It is doing string operations on a 16-byte array taken
+on the stack, and this is exactly how strings are handled in embedded work without a
+heap.
 
-=== What was used where
+== Refuse, rather than truncate
 
-This edition draws on the tools of Part XII across the board. Gathered in one
-place, each takes on one problem.
+The second `append` is the most important single line of this part. On trying to
+attach `" world, and more"` after `"hello"` in a 16-byte vessel, the library *wrote
+nothing* and returned `PROVEN_ERR_OUT_OF_BOUNDS`. And as the next line shows, the
+original content `hello` stands as it was — the failure atomicity learned in
+chapter 81.
 
-#dtable(
-  columns: 3,
-  [*Tool*], [*What it takes on*], [*Without it*],
-  [Arena (chapter 78)], [Takes the memory of one parse in a lump and drops it in a lump], [Every node needs a matching `free`],
-  [Pool (chapter 78)], [Recycles slots of exactly one `jnode`], [Same-size allocations fragment the heap],
-  [Intrusive list (chapter 77)], [Hooks a child onto its parent — through a link inside the node], [A separate child array must be allocated and grown],
-  [Dynamic array], [Stacks the open containers — the *explicit stack*], [You end up leaning on the call stack (that is, recursion)],
-  [`view` (chapter 77)], [Borrows keys and strings from the source], [Every character needs a copy and a container],
-  [Checked arithmetic (chapter 77)], [Watches overflow at every carry], [One forgotten `errno` and it wraps],
-  [`proven_err_t` (chapter 76)], [Depth exceeded, no room, bad syntax — all as values], [Either death, or a silent trim],
-)
+It is the exact opposite of `snprintf`'s choice seen in chapter 79. Why not truncate?
 
-*The intrusive list* earns its keep especially here. Rather than allocating an
-array for the children, each node carries one link (`proven_list_node_t link`)
-that threads it onto the parent's list. The link was created along with the node,
-so *adding a child costs no new allocation* — and one more place that could fail
-disappears.
+*Because a truncated value is not a short value but a different value.* A truncated
+path points at a different file, a truncated command is a different command, a
+truncated user name is a different person. Truncate and declare success and the caller
+cannot know whether what was received is what was requested. So this library *gives
+the decision back to the caller* — "there is not enough room. What shall we do?"
 
 #qa[
-  Does dropping recursion not make the code longer and harder to read?
+  Still, are there not places where truncation is fine, such as one line of a log?
 ][
-  Longer, yes. What would be ten lines in a recursive version becomes thirty of
-  stack frames and state transitions. Recursion also reads more easily — it is
-  closer to the model in a person's head.
-
-  It is still written this way for one reason: *the input must not decide how
-  much resource is consumed.* In the recursive version depth eats the call
-  stack, an *invisible* resource that can be neither checked nor capped. With an
-  explicit stack, depth is `stack.len` — a *number you can see* — and the cap is
-  a parameter.
-
-  Out of that comes the working rule for code at a boundary (files, networks,
-  plug-ins): *do not read a format with depth using recursion.* If you do, put a
-  limit on the depth and count it.
+  There are. So there is a separate function that *explicitly writes only part* —
+  `proven_u8str_append_partial` returns the number of bytes that went in. That the
+  name is long and the return value different is the heart of it. Truncation is still
+  possible, but to do it you must *write it that way*. The principle that the default
+  is always the safe side and the dangerous choice can be made only through a visible
+  name (the same as chapter 82's `_unchecked`) is kept here too.
 ]
 
-#realcase("Deep nesting is a real attack")[
-  "Depth bombs" are an old class of attack on JSON and XML parsers. Send a few
-  kilobytes with a hundred thousand brackets in it and a recursive parser
-  overflows the stack while reading it and the process dies — denial of service.
-  Stopping a server with a few dozen bytes of input is a good return on effort.
+#antipattern[
+  Confusing growth with fixed capacity
+][
+  ```c
+  proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
+  proven_err_t e = proven_u8str_append_grow(alloc, &s, view);  /* dangerous */
+  ```
+  `_append` writes only within the capacity, while `_append_grow` asks the allocator
+  for more if there is not enough — which is why only the latter has an allocator
+  argument. The problem is demanding growth on a borrowed buffer (`_borrow`). A stack
+  array cannot grow, so this is a design error.
 
-  That is why widely used parsers nearly all impose a depth limit. It is also why
-  this example takes `max_depth` as a parameter — and why the limit is set by the
-  *caller rather than the library*, since what counts as reasonable differs from
-  one place of use to another.
+  In this case the library *does not quietly reallocate somebody else's memory* but
+  returns `OUT_OF_BOUNDS` — it succeeds while things fit and refuses the moment they
+  would not. The habit of reading signatures becomes the defence here as it stands —
+  *with an allocator it can grow, without one it cannot.*
 ]
+
+== Three kinds of writing — refuse, truncate, grow
+
+This library's string operations are made so that the kind can be known from the name
+alone. That kind is "what happens when there is not enough room".
+
+#dtable(
+  columns: 4,
+  [*kind*], [*shape of the name*], [*when short*], [*failure atomicity*],
+  [fixed capacity, atomic], [`_append`, `_insert`, `_replace_at`], [refuses (`OUT_OF_BOUNDS`)], [yes — the original stands],
+  [best effort, truncating], [`_append_partial`, `_append_fmt_trunc`], [writes as much as fits and reports], [no (deliberately)],
+  [growing], [`_append_grow`, `_insert_grow`, `_replace_at_grow`], [asks the allocator for more], [yes — the original stands if allocation fails],
+)
+
+All three kinds are needed because the right answer differs by place. Where a file path
+is being built truncation must not happen, so *refusing* is right; where a log line is
+fitted to the screen *truncating* is right; where the length is unknown *growing* is
+right. That the default (the short name) is refusal shows this design's attitude.
+
+== The operations that mend a string
+
+Appending alone is not enough. There are operations that mend the middle, delete, and
+rewrite.
+
+#demo("examples-en/ch84/edit.c")
+
+#dtable(
+  columns: 3,
+  [*function*], [*what it does*], [*contract*],
+  [`_insert(&s, i, v)`], [inserts at position `i`], [`i` ≤ length. it pushes the tail out],
+  [`_remove(&s, i, n)`], [deletes `n` bytes from `i`], [an error if it exceeds the range],
+  [`_replace_at(&s, i, old, v)`], [a range with other content], [the lengths may differ],
+  [`_replace_first(&s, off, t, r)`], [the first `t` found, into `r`], [★ if absent it returns *success*],
+  [`_reset(&s)`], [empties only the content], [the buffer and capacity stand],
+  [`_reserve(alloc, &s, n)`], [capacity up to `n` in advance], [it pays especially on an arena],
+  [`_append_byte(alloc, &s, b)`], [appends one byte], [grows if needed],
+)
+
+The starred contract of `_replace_first` needs care. *Not finding it is not an error but
+a success* — to distinguish "there was nothing to replace" from "it was replaced" you
+must first check with `proven_u8str_view_find`. That the example's "replacing what is
+not there" comes back as `err=0` is that confirmation.
+
+`_reset` and `_reserve` are a pair for performance. In code that builds a string afresh
+every frame or per request, *reusing the buffer instead of throwing it away* is
+`_reset`, and taking it in advance when you roughly know how large it will grow is
+`_reserve`. As seen in chapter 83, `_reserve` pays especially on an arena — take it
+large before another allocation intervenes and growth in place becomes possible.
+
+#qa[
+  Which should be the default, `_insert` or `_insert_grow`?
+][
+  *`_insert` where I settle the capacity*, *`_insert_grow` where I do not know how much
+  content there will be*. The criterion is simple — "is running short here *a bug*, or
+  *a thing that can happen*?"
+
+  If a protocol header is being assembled in a fixed-size buffer, running short is a bug,
+  and refusal is right there (and that error reveals the bug). If user input is being
+  appended, it can grow to any length, so growing is right. It is also why embedded code
+  uses only the editions without `_grow` — there, *unpredictable growth itself is
+  forbidden* (chapter 88).
+]
+
+== Finding and cutting — text handling without copying
+
+The example's ③ and ④ are a view's real usefulness. Obtaining a substring needs no
+copying — it merely calculates a new pointer into the original and a new length.
+While one CSV line was divided into three fields, not one allocation happened.
+
+This pattern is especially powerful in parsers. When parsing a line with `sscanf` in
+chapter 25 a buffer had to be prepared in advance to hold the result, whereas cutting
+with views leaves only *marks upon the original*. In exchange one more thing must be
+kept — as seen in chapter 82, *it is valid only while the original is alive*.
+
+There is a convention too in the value `find` returns when it does not find. It is
+not 0 or a negative number but a sentinel with a name, `PROVEN_INDEX_NOT_FOUND`.
+Chapter 79 spoke of the danger of sentinel values, and what differs here is that *it
+has a name and is documented* — a nameless magic number and a named contract are
+different things.
 
 #misconception[
-  "Removing recursion removes stack overflow"
+  "Carrying the length means knowing the number of characters"
 ][
-  It does not remove it — it *moves* it. An explicit stack eats memory too. The
-  difference is that this memory sits on the heap (or in an arena), its length
-  can be counted, and a cap can be placed on it.
-
-  The point is not "recursion is bad" but *keep the resource where you can see
-  it*. If the depth is a constant you chose (as in code reading your own config
-  file), recursion is the better choice. If someone else chooses the depth, it is
-  better to hold that resource in your hand and count it.
+  No. The length is *the number of bytes*. As learned in chapter 9, one character in
+  UTF-8 is 1\~4 bytes, so the Korean "가" is 3 bytes and an emoji is 4. It is why the
+  example's output takes the trouble to state "(5 bytes)". So handling "the nth
+  character" is still delicate, and *cutting anywhere at a byte boundary* gives the
+  broken characters seen in chapter 9. What a string library solves is boundary
+  trespass, not the essential difficulty of encodings.
 ]
 
-== So what actually changed
+== The boundary of two worlds — NUL termination and UTF-16
 
-#qa[
-  The proven edition is the longer one. Where is the gain?
+Conversion is needed at every place where the outside world is met.
+
+- `proven_u8str_as_cstr` — obtains a NUL-terminated pointer from an owning string.
+  A NUL being kept internally, there is neither copying nor allocation. It is used
+  when passing to `printf("%s")` or to a file API.
+- `proven_u8str_view_to_cstr` — makes a NUL-terminated string from a view. This one
+  *takes an allocator* — because a view may point into the middle of the original and
+  a NUL cannot be written in that place. The signature states the fact once again.
+- `proven_u16str_t` / `proven_u16str_view_t` — the bridge to the UTF-16 world. The
+  Windows API uses this encoding so conversion is needed, and conversion can fail
+  (unpaired surrogates and the like). So the result comes as a bundle.
+
+#realcase[
+  "Do not guess, refuse" — the principle of handling encodings
 ][
-  What it is longer by is *the checking that should have been there.* The plain
-  edition's brevity was bought by not checking, and that checking did not vanish
-  — it moved onto a person.
-
-  Count the difference and it comes to this. In the plain edition there are five
-  places a person must remember to be careful: the container size, the maximum
-  pair count, checking the return value, checking `errno`, and the size of the
-  static array. In the proven edition those five moved into types, parameters and
-  return values. *What had to be remembered became what can be read* — that is
-  the gain.
-
-  And it grows with the code. Five things can be remembered in a 200-line parser.
-  They cannot be remembered in a 20,000-line program.
-]
-
-#qa[
-  Is the plain edition useless, then?
-][
-  No — and this distinction is the most important thing in the chapter.
-
-  The plain edition is excellent *when the conditions are narrow*: input you made
-  yourself, sizes you know, code that never leaves this program. There its
-  brevity is the virtue. What is dangerous is when that code *crosses a
-  boundary*. The moment it reads a file someone else wrote, or bytes off a
-  network, or runs inside a long-lived program, all five unwritten things become
-  seeds of an incident.
-
-  That is why chapter 74's five bugs have been shipping for half a century. Not
-  because the code was bad, but because *code written for narrow conditions moved
-  somewhere wide.*
-]
-
-#misconception[
-  "Using a library stops you making these mistakes"
-][
-  A library does not *stop* mistakes. It *exposes* them. Ignore the `jresult` in
-  the proven edition and the outcome matches the plain edition — except that
-  writing it that way is more awkward, and where `[[nodiscard]]` is attached the
-  compiler speaks up (chapter 76).
-
-  What a tool can do ends at *making the correct path the easy path*. Beyond that
-  it is always the user's part — which is also why this book explained the
-  problems before it introduced the library.
-]
-
-#realcase("Where a real JSON parser gets harder")[
-  What all three editions left out is where the real difficulty lives. `\u`
-  escapes must handle UTF-16 surrogate pairs (chapter 9), and reals bring along
-  the rounding problems of chapter 8 — read `0.1` and write it back, and do the
-  same characters come out?
-
-  That is why widely used parsers run to thousands of lines, and it is worth
-  remembering that a good share of those lines are not features but *boundaries*.
+  The root of the text security problems seen in chapter 9 is mostly *the lenient
+  decoder*. Implementations that "read a wrong UTF-8 as something similar" have
+  several times been the passage to security incidents — decoders that permitted
+  overlong encodings in particular had their checks bypassed. So today's norm is one
+  sentence. *Do not read invalid input as something mended; refuse it.* proven's
+  encoding conversion stopping with `PROVEN_ERR_INVALID_ENCODING` is that norm
+  implemented, and this principle is exactly the same spirit as this chapter's "do not
+  truncate".
 ]
 
 #recap[
+  The string vocabulary in summary.
+
   #dtable(
-    columns: 2,
-    [*What to keep*], [*The point*],
-    [One program, two editions], [Not the syntax but *what gets written down* differs],
-    [Plain C], [Short. The price of that brevity is five things a person must remember],
-    [proven], [Longer. It is longer by the checks moved into types, returns and parameters],
-    [Cut versus refuse], [Failure comes back as a value instead of a silent trim],
-    [Source of memory], [The caller provides it; the parser does not decide],
-    [Boundaries], [Code written for narrow conditions gets dangerous somewhere wide],
-    [Nesting and depth], [An explicit stack instead of recursion — depth becomes a setting, not an incident],
-  )
+  columns: 3,
+    [*function*], [*what it does*], [*failure and ownership*],
+    [`u8str_create(alloc, cap)`], [create an owning string], [returns a bundle, needs `_destroy`],
+    [`u8str_borrow(buf, cap)`], [a string over somebody's buffer], [no allocation, no destruction],
+    [`u8str_append(&s, v)`], [append within the capacity], [refuses if short (the original is preserved)],
+    [`u8str_append_partial`], [as much as fits], [returns the number of bytes put in],
+    [`u8str_append_grow(alloc,…)`], [grow it if short], [allocation may fail],
+    [`u8str_view_find`], [the position of a substring], [`PROVEN_INDEX_NOT_FOUND` if absent],
+    [`u8str_view_slice`], [a sub-view], [no copying — tied to the original's lifetime],
+    [`u8str_as_cstr`], [a NUL-terminated pointer], [no copying],
+    [`u8str_view_to_cstr`], [view → a C string], [needs an allocator],
+)
 ]
 
-Part XII ends here. We have seen the five contracts one at a time, and finally
-watched all five meet inside one program, written three times. The last part closes the
-book — C in practice, the embedded toolbox, and everything gathered up.
+We can now hold and cut strings safely. But the work of *making* them remains —
+turning numbers and values into letters, and turning letters back into numbers. It is
+the place where chapter 79's third bug waits, and the place where this library's most
+conspicuously different syntax appears.

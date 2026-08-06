@@ -61,7 +61,7 @@ is precisely *the real complexity of handling a string that came from outside*.
   else if (errno == ERANGE || v < 1 || v > 65535) { /* out of range */ }
   else port = (int)v;
   ```
-  *Setting `errno` to 0 just before the call* is the convention (chapter 65).
+  *Setting `errno` to 0 just before the call* is the convention (chapter 70).
   Without it you read the value a previous call left behind.
 ]
 
@@ -79,7 +79,7 @@ when parsing a data format.
   price is not only speed. Where the type has been erased, a mistake gets no help
   from the compiler: pass the wrong element size, or write a comparator that takes
   `int` where it must take `int*`, and it collapses quietly. That is why chapter
-  81's `proven_array_sort` pins the type with a macro, and why chapter 74 counts
+  86's `proven_array_sort` pins the type with a macro, and why chapter 79 counts
   "the unchecked callback" among the five bugs.
 ]
 
@@ -164,7 +164,7 @@ The functions chapter 57 foretold. Written out exactly, the contract is this.
   negative, zero or positive value. *Making it by subtraction can overflow* —
   `return *x - *y;` is wrong for large values.
   `return (*x > *y) - (*x < *y);` is the safe idiom.
-- The comparator must be a *total order* (chapter 74). If it is inconsistent the
+- The comparator must be a *total order* (chapter 79). If it is inconsistent the
   result is not merely jumbled — it can trespass outside the array.
 - `qsort` is *not a stable sort.* The relative order of equal values is not
   preserved. If it is needed, lay the original index on top in the comparator to

@@ -1,543 +1,308 @@
 #import "../../book/lib.typ": *
 
-= Non-local jumps — `<setjmp.h>`
+= In practice — handling Unicode and multibyte encodings
 
 #prereq(
-  ([chapter 66, Signals], [the thing that cuts into the flow]),
-  ([chapter 39, The stack and calls], [how call frames are stacked and cleared]),
-  ([chapter 48, How to report failure], [returning failure as a value]),
+  ([chapter 66, Wide characters ②], [UTF-16 and the platform split]),
+  ([chapter 65, Wide characters ①], [conversion functions and `mbstate_t`]),
+  ([chapter 9, Characters and text], [code points and encodings]),
 )
 
 #deepqa[
-  Chapter 39 said that calling a function stacks a frame, and that `return`
-  clears that frame and goes back *one step at a time*. Then how, in C, does one
-  return from ten levels deep to the top *in a single move*?
+  Through chapters 65 and 66 the advice "handle UTF-8 byte strings as they are"
+  kept returning. But if you handle bytes as they are, how do you do something
+  like "delete the third character"?
 ][
-  The two words of `<setjmp.h>` do exactly that. `setjmp` records "here, now",
-  and `longjmp` revives that record and *rewinds the stack whole*. Ten levels or
-  a hundred, it comes back at once.
+  *Because most programs never do that.* Count what they actually do: read,
+  store, compare, concatenate, search, and hand back out. All six work on UTF-8
+  byte strings *with no decoding at all.*
 
-  What is rewound, though, is only *the stack pointer and a few registers*. No
-  one closes the files opened in between, frees the memory taken, or releases the
-  locks held — half of this chapter is about that price.
+  The work that needs characters — moving a cursor, finding a line-break point,
+  counting letters — belongs to an editor or a renderer, and at that layer even
+  code points are not enough; you need *grapheme clusters*. This chapter draws
+  that line: how far to go on bytes, where decoding begins, and what to watch for
+  there.
 ]
 
 #organizer[
-#idx("non-local jump")  A close reading of one header, `<setjmp.h>`. Why it exists (the makeshift of a
-  language without exceptions), the exact shape and return values of the two
-  words, the eight slots of `jmp_buf` and which registers come back, the
-  `volatile` rule that follows from them (measured on a real build), how real
-  software such as libjpeg and PostgreSQL copes with the memory left behind by a
-  jump, and today's alternatives.
+#idx("UTF-8")  The prescriptions of practice. Why a UTF-8-first design wins, the three layers
+  of "how many characters" and grapheme clusters, normalisation, case that
+  depends on language, a UTF-8 validator written by hand, and the traps of the
+  legacy two-byte encodings still in use.
 ]
 
 #chapter-questions()
 
-== Why it exists — the makeshift of a language without exceptions
+== The principle — UTF-8 inside, conversion only at the boundary
 
-When trouble arises deep down, a language with exceptions escapes to the upper
-floors with one `throw`. C has none. So an error must be *carried up one layer at
-a time as a return value*, and every function in between must take that value and
-pass it on (chapter 48).
-
-`setjmp`/`longjmp` is the device that skips that chain. It was already in Unix V7
-in the 1970s, and its reason for being was the same as now — *getting out of deep
-recursion in one move.*
-
-The standard's footnote states the purpose narrowly: these functions "are useful
-for dealing with unusual conditions encountered in a low-level function of a
-program." That is, the original place of the device is *an escape hatch for
-exceptional situations, not a substitute for exceptions.*
-
-#qa[
-  Is this then C's exception handling?
-][
-  No. Three differences are decisive.
-
-  *First, nothing is cleaned up.* A C++ exception rewinds the stack calling
-  destructors (stack unwinding). `longjmp` simply jumps — open files, taken
-  memory, locked mutexes all stay as they were.
-
-  *Second, there is no type.* The only thing thrown is one `int`. To carry what
-  went wrong, that value must serve as an index into something written elsewhere.
-
-  *Third, the region is limited.* The function that called `setjmp` must *still be
-  alive*. There is no jumping into the place of a function that has already
-  returned — doing so is undefined behaviour.
-
-  So the conclusion of this chapter, stated in advance: *new code mostly does not
-  use it. But you must be able to read it* — because widely used libraries are
-  built on it.
-]
-
-== The two words — the exact shape
+The conclusion first.
 
 #dtable(
   columns: 2,
-  keycol: false,
-  [*Declaration*], [*What it does*],
-  [`int setjmp(jmp_buf env);`], [Saves the present calling environment in `env`. *It is a macro*],
-  [`[[noreturn]] void longjmp(jmp_buf env, int val);`], [Goes back to the place saved in `env`. Does not return],
+  [*Place*], [*What to use*],
+  [Inside the program], [UTF-8 byte strings (`char *`, length in bytes)],
+  [Files, networks, databases], [UTF-8],
+  [Calling the Windows API], [Convert to UTF-16 at the boundary only],
+  [Character-level editing and rendering], [Decode to code points or graphemes only where needed],
 )
 
-=== `setjmp` — the macro that seems to return twice
-
-`setjmp` is a *macro*, not a function (the standard allows a function to be
-provided as well, but suppressing the macro and calling the function directly is
-undefined behaviour).
-
-The rule for its return value is simple, and it is nearly the whole header.
+Why this design wins follows straight from UTF-8's properties.
 
 #dtable(
   columns: 2,
-  [*How it was reached*], [*What `setjmp` returns*],
-  [Called directly (the moment the place is saved)], [0],
-  [Returned to by `longjmp(env, val)`], [`val` — except that 0 becomes 1],
+  [*Property of UTF-8*], [*What it buys*],
+  [Fully compatible with ASCII], [Existing code, protocols and file formats keep working],
+  [Trail bytes are always 0x80 or above], [They never collide with separators like `'/'`, `'\\'` or `','`],
+  [It is self-synchronising], [A character boundary can be found from any position],
+  [Byte order equals code-point order], [`strcmp` gives a code-point-ordered sort],
+  [It has no endianness], [No byte order mark is needed],
 )
 
-That is why `longjmp(env, 0)` cannot produce 0. Zero already means *"saving right
-now"*, so the standard turns it into 1.
+#demo("examples-en/ch67/utf8_scan.c")
 
-#demo("examples-en/ch67/jmp_basic.c")
+The last part of the demonstration shows self-synchronisation. Point at any byte
+and testing `(b & 0xC0) == 0x80` alone tells you whether you are inside a
+character or at its start — which is why a buffer can be cut anywhere and
+recovered, and why a scanner can move on to the next character in damaged data.
 
-The demonstration follows that flow exactly. The first time it yields 0 and goes
-down into `deep`; at depth 3 the `longjmp(env, 42)` brings us *straight back to
-`main`'s `setjmp`* and 42 appears. The intervening `deep(2)` and `deep(1)` never
-get to print their "leaving normally" line — those frames simply vanished.
+== Validation — what to reject even when the shape is right
 
-The last test is `longjmp(env, 0)`. We gave 0, and 1 came back.
-
-=== Where `setjmp` may appear — four contexts only
-
-The standard (§7.13.1.1) restricts the context *by enumeration*. Using it outside
-these four is undefined behaviour.
-
-#dtable(
-  columns: 2,
-  keycol: false,
-  [*Permitted context*], [*Example*],
-  [The *entire* controlling expression of `if`, `switch`, `while`, …], [`if (setjmp(env)) { ... }`],
-  [One operand of a comparison with an integer constant expression (the whole being a controlling expression)], [`if (setjmp(env) == 0)`],
-  [The operand of a single `!` (likewise)], [`if (!setjmp(env))`],
-  [An entire expression statement (a cast to `void` is allowed)], [`setjmp(env);`],
-)
-
-So `int rc = setjmp(env);` is *not one of the standard's contexts.* It does work
-on many implementations and this book's demonstration writes it that way, but
-where portability matters, `switch (setjmp(env))` or `if (setjmp(env) == 0)` is
-the safer form.
-
-#qa[
-  Why does such an odd restriction exist?
-][
-  Because `setjmp` is a thing *called once and returned from twice*. To a
-  compiler this is not an ordinary call — if its return value sat in the middle of
-  a complicated expression, there would be no way to decide how to revive the
-  half-computed state (temporaries spread across registers).
-
-  So the standard narrowed the context down to *places where no temporary can be
-  alive*: one controlling expression, one comparison against a constant, and an
-  expression statement that discards the value. The restriction looks strange, but
-  it comes from implementability.
-]
-
-=== `longjmp` — three things to check before jumping
-
-`longjmp(env, val)` does not return (C23 marks it `[[noreturn]]`). Three
-conditions must hold before jumping, and breaking any one is undefined behaviour.
-
-#dtable(
-  columns: 2,
-  [*Condition*], [*If broken*],
-  [There really was a `setjmp` on that `env`], [Jumping to a place never saved],
-  [The function that called `setjmp` is *still alive*], [Jumping into a vanished frame — usually instant death],
-  [It is the same thread], [Jumping into another thread's stack],
-)
-
-The second is the accident that happens most often. Thinking "I will make an error
-handler and call it from anywhere", one calls `longjmp` after the function that
-called `setjmp` has already returned — and by then another function's frame has
-moved into that place.
-
-== What `jmp_buf` really is
-
-`jmp_buf` is *an array type*. The standard nails that down for a practical reason
-— being an array, passing it to a function decays it to the address of its first
-element (chapter 37), so `setjmp(env)` can *modify the original* without writing
-`&env`.
-
-What is inside? The standard says only "information sufficient for `longjmp` to
-restore the calling environment". In practice it is roughly these.
-
-#dtable(
-  columns: 2,
-  [*What is saved*], [*Why*],
-  [The stack pointer], [The place to rewind to must be known],
-  [The program counter (return address)], [Where to go back to],
-  [Callee-saved registers], [The values the calling convention promised to preserve],
-  [(Sometimes) the signal mask], [POSIX's `sigsetjmp`, optionally],
-)
-
-The size the demonstration printed (200 bytes on this implementation) is the sum
-of those contents. But *looking inside or editing it by hand is outside the
-contract* — treat it as opaque data.
-
-The standard is also explicit about what is *not* saved: *the state of the
-floating-point environment, of open files, or of any other component of the
-abstract machine.* That one sentence produces every pitfall in the next section.
-
-=== Looking inside the eight slots
-
-On this implementation (glibc, x86-64) the 200 bytes of a `jmp_buf` divide thus.
-
-#dtable(
-  columns: 2,
-  [*Part*], [*Size*],
-  [Eight register slots (`long [8]`)], [64 bytes],
-  [Whether the signal mask was saved (`int` + padding)], [8 bytes],
-  [Room for the signal mask], [128 bytes],
-)
-
-Print the eight slots and their order appears — RBX, RBP, R12, R13, R14, R15, the
-stack pointer, the return address. That is exactly the list the x86-64 SysV
-calling convention marks *callee-saved* (chapter 39's calling convention).
-
-Two things stand out.
-
-*First, three of the slots hold scrambled values.* Print the slots for RBP, the
-stack pointer and the return address and they do not look like stack addresses.
-glibc stores them mixed with a per-thread guard value — a device against
-overwriting a `jmp_buf` to jump to an address of the attacker's choosing. It
-confirms the rule that the inside of a `jmp_buf` is not to be edited by hand.
-
-*Second, registers not on that list are not saved.* RAX, RCX, RDX, RSI, RDI and
-R8--R11 are the ones the convention marks "the caller's business" (caller-saved),
-so `setjmp` does not keep them.
-
-=== And that is the `volatile` rule
-
-Read those two facts from a local variable's point of view and the next section's
-rule follows by itself. A compiler puts a local in one of three places.
+Code that reads UTF-8 *must validate*. The rules are RFC 3629 (STD 63), and three
+things are not caught by the shape alone.
 
 #dtable(
   columns: 3,
-  [*Where the variable was*], [After `longjmp`], [*Why*],
-  [In memory on the stack], [The changed value, intact], [`longjmp` restores only the stack *pointer*. It does not touch the contents],
-  [In a callee-saved register], [The old value from `setjmp`], [That slot is restored wholesale from the `jmp_buf`],
-  [In a caller-saved register], [Anything at all], [It is neither saved nor restored],
+  [*What to reject*], [*Example*], [*Why*],
+  [Overlong encodings], [`C0 80`], [U+0000 written in two bytes — a classic way past a check],
+  [Encoded surrogates], [`ED A0 80`], [U+D800 is not a character (chapter 66)],
+  [Out of range], [`F5 80 80 80`], [Beyond U+10FFFF],
 )
 
-Turn optimization off and the compiler mostly puts locals on the stack, so only
-the first row happens — which is why nothing *appears* wrong at `-O0`. Turn it on
-and heavily used variables move into registers, and the second and third rows
-appear.
-
-It is also why the standard writes *"indeterminate representation"* rather than
-"becomes the old value". The result depends on where the variable was, so the
-standard promises none of them.
-
-== What happens to values on return — the `volatile` rule
-
-The most practical rule in this chapter. The standard (§7.13.2.1) settles it thus.
-
-*All objects have the values they had at the time `longjmp` was called, with one
-exception — objects of automatic storage duration local to the function
-containing the `setjmp`, that are not `volatile` and have been changed since the
-`setjmp`, have indeterminate representations.*
-
-#demo("examples-en/ch67/jmp_volatile.c")
-
-Three variables split exactly along that rule.
-
-#dtable(
-  columns: 3,
-  [*Variable*], [*Storage and qualifier*], [After `longjmp`],
-  [`plain`], [automatic, non-`volatile`, changed in between], [*No guarantee*],
-  [`guarded`], [automatic, `volatile`], [Guaranteed],
-  [`statik`], [static], [Guaranteed],
-)
-
-*This rule really does bite.* Build with optimization off and all three show 2;
-build the same code with `-O2` and `plain` *comes back as 1* — the compiler had
-kept that variable in a register, and `longjmp` restored the registers to their
-values at `setjmp`. This book ran both builds and confirmed the difference, and
-the example reports which build it is by looking at `__OPTIMIZE__`.
+The demonstration rejects each of the three. The first row matters most —
+*overlong encodings are a security problem.* There really were attacks that wrote
+`..` or `/` in several bytes to slip past a path check, so that a later layer
+would interpret them again. That is why "only the shortest form is valid" became a
+requirement of the specification.
 
 #misconception[
-  "`volatile` is for hardware registers and nothing else"
+  "UTF-8 is just bytes, so it can be passed through without validation"
 ][
-  This is `volatile`'s second legitimate use (the first was chapter 66's
-  `volatile sig_atomic_t`). Set the three side by side and the purpose is clear.
+  Passing it through the middle untouched is mostly safe. The problem is *the
+  moment of interpretation.*
 
-  #dtable(
-    columns: 2,
-    [*Place*], [*What it prevents*],
-    [MMIO and hardware registers], [Optimizations that erase or merge reads and writes],
-    [Flags exchanged with a signal handler], [Optimizations that skip the read in a loop],
-    [Locals that cross a `longjmp`], [Optimizations that keep the value only in a register],
-  )
+  An unvalidated byte string can be interpreted differently by different layers,
+  and that mismatch becomes a security hole — the first layer sees "odd bytes" and
+  lets them by, the next reads them as `/`. This is especially so where a web
+  server, a file system and a database meet.
 
-  All three prevent "the compiler bypassing memory". Conversely, *`volatile` is
-  useless for synchronization between threads* — that place belongs to
-  `<stdatomic.h>` (chapter 69). Miss this distinction and `volatile` becomes a
-  misunderstood charm against all evils.
+  One discipline — *validate once at the input boundary and trust it afterwards.*
+  Marking clearly in the code where that happened is part of the discipline. Part
+  XII's `u8` family in proven is an example of enforcing it through the type.
 ]
 
-== Nobody cleans up the resources
+== The three layers of "how many characters", and the fourth
 
-`longjmp` only rolls back the stack pointer. Whatever was taken in between stays
-taken.
+Chapter 66 said length has three answers. Counting what a reader sees makes four.
 
-#antipattern("Code that leaves resources where it jumped over")[
-  ```c
-  void work(void) {
-      FILE *f = fopen("data", "r");     /* opened */
-      char *buf = malloc(1024);          /* taken */
-      parse(f, buf);                     /* if a longjmp happens here… */
-      free(buf);                         /* does not run — a leak */
-      fclose(f);                         /* does not run — the file leaks too */
-  }
-  ```
-  If a `longjmp` happens inside `parse`, `work`'s frame simply vanishes. Neither
-  `free` nor `fclose` runs. In a long-running program this pattern shows up as a
-  small leak per request.
-]
-
-So code that uses this device keeps one discipline without exception — *gather
-the places that take and release resources inside the function that called
-`setjmp`.* Having jumped back, that function can clean up itself.
-
-=== The quieter accident — a pointer reverts to its old value
-
-The previous counter-example was a `free` *that never ran*. There is a quieter
-one. The cleanup code runs perfectly well, but *the pointer saying what to free*
-falls foul of the previous section's rule and reverts to its old value.
-
-#demo("examples-en/ch67/jmp_leak.c")
-
-At `-O0` both survive, but build the same code at `-O1` or above and the
-non-`volatile` one reverts to the null it held at `setjmp` (we checked). Then
-`free(risky)` frees null, does nothing, and 64 bytes leak for good — clear the
-static copy and ASan reports it as "Direct leak of 64 byte(s)".
-
-*There is cleanup code, and it still leaks.* Reading the code will not show it,
-and it appears only in the optimized build that ships. Of the accidents in this
-pattern it is the hardest to diagnose.
-
-There is an opposite direction too. If the old value is not null but *an address
-already freed*, it is a double free.
-
-#antipattern("Code that reverts to an old address and frees it twice")[
-  ```c
-  char *p = malloc(64);
-  if (setjmp(env) == 0) {
-      free(p);            /* freed once */
-      p = malloc(128);    /* and taken afresh */
-      work(p);            /* a longjmp happens here */
-  }
-  free(p);                /* if p reverted, this frees what was already freed */
-  ```
-  Chapter 42's double free, reproduced exactly. The allocator's ledger is wrecked,
-  so every allocation after it is contaminated.
-]
-
-The discipline is one line — *do not keep a pointer that must survive a `longjmp`
-in an automatic local.* Give it `volatile`, or put it in a static variable or a
-context struct. The `load_image` of the next demonstration does exactly that.
-
-#demo("examples-en/ch67/jmp_error.c")
-
-The demonstration's `load_image` is that structure. The `malloc` happens *before*
-the `setjmp`, and the `free` sits once, in a place both the success and the
-failure path pass through. The deep `parse_header` and `parse_size` take no
-resources and only jump.
-
-== What is actually built on this
-
-The device is not recommended for new code, but *what is already built* is
-plentiful.
+#demo("examples-en/ch67/graphemes.c")
 
 #dtable(
   columns: 3,
-  [*What*], [*How it uses it*], [*Why it did so*],
-  [libjpeg], [A `jmp_buf` inside `struct jpeg_error_mgr`; on error it jumps from `error_exit`], [Decoding is deep recursion, so a return-value chain would be far too long],
-  [libpng], [The same pattern through the `png_jmpbuf(png_ptr)` macro], [The same reason — imitating exceptions in a C API],
-  [The Lua interpreter], [`LUAI_THROW`/`LUAI_TRY` are implemented with `longjmp` in a C build], [A script's `error()` must be carried into the host language],
-  [Some coroutine implementations], [Save the context with `setjmp` and swap stacks], [The only road to imitating context switching with the standard alone],
-  [Test frameworks], [On a failed assertion, abandon that test and move to the next], [One test's failure must not stop the whole run],
+  [*Layer*], [*Unit*], [*Where it is used*],
+  [Bytes], [`char`], [Storage, transmission, buffer sizes],
+  [Code units], [A UTF-16 unit, …], [The `length` of Java and JavaScript],
+  [Code points], [One Unicode value], [Normalisation, classification, conversion],
+  [Grapheme clusters], [What a reader sees as one character], [Cursor movement, counting, truncation],
 )
 
-#realcase("libjpeg's error manager — how it came to look like this")[
-  Code using libjpeg almost always begins like this.
+The demonstration measures the difference. One emoji family is *18 bytes, 5 code
+points, 1 visible character.* An invisible character, ZWJ (U+200D), joined three
+people into one. A flag is two regional indicators gathered into one.
 
-  ```c
-  struct my_error_mgr { struct jpeg_error_mgr pub; jmp_buf setjmp_buffer; };
-
-  static void my_error_exit(j_common_ptr cinfo) {
-      struct my_error_mgr *err = (struct my_error_mgr *)cinfo->err;
-      longjmp(err->setjmp_buffer, 1);
-  }
-  ```
-
-  The library's default behaviour was *to `exit` on error*. That amounts to a
-  library killing the application — one broken image and the whole editor
-  terminates. So libjpeg left open a hook for "the function to call on error", and
-  from inside that hook the only way back was `longjmp`.
-
-  What this case shows is the order of the design. *A deep call chain + a C API +
-  a library that must not kill the process* — when those three coincide, there was
-  hardly any choice besides `setjmp`/`longjmp`. Designed afresh today one would
-  take chapter 48's "failure as a value", but within the constraints of the 1990s
-  it was a reasonable decision.
-]
-
-=== How do they cope with memory — the answer is always the same
-
-Read the previous table again, this time asking only "who frees the memory taken
-before the jump?"
-
-#dtable(
-  columns: 3,
-  [*What*], [*Who frees it*], [*The device*],
-  [libjpeg], [One call to `jpeg_destroy_*`], [The library ties every allocation into pools of its own memory manager],
-  [libpng], [One `png_destroy_read_struct`], [The same way],
-  [Lua], [The garbage collector], [Every allocation is registered in the interpreter's state],
-  [PostgreSQL], [Resetting a memory context where the error is caught], [An arena per query and per transaction],
-  [Test frameworks], [Wholesale, when a test ends], [An arena per test, or separate processes altogether],
-)
-
-*The common thread is visible — they are all arenas.* The flaw that `longjmp`
-cleans up nothing was worked around by a structure in which *no individual `free`
-is needed*: tie everything taken into one bundle, and at the place you jump back
-to, throw away that one bundle.
-
-So one more conclusion attaches. *Use `setjmp` without an arena and a leak is a
-matter of time.* Part XII's arena is also the precondition that makes this
-pattern legitimate.
-
-#realcase("PostgreSQL's `PG_TRY`/`PG_CATCH`")[
-  PostgreSQL builds something very like exceptions out of this device.
-  `PG_TRY` and `PG_CATCH` are macros, and inside them are `sigsetjmp` and a global
-  exception stack. Reporting an error deep down jumps to the nearest `PG_CATCH`.
-
-  But a single query takes thousands of pieces of memory. How is that coped with?
-  *Memory contexts.* Every allocation belongs to some context, and resetting that
-  context where the error is caught makes thousands of pieces vanish at once. An
-  arena used as if it were a language feature.
-
-  And the previous section's rule is written into that source as a convention —
-  *a local variable modified inside a `PG_TRY` block and used in the `PG_CATCH`
-  must be declared `volatile`.* It is precisely the list of what a large C program
-  needs in order to use this device safely: one arena, one `volatile` convention,
-  and macros around the jump so that people never write `longjmp` themselves.
-]
+The same happens in Hangul. "가" can be written as the precomposed U+AC00 or as
+U+1100 (ㄱ) + U+1161 (ㅏ) — what appears on screen is the same letter.
 
 #qa[
-  What happens to `alloca` and variable-length arrays?
+  How do you count grapheme clusters?
 ][
-  Those alone are cleaned up automatically. They were taken from the stack, so
-  when the stack pointer rewinds they go with it — the VLAs of the skipped frames
-  do not leak.
+  The rules are Unicode Annex UAX \#29. It defines "where a character breaks" by
+  combinations of character properties, and implementing it properly needs the
+  Unicode database.
 
-  The standard does nail down one thing, though. *A `longjmp` that would leave the
-  scope of an identifier with a variably modified type is undefined behaviour* —
-  the implementation loses its chance to tidy that place. So the rule becomes "do
-  not jump across a block in which a VLA is alive."
+  The demonstration's count is a *simplified version* covering the four cases you
+  meet most — combining marks, Hangul conjoining jamo, ZWJ joins and regional
+  indicator pairs. That is enough to count most emoji and Hangul correctly, but it
+  is not complete.
 
-  From the memory point of view it comes to this — *what was taken from the stack
-  is cleaned up for free; what was taken from the heap is cleaned up by nobody.*
-  That one line is why all the libraries above went to arenas.
+  The practical conclusion: *do not implement it yourself.* Where grapheme units
+  are genuinely needed (an editor's cursor, display width), use ICU or its like.
+  The purpose of this section is to know *when* they are needed: not for storage,
+  comparison or transmission, but only when handling what a person sees.
 ]
 
-== POSIX's `sigsetjmp`/`siglongjmp`
+== Normalisation — the same letter, different bytes
 
-Unix-like systems have one more pair.
+The two ways of writing "가" become a problem at once in practice, *because
+different bytes make `strcmp` say different.* To the user it is the same letter,
+yet the search misses, file names collide, and a login name is treated as another.
 
-```c
-int  sigsetjmp(sigjmp_buf env, int savemask);
-[[noreturn]] void siglongjmp(sigjmp_buf env, int val);
-```
-
-The difference is whether the *signal mask* (chapter 66) is saved along with the
-rest. If `savemask` is non-zero the current mask is saved too, and `siglongjmp`
-restores it.
-
-Why is that needed? Consider code that escapes from a signal handler with
-`longjmp`. While the handler runs that signal is blocked, and jumping out with the
-standard `longjmp` may *leave it blocked* — after which that signal never arrives
-again. `sigsetjmp` closes that hole.
-
-#misconception[
-  "Escaping from a signal handler with `longjmp` is fine"
-][
-  A widely used but dangerous pattern. Two things compound.
-
-  *First, the mask problem* — exactly as above. On Unix the `sigsetjmp` pair must
-  be used.
-
-  *Second, and more fundamentally, you do not know where it was cut.* A signal
-  arrives in the middle of `malloc` or `printf` too (chapter 66). Jump out from
-  there and that data structure stays half-rewritten. Call `malloc` again after
-  jumping out and it collapses then.
-
-  So the places where the pattern is even defensible are narrow — *finish
-  immediately after jumping* (`_Exit`), or take a path that uses the standard
-  library no further. In a long-running program the pattern of "set a timeout with
-  a signal and escape with `longjmp`" runs well on the surface and collapses
-  rarely.
-]
-
-== Its place today — when to use it, what to use instead
+Unicode handles this with *normalisation* (UAX \#15). There are four forms.
 
 #dtable(
-  columns: 2,
-  [*What you want to do*], [*The recommended way*],
-  [Carry a deep failure upward], [Return it as a value (chapter 48). Tedious for the middle layers, but safer],
-  [Tidy several failure paths inside one function], [Gather them with a single `goto cleanup` — the Linux kernel's practice],
-  [Not forget to release resources], [By *structure*, not by attributes — take and release in the same function],
-  [A deep escape in a parser or interpreter], [One of the few legitimate places for `setjmp`, if the resource discipline is kept],
-  [Escape across threads], [Impossible — `longjmp` works only within one thread],
+  columns: 3,
+  [*Form*], [*What*], [*Example*],
+  [NFC], [Compose as far as possible (the usual recommendation)], [`ㄱ`+`ㅏ` → `가`],
+  [NFD], [Decompose as far as possible], [`가` → `ㄱ`+`ㅏ`],
+  [NFKC, NFKD], [Also unify compatibility characters that look different], [`㈜` → `(주)`, fullwidth `Ａ` → `A`],
 )
 
-The `goto cleanup` pattern is worth writing out again, because most of what people
-reach for `setjmp` to do is in fact covered by it.
+#realcase[
+  macOS file names and NFD
+][
+  macOS's HFS+ file system stored file names *normalised into something close to
+  NFD*. So a Korean file name created on macOS and moved to Linux often appeared
+  with its jamo pulled apart.
 
-```c
-int work(void) {
-    int rc = -1;
-    FILE *f = fopen("data", "r");
-    if (!f) goto out;
-    char *buf = malloc(1024);
-    if (!buf) goto close;
-    if (parse(f, buf) != 0) goto free_buf;
-    rc = 0;
-free_buf: free(buf);
-close:    fclose(f);
-out:      return rc;
-}
-```
+  For the same reason archives broke, web servers returned 404, and `git status`
+  reported perfectly good files as modified. Git ended up adding a
+  `core.precomposeunicode` setting to put names back into NFC on macOS.
 
-*Within one function* this is better. The flow is visible, the order of cleanup is
-written in the code, and the compiler checks it. `setjmp` is needed only when
-*several functions must be skipped over*.
+  Two lessons. *One, normalise before comparing strings* — especially when using
+  something a person typed (a file name, a user name, a search term) as a key.
+  *Two, settle on one form across the whole system* — usually NFC.
+
+  Standard C has no normalisation function. ICU or its like is required.
+]
+
+== Case and sorting depend on the language
+
+The assumption that `toupper` turns one character into one character also
+collapses under Unicode.
+
+#dtable(
+  columns: 3,
+  [*Example*], [*What happens*], [*So*],
+  [Turkish `i`], [Its capital is `İ` (dotted I)], [Without a locale it cannot be done right],
+  [Turkish `I`], [Its lower case is `ı` (dotless i)], [The exact opposite of English],
+  [German `ß`], [Its capital is `SS`, two letters], [Not a one-to-one mapping],
+  [Greek `Σ`], [At the end of a word it is `ς`], [It depends on position],
+)
+
+#realcase[
+  The Turkish `i` — code that really did break
+][
+  The common idiom "to compare case-insensitively, upper-case both and compare"
+  breaks in a Turkish locale. Upper-casing `"file"` gives `"FİLE"`, which is not
+  `"FILE"`.
+
+  Because of this, extension checks failed, HTTP header names did not match and
+  configuration keys went unrecognised in real software. Java's
+  `toUpperCase(Locale.ROOT)` exists as a separate call because of this problem.
+
+  The remedy is to separate the layers. *What a machine compares — protocols,
+  identifiers, file extensions — is folded by ASCII rules only, independent of the
+  locale.* The locale is used only for names shown to people.
+
+  ```c
+  /* for machines — ASCII only, independent of the locale */
+  static char ascii_lower(char c)
+  { return (c >= 'A' && c <= 'Z') ? (char)(c - 'A' + 'a') : c; }
+  ```
+]
+
+== Still alive — the legacy two-byte encodings
+
+The world has not all become UTF-8. Old files, old databases and the protocols of
+old equipment still carry regional two-byte encodings.
+
+#dtable(
+  columns: 3,
+  [*Encoding*], [*Region*], [*Underlying standard*],
+  [EUC-KR / CP949 (UHC)], [Korea], [KS X 1001 (formerly KS C 5601)],
+  [Shift_JIS / CP932], [Japan], [JIS X 0208],
+  [Big5], [Taiwan, Hong Kong], [— (a de facto standard)],
+  [GBK / GB 18030], [China], [GB 18030-2022 (a mandatory Chinese national standard)],
+)
+
+Their common structure is "lead byte + trail byte". And *in some of them the
+trail byte reaches into ASCII* — which is where the famous accident happens.
+
+#demo("examples-en/ch67/legacy_lead.c")
+
+The demonstration reproduces it. In Shift_JIS, 表 is `95 5C` and ソ is `83 5C`,
+and that second byte `0x5C` is the ASCII backslash. So
+`strrchr(path, '\\')` *mistakes a character's trail byte for a path separator.*
+In the demonstration it points at 7 instead of the correct 5, and cutting there
+breaks the file name.
+
+In Japan these characters even have a name — *dame-moji* (ダメ文字). 表, ソ, 十
+and ダ caused accidents over and over in path handling, escaping and SQL.
+
+#dtable(
+  columns: 3,
+  [*Encoding*], [*Trail byte range*], [`0x5C` as a trail?],
+  [EUC-KR], [A1\~FE], [No — safe],
+  [CP949], [41\~5A, 61\~7A, 81\~FE], [No — safe],
+  [Shift_JIS], [40\~7E, 80\~FC], [★ Yes],
+  [Big5], [40\~7E, A1\~FE], [★ Yes],
+  [GBK], [40\~FE (not 7F)], [★ Yes],
+  [UTF-8], [80\~BF], [No — structurally impossible],
+)
+
+*The Korean encodings escaped this accident by luck.* EUC-KR's trail bytes are
+all 0xA1 or above and so never touch ASCII. Code handling Japanese or Chinese, by
+contrast, must use a lead-byte-aware scan.
+
+#antipattern[
+  Scanning a legacy-encoded string byte by byte
+][
+  ```c
+  char *ext = strrchr(filename, '.');    /* can misbehave in Shift_JIS */
+  for (char *p = s; *p; p++)             /* mistakes a trail byte for a character */
+      if (*p == ',') split(p);
+  ```
+  On meeting a lead byte you must step over two. The `safe_last_sep` of the
+  demonstration is that shape. With standard functions, advance one character at a
+  time with `mblen` or `mbrtowc` — but only if the locale is that encoding
+  (chapter 65).
+
+  The better prescription is not to create the problem — *convert to UTF-8 at the
+  input boundary and handle only UTF-8 inside.*
+]
+
+== What does the converting
+
+#dtable(
+  columns: 3,
+  [*Means*], [*Where*], [*Character*],
+  [`iconv`], [POSIX], [Named by encoding. Outside standard C, but on every Unix],
+  [The `MultiByteToWideChar` family], [Windows], [Named by code page number],
+  [ICU], [Portable], [The most complete — normalisation, collation, graphemes],
+  [The `mbrtowc` family], [Standard C], [*Only the locale's encoding* (chapter 65)],
+  [Writing it yourself], [—], [UTF-8 ↔ UTF-16/32 is short. The demonstrations are the example],
+)
+
+Let us restate that standard C alone cannot handle an arbitrary encoding.
+`mbrtowc` knows only "the encoding of the current locale". So a task like "read a
+EUC-KR file and save it as UTF-8" is outside standard C and needs `iconv` or a
+conversion table of your own.
 
 #recap[
   #dtable(
     columns: 2,
     [*What to remember*], [*The point*],
-    [What it is], [An escape hatch that rewinds the stack whole — not an exception],
-    [`setjmp`], [A macro. 0 when called directly, `val` when jumped to (0 becomes 1)],
-    [Context restriction], [Controlling expression, comparison with a constant, `!`, expression statement — four only],
-    [`longjmp`'s premises], [The saving function is still alive, and it is the same thread],
-    [`jmp_buf`], [An array type. Eight callee-saved slots plus room for a signal mask],
-    [Registers], [Only callee-saved ones are restored → stack locals live, register locals revert],
-    [Pointers], [`free` through a reverted pointer means a leak or a double free — measured],
-    [The `volatile` rule], [Automatic, non-`volatile`, changed in between → no guarantee (measured)],
-    [Resources], [Nobody cleans up — keep taking and releasing in one function],
-    [Today's choice], [Mostly return values and `goto cleanup`. Legitimate only in deep parsers],
+    [Design], [UTF-8 byte strings inside, conversion at the boundary only],
+    [Validation], [Once, at the input boundary. Reject overlong, surrogate and out-of-range],
+    [Length], [Bytes, code units, code points, graphemes — settle which layer first],
+    [Normalisation], [To NFC before comparing. Not in standard C],
+    [Case], [ASCII rules for machines. Remember the Turkish `i`],
+    [Legacy], [Shift_JIS, Big5 and GBK have trail bytes that reach into ASCII],
+    [Scanning], [In legacy encodings, know the lead bytes and step over],
+    [Conversion], [`iconv`, ICU, platform APIs. Standard C only does the locale's encoding],
   )
 ]
 
-We have seen the two devices that cut a flow and jump — the signal that comes from
-outside, and the non-local jump that leaps from within. The next chapter is what
-recent standards added, and the long argument over "safe" functions.
+The story of characters that began in chapter 62 closes after six chapters —
+from the judgement of one byte through locales and `wchar_t` to the prescriptions
+of practice. The next chapter is what recent standards added, and the long
+argument over "safe" functions.

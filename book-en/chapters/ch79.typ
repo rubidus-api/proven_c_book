@@ -1,286 +1,281 @@
 #import "../../book/lib.typ": *
 
-= Strings and text
+= The five bugs shipped for fifty years
 
 #prereq(
-  ([chapter 39, Strings], [strings]),
-  ([chapter 9, Characters and text], [UTF-8 and bytes]),
+  ([chapter 48, Errors and contracts], [errors and contracts]),
+  ([chapter 39, Strings], [the danger of strings]),
+  ([chapter 56, The terrain of the standard library], [the traps of the standard library]),
 )
 
 #deepqa[
-  Chapter 39 said that for a C string "up to the NUL" is the length, so to know the
-  length it must be counted every time. Then what improves if the length is carried
-  along — and what is lost?
+  Chapter 39 said the functions handling strings "do not know the size of the
+  vessel", and chapter 48 said "a failure not confirmed becomes a thing that never
+  happened". Then why do such problems still remain — is half a century not more
+  than enough time to mend them?
 ][
-  Three things are gained. The cost of counting the length vanishes ($O(n)$ becomes
-  $O(1)$), data with a zero byte in the middle can be handled, and above all *the
-  boundary can be checked* — without the length there is nothing to check. Two things
-  are lost. One string becomes two words rather than one, and conversion becomes
-  necessary when meeting a world that expects NUL termination, as `printf("%s")` does.
-  This library keeps a NUL internally as well in order to remove that conversion cost
-  — a compromise that has both.
+  Not because they cannot be mended but because mending them *breaks all the code
+  already written*. The moment one more size parameter is put into `strcpy`'s
+  signature, every C program in the world stops compiling. The standard is an
+  institution that must protect existing code (chapter 56's reason for "thin and
+  old" appears here too), so instead of removing dangerous functions it has taken the
+  road of *placing better functions beside them*. So the choice comes over to the
+  programmer — it is, in effect, a language in which knowing what is dangerous and
+  choosing accordingly is itself skill.
 ]
 
 #organizer[
-  The answer to chapter 74's first bug — string functions that do not know the size
-  of the vessel. Strings that carry their length, the distinction between owning and
-  borrowing, and this library's most contentious decision, *refuse rather than
-  truncate*. Chapter 9's story of encodings and chapter 39's story of boundaries
-  gather here into one.
+  This part's statement of the problem. We confirm with actually running code why C
+  has kept shipping the same five classes of bug for half a century — that it is not
+  the programmer's carelessness but *the shape of the API*. Only after all five have
+  been seen does the name proven appear again. Not introducing the tool first is
+  this part's principle.
+]
+
+#qa[
+  Then are these five a list of mistakes beginners make?
+][
+  No. These are mistakes *the skilled keep making too*, and that point matters. If
+  people who know the whole grammar still slip in the same places, the cause is not
+  the person but *the shape of the tool*. A function that does not take a size has
+  no way of checking a size, and a function whose return value may be thrown away
+  with nothing happening will one day be thrown away. This chapter takes that
+  "shape" apart one at a time.
 ]
 
 #chapter-questions()
 
-== Two types, one rule
+== One — string functions do not know the size of the vessel
 
-The string vocabulary is only two.
-
-- `proven_u8str_t` — an *owning* string. It has a buffer, a length and a capacity.
-- `proven_u8str_view_t` — a *borrowed* string. Only a pointer and a length.
-
-If the name has `view` in it, it is borrowed, and what is borrowed is not destroyed.
-The rule set up in chapter 78 applied to strings as it is. `u8` means UTF-8 — that
-encoding seen in chapter 9 is this library's default text representation.
-
-Open them up and why they were divided in two becomes clear.
+The oldest and most exploited class. Exactly as seen in chapter 39.
 
 ```c
-/* the borrowed string — the same shape as chapter 77's mem_view_t */
-typedef struct {
-    const proven_byte_t *ptr;
-    proven_size_t        size;
-} proven_u8str_view_t;
-
-/* the owning string — one buffer and an "is it borrowed" flag */
-typedef struct {
-    proven_buf_t internal;   /* { ptr, len, cap } */
-    bool         borrowed;
-} proven_u8str_t;
+char buf[64];
+strcpy(buf, name);            /* how long is name? strcpy does not ask */
+strcat(buf, ", welcome!");    /* and how much room is left now? */
 ```
 
-The three slots of `proven_buf_t` state the string's character as they are. *`len` is
-the number of bytes of content held now*, *`cap` is the whole buffer's size*, and the
-difference between them is the spare room including the NUL's place. So
-`create(alloc, 64)` really takes 65 bytes — 64 is the limit of the *content* and one
-byte is the NUL's share. Thanks to that one byte `proven_u8str_as_cstr` can hand out a
-C string with neither copying nor allocation.
+`strcpy`'s signature has no destination size. What is not there cannot be checked,
+so this function will happily write to the 200th byte of a 64-byte vessel. What gets
+wrecked depends on what the compiler placed after it, and commonly that is the
+function's return address (recall chapter 41's picture of the stack).
 
-The `borrowed` flag marks a string made with `_borrow`. When this flag is on,
-`_destroy` *releases nothing* and merely empties the struct — somebody else's memory
-cannot be given back.
+The modern prescription is to use the editions that take a size — `snprintf` is
+representative. And here is a second trap. Functions that take a size *quietly
+truncate* when it overflows.
 
-There are three roads to obtaining a string.
+#demo("examples-en/ch79/truncate.c")
 
-#dtable(
-  columns: 4,
-  [*function*], [*allocates*], [*destroy*], [*where it is used*],
-  [`proven_u8str_create(alloc, limit)`], [yes], [`_destroy` needed], [starting empty and filling it],
-  [`proven_u8str_create_from_view(alloc, v)`], [yes], [`_destroy` needed], [owning a copy of existing content],
-  [`proven_u8str_borrow(buf, cap)`], [no], [unnecessary (harmless)], [over a stack or static array. embedded],
-)
-
-Only beware that `_borrow`'s `cap` is *the whole capacity including the NUL* — give it
-`buf[64]` and the content goes to 63 bytes.
-
-Making a view from a literal is done with one macro.
-
-```c
-PROVEN_LIT("hello")        /* becomes { ptr, 5 } at compile time — no strlen */
-proven_u8str_view_from_cstr(p)   /* counts the length at run time */
-```
-
-`PROVEN_LIT` draws the length from `sizeof("...") - 1`, so its *run-time cost is zero*.
-Using it for string literals is the practice, and `_from_cstr` for a C string whose
-length is unknown.
-
-#demo("examples-en/ch79/ops.c")
-
-The first line shows chapter 78's rule again. `proven_u8str_borrow` has no allocator —
-therefore it does not allocate. It is doing string operations on a 16-byte array taken
-on the stack, and this is exactly how strings are handled in embedded work without a
-heap.
-
-== Refuse, rather than truncate
-
-The second `append` is the most important single line of this part. On trying to
-attach `" world, and more"` after `"hello"` in a 16-byte vessel, the library *wrote
-nothing* and returned `PROVEN_ERR_OUT_OF_BOUNDS`. And as the next line shows, the
-original content `hello` stands as it was — the failure atomicity learned in
-chapter 76.
-
-It is the exact opposite of `snprintf`'s choice seen in chapter 74. Why not truncate?
-
-*Because a truncated value is not a short value but a different value.* A truncated
-path points at a different file, a truncated command is a different command, a
-truncated user name is a different person. Truncate and declare success and the caller
-cannot know whether what was received is what was requested. So this library *gives
-the decision back to the caller* — "there is not enough room. What shall we do?"
-
-#qa[
-  Still, are there not places where truncation is fine, such as one line of a log?
-][
-  There are. So there is a separate function that *explicitly writes only part* —
-  `proven_u8str_append_partial` returns the number of bytes that went in. That the
-  name is long and the return value different is the heart of it. Truncation is still
-  possible, but to do it you must *write it that way*. The principle that the default
-  is always the safe side and the dangerous choice can be made only through a visible
-  name (the same as chapter 77's `_unchecked`) is kept here too.
-]
+Look at the third line. What was to be made was
+`/var/log/service/http/access.log`, and what remained in hand is
+`/var/log/service/http/a`. The program neither stopped nor warned. If this string is
+a file path it opens the wrong file, if a command it becomes a different command, if
+a log the record of an accident is cut without a sound. *A truncated path is not a
+short path but a wrong path.*
 
 #antipattern[
-  Confusing growth with fixed capacity
+  Treating truncation as success
 ][
   ```c
-  proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
-  proven_err_t e = proven_u8str_append_grow(alloc, &s, view);  /* dangerous */
+  snprintf(path, sizeof path, "%s/%s", dir, name);
+  open_file(path);          /* nobody asked whether it was truncated */
   ```
-  `_append` writes only within the capacity, while `_append_grow` asks the allocator
-  for more if there is not enough — which is why only the latter has an allocator
-  argument. The problem is demanding growth on a borrowed buffer (`_borrow`). A stack
-  array cannot grow, so this is a design error.
-
-  In this case the library *does not quietly reallocate somebody else's memory* but
-  returns `OUT_OF_BOUNDS` — it succeeds while things fit and refuses the moment they
-  would not. The habit of reading signatures becomes the defence here as it stands —
-  *with an allocator it can grow, without one it cannot.*
+  `snprintf` in fact gives the answer — it returns *the length that would have been
+  needed*. If that value is at least the vessel's size it was truncated (the
+  example's last line is that check). The problem is that this check is *optional*.
+  Throw the return value away and the compiler says nothing. That leads straight
+  into the second bug.
 ]
-
-== Three kinds of writing — refuse, truncate, grow
-
-This library's string operations are made so that the kind can be known from the name
-alone. That kind is "what happens when there is not enough room".
-
-#dtable(
-  columns: 4,
-  [*kind*], [*shape of the name*], [*when short*], [*failure atomicity*],
-  [fixed capacity, atomic], [`_append`, `_insert`, `_replace_at`], [refuses (`OUT_OF_BOUNDS`)], [yes — the original stands],
-  [best effort, truncating], [`_append_partial`, `_append_fmt_trunc`], [writes as much as fits and reports], [no (deliberately)],
-  [growing], [`_append_grow`, `_insert_grow`, `_replace_at_grow`], [asks the allocator for more], [yes — the original stands if allocation fails],
-)
-
-All three kinds are needed because the right answer differs by place. Where a file path
-is being built truncation must not happen, so *refusing* is right; where a log line is
-fitted to the screen *truncating* is right; where the length is unknown *growing* is
-right. That the default (the short name) is refusal shows this design's attitude.
-
-== The operations that mend a string
-
-Appending alone is not enough. There are operations that mend the middle, delete, and
-rewrite.
-
-#demo("examples-en/ch79/edit.c")
-
-#dtable(
-  columns: 3,
-  [*function*], [*what it does*], [*contract*],
-  [`_insert(&s, i, v)`], [inserts at position `i`], [`i` ≤ length. it pushes the tail out],
-  [`_remove(&s, i, n)`], [deletes `n` bytes from `i`], [an error if it exceeds the range],
-  [`_replace_at(&s, i, old, v)`], [a range with other content], [the lengths may differ],
-  [`_replace_first(&s, off, t, r)`], [the first `t` found, into `r`], [★ if absent it returns *success*],
-  [`_reset(&s)`], [empties only the content], [the buffer and capacity stand],
-  [`_reserve(alloc, &s, n)`], [capacity up to `n` in advance], [it pays especially on an arena],
-  [`_append_byte(alloc, &s, b)`], [appends one byte], [grows if needed],
-)
-
-The starred contract of `_replace_first` needs care. *Not finding it is not an error but
-a success* — to distinguish "there was nothing to replace" from "it was replaced" you
-must first check with `proven_u8str_view_find`. That the example's "replacing what is
-not there" comes back as `err=0` is that confirmation.
-
-`_reset` and `_reserve` are a pair for performance. In code that builds a string afresh
-every frame or per request, *reusing the buffer instead of throwing it away* is
-`_reset`, and taking it in advance when you roughly know how large it will grow is
-`_reserve`. As seen in chapter 78, `_reserve` pays especially on an arena — take it
-large before another allocation intervenes and growth in place becomes possible.
-
-#qa[
-  Which should be the default, `_insert` or `_insert_grow`?
-][
-  *`_insert` where I settle the capacity*, *`_insert_grow` where I do not know how much
-  content there will be*. The criterion is simple — "is running short here *a bug*, or
-  *a thing that can happen*?"
-
-  If a protocol header is being assembled in a fixed-size buffer, running short is a bug,
-  and refusal is right there (and that error reveals the bug). If user input is being
-  appended, it can grow to any length, so growing is right. It is also why embedded code
-  uses only the editions without `_grow` — there, *unpredictable growth itself is
-  forbidden* (chapter 83).
-]
-
-== Finding and cutting — text handling without copying
-
-The example's ③ and ④ are a view's real usefulness. Obtaining a substring needs no
-copying — it merely calculates a new pointer into the original and a new length.
-While one CSV line was divided into three fields, not one allocation happened.
-
-This pattern is especially powerful in parsers. When parsing a line with `sscanf` in
-chapter 25 a buffer had to be prepared in advance to hold the result, whereas cutting
-with views leaves only *marks upon the original*. In exchange one more thing must be
-kept — as seen in chapter 77, *it is valid only while the original is alive*.
-
-There is a convention too in the value `find` returns when it does not find. It is
-not 0 or a negative number but a sentinel with a name, `PROVEN_INDEX_NOT_FOUND`.
-Chapter 74 spoke of the danger of sentinel values, and what differs here is that *it
-has a name and is documented* — a nameless magic number and a named contract are
-different things.
-
-#misconception[
-  "Carrying the length means knowing the number of characters"
-][
-  No. The length is *the number of bytes*. As learned in chapter 9, one character in
-  UTF-8 is 1\~4 bytes, so the Korean "가" is 3 bytes and an emoji is 4. It is why the
-  example's output takes the trouble to state "(5 bytes)". So handling "the nth
-  character" is still delicate, and *cutting anywhere at a byte boundary* gives the
-  broken characters seen in chapter 9. What a string library solves is boundary
-  trespass, not the essential difficulty of encodings.
-]
-
-== The boundary of two worlds — NUL termination and UTF-16
-
-Conversion is needed at every place where the outside world is met.
-
-- `proven_u8str_as_cstr` — obtains a NUL-terminated pointer from an owning string.
-  A NUL being kept internally, there is neither copying nor allocation. It is used
-  when passing to `printf("%s")` or to a file API.
-- `proven_u8str_view_to_cstr` — makes a NUL-terminated string from a view. This one
-  *takes an allocator* — because a view may point into the middle of the original and
-  a NUL cannot be written in that place. The signature states the fact once again.
-- `proven_u16str_t` / `proven_u16str_view_t` — the bridge to the UTF-16 world. The
-  Windows API uses this encoding so conversion is needed, and conversion can fail
-  (unpaired surrogates and the like). So the result comes as a bundle.
 
 #realcase[
-  "Do not guess, refuse" — the principle of handling encodings
+  The compiler catches only what it can see
 ][
-  The root of the text security problems seen in chapter 9 is mostly *the lenient
-  decoder*. Implementations that "read a wrong UTF-8 as something similar" have
-  several times been the passage to security incidents — decoders that permitted
-  overlong encodings in particular had their checks bypassed. So today's norm is one
-  sentence. *Do not read invalid input as something mended; refuse it.* proven's
-  encoding conversion stopping with `PROVEN_ERR_INVALID_ENCODING` is that norm
-  implemented, and this principle is exactly the same spirit as this chapter's "do not
-  truncate".
+  Something that really happened while making this example. At first `snprintf` was
+  called directly inside `main` with literal arguments, and gcc caught it.
+
+  ```text
+  error: ‘%s’ directive output truncated writing 10 bytes
+         into a region of size 2 [-Werror=format-truncation=]
+  note: ‘snprintf’ output 33 bytes into a destination of size 24
+  ```
+
+  An excellent diagnosis. Yet moving the same call inside a function called
+  `build_path` made the warning *vanish*. The moment a function boundary is crossed
+  the compiler cannot know the real lengths of `dir` and `name`. In a real program
+  strings come from files or from the network, so cases where the compiler can help
+  are rather rare. A warning is a free review, not a guarantee (chapter 17).
 ]
 
-#recap[
-  The string vocabulary in summary.
+== Two — there is no device that makes you confirm failure
 
+```c
+char *p = malloc(n);
+p[0] = 'x';                   /* malloc gives null on failure */
+```
+
+C's ways of reporting failure are two. Return a *sentinel value* (null, `-1`, `EOF`),
+or leave the reason in the global variable `errno`. Neither can compel a check. Code
+that throws the return value away is perfectly legal, and `errno` is global state
+that must be read at exactly the right moment, before the next call overwrites it
+(chapter 56).
+
+#demo("examples-en/ch79/unchecked.c")
+
+That `careless typo` returned 8080 is this section's heart. There was a typo in the
+configuration and the program *quietly fell back to the default*. On the surface
+nothing happened, and months later only the question "why is the setting not taking
+effect?" remains. That `strtol("abc")` gives 0 is the same pattern — failure and "a
+real 0" come back as the same value.
+
+#misconception[
+  "Failure is exceptional, so it can be handled later"
+][
+  The premise that failure is rare is wrong to begin with. A file may not exist,
+  input carries typos, disks fill, networks break — every place where the program
+  touches the outside world is a point of failure. And the real reason "later" is
+  dangerous lies elsewhere. Code that ignored a failure *does not stop but keeps
+  running*. A wrong value flows into the next calculation, into the function after
+  that, and by the time the problem finally shows itself it blows up far from its
+  cause. Chapter 48's "fail early" returns here.
+]
+
+== Three — `printf` believes exactly what you tell it
+
+Chapter 56 took the grammar of the format string apart. That grammar has one
+structural weakness — *the type is written twice*. Once in the format (`%d`) and
+once in the argument (the variable's type). If the two go out of step the language
+cannot prevent it, because as seen in chapter 53 type information does not ride
+along into variadic arguments.
+
+Today's compilers catch this. The real message is like this.
+
+```text
+warning: format ‘%d’ expects argument of type ‘int’,
+         but argument 2 has type ‘double’ [-Wformat=]
+    3 |     printf("%d\n", 3.0);
+      |             ~^     ~~~
+      |              |     |
+      |              int   double
+```
+
+But only this far. The moment the format becomes a *variable* — the moment a
+multilingual message is taken from a table or a log format is received from a
+configuration — the compiler has nothing left to look at.
+
+#antipattern[
+  Code that takes the format as a variable
+][
+  ```c
+  const char *fmt = load_message("greeting");   /* a format taken from a table */
+  printf(fmt, count);                           /* no warning. no check either */
+  ```
+  Not a single warning comes from this code. Because a way of knowing whether format
+  and arguments match does not exist at compile time. Worst is when the format is
+  *user input*, which becomes the format string vulnerability seen in chapter 56.
+]
+
+== Four — who frees this
+
+```c
+char *s = build_message();    /* must this be freed? the type says nothing */
+```
+
+As learned in chapter 42, dynamically taken memory must be released by somebody
+exactly once. Yet a `char *` a function returned may be any of four things.
+
+- Just allocated — it must be freed.
+- Pointing at a buffer the caller gave — it must not be freed.
+- A string literal in a read-only place — freeing it is an accident.
+- A static buffer the next call will overwrite — it must neither be freed nor held
+  for long (chapter 56's `strtok` was such).
+
+The types of the four cases are *all the same*. The answer is in the documentation,
+and documentation goes out of step with code as a matter of course. Here arise
+chapter 42's three accidents — a leak (nobody frees), a double free (both free), and
+use after free (somebody still points at it after freeing).
+
+#antipattern[
+  An API whose type does not state ownership
+][
+  ```c
+  const char *lookup(int code);        /* a literal? an allocation? a static buffer? */
+  char       *format_time(time_t t);   /* must this be freed? */
+  ```
+  It cannot be known from the name and type alone. *Every place* that uses this API
+  must remember the documentation, and if even one forgets it becomes one of the
+  three accidents above. That the discipline is entrusted to human memory is the
+  essence of the problem.
+]
+
+== Five — a callback nobody can type-check for you
+
+```c
+qsort(a, n, sizeof *a, cmp);   /* cmp takes const void* */
+```
+
+`qsort` takes a comparison function through a `void *` interface in order to sort any
+type. In a language with no generics this is nearly the only way, but the price is
+*the complete abandonment of type checking*. Whatever you cast to inside the
+comparator, the compiler believes you.
+
+#demo("examples-en/ch79/cmp_bad.c")
+
+The `first-char` comparator's types match perfectly, it compiles without a single
+warning, and it does not die. It is only that `peach` and `pear` are in the wrong
+order — seeing only the first letter, the two were judged "equal" and the rest was
+left to chance. This class of bug is found last of all, because it gives *a quietly
+wrong answer*.
+
+#realcase[
+  Attacks aiming at a data structure's worst case
+][
+  There is a performance trap in the same place. Widely used sorting and hashing
+  implementations are fast on average but slow down sharply on particular inputs, and
+  the technique of an attacker deliberately making such inputs to paralyse a server
+  (an algorithmic complexity attack) was organised in a 2003 paper and used in real
+  attacks. Attacks of the same family aiming at hash collisions brought down several
+  web frameworks at once in 2011. They were events showing that a data structure's
+  *worst case* is itself a security problem, and so today's libraries take as their
+  defaults sorting with a guarantee even in the worst case (introsort) and hashes
+  using a random seed — we see them in the flesh in chapter 86.
+]
+
+== And a sixth — bytes have types
+
+We said five, but one more must be added to be fair. It is the strict aliasing seen
+in chapter 13. A hand-written parser that peers into a byte buffer through pointers
+of different widths runs perfectly at `-O0` and quietly gives a different answer at
+`-O2`. It is the representative of the "bug that appears only in release" seen in
+chapter 17, and the clause to which the Linux kernel surrendered with a single flag.
+
+Gathering the six into one table gives this part's map.
+
+#recap[
   #dtable(
   columns: 3,
-    [*function*], [*what it does*], [*failure and ownership*],
-    [`u8str_create(alloc, cap)`], [create an owning string], [returns a bundle, needs `_destroy`],
-    [`u8str_borrow(buf, cap)`], [a string over somebody's buffer], [no allocation, no destruction],
-    [`u8str_append(&s, v)`], [append within the capacity], [refuses if short (the original is preserved)],
-    [`u8str_append_partial`], [as much as fits], [returns the number of bytes put in],
-    [`u8str_append_grow(alloc,…)`], [grow it if short], [allocation may fail],
-    [`u8str_view_find`], [the position of a substring], [`PROVEN_INDEX_NOT_FOUND` if absent],
-    [`u8str_view_slice`], [a sub-view], [no copying — tied to the original's lifetime],
-    [`u8str_as_cstr`], [a NUL-terminated pointer], [no copying],
-    [`u8str_view_to_cstr`], [view → a C string], [needs an allocator],
+    [*problem*], [*what C gives*], [*what is needed*],
+    [buffer overflow and truncation], [string functions that do not know the size], [strings that carry their length, writes that do not truncate],
+    [unconfirmed failure], [sentinel values and `errno`], [errors that come as values, a compile refusal if discarded],
+    [format mismatch], [a `printf` that believes the format string], [placeholders that take the type from the argument],
+    [unclear ownership], [a `char *` that means four things], [different types for owning and borrowing],
+    [unchecked callbacks], [the `void *` interface], [documented contracts and worst-case-guaranteed algorithms],
+    [the hidden type of bytes], [UB on breaking the aliasing rule], [a byte type the rule exempts],
 )
 ]
 
-We can now hold and cut strings safely. But the work of *making* them remains —
-turning numbers and values into letters, and turning letters back into numbers. It is
-the place where chapter 74's third bug waits, and the place where this library's most
-conspicuously different syntax appears.
+#qa[
+  Would it not be better to use another language entirely to avoid such problems?
+][
+  That too is an answer, and many places really went that road (chapter 1). But the
+  places where C must be used still remain — operating systems, firmware, the floor
+  layer other languages lean on, and projects where decades of code have already
+  piled up. What can be done in such places is *not to change the language but to
+  change the shape of the API*. The right-hand column of the table above is not a
+  list of items requiring a new language but things that can be made by design within
+  C. From the next chapter we see that design.
+]
+
+The library that implements that right-hand column as it stands is the proven this
+book has leaned on. We first met it in chapter 40 and its name has come up a few
+times since, but treating it head on begins now. The next chapter is installation and
+a first program — and why this library has the shape of "nothing to install".

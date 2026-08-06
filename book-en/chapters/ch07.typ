@@ -192,7 +192,7 @@ practice was promoted to a promise of the standard (exactly the pattern of the
   spectacularly was not an overflow "alarm" but a *downstream accident* caused
   by the wrapped value. Watching for overflow is the programmer's job, not the
   machine's — which is also why verified tools like proven check arithmetic
-  later on (chapters 40 and 77).
+  later on (chapters 40 and 82).
 ]
 
 == Shift — pushing bits wholesale

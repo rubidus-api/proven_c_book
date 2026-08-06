@@ -1,333 +1,303 @@
 #import "../../book/lib.typ": *
 
-= Allocation is a parameter
+= Inside the allocator — the heap, alternative allocators, alternative standard libraries
 
 #prereq(
-  ([chapter 42, Dynamic memory], [dynamic memory]),
-  ([chapter 73, Inside the allocator], [inside the allocator]),
+  ([chapter 42, Dynamic memory], [dynamic allocation]),
+  ([chapter 77, A program's map of memory], [a program's map of memory]),
 )
 
 #deepqa[
-  Chapter 42 said memory obtained with `malloc` must be `free`d by somebody exactly
-  once, and that settling that "somebody" is the program's design. Then is there a
-  way to know from a function alone whether "this function allocates memory"?
+  Chapter 42 said one `malloc` is "a trip to the warehouse office", and
+  chapter 77 showed where in the address space that warehouse lies. Then what
+  ledgers exactly does that office keep inside?
 ][
-  In standard C there is not. `malloc` can be called anywhere, so any function can
-  allocate in secret, and the signature does not say so. proven's answer is to return
-  that information to the signature with one rule — *a function that does not take an
-  allocator as an argument does not allocate.* If this rule is kept, reading the
-  signature alone tells you "this function may take memory".
+  It writes two things down — *which piece is free* and *how many bytes each piece
+  is*. The classic answer manages the former with lists by size (bins) and the
+  latter with a header attached to each block. How these two ledgers are designed
+  settles an allocator's performance and security entire. This chapter is the map of
+  that design.
 ]
 
 #organizer[
-  The answer to chapter 74's fourth bug — unclear ownership. The *allocator* that
-#idx("allocator")  handles the source of memory as a value, the *arena* that returns
-#idx("arena")  things of the same lifetime all at once, and the rule that divides
-  owning from borrowing by type. The dangers of the heap learned in chapter 42 are
-  organised here into design.
+#idx("allocator")  We open the inside of the `malloc` chapter 42 passed over saying
+  only "it is expensive". How an allocator manages free pieces (bins, boundary
+  tags, coalescing), why there is a cache per strand, what fragmentation is and why
+#idx("fragmentation")  it does not recover. Then the alternatives that can be
+  swapped in for the standard `malloc` (jemalloc, tcmalloc, mimalloc, snmalloc) and
+  the alternative standard libraries (musl, picolibc and others), and the arenas and
+  pools that change the very shape of allocation. The end of this chapter is the
+  door to Part XII.
 ]
 
 #chapter-questions()
 
-== An allocator is a value
+== Ledger ① — the header attached to each block
 
-`proven_allocator_t` is one struct — a context pointer and three function pointers
-(allocate, reallocate, free). There is no special global and no registration
-procedure. Being simply a value, it can be passed as an argument, held in a struct,
-and returned from a function. The *virtual function table* seen in chapter 54 is here
-as it stands.
+`free(p)` does not take a size. And yet it must know how many bytes are being
+returned. The answer is simple — *the size is written just before the address that
+was returned.*
 
-```c
-typedef struct {
-    void *ctx;                        /* this allocator's state (for an arena, the arena) */
-    proven_alloc_fn_t   alloc_fn;
-    proven_realloc_fn_t realloc_fn;
-    proven_free_fn_t    free_fn;
-} proven_allocator_t;
+```text
+        ┌────────────┬──────────────────────────┐
+        │ header     │ the place given to you   │
+        │ size·flags │ ← the address malloc gave│
+        └────────────┴──────────────────────────┘
 ```
 
-The three functions' signatures write the contract down as they stand.
+This header explains two facts seen in chapter 42. *Even a request for 1 byte
+consumes far more* (the header plus alignment padding), and *making countless small
+pieces makes the management information as large as the data.*
 
-```c
-proven_result_mem_mut_t (*alloc_fn)(void *ctx, proven_size_t size,
-                                    proven_size_t align);
-proven_result_mem_mut_t (*realloc_fn)(void *ctx, void *old_ptr,
-                                      proven_size_t old_size,
-                                      proven_size_t new_size,
-                                      proven_size_t align);
-void                    (*free_fn)(void *ctx, void *ptr);
-```
+The classic design (the dlmalloc family) lays one more layer on top of this. It
+writes the size *at the end of the block too* — a *boundary tag*. Then from any
+block the size of "the block just before" can be known at once, so *coalescing* with
+a neighbouring free piece on release finishes in constant time. It is the most basic
+device for preventing pieces from scattering finely.
 
-*Why pass `old_size` and `align` too.* The standard `realloc` does not ask the old size
-— because the allocator wrote it into the block's header (chapter 73). But an arena has
-no header. Not making a place to write the size is why an arena is fast, so the choice
-was for *the caller to tell it* instead. This decision is what lets a "headerless
-allocator" fit the same interface.
-
-Four things from the contract must be remembered.
-
-+ *`align` must be a power of two.* And *a block must be reallocated and freed with the
-  same alignment it was allocated with.* Because the heap allocator handles requests at
-  or below the default alignment differently from stricter ones (chapter 77) — handing
-  a block back in a different alignment class is outside the contract.
-+ *`size == 0` is `INVALID_ARG`.* A zero-byte allocation is treated as a caller's bug.
-  Before this rule the heap said `NOMEM` (a lie — nothing was out of memory) and the
-  arena returned a valid pointer, so *the answer differed per allocator*. Generic code
-  cannot be written on a rule like that.
-+ *A reallocation with `new_size == 0` is a free* — it gives a null pointer and
-  `PROVEN_OK`.
-+ *Reallocation is failure-atomic.* On failure `old_ptr` is still valid and its contents
-  untouched — chapter 61's `realloc` leak counterexample blocked at the level of the
-  interface.
-
-And every function that allocates has this shape.
-
-```c
-proven_result_u8str_t proven_u8str_create(proven_allocator_t alloc,
-                                          proven_size_t limit);
-void                  proven_u8str_destroy(proven_allocator_t alloc,
-                                           proven_u8str_t *str);
-```
-
-*Destroy with the allocator given at creation* — that is the whole of the ownership
-rule.
-
-== Swapping the three sources
-
-#demo("examples-en/ch78/three.c")
-
-Look at the `make_list` function. This function *does not know* whether the memory it
-uses comes from `malloc`, from a static array, or from a recycling bin. The caller
-settles it, and the same code runs identically over all three.
-
-Three things can be read in the output.
-
-*① An arena's usage is visible.* That `arena.offset` is 129 means exactly 129 bytes
-(128 of content + 1 NUL) went out for one string. A number that cannot be known on the
-heap can be counted in an arena — in embedded work this transparency pays when setting
-a memory budget.
-
-*② Reset makes individual release meaningless.* The usage did not fall although
-`destroy` was called (an arena's `free` does nothing), and one `reset` took it to 0.
-"Instead of giving back individually, give the whole back" is this picture.
-
-*③ When it runs dry it refuses as a value.* Requesting 128 bytes from a 64-byte arena
-gave back `NOMEM` (1). It neither collapses nor quietly falls back to the heap.
-
-#qa[
-  Besides `heap`, `arena` and `pool`, can I make an allocator myself?
+#misconception[
+  "A heap block's header is an internal matter, no need to care"
 ][
-  Of course. Chapter 76's example already did — a testing allocator that "fails from the
-  nth call" made of three functions and inserted. The only rule is keeping the contract
-  above.
+  It is worth caring about for two reasons.
 
-  The cases for making one in practice are mostly these. *Instrumentation* — a shell
-  counting allocations and peak usage. *Testing* — failing on purpose, painting freed
-  memory with 0xDD. *Debugging* — recording the place (file and line) of an allocation.
-  *Special resources* — obtaining from shared memory or a DMA-capable region, places
-  `malloc` cannot give.
+  First, *security*. The header being right beside the user data, one buffer
+  overflow can overwrite a neighbouring block's header. Then the allocator's ledger
+  tells lies, and an attacker can make "the next `malloc` return the address I want".
+  The whole family of techniques called heap exploitation grows from this place. So
+  modern allocators put defences in — scrambling the free list's pointers with the
+  address (safe-linking), inserting marks that notice a double free, or putting the
+  header entirely away from the user data (mimalloc and snmalloc below go in that
+  direction).
 
-  All four take the shape of *wrapping an existing allocator*. They hold a backing
-  allocator inside, do their own work and pass it on. Chapter 76's example is the model.
+  Second, *memory accounting*. The answer to "why do a million 100-byte pieces eat
+  160 MB rather than 100 MB" is this header and the alignment padding.
 ]
 
-#qa[
-  Why is this such an important property? Most of the time the heap will be used
-  anyway.
-][
-  Because three things follow at once. First, *the same code runs in an environment
-  with no heap* — such is embedded work (chapter 83), and such is inside a kernel.
-  Second, *testing becomes easy* — insert an allocator that fails on purpose and you
-  can test "does this code recover properly when memory runs short". Third, *the
-  caller can choose the performance* — for data that lives briefly and dies all at
-  once, an arena is far faster than the heap. The moment the library calls `malloc`
-  directly, all three of these vanish.
-]
+== Ledger ② — lists by size and caches per strand
 
-== The arena — things of the same lifetime, all at once
-
-Chapter 42 taught the heap's three dangers (leak, double free, use after free). All
-three come from *individual release*. Then what if individual release were removed —
-that is the arena's idea.
-
-An arena takes one large lump of memory and, whenever a request comes, cuts from the
-front. There is a release function but it does nothing. Instead there is *reset* — it
-returns everything at once.
-
-That the struct has only two slots shows this simplicity as it stands.
-
-```c
-typedef struct {
-    proven_mem_mut_t backing;   /* the memory that backs it (borrowed) */
-    proven_size_t    offset;    /* how far it has been handed out */
-} proven_arena_t;
-```
-
-*An arena does not own its memory.* That `backing` is a writing window (`mem_mut_t`) is
-that declaration — a static array, a stack array, or a lump received once from the heap
-is prepared by the caller, and the arena only cuts on top of it. So
-`proven_arena_destroy` *does nothing* (there is nothing borrowed to give back). If the
-lump came from the heap, returning it is still the caller's part.
-
-The life cycle is four steps.
+Keep the free pieces in one long list and every request must scan the whole list. So
+the lists are divided by size — these are *bins*. Taking glibc's allocator as an
+example, there are roughly these layers.
 
 #dtable(
   columns: 3,
-  [*step*], [*function*], [*what happens*],
-  [making], [`proven_arena_create(backing)`], [`offset = 0`. no allocation],
-  [handing out], [`proven_arena_alloc(&a, n)`], [aligns and pushes `offset`],
-  [taking back], [`proven_arena_reset(&a)`], [`offset = 0` — everything becomes invalid],
-  [ending], [`proven_arena_destroy(&a)`], [the formal partner. it does nothing],
+  [*layer*], [*what*], [*why*],
+  [tcache], [a small cache kept separately per strand], [to take pieces out at once without locking],
+  [fastbin], [singly linked lists of small sizes], [quick reuse without coalescing],
+  [smallbin], [lists by exact size], [finding is constant time],
+  [largebin], [sorted lists by range], [to choose a fitting size],
+  [unsorted bin], [a temporary place for the just-freed], [to reuse as it is for the next request],
+  [top chunk], [the lump remaining at the very end of the heap], [when short, it is cut from here],
 )
 
-The allocation function has four editions. Choose the one that fits.
+The heart of it is the *cache per strand* (tcache). If several strands touch the
+same ledger it becomes slow through locking (chapter 74), so each strand keeps a
+small drawer of its own and takes from there first. Only when the drawer is empty
+does it go to the shared ledger. It is the common design of today's fast allocators,
+differing only in name (tcache, thread cache, mimalloc's local heap) while the idea
+is the same.
+
+Two things seen in chapter 77 attach here. When the heap is short it is enlarged
+with `brk` (for small requests), and large requests are received separately through
+`mmap`. And releasing a large block may return it to the operating system, while
+small ones are mostly only marked in the ledger.
+
+== Fragmentation — memory grows though there is no leak
+
+#idx("fragmentation")*Fragmentation* has two faces.
+
+*Internal fragmentation* — the waste arising from giving a piece larger than the
+request. Request 24 bytes and be given a 32-byte slot and 8 bytes die. It is the
+fate of allocators that use size classes, and speed is gained in exchange.
+
+*External fragmentation* — the state in which the total free space is ample but
+there is no *contiguous* large lump, so a large request fails. If small pieces are
+lodged among the large ones, those large pieces cannot be joined.
+
+This is the identity of the phenomenon "there is no leak and yet memory keeps
+growing". It appears especially in long-running servers, and the cause is usually
+*allocating things of different lifetimes mixed together* — one long-lived small
+object lodged in the middle of a large empty region ties up that whole region.
 
 #dtable(
   columns: 2,
-  [*function*], [*when to use it*],
-  [`proven_arena_alloc(&a, size)`], [the default. cuts at the default alignment],
-  [`proven_arena_alloc_aligned(&a, size, align)`], [data where alignment matters (SIMD, DMA)],
-  [`proven_arena_alloc_or_panic(&a, size)`], [places where failure should stop the program],
-  [`proven_arena_realloc_aligned(...)`], [grows in place if it is the last block],
+  [*how to mitigate it*], [*explanation*],
+  [gather things of similar lifetime], [an arena does exactly this (below)],
+  [things of the same size into a pool], [no pieces arise],
+  [take long-lived objects early], [taken at startup, they do not lodge in the middle],
+  [change the allocator], [there are ones with different purge and shrink policies (below)],
+  [periodic restarts], [an honest last resort — really used],
 )
-
-The `_or_panic` family exists for the reason given in chapter 76 — where the memory
-budget has been calculated in advance (embedded work is representative), "the arena is
-short" is not a failure to recover from but *a design error*, so demanding a check every
-time is rather noise.
-
-The `realloc` has one interesting property. An arena having no header, ordinary
-reallocation is "cut anew and copy", but *if the block being grown happens to be the
-last one handed out* it can grow in place simply by pushing `offset`. It is why code
-that appends to a string a little at a time is fast on an arena, and why calling
-chapter 79's `proven_u8str_reserve` in advance pays especially on an arena (an
-intervening allocation breaks the property).
-
-#demo("examples-en/ch78/arena.c")
-
-There really are many places this model fits. The temporary data made while handling
-one request, a game's calculation results used for one frame, the syntax tree made
-while parsing one file — all data *born at different moments but dying at the same
-one*. For such data, individual release is only cost and risk.
-
-#recap[
-  A comparison of the three sources of memory.
-
-  #dtable(
-  columns: 4,
-    [], [*heap*], [*arena*], [*pool*],
-    [how it gives], [arbitrary sizes], [cuts from the front], [fixed-size slots],
-    [individual release], [yes], [no (reset)], [yes (return the slot)],
-    [fragmentation], [can arise], [none], [none],
-    [speed], [ordinary], [very fast], [very fast],
-    [where it fits], [assorted lifetimes], [a group of the same lifetime], [the same size repeatedly],
-)
-]
-
-#idx("pool")The pool (`proven_pool_t`) is the third branch. It is used where objects
-of the same size are repeatedly made and unmade — a game's bullets, a server's
-connection objects, a parser's nodes. The slot size being fixed there is no
-fragmentation, and a returned slot is reused at once. A pool too becomes an allocator
-through `proven_pool_as_allocator`, so the previous example's `build` function runs
-on it as it is.
-
-#antipattern[
-  Destroying with a different allocator
-][
-  ```c
-  proven_result_u8str_t r = proven_u8str_create(proven_heap_allocator(), 64);
-  ...
-  proven_u8str_destroy(proven_arena_as_allocator(&arena), &r.value);  /* wrong */
-  ```
-  It amounts to giving back to an arena what was obtained from `malloc`. This rule
-  cannot be enforced by the library — an allocator is simply a value, and which value
-  is passed is settled by the caller. So the practice in the field is *to carry the
-  allocator along with the data structure*, or to narrow the scope so that only one is
-  used within a module.
-]
-
-#misconception[
-  "Use an arena and you need not care about releasing"
-][
-  Individual release disappears but *the lifetime remains as it was.* The moment the
-  arena is reset, every piece cut on it becomes invalid at once, so data that must
-  still be alive after the reset must not be put in the arena. Chapter 77's "a view
-  cannot outlive its owner" has grown here to arena scale. What an arena removes is
-  the *number of times* one releases, not the *thinking* about lifetime.
-
-  ```c
-  proven_u8str_t name;
-  for (int i = 0; i < n; i++) {
-      proven_arena_reset(&per_request);        /* taken back per request */
-      handle(proven_arena_as_allocator(&per_request), &name);
-  }
-  use(&name);        /* ← dangerous. what name pointed at has already gone back */
-  ```
-
-  The discipline in the field is one — *call the arena's lifetime and the lifetime of
-  the data on it by the same name.* "the request arena", "the frame arena", "the file
-  arena". Then which data must survive the reset shows itself in the name alone, and
-  data that must cross over is copied to *a longer-lived allocator*.
-]
-
-== Which to choose
-
-#dtable(
-  columns: 4,
-  [*situation*], [*what to choose*], [*why*], [*caution*],
-  [data of assorted lifetimes], [the heap], [general-purpose. individual release possible], [cost and fragmentation (chapter 73)],
-  [data born and dying with a unit of work], [an arena], [allocation is one addition, release one reset], [everything invalid after a reset],
-  [the same struct by the thousand], [a pool], [no fragmentation, immediate reuse], [one size only],
-  [an environment with no heap at all], [a static array + an arena], [`malloc` is never called once], [the budget must be calculated in advance],
-  [testing the out-of-memory path], [a failing shell (chapter 76)], [it runs the path that never otherwise runs], [for testing only],
-)
-
-In practice these four are *layered*. The program as a whole uses the heap, while
-handling one request uses a request arena, and a data structure making thousands of
-nodes inside it lays a pool on top. That all three share the same interface, so that
-layering needs no special device, is the value of this design.
-
-== Owning and borrowing, and state that points at itself
-
-Now we return to chapter 74's fourth bug. The problem of `char *` meaning four things
-#idx("owning and borrowing")is solved by dividing the type in two.
-
-- *Owned* — things such as `proven_u8str_t` and `proven_array_t`. Obtained with
-  `_create` and let go with `_destroy`.
-- *Borrowed* — `proven_u8str_view_t`, `proven_mem_view_t`. Never destroyed. When the
-  owner vanishes they become invalid with it.
-
-That "must I release this?" can be answered from the signature alone is the whole of
-this distinction and its purpose.
-
-There is one more rule attached. *State that points at itself is not copied.*
-Chapter 43 taught that struct assignment is a shallow copy. Copy an object that holds
-inside a pointer to its own buffer that way, and the copy's pointer still points at
-the original, so two objects share the same memory and destroying both is a double
-free. So such objects are not copied by value but passed by pointer.
 
 #realcase[
-  The spread of the allocator-as-argument design
+  Why RSS does not go down
 ][
-  This way is not proven's invention but is close to the recent consensus of systems
-  programming. In Zig, almost every allocating API of the standard library takes an
-  allocator as an argument and "no hidden allocation" is the language's motto. In Rust
-  too, attaching an allocator to a container is on its way into the standard, and
-  C++'s `std::pmr` arose from the same problem-consciousness. The reason is the same
-  in every case — in games, embedded work, kernels and high-performance servers,
-  *choosing the source of memory* is the heart of both performance and safety.
+  There is a conversation that recurs in operations. "There seems to be a memory
+  leak — the request has ended and the process memory (RSS) does not go down." And
+  yet checking with tools shows no leak.
+
+  The reason is, as seen in chapter 42, that `free` is not a return to the operating
+  system, and two more things compound it. First, even to return it *the end side of
+  the heap must be empty* to shrink (if even one live block sits below the top chunk
+  it cannot shrink). Second, the allocator judges that being sparing with returns is
+  advantageous — another request will come soon.
+
+  Hence a rule of observation in the field. *When diagnosing a memory problem do not
+  look at RSS alone* — look together at the allocator's statistics (`malloc_info`,
+  say) and at the number and size distribution of live allocations. And if you really
+  want to give it back there is a road of asking explicitly (glibc's `malloc_trim`,
+  the purge settings of jemalloc and mimalloc).
+]
+
+== Swapping out the standard `malloc` — alternative allocators
+
+The allocator alone can be changed without mending the program. `malloc` and `free`
+are, after all, names, so linking another implementation (statically) or inserting
+it at run time (Linux's `LD_PRELOAD`) makes that one be used.
+
+#dtable(
+  columns: 3,
+  [*allocator*], [*where it came from*], [*character*],
+  [glibc malloc (ptmalloc)], [GNU], [the default. balanced. improved with tcache],
+  [jemalloc], [FreeBSD → Meta], [size classes and arenas. strong on suppressing fragmentation and on statistics],
+  [TCMalloc], [Google], [centred on per-strand caches. multi-strand throughput],
+  [mimalloc], [Microsoft], [relatively new (2019–). small and fast, with a safety-minded header layout],
+  [snmalloc], [MS Research], [a design that passes cross-strand frees as messages],
+  [scudo], [LLVM], [security-hardened. the default on Android],
+)
+
+How much difference does changing make — *it depends on the workload* is the honest
+answer. On a server with many strands and a flood of small allocations tens of per
+cent can change, while in a single-strand computational program there is almost no
+difference. So the rule is one: *measure, then change.* And before changing, trying
+chapter 42's first prescription — not allocating at all in the hot loop — is usually
+the greater gain.
+
+#platform[
+  How swapping is actually done
+][
+  - *At run time* — `LD_PRELOAD=/usr/lib/libjemalloc.so ./program` (Linux). Neither
+    the code nor the build is touched.
+  - *At link time* — join it as `-ljemalloc` and that `malloc` is used.
+  - *Windows* — the above do not work. It is common to use the CRT's heap, or to
+    link the allocator as a library and call its API directly from your own code.
+  - *The road that works anywhere* — writing the code from the start so that it
+    *takes an allocator as an argument*. This chapter's last section and Part XII
+    are that way.
+]
+
+== Alternative standard libraries
+
+There is also the choice of swapping out one layer larger than the allocator — the
+standard library implementation itself. It is the flesh of chapter 56's "the
+standard is a list and the implementations are several".
+
+#dtable(
+  columns: 3,
+  [*implementation*], [*where it is used*], [*character*],
+  [glibc], [mainstream Linux distributions], [the most features. large and rich in extensions],
+  [musl], [containers, static linking, Alpine], [small and simple. advantageous for static linking],
+  [uClibc-ng], [small embedded Linux], [features chosen and cut down],
+  [picolibc], [bare metal, RTOS], [a small one split off from newlib and avr-libc],
+  [newlib(-nano)], [the default of embedded toolchains], [it comes with `arm-none-eabi-gcc`],
+  [Bionic], [Android], [security-minded (the scudo allocator)],
+  [UCRT], [Windows], [the runtime MSVC and MinGW use],
+)
+
+The criteria for choosing are mostly three — *size* (embedded, containers), *the
+convenience of static linking* (musl's strength), and *the breadth of features*
+(glibc's strength). And what one runs into when moving is mostly not standard C but
+*extensions*: functions only glibc has, locale handling, subtle differences in
+threads and signals. Chapter 56's conclusion — "use only what is in the standard and
+it ports" — pays here.
+
+== Alternatives that change the shape — arenas, pools, and the allocator as an argument
+
+Until now the story has been *making the same `malloc` better*. There is another
+road. It is changing *the very shape* of allocation.
+
+*Arena (region, bump allocator).* Take a large lump once, and when a request comes
+merely push a pointer forward. Allocation is one addition and so nearly free, and
+release *is not done individually* — when the work is done the pointer is returned to
+the beginning and the whole is thrown away. There is no fragmentation, the time is
+constant, and release cannot be forgotten. In exchange, individual release is given
+up.
+
+This way fits perfectly "things of the same lifetime". One request of a web server,
+one function of a compiler, one frame of a game — for each unit of work with a clear
+beginning and end, keep one arena and reset it when it ends. It really is widely
+used (Apache's memory pools and PostgreSQL's memory contexts are the same idea).
+
+*Pool (slab).* An allocator that handles only pieces of the same size. Slots cut in
+advance are managed as a list, so allocation and release are one list operation each,
+and there is no internal fragmentation either. It fits data structures with tens of
+thousands of nodes, or the fixed-object management of embedded work seen in
+chapter 77.
+
+*Taking the allocator as an argument.* For the two above to have force, a library
+must *ask the caller* "where shall I get memory from". So modern C libraries make a
+bundle of allocation functions into one value and take it as an argument. The table
+of function pointers learned in chapter 54 does exactly this work here.
+
+#realcase[
+  proven's memory model — a trailer for the next part
+][
+  The library this book has leaned on uses exactly this design. proven handles the
+  allocator as one value (`proven_allocator_t`) — inside it are the `alloc`,
+  `realloc` and `free` function pointers and a context (`ctx`), exactly
+  chapter 54's vtable. And there are three providers that make that value.
+
+  - `proven_heap_allocator()` — the standard `malloc` wrapped in that interface.
+  - `proven_arena_create(backing)` — takes *memory already secured* and makes it a
+    bump allocator. It is returned whole with `proven_arena_reset` and fitted into
+    the same interface with `proven_arena_as_allocator`.
+  - `proven_pool_init(...)` — lays a pool of same-size pieces over a backing
+    allocator.
+
+  This structure gives three things. First, *the same data-structure code runs on
+  the heap, on an arena and in a pool* — where memory comes from is settled by an
+  argument. Second, the embedded norm seen in chapter 77 (no dynamic allocation) can
+  be kept — give a static array as the arena's backing and `malloc` is never called
+  once. Third, failure comes back as a value (`proven_result_mem_mut_t`) — instead of
+  checking for null you check the result.
+
+  We meet these three as real code in Part XII. The heap's circumstances seen in
+  this chapter — that it is expensive, fragments, can fail, and is sometimes
+  forbidden outright in embedded work — are the whole reason for that design.
 ]
 
 #qa[
-  Then what is the price?
+  Then should `malloc` no longer be used?
 ][
-  One more parameter attaches to the signature. And a new design problem arises of
-  *how far the allocator is to be carried* — whether to pass it to every function or
-  to hold it in a struct. In a small program this can look like nothing but tiresome
-  formality. Its value shows itself after the program grows, or when the code must be
-  moved to a place where the heap cannot be used.
+  No. `malloc` is still the right answer as the general-purpose tool for handling
+  *things of assorted lifetimes*. The knack is fitting the tool to the purpose.
+
+  - the lifetime equals a unit of work → *an arena*
+  - the sizes are all the same → *a pool*
+  - lifetimes and sizes are assorted → *`malloc`* (or an allocator wrapping it)
+  - real-time or safety-critical → *static allocation*, plus the two above
+
+  And whichever is used, chapter 42's discipline stands — settle the ownership,
+  confirm failure, and check with tools (ASan, Valgrind).
 ]
 
-We have set up the rules for obtaining and letting go of memory. From the next chapter
-come the real components that rise on top of it — first, the strings this book warned
-about all through chapter 39.
+#recap[
+  #dtable(
+    columns: 2,
+    [*to remember*], [*the point*],
+    [the header], [the size is written just before the user's place — an overflow breaks the ledger],
+    [boundary tags], [writing the size at both ends makes coalescing with a neighbour constant time],
+    [bins], [lists by size. the per-strand cache (tcache) avoids locking],
+    [internal/external fragmentation], [waste vs. no *contiguous* large lump left],
+    [RSS], [it may not go down even after `free` — distinguish it from a leak],
+    [alternative allocators], [jemalloc, TCMalloc, mimalloc, snmalloc, scudo. *measure, then change*],
+    [alternative libcs], [musl, picolibc, newlib, Bionic — a trade of size, static linking and features],
+    [arena], [only pushing, and throwing the whole away. for things of the same lifetime],
+    [pool], [the same size only. no fragmentation],
+    [the allocator as an argument], [the same code runs on heap, arena or pool alike (Part XII)],
+  )
+]
+
+We have walked the terrain of the standard library and opened even the warehouse
+beneath it. The next part is the attempt to handle all these traps and costs *by
+design* — proven, the library this book has leaned on.

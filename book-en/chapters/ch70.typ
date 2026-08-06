@@ -1,204 +1,179 @@
 #import "../../book/lib.typ": *
 
-= How to ask about overflow — `<stdckdint.h>`
+= Diagnosis and control — `<errno.h>`, `<assert.h>`, `<signal.h>`, `<setjmp.h>`
 
 #prereq(
-  ([chapter 26, Integers], [the finiteness of integers]),
-  ([chapter 49, Undefined behaviour], [overflow is outside the contract]),
+  ([chapter 48, Errors and contracts], [reporting an error as a value]),
+  ([chapter 49, Undefined behaviour], [after a contract is broken]),
 )
 
 #deepqa[
-  Chapter 7 said unsigned overflow is defined wrap-round while signed overflow is
-  outside the contract, and chapter 61 said `calloc` checks the product of the
-  element count and the size. Then how do we write the check for whether a
-  multiplication overflows ourselves?
+  Chapter 48 said C's ways of reporting an error are only three — the return value,
+  global state, and stopping the program. Then exactly when can the global called
+  `errno` be believed?
 ][
-  That very "checking ourselves" is the code that has been written wrongly for half
-  a century. With signed values, *checking after it has overflowed is itself
-  already outside the contract*, so the compiler may erase the checking code
-  (chapter 13's editor), and with unsigned values the idiom that inserts a division
-  is hard to read and easy to get wrong. C23 tidied this place up at the level of
-  the language.
+  It can be believed *only right after a failure has been confirmed.* The
+  standard's rule is two-layered. First, a successful call may also put a value in
+  `errno` — so the order must not be "nonzero means failure" but "read the reason
+  after the function has reported failure". Second, the value may be overwritten by
+  the next library call at any time — so once read it is stored at once. These two
+  rules are the price of the design that carries errors in global state.
 ]
 
 #organizer[
-#idx("checked arithmetic")  We learn the checked arithmetic C23 brought in. Why
-  hand-written code that "checks after calculating whether it overflowed" is
-  dangerous, exactly what `ckd_add`, `ckd_sub` and `ckd_mul` promise, and how to
-  move the size calculations of existing code onto this tool.
+  We look in one place at the four headers used when a program *has gone wrong*.
+  The global holding an error number, the assertion that catches contract
+  violations, signals flying in from outside, and the jump that skips over the
+  stack. Why the discipline set up in chapter 48, "errors are values", matters so
+  much becomes clear on seeing the real shape of the alternatives.
 ]
 
 #chapter-questions()
 
-== The trap of checking afterwards
+== `errno` — the price of carrying errors in a global
 
-We start from the most common hand-written check.
+#demo("examples-en/ch70/errno_demo.c")
 
-#antipattern[
-  Adding and then seeing whether it overflowed
-][
-  ```c
-  int sum = a + b;
-  if (sum < a) { /* it overflowed */ }        /* ← this check can vanish */
-  ```
-  If `a` and `b` are signed integers, the moment `a + b` overflows it is already
-  undefined behaviour. The check after it has meaning only on the premise "if it
-  did not overflow", so the compiler judges that `sum < a` can never be true and
-  *erases the conditional entirely.* This pattern really did make checks vanish
-  quietly in several projects, and among them were security checks.
+The output shows the rules exactly. Set it to 0 just before the call, read it
+after confirming failure, and store it before doing anything else. Merely slipping
+one line of `printf` in between can change the value.
 
-  For unsigned values, wrap-round being defined, the check above *does work*. But
-  going to multiplication makes even that awkward.
-  ```c
-  if (n != 0 && bytes / n != sz) { /* it overflowed */ }   /* correct but hard to read */
-  ```
-]
-
-So compilers each put out extensions — GCC's and Clang's `__builtin_add_overflow`
-family, MSVC's `SafeInt`, the home-made macros of many projects. They worked well
-but *were not portable*, and to secure portability every project had to write the
-same shell again. It is the same pattern as chapter 60's `strlcpy` story — reality
-finds the answer first and the standard ratifies it belatedly.
-
-== C23's answer — `ckd_add`, `ckd_sub`, `ckd_mul`
-
-#demo("examples-en/ch70/ckdint.c")
-
-The way to read it is this. All three macros have the same shape.
-
-```c
-bool overflowed = ckd_add(&result, left, right);
-```
-
-There are four promises.
-
-+ *It calculates in infinite precision and then puts it in the vessel.* The
-  judgement is "does the mathematical result fit in the result type", and there is
-  no overflow in the intermediate calculation. So it judges exactly even when the
-  arguments' types differ from each other, and even when the result type is
-  narrower than the arguments — the example's `signed char <- 300` confirms it.
-+ *The result type is settled by the first argument (the pointer).* It means the
-  arguments' promotion rules (chapter 27) do not sway the result, so there is no
-  need to fret over "in which type is it calculated".
-+ *Even on overflow the result is stored.* That value is the value wrapped round
-  into the result type. The example's `INT_MAX + 1` remaining as `-2147483648` is
-  that — and it matters that even for a signed value *it is defined behaviour in
-  this place*.
-+ *Unsigned wrap-round is reported as "overflowed" too.* The example's `3u - 5u`
-  confirms it. The value itself is a defined result (`4294967294`), but checked
-  arithmetic reports that *it differs from the mathematical value*. In size
-  calculations this is the property needed.
-
-#qa[
-  Are the `ckd_*` functions or macros? Do they not evaluate arguments several
-  times?
-][
-  What the standard settles are macros, but they are pinned down not to evaluate
-  their arguments several times (implementations mostly expand them into compiler
-  builtins). So code such as `ckd_add(&r, i++, j)` is safe too.
-
-  But there is *another* trap. The judgement and the result must not be mixed
-  inside one expression.
-  ```c
-  printf("%s %d", ckd_add(&r, a, b) ? "overflow" : "fine", r);   /* dangerous */
-  ```
-  There is no settled order between the moment `r` is read and the moment `ckd_add`
-  writes to `r`, so the old value may be printed (chapter 20's story of ordering).
-  This mistake really did print a wrong value when this chapter's example was first
-  written. *Take the judgement into a variable, and use the result on the next
-  line* — that one line of discipline is the whole of it.
-]
-
-== Where it is used — size calculation comes first
-
-The `alloc_array` in the latter part of the example is the type. Calculating an
-allocation size is the place where checked arithmetic is most sorely needed. If
-`n * sz` overflows you end up *obtaining a small vessel and using it believing it
-big*, which leads straight to a buffer overflow accident. Several famous
-vulnerabilities took exactly this route.
+`errno` looks like a variable but is *a macro*. In a program running along several
+strands each strand must see a different value, so the implementation defines it
+as a macro pointing at thread-local storage.
 
 #dtable(
   columns: 3,
-  [*place*], [*the old idiom*], [*now*],
-  [array allocation], [the check `n && SIZE_MAX/n < sz`], [`ckd_mul(&bytes, n, sz)`],
-  [growing a buffer], [just calculating `cap * 2`], [`ckd_mul(&cap2, cap, 2)`],
-  [joining lengths], [`len1 + len2 + 1`], [`ckd_add` twice],
-  [index calculation], [`base + off` just so], [`ckd_add` (compulsory for signed values)],
-  [numbers from input], [using it straight after `atoi`], [`strtol` (chapter 61) + a range check],
+  [*function*], [*what it does*], [*note*],
+  [`strerror(n)`], [error number → a sentence], [★ a static buffer. not thread-safe],
+  [`perror(s)`], [`s: reason` to `stderr`], [the habit of attaching a context string],
+  [`strerror_r`], [fills a caller's buffer], [POSIX. there are two editions, hence confusion],
+  [`strerror_s`], [the same intent], [annex K (chapter 73)],
 )
 
-The last line matters. Checked arithmetic only catches the overflow of a
-*calculation*; it does not filter out a value that was too large to begin with. The
-check at the input-parsing stage (chapter 61) and the check at the calculation
-stage do not stand in for each other.
+The error numbers the standard names are only three — `EDOM` (domain), `ERANGE`
+(range), `EILSEQ` (encoding). The rest, such as `ENOENT` and `EACCES`, are settled
+by POSIX or the platform. That is, *code comparing `errno` values is that much less
+portable*.
 
-#misconception[
-  "Use `ckd_*` and worry about integer overflow ends"
+#qa[
+  Why was `assert` made to switch off wholesale with `NDEBUG` — is it not better to always check?
 ][
-  Three things remain. First, *division* is not in this header — `INT_MIN / -1` is
-  still an outside-the-contract case you must block yourself. Second, *conversions*
-  are not checked. Assigning from a wide type to a narrow one is not arithmetic but
-  conversion (chapter 7's truncation), so a value being wrecked there is not
-  `ckd_*`'s business. Third, *floating point* is not its subject (chapter 63).
+  Because what `assert` checks is *the programmer's assumption, not the user's
+  input*. "By the time we are here, p is not null" must be true whenever the code
+  is right; if it is false, that is a bug. The original design puts such checks
+  densely during development and removes their cost from the shipped build.
 
-  In summary, checked arithmetic is a tool answering the narrow and clear question
-  "did an addition, subtraction or multiplication overflow its vessel". It is a good
-  tool precisely because it is narrow.
+  Two things follow. First, *no side effects inside `assert`* — `assert(pop(&s) == 3)`
+  disappears entirely in the release build. Second, checks on user input, file
+  contents and network data must be made by *code that always runs*, not by
+  `assert`. In chapter 48's vocabulary of contracts, `assert` confirms
+  preconditions *during development*; reporting failure as a value is another job.
 ]
 
-== Where this tool is absent
+== `assert` — the cheapest way to write a contract as code
 
-In an environment that cannot yet use the C23 header, prepare in two steps.
+The macro learned in chapter 48. Pinning down the rules again:
+
+- `assert` confirms *an invariant internal to the program*. Things like "if we got
+  this far, p is not null".
+- *It is not used to check values that came from outside.* User input, file
+  contents and network data are checked with `if` and handled as errors.
+- If `NDEBUG` is defined it *vanishes entirely* (chapter 17). So an expression with
+  side effects must not be put in it.
+
+#antipattern[
+  Making `assert` do work
+][
+  ```c
+  assert(fclose(f) == 0);      /* in a release build the fclose itself vanishes */
+  assert(i++ < n);             /* there arises a build in which i is not incremented */
+  ```
+  Separate the check from the side effect.
+  ```c
+  int rc = fclose(f);
+  assert(rc == 0);
+  (void)rc;                    /* prevents an unused warning in release */
+  ```
+]
+
+C11 brought in `static_assert` (in C23 it can be used without `_Static_assert`).
+It confirms at compile time, so the run-time cost is zero, and it is used on
+`sizeof` and constant conditions.
 
 ```c
-#if defined(__has_include)
-#  if __has_include(<stdckdint.h>)
-#    include <stdckdint.h>
-#    define HAVE_CKDINT 1
-#  endif
-#endif
-
-#ifndef HAVE_CKDINT                      /* fill in with the GCC/Clang extensions */
-#  define ckd_add(r, a, b) __builtin_add_overflow((a), (b), (r))
-#  define ckd_sub(r, a, b) __builtin_sub_overflow((a), (b), (r))
-#  define ckd_mul(r, a, b) __builtin_mul_overflow((a), (b), (r))
-#endif
+static_assert(sizeof(int) >= 4, "this code assumes a 32-bit int");
 ```
 
-Only beware that the argument order differs — the standard puts the result pointer
-first, the compiler builtins put it last. Gathering such shells in one place is the
-real shape of the portability layer spoken of in chapter 52, and Part XII's library
-does the same work.
+== Signals — see the next chapter
 
-#platform[
-  The road of leaving the checking to tools
+`<signal.h>` deals with events that come from outside the program (Ctrl+C, an
+invalid memory access, an arithmetic error). The standard defines only six signals
+(`SIGINT`, `SIGSEGV`, `SIGFPE`, `SIGILL`, `SIGABRT`, `SIGTERM`); the rest belong to
+the platform.
+
+One discipline is worth putting down here — *there is almost nothing a handler may
+do.* Neither `printf` nor `malloc` may be called. So the working idiom becomes
+"the handler raises a flag, the main flow does the work."
+
+```c
+static volatile sig_atomic_t stop = 0;
+static void on_int(int sig) { (void)sig; stop = 1; }
+/* in the main loop: while (!stop) { ... } */
+```
+
+There is enough in this header to fill a chapter, so it has one — the history, the
+shape of the functions with their arguments and return values, what `sig_atomic_t`
+really is, POSIX's `sigaction` and the inside of its structures, and the real uses
+in servers, shells and terminals, all in chapter 71.
+
+== Non-local jumps — `setjmp`/`longjmp`
+
+A device that remembers the present place with `setjmp` and comes back later from
+somewhere deep with `longjmp`. It is an attempt to make something like exceptions
+in a language that has none, and the price is correspondingly large — *nobody
+cleans up the resources held by the functions that were skipped over.*
+
+This header too has enough in it for a chapter of its own — the return-value rule
+of the two words, the four contexts in which `setjmp` may appear, the inside of
+`jmp_buf`, the `volatile` rule measured on a real build, the uses in real
+software such as libjpeg and Lua, and today's alternatives, all in chapter 72.
+
+#realcase[
+  The shape of code made by the way of handling errors
 ][
-  There is also a way of catching overflow without mending the code. GCC's and
-  Clang's `-fsanitize=signed-integer-overflow` (UBSan) catches overflow during
-  execution and reports it, and `-ftrapv` stops the program on overflow. Both are
-  *for testing* — they show themselves only in a run in which an overflow actually
-  happened, so they are different in character from checked arithmetic, which
-  "blocks in code the places where it could happen". It is the same conclusion as
-  chapter 17's story of debuggers: tools help observation but do not stand in for
-  the contract.
+  Write the same program three ways and its shape splits like this.
+
+  - *Return value + `errno`*: an `if` attaches to every call and the error paths
+    are visible. Cumbersome, but the flow is honest.
+  - *`setjmp`/`longjmp`*: the body becomes clean but a human must remember all the
+    resource cleanup, and where control jumps to is not visible in the code.
+  - *`goto cleanup`*: the compromise most widely settled in C codebases. On failure
+    everything gathers at one place and cleans up in reverse order. The Linux
+    kernel pinned this pattern down as a convention, and it is exactly the
+    disciplined use meant by chapter 29's "use goto with restraint".
+
+  All three solve the same problem of "handling failure as a value and not
+  forgetting the cleanup". Part XII's library lays a fourth answer on top — *making
+  failure into a type*.
 ]
 
 #recap[
+  Diagnosis and control in summary.
+
   #dtable(
-    columns: 2,
-    [*to remember*], [*the point*],
-    [checking afterwards], [with signed values the check itself is outside the contract — it can be erased],
-    [the shape], [`bool overflowed = ckd_add(&result, a, b)`],
-    [the criterion], [does the mathematical result fit in *the result type*],
-    [the result type], [settled by the first argument. not swayed by promotion rules],
-    [even on overflow], [the wrapped value is stored (defined behaviour)],
-    [unsigned values], [wrap-round too is reported as "overflow"],
-    [one expression], [do not mix the judgement and the result],
-    [first place to apply it], [allocation size calculation],
-    [where it is absent], [make a shell with `__builtin_*_overflow`],
+    columns: 3,
+    [*tool*], [*where it is used*], [*rule*],
+    [`errno`], [the reason a library call failed], [0 just before, read after confirming failure, store at once],
+    [`assert`], [internal invariants], [no side effects, not used for checking input],
+    [`static_assert`], [compile-time assumptions], [zero cost],
+    [`signal`], [external events such as Ctrl+C], [only a flag in the handler],
+    [`SIGSEGV`], [—], [catching it does not allow recovery],
+    [`setjmp`/`longjmp`], [special recovery], [values undetermined unless `volatile`, no cleanup],
+    [the practical idiom], [cleanup on failure], [gather at one place with `goto cleanup`],
   )
 ]
 
-We have learned how to ask about overflow according to the contract. The next
-chapter is this part's last and the most conspicuous change C23 made to the
-language — the story of things that were macros becoming keywords.
+That is as far as the headers that existed from the C89 days. The next chapter is
+what the standard has added since — and the story of what became of the attempt to
+make "safe functions".

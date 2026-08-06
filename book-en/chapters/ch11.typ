@@ -269,11 +269,11 @@ Each page carries permission bits: read, write, execute. Three things follow.
 
 #platform("The world without any of this")[
   Virtual memory is a story about *having an operating system and an MMU*. The
-  small microcontrollers of chapter 86 have no MMU. An address is a physical
+  small microcontrollers of chapter 91 have no MMU. An address is a physical
   address, one program owns the whole machine, and a null dereference does not
   die but quietly damages whatever sits at address zero. That the same C code
   travels between these two worlds is this language's difficulty and its use
-  (we meet it again in chapter 83).
+  (we meet it again in chapter 88).
 ]
 
 What a C programmer should take from this layer is three sentences. *Numbers are

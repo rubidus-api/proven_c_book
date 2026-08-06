@@ -62,7 +62,7 @@ side by side.
 )
 
 `%.*s` is a form used often in this book — because a string that carries its length
-separately (chapters 53 and 79's views) can be printed as it is, without NUL
+separately (chapters 53 and 84's views) can be printed as it is, without NUL
 termination.
 
 One thing must be kept, though. *The width or precision argument that `*` takes is of
@@ -156,12 +156,12 @@ c; `%[^,\n]` gathers characters that are neither a comma nor a newline. Range no
   already ended it is `EOF` (a negative value), and that differs in meaning from "the
   format was wrong" (0).
 - *A failed argument is not touched.* Use it without checking and you mistake the
-  previous value for new input (chapter 74's counterexample is that).
+  previous value for new input (chapter 79's counterexample is that).
 - *Only `%c` and `%[` do not skip whitespace.* The accident of a newline left from the
   previous line going into the next `%c` arises here — put a space in front, as in
   `" %c"`, and it skips.
 - *It does not report overflow.* Giving `99999999999` to a `%d` is outside the
-  contract. If a range check is needed, use the `strtol` family or chapter 80's
+  contract. If a range check is needed, use the `strtol` family or chapter 85's
   scanner.
 
 == The return values organised
@@ -179,7 +179,7 @@ c; `%[^,\n]` gathers characters that are neither a comma nor a newline. Range no
 
 `snprintf`'s return value rule matters especially — being *the number of characters
 needed, not the number written*, the truncation check is
-`need >= (int)sizeof buf` (chapter 74).
+`need >= (int)sizeof buf` (chapter 79).
 
 == A collection of common mistakes
 

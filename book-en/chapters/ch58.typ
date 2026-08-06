@@ -39,7 +39,7 @@
 It is worth noticing that the example checks for failure in three places.
 
 *① `fopen`* — on failure it returns null. The reason is left in `errno`, and
-`perror` prints it as a sentence a human can read (chapter 65). The file may not
+`perror` prints it as a sentence a human can read (chapter 70). The file may not
 exist, permission may be lacking, or too many files may be open.
 
 *② Writing* — `fprintf` returns the number of characters printed and gives a

@@ -1,335 +1,279 @@
 #import "../../book/lib.typ": *
 
-= Errors are values
+= From macro to keyword — `bool`, `nullptr` and their companions
 
 #prereq(
-  ([chapter 48, Errors and contracts], [errors as values]),
-  ([chapter 74, The five bugs shipped for fifty years], [the unchecked return value]),
+  ([chapter 73, What the new standards added, and the `*_s` controversy], [what the standards added]),
+  ([chapter 29, Booleans and comparison], [the type of true and false]),
 )
 
 #deepqa[
-  Chapter 48 said C's ways of reporting an error are only three — the return value,
-  global state, and stopping the program — and that of these the return value is the
-  most honest. Then how does one say both "it failed" and "here is the result" with a
-  single return value?
+  Chapter 73 passed over in a table only that C23 made `<stdbool.h>` effectively
+  unnecessary and that `nullptr` came in. But why put into the language what worked
+  fine as macros — is it not merely a change of name?
 ][
-  There are three ways. Mix an *impossible value* into the result's place (null,
-  `-1` — that trap seen in chapter 74), take the result out as an *output parameter*
-  and use the return value for status alone, or *hold both in one struct* and return
-  them together. proven uses the second and third together — and the third is
-  possible because, as learned in chapter 43, a C struct can be returned by value.
+  It is not merely a change of name. A macro is *the preprocessor changing letters*
+  and so has neither type nor scope, and the user can `#undef` it or define it again
+  with another meaning. A keyword is *a grammatical element of the language*, so it
+  has a type, can be diagnosed, and nobody can redefine it. Where that difference
+  really prevents accidents is this chapter's content — and `nullptr` in particular
+  is not a renaming but *a new type*.
 ]
 
 #organizer[
-  We see the answer to chapter 74's second bug — unconfirmed failure. The way of
-  returning failure as a value, the bundle holding a value and an error together,
-  and the device that makes the compiler protest if an error is thrown away. The
-  discipline set up in chapter 48, "errors are values", hardens here into a type.
+#idx("bool")  We treat the most conspicuous change C23 made to the language. Why
+#idx("nullptr")  things long imitated with macros in headers — `bool`, `true`,
+  `false`, `static_assert`, `alignas`, `thread_local` — rose to being keywords,
+  what `nullptr` was newly made to prevent, what rules and limits come with them,
+  and in what order to move existing code over.
 ]
 
 #chapter-questions()
 
-== Two shapes of return
+== What was promoted
 
-The rule is simple. *A function that can fail must return the failure as a value.*
+#demo("examples-en/ch76/keywords.c")
 
-- If there is no result to return, it returns a single `proven_err_t`.
-- If there is a result to return, it returns an `{err, value}` bundle — with a name
-  per type, such as `proven_result_u8str_t` or `proven_result_size_t`.
-
-`proven_err_t` is an enumeration and success is `PROVEN_OK` (0). The check is always
-the single `proven_is_ok(err)` — writing `err == 0` would work too, but using the name
-lets the code survive a later change of representation.
-
-=== Every error code
-
-Failures have a name per kind, and there are sixteen in all. They are not to be
-memorised; it is enough to know *what branches exist* — most code divides only success
-from failure, and looks at the branch only when attempting recovery.
+We organise it in one table. On the left is the shape up to C17, on the right C23.
 
 #dtable(
   columns: 3,
-  [*code*], [*what happened*], [*mainly where*],
-  [`PROVEN_OK`], [success (0)], [—],
-  [`ERR_NOMEM`], [the allocator could not hand out memory], [`_create`, `_grow`],
-  [`ERR_OUT_OF_BOUNDS`], [outside the vessel — refused rather than truncated], [`append`, `slice`, array indexing],
-  [`ERR_INVALID_ENCODING`], [the UTF-8/UTF-16 was broken], [string conversion, `hex`/`base64`],
-  [`ERR_INVALID_ARG`], [an argument is outside the contract (null, 0, an unusable allocator)], [almost every entry point],
-  [`ERR_IO`], [the outside world failed], [files and streams],
-  [`ERR_NOT_FOUND`], [what was sought is not there], [map lookup, opening a file],
-  [`ERR_INVALID_STATE`], [it cannot be done in the present state], [a closed stream, a destroyed object],
-  [`ERR_NEED_MORE`], [more input is needed before judging], [parsers and decoders],
-  [`ERR_OVERFLOW`], [a size calculation overflowed], [`create`, container growth],
-  [`ERR_UNSUPPORTED`], [this environment does not have that facility], [OS features under freestanding],
-  [`ERR_AGAIN`], [not now — try again], [non-blocking I/O],
-  [`ERR_EOF`], [the end was reached], [reading],
-  [`ERR_BUSY`], [somebody else is using it], [locks, the job queue],
-  [`ERR_PERMISSION`], [there is no permission], [files],
-  [`ERR_INVALID_FORMAT`], [the format was wrong], [parsing, format strings],
+  [*before*], [*C23*], [*the header it required*],
+  [`_Bool` + the `bool` macro], [the keyword `bool`], [`<stdbool.h>`],
+  [the `true`, `false` macros (= 1, 0)], [the keywords `true`, `false` (of type bool)], [`<stdbool.h>`],
+  [`_Static_assert`], [`static_assert`], [`<assert.h>`],
+  [`_Alignas`, `_Alignof`], [`alignas`, `alignof`], [`<stdalign.h>`],
+  [`_Thread_local`], [`thread_local`], [`<threads.h>`],
+  [the `NULL` macro], [`nullptr` (a new type)], [`<stddef.h>` and others],
+  [(none)], [`constexpr`], [—],
+  [(a GCC extension)], [`typeof`, `typeof_unqual`], [—],
 )
 
-#demo("examples-en/ch76/codes.c")
+The headers still exist and including them is harmless — the principle that the
+standard does not break old code (chapter 59's `gets` story) was kept here too. But
+newly written code has no reason to include them.
 
-The latter part of the example shows this table in the flesh. Try to put twelve bytes
-into an eight-byte vessel and `OUT_OF_BOUNDS` comes — *and the original is left
-untouched* (the length is still 0). Give an unusable allocator and it is caught as
-`INVALID_ARG` before anything is made. Slicing outside the range too is a refusal, not
-"as much as there is".
+== `bool` — what does it prevent
 
-Two things are worth taking from here. First, *`ERR_INVALID_ARG` is usually a bug in my
-own code* — not a failure of the outside world but a contract violation, so it is to be
-mended rather than recovered from. Second, `ERR_EOF` and `ERR_AGAIN` are *part of the
-normal flow*. In a reading loop EOF is not an error but the ending condition
-(chapter 82).
+C long had no true-false type. It was imitated with `int`, and every project had
+`typedef int BOOL;` and `#define TRUE 1` rolling about. C99 brought in `_Bool` and
+`<stdbool.h>` attached a pretty name to it, and C23 raised that to a keyword.
 
-=== The kinds of result bundle
+What differs between `bool` and `int` is not the name but *the conversion rule*.
 
-A function with a value to return has one bundle per type. The naming rule being the
-same, the list need not be memorised — inside a `proven_result_XXX_t` there are always
-just `err` and `value`.
-
-#dtable(
-  columns: 3,
-  [*bundle*], [*the type of `value`*], [*where it is returned*],
-  [`proven_result_size_t`], [`proven_size_t`], [lengths, counts, bytes written],
-  [`proven_result_mem_mut_t`], [`proven_mem_mut_t`], [allocators (chapters 77 and 78)],
-  [`proven_result_mem_view_t`], [`proven_mem_view_t`], [slicing (chapter 77)],
-  [`proven_result_u8str_t`], [`proven_u8str_t`], [making a string (chapter 79)],
-  [`proven_result_buf_t`], [`proven_buf_t`], [making a buffer],
-  [`proven_result_cstr_t`], [`const char *`], [exporting as a C string (chapter 79)],
-  [`proven_fmt_result_t`], [(amount written and amount needed)], [formatting (chapter 80)],
-)
-
-Only the last row is of a different grain. For formatting, "success or failure" is not
-enough — if it was truncated you must know *how much more was needed* — so beside `err`
-it carries two numbers as well (we look at it closely in chapter 80).
-
-#demo("examples-en/ch76/errval.c")
-
-This example contains all of this chapter's syntax. `make_greeting` sends the result
-out through an output parameter (`out`) and used the return value for status alone —
-on failure it passes it up as it is. And `proven_u8str_create` returns a bundle, so
-`made.value` is taken out *only after checking*. The order must not be reversed.
+- *Every nonzero value is narrowed to 1.* The example's `bool b = 42;` printing `1`
+  is that. `int i = 42` is 42 as it stands.
+- So *comparing two truths is true.* The classic bug of the `int`-imitation days
+  vanishes here.
 
 #antipattern[
-  Taking out `value` before checking
+  Comparing truth with `1`
 ][
   ```c
-  proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* dangerous */
+  int a = isupper('A');      /* any nonzero value, depending on the implementation */
+  int b = isupper('B');
+  if (a == b) { … }          /* both are true, yet the values may differ and it be false */
+  if (a == 1) { … }          /* worse */
   ```
-  It finishes in one line and looks clean, but what comes into your hand on failure
-  is *a meaningless value*. The bundle's contract is "`value` has meaning only when
-  `err` is `PROVEN_OK`", so this code has skipped the contract. That on failure a
-  struct filled with zeros usually arrives and it does not die immediately is rather
-  the danger — the accident is put off until much later (that pattern from
-  chapter 74).
-]
-
-The output of the second call compresses this part's theme. On trying to put
-`"Hello, world"` into a capacity of 8 bytes, the library, *instead of putting in as
-much as fits and declaring success*, wrote nothing and returned a failure. It is the
-exact opposite choice from `snprintf`'s quiet truncation seen in chapter 74.
-
-== Throw it away and the compiler protests
-
-Returning the error as a value is not enough by itself. As seen in chapter 74, a
-return value *can be thrown away*. So functions for which failure is meaningful have
-C23's #idx("nodiscard")`[[nodiscard]]` attached (we saw the name in chapter 48).
-Throw the result away and the compiler really says this.
-
-```text
-warning: ignoring return value of ‘proven_u8str_append’,
-         declared with attribute ‘nodiscard’ [-Wunused-result]
-    5 |     proven_u8str_append(&s, proven_u8str_view_from_cstr("hi"));
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-note: declared here
-  123 | [[nodiscard]] proven_err_t proven_u8str_append(...);
-```
-
-If the `-Werror` recommended in chapter 17 is turned on, this is not a warning but a
-*build failure*. What was "checking is optional" has become "it does not compile
-unless you check".
-
-Of course there are times when you really do want to ignore it. Then `(void)` is put
-in front.
-
-```c
-(void)proven_u8str_append(&s, view);   /* ignored knowingly */
-```
-
-#qa[
-  If it can be ignored with `(void)`, is it not compulsory after all?
-][
-  Because the purpose of the compulsion is not "to prevent ignoring" but *"to make
-  ignoring visible"*. An error thrown away with no mark is invisible in code review,
-  while a line with `(void)` attached becomes a declaration that "this failure is
-  deliberately ignored". The very fact that it must be typed is the heart of it — it
-  cannot be done by accident, only on purpose.
+  As seen in chapter 62, the classification functions of `<ctype.h>` promise only
+  "a nonzero value". To compare truths, narrow to *truth values* rather than
+  values.
+  ```c
+  bool a = isupper('A');     /* normalised to 1 here */
+  bool b = isupper('B');
+  if (a == b) { … }          /* safe */
+  ```
 ]
 
 #qa[
-  But chapter 75's `proven_println` had no such mark. Why is screen output alone an
-  exception?
+  What format is used when printing a `bool` with `printf`?
 ][
-  Because contracts have grades too. The failure of a write going to the console has
-  conventionally been ignored (have you ever seen code that checks `printf`'s return
-  value?), and making every line of output carry a `(void)` would bury the code in
-  noise. So this library placed output in the grade that *returns the error but does
-  not compel a check*. Conversely, the functions on the *input* side do have the mark
-  — ignore the failure of a read and you treat "data not read" as though it had been
-  read, replaying chapter 74's second bug exactly. Where to attach the mark is itself
-  a design judgement.
+  There is no dedicated format. A `bool` goes over as a variadic argument and is
+  promoted to `int` (chapter 53's promotion rule), so `%d` is used — the example did
+  so. Printing words a human can read with `%s` and the ternary operator is a
+  common practice too.
+
+  The place to beware is the `scanf` side. There being no format that takes a
+  `bool` directly, it must be received as an `int` and moved. And `sizeof(bool)` is
+  usually 1, but *the standard does not promise it is 1* — do not assume this value
+  when calculating a struct layout (chapter 43).
 ]
 
-== What remains after a failure — failure atomicity
+Two remaining traps of `bool`. First, using `bool` in a *bit-field* works fine even
+with a width of 1, but the layout is implementation-defined (chapter 43). Second,
+an array of `bool` uses one byte per element — it is not compressed into bits like
+C++'s `vector<bool>`. To compress into bits, write the masks by hand (chapter 27)
+or use the tools of `<stdbit.h>`.
 
-There is a question that naturally arises after receiving an error. *What state is
-the object the failed function was touching in now?*
+== `nullptr` — not a renaming
 
-#idx("failure atomicity")The library's answer is *failure atomicity* — unless the
-documentation says otherwise, a failed operation leaves the target in the state it
-was in before being touched. If memory runs short while growing an array the existing
-elements are still alive, and if there is not enough room while appending to a string
-the original content stands. The second call of the example just now is that case —
-it failed, but no half-written string was left.
+Chapter 6 distinguished the null triplets. `NULL` is *a macro*, and its definition
+is `0` or `((void *)0)` depending on the implementation. This freedom bore real
+accidents.
 
-Why does this matter? Without failure atomicity a caller can do nothing after a
-failure *but throw the object away*. With it, "give up this addition and carry on
-with what has been gathered so far" becomes possible.
+*Accident 1 — the size goes out of step in variadic arguments.* A variadic function
+does not know the arguments' types and so reads the bits as they came (chapter 53).
+On an implementation where `NULL` is defined as `0`, writing
+`execl("/bin/ls", "ls", NULL)` sends an *`int` 0*, and on a machine where pointers
+are 8 bytes the upper 4 bytes remain as rubbish. The function, failing to recognise
+the end of the list, runs away. That is why old code had to write `(char *)0`.
+`nullptr` is always of pointer size, so it does not have this problem.
+
+*Accident 2 — whether it is an integer or a pointer blurs.* On an implementation
+where `NULL` is `0`, `foo(NULL)` is indistinguishable from passing the integer 0.
+In code that branches by type with `_Generic` (chapter 53), this ambiguity becomes
+an accident as it stands. `nullptr` has *a type of its own* called `nullptr_t`, so
+the branch is clear.
+
+*Accident 3 — going out of step with C++.* C++ brought in `nullptr` first, in 2011,
+for the same reasons. There were places in headers crossing the two languages
+(chapter 51) where `NULL`'s meaning divided, and C23's adopting the same word
+narrowed that gap.
+
+#dtable(
+  columns: 3,
+  [], [`NULL`], [`nullptr`],
+  [identity], [a macro (implementation-defined)], [a keyword, of type `nullptr_t`],
+  [variadic arguments], [dangerous (size goes out of step)], [safe],
+  [`_Generic` branching], [ambiguous], [clear],
+  [comparing with an integer], [`NULL == 0` may work], [not possible — diagnosed],
+  [conversion to `bool`], [—], [possible (false)],
+  [redefinition], [possible (`#undef`)], [not possible],
+)
+
+A few rules to pin down. `nullptr` converts to *any object pointer type* and to a
+function pointer too (chapter 54). Two `nullptr`s, and a `nullptr` and any pointer,
+can be compared with `==` and `!=`. Converted to `bool` it is false. But *it cannot
+be compared with an integer* and does not convert to an integer — `nullptr == 0` is
+subject to diagnosis. The language has, in effect, cut the old intuition that "a
+null pointer is the same thing as the integer 0".
 
 #misconception[
-  "If it fails we will end the program anyway, so what does the state matter"
+  "Using `nullptr` reduces null-dereference accidents"
 ][
-  For a short-running command-line tool that may be so. But long-running programs —
-  servers, editors, games, firmware — must not die on one failure. If the whole server
-  went down because handling one request failed for lack of memory, that would be the
-  greater accident. Failure atomicity is the minimal condition that makes possible the
-  recovery of "throw away only this request and take the next".
+  It is a different kind of problem. What `nullptr` prevents is accidents coming
+  from *the way null is written* (size going out of step, type ambiguity), not
+  accidents of dereferencing null. Confirming whether a pointer is null is still a
+  human's part (chapter 35), and reducing that burden is the part not of the
+  language but of design — data structures that do not make nulls in the first
+  place, conventions that report failure through the return value (Part XII).
 ]
 
-== Raising a failure upward — together with the cleanup
+== The remaining promotions and the new words
 
-Receiving errors as values raises one practical problem at once. *If it fails in the
-middle, who gives back what has been taken so far?* In a language with exceptions the
-stack unwinds and destructors handle it, but C has no such device (chapter 65). So an
-idiom is needed.
+*`static_assert`* — checks a condition at compile time and, if it is broken,
+*translation fails*. The example's first line is that. It differs in character from
+the run-time `assert` (chapter 70) — this one is a tool asking "does this code hold
+on this machine", used for pinning assumptions about type sizes, alignment and
+struct layout into the code. In C23 the message may be omitted.
 
-#demo("examples-en/ch76/cleanup.c")
+*`alignas`, `alignof`* — the words for handling in the language the alignment seen
+in chapter 6. They are used to lay things out to fit a cache line (chapter 11's
+avoidance of false sharing) or to meet an alignment the hardware requires.
 
-This example deliberately inserts a failing allocator (once the *budget* runs out it
-necessarily gives `NOMEM`) and runs all three cases — failure from the first
-allocation, one taken and failure at the second, and everything succeeding. The middle
-case is the heart of it. `x` has already been taken while `y` failed, so simply
-returning here is *a leak*.
+*`thread_local`* — makes a variable that exists separately per strand. It is a tool
+for avoiding the problem of sharing seen in chapter 74 *by not sharing*. `errno` is
+in fact implemented this way (chapter 70).
 
-The pattern comes to three.
+*`constexpr`* — as seen in the example, it makes a real constant. A `const int` is
+not a constant *expression* and so could not be used for an array size or a `case`
+label (chapter 23), and that place was long the part of `#define`. `constexpr`
+reclaims that place with a typed name — this chapter's theme of macros being
+promoted into the language is repeated here too.
 
-+ *Mark what you hold with a flag* — one boolean such as `has_x`. If the resources are
-  several, so are the flags.
-+ *On failure everything gathers at one place* — `goto done`. That use chapter 65
-  called "disciplined `goto`".
-+ *Clean up in reverse order of taking* — what was taken later is given back first.
+*`typeof`* — takes an expression's type down as it is. What had been used as a GCC
+extension for over thirty years became standard. It is especially handy when
+declaring a temporary variable inside a macro.
 
-It is worth noticing too that after ownership passes with `*out = y;` on the success
-path, `y` is not destroyed thereafter. *You must be able to point at the place where
-ownership passes with a single line of code* — a function that cannot is usually one of
-blurred design.
+#realcase[
+  The story of the underscored names — why `_Bool` looks like that
+][
+  Why was it not called `bool` from the start? Because if the standard makes a new
+  keyword, all existing code already using that word as a name breaks. The world had
+  mountains of code containing `typedef int bool;` or `struct bool { … };`.
+
+  So the standard uses *a name space reserved so that users cannot use it* — names
+  beginning with one underscore and a capital letter. `_Bool`, `_Static_assert`,
+  `_Alignas`, `_Atomic` (chapter 74) and `_Generic` are all products of this rule.
+  And headers laid pretty names on top as macros, so that *only those who included
+  them* used the short names. Old code that did not include them breaks in nothing.
+
+  C23's promotion is the judgement that "enough time has passed that the short names
+  may now be used". Even so the underscored names are still alive, and the two names
+  point at the same thing. It is a case where the standard's habit of not breaking
+  old code remains even in the names — the same character as chapter 59's `gets`
+  story, and a decision in the opposite direction.
+]
+
+== How to move existing code over
+
+There is no need to change it all at once. Fix an order and there is almost no
+risk.
+
++ *First settle the compiler edition.* Check whether `-std=c23` (or `c2x`) can be
+  used, and whether it works on all the target platforms. If even one does not, go
+  to the shell strategy of number 5 below.
++ *Clear away your own `BOOL`, `TRUE`, `FALSE`.* Delete the project header's
+  `typedef int BOOL;` and change it to `bool`. While doing so, look together for
+  *places that were comparing values* (the counterexample above) — it is rather a
+  place where bugs come to light.
++ *Change `NULL` to `nullptr`.* Mechanical substitution finishes most of it, but
+  check two places by hand. Variadic calls (a real bug is mended here), and code
+  that used `NULL` like the integer 0 (a compile error arises here — which is a good
+  thing).
++ *Take `_Static_assert`, `_Alignas` and `_Thread_local` to the names without
+  underscores.* They are different notations for the same thing, so there is no
+  risk. Then tidy away the now unnecessary `<stdbool.h>` and `<stdalign.h>`
+  includes.
++ *If old editions must be supported too, put the shells in one place.* The same as
+  what was done in chapter 75.
+
+  ```c
+  #if __STDC_VERSION__ < 202311L
+  #  include <stdbool.h>
+  #  define nullptr ((void *)0)      /* not a complete substitute — see the caution below */
+  #  define static_assert _Static_assert
+  #endif
+  ```
+
+  This `nullptr` shell *cannot imitate the type as well.* In code doing `_Generic`
+  branching or type checking it may behave differently from expectations, so if
+  there is such code it is right to raise the edition rather than use the shell.
 
 #qa[
-  Is deliberately making a failing allocator of any use in practice too?
+  For a project that must keep compiling with an old standard, is this chapter
+  somebody else's story?
 ][
-  Of great use. The out-of-memory path is almost never executed in a real program, so
-  in most codebases it is *the least tested path*. And a leak or double free there is
-  the hardest of all to diagnose.
-
-  As chapter 78 will show, an allocator is simply a value, so a shell that "fails from
-  the nth call" can be made in ten lines, as in the example, and inserted. Raise n from
-  1 and run the tests and you can pass through *every failure point* once, and running
-  it with ASan or Valgrind (chapter 17) makes that path's leaks show themselves plainly.
-  It is the place where the decision that the library does not call `malloc` directly
-  comes back as testability.
+  No — two things remain. First, *the ability to read*. New code and libraries have
+  begun using these words, so when a `constexpr` or a `nullptr` appears you must
+  know its meaning. Second, *what to mend now*. Places passing `NULL` into variadic
+  arguments with the cast left out, places comparing truth with `== 1`, places
+  making constants with `#define` and losing the type — these are already dangerous
+  under the old standard too. C23's words merely have the language block that danger
+  for you; the danger itself was there all along.
 ]
-
-== When there is nobody to return to — the panic
-
-To return an error as a value there must be *somebody to return it to*. But in a
-place where the contract itself is broken there is no such somebody — if, for
-example, a null arrived in a place where there is no reason whatever to pass a null,
-that is not a failure but means *the program's logic is already wrong*.
-
-For such places the library has a panic path. It is the same spirit as chapter 48's
-`assert`, differing in that the way it is handled can be swapped out so as to be
-usable in embedded work too (chapter 83).
-
-There are only two doors.
-
-```c
-void proven_panic(const char *msg);                       /* raise a panic */
-void proven_set_panic_handler(proven_panic_handler_t h);  /* swap the handler */
-```
-
-The default handler *does not return* — it stops the program on the spot (the
-implementation is `__builtin_trap()`). And this swapping is what pays in embedded work.
-On a board with no console there is nowhere to print a message, so a handler is
-registered that lights an LED, kicks the watchdog, or reboots.
-
-```c
-static void my_panic(const char *msg) {
-    (void)msg;
-    board_led_on(LED_FAULT);
-    for (;;) { }          /* it does not go back */
-}
-/* at the program's starting place */
-proven_set_panic_handler(my_panic);
-```
-
-*A handler must not return.* If it returns, the validity of what an `_or_panic`
-function gave back is not guaranteed — a panic is the declaration that "from here the
-program's premises are broken". The exception is test code deliberately using a
-returning handler to confirm the panic path, and even then the value after it is not
-used.
-
-The places where the library itself calls a panic can be counted on the fingers — the
-functions with `_or_panic` in the name (chapter 78's arena allocation is
-representative) and a few places where the contract is plainly already broken. Everything
-else is returned as a value.
-
-The distinction is best remembered like this.
 
 #recap[
   #dtable(
-  columns: 3,
-    [*situation*], [*example*], [*the library's handling*],
-    [failure of the outside world], [out of memory, file not found, out of room], [return the error as a value],
-    [the caller's contract violation], [a null that must not be, reusing a destroyed object], [panic (or undefined)],
-    [failure that may be ignored], [console output failure], [return the error but do not compel],
-)
+    columns: 2,
+    [*to remember*], [*the point*],
+    [the meaning of promotion], [macro (letter substitution) → keyword (type, diagnosis, no redefinition)],
+    [`bool`], [it *normalises* nonzero values to 1 — comparing truths becomes safe],
+    [printing a `bool`], [`%d` (promoted to `int` in variadic arguments)],
+    [`nullptr`], [not a name but *a new type*. it prevents variadic and `_Generic` accidents],
+    [`nullptr`'s limits], [no comparison with or conversion to an integer. false as a `bool`],
+    [`constexpr`], [reclaims `#define` constants with a typed name],
+    [underscored names], [a product of the reserved name space, to avoid breaking old code],
+    [the order of moving], [check the edition → remove your own BOOL → substitute NULL → tidy underscores → shells],
+  )
 ]
 
-#realcase[
-  Other languages that chose errors as values
-][
-  This design is not C's invention alone but a current common to recent systems
-  languages. Go has functions return a result and an error side by side, and Rust
-  wraps success and failure in the single `Result` type and warns if it is ignored.
-  Both are languages that decided not to use exceptions, and the reason is the same —
-  *the error paths must be visible in the shape of the code*. Exceptions are
-  convenient but erase from the signature "which failure jumps where from here".
-  Three different languages, in effect, found the answer to the second row of
-  chapter 74's table from the same direction.
-]
+Across thirteen chapters we have walked the terrain of the standard library and the
+newest standard. We have seen what the standard promises and what it does not,
+where it is slippery and why.
 
-#qa[
-  What is the price of this way?
-][
-  `if`s multiply. There being no device like exceptions to sweep a deep failure up in
-  one go, code that checks and passes upward attaches at every place a failure is
-  met. That is half the reason the `make_greeting` of the example just now runs to
-  some twenty lines. In exchange one thing is gained — *where and what can fail is
-  visible in the code as it stands.* That there is no hidden failure is the thing
-  this library sells.
-]
-
-Knowing the shape of errors, we now go down to what those errors protect — memory
-itself. The next chapter is bytes and views, and size calculation that does not
-overflow.
+The two remaining chapters of this part go one layer down. The place chapter 42
+passed over saying only "it is expensive" — what map a program's memory is laid out
+on in an operating system and in an embedded chip respectively (chapter 77), and
+what an allocator actually does in the heap region of that map (chapter 78). Those
+two chapters become the ground for understanding the next part's design.

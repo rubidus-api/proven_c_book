@@ -1,319 +1,333 @@
 #import "../../book/lib.typ": *
 
-= The boundaries — running things overlapped, and when there is no OS
+= Allocation is a parameter
 
 #prereq(
-  ([chapter 69, Operations that do not split], [operations that do not split]),
-  ([chapter 72, A program's map of memory], [when there is no OS]),
+  ([chapter 42, Dynamic memory], [dynamic memory]),
+  ([chapter 78, Inside the allocator], [inside the allocator]),
 )
 
 #deepqa[
-  Chapter 12 said cores became several because of the clock's limits, and that
-  accidents such as false sharing arise. Then how many different meanings does the
-  phrase "doing several things at once" have?
+  Chapter 42 said memory obtained with `malloc` must be `free`d by somebody exactly
+  once, and that settling that "somebody" is the program's design. Then is there a
+  way to know from a function alone whether "this function allocates memory"?
 ][
-  At least two. *Concurrency* is several tasks progressing by turns while waiting for
-  each other, and it holds even with one core — such is a server doing other work
-  while waiting for input and output. *Parallelism* is several cores really
-  calculating at the same moment. The former is a problem of *structure*, the latter a
-  problem of *performance*. This chapter's coroutines treat the former and the job
-  system the latter.
+  In standard C there is not. `malloc` can be called anywhere, so any function can
+  allocate in secret, and the signature does not say so. proven's answer is to return
+  that information to the signature with one rule — *a function that does not take an
+  allocator as an argument does not allocate.* If this rule is kept, reading the
+  signature alone tells you "this function may take memory".
 ]
 
 #organizer[
-  The last chapter of Part XII. We see the two ways of running several things
-#idx("coroutine")  overlapped (stackless coroutines and the job system), why
-  allocators and pointer provenance become a problem in a program running along
-  several strands, and what shape this library takes in a place with no operating
-  system at all. The last section is *when it is better not to use it*.
+  The answer to chapter 79's fourth bug — unclear ownership. The *allocator* that
+#idx("allocator")  handles the source of memory as a value, the *arena* that returns
+#idx("arena")  things of the same lifetime all at once, and the rule that divides
+  owning from borrowing by type. The dangers of the heap learned in chapter 42 are
+  organised here into design.
 ]
 
 #chapter-questions()
 
-== Stackless coroutines — overlapping without threads
+== An allocator is a value
 
-If a function can do some work, stop, and later start again *from that place*, much
-becomes easy. Because the code can be written in order instead of a state machine
-being written by hand.
-
-#demo("examples-en/ch83/coro.c")
-
-The heart of it is the last line — the state this coroutine remembers is *4 bytes*.
-There is no separate stack, no thread and no allocation. It is a tidying up of an old
-knack in C in which macros make re-entry points with `switch` and `case` (a cousin of
-Duff's device — that syntax seen in chapter 30 is used again here).
-
-The price is clear too. *Local variables do not survive* — stop and come back and they
-are gone, so state that must be maintained has to be kept in a struct. It is why the
-example kept `sent` as a struct member. And, being implemented with `switch`,
-`PROVEN_CORO_YIELD` cannot be put inside another `switch`.
-
-Even so the reason this model is loved in embedded work is plain. If one task is
-4 bytes, hundreds may be raised with no burden, and since no stack is taken separately
-the memory usage can be calculated at compile time.
-
-#misconception[
-  "A coroutine is a light version of a thread"
-][
-  What they do is entirely different. Threads are switched by the operating system
-  *cutting in as it pleases* (pre-emption), while a coroutine stops only where it
-  itself wrote `YIELD` (co-operation). So race conditions do not arise between
-  coroutines — because two coroutines never run at the same moment. There is a price
-  in exchange. If one coroutine calculates long without yielding, all the rest starve.
-  And coroutines cannot use several cores — which is why the next section's job system
-  exists separately.
-]
-
-== The job system — using several cores
-
-`proven_job_sys_t` is a small system equipped with a queue of work and worker threads.
-Its characteristic is that the queue's size is *fixed* — if it overflows, submission
-fails, and that failure comes as a value. The judgement is that an infinitely growing
-queue is merely a device for putting the problem off until memory is exhausted.
-
-There are five doors, and their order is itself the contract.
+`proven_allocator_t` is one struct — a context pointer and three function pointers
+(allocate, reallocate, free). There is no special global and no registration
+procedure. Being simply a value, it can be passed as an argument, held in a struct,
+and returned from a function. The *virtual function table* seen in chapter 54 is here
+as it stands.
 
 ```c
-proven_job_sys_t *sys;
-proven_err_t e = proven_job_system_init(alloc, 4, 256, &sys);  /* ① 4 workers, queue 256 */
-bool ok = proven_job_submit(sys, routine, arg);                /* ② submit (false if full) */
-bool did = proven_job_execute_one(sys);                        /* ③ this thread handles one too */
-proven_job_system_close(sys);                                  /* ④ take no more */
-proven_job_system_destroy(sys);                                /* ⑤ join the workers and clean up */
+typedef struct {
+    void *ctx;                        /* this allocator's state (for an arena, the arena) */
+    proven_alloc_fn_t   alloc_fn;
+    proven_realloc_fn_t realloc_fn;
+    proven_free_fn_t    free_fn;
+} proven_allocator_t;
 ```
 
-That it is an *opaque type* stands out — the inside of `proven_job_sys_t` is not in the
-header and it is handled only by pointer (the opaque type of chapter 55 in the flesh).
-Platform resources such as threads and locks are inside, and their layout is not to be
-exposed to user code.
-
-That ④ and ⑤ are divided is a contract too. *Closing* is "no more submissions are
-taken", and *destroying* is "wait for the workers to finish and then clean up". Between
-them, the header requires the producer threads to be joined.
-
-`proven_job_execute_one` is a little special. It lets *the submitting side handle one
-item of work itself* — so when submission fails because the queue is full, instead of
-merely waiting one can handle one and try again (a simple form of work stealing).
-
-#antipattern[
-  Overlapping closing with submitting
-][
-  ```c
-  /* thread A */                    /* thread B */
-  proven_job_submit(sys, job);      proven_job_system_destroy(sys);
-  ```
-  A pattern the header explicitly forbids. The correct order is *close, join all the
-  producers, then destroy*. Such ordering contracts are not solved by hiding a lock
-  inside the data structure — rather, a hidden lock increases the code that "mistakenly
-  believes it works". It is also why this library puts no locks in its containers and
-  pins down that *shared mutation is synchronised by the caller*.
-]
-
-== Threads, allocators, and provenance
-
-In a program running along several strands the allocator demands special care. If two
-threads use one arena together, the simple action seen in chapter 78 of "cutting from
-the front" becomes a race at once. The prescription is mostly *one per thread* — and
-then no synchronisation is needed at all.
-
-Pointer *provenance*, whose name only was seen in chapter 14, becomes practical here
-too. Since even at the same address it matters which allocation a pointer came from,
-giving a block obtained from one allocator back to another is a contract violation
-(as in chapter 78's counterexample) even if the address happens to match. The library's
-name came from here.
-
-== When there is no OS — freestanding
-
-This is the constraint that most shaped this library. It is the demand to run in the
-very environment chapter 56 gave as the reason the standard library is thin — a place
-with no operating system, no heap and no files.
-
-#idx("freestanding")What changes in a freestanding build is this.
-
-- `platform/` is not included at all. Files, time and OS randomness disappear.
-- Allocation is done with an arena over a static buffer (chapter 78). There is no
-  `malloc`.
-- Strings are handled with `_borrow` over stack and static buffers (chapter 79).
-- The panic handler is registered by you — there may be no console to print to, so it
-  becomes a matter of lighting an LED, kicking a watchdog or rebooting.
-- Real-number formatting uses large-integer arithmetic, so it can be taken out whole
-  if it is not needed.
-
-Why the disciplines of the earlier chapters — "take the allocator as an argument", "a
-view is borrowed", "no hidden globals" — were so persistent shows itself here. Those
-disciplines were not a taste but *the minimum condition for running in this
-environment*.
-
-=== The actual build procedure
-
-Left in words alone it stays vague, so here is the order.
-
-+ *Take `platform/` out of the compilation list.* Leave only `src/proven/*.c`. Files,
-  time, OS randomness, streams, mmap and the job system go out with it.
-+ *Define `PROVEN_FREESTANDING`* (`-DPROVEN_FREESTANDING=1`). `proven_heap_allocator()`
-  then returns *an unusable value* (all zeros), and if it is used by mistake
-  `proven_alloc_is_valid` says false.
-+ *Take the backing memory statically.* Put one array where the linker script knows it
-  and lay an arena over it (chapter 78).
-+ *Register a panic handler.* There being no console, one of an LED, a watchdog or a
-  reboot (chapter 76's example).
-+ *Take out what is not needed.* If real-number formatting is not used,
-  `-DPROVEN_FMT_NO_FLOAT` strips the large-integer arithmetic code out whole.
+The three functions' signatures write the contract down as they stand.
 
 ```c
-/* the skeleton of a freestanding program */
-static proven_byte_t g_pool[8 * 1024];      /* the memory budget is settled here */
-
-int main(void)
-{
-    proven_set_panic_handler(board_panic);
-    proven_arena_t arena = proven_arena_create(
-        (proven_mem_mut_t){ .ptr = g_pool, .size = sizeof g_pool });
-    proven_allocator_t alloc = proven_arena_as_allocator(&arena);
-
-    for (;;) {
-        proven_arena_reset(&arena);          /* taken back each turn */
-        handle_one_event(alloc);
-    }
-}
+proven_result_mem_mut_t (*alloc_fn)(void *ctx, proven_size_t size,
+                                    proven_size_t align);
+proven_result_mem_mut_t (*realloc_fn)(void *ctx, void *old_ptr,
+                                      proven_size_t old_size,
+                                      proven_size_t new_size,
+                                      proven_size_t align);
+void                    (*free_fn)(void *ctx, void *ptr);
 ```
 
-These twenty lines contain all of this part's discipline — *the allocator is an
-argument*, *lifetime is per arena*, *`main` does not return* (chapter 50), and *the
-memory budget is written as a number in the source*.
+*Why pass `old_size` and `align` too.* The standard `realloc` does not ask the old size
+— because the allocator wrote it into the block's header (chapter 78). But an arena has
+no header. Not making a place to write the size is why an arena is fast, so the choice
+was for *the caller to tell it* instead. This decision is what lets a "headerless
+allocator" fit the same interface.
 
-#realcase[
-  The same code in two worlds — and its price
+Four things from the contract must be remembered.
+
++ *`align` must be a power of two.* And *a block must be reallocated and freed with the
+  same alignment it was allocated with.* Because the heap allocator handles requests at
+  or below the default alignment differently from stricter ones (chapter 82) — handing
+  a block back in a different alignment class is outside the contract.
++ *`size == 0` is `INVALID_ARG`.* A zero-byte allocation is treated as a caller's bug.
+  Before this rule the heap said `NOMEM` (a lie — nothing was out of memory) and the
+  arena returned a valid pointer, so *the answer differed per allocator*. Generic code
+  cannot be written on a rule like that.
++ *A reallocation with `new_size == 0` is a free* — it gives a null pointer and
+  `PROVEN_OK`.
++ *Reallocation is failure-atomic.* On failure `old_ptr` is still valid and its contents
+  untouched — chapter 61's `realloc` leak counterexample blocked at the level of the
+  interface.
+
+And every function that allocates has this shape.
+
+```c
+proven_result_u8str_t proven_u8str_create(proven_allocator_t alloc,
+                                          proven_size_t limit);
+void                  proven_u8str_destroy(proven_allocator_t alloc,
+                                           proven_u8str_t *str);
+```
+
+*Destroy with the allocator given at creation* — that is the whole of the ownership
+rule.
+
+== Swapping the three sources
+
+#demo("examples-en/ch83/three.c")
+
+Look at the `make_list` function. This function *does not know* whether the memory it
+uses comes from `malloc`, from a static array, or from a recycling bin. The caller
+settles it, and the same code runs identically over all three.
+
+Three things can be read in the output.
+
+*① An arena's usage is visible.* That `arena.offset` is 129 means exactly 129 bytes
+(128 of content + 1 NUL) went out for one string. A number that cannot be known on the
+heap can be counted in an arena — in embedded work this transparency pays when setting
+a memory budget.
+
+*② Reset makes individual release meaningless.* The usage did not fall although
+`destroy` was called (an arena's `free` does nothing), and one `reset` took it to 0.
+"Instead of giving back individually, give the whole back" is this picture.
+
+*③ When it runs dry it refuses as a value.* Requesting 128 bytes from a 64-byte arena
+gave back `NOMEM` (1). It neither collapses nor quietly falls back to the heap.
+
+#qa[
+  Besides `heap`, `arena` and `pool`, can I make an allocator myself?
 ][
-  Keeping as one set the code that runs both in embedded work and on a host really is
-  of great value. If a protocol parser can be tested on a PC and put into the firmware
-  as it stands, the time spent floundering on a board with no debugging environment
-  shrinks greatly. It is why many embedded teams keep a separate "test build that runs
-  on the host", and what makes that structure possible is exactly the design of
-  *confining platform dependence to one layer*. The price is that the API becomes a
-  little more formal — code that works anywhere is specialised to nowhere.
+  Of course. Chapter 81's example already did — a testing allocator that "fails from the
+  nth call" made of three functions and inserted. The only rule is keeping the contract
+  above.
+
+  The cases for making one in practice are mostly these. *Instrumentation* — a shell
+  counting allocations and peak usage. *Testing* — failing on purpose, painting freed
+  memory with 0xDD. *Debugging* — recording the place (file and line) of an allocation.
+  *Special resources* — obtaining from shared memory or a DMA-capable region, places
+  `malloc` cannot give.
+
+  All four take the shape of *wrapping an existing allocator*. They hold a backing
+  allocator inside, do their own work and pass it on. Chapter 81's example is the model.
 ]
 
-== Where this library stands — what it is, and what it is not
+#qa[
+  Why is this such an important property? Most of the time the heap will be used
+  anyway.
+][
+  Because three things follow at once. First, *the same code runs in an environment
+  with no heap* — such is embedded work (chapter 88), and such is inside a kernel.
+  Second, *testing becomes easy* — insert an allocator that fails on purpose and you
+  can test "does this code recover properly when memory runs short". Third, *the
+  caller can choose the performance* — for data that lives briefly and dies all at
+  once, an arena is far faster than the heap. The moment the library calls `malloc`
+  directly, all three of these vanish.
+]
 
-Before closing the part its place has to be made clear. The design seen so far —
-taking an allocator as a parameter, returning failure as a value, views that
-carry a length, refusing rather than truncating — was not invented by proven.
-Zig's allocator parameter, Rust's `Result` and slices, recent C++'s `span` and
-`expected`, and the in-house C conventions of many companies have all moved in
-the same direction. There is considerable common ground about it.
+== The arena — things of the same lifetime, all at once
 
-*proven, however, is not that common ground itself.* It is *one attempt* to
-implement that direction in C23 — neither a standard nor an industry component.
-The distinction matters for a simple reason: the direction has been verified in
-many places, this implementation has not yet. What to take from this part is the
-direction rather than the code, and if you do take the code, take it knowing what
-follows.
+Chapter 42 taught the heap's three dangers (leak, double free, use after free). All
+three come from *individual release*. Then what if individual release were removed —
+that is the arena's idea.
 
-=== What has been verified so far
+An arena takes one large lump of memory and, whenever a request comes, cuts from the
+front. There is a release function but it does nothing. Instead there is *reset* — it
+returns everything at once.
 
-What this book has put in print is exactly this much.
+That the struct has only two slots shows this simplicity as it stands.
+
+```c
+typedef struct {
+    proven_mem_mut_t backing;   /* the memory that backs it (borrowed) */
+    proven_size_t    offset;    /* how far it has been handed out */
+} proven_arena_t;
+```
+
+*An arena does not own its memory.* That `backing` is a writing window (`mem_mut_t`) is
+that declaration — a static array, a stack array, or a lump received once from the heap
+is prepared by the caller, and the arena only cuts on top of it. So
+`proven_arena_destroy` *does nothing* (there is nothing borrowed to give back). If the
+lump came from the heap, returning it is still the caller's part.
+
+The life cycle is four steps.
+
+#dtable(
+  columns: 3,
+  [*step*], [*function*], [*what happens*],
+  [making], [`proven_arena_create(backing)`], [`offset = 0`. no allocation],
+  [handing out], [`proven_arena_alloc(&a, n)`], [aligns and pushes `offset`],
+  [taking back], [`proven_arena_reset(&a)`], [`offset = 0` — everything becomes invalid],
+  [ending], [`proven_arena_destroy(&a)`], [the formal partner. it does nothing],
+)
+
+The allocation function has four editions. Choose the one that fits.
 
 #dtable(
   columns: 2,
-  [*confirmed*], [*not confirmed*],
-  [this book's 94 examples build and run under GCC 14 and Clang 22], [behaviour under other compilers (MSVC, older GCC)],
-  [they all pass on x86-64 Linux], [continuous verification on other systems and architectures],
-  [the contracts of the API the examples use match the documentation], [coverage of the whole API],
-  [the platform layer has two branches, POSIX and Win32], [continuous automated verification of the Win32 branch],
+  [*function*], [*when to use it*],
+  [`proven_arena_alloc(&a, size)`], [the default. cuts at the default alignment],
+  [`proven_arena_alloc_aligned(&a, size, align)`], [data where alignment matters (SIMD, DMA)],
+  [`proven_arena_alloc_or_panic(&a, size)`], [places where failure should stop the program],
+  [`proven_arena_realloc_aligned(...)`], [grows in place if it is the last block],
 )
 
-That is, what this book vouches for is that *the code printed here runs in this
-environment* — not that the whole library is verified in every environment. The
-book claims no more than that.
+The `_or_panic` family exists for the reason given in chapter 81 — where the memory
+budget has been calculated in advance (embedded work is representative), "the arena is
+short" is not a failure to recover from but *a design error*, so demanding a check every
+time is rather noise.
 
-=== Stability — what may still change
+The `realloc` has one interesting property. An arena having no header, ordinary
+reallocation is "cut anew and copy", but *if the block being grown happens to be the
+last one handed out* it can grow in place simply by pushing `offset`. It is why code
+that appends to a string a little at a time is fast on an arena, and why calling
+chapter 84's `proven_u8str_reserve` in advance pays especially on an arena (an
+intervening allocation breaks the property).
 
-proven is not at 1.0. The edition this book uses is a snapshot of the
-`v26.07.23b` line, and that means:
+#demo("examples-en/ch83/arena.c")
 
-- *The API may change.* Names and signatures are still being tidied. There is no
-  guarantee that this book's examples compile unchanged against the next edition.
-- *No ABI is promised.* Struct layouts may change, so mixing pre-compiled
-  binaries is not advisable at this stage; building from source alongside your
-  own code is safer.
-- *Pin the edition.* If you use it in earnest, vendor a specific snapshot into
-  your repository (as this book does under `vendor/proven`) and move it
-  deliberately.
-
-=== What is not there yet
-
-Set down honestly, the following are absent or thin in this edition.
-
-- *Performance and size comparisons.* No benchmarks against the standard library
-  or other C libraries are published. That is why this book makes no performance
-  claim — a performance claim without data is advertising.
-- *Outside users.* There is little record of use in projects beyond the author's.
-- *A wide platform matrix.* The freestanding branch is designed for, but the list
-  of continuously verified targets is narrow.
-- *A long compatibility history.* The trust an old library earns — "it has been
-  carried across many editions already" — accumulates only with time.
-
-#qa[
-  Then what is this part to be read for?
-][
-  Two things. One is *how to read a design* — the eye that asks, of whatever
-  library you meet, "how does it report failure, who supplies the memory, where
-  is the length, what happens at the boundary?" That eye remains whether or not
-  you use proven.
-
-  The other is *grounds for a choice*. If, looking at the table above, you judge
-  that it is too early for your project, that too is the result of reading this
-  part properly. It means the same as the preface saying that deciding you do not
-  need proven is a fine outcome too.
-]
-
-== When it is better not to use it
-
-We close honestly. There are cases where this library is not the answer.
-
-- *Short, script-like programs* — for a twenty-line tool, ownership discipline and
-  allocator parameters are mere formality. The standard library is enough.
-- *A codebase that already has other conventions* — a large project mostly already has
-  its own string, container and error conventions. Mix two conventions and conversion
-  code arises at every boundary, and those boundaries become the places of new bugs.
-- *Places like C++ and Rust where the language already solves the problem* — in an
-  environment where the language handles ownership and error propagation, there is
-  little reason to lay a C library on top.
-- *Work that one standard function finishes* — exactly as this book said in
-  chapter 56. The right attitude is neither "do not use it" nor "use it
-  unconditionally" but *knowing the contract and choosing*.
-
-#qa[
-  Then what remains of what was learned in this part if proven is not used?
-][
-  Almost all of it. Strings that carry their length, writes that refuse rather than
-  truncate, errors that come back as values, allocation visible in the signature, the
-  distinction of owning and borrowing, size calculation done with checked arithmetic,
-  comparators that keep a total order, hashes that assume adversarial input — these are
-  not a library but *design principles*, and they can be applied by hand to any C code.
-  Open chapter 74's table again and the right-hand column is entirely such items. What
-  this part really wanted to sell is not the code but that column.
-]
+There really are many places this model fits. The temporary data made while handling
+one request, a game's calculation results used for one frame, the syntax tree made
+while parsing one file — all data *born at different moments but dying at the same
+one*. For such data, individual release is only cost and risk.
 
 #recap[
-  A summary of the whole of Part XII — problems and answers.
+  A comparison of the three sources of memory.
 
   #dtable(
-  columns: 3,
-    [*chapter 74's problem*], [*the answer*], [*chapter*],
-    [strings that do not know the size], [views (ptr+size), refusing rather than truncating], [chapters 77 and 79],
-    [unconfirmed failure], [errors as values, `[[nodiscard]]`], [chapter 76],
-    [format mismatch], [`{}` and `PROVEN_ARG` (`_Generic`)], [chapter 80],
-    [unclear ownership], [the allocator parameter, owning versus borrowing], [chapter 78],
-    [unchecked callbacks], [documented contracts, introsort, keyed hashes], [chapter 81],
-    [the hidden type of bytes], [`proven_byte_t`], [chapter 77],
-    [environments with no OS], [separating the platform layer, static arenas], [chapter 83],
+  columns: 4,
+    [], [*heap*], [*arena*], [*pool*],
+    [how it gives], [arbitrary sizes], [cuts from the front], [fixed-size slots],
+    [individual release], [yes], [no (reset)], [yes (return the slot)],
+    [fragmentation], [can arise], [none], [none],
+    [speed], [ordinary], [very fast], [very fast],
+    [where it fits], [assorted lifetimes], [a group of the same lifetime], [the same size repeatedly],
 )
 ]
 
-With this, the promise this book made in chapter 1 has been kept — showing C's problems
-first, and showing one answer to them through to the end. The two remaining chapters
-are the story beyond these pages. In the next chapter we look round the terrain of
-practice (build tools, version control, real projects), and in the last we gather up the
-road this book has travelled.
+#idx("pool")The pool (`proven_pool_t`) is the third branch. It is used where objects
+of the same size are repeatedly made and unmade — a game's bullets, a server's
+connection objects, a parser's nodes. The slot size being fixed there is no
+fragmentation, and a returned slot is reused at once. A pool too becomes an allocator
+through `proven_pool_as_allocator`, so the previous example's `build` function runs
+on it as it is.
+
+#antipattern[
+  Destroying with a different allocator
+][
+  ```c
+  proven_result_u8str_t r = proven_u8str_create(proven_heap_allocator(), 64);
+  ...
+  proven_u8str_destroy(proven_arena_as_allocator(&arena), &r.value);  /* wrong */
+  ```
+  It amounts to giving back to an arena what was obtained from `malloc`. This rule
+  cannot be enforced by the library — an allocator is simply a value, and which value
+  is passed is settled by the caller. So the practice in the field is *to carry the
+  allocator along with the data structure*, or to narrow the scope so that only one is
+  used within a module.
+]
+
+#misconception[
+  "Use an arena and you need not care about releasing"
+][
+  Individual release disappears but *the lifetime remains as it was.* The moment the
+  arena is reset, every piece cut on it becomes invalid at once, so data that must
+  still be alive after the reset must not be put in the arena. Chapter 82's "a view
+  cannot outlive its owner" has grown here to arena scale. What an arena removes is
+  the *number of times* one releases, not the *thinking* about lifetime.
+
+  ```c
+  proven_u8str_t name;
+  for (int i = 0; i < n; i++) {
+      proven_arena_reset(&per_request);        /* taken back per request */
+      handle(proven_arena_as_allocator(&per_request), &name);
+  }
+  use(&name);        /* ← dangerous. what name pointed at has already gone back */
+  ```
+
+  The discipline in the field is one — *call the arena's lifetime and the lifetime of
+  the data on it by the same name.* "the request arena", "the frame arena", "the file
+  arena". Then which data must survive the reset shows itself in the name alone, and
+  data that must cross over is copied to *a longer-lived allocator*.
+]
+
+== Which to choose
+
+#dtable(
+  columns: 4,
+  [*situation*], [*what to choose*], [*why*], [*caution*],
+  [data of assorted lifetimes], [the heap], [general-purpose. individual release possible], [cost and fragmentation (chapter 78)],
+  [data born and dying with a unit of work], [an arena], [allocation is one addition, release one reset], [everything invalid after a reset],
+  [the same struct by the thousand], [a pool], [no fragmentation, immediate reuse], [one size only],
+  [an environment with no heap at all], [a static array + an arena], [`malloc` is never called once], [the budget must be calculated in advance],
+  [testing the out-of-memory path], [a failing shell (chapter 81)], [it runs the path that never otherwise runs], [for testing only],
+)
+
+In practice these four are *layered*. The program as a whole uses the heap, while
+handling one request uses a request arena, and a data structure making thousands of
+nodes inside it lays a pool on top. That all three share the same interface, so that
+layering needs no special device, is the value of this design.
+
+== Owning and borrowing, and state that points at itself
+
+Now we return to chapter 79's fourth bug. The problem of `char *` meaning four things
+#idx("owning and borrowing")is solved by dividing the type in two.
+
+- *Owned* — things such as `proven_u8str_t` and `proven_array_t`. Obtained with
+  `_create` and let go with `_destroy`.
+- *Borrowed* — `proven_u8str_view_t`, `proven_mem_view_t`. Never destroyed. When the
+  owner vanishes they become invalid with it.
+
+That "must I release this?" can be answered from the signature alone is the whole of
+this distinction and its purpose.
+
+There is one more rule attached. *State that points at itself is not copied.*
+Chapter 43 taught that struct assignment is a shallow copy. Copy an object that holds
+inside a pointer to its own buffer that way, and the copy's pointer still points at
+the original, so two objects share the same memory and destroying both is a double
+free. So such objects are not copied by value but passed by pointer.
+
+#realcase[
+  The spread of the allocator-as-argument design
+][
+  This way is not proven's invention but is close to the recent consensus of systems
+  programming. In Zig, almost every allocating API of the standard library takes an
+  allocator as an argument and "no hidden allocation" is the language's motto. In Rust
+  too, attaching an allocator to a container is on its way into the standard, and
+  C++'s `std::pmr` arose from the same problem-consciousness. The reason is the same
+  in every case — in games, embedded work, kernels and high-performance servers,
+  *choosing the source of memory* is the heart of both performance and safety.
+]
+
+#qa[
+  Then what is the price?
+][
+  One more parameter attaches to the signature. And a new design problem arises of
+  *how far the allocator is to be carried* — whether to pass it to every function or
+  to hold it in a struct. In a small program this can look like nothing but tiresome
+  formality. Its value shows itself after the program grows, or when the code must be
+  moved to a place where the heap cannot be used.
+]
+
+We have set up the rules for obtaining and letting go of memory. From the next chapter
+come the real components that rise on top of it — first, the strings this book warned
+about all through chapter 39.
