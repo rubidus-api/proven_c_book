@@ -160,21 +160,31 @@ figure.tbl { text-align:center; }
 .qa-a .dev-label { color:var(--muted); }
 .qa-a .dev-label + p { font-family:inherit; font-weight:400; }
 span.dev-label { display:inline; font-size:1rem; margin:0; }
-/* 오개념: 균일한 가는 검은 테두리 상자. 표제 줄만 음영이 들어가고
-   본문은 바탕 없이 이어진다. 표지와 오해 문장은 같은 줄에 둔다. */
-.misconception { border:1px solid var(--fg); border-bottom:none; background:none;
-                 margin-bottom:0; border-radius:0; padding:.6rem .9rem; }
-.misconception .dev-label, .misconception .dev-label + p { display:inline; margin:0; }
-.misconception .dev-label { color:var(--fg); font-size:1rem; }
-.misconception .dev-label + p {
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700; }
-.misconception + div { border:1px solid var(--fg); border-top:none; background:none;
-                       padding:.75rem .9rem; margin:0 0 1.4rem; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
 .cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
@@ -274,7 +284,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>기대한 값 : 800000
-보호 없음 : 269234  &lt;- 잃어버렸다
+보호 없음 : 273115  &lt;- 잃어버렸다
 원자적    : 800000
 
 atomic_long 은 잠금 없이 되는가? 예
