@@ -220,6 +220,141 @@ handler_fn table[4];
   C++'s strong type aliases does not exist in C.
 ]
 
+== The real thing — declarations that actually shipped
+
+What follows is not exercise material. These are *declarations from libraries
+that really shipped*, read by the procedure. The point of the section is to
+confirm there is nothing to be afraid of.
+
+#demo("examples-en/ch55/monster.c")
+
+=== ① The monster the standard itself produced — `signal`
+
+This declaration stands in the standard's `<signal.h>` exactly as written
+(§7.14.1.1).
+
+```c
+void (*signal(int sig, void (*func)(int)))(int);
+```
+
+At first sight it is a forest of parentheses, but following the procedure of the
+previous section it takes five steps. *Start at the name, look right first, and
+go left when the right is exhausted.*
+
+#dtable(
+  columns: 3,
+  [*Step*], [*What is in view*], [*The sentence so far*],
+  [1], [`signal`], [signal is],
+  [2], [to the right: `(int sig, void (*func)(int))`], [… a *function* taking an `int` and "a pointer to a function taking `int` and returning `void`"],
+  [3], [to the left: `*`], [… returning *a pointer*],
+  [4], [outside the parentheses, right: `(int)`], [… that pointer points at *a function* taking `int`],
+  [5], [leftmost: `void`], [… returning `void`],
+)
+
+In one sentence: *"`signal` takes a signal number and a handler, and returns
+**the previous handler**."* That also explains why the return type is so rough —
+installing must hand back the previous one so it can be restored later. The first
+line of the demonstration actually takes that previous handler and restores it.
+
+One `typedef` makes the declaration ordinary.
+
+```c
+typedef void handler_t(int);          /* name the function type */
+handler_t *signal(int sig, handler_t *func);
+```
+
+The standard does not write it that way for historical reasons — this function
+existed long before layering with `typedef` became the habit.
+
+=== ② Rougher in the wild — X11's error handler
+
+From the X Window System's manual:
+
+```c
+int (*XSetErrorHandler(int (*handler)(Display *, XErrorEvent *)))();
+```
+
+The pattern is *identical* to `signal`: take a handler, return the previous one.
+The only difference is that the handler takes two arguments, so a layer of
+parentheses looks thicker. By the procedure, the number of steps is the same.
+
+The second block of the demonstration transplants the pattern and runs it — a raw
+`set_error_handler` and a `set_error_handler2` layered with `typedef` do the same
+work. The latter shows that this rough declaration is really the one line *"a
+function taking a handler and returning a handler."*
+
+```c
+typedef int error_handler_t(Display *, XErrorEvent *);
+error_handler_t *XSetErrorHandler(error_handler_t *handler);
+```
+
+#realcase("The same pattern is everywhere")[
+  Once recognised, "take a handler and return the previous handler" shows up all
+  over: the standard's `signal`, X11's `XSetErrorHandler` and
+  `XSetIOErrorHandler`, and most callback-registration functions in GUI and game
+  frameworks. The reason is the same in each — *it must be possible to restore*.
+  Code that plugs a library in has no way to put things back afterwards unless
+  installation hands back what was there.
+
+  For the same reason `qsort` and `bsearch` take a comparison function
+  (`int (*compar)(const void *, const void *)`), and POSIX's `pthread_create`
+  takes a start routine (`void *(*)(void *)`). Most rough-looking declarations
+  come from one idea: *passing behaviour as a value.*
+]
+
+=== ③ And the genuinely pointless ones
+
+Declaration quizzes on the internet have their regulars.
+
+```c
+char *(*(**foo[][8])())[];      /* an example from cdecl's own documentation */
+int (*(*bar[10])(void))(int);
+```
+
+The procedure works on these too. The first is *"an array of arrays of 8 of
+pointer to pointer to function returning pointer to array of pointer to `char`"*.
+More important than having read it is the judgement that follows: *do not put
+such a declaration in your code.*
+
+The difference between these and the two above is this chapter's point. The first
+two are declarations *worth untangling* — they are really used and the pattern
+carries meaning. The last has no meaning; it only shows what the grammar permits.
+
+#qa[
+  Then why practise reading such declarations at all?
+][
+  Three practical reasons.
+
+  *First, you do not get to choose other people's code.* Standard headers, old
+  libraries and kernel structures carry these declarations as they are. Unable to
+  read one, you cannot use the function.
+
+  *Second, you have to read error messages.* When a function-pointer type does not
+  match, the compiler prints types like `int (*)(Display *, XErrorEvent *)`
+  verbatim. Knowing the procedure turns that message into a sentence.
+
+  *Third, deciding what to wrap in a `typedef` requires reading it first.* Give a
+  name to something you have not understood and the name will lie.
+
+  But the purpose is *reading*. For writing, always divide into layers with
+  `typedef` — the tool in the next section helps with that judgement; it does not
+  replace it.
+]
+
+#misconception[
+  "Only geniuses read complicated declarations"
+][
+  Not so, because there is a procedure. As the table above shows, `signal` is five
+  steps and X11's is five steps. The number of steps is set by *how many layers of
+  parentheses there are*, not by anyone's talent.
+
+  The real reasons it feels hard are two: *scanning with the eye instead of
+  following the procedure*, and *trying to grasp the whole meaning at once*. A
+  machine does not read that way — it peels one layer at a time and appends what
+  it peeled to a sentence. Do the same and mistakes almost stop happening,
+  especially with the steps written down on paper.
+]
+
 == Leaving it to a tool — `cdecl`
 
 A program that does this reading for you has existed for a long time. It is
