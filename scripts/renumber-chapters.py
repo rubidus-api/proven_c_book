@@ -23,13 +23,13 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-# 새로 끼우는 장: 67(비지역 점프), 66장 신호 바로 다음
-INSERTS = (67,)
+# 새로 끼우는 장: 63~67(로케일 2 + 와이드 문자 2 + 실무 1), 62장 바로 다음
+INSERTS = (63, 64, 65, 66, 67)
 
 
 def remap(n: int) -> int:
     """옛 장 번호 → 새 장 번호."""
-    return n if n < 67 else n + 1
+    return n if n < 63 else n + 5
 
 
 PLACE = "«{}»"   # «n»

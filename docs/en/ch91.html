@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>91 The embedded toolbox — compilers and the tools beside them — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch90.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch92.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-91">91 The embedded toolbox — compilers and the tools beside them</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div class="open-body"><div>chapter 18, The compiler landscape · the terrain of compilers</div><div>chapter 77, A program’s map of memory · memory in embedded systems</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 18 said that numerically the largest branch of the world’s C compilers is embedded. Why is that — cannot gcc alone target them all?</p><div class="qa-a"><p><span class="dev-label">A.</span> Three reasons. First, <strong>there are chips gcc does not know</strong> — when a company invents its own instruction set, the compiler that knows that chip is made by that company. Second, <strong>certification</strong>. The safety standards of automotive, aerospace and medical devices demand evidence that “this compiler has been qualified against the standard”, and selling that qualification together with the responsibility is the business of specialist firms. Third, <strong>code size</strong>. On a chip with tens of KiB of memory, a few per cent of size decides whether a product exists.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-128"></span>What people who write C that runs on chips carry with them. The compilers that differ by vendor (IAR, Arm, TI, Microchip, Renesas, SDCC and others), and the tools that sit beside make and git — build tools, debug probes and on-chip debugging, how to see a log on a machine with no screen, simulators, static analysis and unit testing, and the tools that measure size. There is no need to install any of it now. The point is <strong>to know the names and what they are for.</strong></div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Must all of this be learned before starting embedded work?</li></ol></div></div><div></div><h3>91.1 The embedded compilers</h3><p>Only those currently in service. Since the point is recognising names, a table will do.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>compiler</strong></th><th><strong>chips targeted</strong></th><th><strong>character</strong></th></tr><tr><td>IAR Embedded Workbench</td><td>Arm, RISC-V, 8051, MSP430, AVR, RX, RL78, RH850 and many more</td><td>commercial. known for certification (automotive, medical) and code size</td></tr><tr><td>Arm Compiler for Embedded (<code>armclang</code>)</td><td>the Arm Cortex family</td><td>commercial (included in Keil MDK). Clang-based</td></tr><tr><td>TI Arm Clang (<code>tiarmclang</code>)</td><td>TI’s Arm cores</td><td>free. Clang-based, with TI extensions</td></tr><tr><td>MPLAB XC8 / XC-DSC / XC32</td><td>Microchip PIC, AVR, SAM</td><td>usable free of charge. XC32 covers Arm and MIPS</td></tr><tr><td>Renesas CC-RX / CC-RL</td><td>Renesas RX, RL78</td><td>commercial. Renesas chips only</td></tr><tr><td>Green Hills Optimizing Compilers</td><td>Arm, PowerPC, RISC-V and others</td><td>commercial. a long-standing power in the safety market</td></tr><tr><td>Wind River Diab</td><td>Arm, PowerPC and others</td><td>commercial. aerospace and automotive certification</td></tr><tr><td>SDCC</td><td>8051, STM8, Z80, 6502, PDK and other 8-bit</td><td>free software. the standard for small chips</td></tr><tr><td><code>arm-none-eabi-gcc</code> and other GCC ports</td><td>Arm, RISC-V, AVR, MSP430 …</td><td>free software. the default inside vendor SDKs</td></tr><tr><td>Clang/LLVM embedded builds</td><td>Arm, RISC-V</td><td>the common base of the vendor compilers</td></tr></table></div><p class="float-caption">Table 91.1</p></figure><p>Two currents show. One is the same as in chapter 18 — <strong>nearly every new compiler is LLVM-based</strong> (Arm’s <code>armclang</code>, TI’s <code>tiarmclang</code>, Microchip’s new XC32). The other is <strong>becoming free</strong>. Compilers that required a paid key to enable optimisation used to be common; Microchip removed that restriction in recent editions.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Look at the chip vendor’s SDK first</p>In practice the starting point is often not choosing a compiler but getting <strong>the development bundle the chip company provides</strong> (its SDK) — ST’s STM32Cube, NXP’s MCUXpresso, Espressif’s ESP-IDF, Nordic’s nRF Connect SDK and the like. Inside them a compiler (usually GCC or Clang), a linker script, startup code, peripheral libraries and debugging configuration already come paired. Choosing tools one by one from scratch is something you do after learning why that bundle looks the way it does.</div><h3>91.2 The tools beside make and git</h3><p>Now for the tools. On an embedded developer’s desk there are several beyond make and git. Grouped by what they do:</p><p><strong>① Assembling the build.</strong> <code>make</code> is still the base, but today’s practice puts a <strong>generator</strong> on top. <code>CMake</code> is the de facto standard (it produces build files and is commonly paired with <code>Ninja</code>, a fast executor, behind it), and <code>Meson</code> is used too. Higher-level tools that manage libraries, boards and toolchains wholesale include <code>PlatformIO</code> (many boards with one command), the Zephyr project’s <code>west</code>, and Espressif’s <code>idf.py</code>. Projects with many configuration options, like a kernel, switch features on and off with <code>Kconfig</code> and describe the hardware layout in a <strong>device tree</strong>.</p><p><strong>② Burning it onto the chip and stopping it.</strong> To flash a program onto a chip and halt it mid-execution to look inside, you need a small piece of hardware called a <strong>debug probe</strong>. SEGGER’s <code>J-Link</code>, ST’s <code>ST-Link</code> and the standard <code>CMSIS-DAP</code> family are common. The software joining probe to computer is <code>OpenOCD</code>, <code>pyOCD</code> or the vendor’s own server, and on top of that chapter 17′s <code>gdb</code> works just as before — except that this is remote debugging, with the program running <strong>on another machine</strong>. Chip and probe are connected by a few wires called JTAG or SWD.</p><p><strong>③ Seeing a log on a machine with no screen.</strong> Embedded boards usually have no screen, so where <code>printf</code> output goes becomes a question. The traditional answer is to send it out of a <strong>serial port</strong> (UART) and receive it on a computer with a terminal program (<code>picocom</code>, <code>minicom</code>, <code>screen</code>, <code>PuTTY</code>). The Arm family has two faster routes — <code>ITM</code>/<code>SWO</code>, which floats characters out over the debug line, and SEGGER’s <code>RTT</code>, in which the probe peeks at a memory buffer. There is also <strong>semihosting</strong>, where the debugger performs host I/O on the target’s behalf, but it is slow and used only for testing.</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Using <code>printf</code> anywhere in embedded code</p><p>The <code>printf</code> debugging habit formed on a host (chapter 17) brings three problems in embedded work. <strong>Size</strong> — the whole format interpreter is linked in and eats tens of KiB. <strong>Speed</strong> — pushing one character at a time over a UART costs milliseconds. <strong>Timing</strong> — that delay changes the real-time behaviour, so the bug disappears the moment you print: the classic situation.</p><p>So practice uses lighter alternatives: a reduced <code>printf</code> handling integers only, a scheme that sends <strong>only a number</strong> instead of putting the format string on the chip, or a nearly free channel such as the RTT above. It is also why chapter 17′s “learn the debugger” is especially valuable in embedded work.</p></div><p><strong>④ Running it without the machine.</strong> When the hardware does not exist yet, or many boards must be tested automatically, you use a <strong>simulator</strong>. <code>QEMU</code> imitates various boards, and <code>Renode</code> can imitate several devices and even a network together, which makes it common in test automation (CI). Vendor IDEs often ship an instruction-level simulator too.</p><p><strong>⑤ Having the code read for you.</strong> Embedded software is hard to fix once shipped (the product leaves your hands), so <strong>static analysis</strong> has great value. Free tools include <code>cppcheck</code> and <code>clang-tidy</code> (and the compiler’s own <code>-Wall -Wextra</code>); commercial ones commonly used are <code>PC-lint Plus</code>, <code>PVS-Studio</code>, <code>Polyspace</code> and <code>Coverity</code>. In the automotive industry the ability to check conformance to a set of coding rules called <code>MISRA C</code> is especially important — an approach of “using only the subset of C that has been decided as allowed.”</p><p><strong>⑥ Testing.</strong> Code that runs on a chip is unit-tested too. For C, <code>Unity</code> (with its build tool <code>Ceedling</code>) and <code>CppUTest</code> are widely used, and it is the practice to compile logic that does not touch hardware <strong>on the host</strong> and test it there — where you can turn on checkers like <code>-fsanitize=address,undefined</code> (chapter 17), receiving in place of the chip the checks it cannot give you.</p><p><strong>⑦ Measuring size and layout.</strong> Memory is small, so “how much went in” is measured constantly. Binary tools such as <code>size</code>, <code>nm</code>, <code>objdump</code> and <code>readelf</code> are the basics, and you read the <strong>map file</strong> the linker leaves to see what occupies the space. Tools such as <code>bloaty</code> and <code>puncover</code> present that analysis nicely. To convert into a format for the chip you use <code>objcopy</code> (ELF → bin/hex) or <code>srec_cat</code>.</p><p><strong>⑧ Seeing the signals with your eyes.</strong> A moment comes when software tools alone will not do. When you must see what signal is leaving a pin, out come the <strong>logic analyser</strong> (the free software <code>sigrok</code>/PulseView supports inexpensive hardware) and the oscilloscope. That half of the “the code is right but it does not work” problems are wiring and power is an old proverb of this world.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Compiler Explorer — a museum of compilers opened in a browser</p><p>One tool that needs no installation. The website <code>godbolt.org</code> (Compiler Explorer) lets you write C on the left and shows, immediately on the right, <strong>what machine code that code becomes</strong>. You can compare across compilers and versions (from gcc 4 to the newest, clang, MSVC, embedded arm targets — hundreds of them) and optimisation options.</p><p>It is the easiest way to <strong>see with your own eyes</strong> what chapter 13 (compiler optimisation) called “the editor rewriting the code” — <code>x * 2</code> becoming a shift, the outputs of <code>-O0</code> and <code>-O2</code> being utterly different, a loop disappearing entirely, all visible in seconds. In embedded work it is also used to check “how many bytes of instruction does this code become.”</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Must all of this be learned before starting embedded work?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> No. The minimum bundle to start is four things — <strong>the chip company’s SDK</strong>, <strong>a compiler</strong> (usually inside the SDK), <strong>one debug probe</strong>, and <strong>a serial terminal</strong>. The rest grows one at a time as the need arises. The purpose of this chapter is not to make you memorise a list but to let you recognise, when you later meet those names, <strong>which slot the tool sits in</strong>.</p></div></div><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>what it does</strong></th><th><strong>tools</strong></th></tr><tr><td>assembling the build</td><td>CMake, Ninja, Meson; PlatformIO, west, idf.py; Kconfig</td></tr><tr><td>burning and halting</td><td>J-Link, ST-Link, CMSIS-DAP + OpenOCD, pyOCD + gdb</td></tr><tr><td>seeing logs</td><td>UART + terminal, ITM/SWO, RTT, (slow) semihosting</td></tr><tr><td>running without hardware</td><td>QEMU, Renode, vendor simulators</td></tr><tr><td>having code read</td><td>cppcheck, clang-tidy; PC-lint Plus, PVS-Studio; MISRA</td></tr><tr><td>testing</td><td>Unity, Ceedling, CppUTest; sanitizers on the host</td></tr><tr><td>measuring size</td><td>size, nm, objdump, readelf; map files; bloaty, puncover</td></tr><tr><td>seeing signals</td><td>logic analyser (sigrok), oscilloscope</td></tr><tr><td>inspecting machine code</td><td>Compiler Explorer (godbolt.org)</td></tr></table></div><p class="float-caption">Table 91.2</p></figure></div><p>We have looked round the embedded desk. After chapter 18′s map of compilers and chapter 90′s toolbox, the tools of the place where C is rooted most deeply have their names too.</p><p>Now the last chapter. It retraces the road this book has travelled, gathers the practices of modern C into a single page of guidance, and closes.</p>
+<div class="nav"><a href="ch90.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch92.html">Next →</a></div>
+</div></main></body></html>
