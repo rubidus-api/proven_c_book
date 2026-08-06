@@ -61,13 +61,16 @@
 )[
   // 상자 안의 글도 본문이다 — 첫 줄 들여쓰기를 본문과 같게 지킨다
   // (저자 지시 2026-08-06). 표제 줄에 붙는 첫 문단만 들여쓰지 않는다.
-  #set par(first-line-indent: (amount: 1em, all: false))
+  #set par(first-line-indent: 0em)
   #if title != none [
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
           size: 0.98em, fill: black)[#if icon != none [#icon. #h(3pt)]#title]
     #v(4pt)
   ]
-  #body
+  #block(width: 100%)[
+    #set par(first-line-indent: (amount: 1em, all: true))
+    #body
+  ]
 ]
 
 // ── 장 서두 4종 (RFC-0008 §2) ────────────────────────
@@ -94,7 +97,8 @@
   below: 0pt,
   breakable: false,
 )[
-  #set par(first-line-indent: 0em, leading: 0.85em, spacing: 0.55em)
+  #set par(first-line-indent: (amount: 1em, all: true),
+           leading: 0.85em, spacing: 0.55em)
   #set block(spacing: 0.55em)
   #_open-label(label)
   #body
@@ -132,6 +136,7 @@
   #block(width: 100%)[#q]
   #block(width: 100%, inset: (left: 9pt),
     stroke: (left: 0.6pt + black))[
+    #set par(first-line-indent: (amount: 1em, all: false))
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
           size: 0.98em, fill: rgb("#3a3a3a"))[#_L.a.] #h(3pt) #a
   ]
@@ -145,7 +150,7 @@
   stroke: 0.5pt + rgb("#111111"),
   inset: 0pt,
 )[
-  #set par(first-line-indent: (amount: 1em, all: false))
+  #set par(first-line-indent: 0em)
   #block(width: 100%, inset: (x: 11pt, y: 8pt), below: 0pt,
          stroke: (bottom: 0.5pt + rgb("#111111")))[
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
@@ -153,7 +158,10 @@
     #h(4pt)
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 1.0em)[#title]
   ]
-  #block(width: 100%, inset: (x: 11pt, y: 9pt), above: 0pt)[#body]
+  #block(width: 100%, inset: (x: 11pt, y: 9pt), above: 0pt)[
+    #set par(first-line-indent: (amount: 1em, all: true))
+    #body
+  ]
 ]
 
 // 3.4 실제 사례 블록
@@ -272,11 +280,14 @@
            rest: 0.5pt + black),
   breakable: true,
 )[
-  #set par(first-line-indent: (amount: 1em, all: false))
+  #set par(first-line-indent: 0em)
   #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
         size: 0.98em, fill: black)[#_L.platform. #h(3pt)#title]
   #v(2pt)
-  #body
+  #block(width: 100%)[
+    #set par(first-line-indent: (amount: 1em, all: true))
+    #body
+  ]
 ]
 
 // ③ 이 장이 끝나면
@@ -291,6 +302,7 @@
 // 번호만 쓰지 않고 개념 이름을 함께 적는다. 항목은 (참조, 개념) 쌍이다.
 // ① 이 장이 기대는 것 — 항목당 한 줄로 압축한다(재평가 §7.3: 서두가 길다)
 #let prereq(..items) = _open-block(_L.prereq, first: true)[
+  #set par(first-line-indent: 0em)
   #for (where, what) in items.pos() {
     block(width: 100%)[
       #text(weight: "bold")[#where]
@@ -313,7 +325,7 @@
     _open-close
   } else {
     _open-block(_L.questions)[
-      #set par(leading: 0.85em, spacing: 0.85em)
+      #set par(first-line-indent: 0em, leading: 0.85em, spacing: 0.85em)
       #for (i, m) in qs.enumerate() {
         block(width: 100%, inset: (left: 14pt))[
           #place(left, dx: -14pt, text(fill: rgb("#777777"), weight: "bold")[#(i + 1)])

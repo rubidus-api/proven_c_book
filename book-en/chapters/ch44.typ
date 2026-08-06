@@ -204,6 +204,57 @@ That `sizeof(struct message)` came out as 24 bytes is worth reading as well — 
 padding (the previous section) added for alignment. Representation always takes
 *a little more* than what was declared.
 
+=== One real specimen — two-byte Johab Hangul
+
+This pattern is not only a textbook affair. When Hangul was first being put
+into computers, splitting one word into three parts became an actual standard —
+*Johab* (조합형, "the combining form").
+
+#demo("examples-en/ch44/johab.c")
+
+The design is exactly what this chapter has taught. Sixteen bits are divided
+into four: the leading bit marks "this is Hangul", and the remaining fifteen are
+cut into three fields of five bits each — *initial, medial and final* jamo.
+
+#dtable(
+  columns: 4,
+  keycol: false,
+  [*bits*], [*15*], [*14–10 / 9–5 / 4–0*], [*meaning*],
+  [field], [flag], [initial / medial / final], [five bits each],
+  [`가` = `0x8861`], [1], [2 / 3 / 1], [ㄱ + ㅏ + (none)],
+  [`한` = `0xD065`], [1], [20 / 3 / 5], [ㅎ + ㅏ + ㄴ],
+)
+
+The numbers given to the jamo follow a rule. Initials run 2–20 from ㄱ to ㅎ
+(0 and 1 are fill and reserved), and finals start with 1 for "none" and run on
+to 29. Only the medials leave 8–9, 16–17 and 24–25 empty — the trace of laying
+the vowels out in groups of four. The gaps are visible in the example's tables.
+
+What it bought was clear: combining jamo let it write *all 11,172 modern Hangul
+syllables*. The rival of the time, the *precomposed* standard (KS C 5601-1987),
+listed only the 2,350 syllables in common use, which famously left ordinary
+names and words unwritable. Johab chose to *generate* syllables by rule rather
+than enlarge a table.
+
+#realcase("Three lessons Johab left behind")[
+  *First, the second byte collides with ASCII.* 가 is `88 61`, and the trailing
+  byte `0x61` is plain `'a'`. Code searching bytes for `'a'` therefore lands in
+  the middle of a character — the last line of the example shows the false hit
+  happening. Chapter 9's "a byte is not a character" turns into a bug right here.
+
+  *Second, the layout is not fixed by the standard.* The example's union happened
+  to agree with the shift/mask result on this compiler, but only because this
+  implementation fills bits from the low end. The rule of the previous section
+  stands: *handle external formats with shifts and masks.*
+
+  *Third, there is a place where rule beat table.* Unicode took the same idea
+  further and tidier. The code of a Hangul syllable is *computed*:
+  `0xAC00 + (initial * 21 + medial) * 28 + final` — multiplication instead of bit
+  slicing, but the same thought that syllables are made by combining jamo. Johab
+  itself faded (Windows 95 adopted a unified precomposed code and left it
+  behind), yet its idea lives on inside today's standard.
+]
+
 == Closing Part VIII
 
 We have the two syntaxes for making types — the struct that lays things side by
