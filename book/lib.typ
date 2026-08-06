@@ -59,7 +59,9 @@
   stroke: rule,
   breakable: true,
 )[
-  #set par(first-line-indent: 0em)
+  // 상자 안의 글도 본문이다 — 첫 줄 들여쓰기를 본문과 같게 지킨다
+  // (저자 지시 2026-08-06). 표제 줄에 붙는 첫 문단만 들여쓰지 않는다.
+  #set par(first-line-indent: (amount: 1em, all: false))
   #if title != none [
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
           size: 0.98em, fill: black)[#if icon != none [#icon. #h(3pt)]#title]
@@ -106,7 +108,7 @@
   width: 100%, above: 1.25em, below: 1.25em, breakable: true,
   stroke: (left: _qa_rail), inset: (left: 0pt),
 )[
-  #set par(first-line-indent: 0em)
+  #set par(first-line-indent: (amount: 1em, all: false))
   // 문과 답은 하나의 덩어리다 — 사이에 빈칸을 두지 않고, 왼쪽 굵은 선
   // 하나가 둘을 통째로 잇는다 (저자 지시 2026-08-06).
   #block(width: 100%, inset: (x: 9pt, top: 6pt, bottom: 6pt),
@@ -143,7 +145,7 @@
   stroke: 0.5pt + rgb("#111111"),
   inset: 0pt,
 )[
-  #set par(first-line-indent: 0em)
+  #set par(first-line-indent: (amount: 1em, all: false))
   #block(width: 100%, inset: (x: 11pt, y: 8pt), below: 0pt,
          stroke: (bottom: 0.5pt + rgb("#111111")))[
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
@@ -252,7 +254,7 @@
            rest: 0.5pt + black),
   breakable: true,
 )[
-  #set par(first-line-indent: 0em)
+  #set par(first-line-indent: (amount: 1em, all: false))
   #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
         size: 0.98em, fill: black)[#_L.platform. #h(3pt)#title]
   #v(2pt)

@@ -2,7 +2,7 @@
 #import "lib.typ": *
 
 // 이 책의 판 번호. 갱신할 때마다 여기만 고친다 (VERSION.md 와 함께).
-#let book-version = "v0.10.10"
+#let book-version = "v0.10.11"
 #let book-date = "2026년 8월"
 #let book-updated = "2026-08-06"          // 최종 수정일
 #let book-status = "초안(draft)"           // 판의 성격
@@ -99,10 +99,13 @@
   let front-extra = plain.filter(h => page-of(h) < first-ch)
   let back-extra = plain.filter(h => page-of(h) > last-ch)
   // 차례 한 줄 — 제목과 쪽 번호를 양끝에 두고 눌러서 본문으로 간다
-  let row = (label, h) => block(width: 100%, inset: (left: 1.2em), below: 0.72em,
-    grid(columns: (1fr, auto), column-gutter: 0.6em, align: (left, right),
-      link(h.location())[#label],
-      link(h.location())[#page-of(h)]))
+  // 제목과 쪽 번호는 가운데 점선으로 잇는다 (저자 지시 2026-08-06)
+  let row = (label, h) => block(width: 100%, inset: (left: 1.2em), below: 0.72em)[
+    #link(h.location())[#label]
+    #box(width: 1fr, inset: (x: 0.5em),
+      text(fill: rgb("#888888"), tracking: 0.35em, repeat[.]))
+    #link(h.location())[#page-of(h)]
+  ]
 
   block(width: 100%)[
     #set par(leading: 1.0em)

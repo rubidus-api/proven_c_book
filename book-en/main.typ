@@ -1,7 +1,7 @@
 // Proven C Book — English edition. Build: scripts/build-book-en.sh
 #import "../book/lib.typ": *
 
-#let book-version = "v0.10.10"
+#let book-version = "v0.10.11"
 #let book-updated = "2026-08-06"
 #let book-status = "draft"
 #let book-repo = "https://github.com/rubidus-api/proven_c_book"
@@ -96,10 +96,13 @@
   let page-of = h => counter(page).at(h.location()).first()
   let front-extra = plain.filter(h => page-of(h) < first-ch)
   let back-extra = plain.filter(h => page-of(h) > last-ch)
-  let row = (label, h) => block(width: 100%, inset: (left: 1.2em), below: 0.72em,
-    grid(columns: (1fr, auto), column-gutter: 0.6em, align: (left, right),
-      link(h.location())[#label],
-      link(h.location())[#page-of(h)]))
+  // 제목과 쪽 번호는 가운데 점선으로 잇는다 (저자 지시 2026-08-06)
+  let row = (label, h) => block(width: 100%, inset: (left: 1.2em), below: 0.72em)[
+    #link(h.location())[#label]
+    #box(width: 1fr, inset: (x: 0.5em),
+      text(fill: rgb("#888888"), tracking: 0.35em, repeat[.]))
+    #link(h.location())[#page-of(h)]
+  ]
 
   block(width: 100%)[
     #set par(leading: 1.0em)
