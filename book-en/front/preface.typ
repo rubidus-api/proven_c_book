@@ -33,45 +33,40 @@ in advance.
 My thanks go in advance to everyone who reads this. That someone spends their
 time sharing and discussing my work is always a happy thing.
 
-== What this book gives, and what it does not
+== What this book intends, and how to use it
 
 One thing must be clear first. *Reading alone will not grow your ability to
-program.* This book has no exercises, no assignments, no "try it yourself".
-What it gives you is an eye for reading code and naming the dangers in it.
-Standing in front of an empty file and breaking a problem into pieces,
-digging out the name of a function that will not come to mind, clearing the
-errors a compiler has poured out one by one, narrowing down the cause when
-the output is not what you expected — that is a different ability, and it
-grows *only by writing*. This book does not do that work for you, and I will
-not pretend it can. That part has to continue in some hands-on course, or in
-small programs of your own.
+program.* This book has no exercises, no assignments, no "try it yourself". It
+sets out a situation, asks a question, and gives an answer to it — that is all.
+What it intends is that the reader end up with a firm grounding in C, and with
+a feel and an eye for the traps and dangers built into it. That is somewhat
+different from the ability to actually produce code: standing in front of an
+empty file and breaking a problem into pieces, digging out the name of a
+function that will not come to mind, clearing the errors a compiler has poured
+out one by one, narrowing down the cause when the output is not what you
+expected. That grows *only by writing it yourself.* This book does not do that
+work for you, and I will not claim it can. That part has to continue in some
+other course of practice, or in small programs of your own.
 
-That is a shortcoming of this book, but a deliberate choice as well. Put
-exercises and assignments in and the volume swells, and the reader's burden
-swells with it. I chose the side that gets read to the end without strain, and
-gave up drill in exchange. *This is a book for understanding; it is not a book
-for making something quickly.*
+That is a flaw in the book, and also a deliberate choice. Exercises and
+assignments swell the length and the reader's burden along with it. I chose
+the side that gets read to the end without strain, and gave up drill in
+exchange. *This is a book for understanding, not a book for making something
+quickly.*
 
-I should also say in advance that the first program comes late. Hello world
-does not appear until Part III. Until then we build up how a computer is
-shaped, how memory is divided, how numbers and letters are represented. That
-order is deliberate: it is there so that pointers arrive as a concept rather
-than as syntax. To a reader who wants to build something soon, the order may
-feel slow. Such a reader may read chapter 15, hello world, first and come
-back to chapter 1 — nothing is lost by breaking the order.
+I should also say in advance that the first program comes late. Hello, world
+does not appear until Part III. Until then the book lays the groundwork — how a
+computer is built, how storage is divided, how numbers and letters are
+represented. That order is deliberate, so that C is met as a set of ideas
+rather than as syntax. A reader in a hurry to build something may find it
+slow-going. Such a reader may read chapter 15, hello world, first and come back
+to chapter 1. The order does not matter.
 
-What the book gives in return is *a firm foundation*: not a quick result but
-an understanding that lasts. Skills picked up from other books and courses
-sit far more steadily on top of it. The gap between someone who knows why
-integers wrap, why a pointer is not simply a number, and what a compiler does
-and does not promise, and someone who does not, only widens with time.
-
-There is also, in these pages, a certain amount of feeling from someone fond of
-C. Even the dangerous and the inefficient parts — the ones that piled up as the
-language compromised with the constraints and limits of an older age — have
-always struck me as interesting and enjoyable. For the fact that this fondness
-has found its way in as explanation and length somewhat beyond what was needed,
-I apologise to the reader in advance.
+What the book intends is *a firm foundation*: not a quick result but an
+understanding that lasts. Skills picked up from other books and courses sit far
+more steadily on top of it. The gap between someone who knows why integers
+wrap, why a pointer is not simply a number, and what a compiler does and does
+not promise, and someone who does not, only widens with time.
 
 Every piece of code in this book has actually been compiled and run. The
 printed output is not transcribed by hand: it is what the machine produced when
