@@ -192,6 +192,11 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
    쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바 오른쪽의 장 이동 링크 */
+.bar .bar-nav { margin-left:auto; display:flex; gap:.9rem; align-items:center; }
+.bar .bar-nav a, .bar .bar-nav .off { font-size:.9rem; }
+.bar .bar-nav .off { color:var(--muted); opacity:.55; }
+@media (max-width:560px) { .bar .bar-nav .off { display:none; } }
 .dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
   margin-top:.4rem; margin-bottom:.4rem; }
 .dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
@@ -259,7 +264,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <body>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
 <a href="../en/">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a><span class="bar-nav"><a href="sec89.html">← 이전</a><a href="index.html">목차로</a><a href="sec91.html">다음 →</a></span></div>
 <main><div class="wrap">
 <h2>부록 E — 문법을 적는 법(EBNF)과 C 문법 전문</h2><p>이 부록은 두 가지를 담는다. 프로그래밍 언어의 문법을 <strong>적는 표기법</strong>인 EBNF와, 그 표기로 읽는 <strong>C 문법 전체</strong>다. 16장에서 본 파서가 실제로 무엇을 보고 일하는지, 그리고 표준 문서의 문법 절을 어떻게 읽는지가 여기서 풀린다.</p><p>뒤쪽 절들은 C23 표준(ISO/IEC 9899:2024, 무료 초안 N3220)의 <strong>부속서 A</strong>를 그대로 따라간다 — 어휘 문법, 구문 문법, 전처리 지시문의 순서다. 규칙은 표준의 것을 옮기되, 절마다 “이 규칙이 실제로 무엇을 허용하는가”를 덧붙였다.</p><h3>문법을 적는 표기 — BNF에서 EBNF로</h3><p>언어의 문법은 <strong>규칙의 목록</strong>으로 적을 수 있다. “문장은 이런 것들로 이루어지고, 그 각각은 또 이런 것들로 이루어진다”를 끝까지 밀고 내려가는 방식이다.</p><span id="idx-entry-117"></span><p>이 방식을 처음 널리 쓴 것이 <strong>BNF</strong>(Backus–Naur Form)다. 1960년의 ALGOL 60 보고서에서 쓰였고, 두 사람(존 배커스, 페테르 나우르)의 이름이 붙었다. 표기는 단순하다.</p><pre><code data-lang="text">&lt;digit>  ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 &lt;number> ::= &lt;digit> | &lt;digit> &lt;number></code></pre><p>읽는 법은 이렇다. <code>::=</code>는 “ 는 다음과 같이 이루어진다”, <code>|</code>는 “또는”, 꺾쇠 안의 이름은 <strong>비단말</strong>(다른 규칙으로 더 풀리는 것), 그냥 적힌 글자는 <strong>단말</strong>(더 풀리지 않는 실제 글자)이다. 두 번째 줄은 재귀로 “숫자 하나, 또는 숫자 하나 뒤에 다시 수”라고 적어 <strong>한 자리 이상의 수</strong>를 정의한다.</p><span id="idx-entry-118"></span><p>BNF에는 반복과 선택을 적을 때마다 재귀를 써야 하는 불편이 있다. 그래서 확장한 것이 <strong>EBNF</strong>(Extended BNF)이고, 기호 몇 개가 더해졌다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>표기</strong></th><th><strong>뜻</strong></th><th><strong>예</strong></th></tr><tr><td><code>=</code> 또는 <code>::=</code></td><td>정의한다</td><td><code>digit = "0" | "1" ;</code></td></tr><tr><td><code>|</code></td><td>또는(선택)</td><td><code>sign = "+" | "-" ;</code></td></tr><tr><td><code>[ … ]</code></td><td>있어도 되고 없어도 된다(0 또는 1회)</td><td><code>[ sign ] number</code></td></tr><tr><td><code>{ … }</code></td><td>0회 이상 반복</td><td><code>digit { digit }</code></td></tr><tr><td><code>( … )</code></td><td>묶음</td><td><code>( "+" | "-" ) digit</code></td></tr><tr><td><code>" … "</code></td><td>단말(글자 그대로)</td><td><code>";"</code></td></tr><tr><td><code>;</code></td><td>규칙의 끝</td><td>—</td></tr></table></div><p class="float-caption">표 84.1</p></figure><p>같은 “한 자리 이상의 수”를 EBNF로 적으면 재귀가 사라진다.</p><pre><code data-lang="text">number = digit { digit } ;</code></pre><p>표준화된 EBNF(ISO/IEC 14977)가 있지만, 실제 문서들은 조금씩 다른 방언을 쓴다. 흔한 변형이 정규식에서 온 후위 기호들이다 — <code>?</code>(0 또는 1회), <code>*</code>(0회 이상), <code>+</code>(1회 이상).</p><h3>C 표준의 표기법 읽는 법</h3><p><strong>C 표준 문서는 EBNF를 쓰지 않는다.</strong> 대신 BNF에 가까운 표기를 쓰며, 규칙은 이런 모양이다.</p><pre><code data-lang="text">iteration-statement:

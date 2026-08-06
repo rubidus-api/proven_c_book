@@ -192,6 +192,11 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
    쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바 오른쪽의 장 이동 링크 */
+.bar .bar-nav { margin-left:auto; display:flex; gap:.9rem; align-items:center; }
+.bar .bar-nav a, .bar .bar-nav .off { font-size:.9rem; }
+.bar .bar-nav .off { color:var(--muted); opacity:.55; }
+@media (max-width:560px) { .bar .bar-nav .off { display:none; } }
 .dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
   margin-top:.4rem; margin-bottom:.4rem; }
 .dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
@@ -259,7 +264,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <body>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
 <a href="../en/">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a><span class="bar-nav"><a href="ch63.html">← 이전</a><a href="index.html">목차로</a><a href="ch65.html">다음 →</a></span></div>
 <main><div class="wrap">
 <h2 id="loc-64">64 진단과 제어 — <code>&lt;errno.h></code>·<code>&lt;assert.h></code>·<code>&lt;signal.h></code>·<code>&lt;setjmp.h></code></h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>47장 오류와 계약 · 오류를 값으로 알리기</div><div>48장 정의되지 않은 동작 · 계약을 어긴 뒤</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>47장에서 C의 오류 통보 방식이 반환값·전역 상태·프로그램 중단 셋뿐이라 했다. 그러면 <code>errno</code>라는 전역은 정확히 언제 믿을 수 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>실패가 확인된 직후에만</strong> 믿을 수 있다. 표준의 규칙은 두 겹이다. 첫째, 성공한 호출도 <code>errno</code>에 값을 넣을 수 있다 — 그래서 “0이 아니면 실패”가 아니라 “함수가 실패를 알린 뒤에 이유를 읽는” 순서여야 한다. 둘째, 값은 다음 라이브러리 호출이 언제든 덮어쓸 수 있다 — 그래서 읽었으면 즉시 저장한다. 이 두 규칙이 전역 상태로 오류를 나르는 설계의 대가다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">프로그램이 <strong>잘못됐을 때</strong> 쓰는 네 헤더를 한자리에서 본다. 오류 번호를 담는 전역, 계약 위반을 잡는 단언, 바깥에서 날아오는 신호, 그리고 스택을 건너뛰는 점프. 47장에서 세운 “오류는 값이다”라는 규율이 왜 그렇게 중요한지, 대안들의 실제 모습을 보면 분명해진다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>assert</code>는 왜 <code>NDEBUG</code>로 통째로 꺼지게 만들어 두었는가 — 검사는 항상 하는 것이 좋지 않은가?</li></ol></div></div><div></div><h3>64.1 <code>errno</code> — 전역으로 오류를 나르는 대가</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch64/errno_demo.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">errno.h</span><span class="tok-s">></span>

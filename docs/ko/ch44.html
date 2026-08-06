@@ -192,6 +192,11 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
    쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바 오른쪽의 장 이동 링크 */
+.bar .bar-nav { margin-left:auto; display:flex; gap:.9rem; align-items:center; }
+.bar .bar-nav a, .bar .bar-nav .off { font-size:.9rem; }
+.bar .bar-nav .off { color:var(--muted); opacity:.55; }
+@media (max-width:560px) { .bar .bar-nav .off { display:none; } }
 .dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
   margin-top:.4rem; margin-bottom:.4rem; }
 .dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
@@ -259,7 +264,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <body>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
 <a href="../en/">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a><span class="bar-nav"><a href="ch43.html">← 이전</a><a href="index.html">목차로</a><a href="ch45.html">다음 →</a></span></div>
 <main><div class="wrap">
 <h2 id="loc-44">44 공용체와 표현</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>42장 구조체 · 구조체의 배치</div><div>5장 워드와 주소 · 표현을 바이트로 본다</div><div>13장 컴파일러 최적화 · 엄격한 앨리어싱</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>13장에서 “float의 비트를 uint32의 눈으로 읽는” 옛 기법이 엄격한 앨리어싱 위반이며, 옳은 방법은 memcpy나 공용체라고 했다. 그러면 공용체란 정확히 무엇이길래 그 자리에 서는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>여러 멤버가 같은 기억을 공유하는 타입</strong>이다. 구조체가 멤버들을 나란히 놓는다면(42장), 공용체는 멤버들을 <strong>겹쳐</strong> 놓는다 — 크기는 가장 큰 멤버에 맞고, 어느 순간에든 실제로 담긴 것은 하나다. “같은 비트를 이 눈으로도 저 눈으로도 본다”는 5장의 관점이 문법이 된 것이다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-76"></span>같은 기억을 다른 눈으로 보는 장치 — 공용체다. 그리고 이 장은 표현의 장이기도 하다: 5장에서 예약한 엔디안 관찰 시연을 실행하고, 구조체의 숨은 빈틈(패딩)을 눈으로 확인한다. 표현과 추상의 분리라는 이 책의 후렴구가 마지막으로 크게 울리는 자리다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>공용체는 그러면 언제 쓰는 것이 정석인가?</li></ol></div></div><div></div><h3>44.1 공용체 — 겹쳐 놓기</h3><p>문법은 구조체와 쌍둥이다. <code>struct</code>를 <code>union</code>으로 바꾸면 된다:</p><pre><code data-lang="c"><strong><span class="tok-t">union</span></strong> bits32 <span class="tok-x">{</span>
     <strong><span class="tok-t">uint32_t</span></strong> as_int<span class="tok-x">;</span>

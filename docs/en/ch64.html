@@ -192,6 +192,11 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
    쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바 오른쪽의 장 이동 링크 */
+.bar .bar-nav { margin-left:auto; display:flex; gap:.9rem; align-items:center; }
+.bar .bar-nav a, .bar .bar-nav .off { font-size:.9rem; }
+.bar .bar-nav .off { color:var(--muted); opacity:.55; }
+@media (max-width:560px) { .bar .bar-nav .off { display:none; } }
 .dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
   margin-top:.4rem; margin-bottom:.4rem; }
 .dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
@@ -259,7 +264,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <body>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
 <a href="../ko/">한국어</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a><span class="bar-nav"><a href="ch63.html">← Prev</a><a href="index.html">Contents</a><a href="ch65.html">Next →</a></span></div>
 <main><div class="wrap">
 <h2 id="loc-64">64 Diagnosis and control — <code>&lt;errno.h></code>, <code>&lt;assert.h></code>, <code>&lt;signal.h></code>, <code>&lt;setjmp.h></code></h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div class="open-body"><div>chapter 47, Errors and contracts · reporting an error as a value</div><div>chapter 48, Undefined behaviour · after a contract is broken</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 47 said C’s ways of reporting an error are only three — the return value, global state, and stopping the program. Then exactly when can the global called <code>errno</code> be believed?</p><div class="qa-a"><p><span class="dev-label">A.</span> It can be believed <strong>only right after a failure has been confirmed.</strong> The standard’s rule is two-layered. First, a successful call may also put a value in <code>errno</code> — so the order must not be “nonzero means failure” but “read the reason after the function has reported failure”. Second, the value may be overwritten by the next library call at any time — so once read it is stored at once. These two rules are the price of the design that carries errors in global state.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">We look in one place at the four headers used when a program <strong>has gone wrong</strong>. The global holding an error number, the assertion that catches contract violations, signals flying in from outside, and the jump that skips over the stack. Why the discipline set up in chapter 47, “errors are values”, matters so much becomes clear on seeing the real shape of the alternatives.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why was <code>assert</code> made to switch off wholesale with <code>NDEBUG</code> — is it not better to always check?</li></ol></div></div><div></div><h3>64.1 <code>errno</code> — the price of carrying errors in a global</h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch64/errno_demo.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">errno.h</span><span class="tok-s">></span>

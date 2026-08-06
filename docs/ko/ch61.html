@@ -192,6 +192,11 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
    쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바 오른쪽의 장 이동 링크 */
+.bar .bar-nav { margin-left:auto; display:flex; gap:.9rem; align-items:center; }
+.bar .bar-nav a, .bar .bar-nav .off { font-size:.9rem; }
+.bar .bar-nav .off { color:var(--muted); opacity:.55; }
+@media (max-width:560px) { .bar .bar-nav .off { display:none; } }
 .dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
   margin-top:.4rem; margin-bottom:.4rem; }
 .dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
@@ -259,7 +264,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <body>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
 <a href="../en/">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a><span class="bar-nav"><a href="ch60.html">← 이전</a><a href="index.html">목차로</a><a href="ch62.html">다음 →</a></span></div>
 <main><div class="wrap">
 <h2 id="loc-61">61 문자와 로케일 — <code>&lt;ctype.h></code>·<code>&lt;locale.h></code>·<code>&lt;wchar.h></code></h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>9장 문자와 텍스트 · 글자와 인코딩</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>9장에서 문자는 코드표의 번호이고 인코딩은 그 번호를 바이트로 적는 방식 이라 했다. 그러면 <code>isalpha('가')</code> 같은 호출은 무엇을 묻는 것인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 잘못 던진 물음이다. <code>&lt;ctype.h></code>의 함수들은 <strong>한 바이트</strong>를 판정한다. UTF-8에서 “가”는 세 바이트이므로 애초에 인자로 들어갈 수 없고, 넣더라도 각 바이트를 따로 볼 뿐이다. 이 헤더는 아스키 시절의 도구이고, 여러 바이트 문자를 다루려면 와이드 문자 계열(<code>&lt;wctype.h></code>)이나 인코딩을 직접 다루는 코드가 필요하다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">한 글자를 다루는 함수들을 본다. 겉보기에 가장 단순한 헤더인데, C에서 가장 미묘한 함정 두 개가 여기 있다 — <strong><code>char</code>를 그대로 넘기면 계약 밖</strong> 이라는 것과, <strong>답이 로케일이라는 전역 상태에 달렸다</strong>는 것. 9장의 인코딩 이야기가 함수 차원에서 되돌아온다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>아스키만 쓰는 프로그램이라면 로케일과 와이드 문자는 몰라도 되는가?</li></ol></div></div><div></div><h3>61.1 첫 번째 함정 — <code>char</code>를 그대로 넘기지 않는다</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch61/ctype.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">ctype.h</span><span class="tok-s">></span>

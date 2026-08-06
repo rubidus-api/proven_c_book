@@ -192,6 +192,11 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
    쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바 오른쪽의 장 이동 링크 */
+.bar .bar-nav { margin-left:auto; display:flex; gap:.9rem; align-items:center; }
+.bar .bar-nav a, .bar .bar-nav .off { font-size:.9rem; }
+.bar .bar-nav .off { color:var(--muted); opacity:.55; }
+@media (max-width:560px) { .bar .bar-nav .off { display:none; } }
 .dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
   margin-top:.4rem; margin-bottom:.4rem; }
 .dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
@@ -259,7 +264,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <body>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
 <a href="../en/">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a><span class="bar-nav"><a href="ch78.html">← 이전</a><a href="index.html">목차로</a><a href="ch80.html">다음 →</a></span></div>
 <main><div class="wrap">
 <h2 id="loc-79">79 바깥 세계 — 파일, 스트림, 시간, 난수</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>57장 스트림의 실제 · 스트림</div><div>25장 입력 · 입력</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>10장에서 스트림이 “무엇에 연결됐는지 프로그램은 모른다”는 설계였고, 55장에서는 <code>fopen</code>이 실패를 널로 알린다고 했다. 그러면 파일 API에서 가장 자주 놓치는 실패는 무엇인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>부분 쓰기</strong>다. 열기 실패는 눈에 잘 띄지만, <code>write</code>가 요청한 만큼 다 쓰지 않고 돌아오는 경우는 잊기 쉽다 — 디스크가 차거나, 시그널이 끼어들거나, 상대가 파이프인 경우에 실제로 일어난다. 그래서 이 라이브러리에는 두 판이 있다. <code>proven_fs_write</code>는 <strong>실제로 쓴 바이트 수</strong>를 돌려주고, <code>proven_fs_write_all</code>은 다 쓸 때까지 되풀이한 뒤 성공·실패만 알려 준다. 대부분의 코드가 원하는 것은 후자이고, 전자는 그 사실을 감추지 않기 위해 남아 있다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">여기서부터는 운영체제와 닿는다. 파일을 열고 읽고 쓰는 일, 버퍼드 스트림, 시간을 읽고 형식화하는 일, 그리고 난수 — 용도에 따라 완전히 다른 물건이 되는 그 난수까지. 10장의 스트림 이야기와 25장의 입력 이야기가 여기서 실제 API로 완결된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>운영체제가 없으면 비밀용 난수는 어떻게 되는가?</li></ol></div></div><div></div><h3>79.1 파일 하나의 한살이</h3><p>파일은 이 부에서 처음으로 <strong>바깥 세계</strong>와 닿는 자원이다. 만들고 되돌리는 규율은 앞 장들과 같지만, 실패의 종류가 훨씬 많다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch79/fslife.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 파일 하나의 한살이 — 열기 모드, 부분 쓰기, 위치, 그리고 안전한 저장.</span></em>
 <em><span class="tok-c">   바깥 세계와 닿는 자리에서 실패가 어떻게 값으로 오는지 본다. </span></em><em><span class="tok-c">*/</span></em>

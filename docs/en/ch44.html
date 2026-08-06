@@ -192,6 +192,11 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
    쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바 오른쪽의 장 이동 링크 */
+.bar .bar-nav { margin-left:auto; display:flex; gap:.9rem; align-items:center; }
+.bar .bar-nav a, .bar .bar-nav .off { font-size:.9rem; }
+.bar .bar-nav .off { color:var(--muted); opacity:.55; }
+@media (max-width:560px) { .bar .bar-nav .off { display:none; } }
 .dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
   margin-top:.4rem; margin-bottom:.4rem; }
 .dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
@@ -259,7 +264,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <body>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
 <a href="../ko/">한국어</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a><span class="bar-nav"><a href="ch43.html">← Prev</a><a href="index.html">Contents</a><a href="ch45.html">Next →</a></span></div>
 <main><div class="wrap">
 <h2 id="loc-44">44 Unions and representation</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div class="open-body"><div>chapter 42, Structs · the layout of a struct</div><div>chapter 5, Words and addresses · seeing a representation as bytes</div><div>chapter 13, Compiler optimisation · strict aliasing</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 13 said the old technique of “reading a float’s bits through uint32′s eye” violates strict aliasing, and that the correct methods are memcpy or a union. Then what exactly is a union, that it stands in that place?</p><div class="qa-a"><p><span class="dev-label">A.</span> <strong>A type whose several members share the same memory.</strong> If a struct lays members side by side (chapter 42), a union lays them <strong>overlapping</strong> — its size fits the largest member, and at any moment only one thing is really held. Chapter 5′s perspective, “seeing the same bits through this eye and through that”, made into syntax.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-76"></span>The device for seeing the same memory through a different eye — the union. And this is a chapter of representation too: we run the endianness demonstration booked in chapter 5 and confirm with our own eyes the hidden gaps (padding) in a struct. It is where this book’s refrain, the separation of representation from abstraction, rings out loudest for the last time.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>When, then, is a union the standard thing to use?</li></ol></div></div><div></div><h3>44.1 The union — laying things over one another</h3><p>The syntax is a twin of the struct’s. Change <code>struct</code> to <code>union</code>:</p><pre><code data-lang="c"><strong><span class="tok-t">union</span></strong> bits32 <span class="tok-x">{</span>
     <strong><span class="tok-t">uint32_t</span></strong> as_int<span class="tok-x">;</span>

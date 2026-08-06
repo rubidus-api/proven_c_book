@@ -192,6 +192,11 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
    쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바 오른쪽의 장 이동 링크 */
+.bar .bar-nav { margin-left:auto; display:flex; gap:.9rem; align-items:center; }
+.bar .bar-nav a, .bar .bar-nav .off { font-size:.9rem; }
+.bar .bar-nav .off { color:var(--muted); opacity:.55; }
+@media (max-width:560px) { .bar .bar-nav .off { display:none; } }
 .dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
   margin-top:.4rem; margin-bottom:.4rem; }
 .dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
@@ -259,7 +264,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <body>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
 <a href="../en/">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a><span class="bar-nav"><a href="ch77.html">← 이전</a><a href="index.html">목차로</a><a href="ch79.html">다음 →</a></span></div>
 <main><div class="wrap">
 <h2 id="loc-78">78 컨테이너와 알고리즘</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>42장 구조체 · 구조체</div><div>41장 동적 메모리 · 동적 배열</div><div>74장 기반 · 뷰와 경계</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>36장에서 C의 배열은 크기가 컴파일 시간에 정해지고, 41장에서 <code>realloc</code> 으로 늘릴 수 있다고 배웠다. 그러면 “자라는 배열”을 직접 만들 때 가장 틀리기 쉬운 자리는 어디인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 세 곳이다. 첫째, <strong>늘릴 크기 계산</strong> — 74장에서 본 곱셈 감김이 여기서 일어난다. 둘째, <strong>실패했을 때의 상태</strong> — <code>realloc</code>이 실패하면 원본 포인터는 그대로 유효한데, 반환값을 곧바로 원본 변수에 대입하는 흔한 코드는 그 원본을 잃어버린다(누수다). 셋째, <strong>늘어난 뒤의 포인터</strong> — 원소를 가리키던 포인터는 재할당 후 무효가 된다. 컨테이너를 직접 만들 때마다 이 셋을 다시 맞히는 것보다, 한 번 제대로 만든 것을 쓰는 편이 낫다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-111"></span>여럿을 담는 도구들이다 — 자라는 배열, 침습적 리스트, 링 버퍼, 해시 맵. 그리고 71장의 다섯째 버그(검사되지 않는 콜백)와 그 자리에 딸린 성능 함정에 대한 답으로, <strong>최악에도 보장이 있는</strong> 정렬과 <strong>공격을 견디는</strong> 해시를 본다. 36장의 배열과 42장의 구조체가 여기서 실전 부품이 된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>키드 해시를 쓰면 얼마나 느려지는가? 그리고 OS가 없으면 무작위 비밀은 어디서 오는가?</li></ol></div></div><div></div><h3>78.1 네 컨테이너의 한살이</h3><p>먼저 넷을 한 화면에서 본다. 만들고, 넣고, 훑고, 되돌리는 과정이 서로 어떻게 다른지가 이 예제에 다 들어 있다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch78/tour.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 네 컨테이너의 한살이 — 만들고, 넣고, 훑고, 되돌린다.</span></em>
 <em><span class="tok-c">   array · list · ring · map 을 한 화면에서 비교한다. </span></em><em><span class="tok-c">*/</span></em>

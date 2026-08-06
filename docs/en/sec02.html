@@ -192,6 +192,11 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
    쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바 오른쪽의 장 이동 링크 */
+.bar .bar-nav { margin-left:auto; display:flex; gap:.9rem; align-items:center; }
+.bar .bar-nav a, .bar .bar-nav .off { font-size:.9rem; }
+.bar .bar-nav .off { color:var(--muted); opacity:.55; }
+@media (max-width:560px) { .bar .bar-nav .off { display:none; } }
 .dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
   margin-top:.4rem; margin-bottom:.4rem; }
 .dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
@@ -259,7 +264,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <body>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
 <a href="../ko/">한국어</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a><span class="bar-nav"><a href="sec01.html">← Prev</a><a href="index.html">Contents</a><a href="ch01.html">Next →</a></span></div>
 <main><div class="wrap">
 <h2>A note on this translation</h2><p>The Korean edition is the original. This English edition is translated from it chapter by chapter, and <strong>chapter numbers are kept identical to the original</strong>, so a cross-reference to “chapter 56” means the same chapter in both editions. All 13 parts, 83 chapters, appendices A–F and the index are now translated.</p><p>The two editions are kept in step mechanically: <code>scripts/sync-status.py</code> records the hash of the Korean source each translated file was made from, and every build reports any chapter whose original has changed since, so a change on one side surfaces as a stale entry on the other. <code>scripts/check-xrefs.py</code> compares the chapter cross-references of the two editions and reports any that have drifted apart. Per-chapter status is in <code>TRANSLATION.md</code> in the repository.</p><p>The Korean edition is at:</p><ul><li>Web — <a href="https://rubidus-api.github.io/proven_c_book/ko/">rubidus-api.github.io/proven_c_book/ko/</a></li><li>PDF — the <code>ko</code> asset of the current release</li></ul>
 <div class="nav"><a href="sec01.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch01.html">Next →</a></div>

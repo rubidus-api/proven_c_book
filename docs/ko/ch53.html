@@ -192,6 +192,11 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
    쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바 오른쪽의 장 이동 링크 */
+.bar .bar-nav { margin-left:auto; display:flex; gap:.9rem; align-items:center; }
+.bar .bar-nav a, .bar .bar-nav .off { font-size:.9rem; }
+.bar .bar-nav .off { color:var(--muted); opacity:.55; }
+@media (max-width:560px) { .bar .bar-nav .off { display:none; } }
 .dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
   margin-top:.4rem; margin-bottom:.4rem; }
 .dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
@@ -259,7 +264,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <body>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
 <a href="../en/">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a><span class="bar-nav"><a href="ch52.html">← 이전</a><a href="index.html">목차로</a><a href="ch54.html">다음 →</a></span></div>
 <main><div class="wrap">
 <h2 id="loc-53">53 함수를 값으로 — 함수 포인터</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>24장 함수 선언과 정의 · 함수의 이름</div><div>37장 배열 · 이름이 값으로 무너진다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>37장에서 배열 이름이 첫 원소의 주소로 무너진다고 했고, 52장에서는 가변 인자 함수가 타입 정보를 잃는다고 했다. 그러면 <strong>함수 이름</strong>은 수식에서 무엇으로 평가되는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>함수를 가리키는 포인터</strong>로 평가된다 — 배열과 같은 무너짐(decay)이 함수에도 있다. 예외는 <code>sizeof</code>와 <code>&amp;</code>의 피연산자일 때뿐인데, 함수에 <code>sizeof</code>를 쓰는 것은 애초에 금지이므로 사실상 <code>&amp;</code>만 예외다. 그리고 <code>&amp;함수</code>도 결국 같은 포인터를 준다. 그래서 <code>f</code>, <code>&amp;f</code>, <code>*f</code>가 전부 같은 값이 되는 기묘한 상황이 벌어진다 — 이 장의 첫 예제가 그것이다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">지금까지 함수는 “부르는 것”이었다. 이 장에서는 함수를 <strong>값으로</strong> 다룬다 — 변수에 담고, 인자로 넘기고, 배열에 늘어놓는다. 그 과정에서 C의 오래된 규칙 하나(<strong>함수 이름은 포인터로 무너진다</strong>)와, 그 규칙이 만드는 기묘한 문법, 그리고 이 도구로 객체지향을 손수 짓는 방법까지 본다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 C++의 가상 함수와 무엇이 다른가?</li></ol></div></div><div></div><h3>53.1 이름은 포인터로 무너진다</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch53/funcptr.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>

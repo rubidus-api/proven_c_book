@@ -192,6 +192,11 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
    쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바 오른쪽의 장 이동 링크 */
+.bar .bar-nav { margin-left:auto; display:flex; gap:.9rem; align-items:center; }
+.bar .bar-nav a, .bar .bar-nav .off { font-size:.9rem; }
+.bar .bar-nav .off { color:var(--muted); opacity:.55; }
+@media (max-width:560px) { .bar .bar-nav .off { display:none; } }
 .dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
   margin-top:.4rem; margin-bottom:.4rem; }
 .dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
@@ -259,7 +264,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <body>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
 <a href="../ko/">한국어</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a><span class="bar-nav"><a href="ch67.html">← Prev</a><a href="index.html">Contents</a><a href="ch69.html">Next →</a></span></div>
 <main><div class="wrap">
 <h2 id="loc-68">68 From macro to keyword — <code>bool</code>, <code>nullptr</code> and their companions</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div class="open-body"><div>chapter 65, What the new standards added, and the <code>*_s</code> controversy · what the standards added</div><div>chapter 29, Booleans and comparison · the type of true and false</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 65 passed over in a table only that C23 made <code>&lt;stdbool.h></code> effectively unnecessary and that <code>nullptr</code> came in. But why put into the language what worked fine as macros — is it not merely a change of name?</p><div class="qa-a"><p><span class="dev-label">A.</span> It is not merely a change of name. A macro is <strong>the preprocessor changing letters</strong> and so has neither type nor scope, and the user can <code>#undef</code> it or define it again with another meaning. A keyword is <strong>a grammatical element of the language</strong>, so it has a type, can be diagnosed, and nobody can redefine it. Where that difference really prevents accidents is this chapter’s content — and <code>nullptr</code> in particular is not a renaming but <strong>a new type</strong>.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-97"></span>We treat the most conspicuous change C23 made to the language. Why <span id="idx-entry-98"></span>things long imitated with macros in headers — <code>bool</code>, <code>true</code>, <code>false</code>, <code>static_assert</code>, <code>alignas</code>, <code>thread_local</code> — rose to being keywords, what <code>nullptr</code> was newly made to prevent, what rules and limits come with them, and in what order to move existing code over.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>What format is used when printing a <code>bool</code> with <code>printf</code>?</li><li>For a project that must keep compiling with an old standard, is this chapter somebody else’s story?</li></ol></div></div><div></div><h3>68.1 What was promoted</h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch68/keywords.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> What was promoted to a keyword in C23 — and what changed </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
