@@ -7,11 +7,11 @@ C를 처음 배우는 사람을 위한 한국어 책이다. 문법 목록이 아
 부에서 [proven](https://github.com/rubidus-api) C 라이브러리의 매뉴얼로
 이어진다.
 
-- **현재 판**: v0.14.0 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.14.0/proven_c_book-v0.14.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.14.0/proven_c_book-v0.14.0-en.pdf)
+- **현재 판**: v0.15.0 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.0/proven_c_book-v0.15.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.0/proven_c_book-v0.15.0-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.14.0/proven_c_book-v0.14.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.14.0/proven_c_book-v0.14.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.14.0/proven_c_book-v0.14.0-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.14.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.14.0-en.pdf)
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.0/proven_c_book-v0.15.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.0/proven_c_book-v0.15.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.0/proven_c_book-v0.15.0-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.15.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.15.0-en.pdf)
 - 13부 81장 + 부록 A~E + 찾아보기 — 한국어판 475쪽, 영어판 505쪽 (저장소 최신본)
 - 이 저장소가 최신본이다. 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
