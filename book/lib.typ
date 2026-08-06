@@ -80,7 +80,7 @@
 // 서두 라벨은 본문(명조)과 확실히 갈라 보이도록 고딕·크게·굵게 쓴다.
 // 밑선은 두지 않는다 — 고딕 굵은 글씨만으로 충분히 구별된다
 // (저자 지시 2026-08-06).
-#let _open-label(t) = block(below: 7pt, width: 100%)[
+#let _open-label(t) = block(below: 9.5pt, width: 100%)[
   #text(
     font: ("Noto Sans CJK KR", "Noto Sans"),
     weight: "bold", size: 1.15em, fill: black, tracking: 0.01em, t,
@@ -182,26 +182,44 @@
 }
 #let _rel(path) = path.replace("examples-en/", "").replace("examples/", "")
 
-#let demo(path, show-output: true, stdin: false, highlight: none) = block(breakable: true, width: 100%)[
-  #block(width: 100%, inset: 8pt, stroke: 0.5pt + black)[
-    #text(size: 0.96em, fill: rgb("#4a4a4a"), raw(path))
-    #raw(read("/" + path), lang: "c", block: true)
+#let demo(path, show-output: true, stdin: false, highlight: none) = {
+  // 시연 상자는 1×2 다 — 표제 줄(파일 경로 또는 "실행 결과")과 내용을
+  // 가로선으로 가른다 (저자 지시 2026-08-06).
+  let cell(head, body, rail: false) = block(
+    width: 100%, breakable: true,
+    stroke: if rail { (left: 2pt + black, rest: 0.5pt + black) }
+            else { 0.5pt + black },
+    inset: 0pt,
+  )[
+    #set par(first-line-indent: 0em)
+    #block(width: 100%, inset: (x: 8pt, y: 6pt), above: 0pt, below: 0pt,
+           stroke: (bottom: 0.5pt + black))[#head]
+    #block(width: 100%, inset: (x: 8pt, y: 7pt), above: 0pt, below: 0pt)[#body]
   ]
-  #if stdin [
-    #block(width: 100%, inset: 8pt,
-      stroke: (left: 2pt + black, rest: 0.5pt + black))[
-      #text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em, weight: "bold")[#_L.stdin]
-      #raw(read("/" + path.replace(".c", ".in")), block: true)
+
+  block(breakable: true, width: 100%)[
+    #cell(
+      text(size: 0.96em, weight: "bold", raw(path)),
+      raw(read("/" + path), lang: "c", block: true),
+    )
+    #if stdin [
+      #cell(
+        text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em,
+             weight: "bold")[#_L.stdin],
+        raw(read("/" + path.replace(".c", ".in")), block: true),
+        rail: true,
+      )
+    ]
+    #if show-output [
+      #cell(
+        text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em,
+             weight: "bold")[#_L.output],
+        raw(read(_out-dir(path) + _rel(path) + ".out"), block: true),
+        rail: true,
+      )
     ]
   ]
-  #if show-output [
-    #block(width: 100%, inset: 8pt,
-      stroke: (left: 2pt + black, rest: 0.5pt + black))[
-      #text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em, weight: "bold")[#_L.output]
-      #raw(read(_out-dir(path) + _rel(path) + ".out"), block: true)
-    ]
-  ]
-]
+}
 
 // 메모리 사물함 도해: 주소 라벨 + 내용 셀 (+ 강조 칸 인덱스)
 //

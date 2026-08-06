@@ -1,11 +1,11 @@
 #import "../../book/lib.typ": *
 
+= Dynamic memory
+
 #prereq(
   ([chapter 40, Lifetime and storage duration], [the limits of automatic lifetime]),
   ([chapter 2, The regions of memory], [the warehouse (the heap)]),
 )
-
-= Dynamic memory
 
 #deepqa[
   Chapter 40 taught automatic lifetime (dies with the function) and static
