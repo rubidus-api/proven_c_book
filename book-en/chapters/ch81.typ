@@ -1,6 +1,6 @@
 #import "../../book/lib.typ": *
 
-= Writing it twice — a tiny JSON
+= Writing it three times — a tiny JSON
 
 #prereq(
   ([chapter 73, Errors are values], [returning failure as a value]),
@@ -19,13 +19,15 @@
   plain C, container sizes, failure handling and the source of memory are
   scattered through the code as convention; written with proven, the same things
   come out in types, return values and parameters. Rather than describe the
-  difference, this chapter writes the same program twice and shows it.
+  difference, this chapter writes the same program several times and shows it.
 ]
 
 #organizer[
 #idx("JSON")  The chapter that closes Part XII — an exercise without exercises. We write a
-  very small JSON reader and writer in two editions and watch, line by line,
-  where the two part company. No new syntax appears. What appears is *choice*.
+  very small JSON reader and writer in three editions — plain C, proven, and an
+  extended proven that takes nesting — and watch where they part company. The
+  last one shows how to handle depth without recursion. No new syntax appears.
+  What appears is *choice*.
 ]
 
 #chapter-questions()
@@ -39,7 +41,7 @@ scope is narrowed like this.
   columns: 2,
   keycol: false,
   [*In*], [*Out*],
-  [One flat object — `{ "key": value, ... }`], [Nested objects and arrays],
+  [One flat object — `{ "key": value, ... }`], [Nesting (in the first two editions; the third solves it)],
   [Four kinds of value — string, integer, boolean, null], [Reals, exponent notation],
   [Reading and writing back (a round trip)], [`\u` escapes, comments],
   [Where a failure happened], [Recovery, partial parses],
@@ -47,7 +49,8 @@ scope is narrowed like this.
 
 Even narrowed, everything this part is about fits inside: the size of the
 container, pointing into someone else's memory, integer overflow, how failure is
-announced, and who provides the memory.
+announced, and who provides the memory. Nesting is taken up in the last section
+by a *third edition* — without recursion, on an explicit stack.
 
 == The plain C edition
 
@@ -115,6 +118,95 @@ at the moment of overflow.
   [Writing], [`snprintf` — cut if it does not fit], [A growing `u8str` — failure if it does not fit],
 )
 
+== One step further — nesting, without recursion
+
+The two editions so far read one flat object. Real JSON nests. How is that
+usually written? *Recursive descent*: when a value turns out to be an object,
+call yourself again to read what is inside. It is short and it reads well.
+
+That brevity has a price attached. *The input decides the depth.* Nest a
+thousand deep and a thousand frames pile up; nest a hundred thousand deep and
+the stack gives way. It is chapter 39 exactly — the stack is narrow (a few MiB
+usually), and when it overflows the program dies with no way to check for it.
+For a parser reading files other people wrote, that is an *attack surface*.
+
+So the extended edition uses no recursion. Both parsing and output are loops
+driven by an explicit stack. Depth becomes the length of an array, so crossing
+the limit can be *refused as a value* instead of collapsing the stack.
+
+#demo("examples-en/ch81/json_nested.c")
+
+The last two lines of the output are the point of the design. Given the same
+200-deep input, a limit of 32 refuses at the 32nd level (`err 2`), and a limit
+of 256 reads it through and builds 200 nodes. *Neither run dies* — depth is a
+setting, not an incident.
+
+=== What was used where
+
+This edition draws on the tools of Part XII across the board. Gathered in one
+place, each takes on one problem.
+
+#dtable(
+  columns: 3,
+  [*Tool*], [*What it takes on*], [*Without it*],
+  [Arena (chapter 75)], [Takes the memory of one parse in a lump and drops it in a lump], [Every node needs a matching `free`],
+  [Pool (chapter 75)], [Recycles slots of exactly one `jnode`], [Same-size allocations fragment the heap],
+  [Intrusive list (chapter 74)], [Hooks a child onto its parent — through a link inside the node], [A separate child array must be allocated and grown],
+  [Dynamic array], [Stacks the open containers — the *explicit stack*], [You end up leaning on the call stack (that is, recursion)],
+  [`view` (chapter 74)], [Borrows keys and strings from the source], [Every character needs a copy and a container],
+  [Checked arithmetic (chapter 74)], [Watches overflow at every carry], [One forgotten `errno` and it wraps],
+  [`proven_err_t` (chapter 73)], [Depth exceeded, no room, bad syntax — all as values], [Either death, or a silent trim],
+)
+
+*The intrusive list* earns its keep especially here. Rather than allocating an
+array for the children, each node carries one link (`proven_list_node_t link`)
+that threads it onto the parent's list. The link was created along with the node,
+so *adding a child costs no new allocation* — and one more place that could fail
+disappears.
+
+#qa[
+  Does dropping recursion not make the code longer and harder to read?
+][
+  Longer, yes. What would be ten lines in a recursive version becomes thirty of
+  stack frames and state transitions. Recursion also reads more easily — it is
+  closer to the model in a person's head.
+
+  It is still written this way for one reason: *the input must not decide how
+  much resource is consumed.* In the recursive version depth eats the call
+  stack, an *invisible* resource that can be neither checked nor capped. With an
+  explicit stack, depth is `stack.len` — a *number you can see* — and the cap is
+  a parameter.
+
+  Out of that comes the working rule for code at a boundary (files, networks,
+  plug-ins): *do not read a format with depth using recursion.* If you do, put a
+  limit on the depth and count it.
+]
+
+#realcase("Deep nesting is a real attack")[
+  "Depth bombs" are an old class of attack on JSON and XML parsers. Send a few
+  kilobytes with a hundred thousand brackets in it and a recursive parser
+  overflows the stack while reading it and the process dies — denial of service.
+  Stopping a server with a few dozen bytes of input is a good return on effort.
+
+  That is why widely used parsers nearly all impose a depth limit. It is also why
+  this example takes `max_depth` as a parameter — and why the limit is set by the
+  *caller rather than the library*, since what counts as reasonable differs from
+  one place of use to another.
+]
+
+#misconception[
+  "Removing recursion removes stack overflow"
+][
+  It does not remove it — it *moves* it. An explicit stack eats memory too. The
+  difference is that this memory sits on the heap (or in an arena), its length
+  can be counted, and a cap can be placed on it.
+
+  The point is not "recursion is bad" but *keep the resource where you can see
+  it*. If the depth is a constant you chose (as in code reading your own config
+  file), recursion is the better choice. If someone else chooses the depth, it is
+  better to hold that resource in your hand and count it.
+]
+
 == So what actually changed
 
 #qa[
@@ -166,8 +258,7 @@ at the moment of overflow.
 ]
 
 #realcase("Where a real JSON parser gets harder")[
-  What this example left out is where the real difficulty lives. Nesting needs a
-  recursion depth limit (a malicious input otherwise blows the stack), `\u`
+  What all three editions left out is where the real difficulty lives. `\u`
   escapes must handle UTF-16 surrogate pairs (chapter 9), and reals bring along
   the rounding problems of chapter 8 — read `0.1` and write it back, and do the
   same characters come out?
@@ -186,9 +277,10 @@ at the moment of overflow.
     [Cut versus refuse], [Failure comes back as a value instead of a silent trim],
     [Source of memory], [The caller provides it; the parser does not decide],
     [Boundaries], [Code written for narrow conditions gets dangerous somewhere wide],
+    [Nesting and depth], [An explicit stack instead of recursion — depth becomes a setting, not an incident],
   )
 ]
 
 Part XII ends here. We have seen the five contracts one at a time, and finally
-watched all five meet inside one program, written twice. The last part closes the
+watched all five meet inside one program, written three times. The last part closes the
 book — C in practice, the embedded toolbox, and everything gathered up.
