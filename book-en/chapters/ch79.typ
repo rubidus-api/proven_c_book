@@ -1,322 +1,286 @@
 #import "../../book/lib.typ": *
 
-= Formatting and parsing — not writing the type twice
+= Strings and text
 
 #prereq(
-  ([chapter 53, Variadic functions], [variadic arguments and the format string]),
-  ([chapter 56, The terrain of the standard library], [the printf contract]),
+  ([chapter 39, Strings], [strings]),
+  ([chapter 9, Characters and text], [UTF-8 and bytes]),
 )
 
 #deepqa[
-  Chapter 53 said type information does not ride along into variadic arguments, and
-  chapter 56 said that is why the format string alone settles "how the stack is to be
-  read". Then what is needed to take the type from the argument?
+  Chapter 39 said that for a C string "up to the NUL" is the length, so to know the
+  length it must be counted every time. Then what improves if the length is carried
+  along — and what is lost?
 ][
-  Catch the type *at the call site* and send it along with the value. That is, do not
-  pass the argument as it is but wrap it into a `{type tag, value}` bundle. The
-  remaining problem is "how is the type tag attached automatically", and the answer is
-  C11's `_Generic` — the device that chooses different code at compile time according
-  to an expression's type. The run-time cost is zero, and unlike the implicit
-#idx("implicit conversion")  conversion rules learned in chapter 28, here the type is
-  *preserved*.
+  Three things are gained. The cost of counting the length vanishes ($O(n)$ becomes
+  $O(1)$), data with a zero byte in the middle can be handled, and above all *the
+  boundary can be checked* — without the length there is nothing to check. Two things
+  are lost. One string becomes two words rather than one, and conversion becomes
+  necessary when meeting a world that expects NUL termination, as `printf("%s")` does.
+  This library keeps a NUL internally as well in order to remove that conversion cost
+  — a compromise that has both.
 ]
 
 #organizer[
-  The answer to chapter 73's third bug — the mismatch of format and argument. How the
-  typeless placeholder `{}` obtains type safety, what `_Generic` does beneath it, and
-  how failure appears as a value in the opposite direction, parsing. It is the
-  alternative to the `printf` and `scanf` taken apart in chapter 56.
+  The answer to chapter 74's first bug — string functions that do not know the size
+  of the vessel. Strings that carry their length, the distinction between owning and
+  borrowing, and this library's most contentious decision, *refuse rather than
+  truncate*. Chapter 9's story of encodings and chapter 39's story of boundaries
+  gather here into one.
 ]
 
 #chapter-questions()
 
-== `{}` — the placeholder with no type
+== Two types, one rule
 
-The rules are only three.
+The string vocabulary is only two.
 
-- `{}` — put the next argument here. The type is not written.
-- `{:...}` — after the colon write the format specification (width, alignment,
-  digits).
-- `{{` `}}` — the brace characters themselves.
+- `proven_u8str_t` — an *owning* string. It has a buffer, a length and a capacity.
+- `proven_u8str_view_t` — a *borrowed* string. Only a pointer and a length.
 
-There being no `%d`, there is no place for a `%d` and a `double` to go out of step.
-The possibility of mismatch seen in chapter 56 is removed at the level of syntax.
+If the name has `view` in it, it is borrowed, and what is borrowed is not destroyed.
+The rule set up in chapter 78 applied to strings as it is. `u8` means UTF-8 — that
+encoding seen in chapter 9 is this library's default text representation.
 
-=== The whole grammar after the colon
-
-The order of the specifiers is fixed, and every one may be omitted.
-
-#align(center, block(inset: (y: 4pt))[
-  `{:` `[fill][align]` `[sign]` `[#]` `[0]` `[width]` `[.precision]` `[type]` `}`
-])
-
-#dtable(
-  columns: 3,
-  [*place*], [*what may be written*], [*meaning*],
-  [fill], [any character], [the character filling the spare places. it comes *before* the alignment symbol],
-  [align], [`<` `>` `^`], [left, right, centre. the default is right for numbers, left otherwise],
-  [sign], [`+`], [attach a sign to positives too],
-  [alternative form], [`#`], [attach the `0x`, `0b`, `0` prefix],
-  [zero fill], [`0`], [put before the width to fill with zeros (it goes after the sign)],
-  [width], [a number], [the minimum number of characters. it does not cut if over],
-  [precision], [`.number`], [decimal places for reals],
-  [type], [`x X o b f e g`], [hexadecimal (lower, upper), octal, binary, fixed, exponential, shortest],
-)
-
-They correspond to chapter 56's `printf` formats but differ in three ways. *The
-alignment symbol comes first* (`{:<10}` instead of `%-10s`), *the fill character can be
-chosen* (`{:*>8}`), and *there is no type letter* (`%d`'s `d` has gone — the type comes
-from the argument).
-
-#demo("examples-en/ch79/spec.c")
-
-The example shows this table in the flesh, a line at a time. A few points.
-
-*① The fill is written before the alignment.* `{:*>8}` is "fill with asterisks, align
-right". Swap the order (`{:>*8}`) and it does not mean anything.
-
-*② The 0 of `{:08}` goes after the sign.* Zero-fill `-42` to a width of 8 and it is
-`-0000042`, not `000000-42` — the same rule as `%08d` seen in chapter 56.
-
-*③ The default notation for reals differs from `printf`'s.* Very large and very small
-numbers are printed by `printf("%f")` as `100000000000000000000.000000` or `0.000000`,
-while this library uses exponential notation, `1.000000e+20` and `5.000000e-07`. The
-side that *does not lose information* was taken as the default, and it is a difference
-to know before comparing two logs. If fixed notation is needed, force it with `{:f}`.
-
-*④ `{:g}` gives the shortest notation that round-trips.* That `3.14159` comes out as it
-stands is that result — the notation keeping the "read it back and it is the same value"
-property seen in chapter 8.
-
-=== Printing a type the library has never heard of
-
-What can go into `{}` is only the types in the `_Generic` list. Then how is my own
-struct printed — *give it one function that draws.*
+Open them up and why they were divided in two becomes clear.
 
 ```c
-static proven_err_t render_frac(proven_fmt_sink_t out, const void *obj)
-{
-    const frac_t *f = obj;
-    /* ... make it ... */
-    return proven_fmt_put(out, view);      /* and send it out */
-}
+/* the borrowed string — the same shape as chapter 77's mem_view_t */
+typedef struct {
+    const proven_byte_t *ptr;
+    proven_size_t        size;
+} proven_u8str_view_t;
 
-proven_arg_t a = proven_arg_custom(&half, render_frac);
-proven_println("{} and |{:>8}|", PROVEN_ARG(a), PROVEN_ARG(a));
+/* the owning string — one buffer and an "is it borrowed" flag */
+typedef struct {
+    proven_buf_t internal;   /* { ptr, len, cap } */
+    bool         borrowed;
+} proven_u8str_t;
 ```
 
-`proven_fmt_sink_t` is "a hole that receives bytes", and `proven_fmt_put` sends them
-out. As the example's output shows, *width and alignment apply to a user type too*.
+The three slots of `proven_buf_t` state the string's character as they are. *`len` is
+the number of bytes of content held now*, *`cap` is the whole buffer's size*, and the
+difference between them is the spare room including the NUL's place. So
+`create(alloc, 64)` really takes 65 bytes — 64 is the limit of the *content* and one
+byte is the NUL's share. Thanks to that one byte `proven_u8str_as_cstr` can hand out a
+C string with neither copying nor allocation.
 
-There is one contract to know here. *The drawing function is called twice per `{}`* —
-once with a counting sink (because the width and alignment must be calculated) and once
-for real. So this function must be *deterministic* and must not mutate its target. If
-the two results disagree the library returns `INVALID_ARG` rather than print a misaligned
-field. It is the price paid for aligning without allocating.
+The `borrowed` flag marks a string made with `_borrow`. When this flag is on,
+`_destroy` *releases nothing* and merely empties the struct — somebody else's memory
+cannot be given back.
 
-#demo("examples-en/ch79/fmt.c")
-
-This example formats not to the screen but *into a string* — the `proven_println`
-seen in chapter 74 is the edition connecting this machinery to standard output. Three
-things can be pointed out.
-
-*First, formatting too can fail.* `example.org:8080` cannot go into an 8-byte vessel,
-so it was refused. Chapter 78's principle stands here too — rather than truncate, it
-returns a failure. The opposite default from `snprintf`.
-
-*Second, the format specification syntax is a little different.* The `>` of `{:>10}`
-is right alignment, `{:<10}` left alignment, `{:.3}` three decimal places. They
-correspond to chapter 56's `%10s`, `%-10s` and `%.3f`, differing in that *there is no
-type letter*.
-
-*Third, it rounds but keeps the number of digits.* `load=0.42` is what `{:.2}` made.
-
-=== Which formatting function to use
-
-Chapter 78's three kinds are here in formatting too. Organised in a table there is
-nothing to choose over.
+There are three roads to obtaining a string.
 
 #dtable(
   columns: 4,
-  [*function*], [*when short*], [*allocator*], [*where it is used*],
-  [`proven_println(fmt, …)`], [—], [not needed], [one line to the screen],
-  [`proven_print(fmt, …)`], [—], [not needed], [without a line break],
-  [`proven_eprint(fmt, …)`], [—], [not needed], [to standard error],
-  [`proven_u8str_append_fmt`], [refuses (the original stands)], [not needed], [a fixed buffer. the default],
-  [`proven_u8str_append_fmt_trunc`], [as much as fits], [not needed], [places that may be cut, such as a log line],
-  [`proven_u8str_append_fmt_grow`], [grows], [needed], [when the length is unknown],
-  [`proven_u8str_append_fmt_with_scratch`], [grows], [needed (+ scratch)], [when the temporary memory is to be given separately],
+  [*function*], [*allocates*], [*destroy*], [*where it is used*],
+  [`proven_u8str_create(alloc, limit)`], [yes], [`_destroy` needed], [starting empty and filling it],
+  [`proven_u8str_create_from_view(alloc, v)`], [yes], [`_destroy` needed], [owning a copy of existing content],
+  [`proven_u8str_borrow(buf, cap)`], [no], [unnecessary (harmless)], [over a stack or static array. embedded],
 )
 
-All of them return a `proven_fmt_result_t`, and this bundle has two more numbers beside
-`err`.
+Only beware that `_borrow`'s `cap` is *the whole capacity including the NUL* — give it
+`buf[64]` and the content goes to 63 bytes.
+
+Making a view from a literal is done with one macro.
 
 ```c
-typedef struct {
-    proven_err_t  err;
-    proven_size_t written;    /* the number of bytes actually written */
-    proven_size_t required;   /* the number of bytes needed to write it all */
-} proven_fmt_result_t;
+PROVEN_LIT("hello")        /* becomes { ptr, 5 } at compile time — no strlen */
+proven_u8str_view_from_cstr(p)   /* counts the length at run time */
 ```
 
-`required` is the same information as `snprintf`'s return value seen in chapter 56. The
-difference is *that it sits in a named slot* — with `snprintf` a human had to remember
-the convention "if the return value is at least the buffer size it was truncated", while
-here `err` already says that and `required` answers "so how much was needed". In the
-output of the example `spec.c`, `written=7 required=10` is that use — how much to enlarge
-the buffer by is known as it stands.
+`PROVEN_LIT` draws the length from `sizeof("...") - 1`, so its *run-time cost is zero*.
+Using it for string literals is the practice, and `_from_cstr` for a C string whose
+length is unknown.
+
+#demo("examples-en/ch79/ops.c")
+
+The first line shows chapter 78's rule again. `proven_u8str_borrow` has no allocator —
+therefore it does not allocate. It is doing string operations on a 16-byte array taken
+on the stack, and this is exactly how strings are handled in embedded work without a
+heap.
+
+== Refuse, rather than truncate
+
+The second `append` is the most important single line of this part. On trying to
+attach `" world, and more"` after `"hello"` in a 16-byte vessel, the library *wrote
+nothing* and returned `PROVEN_ERR_OUT_OF_BOUNDS`. And as the next line shows, the
+original content `hello` stands as it was — the failure atomicity learned in
+chapter 76.
+
+It is the exact opposite of `snprintf`'s choice seen in chapter 74. Why not truncate?
+
+*Because a truncated value is not a short value but a different value.* A truncated
+path points at a different file, a truncated command is a different command, a
+truncated user name is a different person. Truncate and declare success and the caller
+cannot know whether what was received is what was requested. So this library *gives
+the decision back to the caller* — "there is not enough room. What shall we do?"
 
 #qa[
-  What exactly does `PROVEN_ARG` do?
+  Still, are there not places where truncation is fine, such as one line of a log?
 ][
-  It chooses on the argument's type with `_Generic` and makes a small struct with a
-  tag fitting that type attached. Carried over in concept alone it has this shape.
-
-  ```c
-  #define PROVEN_ARG(x) _Generic((x),          \
-      int:          proven_arg_i32,            \
-      double:       proven_arg_f64,            \
-      const char *: proven_arg_cstr,           \
-      bool:         proven_arg_bool            \
-      /* ... */ )(x)
-  ```
-
-  `_Generic` chooses the branch *at compile time*, so there is no run-time cost of
-  determining the type. And passing a type not in the list is *a compile error* — the
-  exact opposite of chapter 56's `printf`, which accepted anything.
+  There are. So there is a separate function that *explicitly writes only part* —
+  `proven_u8str_append_partial` returns the number of bytes that went in. That the
+  name is long and the return value different is the heart of it. Truncation is still
+  possible, but to do it you must *write it that way*. The principle that the default
+  is always the safe side and the dangerous choice can be made only through a visible
+  name (the same as chapter 77's `_unchecked`) is kept here too.
 ]
 
 #antipattern[
-  Passing a value without `PROVEN_ARG`
+  Confusing growth with fixed capacity
 ][
   ```c
-  proven_println("count={}", count);        /* it does not compile */
+  proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
+  proven_err_t e = proven_u8str_append_grow(alloc, &s, view);  /* dangerous */
   ```
-  A raw value rather than a bundle was passed, so the types do not match and the build
-  fails. It can feel tiresome, but this is the point of the design — *forget to wrap
-  it and the program is not made.* Herein lies the difference from `printf`, which
-  compiles even when you forget and goes strange during execution.
+  `_append` writes only within the capacity, while `_append_grow` asks the allocator
+  for more if there is not enough — which is why only the latter has an allocator
+  argument. The problem is demanding growth on a borrowed buffer (`_borrow`). A stack
+  array cannot grow, so this is a design error.
+
+  In this case the library *does not quietly reallocate somebody else's memory* but
+  returns `OUT_OF_BOUNDS` — it succeeds while things fit and refuses the moment they
+  would not. The habit of reading signatures becomes the defence here as it stands —
+  *with an allocator it can grow, without one it cannot.*
 ]
 
-#misconception[
-  "The placeholder has no type, so it must be slow"
-][
-  The opposite. `printf` interprets the format string letter by letter *during
-  execution* and decides what to take out next. `{}` scans the format too, but each
-  argument's type is already settled by its tag, so there is no guessing. Above all,
-  there being no UB from type mismatch, no defensive code is needed either. The
-  difference in cost is mostly negligible, and this library's real-number formatting
-  has rather taken more care over accuracy — reproducing exactly the rounding rules of
-  `%f` seen in chapter 56 is the more awkward task.
-]
+== Three kinds of writing — refuse, truncate, grow
 
-== The opposite direction — the scanner
+This library's string operations are made so that the kind can be known from the name
+alone. That kind is "what happens when there is not enough room".
 
-Parsing is formatting's mirror, but the character of failure differs. Formatting
-fails only when the vessel is too small, while parsing fails *whenever the input
-differs from expectation*. And as seen in chapter 56, `sscanf` tells only "how many
-succeeded" — it does not say where or why it stopped.
+#dtable(
+  columns: 4,
+  [*kind*], [*shape of the name*], [*when short*], [*failure atomicity*],
+  [fixed capacity, atomic], [`_append`, `_insert`, `_replace_at`], [refuses (`OUT_OF_BOUNDS`)], [yes — the original stands],
+  [best effort, truncating], [`_append_partial`, `_append_fmt_trunc`], [writes as much as fits and reports], [no (deliberately)],
+  [growing], [`_append_grow`, `_insert_grow`, `_replace_at_grow`], [asks the allocator for more], [yes — the original stands if allocation fails],
+)
 
-#idx("scanner")proven's scanner is an object with a cursor. It is placed over a view
-and reads onward one at a time. Each read gives its result as a bundle.
+All three kinds are needed because the right answer differs by place. Where a file path
+is being built truncation must not happen, so *refusing* is right; where a log line is
+fitted to the screen *truncating* is right; where the length is unknown *growing* is
+right. That the default (the short name) is refusal shows this design's attitude.
 
-```c
-typedef struct {
-    proven_u8str_view_t view;     /* the input being read (borrowed) */
-    proven_size_t       cursor;   /* how far it has read */
-} proven_scan_t;
-```
+== The operations that mend a string
 
-That there are only two slots says two things. First, *the scanner does not own the
-input* — it is only a cursor laid over a view, so making it allocates nothing and there
-is no destroying. Second, *the cursor can be saved and restored by hand*. Copy the whole
-struct, and on failure put it back, so a parser that "looks a few characters ahead to
-judge" is not hard to write.
+Appending alone is not enough. There are operations that mend the middle, delete, and
+rewrite.
 
-```c
-proven_scan_t save = sc;         /* a mark to go back to */
-proven_result_i64_t n = proven_scan_i64(&sc);
-if (!proven_is_ok(n.err)) sc = save;   /* it failed, so let it never have happened */
-```
-
-There are six reading functions, and all of them push the cursor forward.
+#demo("examples-en/ch79/edit.c")
 
 #dtable(
   columns: 3,
-  [*function*], [*what it reads*], [*what it returns*],
-  [`proven_scan_i64(&sc)`], [a signed integer], [`{err, val}`],
-  [`proven_scan_u64(&sc)`], [an unsigned integer], [`{err, val}`],
-  [`proven_scan_f64(&sc)`], [a real], [`{err, val}`],
-  [`proven_scan_str(&sc)`], [a word up to whitespace], [`{err, view}` — *a view into the original*],
-  [`proven_scan_skip_whitespace(&sc)`], [skips whitespace], [—],
-  [`proven_scan_skip_until(&sc, t)`], [skips until `t` appears], [`err` (the cursor stands if absent)],
+  [*function*], [*what it does*], [*contract*],
+  [`_insert(&s, i, v)`], [inserts at position `i`], [`i` ≤ length. it pushes the tail out],
+  [`_remove(&s, i, n)`], [deletes `n` bytes from `i`], [an error if it exceeds the range],
+  [`_replace_at(&s, i, old, v)`], [a range with other content], [the lengths may differ],
+  [`_replace_first(&s, off, t, r)`], [the first `t` found, into `r`], [★ if absent it returns *success*],
+  [`_reset(&s)`], [empties only the content], [the buffer and capacity stand],
+  [`_reserve(alloc, &s, n)`], [capacity up to `n` in advance], [it pays especially on an arena],
+  [`_append_byte(alloc, &s, b)`], [appends one byte], [grows if needed],
 )
 
-That `proven_scan_str` *returns a view without copying* matters — chapter 78's "text
-handling without copying" holds in parsing too. In exchange that view is valid only
-while the original input is alive (chapter 76).
+The starred contract of `_replace_first` needs care. *Not finding it is not an error but
+a success* — to distinguish "there was nothing to replace" from "it was replaced" you
+must first check with `proven_u8str_view_find`. That the example's "replacing what is
+not there" comes back as `err=0` is that confirmation.
 
-#demo("examples-en/ch79/lines.c")
-
-That three inputs divided into three branches is the heart of it. `bob thirty` had
-its name read but stopped at the age, and the line of whitespace only failed from the
-name. With `sscanf` both would have been lumped together as "one item succeeded" or
-"0".
-
-Having a cursor has another advantage. *How far it has read* can be known, so the
-remaining part can be handled another way or the position can be carried in an error
-message. It is the answer to the problem chapter 25 named when parsing a line with
-`sscanf`: "you cannot know how many characters were consumed."
+`_reset` and `_reserve` are a pair for performance. In code that builds a string afresh
+every frame or per request, *reusing the buffer instead of throwing it away* is
+`_reset`, and taking it in advance when you roughly know how large it will grow is
+`_reserve`. As seen in chapter 78, `_reserve` pays especially on an arena — take it
+large before another allocation intervenes and growth in place becomes possible.
 
 #qa[
-  Does the scanner have a format string too?
+  Which should be the default, `_insert` or `_insert_grow`?
 ][
-  It does. It is written like this.
+  *`_insert` where I settle the capacity*, *`_insert_grow` where I do not know how much
+  content there will be*. The criterion is simple — "is running short here *a bug*, or
+  *a thing that can happen*?"
 
-  ```c
-  proven_scan_fmt_cursor(&sc, "{}:{}",
-                         PROVEN_SCAN_ARG(&host), PROVEN_SCAN_ARG(&port));
-  ```
-
-  It is symmetrical with formatting, and the arguments are
-  wrapped addresses of the places to hold the results. But there is one caution the
-  header states honestly — if it fails in the middle of the format, *the values filled
-  in up to that point have already been changed*. The failure atomicity learned in
-  chapter 75 is not guaranteed here, so if it is really needed the cursor and the
-  destinations must be saved beforehand and restored. Writing the contract in the
-  documentation rather than hiding it is this library's way.
+  If a protocol header is being assembled in a fixed-size buffer, running short is a bug,
+  and refusal is right there (and that error reveals the bug). If user input is being
+  appended, it can grow to any length, so growing is right. It is also why embedded code
+  uses only the editions without `_grow` — there, *unpredictable growth itself is
+  forbidden* (chapter 83).
 ]
 
-#realcase[
-  What happens when a parser is lenient
+== Finding and cutting — text handling without copying
+
+The example's ③ and ④ are a view's real usefulness. Obtaining a substring needs no
+copying — it merely calculates a new pointer into the original and a new length.
+While one CSV line was divided into three fields, not one allocation happened.
+
+This pattern is especially powerful in parsers. When parsing a line with `sscanf` in
+chapter 25 a buffer had to be prepared in advance to hold the result, whereas cutting
+with views leaves only *marks upon the original*. In exchange one more thing must be
+kept — as seen in chapter 77, *it is valid only while the original is alive*.
+
+There is a convention too in the value `find` returns when it does not find. It is
+not 0 or a negative number but a sentinel with a name, `PROVEN_INDEX_NOT_FOUND`.
+Chapter 74 spoke of the danger of sentinel values, and what differs here is that *it
+has a name and is documented* — a nameless magic number and a named contract are
+different things.
+
+#misconception[
+  "Carrying the length means knowing the number of characters"
 ][
-  There is a problem that has come to light repeatedly in the handling of HTTP
-  requests. If a server and a proxy interpret the same request *slightly differently*,
-  an attacker can slip a second request in through that gap (request smuggling). The
-  cause was differences such as one side generously letting odd whitespace in a header
-  pass while the other refused strictly. The lesson is exactly the same as
-  chapter 78's story of encodings — *do not read ambiguous input as something mended;
-  refuse it.* A parser that returns failure as a value is also a parser equipped with
-  the means to express that refusal.
+  No. The length is *the number of bytes*. As learned in chapter 9, one character in
+  UTF-8 is 1\~4 bytes, so the Korean "가" is 3 bytes and an emoji is 4. It is why the
+  example's output takes the trouble to state "(5 bytes)". So handling "the nth
+  character" is still delicate, and *cutting anywhere at a byte boundary* gives the
+  broken characters seen in chapter 9. What a string library solves is boundary
+  trespass, not the essential difficulty of encodings.
+]
+
+== The boundary of two worlds — NUL termination and UTF-16
+
+Conversion is needed at every place where the outside world is met.
+
+- `proven_u8str_as_cstr` — obtains a NUL-terminated pointer from an owning string.
+  A NUL being kept internally, there is neither copying nor allocation. It is used
+  when passing to `printf("%s")` or to a file API.
+- `proven_u8str_view_to_cstr` — makes a NUL-terminated string from a view. This one
+  *takes an allocator* — because a view may point into the middle of the original and
+  a NUL cannot be written in that place. The signature states the fact once again.
+- `proven_u16str_t` / `proven_u16str_view_t` — the bridge to the UTF-16 world. The
+  Windows API uses this encoding so conversion is needed, and conversion can fail
+  (unpaired surrogates and the like). So the result comes as a bundle.
+
+#realcase[
+  "Do not guess, refuse" — the principle of handling encodings
+][
+  The root of the text security problems seen in chapter 9 is mostly *the lenient
+  decoder*. Implementations that "read a wrong UTF-8 as something similar" have
+  several times been the passage to security incidents — decoders that permitted
+  overlong encodings in particular had their checks bypassed. So today's norm is one
+  sentence. *Do not read invalid input as something mended; refuse it.* proven's
+  encoding conversion stopping with `PROVEN_ERR_INVALID_ENCODING` is that norm
+  implemented, and this principle is exactly the same spirit as this chapter's "do not
+  truncate".
 ]
 
 #recap[
-  Formatting and parsing in summary.
+  The string vocabulary in summary.
 
   #dtable(
   columns: 3,
-    [*what it does*], [*API*], [*note*],
-    [one line to the screen], [`proven_println(fmt, ARG…)`], [returns an error but does not compel],
-    [format into a string], [`proven_u8str_append_fmt(&s, …)`], [refuses if short],
-    [permitting truncation], [`…_append_fmt_trunc`], [states the intent in the name],
-    [growing as it goes], [`…_append_fmt_grow(alloc, …)`], [needs an allocator],
-    [wrapping an argument], [`PROVEN_ARG(x)`], [`_Generic` — a type not listed is a compile error],
-    [starting a scanner], [`proven_scan_init(view)`], [an object with a cursor],
-    [reading one at a time], [`proven_scan_i64/f64/str`], [result and failure as a bundle],
-    [reading by format], [`proven_scan_fmt_cursor(…)`], [beware partial changes on mid-way failure],
+    [*function*], [*what it does*], [*failure and ownership*],
+    [`u8str_create(alloc, cap)`], [create an owning string], [returns a bundle, needs `_destroy`],
+    [`u8str_borrow(buf, cap)`], [a string over somebody's buffer], [no allocation, no destruction],
+    [`u8str_append(&s, v)`], [append within the capacity], [refuses if short (the original is preserved)],
+    [`u8str_append_partial`], [as much as fits], [returns the number of bytes put in],
+    [`u8str_append_grow(alloc,…)`], [grow it if short], [allocation may fail],
+    [`u8str_view_find`], [the position of a substring], [`PROVEN_INDEX_NOT_FOUND` if absent],
+    [`u8str_view_slice`], [a sub-view], [no copying — tied to the original's lifetime],
+    [`u8str_as_cstr`], [a NUL-terminated pointer], [no copying],
+    [`u8str_view_to_cstr`], [view → a C string], [needs an allocator],
 )
 ]
 
-The vocabulary for holding, making and reading back strings is equipped. Next are the
-tools that *hold many* — growing arrays, lists, ring buffers, hash maps, and the
-algorithms with "a guarantee even in the worst case" foretold in chapter 73.
+We can now hold and cut strings safely. But the work of *making* them remains —
+turning numbers and values into letters, and turning letters back into numbers. It is
+the place where chapter 74's third bug waits, and the place where this library's most
+conspicuously different syntax appears.

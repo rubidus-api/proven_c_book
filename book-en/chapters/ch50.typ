@@ -262,7 +262,7 @@ it. So *ending with `_Exit` or `abort` can lose output.*
   does not return." That the entry point may not even be called `main` is exactly
   as chapter 56 showed — the function the reset vector points at is the starting
   point, and that function copies `.data`, fills `.bss` with zeros and then calls
-  `main` (chapter 71).
+  `main` (chapter 72).
 ]
 
 #realcase[
@@ -294,7 +294,7 @@ it. So *ending with `_Exit` or `abort` can lose output.*
   Know one thing instead. That `main` is the starting point is a statement from
   *the C program's point of view*. In reality, startup code (something like `crt0`)
   runs before it, preparing the static region and gathering the arguments before
-  calling `main` (chapter 71). `main` is not "the first code that runs" but "the
+  calling `main` (chapter 72). `main` is not "the first code that runs" but "the
   first of the code we write that runs."
 ]
 

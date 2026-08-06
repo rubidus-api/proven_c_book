@@ -140,7 +140,7 @@ behaviour.
   columns: 2,
   [*What is permitted*], [*Condition*],
   [*Assigning a value* to a `volatile sig_atomic_t` object], [Assigning, not reading],
-  [Handling lock-free atomic objects], [`<stdatomic.h>`, when lock-free (chapter 68)],
+  [Handling lock-free atomic objects], [`<stdatomic.h>`, when lock-free (chapter 69)],
   [Calling `abort`], [—],
   [Calling `_Exit`], [—],
   [Calling `quick_exit`], [—],
@@ -188,7 +188,7 @@ jobs, so *both* are needed — `volatile sig_atomic_t`.
 )
 
 Since C11, lock-free atomic types such as `atomic_int` may also be used in a
-handler (chapter 68). In a program with several threads that is the more accurate
+handler (chapter 69). In a program with several threads that is the more accurate
 choice — `sig_atomic_t` guarantees only *signal versus main flow*, not thread
 against thread.
 
@@ -429,5 +429,5 @@ those with timeouts), so robust code keeps the retry loop as well.
 ]
 
 We have handled the interruption that arrives from outside. The next chapter is
-its opposite — what recent standards added, and the long argument over "safe"
-functions.
+its opposite — the device with which a program cuts its own flow and leaps back
+up the stack, `setjmp` and `longjmp`.

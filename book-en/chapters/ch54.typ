@@ -206,7 +206,7 @@ pointer (8 bytes) only, and the table exists once per type.
   One thing more. C++'s virtual table layout is *not settled by the standard* (the
   ABI settles it). That is why, when mixing C and C++, class objects are not passed
   across the boundary and only `extern "C"` functions and plain structs are
-  exchanged (chapter 84).
+  exchanged (chapter 85).
 ]
 
 #recap[

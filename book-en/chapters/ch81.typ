@@ -1,252 +1,310 @@
 #import "../../book/lib.typ": *
 
-= The outside world — files, streams, time, random numbers
+= Containers and algorithms
 
 #prereq(
-  ([chapter 58, Streams in reality], [streams]),
-  ([chapter 25, Input], [input]),
+  ([chapter 43, Structs], [structs]),
+  ([chapter 42, Dynamic memory], [a growing array]),
+  ([chapter 77, The foundation], [views and bounds]),
 )
 
 #deepqa[
-  Chapter 10's design had a stream be one where "the program does not know what it is
-  connected to", and chapter 56 said `fopen` reports failure with null. Then what
-  failure is most often missed in a file API?
+  Chapter 36 taught that a C array's size is settled at compile time, and chapter 42
+  that it can be grown with `realloc`. Then where is it easiest to go wrong when
+  making a "growing array" yourself?
 ][
-  *The partial write.* A failure to open is conspicuous, but the case of `write`
-  returning without writing all that was requested is easy to forget — it really
-  happens when the disk fills, when a signal cuts in, or when the other end is a pipe.
-  So this library has two editions. `proven_fs_write` returns *the number of bytes
-  actually written*, and `proven_fs_write_all` repeats until all is written and then
-  reports only success or failure. What most code wants is the latter, and the former
-  remains so as not to hide that fact.
+  In three places. First, *calculating the size to grow to* — the multiplication
+  wrap-round seen in chapter 77 happens here. Second, *the state on failure* — when
+  `realloc` fails the original pointer is still valid, and the common code that
+  assigns the return value straight into the original variable loses that original (a
+  leak). Third, *pointers after the growth* — a pointer that pointed at an element
+  becomes invalid after reallocation. Rather than getting these three right afresh
+  every time you make a container, it is better to use one made properly once.
 ]
 
 #organizer[
-  From here we touch the operating system. Opening, reading and writing files,
-  buffered streams, reading and formatting time, and random numbers — those random
-  numbers that become entirely different things according to the purpose. Chapter 10's
-  story of streams and chapter 25's story of input are completed here as real APIs.
+#idx("hash map")  The tools that hold many — the growing array, the intrusive list,
+  the ring buffer, the hash map. And as the answer to chapter 74's fifth bug
+  (unchecked callbacks) and the performance trap attached to that place, we see
+  sorting *guaranteed even in the worst case* and hashing that *withstands attack*.
+  Chapter 36's arrays and chapter 43's structs become practical components here.
 ]
 
 #chapter-questions()
 
-== The life of one file
+== The life cycle of the four containers
 
-A file is the first resource in this part that touches *the outside world*. The
-discipline of making and giving back is the same as in the earlier chapters, but the
-kinds of failure are far more numerous.
+First we see the four on one screen. How making, putting in, traversing and giving back
+differ between them is all in this example.
 
-#demo("examples-en/ch81/fslife.c")
-
-The life cycle is four steps, and at each step failure comes as a value.
+#demo("examples-en/ch81/tour.c")
 
 #dtable(
-  columns: 3,
-  [*step*], [*function*], [*to know*],
-  [opening], [`proven_fs_open(scratch, path, mode)`], [*a scratch allocator* is needed (for path conversion)],
-  [writing, reading], [`_write`/`_write_all`, `_read`], [amount requested ≠ amount handled],
-  [nailing it down], [`proven_fs_sync(file)`], [closing alone does not leave it on the disk],
-  [closing], [`proven_fs_close(file)`], [it has a return value — there is something to check],
+  columns: 5,
+  [*container*], [*making*], [*allocation*], [*traversal*], [*giving back*],
+  [`array`], [`PROVEN_ARRAY_INIT(alloc, T, n)`], [grows], [by index], [`PROVEN_ARRAY_DESTROY`],
+  [`list`], [`proven_list_init(&l)`], [*none*], [`PROVEN_LIST_FOR_EACH`], [unnecessary],
+  [`ring`], [`PROVEN_RING_INIT(alloc, T, n)`], [once, fixed], [by popping], [`proven_ring_destroy`],
+  [`map`], [`PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)`], [grows (rehashing)], [by key lookup], [`proven_map_destroy`],
 )
 
-*The mode weaves bit flags.* Instead of a string like the standard `fopen`'s `"w+b"`,
-named values are joined with `|`.
+That only the list has no allocation stands out — because the node lives inside the
+data. So a list is the only container that *cannot fail for lack of memory*, and it is
+especially loved in embedded work (chapter 83).
 
-#dtable(
-  columns: 2,
-  [*flag*], [*meaning*],
-  [`PROVEN_FS_READ`], [reading],
-  [`PROVEN_FS_WRITE`], [writing],
-  [`PROVEN_FS_APPEND`], [appending at the end],
-  [`PROVEN_FS_CREATE`], [create it if absent],
-  [`PROVEN_FS_TRUNC`], [empty it if present],
-  [`PROVEN_FS_CREATE_NEW`], [★ *fail if it already exists* — creating anew without a race],
-)
+== The growing array
 
-Two things are better than string modes. First, *the combination is visible* — there is
-no need to memorise what `"a+"` exactly is. Second, things absent from string modes,
-such as `CREATE_NEW`, can be expressed. When making a lock file or a temporary file,
-"fail if it already exists" is the only road that blocks a race condition (recall
-chapter 59's `tmpnam` story).
+`proven_array_t` is a byte buffer that knows the element size and alignment. Open it up
+and why the type is filled in by macros becomes clear.
 
-*Handles travel by value.* That the functions take a `proven_file_t` by value rather
-than by pointer is the mark of it, because what is inside is about one integer
-descriptor. So the discipline of not using that value again after closing is still a
-human's part.
+```c
+typedef struct {
+    proven_allocator_t alloc;       /* it remembers the allocator given at creation */
+    proven_byte_t     *data;        /* the byte buffer */
+    proven_size_t      len;         /* the number of elements held now */
+    proven_size_t      cap;         /* the number of elements it can hold */
+    proven_size_t      elem_size;   /* the size of one element */
+    proven_size_t      align;       /* the element's alignment requirement */
+} proven_array_t;
+```
 
-=== The convenience functions that read and write in one go
+*That the array remembers the allocator* differs from strings. A string takes an
+allocator per operation (chapter 79), while an array takes one at creation and keeps it
+inside — making `push` pass an allocator every time it grows would make the code noisy.
+So the allocator is not given again at destruction either
+(`PROVEN_ARRAY_DESTROY(&arr)`).
 
-In half the cases in practice the file is small and may be handled whole. Then opening,
-reading and closing need not be woven by hand.
+C having no generics, the type is filled in by macros.
 
-#dtable(
-  columns: 3,
-  [*function*], [*what it does*], [*caution*],
-  [`proven_fs_read_all(alloc, path)`], [the whole file as bytes], [a large file eats memory],
-  [`proven_fs_read_all_u8str(alloc, path)`], [the whole file as a string], [the same. it does not check the encoding],
-  [`proven_fs_write_file(scratch, path, data)`], [writing it whole], [die in the middle and a half-written file is left],
-  [`proven_fs_write_file_atomic(...)`], [write to a temporary and swap], [★ no half-written file is left],
-  [`proven_fs_write_file_durable(...)`], [atomic + `sync`], [it survives a power cut. the slowest],
-)
+#demo("examples-en/ch81/arr.c")
 
-The difference between the last three rows matters in practice. Code that overwrites a
-configuration file or saved data, *if it dies in the middle, leaves a file that is
-neither the original nor the new one*, and the standard practice that prevents it is
-"write to a temporary file and rename" (renaming is atomic within the same file system).
-`_atomic` does that work for you, and `_durable` hangs a `sync` on it as well so that it
-survives a power cut.
-
-#demo("examples-en/ch81/fileio.c")
-
-Several things stand out.
-
-*The path is a view too.* `proven_u8str_view_from_cstr("...")` — wherever the string
-came from, it is handled as a pointer and a length (chapter 78).
-
-*Opening needs an allocator.* The signature's first argument is a `scratch` allocator,
-because temporary memory may be needed to turn the path into the form the operating
-system requires. Chapter 77's rule is honestly kept here too — *if it can allocate, it
-takes an allocator*.
-
-*What is read becomes a view.* Bind the buffer and the number of bytes read and from
-then on all of chapter 78's tools can be used. That is what the example used to divide
-the lines, and copying never happened once.
+`PROVEN_ARRAY_INIT(alloc, int, 4)` means "an array to hold ints, initial capacity 4",
+and `PROVEN_ARRAY_PUSH` writes the type again to *check at compile time that it
+matches*. At the fifth element, which exceeded the capacity of 4, the array grew by
+itself — and that growth happens through the allocator (exactly chapter 78's rule; the
+array remembers the allocator it was given at creation).
 
 #antipattern[
-  Trusting `size` and assuming that much was read
+  Holding an element pointer and then pushing
 ][
   ```c
-  proven_result_size_t sz = proven_fs_size(f);
-  proven_byte_t *buf = malloc(sz.value);
-  (void)proven_fs_read(f, (proven_mem_mut_t){ buf, sz.value });
-  process(buf, sz.value);      /* was that much really read? */
+  int *first = PROVEN_ARRAY_GET_MUT(&arr, int, 0);
+  (void)PROVEN_ARRAY_PUSH(&arr, int, 42);   /* the buffer may move here */
+  *first = 7;                               /* writes at the old address — use after free */
   ```
-  A file's size and *the amount this read brought* are different. From pipes,
-  terminals and networks it comes a little at a time, and even a file may end in the
-  middle. The number `read` returned must be used, and that is why this library returns
-  the read result as a bundle. The fact chapter 25 stated — "input is not a keyboard
-  but a stream" — becomes a practical rule here.
+  When the array grows the contents move to a new buffer and a pointer to the old
+  address becomes invalid. It is the form in which the use after free learned in
+  chapter 42 appears on a container. The rule is one — *after changing a container,
+  obtain it again by index.* The habit of carrying an index rather than a pointer
+  becomes the defence here.
 ]
 
-== Streams — reading and writing with a buffer
+== The intrusive list — linking without allocation
 
-System calls are expensive. Call `write` one byte at a time and that cost accumulates
-as it stands. So standard C's `FILE*` kept a buffer (chapter 10's story of line
-buffering), and proven puts a *stream* in the same place — differing in two ways.
+`proven_list_t` is an *intrusive* linked list — the node does not hold the data;
+rather a link field is planted inside the data struct. It amounts to putting one
+`proven_list_node_t link;` slot inside a `struct` made in chapter 43.
 
-- *The caller gives the buffer.* The stream does not allocate in secret.
-- *The failure of a flush comes as a value.* It is not quietly swallowed on closing.
+```c
+typedef struct proven_list_node_t {
+    struct proven_list_node_t *next;
+    struct proven_list_node_t *prev;
+} proven_list_node_t;
 
-These two aim at the same problem. In buffered writing the real failure shows itself
-not in `write` but in the *flush*, and missing that failure creates data that "was
-believed successful but is not on the disk". It is also the place databases and file
-systems are most careful about (the reason `proven_fs_sync` exists separately).
+typedef struct {
+    proven_list_node_t head;      /* a sentinel pointing at itself */
+} proven_list_t;
+```
 
-== Time — two different clocks
+That `head` is a *sentinel* is this implementation's knack. In an empty list
+`head.next` and `head.prev` point at head itself, and so not one "is it null" check
+appears in the insertion and deletion code — a pattern the Linux kernel long used.
 
-Two different things are mixed together in time.
+What is good about it? *There is nothing to allocate separately* in order to put
+something in the list — because the node is the data. A list can be used even in an
+environment with no heap (chapter 83), and hanging the same object on two lists at
+once is a matter of keeping two link fields. The price is that the data struct must
+know about the list.
 
-- *Calendar time* — a time a human reads, like "5 August 2026, 09:00". It is used for
-  showing to users and leaving in records. Time zones, leap seconds and summer time are
-  entangled in it.
-- *Monotonic time* — a scale that does not go backwards. It is used for measuring
-  *elapsed time*.
+Getting back the other way is the problem, and one macro solves it.
 
-Mix the two and you get the famous bug. Measure elapsed time with a calendar clock and
-the moment the system adjusts the time or summer time changes, *a negative elapsed
-time* comes out. Let that value into a timeout calculation and it waits forever or
-expires at once.
+```c
+task_t *t = PROVEN_LIST_ENTRY(node, task_t, link);
+```
 
-Date formatting uses the format syntax seen in chapter 56 as it is — named
-placeholders with width and fill specified, as in `"{year}-{month:0>2}-{day:0>2}"`.
-Unlike `strftime`'s `%Y-%m-%d`, the difference is that *there is no need to memorise
-what symbol means what*.
+It is the macro that *works the struct's starting address back* from the address of the
+`link` member — the `offsetof` seen in chapter 43 used here in the flesh. This one line
+returning from node to data is nearly the whole of the intrusive list.
 
-#misconception[
-  "Time is just a number, so adding and subtracting is fine"
-][
-  Not in calendar time. A day is not always 86400 seconds (a summer-time transition
-  day is 23 or 25 hours), the lengths of months differ, and time zones change by
-  political decision. "A month later" is not arithmetic but a calendar rule. The
-  difference of *monotonic* times, on the other hand, may be handled as a plain number
-  — that is one more reason to use a monotonic clock for measuring elapsed time.
-]
+There are two traversal macros.
 
-== Random numbers — the purpose settles the thing
+#dtable(
+  columns: 3,
+  [*macro*], [*what it does*], [*when*],
+  [`PROVEN_LIST_FOR_EACH(it, &l)`], [traverses from the front], [when only reading],
+  [`PROVEN_LIST_FOR_EACH_SAFE(it, tmp, &l)`], [holds the next node in advance], [★ when removing while traversing],
+)
 
-Few tools are as much "the same name, different demands" as random numbers. The
-library does not hide this but divides it into three.
+The star matters. Remove a node during traversal and its `next` becomes meaningless, so
+the loop loses its way. The `_SAFE` edition turns with *the next node already in hand*,
+so removing the present node is safe. It is why the example used it when detaching item
+20.
 
-#demo("examples-en/ch81/rng.c")
+It is worth knowing too that both macros require the iteration variables to be
+*declared in advance* (`proven_list_node_t *node, *tmp;`). The macro does not put a
+declaration in the `for`'s initialiser — a kernel practice carried on from the C89 days.
 
-*Reproducible random numbers* (`proven_xoshiro256ss_t`) are for simulation, games and
-testing. The same seed gives the same sequence — the very reason the example's two
-lines are identical, and also the property that lets a failed test be reproduced. They
-are fast but *predictable*, so they are never used for secrets.
+== The ring buffer — a stream of fixed size
 
-*Random numbers for secrets* (`proven_random_bytes`) come from the operating system's
-cryptographic source of randomness. They are used for values *an attacker must not
-guess* — keys, tokens, session identifiers.
+`proven_ring_t` is a fixed-size circular buffer. It is used where a producer and a
+consumer come and go, for the most recent N of a log, and for streams such as audio
+and sensor samples where *what has passed may be thrown away*. The size being fixed,
+what to do when it is full is part of the contract — and here too the default is to
+report rather than quietly overwrite (the example's `err=2` is that confirmation).
 
-The third is the compromise between the two, `proven_chacha_rng_t`, which takes a seed
-once from the OS source of randomness and then continues a cryptographically secure
-sequence quickly.
+There are only `push` and `pop`, and both *copy the element*. Putting in gives an
+address, and taking out gives the address of the place to receive it.
+
+```c
+int v = 42;
+proven_err_t e = proven_ring_push(&ring, &v);     /* copies the value in */
+int out;
+e = proven_ring_pop(&ring, &out);                 /* copies the value out */
+```
+
+Thanks to this design no pointer into an element inside the ring leaks outward — holding
+a pointer in a circular buffer and having that place overwritten is a classic accident,
+and it was blocked by the interface.
+
+== The hash map, and data structures under attack
+
+`proven_map_t` is an open-addressing hash map. Keys are integers or byte sequences,
+and string keys have two modes — *a borrowed key* (the caller keeps the bytes alive)
+and *an owned key* (the map copies and holds it). Chapter 78's owning-borrowing
+distinction appears here as it is too.
+
+The kind of key is settled at creation.
+
+#dtable(
+  columns: 3,
+  [*creation macro*], [*key*], [*caution*],
+  [`PROVEN_MAP_INIT_INT(alloc, T, n)`], [an integer (`key.id`)], [the fastest],
+  [`PROVEN_MAP_INIT_U8_BORROWED(alloc, T, n)`], [a string (borrowed)], [★ the key bytes must outlive the map],
+  [`PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)`], [a string (copied)], [a copy cost on insertion. safe in exchange],
+)
+
+The key is passed as one union — `.id` for an integer, `.str` for a string.
+
+```c
+proven_map_key_t k = { .str = PROVEN_LIT("beta") };
+const int *v = proven_map_get(&map, k);      /* null if absent */
+```
+
+*Lookup answers with null.* The reason it returns a pointer rather than a bundle is
+that "absent" is not a failure but a normal answer (distinct from chapter 76's error
+branches). And that pointer *points inside the map*, so it becomes invalid the next time
+the map grows — the same rule as with arrays.
+
+There are three functions for putting in. `proven_map_set` (general),
+`proven_map_set_u8_owned` (copying a string key in), and
+`proven_map_set_with_scratch` (giving the temporary memory separately). The last is used
+when the temporary buffers of internal work such as rehashing are to be obtained from
+another allocator — a device for keeping dead memory from piling up when running a map
+on an arena.
+
+#demo("examples-en/ch81/wordcount.c")
+
+This one example contains all of this chapter's tools — it counts with a map, gathers
+into an array, sorts and prints. Chapter 79's views were used to cut the words, so
+string copying happens only once, when the map owns the key.
 
 #realcase[
-  The accidents predictable random numbers made
+  HashDoS — when hash maps became a target of attack
 ][
-  Accidents breaking this distinction have happened repeatedly. An online card game
-  whose hands were predicted because it used the time as a seed, a case where session
-  identifiers made with a fast random generator let one into somebody else's account,
-  and, representatively, the 2008 incident in which Debian's OpenSSL patch deleted the
-  entropy-gathering code so that *the number of generable keys shrank to a few tens of
-  thousands*. The last required every key already made to be discarded. The lesson is
-  summed up in one line of the library's documentation — *random numbers for secrets
-  come only from a cryptographic source of randomness.*
+  In 2011 several web frameworks collapsed at once through the same vulnerability. If
+  an attacker chose *keys that crowd into the same bucket* and sent thousands of them
+  as parameters in one request, insertion that had been $O(1)$ on average became
+  $O(n)$ and the whole degenerated to $O(n^2)$, so a few requests stopped a server. The
+  cause was that the hash function was public and collisions *could be calculated*.
+
+  Today's prescription is a *keyed hash* — draw a random secret per process and mix it
+  into the hash, and the attacker cannot precompute collisions. It is why proven's
+  `proven_map_create` uses SipHash-2-4 and a random seed by default for string keys,
+  and conversely why there is a separate `proven_map_create_trusted` using the faster
+  FNV-1a for cases where the keys all come from my own code. *The default is the safe
+  side, and the fast side states itself in the name* — the principle met repeatedly in
+  this part.
 ]
 
 #qa[
-  What becomes of random numbers for secrets if there is no operating system?
+  How much slower is a keyed hash? And where does the random secret come from if
+  there is no OS?
 ][
-  They cannot be obtained, so `proven_random_bytes` *returns a falsehood* — and this is
-  an important design decision. Many libraries slip back to the time or an address
-  value in this situation, and then you have the worst state of "believed safe but
-  predictable". This library does not fall back; it declares failure. If the board has a
-  real source of entropy (a hardware random number generator) it can be registered and
-  used. *Rather than quietly give something bad, say there is none* — another face of
-  the principle met continually in this part.
+  SipHash is slower than FNV-1a, but by an amount proportional to the string length,
+  and the share hash computation takes in the whole of a map operation is mostly not
+  large. The random secret is drawn once from the operating system's source of
+  randomness — and in an environment with no OS (chapter 83) there is nowhere to draw
+  it from, so it falls back to FNV-1a. The library does not hide this fact but writes
+  it in the documentation, and the grounds are clear: *where there is no attacker
+  there is no need for an attacker model either.* There exists no outsider choosing
+  keys inside your firmware.
 ]
 
-== Memory mapping
+== Sorting with a worst-case guarantee
 
-There is one more way of reading a file. Hanging the file whole *in the address space*
-and accessing it with a pointer — `proven_mmap_*` is that window. It is advantageous
-when reading a large file by roaming randomly over it, and it is used when several
-processes share the same file.
+The two problems seen in chapter 74 — the unchecked comparator, and the algorithm
+that collapses in the worst case — are treated together here.
 
-The price is clear too. If the file is truncated while the mapped region is being
-touched, the program can receive a signal and die, and portability is lower than the
-file API's. So this tool is not "what is used by default" but "what is chosen when
-there is a reason".
+#idx("introsort")`proven_array_sort` is *introsort*. It begins as a fast quicksort
+and, if the recursion becomes too deep, switches to heapsort. So the average is as
+fast as quicksort and $O(n log n)$ is *guaranteed* even in the worst case — the
+complexity attack seen in chapter 74 does not work. To carry the header's wording
+over as it is: "$O(n log n)$ is not an average but a guarantee."
+
+On the comparator side the language cannot help, so the contract is stated in the
+documentation and in examples. The example's `by_count_desc` is the model — descending
+by count, and *ties broken by the word*. It contrasts exactly with chapter 74's
+counterexample (the comparator that sees only the first letter).
+
+#misconception[
+  "Ties may be handled however you like"
+][
+  They may not. A comparator must form a *total order* — 0 if equal, consistently
+  greater and less, and the signs of `cmp(a,b)` and `cmp(b,a)` must be opposite. Break
+  this and the result is not merely jumbled; depending on the implementation it may
+  even *trespass outside the array* (because the partitioning algorithm judges its
+  boundaries from the comparison results). A comparator that returns anything at all
+  for ties is therefore a bug, not a taste.
+]
+
+== Bytes into letters — hashes and encodings
+
+We note the remaining tools in the same box too.
+
+- *Hashes by purpose* — for the map's internals (fast mixing), for integrity checking
+  (CRC-32), for cryptographic use (SHA-256), and the keyed hash seen above (SipHash).
+  The library distinguishes them because *the same word "hash" means entirely
+  different demands* — using SHA-256 where only speed is needed is waste, and using
+  FNV-1a where adversarial input comes is dangerous.
+- *hex and Base64* — two standards for moving bytes into text. The principle here is
+  the same. Wrong input (hex of odd length, wrong padding) is *not guessed at and
+  mended* but refused with `PROVEN_ERR_INVALID_ENCODING` (that norm from chapter 79).
 
 #recap[
-  The outside world in summary.
+  Containers in summary.
 
   #dtable(
-  columns: 3,
-    [*what it does*], [*API*], [*to beware of*],
-    [open and close], [`proven_fs_open/close`], [needs a scratch allocator],
-    [reading], [`proven_fs_read`], [amount requested ≠ amount read],
-    [writing], [`proven_fs_write` / `_write_all`], [partial writes],
-    [nailing it to the disk], [`proven_fs_sync`], [flush ≠ sync],
-    [buffered I/O], [`proven_stream_*`], [the caller gives the buffer],
-    [the current time], [`proven_time_now_datetime`], [not used for measuring elapsed time],
-    [date formatting], [`proven_time_u8_fmt`], [named placeholders such as `{year}`],
-    [reproducible random], [`proven_xoshiro256ss_*`], [not used for secrets],
-    [random for secrets], [`proven_random_bytes`], [a falsehood if absent — it does not fall back],
-    [memory mapping], [`proven_mmap_*`], [only when there is a reason],
+  columns: 4,
+    [*tool*], [*shape*], [*where it fits*], [*caution*],
+    [`array`], [a growing contiguous array], [an ordered list], [pointers invalid after growth],
+    [`list`], [an intrusive linked list], [joining without allocation], [the data holds the link],
+    [`ring`], [fixed-size circular], [streams, the most recent N], [the contract when full],
+    [`map`], [open-addressing hash], [finding by key], [choose whether the key is owned],
+    [`array_sort`], [introsort], [sorting anything], [the comparator must be a total order],
+    [four hashes], [by purpose], [map, integrity, cryptography, anti-attack], [do not mix the purposes],
 )
 ]
 
-What remains now is the boundaries — the way of running several things overlapped, and
-the place with no operating system at all. The last chapter closes this part.
+That is as far as the world of pure computation — it all runs even with no operating
+system. In the next chapter we go outside. Files, streams, time, random numbers — the
+places that touch the OS.

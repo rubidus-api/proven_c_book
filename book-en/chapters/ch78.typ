@@ -1,286 +1,333 @@
 #import "../../book/lib.typ": *
 
-= Strings and text
+= Allocation is a parameter
 
 #prereq(
-  ([chapter 39, Strings], [strings]),
-  ([chapter 9, Characters and text], [UTF-8 and bytes]),
+  ([chapter 42, Dynamic memory], [dynamic memory]),
+  ([chapter 73, Inside the allocator], [inside the allocator]),
 )
 
 #deepqa[
-  Chapter 39 said that for a C string "up to the NUL" is the length, so to know the
-  length it must be counted every time. Then what improves if the length is carried
-  along — and what is lost?
+  Chapter 42 said memory obtained with `malloc` must be `free`d by somebody exactly
+  once, and that settling that "somebody" is the program's design. Then is there a
+  way to know from a function alone whether "this function allocates memory"?
 ][
-  Three things are gained. The cost of counting the length vanishes ($O(n)$ becomes
-  $O(1)$), data with a zero byte in the middle can be handled, and above all *the
-  boundary can be checked* — without the length there is nothing to check. Two things
-  are lost. One string becomes two words rather than one, and conversion becomes
-  necessary when meeting a world that expects NUL termination, as `printf("%s")` does.
-  This library keeps a NUL internally as well in order to remove that conversion cost
-  — a compromise that has both.
+  In standard C there is not. `malloc` can be called anywhere, so any function can
+  allocate in secret, and the signature does not say so. proven's answer is to return
+  that information to the signature with one rule — *a function that does not take an
+  allocator as an argument does not allocate.* If this rule is kept, reading the
+  signature alone tells you "this function may take memory".
 ]
 
 #organizer[
-  The answer to chapter 73's first bug — string functions that do not know the size
-  of the vessel. Strings that carry their length, the distinction between owning and
-  borrowing, and this library's most contentious decision, *refuse rather than
-  truncate*. Chapter 9's story of encodings and chapter 39's story of boundaries
-  gather here into one.
+  The answer to chapter 74's fourth bug — unclear ownership. The *allocator* that
+#idx("allocator")  handles the source of memory as a value, the *arena* that returns
+#idx("arena")  things of the same lifetime all at once, and the rule that divides
+  owning from borrowing by type. The dangers of the heap learned in chapter 42 are
+  organised here into design.
 ]
 
 #chapter-questions()
 
-== Two types, one rule
+== An allocator is a value
 
-The string vocabulary is only two.
-
-- `proven_u8str_t` — an *owning* string. It has a buffer, a length and a capacity.
-- `proven_u8str_view_t` — a *borrowed* string. Only a pointer and a length.
-
-If the name has `view` in it, it is borrowed, and what is borrowed is not destroyed.
-The rule set up in chapter 77 applied to strings as it is. `u8` means UTF-8 — that
-encoding seen in chapter 9 is this library's default text representation.
-
-Open them up and why they were divided in two becomes clear.
+`proven_allocator_t` is one struct — a context pointer and three function pointers
+(allocate, reallocate, free). There is no special global and no registration
+procedure. Being simply a value, it can be passed as an argument, held in a struct,
+and returned from a function. The *virtual function table* seen in chapter 54 is here
+as it stands.
 
 ```c
-/* the borrowed string — the same shape as chapter 76's mem_view_t */
 typedef struct {
-    const proven_byte_t *ptr;
-    proven_size_t        size;
-} proven_u8str_view_t;
-
-/* the owning string — one buffer and an "is it borrowed" flag */
-typedef struct {
-    proven_buf_t internal;   /* { ptr, len, cap } */
-    bool         borrowed;
-} proven_u8str_t;
+    void *ctx;                        /* this allocator's state (for an arena, the arena) */
+    proven_alloc_fn_t   alloc_fn;
+    proven_realloc_fn_t realloc_fn;
+    proven_free_fn_t    free_fn;
+} proven_allocator_t;
 ```
 
-The three slots of `proven_buf_t` state the string's character as they are. *`len` is
-the number of bytes of content held now*, *`cap` is the whole buffer's size*, and the
-difference between them is the spare room including the NUL's place. So
-`create(alloc, 64)` really takes 65 bytes — 64 is the limit of the *content* and one
-byte is the NUL's share. Thanks to that one byte `proven_u8str_as_cstr` can hand out a
-C string with neither copying nor allocation.
-
-The `borrowed` flag marks a string made with `_borrow`. When this flag is on,
-`_destroy` *releases nothing* and merely empties the struct — somebody else's memory
-cannot be given back.
-
-There are three roads to obtaining a string.
-
-#dtable(
-  columns: 4,
-  [*function*], [*allocates*], [*destroy*], [*where it is used*],
-  [`proven_u8str_create(alloc, limit)`], [yes], [`_destroy` needed], [starting empty and filling it],
-  [`proven_u8str_create_from_view(alloc, v)`], [yes], [`_destroy` needed], [owning a copy of existing content],
-  [`proven_u8str_borrow(buf, cap)`], [no], [unnecessary (harmless)], [over a stack or static array. embedded],
-)
-
-Only beware that `_borrow`'s `cap` is *the whole capacity including the NUL* — give it
-`buf[64]` and the content goes to 63 bytes.
-
-Making a view from a literal is done with one macro.
+The three functions' signatures write the contract down as they stand.
 
 ```c
-PROVEN_LIT("hello")        /* becomes { ptr, 5 } at compile time — no strlen */
-proven_u8str_view_from_cstr(p)   /* counts the length at run time */
+proven_result_mem_mut_t (*alloc_fn)(void *ctx, proven_size_t size,
+                                    proven_size_t align);
+proven_result_mem_mut_t (*realloc_fn)(void *ctx, void *old_ptr,
+                                      proven_size_t old_size,
+                                      proven_size_t new_size,
+                                      proven_size_t align);
+void                    (*free_fn)(void *ctx, void *ptr);
 ```
 
-`PROVEN_LIT` draws the length from `sizeof("...") - 1`, so its *run-time cost is zero*.
-Using it for string literals is the practice, and `_from_cstr` for a C string whose
-length is unknown.
+*Why pass `old_size` and `align` too.* The standard `realloc` does not ask the old size
+— because the allocator wrote it into the block's header (chapter 73). But an arena has
+no header. Not making a place to write the size is why an arena is fast, so the choice
+was for *the caller to tell it* instead. This decision is what lets a "headerless
+allocator" fit the same interface.
 
-#demo("examples-en/ch78/ops.c")
+Four things from the contract must be remembered.
 
-The first line shows chapter 77's rule again. `proven_u8str_borrow` has no allocator —
-therefore it does not allocate. It is doing string operations on a 16-byte array taken
-on the stack, and this is exactly how strings are handled in embedded work without a
-heap.
++ *`align` must be a power of two.* And *a block must be reallocated and freed with the
+  same alignment it was allocated with.* Because the heap allocator handles requests at
+  or below the default alignment differently from stricter ones (chapter 77) — handing
+  a block back in a different alignment class is outside the contract.
++ *`size == 0` is `INVALID_ARG`.* A zero-byte allocation is treated as a caller's bug.
+  Before this rule the heap said `NOMEM` (a lie — nothing was out of memory) and the
+  arena returned a valid pointer, so *the answer differed per allocator*. Generic code
+  cannot be written on a rule like that.
++ *A reallocation with `new_size == 0` is a free* — it gives a null pointer and
+  `PROVEN_OK`.
++ *Reallocation is failure-atomic.* On failure `old_ptr` is still valid and its contents
+  untouched — chapter 61's `realloc` leak counterexample blocked at the level of the
+  interface.
 
-== Refuse, rather than truncate
+And every function that allocates has this shape.
 
-The second `append` is the most important single line of this part. On trying to
-attach `" world, and more"` after `"hello"` in a 16-byte vessel, the library *wrote
-nothing* and returned `PROVEN_ERR_OUT_OF_BOUNDS`. And as the next line shows, the
-original content `hello` stands as it was — the failure atomicity learned in
-chapter 75.
+```c
+proven_result_u8str_t proven_u8str_create(proven_allocator_t alloc,
+                                          proven_size_t limit);
+void                  proven_u8str_destroy(proven_allocator_t alloc,
+                                           proven_u8str_t *str);
+```
 
-It is the exact opposite of `snprintf`'s choice seen in chapter 73. Why not truncate?
+*Destroy with the allocator given at creation* — that is the whole of the ownership
+rule.
 
-*Because a truncated value is not a short value but a different value.* A truncated
-path points at a different file, a truncated command is a different command, a
-truncated user name is a different person. Truncate and declare success and the caller
-cannot know whether what was received is what was requested. So this library *gives
-the decision back to the caller* — "there is not enough room. What shall we do?"
+== Swapping the three sources
+
+#demo("examples-en/ch78/three.c")
+
+Look at the `make_list` function. This function *does not know* whether the memory it
+uses comes from `malloc`, from a static array, or from a recycling bin. The caller
+settles it, and the same code runs identically over all three.
+
+Three things can be read in the output.
+
+*① An arena's usage is visible.* That `arena.offset` is 129 means exactly 129 bytes
+(128 of content + 1 NUL) went out for one string. A number that cannot be known on the
+heap can be counted in an arena — in embedded work this transparency pays when setting
+a memory budget.
+
+*② Reset makes individual release meaningless.* The usage did not fall although
+`destroy` was called (an arena's `free` does nothing), and one `reset` took it to 0.
+"Instead of giving back individually, give the whole back" is this picture.
+
+*③ When it runs dry it refuses as a value.* Requesting 128 bytes from a 64-byte arena
+gave back `NOMEM` (1). It neither collapses nor quietly falls back to the heap.
 
 #qa[
-  Still, are there not places where truncation is fine, such as one line of a log?
+  Besides `heap`, `arena` and `pool`, can I make an allocator myself?
 ][
-  There are. So there is a separate function that *explicitly writes only part* —
-  `proven_u8str_append_partial` returns the number of bytes that went in. That the
-  name is long and the return value different is the heart of it. Truncation is still
-  possible, but to do it you must *write it that way*. The principle that the default
-  is always the safe side and the dangerous choice can be made only through a visible
-  name (the same as chapter 76's `_unchecked`) is kept here too.
+  Of course. Chapter 76's example already did — a testing allocator that "fails from the
+  nth call" made of three functions and inserted. The only rule is keeping the contract
+  above.
+
+  The cases for making one in practice are mostly these. *Instrumentation* — a shell
+  counting allocations and peak usage. *Testing* — failing on purpose, painting freed
+  memory with 0xDD. *Debugging* — recording the place (file and line) of an allocation.
+  *Special resources* — obtaining from shared memory or a DMA-capable region, places
+  `malloc` cannot give.
+
+  All four take the shape of *wrapping an existing allocator*. They hold a backing
+  allocator inside, do their own work and pass it on. Chapter 76's example is the model.
 ]
 
-#antipattern[
-  Confusing growth with fixed capacity
+#qa[
+  Why is this such an important property? Most of the time the heap will be used
+  anyway.
 ][
-  ```c
-  proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
-  proven_err_t e = proven_u8str_append_grow(alloc, &s, view);  /* dangerous */
-  ```
-  `_append` writes only within the capacity, while `_append_grow` asks the allocator
-  for more if there is not enough — which is why only the latter has an allocator
-  argument. The problem is demanding growth on a borrowed buffer (`_borrow`). A stack
-  array cannot grow, so this is a design error.
-
-  In this case the library *does not quietly reallocate somebody else's memory* but
-  returns `OUT_OF_BOUNDS` — it succeeds while things fit and refuses the moment they
-  would not. The habit of reading signatures becomes the defence here as it stands —
-  *with an allocator it can grow, without one it cannot.*
+  Because three things follow at once. First, *the same code runs in an environment
+  with no heap* — such is embedded work (chapter 83), and such is inside a kernel.
+  Second, *testing becomes easy* — insert an allocator that fails on purpose and you
+  can test "does this code recover properly when memory runs short". Third, *the
+  caller can choose the performance* — for data that lives briefly and dies all at
+  once, an arena is far faster than the heap. The moment the library calls `malloc`
+  directly, all three of these vanish.
 ]
 
-== Three kinds of writing — refuse, truncate, grow
+== The arena — things of the same lifetime, all at once
 
-This library's string operations are made so that the kind can be known from the name
-alone. That kind is "what happens when there is not enough room".
+Chapter 42 taught the heap's three dangers (leak, double free, use after free). All
+three come from *individual release*. Then what if individual release were removed —
+that is the arena's idea.
 
-#dtable(
-  columns: 4,
-  [*kind*], [*shape of the name*], [*when short*], [*failure atomicity*],
-  [fixed capacity, atomic], [`_append`, `_insert`, `_replace_at`], [refuses (`OUT_OF_BOUNDS`)], [yes — the original stands],
-  [best effort, truncating], [`_append_partial`, `_append_fmt_trunc`], [writes as much as fits and reports], [no (deliberately)],
-  [growing], [`_append_grow`, `_insert_grow`, `_replace_at_grow`], [asks the allocator for more], [yes — the original stands if allocation fails],
-)
+An arena takes one large lump of memory and, whenever a request comes, cuts from the
+front. There is a release function but it does nothing. Instead there is *reset* — it
+returns everything at once.
 
-All three kinds are needed because the right answer differs by place. Where a file path
-is being built truncation must not happen, so *refusing* is right; where a log line is
-fitted to the screen *truncating* is right; where the length is unknown *growing* is
-right. That the default (the short name) is refusal shows this design's attitude.
+That the struct has only two slots shows this simplicity as it stands.
 
-== The operations that mend a string
+```c
+typedef struct {
+    proven_mem_mut_t backing;   /* the memory that backs it (borrowed) */
+    proven_size_t    offset;    /* how far it has been handed out */
+} proven_arena_t;
+```
 
-Appending alone is not enough. There are operations that mend the middle, delete, and
-rewrite.
+*An arena does not own its memory.* That `backing` is a writing window (`mem_mut_t`) is
+that declaration — a static array, a stack array, or a lump received once from the heap
+is prepared by the caller, and the arena only cuts on top of it. So
+`proven_arena_destroy` *does nothing* (there is nothing borrowed to give back). If the
+lump came from the heap, returning it is still the caller's part.
 
-#demo("examples-en/ch78/edit.c")
+The life cycle is four steps.
 
 #dtable(
   columns: 3,
-  [*function*], [*what it does*], [*contract*],
-  [`_insert(&s, i, v)`], [inserts at position `i`], [`i` ≤ length. it pushes the tail out],
-  [`_remove(&s, i, n)`], [deletes `n` bytes from `i`], [an error if it exceeds the range],
-  [`_replace_at(&s, i, old, v)`], [a range with other content], [the lengths may differ],
-  [`_replace_first(&s, off, t, r)`], [the first `t` found, into `r`], [★ if absent it returns *success*],
-  [`_reset(&s)`], [empties only the content], [the buffer and capacity stand],
-  [`_reserve(alloc, &s, n)`], [capacity up to `n` in advance], [it pays especially on an arena],
-  [`_append_byte(alloc, &s, b)`], [appends one byte], [grows if needed],
+  [*step*], [*function*], [*what happens*],
+  [making], [`proven_arena_create(backing)`], [`offset = 0`. no allocation],
+  [handing out], [`proven_arena_alloc(&a, n)`], [aligns and pushes `offset`],
+  [taking back], [`proven_arena_reset(&a)`], [`offset = 0` — everything becomes invalid],
+  [ending], [`proven_arena_destroy(&a)`], [the formal partner. it does nothing],
 )
 
-The starred contract of `_replace_first` needs care. *Not finding it is not an error but
-a success* — to distinguish "there was nothing to replace" from "it was replaced" you
-must first check with `proven_u8str_view_find`. That the example's "replacing what is
-not there" comes back as `err=0` is that confirmation.
+The allocation function has four editions. Choose the one that fits.
 
-`_reset` and `_reserve` are a pair for performance. In code that builds a string afresh
-every frame or per request, *reusing the buffer instead of throwing it away* is
-`_reset`, and taking it in advance when you roughly know how large it will grow is
-`_reserve`. As seen in chapter 77, `_reserve` pays especially on an arena — take it
-large before another allocation intervenes and growth in place becomes possible.
+#dtable(
+  columns: 2,
+  [*function*], [*when to use it*],
+  [`proven_arena_alloc(&a, size)`], [the default. cuts at the default alignment],
+  [`proven_arena_alloc_aligned(&a, size, align)`], [data where alignment matters (SIMD, DMA)],
+  [`proven_arena_alloc_or_panic(&a, size)`], [places where failure should stop the program],
+  [`proven_arena_realloc_aligned(...)`], [grows in place if it is the last block],
+)
 
-#qa[
-  Which should be the default, `_insert` or `_insert_grow`?
-][
-  *`_insert` where I settle the capacity*, *`_insert_grow` where I do not know how much
-  content there will be*. The criterion is simple — "is running short here *a bug*, or
-  *a thing that can happen*?"
+The `_or_panic` family exists for the reason given in chapter 76 — where the memory
+budget has been calculated in advance (embedded work is representative), "the arena is
+short" is not a failure to recover from but *a design error*, so demanding a check every
+time is rather noise.
 
-  If a protocol header is being assembled in a fixed-size buffer, running short is a bug,
-  and refusal is right there (and that error reveals the bug). If user input is being
-  appended, it can grow to any length, so growing is right. It is also why embedded code
-  uses only the editions without `_grow` — there, *unpredictable growth itself is
-  forbidden* (chapter 82).
-]
+The `realloc` has one interesting property. An arena having no header, ordinary
+reallocation is "cut anew and copy", but *if the block being grown happens to be the
+last one handed out* it can grow in place simply by pushing `offset`. It is why code
+that appends to a string a little at a time is fast on an arena, and why calling
+chapter 79's `proven_u8str_reserve` in advance pays especially on an arena (an
+intervening allocation breaks the property).
 
-== Finding and cutting — text handling without copying
+#demo("examples-en/ch78/arena.c")
 
-The example's ③ and ④ are a view's real usefulness. Obtaining a substring needs no
-copying — it merely calculates a new pointer into the original and a new length.
-While one CSV line was divided into three fields, not one allocation happened.
-
-This pattern is especially powerful in parsers. When parsing a line with `sscanf` in
-chapter 25 a buffer had to be prepared in advance to hold the result, whereas cutting
-with views leaves only *marks upon the original*. In exchange one more thing must be
-kept — as seen in chapter 76, *it is valid only while the original is alive*.
-
-There is a convention too in the value `find` returns when it does not find. It is
-not 0 or a negative number but a sentinel with a name, `PROVEN_INDEX_NOT_FOUND`.
-Chapter 73 spoke of the danger of sentinel values, and what differs here is that *it
-has a name and is documented* — a nameless magic number and a named contract are
-different things.
-
-#misconception[
-  "Carrying the length means knowing the number of characters"
-][
-  No. The length is *the number of bytes*. As learned in chapter 9, one character in
-  UTF-8 is 1\~4 bytes, so the Korean "가" is 3 bytes and an emoji is 4. It is why the
-  example's output takes the trouble to state "(5 bytes)". So handling "the nth
-  character" is still delicate, and *cutting anywhere at a byte boundary* gives the
-  broken characters seen in chapter 9. What a string library solves is boundary
-  trespass, not the essential difficulty of encodings.
-]
-
-== The boundary of two worlds — NUL termination and UTF-16
-
-Conversion is needed at every place where the outside world is met.
-
-- `proven_u8str_as_cstr` — obtains a NUL-terminated pointer from an owning string.
-  A NUL being kept internally, there is neither copying nor allocation. It is used
-  when passing to `printf("%s")` or to a file API.
-- `proven_u8str_view_to_cstr` — makes a NUL-terminated string from a view. This one
-  *takes an allocator* — because a view may point into the middle of the original and
-  a NUL cannot be written in that place. The signature states the fact once again.
-- `proven_u16str_t` / `proven_u16str_view_t` — the bridge to the UTF-16 world. The
-  Windows API uses this encoding so conversion is needed, and conversion can fail
-  (unpaired surrogates and the like). So the result comes as a bundle.
-
-#realcase[
-  "Do not guess, refuse" — the principle of handling encodings
-][
-  The root of the text security problems seen in chapter 9 is mostly *the lenient
-  decoder*. Implementations that "read a wrong UTF-8 as something similar" have
-  several times been the passage to security incidents — decoders that permitted
-  overlong encodings in particular had their checks bypassed. So today's norm is one
-  sentence. *Do not read invalid input as something mended; refuse it.* proven's
-  encoding conversion stopping with `PROVEN_ERR_INVALID_ENCODING` is that norm
-  implemented, and this principle is exactly the same spirit as this chapter's "do not
-  truncate".
-]
+There really are many places this model fits. The temporary data made while handling
+one request, a game's calculation results used for one frame, the syntax tree made
+while parsing one file — all data *born at different moments but dying at the same
+one*. For such data, individual release is only cost and risk.
 
 #recap[
-  The string vocabulary in summary.
+  A comparison of the three sources of memory.
 
   #dtable(
-  columns: 3,
-    [*function*], [*what it does*], [*failure and ownership*],
-    [`u8str_create(alloc, cap)`], [create an owning string], [returns a bundle, needs `_destroy`],
-    [`u8str_borrow(buf, cap)`], [a string over somebody's buffer], [no allocation, no destruction],
-    [`u8str_append(&s, v)`], [append within the capacity], [refuses if short (the original is preserved)],
-    [`u8str_append_partial`], [as much as fits], [returns the number of bytes put in],
-    [`u8str_append_grow(alloc,…)`], [grow it if short], [allocation may fail],
-    [`u8str_view_find`], [the position of a substring], [`PROVEN_INDEX_NOT_FOUND` if absent],
-    [`u8str_view_slice`], [a sub-view], [no copying — tied to the original's lifetime],
-    [`u8str_as_cstr`], [a NUL-terminated pointer], [no copying],
-    [`u8str_view_to_cstr`], [view → a C string], [needs an allocator],
+  columns: 4,
+    [], [*heap*], [*arena*], [*pool*],
+    [how it gives], [arbitrary sizes], [cuts from the front], [fixed-size slots],
+    [individual release], [yes], [no (reset)], [yes (return the slot)],
+    [fragmentation], [can arise], [none], [none],
+    [speed], [ordinary], [very fast], [very fast],
+    [where it fits], [assorted lifetimes], [a group of the same lifetime], [the same size repeatedly],
 )
 ]
 
-We can now hold and cut strings safely. But the work of *making* them remains —
-turning numbers and values into letters, and turning letters back into numbers. It is
-the place where chapter 73's third bug waits, and the place where this library's most
-conspicuously different syntax appears.
+#idx("pool")The pool (`proven_pool_t`) is the third branch. It is used where objects
+of the same size are repeatedly made and unmade — a game's bullets, a server's
+connection objects, a parser's nodes. The slot size being fixed there is no
+fragmentation, and a returned slot is reused at once. A pool too becomes an allocator
+through `proven_pool_as_allocator`, so the previous example's `build` function runs
+on it as it is.
+
+#antipattern[
+  Destroying with a different allocator
+][
+  ```c
+  proven_result_u8str_t r = proven_u8str_create(proven_heap_allocator(), 64);
+  ...
+  proven_u8str_destroy(proven_arena_as_allocator(&arena), &r.value);  /* wrong */
+  ```
+  It amounts to giving back to an arena what was obtained from `malloc`. This rule
+  cannot be enforced by the library — an allocator is simply a value, and which value
+  is passed is settled by the caller. So the practice in the field is *to carry the
+  allocator along with the data structure*, or to narrow the scope so that only one is
+  used within a module.
+]
+
+#misconception[
+  "Use an arena and you need not care about releasing"
+][
+  Individual release disappears but *the lifetime remains as it was.* The moment the
+  arena is reset, every piece cut on it becomes invalid at once, so data that must
+  still be alive after the reset must not be put in the arena. Chapter 77's "a view
+  cannot outlive its owner" has grown here to arena scale. What an arena removes is
+  the *number of times* one releases, not the *thinking* about lifetime.
+
+  ```c
+  proven_u8str_t name;
+  for (int i = 0; i < n; i++) {
+      proven_arena_reset(&per_request);        /* taken back per request */
+      handle(proven_arena_as_allocator(&per_request), &name);
+  }
+  use(&name);        /* ← dangerous. what name pointed at has already gone back */
+  ```
+
+  The discipline in the field is one — *call the arena's lifetime and the lifetime of
+  the data on it by the same name.* "the request arena", "the frame arena", "the file
+  arena". Then which data must survive the reset shows itself in the name alone, and
+  data that must cross over is copied to *a longer-lived allocator*.
+]
+
+== Which to choose
+
+#dtable(
+  columns: 4,
+  [*situation*], [*what to choose*], [*why*], [*caution*],
+  [data of assorted lifetimes], [the heap], [general-purpose. individual release possible], [cost and fragmentation (chapter 73)],
+  [data born and dying with a unit of work], [an arena], [allocation is one addition, release one reset], [everything invalid after a reset],
+  [the same struct by the thousand], [a pool], [no fragmentation, immediate reuse], [one size only],
+  [an environment with no heap at all], [a static array + an arena], [`malloc` is never called once], [the budget must be calculated in advance],
+  [testing the out-of-memory path], [a failing shell (chapter 76)], [it runs the path that never otherwise runs], [for testing only],
+)
+
+In practice these four are *layered*. The program as a whole uses the heap, while
+handling one request uses a request arena, and a data structure making thousands of
+nodes inside it lays a pool on top. That all three share the same interface, so that
+layering needs no special device, is the value of this design.
+
+== Owning and borrowing, and state that points at itself
+
+Now we return to chapter 74's fourth bug. The problem of `char *` meaning four things
+#idx("owning and borrowing")is solved by dividing the type in two.
+
+- *Owned* — things such as `proven_u8str_t` and `proven_array_t`. Obtained with
+  `_create` and let go with `_destroy`.
+- *Borrowed* — `proven_u8str_view_t`, `proven_mem_view_t`. Never destroyed. When the
+  owner vanishes they become invalid with it.
+
+That "must I release this?" can be answered from the signature alone is the whole of
+this distinction and its purpose.
+
+There is one more rule attached. *State that points at itself is not copied.*
+Chapter 43 taught that struct assignment is a shallow copy. Copy an object that holds
+inside a pointer to its own buffer that way, and the copy's pointer still points at
+the original, so two objects share the same memory and destroying both is a double
+free. So such objects are not copied by value but passed by pointer.
+
+#realcase[
+  The spread of the allocator-as-argument design
+][
+  This way is not proven's invention but is close to the recent consensus of systems
+  programming. In Zig, almost every allocating API of the standard library takes an
+  allocator as an argument and "no hidden allocation" is the language's motto. In Rust
+  too, attaching an allocator to a container is on its way into the standard, and
+  C++'s `std::pmr` arose from the same problem-consciousness. The reason is the same
+  in every case — in games, embedded work, kernels and high-performance servers,
+  *choosing the source of memory* is the heart of both performance and safety.
+]
+
+#qa[
+  Then what is the price?
+][
+  One more parameter attaches to the signature. And a new design problem arises of
+  *how far the allocator is to be carried* — whether to pass it to every function or
+  to hold it in a struct. In a small program this can look like nothing but tiresome
+  formality. Its value shows itself after the program grows, or when the code must be
+  moved to a place where the heap cannot be used.
+]
+
+We have set up the rules for obtaining and letting go of memory. From the next chapter
+come the real components that rise on top of it — first, the strings this book warned
+about all through chapter 39.

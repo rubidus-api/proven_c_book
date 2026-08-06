@@ -72,7 +72,7 @@ one-byte borrowings gave neighbouring blocks 32 bytes apart. It is because of th
 space left over to satisfy alignment and the management information (size,
 status) the allocator attaches to each block. It means *a program that borrows
 countless small pieces uses far more memory than it asked for*, and that is why
-the arena and pool approaches we see later were born (chapter 72).
+the arena and pool approaches we see later were born (chapter 73).
 
 *Second, stricter alignment must be requested separately.* SIMD instructions or
 hardware DMA sometimes require 64-byte or 4096-byte alignment, and for that there
@@ -114,7 +114,7 @@ fact one round trip to *the warehouse management office*.
   the kernel and back, which is far more expensive. Fortunately it does not happen
   often — the allocator takes plenty and cuts it up.
 + *With several threads, locks appear.* The warehouse ledger is a shared resource,
-  so contention between threads slows it (chapter 68's story of races). That is
+  so contention between threads slows it (chapter 69's story of races). That is
   why modern allocators keep a small cache per thread.
 + *The cache is cold.* A freshly obtained address is usually not in the cache, so
   the first access is slow (chapter 11's ladder). Conversely a reused buffer is
@@ -123,7 +123,7 @@ fact one round trip to *the warehouse management office*.
 
 So a practical rule follows. *Do not allocate inside a hot loop.* Borrow once in
 advance and reuse, put what has a known size on the stack, or borrow many at once
-and cut them up. The last is the arena, and chapter 72 and Part XII are that
+and cut them up. The last is the arena, and chapter 73 and Part XII are that
 story.
 
 #misconception[
@@ -138,7 +138,7 @@ story.
   This fact explains two things. First, the common misunderstanding of "I freed
   the memory, so why does it not go down?" Second, the phenomenon of a
   long-running server holding memory *even with no leak* — pieces scattered so
-  that a large lump cannot be formed: *fragmentation*. Chapter 72 faces it head
+  that a large lump cannot be formed: *fragmentation*. Chapter 73 faces it head
   on.
 ]
 
@@ -171,7 +171,7 @@ overflow.
 *Second, the size computation itself can overflow.* `rows * cols * sizeof(int)`
 is a product of three numbers, easy to overflow, and an overflow means *borrowing
 a small vessel and using it as a large array* — the worst kind of accident. The
-example checks with `ckd_mul` (chapters 49 and 69) first and does not even attempt
+example checks with `ckd_mul` (chapters 49 and 70) first and does not even attempt
 the allocation if it overflows.
 
 *Third, nail down the order of rows and columns in the documentation.*
@@ -267,7 +267,7 @@ We have seen dynamic memory's syntax, discipline and price. How an allocator
 actually manages the warehouse, what alternative allocators and alternative
 standard libraries are widely used today, and what map a program's memory is laid
 out on in an operating system and in an embedded chip are treated in two chapters
-at the end of Part XI (chapters 71 and 72).
+at the end of Part XI (chapters 72 and 73).
 
 The next part is short but long deferred — the structs and unions put off in
 Part V with "declarations that make types come after we have a memory model."

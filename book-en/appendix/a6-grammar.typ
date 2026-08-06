@@ -165,7 +165,7 @@ keyword: one of
     _Noreturn      _Static_assert _Thread_local
 ```
 
-The promotion treated in chapter 70 is visible in this list as it stands.
+The promotion treated in chapter 71 is visible in this list as it stands.
 `bool`, `true`, `false`, `nullptr`, `static_assert`, `alignas`, `thread_local`,
 `constexpr` and `typeof` have risen to being *keywords*, and beneath them the
 underscored names (`_Bool`, `_Alignas`, …) remain as they were for old code. The two
@@ -398,7 +398,7 @@ upper limit on the number of digits.* `"\x41BC"` is read not as `\x41` followed 
 but as one `\x41BC`, and if the value does not fit in a `char` it is outside the
 contract. Octal escapes, by contrast, are cut at three digits at most.
 
-That `predefined-constant` exists as a rule of its own is C23's change (chapter 70) —
+That `predefined-constant` exists as a rule of its own is C23's change (chapter 71) —
 `true`, `false` and `nullptr` became *grammatical elements* rather than macros.
 
 === A.1.6 String literals
@@ -438,7 +438,7 @@ The last line is the *digraphs*. `<:` is the same as `[`, `%:` the same as `#` �
 of the days when keyboards lacked those characters, and unlike trigraphs they remain in
 C23.
 
-`::` newly entered because of chapter 70's attribute syntax (`[[gnu::packed]]`).
+`::` newly entered because of chapter 71's attribute syntax (`[[gnu::packed]]`).
 
 === A.1.8 Header names
 
@@ -731,7 +731,7 @@ The four axes organised in chapter 41 are in these few lines as they stand. That
 `typedef` is *one of the storage-class specifiers* is visible here (chapter 55), and the
 demand that "there be only one storage class" is pinned down not by the grammar but by a
 constraints clause. That `constexpr` came into the storage-class place is as seen in
-chapter 70.
+chapter 71.
 
 *Structures and unions.*
 
@@ -830,7 +830,7 @@ typeof-specifier-argument:
 ```
 
 That `_Atomic` appears in two places is easy to confuse — used as a *qualifier* it is
-`_Atomic int x;`, and as a *type specifier* `_Atomic(int) x;` (chapter 68).
+`_Atomic int x;`, and as a *type specifier* `_Atomic(int) x;` (chapter 69).
 
 `typeof` was used as a GCC extension for over thirty years and became standard in C23.
 `typeof_unqual` is the edition with `const` and `volatile` stripped off, which is
@@ -1034,7 +1034,7 @@ The attribute syntax came over from C++ and C23 brought it formally into the lan
 What the standard settles are `[[deprecated]]`, `[[fallthrough]]`, `[[maybe_unused]]`,
 `[[nodiscard]]`, `[[noreturn]]`, `[[unsequenced]]` and `[[reproducible]]`, while
 compiler extensions attach a prefix and are written like `[[gnu::packed]]`. The
-`[[nodiscard]]` seen in chapter 75 is a product of this syntax.
+`[[nodiscard]]` seen in chapter 76 is a product of this syntax.
 
 Thanks to `balanced-token` leaving it open as "any token so long as the brackets
 match", the arguments of an extension attribute the standard does not know pass
@@ -1131,7 +1131,7 @@ separate sentence that "it attaches to the nearest `if`". It is why chapter 30
 recommended braces.
 
 *④ A `case` label's value is a `constant-expression`* — so a variable cannot come there,
-while chapter 70's `constexpr` constants can.
+while chapter 71's `constexpr` constants can.
 
 === A.2.4 External definitions
 
@@ -1334,7 +1334,7 @@ certificates go into firmware. The parameter syntax (`limit(…)`, `prefix(…)`
 `if_empty(…)`) is the `pp-parameter` above, and extensions attach a prefix such as
 `gnu::`.
 
-*`__has_include`* is the one already used in chapter 69 — it asks whether a header
+*`__has_include`* is the one already used in chapter 70 — it asks whether a header
 exists and takes another road if not. `__has_c_attribute` asks about attribute support
 and `__has_embed` about whether `#embed` is possible.
 
@@ -1349,7 +1349,7 @@ LOG("%d", 42);          /* printf("%d", 42) — a comma attaches */
 
 The place that leaned on a GCC extension (`, ##__VA_ARGS__`) because of the comma left
 over when there are no arguments has been tidied into the standard. proven's formatting
-macros seen in chapter 79 use this.
+macros seen in chapter 80 use this.
 
 == What the grammar cannot answer
 

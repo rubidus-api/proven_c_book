@@ -77,7 +77,7 @@ type is `int` and not `char` (the same root as chapter 58's `fgetc` story).
 
   So this book's advice is not "you may ignore it" but *"be aware of the moment
   you step outside the default locale."* A design that handles bytes as they are,
-  like chapter 78's UTF-8 views, shrinks the problem the most.
+  like chapter 79's UTF-8 views, shrinks the problem the most.
 ]
 
 == The second trap — the locale

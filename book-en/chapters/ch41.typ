@@ -146,7 +146,7 @@ same object*. It is the groundwork of chapter 51 (several files).
 - *`typedef`* — syntactically it goes in this slot but does something entirely
   different. Instead of a variable it makes a *type name* (treated in
   chapter 55).
-- *`thread_local`* — makes an object that is separate per thread (chapter 67). It
+- *`thread_local`* — makes an object that is separate per thread (chapter 68). It
   is the one exception that may be written together with static storage duration
   (`static thread_local`).
 
@@ -250,7 +250,7 @@ that direction).
   Linux dying of stack overflow on Windows — *the same code, a container eight
   times narrower*. A large local array (`char buf[2*1024*1024];`) or deep
   recursion are the candidates. The fuller map, and the circumstances of embedded
-  work, are treated in chapter 71.
+  work, are treated in chapter 72.
 ]
 
 == The stack — the ledger of calls

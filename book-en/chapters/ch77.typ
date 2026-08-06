@@ -1,333 +1,287 @@
 #import "../../book/lib.typ": *
 
-= Allocation is a parameter
+= The foundation — bytes, views, and arithmetic that does not overflow
 
 #prereq(
-  ([chapter 42, Dynamic memory], [dynamic memory]),
-  ([chapter 72, Inside the allocator], [inside the allocator]),
+  ([chapter 36, The rules of pointers], [alignment and provenance]),
+  ([chapter 37, Arrays], [arrays and bounds]),
+  ([chapter 70, How to ask about overflow], [arithmetic that does not overflow]),
 )
 
 #deepqa[
-  Chapter 42 said memory obtained with `malloc` must be `free`d by somebody exactly
-  once, and that settling that "somebody" is the program's design. Then is there a
-  way to know from a function alone whether "this function allocates memory"?
+  Chapter 36 said that pointers to a character type (`char*`, `signed char*`,
+  `unsigned char*`) alone have the privilege of
+  peering into any object byte by byte, and chapter 13 showed code that broke that
+  rule quietly collapsing under optimisation. Then what, concretely, does "handling
+  bytes safely" keep?
 ][
-  In standard C there is not. `malloc` can be called anywhere, so any function can
-  allocate in secret, and the signature does not say so. proven's answer is to return
-  that information to the signature with one rule — *a function that does not take an
-  allocator as an argument does not allocate.* If this rule is kept, reading the
-  signature alone tells you "this function may take memory".
+  Two things. First, *fix the type you peer with to the one the rule exempts* —
+  `unsigned char`. Second, *do not lose the range you are peering into* — carry a
+  pointer alone and you forget where your land ends, which is chapter 37's boundary
+  trespass. proven's basic vocabulary is these two each made into a type.
 ]
 
 #organizer[
-  The answer to chapter 73's fourth bug — unclear ownership. The *allocator* that
-#idx("allocator")  handles the source of memory as a value, the *arena* that returns
-#idx("arena")  things of the same lifetime all at once, and the rule that divides
-  owning from borrowing by type. The dangers of the heap learned in chapter 42 are
-  organised here into design.
+  We see the four basic vocabularies the whole library stands on — the type that
+#idx("view")  points at raw bytes, the *view* binding pointer and length into one,
+  size calculation that does not wrap, and alignment. Chapter 74's sixth bug (the
+  hidden type of bytes) and chapter 37's boundary problem obtain their answer at the
+  level of types here.
 ]
 
 #chapter-questions()
 
-== An allocator is a value
+== Bytes have a name
 
-`proven_allocator_t` is one struct — a context pointer and three function pointers
-(allocate, reallocate, free). There is no special global and no registration
-procedure. Being simply a value, it can be passed as an argument, held in a struct,
-and returned from a function. The *virtual function table* seen in chapter 54 is here
-as it stands.
+`proven_byte_t` is an alias for `unsigned char`. It seems no great thing, but one
+declaration writes down a contract — "this pointer is an eye that looks at
+*representation*, not something pointing at a value of some type".
+
+Why this distinction matters was already seen in chapter 13. Code that looks at the
+same memory alternately through `uint32_t*` and `uint16_t*` breaks the aliasing rule,
+and the compiler uses that premise in optimisation. Looking through `unsigned char`,
+on the other hand, is explicitly permitted by the standard. It is why the library
+always goes through this type when handling raw memory, and so through the library
+that bug cannot be written.
+
+== Views — pointer and length as one
+
+The vocabulary for pointing at memory is only three, and all are structs of two slots.
+The difference between the three is only *does it own* and *may it be changed*.
 
 ```c
+/* ① an owned lump — "this memory is mine, and one day I give it back" */
 typedef struct {
-    void *ctx;                        /* this allocator's state (for an arena, the arena) */
-    proven_alloc_fn_t   alloc_fn;
-    proven_realloc_fn_t realloc_fn;
-    proven_free_fn_t    free_fn;
-} proven_allocator_t;
-```
+    proven_byte_t *ptr;
+    proven_size_t  size;
+} proven_mem_t;
 
-The three functions' signatures write the contract down as they stand.
-
-```c
-proven_result_mem_mut_t (*alloc_fn)(void *ctx, proven_size_t size,
-                                    proven_size_t align);
-proven_result_mem_mut_t (*realloc_fn)(void *ctx, void *old_ptr,
-                                      proven_size_t old_size,
-                                      proven_size_t new_size,
-                                      proven_size_t align);
-void                    (*free_fn)(void *ctx, void *ptr);
-```
-
-*Why pass `old_size` and `align` too.* The standard `realloc` does not ask the old size
-— because the allocator wrote it into the block's header (chapter 72). But an arena has
-no header. Not making a place to write the size is why an arena is fast, so the choice
-was for *the caller to tell it* instead. This decision is what lets a "headerless
-allocator" fit the same interface.
-
-Four things from the contract must be remembered.
-
-+ *`align` must be a power of two.* And *a block must be reallocated and freed with the
-  same alignment it was allocated with.* Because the heap allocator handles requests at
-  or below the default alignment differently from stricter ones (chapter 76) — handing
-  a block back in a different alignment class is outside the contract.
-+ *`size == 0` is `INVALID_ARG`.* A zero-byte allocation is treated as a caller's bug.
-  Before this rule the heap said `NOMEM` (a lie — nothing was out of memory) and the
-  arena returned a valid pointer, so *the answer differed per allocator*. Generic code
-  cannot be written on a rule like that.
-+ *A reallocation with `new_size == 0` is a free* — it gives a null pointer and
-  `PROVEN_OK`.
-+ *Reallocation is failure-atomic.* On failure `old_ptr` is still valid and its contents
-  untouched — chapter 61's `realloc` leak counterexample blocked at the level of the
-  interface.
-
-And every function that allocates has this shape.
-
-```c
-proven_result_u8str_t proven_u8str_create(proven_allocator_t alloc,
-                                          proven_size_t limit);
-void                  proven_u8str_destroy(proven_allocator_t alloc,
-                                           proven_u8str_t *str);
-```
-
-*Destroy with the allocator given at creation* — that is the whole of the ownership
-rule.
-
-== Swapping the three sources
-
-#demo("examples-en/ch77/three.c")
-
-Look at the `make_list` function. This function *does not know* whether the memory it
-uses comes from `malloc`, from a static array, or from a recycling bin. The caller
-settles it, and the same code runs identically over all three.
-
-Three things can be read in the output.
-
-*① An arena's usage is visible.* That `arena.offset` is 129 means exactly 129 bytes
-(128 of content + 1 NUL) went out for one string. A number that cannot be known on the
-heap can be counted in an arena — in embedded work this transparency pays when setting
-a memory budget.
-
-*② Reset makes individual release meaningless.* The usage did not fall although
-`destroy` was called (an arena's `free` does nothing), and one `reset` took it to 0.
-"Instead of giving back individually, give the whole back" is this picture.
-
-*③ When it runs dry it refuses as a value.* Requesting 128 bytes from a 64-byte arena
-gave back `NOMEM` (1). It neither collapses nor quietly falls back to the heap.
-
-#qa[
-  Besides `heap`, `arena` and `pool`, can I make an allocator myself?
-][
-  Of course. Chapter 75's example already did — a testing allocator that "fails from the
-  nth call" made of three functions and inserted. The only rule is keeping the contract
-  above.
-
-  The cases for making one in practice are mostly these. *Instrumentation* — a shell
-  counting allocations and peak usage. *Testing* — failing on purpose, painting freed
-  memory with 0xDD. *Debugging* — recording the place (file and line) of an allocation.
-  *Special resources* — obtaining from shared memory or a DMA-capable region, places
-  `malloc` cannot give.
-
-  All four take the shape of *wrapping an existing allocator*. They hold a backing
-  allocator inside, do their own work and pass it on. Chapter 75's example is the model.
-]
-
-#qa[
-  Why is this such an important property? Most of the time the heap will be used
-  anyway.
-][
-  Because three things follow at once. First, *the same code runs in an environment
-  with no heap* — such is embedded work (chapter 82), and such is inside a kernel.
-  Second, *testing becomes easy* — insert an allocator that fails on purpose and you
-  can test "does this code recover properly when memory runs short". Third, *the
-  caller can choose the performance* — for data that lives briefly and dies all at
-  once, an arena is far faster than the heap. The moment the library calls `malloc`
-  directly, all three of these vanish.
-]
-
-== The arena — things of the same lifetime, all at once
-
-Chapter 42 taught the heap's three dangers (leak, double free, use after free). All
-three come from *individual release*. Then what if individual release were removed —
-that is the arena's idea.
-
-An arena takes one large lump of memory and, whenever a request comes, cuts from the
-front. There is a release function but it does nothing. Instead there is *reset* — it
-returns everything at once.
-
-That the struct has only two slots shows this simplicity as it stands.
-
-```c
+/* ② a borrowed reading window — it only peers into somebody's memory */
 typedef struct {
-    proven_mem_mut_t backing;   /* the memory that backs it (borrowed) */
-    proven_size_t    offset;    /* how far it has been handed out */
-} proven_arena_t;
+    const proven_byte_t *ptr;
+    proven_size_t        size;
+} proven_mem_view_t;
+
+/* ③ a borrowed writing window — it may change somebody's memory but not return it */
+typedef struct {
+    proven_byte_t *ptr;
+    proven_size_t  size;
+} proven_mem_mut_t;
 ```
 
-*An arena does not own its memory.* That `backing` is a writing window (`mem_mut_t`) is
-that declaration — a static array, a stack array, or a lump received once from the heap
-is prepared by the caller, and the arena only cuts on top of it. So
-`proven_arena_destroy` *does nothing* (there is nothing borrowed to give back). If the
-lump came from the heap, returning it is still the caller's part.
+One `const` divides ② from ③, and *the name* divides ① from the rest. What this small
+struct does is one thing — *making sure the pointer and the length never part*. It is
+the answer to the problem chapter 39 called "the real problem of strings is carrying
+the length separately".
 
-The life cycle is four steps.
+#dtable(
+  columns: 4,
+  [*type*], [*owns*], [*writes*], [*where it comes from*],
+  [`proven_mem_t`], [yes], [yes], [an allocator (chapter 78)],
+  [`proven_mem_view_t`], [no], [no], [`_as_view`, slicing, literals],
+  [`proven_mem_mut_t`], [no], [yes], [an allocation result, a stack array, slicing],
+)
+
+There are paired functions for obtaining a window from an owned lump too —
+`proven_mem_view_from_owned` and `proven_mem_mut_from_owned`. The `from_owned` in the
+name means "leave the ownership as it is and open only a window".
+
+#demo("examples-en/ch77/mem.c")
+
+The example runs the vocabulary of this section and the next once each. Five places to
+point at.
+
+*① A view is two words.* The output's `sizeof(mem_view_t)=16` is that (on 64-bit,
+pointer 8 + length 8). That it is larger than a bare pointer (8 bytes) is a view's only
+cost, and in exchange bounds checking becomes possible.
+
+*② Only the writing window can change things.* The example changed the first letter
+with `mut.ptr[0] = 'A'` and every later output begins with `A`. Try to change the same
+place through the reading view and it is *a compile error* — that is what the `const`
+does.
+
+*③ Slicing has two editions.* We look at them closely in the next section.
+
+*④ Copying and moving have boundaries too.* `proven_mem_copy(dst, dst_cap, src)`
+*compulsorily* takes the destination's capacity and, if the source does not fit, writes
+not one byte and returns `OUT_OF_BOUNDS` (the output's `copy 15 into 8`). If they may
+overlap it is `proven_mem_move` — chapter 60's `memcpy`/`memmove` distinction as it
+stands.
+
+*⑤ You can ask which lump a pointer belongs to.*
+`proven_range_contains_ptr` is that, and what is worth noticing is that *the
+implementation compares as integers*. Comparing pointers from different allocations
+with `<` or `>=` is outside the contract (chapter 36), so the library converts to
+`uintptr_t` and then checks. It is the function chapter 78's arena uses when confirming
+"is this pointer one I handed out".
+
+This detour is not, however, *a portable check the standard guarantees.*
+`uintptr_t` is an optional type — an implementation need not have it — and the
+standard nowhere promises that converting pointers to integers preserves the
+order of addresses. What it promises is only the round trip: pointer →
+`uintptr_t` → the same pointer. On today's mainstream platforms, with their flat
+address spaces, the ordered comparison does what one expects; on machines where
+an address is not a single number — segmented addresses, or capability pointers
+(the CHERI of chapter 5) — it is another story. So this function should be read
+not as a contract but as *an assumption about the platforms proven supports*:
+a flat address space in which the integer conversion preserves order (see the
+support range in chapter 83).
+
+== Slicing — the operation used most in this part
+
+#demo("examples-en/ch77/view.c")
+
+`slice 6+4` is this section's heart. From an 8-byte view we asked for 4 bytes from
+the 6th, so two bytes are short. The library *does not cut off as much as there is* —
+it returns an error (number 2 is `PROVEN_ERR_OUT_OF_BOUNDS`). Giving as much as there
+is looks kinder, but then the caller cannot know whether what was received is what
+was requested. It is blocking chapter 74's truncation problem from repeating here.
+
+Four functions form pairs — reading/writing × checked/unchecked.
 
 #dtable(
   columns: 3,
-  [*step*], [*function*], [*what happens*],
-  [making], [`proven_arena_create(backing)`], [`offset = 0`. no allocation],
-  [handing out], [`proven_arena_alloc(&a, n)`], [aligns and pushes `offset`],
-  [taking back], [`proven_arena_reset(&a)`], [`offset = 0` — everything becomes invalid],
-  [ending], [`proven_arena_destroy(&a)`], [the formal partner. it does nothing],
+  [*function*], [*what it returns*], [*when*],
+  [`proven_mem_view_slice_checked`], [an `{err, view}` bundle], [the default. when the boundary is unknown],
+  [`proven_mem_view_slice_unchecked`], [a view (no check)], [a hot loop whose boundary is already confirmed],
+  [`proven_mem_mut_slice_checked`], [an `{err, mut}` bundle], [the default (writing)],
+  [`proven_mem_mut_slice_unchecked`], [a writing window (no check)], [the same],
 )
 
-The allocation function has four editions. Choose the one that fits.
-
-#dtable(
-  columns: 2,
-  [*function*], [*when to use it*],
-  [`proven_arena_alloc(&a, size)`], [the default. cuts at the default alignment],
-  [`proven_arena_alloc_aligned(&a, size, align)`], [data where alignment matters (SIMD, DMA)],
-  [`proven_arena_alloc_or_panic(&a, size)`], [places where failure should stop the program],
-  [`proven_arena_realloc_aligned(...)`], [grows in place if it is the last block],
-)
-
-The `_or_panic` family exists for the reason given in chapter 75 — where the memory
-budget has been calculated in advance (embedded work is representative), "the arena is
-short" is not a failure to recover from but *a design error*, so demanding a check every
-time is rather noise.
-
-The `realloc` has one interesting property. An arena having no header, ordinary
-reallocation is "cut anew and copy", but *if the block being grown happens to be the
-last one handed out* it can grow in place simply by pushing `offset`. It is why code
-that appends to a string a little at a time is fast on an arena, and why calling
-chapter 78's `proven_u8str_reserve` in advance pays especially on an arena (an
-intervening allocation breaks the property).
-
-#demo("examples-en/ch77/arena.c")
-
-There really are many places this model fits. The temporary data made while handling
-one request, a game's calculation results used for one frame, the syntax tree made
-while parsing one file — all data *born at different moments but dying at the same
-one*. For such data, individual release is only cost and risk.
-
-#recap[
-  A comparison of the three sources of memory.
-
-  #dtable(
-  columns: 4,
-    [], [*heap*], [*arena*], [*pool*],
-    [how it gives], [arbitrary sizes], [cuts from the front], [fixed-size slots],
-    [individual release], [yes], [no (reset)], [yes (return the slot)],
-    [fragmentation], [can arise], [none], [none],
-    [speed], [ordinary], [very fast], [very fast],
-    [where it fits], [assorted lifetimes], [a group of the same lifetime], [the same size repeatedly],
-)
-]
-
-#idx("pool")The pool (`proven_pool_t`) is the third branch. It is used where objects
-of the same size are repeatedly made and unmade — a game's bullets, a server's
-connection objects, a parser's nodes. The slot size being fixed there is no
-fragmentation, and a returned slot is reused at once. A pool too becomes an allocator
-through `proven_pool_as_allocator`, so the previous example's `build` function runs
-on it as it is.
-
-#antipattern[
-  Destroying with a different allocator
-][
-  ```c
-  proven_result_u8str_t r = proven_u8str_create(proven_heap_allocator(), 64);
-  ...
-  proven_u8str_destroy(proven_arena_as_allocator(&arena), &r.value);  /* wrong */
-  ```
-  It amounts to giving back to an arena what was obtained from `malloc`. This rule
-  cannot be enforced by the library — an allocator is simply a value, and which value
-  is passed is settled by the caller. So the practice in the field is *to carry the
-  allocator along with the data structure*, or to narrow the scope so that only one is
-  used within a module.
-]
-
-#misconception[
-  "Use an arena and you need not care about releasing"
-][
-  Individual release disappears but *the lifetime remains as it was.* The moment the
-  arena is reset, every piece cut on it becomes invalid at once, so data that must
-  still be alive after the reset must not be put in the arena. Chapter 76's "a view
-  cannot outlive its owner" has grown here to arena scale. What an arena removes is
-  the *number of times* one releases, not the *thinking* about lifetime.
-
-  ```c
-  proven_u8str_t name;
-  for (int i = 0; i < n; i++) {
-      proven_arena_reset(&per_request);        /* taken back per request */
-      handle(proven_arena_as_allocator(&per_request), &name);
-  }
-  use(&name);        /* ← dangerous. what name pointed at has already gone back */
-  ```
-
-  The discipline in the field is one — *call the arena's lifetime and the lifetime of
-  the data on it by the same name.* "the request arena", "the frame arena", "the file
-  arena". Then which data must survive the reset shows itself in the name alone, and
-  data that must cross over is copied to *a longer-lived allocator*.
-]
-
-== Which to choose
-
-#dtable(
-  columns: 4,
-  [*situation*], [*what to choose*], [*why*], [*caution*],
-  [data of assorted lifetimes], [the heap], [general-purpose. individual release possible], [cost and fragmentation (chapter 72)],
-  [data born and dying with a unit of work], [an arena], [allocation is one addition, release one reset], [everything invalid after a reset],
-  [the same struct by the thousand], [a pool], [no fragmentation, immediate reuse], [one size only],
-  [an environment with no heap at all], [a static array + an arena], [`malloc` is never called once], [the budget must be calculated in advance],
-  [testing the out-of-memory path], [a failing shell (chapter 75)], [it runs the path that never otherwise runs], [for testing only],
-)
-
-In practice these four are *layered*. The program as a whole uses the heap, while
-handling one request uses a request arena, and a data structure making thousands of
-nodes inside it lays a pool on top. That all three share the same interface, so that
-layering needs no special device, is the value of this design.
-
-== Owning and borrowing, and state that points at itself
-
-Now we return to chapter 73's fourth bug. The problem of `char *` meaning four things
-#idx("owning and borrowing")is solved by dividing the type in two.
-
-- *Owned* — things such as `proven_u8str_t` and `proven_array_t`. Obtained with
-  `_create` and let go with `_destroy`.
-- *Borrowed* — `proven_u8str_view_t`, `proven_mem_view_t`. Never destroyed. When the
-  owner vanishes they become invalid with it.
-
-That "must I release this?" can be answered from the signature alone is the whole of
-this distinction and its purpose.
-
-There is one more rule attached. *State that points at itself is not copied.*
-Chapter 43 taught that struct assignment is a shallow copy. Copy an object that holds
-inside a pointer to its own buffer that way, and the copy's pointer still points at
-the original, so two objects share the same memory and destroying both is a double
-free. So such objects are not copied by value but passed by pointer.
-
-#realcase[
-  The spread of the allocator-as-argument design
-][
-  This way is not proven's invention but is close to the recent consensus of systems
-  programming. In Zig, almost every allocating API of the standard library takes an
-  allocator as an argument and "no hidden allocation" is the language's motto. In Rust
-  too, attaching an allocator to a container is on its way into the standard, and
-  C++'s `std::pmr` arose from the same problem-consciousness. The reason is the same
-  in every case — in games, embedded work, kernels and high-performance servers,
-  *choosing the source of memory* is the heart of both performance and safety.
-]
+The checked edition's contract is three lines. *If the length is nonzero and the
+pointer is null*, `INVALID_ARG`. *If `offset` exceeds the size, or `offset + size`
+exceeds it*, `OUT_OF_BOUNDS` — and it matters that this check is written not as
+`offset + size > view.size` but as `size > view.size - offset`. The former can wrap in
+the addition; the latter never can (the same spirit as the checked arithmetic later in
+this chapter). *If the size is 0* it returns an empty view with a null pointer and size
+0 — a safeguard against dereferencing a pointer to nothing.
 
 #qa[
-  Then what is the price?
+  I saw the slicing function in two editions, `_checked` and `_unchecked` — why does
+  the latter exist?
 ][
-  One more parameter attaches to the signature. And a new design problem arises of
-  *how far the allocator is to be carried* — whether to pass it to every function or
-  to hold it in a struct. In a small program this can look like nothing but tiresome
-  formality. Its value shows itself after the program grows, or when the code must be
-  moved to a place where the heap cannot be used.
+  For places where the boundary has *already been checked*. Redoing the same check
+  every turn inside a loop is waste, so one checks once before the loop and uses the
+  unchecked edition inside.
+
+  ```c
+  /* read in 8-byte pieces — the loop condition already guarantees the boundary */
+  for (proven_size_t off = 0; off + 8 <= buf.size; off += 8) {
+      proven_mem_view_t chunk = proven_mem_view_slice_unchecked(buf, off, 8);
+      process(chunk);
+  }
+  ```
+
+  That the name carries `_unchecked` matters — the dangerous choice can be made only
+  through *a visible name*, and the default is always the safe side. It is one form of
+  chapter 48's "write the contract as code", with the practical benefit too that
+  searching for `_unchecked` in review skims the dangerous places.
 ]
 
-We have set up the rules for obtaining and letting go of memory. From the next chapter
-come the real components that rise on top of it — first, the strings this book warned
-about all through chapter 39.
+#antipattern[
+  Holding a view longer than its owner
+][
+  ```c
+  proven_mem_view_t get_view(void) {
+      proven_byte_t local[16] = {0};
+      return (proven_mem_view_t){ .ptr = local, .size = sizeof local };
+  }   /* local dies here — the returned view is already invalid */
+  ```
+  A view is *borrowed*. When the owner vanishes it becomes invalid that instant, and
+  use after that is the access to a dead automatic variable learned in chapter 41.
+  That a view is safer than a pointer is about *boundaries*, not about *lifetime* —
+  lifetime is still for a human to keep. That is why the next chapter's story of
+  allocators becomes necessary.
+]
+
+== Size arithmetic that does not overflow
+
+Chapter 26 taught the wrap-round of unsigned integers, and chapter 7 showed why it is
+defined behaviour. The fact that wrapping is quiet becomes especially dangerous in one
+place — *when calculating the number of bytes to allocate*.
+
+```c
+void *p = malloc(count * sizeof(item_t));   /* if count is large it wraps */
+```
+
+If `count` is large enough the product wraps into a very small number, and `malloc`
+succeeds at that small size. Then the program begins writing as many items as it
+originally intended — a typical heap overflow. This is the pattern chapter 26 gave as
+the real accident case of overflow, "size calculation".
+
+#idx("checked arithmetic")The library uses C23's checked arithmetic for size
+calculation. The example's `PROVEN_CKD_MUL` is that: if the product overflows it
+returns *true* (the return value is whether it overflowed, not the result of the
+calculation). If it overflows, the allocation is not even attempted.
+
+#misconception[
+  "`size_t` is as much as 64 bits, so it cannot overflow"
+][
+  It can, and it does. Because multiplication grows values *on a squared scale* —
+  four billion × four billion already exceeds 64 bits. Moreover on a 32-bit machine
+  `size_t` is still 32 bits, and code multiplying two 32-bit fields read from a file
+  format wraps on the spot. Most important of all is *who settles that number*. If the
+  size is a constant inside the program you may rest easy, but if it is a number that
+  came from a file or the network then it is *an operand chosen by the attacker*.
+]
+
+#realcase[
+  The vulnerabilities one multiplication made
+][
+  This pattern is a regular in the CVE lists. Cases have been reported repeatedly of
+  an image decoder wrapping while calculating
+  `width * height * bytes_per_pixel` in 32 bits, of a font parser wrapping while
+  multiplying the glyph count, of decompression code wrapping while multiplying the
+  original size. What they share is that *the input file settles the size* — that is,
+  the attacker can choose the multiplication's operands. So today's languages and
+  libraries do size calculation with checked arithmetic, or handle it with types that
+  cannot overflow at all.
+]
+
+== Alignment — pushing up to the next boundary
+
+The alignment learned in chapter 6 becomes a practical tool here.
+`proven_mem_align_up(13, 8)` returns 16 — because to fit an object starting at
+address 13 to an 8-byte boundary it must be pushed to 16. This is exactly the
+calculation the next chapter's arena does every time it lays objects out in a row.
+
+#dtable(
+  columns: 3,
+  [*name*], [*what*], [*note*],
+  [`proven_mem_align_up(a, n)`], [rounds `a` up to a multiple of `n`], [0 if it overflows or `n` is not a power of two],
+  [`proven_uintptr_align_up(p, n)`], [rounds an address up], [as an integer, instead of pointer arithmetic],
+  [`proven_is_pow2(n)`], [is it a power of two], [checking an alignment value],
+  [`PROVEN_MAX_ALIGN`], [`alignof(max_align_t)`], [usually 16. holds any type],
+  [`PROVEN_DEFAULT_ALIGNMENT`], [8], [the default for byte data such as strings and buffers],
+)
+
+*Reporting failure as 0* is these functions' peculiar contract. If the alignment is not
+a power of two or the rounding overflows they return 0, so the result must be checked
+for 0 before being used as a size. Inside the library the arena does that check for
+you, so you will call these directly only when making a data structure of your own.
+
+It is worth knowing too that the two constants have different uses. A byte array or a
+string is content with `PROVEN_DEFAULT_ALIGNMENT` (8), while *general allocation that
+does not know what type is coming* uses `PROVEN_MAX_ALIGN`. It is also why chapter 78's
+heap allocator divides the two — requests at or below the default alignment go to
+`malloc` (growth in place is then possible), and stricter requests to an aligned
+allocation.
+
+#recap[
+  This chapter's vocabulary.
+
+  #dtable(
+  columns: 3,
+    [*name*], [*what*], [*contract*],
+    [`proven_byte_t`], [an alias for `unsigned char`], [the only legal window onto representation],
+    [`proven_mem_view_t`], [a read-only view (ptr+size)], [borrowed — it cannot outlive its owner],
+    [`proven_mem_mut_t`], [a writable view], [the same],
+    [`..._slice_checked`], [making a sub-view], [an error if it exceeds the range, no truncation],
+    [`PROVEN_CKD_MUL/ADD`], [checked arithmetic], [true if it overflows — the calculation is discarded],
+    [`proven_mem_align_up`], [rounding up an alignment], [alignment is a power of two],
+)
+]
+
+We are equipped with the vocabulary for *looking at* memory. Next is the story of
+*obtaining* memory — and in that place we meet this library's most characteristic
+decision.

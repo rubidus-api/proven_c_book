@@ -4,14 +4,14 @@ exactly as was said at the start. The preceding forty-six chapters came with
 standard C alone, and proven showed its face only once, at the place where the need
 proved itself (chapter 40).
 
-So this part too begins not with the tool but with the *problem*. Chapter 73
+So this part too begins not with the tool but with the *problem*. Chapter 74
 confirms with actually running code the five classes of defect at which C has
 slipped in the same places for half a century, and the nine chapters that follow
-point to the answer for each — installation and a first program (chapter 74), errors
-that come as values (chapter 75), bytes and views (chapter 76), allocators
-(chapter 77), strings (chapter 78), formatting and parsing (chapter 79), containers
-and algorithms (chapter 80), files, time and random numbers (chapter 81), and
-running things overlapped and environments with no OS (chapter 82).
+point to the answer for each — installation and a first program (chapter 75), errors
+that come as values (chapter 76), bytes and views (chapter 77), allocators
+(chapter 78), strings (chapter 79), formatting and parsing (chapter 80), containers
+and algorithms (chapter 81), files, time and random numbers (chapter 82), and
+running things overlapped and environments with no OS (chapter 83).
 
 One thing should be said in advance. The design this part will show — taking an
 allocator as a parameter, returning failure as a value, views that carry their
@@ -20,7 +20,7 @@ same direction, and there is considerable common ground about it. But *proven is
 not that common ground itself: it is one attempt to implement it in C23.* It is
 neither a standard nor a component the industry has adopted. That distinction
 holds throughout this part — the direction has been verified in many places, this
-implementation has not yet (chapter 82 sets down the supported range and the
+implementation has not yet (chapter 83 sets down the supported range and the
 stability honestly).
 
 It is well to hold two purposes in reading. If you mean to use proven, this part is

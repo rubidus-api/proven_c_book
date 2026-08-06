@@ -44,7 +44,7 @@ does not know.
 #dtable(
   columns: 3,
   [*what the OS gives a process*], [*what it is*], [*in this book*],
-  [address space], [a memory map of its own (chapter 2's four regions)], [chapter 71],
+  [address space], [a memory map of its own (chapter 2's four regions)], [chapter 72],
   [execution position], [which instruction it is in the middle of], [—],
   [the list of open files], [the passages including standard input and output], [chapters 10 and 58],
   [command-line arguments and environment], [the values handed over at running], [chapter 50],
@@ -69,7 +69,7 @@ and the side receiving that number is whoever ran this process.
 
   There is a world without this isolation too — on a small chip running with no
   operating system there is no concept of a process at all, and one piece of code uses
-  the whole machine (chapter 71). So this chapter's story is not the story of
+  the whole machine (chapter 72). So this chapter's story is not the story of
   "everywhere C runs" but the story of *when it runs on an operating system*.
 ]
 
@@ -166,7 +166,7 @@ From here it differs by operating system. We learn the faces of two branches.
   The deeper stories — programs running along several strands (threads), communication
   between processes, signals — are beyond this book's scope, but the pieces of them the
   C standard treats are met in their places (signals in chapter 65, threads and atomic
-  operations in chapter 68).
+  operations in chapter 69).
 ]
 
 #recap[

@@ -1,279 +1,214 @@
 #import "../../book/lib.typ": *
 
-= Operations that do not split — `<stdatomic.h>`
+= What the new standards added, and the `*_s` controversy
 
 #prereq(
-  ([chapter 11, Memory divides], [the cache and the layers of memory]),
-  ([chapter 41, Lifetime and storage duration], [lifetime and sharing]),
+  ([chapter 57, The whole map of the standard library], [the whole map of the standard library]),
+  ([chapter 59, The traps of reading and writing], [bounds and truncation]),
 )
 
 #deepqa[
-  Chapter 12 said the CPU does several things in one beat and even executes out of
-  order, and chapter 11 said each core carries its own cache. Then if two strands
-  increase the same variable by 1 at once — is the result 2?
+  Chapter 57 said the speed at which headers grow is the same as the language's
+  speed of change, and chapter 59 said `gets`'s funeral took twenty years. Then
+  where are the "safe functions" the standard brought in to fill that place?
 ][
-  It may not be. `x = x + 1` is not one step to the machine but *three* (read, add,
-  write), and if two strands interleave these three steps they read the same value
-  and write the same value — one increment vanishes whole. On top of that, caches
-  differ per core, so the lag of "written but not visible to the other" is
-  compounded. This chapter's first example actually counts that loss out.
+  Mostly *nowhere*. C11 brought in dozens of functions such as `gets_s` and
+  `strcpy_s` as annex K, but it was *optional* and the major implementations
+  refused to adopt it. What was confirmed on the machine that made this book is the
+  same — the "annex K: not present in this implementation" the example printed. The
+  latter part of this chapter is that story.
 ]
 
 #organizer[
-#idx("atomic operations")  We see what happens when several strands touch the same
-  memory at once, and learn the tool C11 brought into that place — atomic types and
-  operations. Why a data race is *outside the contract* rather than "slow", why
-#idx("data race")  `volatile` is not the answer, and when to touch and when to
-  leave alone the difficult handle called the memory order.
+  The last chapter of this part. We skim the headers C99, C11 and C23 added to the
+  standard library, and then see the whole story of this language's most famous
+  failed attempt — annex K, which tried to bring "safe functions" into the
+  standard. Why `gets_s` and `strcpy_s` are not widely used, and what is different
+  about Microsoft's functions of the same names.
 ]
 
 #chapter-questions()
 
-== The lost update — confirmed with the eyes
-
-#demo("examples-en/ch68/atomic.c")
-
-Four strands turned the same loop 200,000 times each. The expected value is
-800,000, but the unprotected `long` did not even get near it. The vanished share
-differs on every run — and this non-determinism is precisely the character of this
-class of bug. *A loss that does not reproduce.*
-
-The atomic variable's side is exactly 800,000 every time. Because
-`atomic_fetch_add` performs "read-add-write" as *one lump that cannot be split*.
-The name atom means just that — that which is not split further.
-
-#misconception[
-  "A race condition is a probabilistic performance problem where the value is
-  occasionally off"
-][
-  Wrong in two layers. First, it is not that the value goes off but that *the
-  contract breaks*. The standard from C11 onward settles it thus — if two strands
-  touch the same memory at once, at least one of them writing, and it is neither
-  atomic nor ordered, that is a *data race* and the whole program is undefined
-  behaviour (chapter 49). It means there is no guarantee that it ends at the level
-  of "one value being wrong".
-
-  Second, the compiler optimises on this premise. Assuming there is no race, it
-  puts the variable in a register, and then however much the other side changes the
-  value this loop *sees the old value forever*. This really is the common identity
-  of the infinite loop that "works in a debug build and hangs in release"
-  (chapter 17's release-only bug is replayed here).
-]
-
-== Why `volatile` is not the answer
-
-In code that has long used C one often sees the practice of exchanging signals
-between strands with `volatile int flag;`. It is a wrong practice now. What
-`volatile` promises is one thing only — *the compiler will not remove or merge
-these accesses*. As will be seen in chapter 49, its purpose was hardware registers
-(places whose value changes from outside).
-
-There are two things `volatile` does not promise. *Atomicity* — the `x++` of a
-`volatile long x;` is still three steps and splits. And *ordering and visibility* —
-it does not prevent the CPU from changing the order of writes or from being late to
-show them to another core.
-
-#dtable(
-  columns: 4,
-  [], [*not split*], [*visibility between cores*], [*blocks reordering*],
-  [`volatile`], [no], [no], [no (against other accesses)],
-  [`_Atomic`], [yes], [yes], [yes (as much as the chosen order)],
-  [a mutex], [yes (the whole region)], [yes], [yes],
-)
-
-Summed up: *`volatile` for hardware registers, atomic types or mutexes for sharing
-between strands.* Java's and C\#'s `volatile` share only the name and differ in
-meaning (there it really does guarantee visibility), so bringing the habits of
-those languages into C is a common passage to accidents.
-
-== Atomic types and operations
-
-Using them is simple. Attach `_Atomic` before the type, or use the names the header
-gives (`atomic_int`, `atomic_long`, `atomic_bool`, `atomic_size_t` …).
-
-```c
-#include <stdatomic.h>
-atomic_int  counter = 0;      /* = _Atomic int */
-_Atomic long total;
-```
-
-The operations are called as functions (or macros of those names). Using the
-ordinary operators (`++`, `+=`) also behaves atomically, but *the fact of being
-atomic is not visible in the code* and so is easy for a reader to miss, which is
-why the explicit functions are recommended.
+== What C99 added
 
 #dtable(
   columns: 3,
-  [*operation*], [*what it does*], [*where it is used*],
-  [`atomic_load`], [read], [seeing the current value],
-  [`atomic_store`], [write], [setting a value],
-  [`atomic_fetch_add`, `_sub`], [add and return *the previous value*], [counters and statistics],
-  [`atomic_fetch_or`, `_and`, `_xor`], [bit manipulation], [sets of flags],
-  [`atomic_exchange`], [swap and return the previous value], [replacing in place],
-  [`atomic_compare_exchange_strong`], [change only if equal to the expected value (CAS)], [lock-free data structures],
-  [`atomic_compare_exchange_weak`], [the same, but it may fail in vain], [inside a loop],
-  [`atomic_flag_test_and_set`], [the most primitive test-and-set], [spinlocks],
+  [*header*], [*what*], [*its position today*],
+  [`<stdint.h>`], [fixed-width integers (`int32_t` and so on)], [effectively compulsory. chapter 26],
+  [`<inttypes.h>`], [the format macros for those types], [the `PRId32` family. appendix B],
+  [`<stdbool.h>`], [`bool`, `true`, `false`], [unnecessary, having become keywords in C23],
+  [`<complex.h>`], [complex numbers], [optional. support is uneven],
+  [`<fenv.h>`], [the floating-point environment], [chapter 63],
+  [`<tgmath.h>`], [type-generic mathematics], [chapter 63],
 )
 
-That `fetch_add` returns *the previous value* is a place often confused. To obtain
-"which number this is", use the return value; to know "how much it is now", it is
-the return value plus the increment, or a separate `atomic_load` — and the latter
-may change again in the meantime.
-
-#antipattern[
-  Believing that several atomic operations make their bundle atomic too
-][
-  ```c
-  if (atomic_load(&count) < LIMIT)      /* ① read and */
-      atomic_fetch_add(&count, 1);      /* ② add — somebody cuts in between */
-  ```
-  If another strand raises the value between ① and ②, the limit is exceeded.
-  *Atomicity is a property of one operation, not of a region.* To protect a region,
-  bind it with a CAS loop or use a mutex.
-  ```c
-  int cur = atomic_load(&count);
-  do {
-      if (cur >= LIMIT) break;                 /* limit check and update as one lump */
-  } while (!atomic_compare_exchange_weak(&count, &cur, cur + 1));
-  ```
-  That on failure *the current value comes back held in `cur`* is the heart of this
-  idiom. So there is no need to read again inside the loop.
-]
+`<stdint.h>` is this list's winner. A standard way to express "exactly 32 bits"
+finally arose, and the practice of every project keeping its own `typedef` until
+then was tidied away.
 
 #qa[
-  What differs between `compare_exchange`'s strong and weak? Why is there a
-  separate edition that "fails in vain"?
+  If annex K's `*_s` functions failed, what fills their place now?
 ][
-  Some CPUs (the ARM family and others) implement CAS as a pair of instructions,
-  "reserve and later write conditionally". If the reservation is broken in between
-  by an interrupt or by cache circumstances, it comes back as a failure even though
-  the value equalled the expectation — that is a *spurious failure*. `weak` exposes
-  this failure as it is and in exchange is faster, while `strong` retries
-  internally to guarantee "failure only when the value differed" and in exchange is
-  a little slower.
+  Not one thing but three, sharing it out. *Compiler diagnostics* (warnings and
+  hardened builds such as `_FORTIFY_SOURCE`), *sanitizers* (chapter 17), and
+  *API designs that carry the length along*. The last is the direction this book
+  has pushed, and chapters 77 and 79 are its implementation.
 
-  The rule is simple. *`weak` inside a loop, `strong` when trying only once without
-  a loop.* Since the loop will turn again anyway, a spurious failure is harmless
-  and only the gain remains.
+  The lesson is that safety does not arrive by appending `_s` to a function name.
+  What actually worked was making failure impossible to ignore, putting the bounds
+  inside the type, and making the checks something a tool can perform. That is how
+  chapter 74 arranges the five bugs.
 ]
 
-== Memory order — not touching it is the default
-
-If no order is specified, as in `atomic_fetch_add(&x, 1)`, the strongest order,
-*sequential consistency* (`memory_order_seq_cst`), is used. It means every strand
-sees the order of atomic operations as one consistent story, and it is the model
-easiest for a human to reason about. In exchange it is the most expensive.
-
-C provides six orders. We learn their faces from a table — *most programs need only
-the default.*
+== What C11 added
 
 #dtable(
   columns: 3,
-  [*order*], [*guarantee*], [*where it is used*],
-  [`seq_cst`], [one order globally], [the default. if in doubt, this],
-  [`acquire`], [later accesses cannot rise above it], [taking a lock, reads on the consumer side],
-  [`release`], [earlier accesses cannot sink below it], [releasing a lock, writes on the producer side],
-  [`acq_rel`], [both, in a read-modify-write operation], [state transitions with CAS],
-  [`relaxed`], [atomicity only. no ordering guarantee], [pure counters and statistics],
-  [`consume`], [effectively abandoned (implementations raise it to acquire)], [not used],
+  [*header*], [*what*], [*its position today*],
+  [`<stdatomic.h>`], [atomic operations and memory orders], [the foundation of concurrency. chapter 12's story],
+  [`<threads.h>`], [threads, mutexes, condition variables], [★ adoption is slow — pthreads are usually used],
+  [`<stdalign.h>`], [`alignas`, `alignof`], [keywords in C23],
+  [`<stdnoreturn.h>`], [`noreturn`], [to be retired in C23, in favour of `[[noreturn]]`],
+  [`<uchar.h>`], [`char16_t`, `char32_t`], [chapter 62],
 )
 
-The two most common practical uses are these. First, *the producer-consumer flag*:
-fill the data and then raise the flag with `release`, and the consumer sees the
-flag with `acquire` and then reads the data. This pair guarantees "if the flag is
-visible the data is visible too." Second, *a pure statistics counter*: only the
-final sum need be right and there is no need to order it against other data, so
-`relaxed` is exactly the right tool.
+`<threads.h>`'s circumstance is interesting. Though it is in the standard, glibc
+long did not provide it, so portable code still uses POSIX threads. It is a case
+showing that *entering the standard and becoming usable are different things*.
 
-#antipattern[
-  Switching to `relaxed` for performance, just to see
-][
-  ```c
-  atomic_store_explicit(&ready, 1, memory_order_relaxed);   /* the flag */
-  ```
-  `relaxed` guarantees *only the atomicity of this variable*. There is no guarantee
-  that the data filled in beforehand is visible to the other side, so the consumer
-  can see the flag raised and yet read *the data from before it was filled*. Such
-  code mostly runs fine on x86 and then appears as an unreproducible bug on an ARM
-  device — because the reordering each piece of hardware permits differs.
+== What C23 added
 
-  The rule: *when a flag and data form a pair, `release`/`acquire`.* Until you
-  understand that pair, leave the default as it is. The time lost far exceeds the
-  nanoseconds saved here.
-]
+#demo("examples-en/ch68/newheaders.c")
 
-== The phrase "lock-free"
+`<stdckdint.h>` is this edition's practical winner. It reports the wrap-round of
+the size calculations seen in chapter 60 *as a value* — `ckd_add`, `ckd_sub` and
+`ckd_mul` return true on overflow, and the result may be treated as "unusable"
+rather than as the wrapped value.
 
-That is what the example's last line asked with `atomic_is_lock_free`. If an atomic
-type is handled by a single CPU instruction it is *lock-free*, and if not the
-library uses a hidden lock behind the scenes. On today's mainstream machines
-integers of pointer size or smaller are mostly lock-free. Wrap a large struct in
-`_Atomic`, on the other hand, and — the syntax passes but — a hidden lock attaches
-and performance can become unexpectedly bad.
+`<stdbit.h>` is new too. Bit manipulations such as counting leading zeros, counting
+set bits and rounding up to a power of two have become standard functions — until
+then a place that leaned on compiler builtins (`__builtin_clz` and the like).
 
-#misconception[
-  "Atomic operations are always faster than a mutex"
-][
-  Mostly right when contention is low, but it reverses when contention is heavy. If
-  several cores fight over the same cache line, that line keeps travelling between
-  the cores (chapter 11's false sharing is replayed here). A CAS loop turns again
-  on every failure, and when contention is heavy this retrying is waste entire — a
-  mutex puts the failing strand to sleep while spinning burns a core.
+Besides these, C23 promoted `bool`, `true`, `false`, `static_assert` and
+`thread_local` to keywords, brought in `nullptr` (chapter 35), and effectively
+retired compatibility headers such as `<stdbool.h>` and `<stdnoreturn.h>`.
 
-  And *writing lock-free data structures yourself* is a task of another order of
-  difficulty. The ABA problem (a value going from A to B and back to A, fooling the
-  CAS), when memory may be reclaimed, progress guarantees — these are topics for a
-  paper each. The right answer in the field is usually this: *atomic types for
-  counters and flags, a verified library or a mutex for data structures.*
-]
+== Annex K — the failed attempt at "safe functions"
 
-== Where to use it and where not to
+Now the main business of this chapter.
 
-#dtable(
-  columns: 3,
-  [*situation*], [*recommended tool*], [*reason*],
-  [statistics counters], [`atomic_fetch_add` (`relaxed`)], [no ordering is needed],
-  [a shutdown-request flag], [`atomic_bool` + `release`/`acquire`], [it pairs with data],
-  [initialising exactly once], [`call_once` (`<threads.h>`) or CAS], [do not write double-checked locking by hand],
-  [invariants over several values], [a mutex], [atomicity is per single variable],
-  [sharing a large struct], [a mutex], [an `_Atomic` struct means a hidden lock],
-  [sharing with a signal handler], [`sig_atomic_t` or a lock-free atomic type], [chapter 65's restrictions],
-  [hardware registers], [`volatile`], [it is not sharing between strands],
-)
+In the early 2000s Microsoft put functions such as `strcpy_s` and `sprintf_s` into
+its compiler and began raising warnings on use of the existing functions. The
+proposal to make that design a standard entered C11 as *annex K*
+(bounds-checking interfaces).
+
+The core ideas were three.
+
++ The destination size is *compulsorily* taken as an argument.
++ When a problem arises it does not truncate and carry on but *returns an error*
+  (`errno_t`).
++ When a contract violation is detected, the program's chosen *constraint handler*
+  is called.
+
+```c
+#define __STDC_WANT_LIB_EXT1__ 1
+#include <string.h>
+
+char dst[8];
+errno_t e = strcpy_s(dst, sizeof dst, src);   /* an error if it overflows */
+```
+
+The direction resembles what we organised in chapter 57 as "what is needed". Yet
+the result was a failure.
 
 #realcase[
-  Why C11 brought in a memory model
+  Why annex K was not adopted
 ][
-  In the standard before C11 there was *no concept at all of there being several
-  strands.* Threads were the business of a library (POSIX threads and the like),
-  and the language defined optimisation on the premise that "a program flows in one
-  stream". In that gap questions piled up which nobody could answer exactly — must
-  the compiler assume another strand sees this write, is this reordering legal, is
-  this mutex-less code wrong.
+  In 2015, C standards committee document N1967, "Field Experience With Annex K",
+  surveyed the actual state. Its summary was cold — *it was not widely implemented,
+  it behaved differently where it was implemented, and there was no evidence that
+  it made real code safer*.
 
-  Around 2004 Java tidied up its memory model first, and C++11 and C11 continued
-  that current by introducing *a memory model at the level of the language*. What
-  entered then was the definition of a data race, atomic types, and the six memory
-  orders. That we can today say in one line "a data race is undefined behaviour" is
-  thanks to that tidying — before it there was not even a language in which to write
-  that sentence.
+  Concretely these were the circumstances.
+
+  - *Microsoft's functions and the standard's functions are not the same.* The
+    names are the same while arguments and behaviour go out of step in places, so
+    code fitted to one side broke on the other.
+  - *Major implementations, glibc among them, did not adopt it.* That is still so
+    today — the reason the earlier example printed "not present in this
+    implementation".
+  - *The global state called the constraint handler* caused conflicts between
+    libraries.
+  - It merely changed existing code mechanically, while the real defects remained
+    *where the size is calculated wrongly*.
+
+  The committee went as far as discussing removing annex K, and in the end it was
+  settled to be kept but effectively not recommended. It is a representative case
+  showing how the expectation that "putting it in the standard makes things safe"
+  goes wrong in reality.
 ]
 
+#misconception[
+  "Using functions with `_s` attached is safe"
+][
+  Three things must be checked. First, *is that function there* — the standard's
+  annex K is optional and is absent on most of the Unix family. Second, *which
+  edition is it* — the standard's and Microsoft's may differ. Third, *what becomes
+  safe* — it means the size is taken as an argument, not that the size you passed
+  is right. The mistake of passing `strlen` instead of `sizeof` is just as much an
+  accident in an `_s` function.
+
+  The realistic choice in portable code is still this — within the standard,
+  `snprintf` and explicit bounds checking; where the platform permits, the
+  `strlcpy` family; and for the repeated danger zones, components with checking
+  built in (Part XII).
+]
+
+#platform[
+  The `_s` functions met on Windows
+][
+  MSVC has long provided `strcpy_s`, `sprintf_s`, `fopen_s` and so on, and raises
+  the `C4996` warning when the existing functions are used. Defining
+  `_CRT_SECURE_NO_WARNINGS` to turn the warning off is the practice.
+
+  The point to beware of is that *these functions are not entirely the same as the
+  standard's annex K*. For example the behaviour on argument-validation failure and
+  the rules for return values may differ. So unless the code is Windows-only one
+  does not lean on the `_s` family, and cross-platform projects mostly choose to
+  keep a wrapper of their own.
+]
+
+== What this part leaves behind
+
+We have walked the standard library across ten chapters. Memorising function names
+was not the aim, so what remains to be kept is a few attitudes.
+
++ *Read the contract first.* Does it take a size, how does it report failure, who
+  owns the pointer it returned.
++ *Do not throw away return values.* Especially `fclose`, `snprintf` and the
+  `scanf` family.
++ *Suspect global state.* `errno`, the locale, static buffers, the rounding mode.
++ *Being in the standard does not make it safe.* `gets` survived twenty-two years.
++ *Weigh platform extensions between the gain and portability.*
+
 #recap[
+  A table of the editions.
+
   #dtable(
-    columns: 2,
-    [*to remember*], [*the point*],
-    [data race], [not slowness but *outside the contract*. optimisation changes the code],
-    [`volatile`], [not a tool for sharing between strands. it is for hardware],
-    [the default order], [`seq_cst`. leaving it as it is is mostly the right answer],
-    [`fetch_add`], [it returns *the previous value*],
-    [two operations], [bundling them is not atomic — a CAS loop or a mutex],
-    [`weak`/`strong`], [`weak` if inside a loop],
-    [lock-free], [mostly yes for small integers. a hidden lock for large structs],
-    [data structures], [do not write them yourself],
+    columns: 3,
+    [*edition*], [*representative addition*], [*is it actually used*],
+    [C99], [`<stdint.h>`, `<inttypes.h>`], [yes — effectively compulsory],
+    [C99], [`<complex.h>`], [rarely],
+    [C11], [`<stdatomic.h>`], [yes — the foundation of concurrency],
+    [C11], [`<threads.h>`], [rarely — pthreads prevail],
+    [C11], [annex K (`*_s`)], [no — this chapter's story],
+    [C23], [`<stdckdint.h>`], [yes — the right answer for size calculations],
+    [C23], [`<stdbit.h>`], [growing],
+    [C23], [keyword promotion (`bool`, `nullptr` and so on)], [yes],
   )
 ]
 
-We have seen operations that do not split. The next chapter is a tool in the
-opposite direction — C23's checked arithmetic, which asks according to the contract
-whether an operation *overflowed its vessel*.
+The bottom three lines of that table — `<stdatomic.h>`, `<stdckdint.h>` and
+keyword promotion — have only shown their faces. The three remaining chapters of
+this part treat those three in detail, one each. We begin with the foundation of
+concurrency.

@@ -375,7 +375,7 @@ call each other.*
 
 === ③ `__VA_OPT__` — when is "empty" judged?
 
-The `__VA_OPT__` C23 brought in (chapter 70) puts something in "only when the variadic
+The `__VA_OPT__` C23 brought in (chapter 71) puts something in "only when the variadic
 arguments are not empty". But *when* it looks to see whether they are empty is subtle.
 
 ```c

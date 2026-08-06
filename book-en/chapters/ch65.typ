@@ -48,7 +48,7 @@ as a macro pointing at thread-local storage.
   [`strerror(n)`], [error number → a sentence], [★ a static buffer. not thread-safe],
   [`perror(s)`], [`s: reason` to `stderr`], [the habit of attaching a context string],
   [`strerror_r`], [fills a caller's buffer], [POSIX. there are two editions, hence confusion],
-  [`strerror_s`], [the same intent], [annex K (chapter 67)],
+  [`strerror_s`], [the same intent], [annex K (chapter 68)],
 )
 
 The error numbers the standard names are only three — `EDOM` (domain), `ERANGE`
@@ -131,21 +131,13 @@ in servers, shells and terminals, all in chapter 66.
 
 A device that remembers the present place with `setjmp` and comes back later from
 somewhere deep with `longjmp`. It is an attempt to make something like exceptions
-in a language that has none, and the price is correspondingly large.
+in a language that has none, and the price is correspondingly large — *nobody
+cleans up the resources held by the functions that were skipped over.*
 
-- The only local variables whose values can be believed after a `longjmp` are those
-  declared `volatile`. The rest may have been in registers, so their values are
-  undetermined.
-- *Cleanup code does not run.* The resources (files, memory) held by the functions
-  skipped over leak as they are. Because there is no device like C++'s destructors.
-- If the function that called `setjmp` has already returned, `longjmp` is outside
-  the contract.
-- Escaping from a signal handler with `longjmp` is especially dangerous.
-
-So the conclusion in the field is usually "do not use it". If there is a place for
-it, it is confined to structures such as an interpreter's error recovery or a
-parser's deep failure, where *the resources to clean up are bound into a single
-arena* (Part XII's arena makes that condition).
+This header too has enough in it for a chapter of its own — the return-value rule
+of the two words, the four contexts in which `setjmp` may appear, the inside of
+`jmp_buf`, the `volatile` rule measured on a real build, the uses in real
+software such as libjpeg and Lua, and today's alternatives, all in chapter 67.
 
 #realcase[
   The shape of code made by the way of handling errors

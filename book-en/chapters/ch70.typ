@@ -1,279 +1,204 @@
 #import "../../book/lib.typ": *
 
-= From macro to keyword — `bool`, `nullptr` and their companions
+= How to ask about overflow — `<stdckdint.h>`
 
 #prereq(
-  ([chapter 67, What the new standards added, and the `*_s` controversy], [what the standards added]),
-  ([chapter 29, Booleans and comparison], [the type of true and false]),
+  ([chapter 26, Integers], [the finiteness of integers]),
+  ([chapter 49, Undefined behaviour], [overflow is outside the contract]),
 )
 
 #deepqa[
-  Chapter 67 passed over in a table only that C23 made `<stdbool.h>` effectively
-  unnecessary and that `nullptr` came in. But why put into the language what worked
-  fine as macros — is it not merely a change of name?
+  Chapter 7 said unsigned overflow is defined wrap-round while signed overflow is
+  outside the contract, and chapter 61 said `calloc` checks the product of the
+  element count and the size. Then how do we write the check for whether a
+  multiplication overflows ourselves?
 ][
-  It is not merely a change of name. A macro is *the preprocessor changing letters*
-  and so has neither type nor scope, and the user can `#undef` it or define it again
-  with another meaning. A keyword is *a grammatical element of the language*, so it
-  has a type, can be diagnosed, and nobody can redefine it. Where that difference
-  really prevents accidents is this chapter's content — and `nullptr` in particular
-  is not a renaming but *a new type*.
+  That very "checking ourselves" is the code that has been written wrongly for half
+  a century. With signed values, *checking after it has overflowed is itself
+  already outside the contract*, so the compiler may erase the checking code
+  (chapter 13's editor), and with unsigned values the idiom that inserts a division
+  is hard to read and easy to get wrong. C23 tidied this place up at the level of
+  the language.
 ]
 
 #organizer[
-#idx("bool")  We treat the most conspicuous change C23 made to the language. Why
-#idx("nullptr")  things long imitated with macros in headers — `bool`, `true`,
-  `false`, `static_assert`, `alignas`, `thread_local` — rose to being keywords,
-  what `nullptr` was newly made to prevent, what rules and limits come with them,
-  and in what order to move existing code over.
+#idx("checked arithmetic")  We learn the checked arithmetic C23 brought in. Why
+  hand-written code that "checks after calculating whether it overflowed" is
+  dangerous, exactly what `ckd_add`, `ckd_sub` and `ckd_mul` promise, and how to
+  move the size calculations of existing code onto this tool.
 ]
 
 #chapter-questions()
 
-== What was promoted
+== The trap of checking afterwards
 
-#demo("examples-en/ch70/keywords.c")
-
-We organise it in one table. On the left is the shape up to C17, on the right C23.
-
-#dtable(
-  columns: 3,
-  [*before*], [*C23*], [*the header it required*],
-  [`_Bool` + the `bool` macro], [the keyword `bool`], [`<stdbool.h>`],
-  [the `true`, `false` macros (= 1, 0)], [the keywords `true`, `false` (of type bool)], [`<stdbool.h>`],
-  [`_Static_assert`], [`static_assert`], [`<assert.h>`],
-  [`_Alignas`, `_Alignof`], [`alignas`, `alignof`], [`<stdalign.h>`],
-  [`_Thread_local`], [`thread_local`], [`<threads.h>`],
-  [the `NULL` macro], [`nullptr` (a new type)], [`<stddef.h>` and others],
-  [(none)], [`constexpr`], [—],
-  [(a GCC extension)], [`typeof`, `typeof_unqual`], [—],
-)
-
-The headers still exist and including them is harmless — the principle that the
-standard does not break old code (chapter 59's `gets` story) was kept here too. But
-newly written code has no reason to include them.
-
-== `bool` — what does it prevent
-
-C long had no true-false type. It was imitated with `int`, and every project had
-`typedef int BOOL;` and `#define TRUE 1` rolling about. C99 brought in `_Bool` and
-`<stdbool.h>` attached a pretty name to it, and C23 raised that to a keyword.
-
-What differs between `bool` and `int` is not the name but *the conversion rule*.
-
-- *Every nonzero value is narrowed to 1.* The example's `bool b = 42;` printing `1`
-  is that. `int i = 42` is 42 as it stands.
-- So *comparing two truths is true.* The classic bug of the `int`-imitation days
-  vanishes here.
+We start from the most common hand-written check.
 
 #antipattern[
-  Comparing truth with `1`
+  Adding and then seeing whether it overflowed
 ][
   ```c
-  int a = isupper('A');      /* any nonzero value, depending on the implementation */
-  int b = isupper('B');
-  if (a == b) { … }          /* both are true, yet the values may differ and it be false */
-  if (a == 1) { … }          /* worse */
+  int sum = a + b;
+  if (sum < a) { /* it overflowed */ }        /* ← this check can vanish */
   ```
-  As seen in chapter 62, the classification functions of `<ctype.h>` promise only
-  "a nonzero value". To compare truths, narrow to *truth values* rather than
-  values.
+  If `a` and `b` are signed integers, the moment `a + b` overflows it is already
+  undefined behaviour. The check after it has meaning only on the premise "if it
+  did not overflow", so the compiler judges that `sum < a` can never be true and
+  *erases the conditional entirely.* This pattern really did make checks vanish
+  quietly in several projects, and among them were security checks.
+
+  For unsigned values, wrap-round being defined, the check above *does work*. But
+  going to multiplication makes even that awkward.
   ```c
-  bool a = isupper('A');     /* normalised to 1 here */
-  bool b = isupper('B');
-  if (a == b) { … }          /* safe */
+  if (n != 0 && bytes / n != sz) { /* it overflowed */ }   /* correct but hard to read */
   ```
 ]
+
+So compilers each put out extensions — GCC's and Clang's `__builtin_add_overflow`
+family, MSVC's `SafeInt`, the home-made macros of many projects. They worked well
+but *were not portable*, and to secure portability every project had to write the
+same shell again. It is the same pattern as chapter 60's `strlcpy` story — reality
+finds the answer first and the standard ratifies it belatedly.
+
+== C23's answer — `ckd_add`, `ckd_sub`, `ckd_mul`
+
+#demo("examples-en/ch70/ckdint.c")
+
+The way to read it is this. All three macros have the same shape.
+
+```c
+bool overflowed = ckd_add(&result, left, right);
+```
+
+There are four promises.
+
++ *It calculates in infinite precision and then puts it in the vessel.* The
+  judgement is "does the mathematical result fit in the result type", and there is
+  no overflow in the intermediate calculation. So it judges exactly even when the
+  arguments' types differ from each other, and even when the result type is
+  narrower than the arguments — the example's `signed char <- 300` confirms it.
++ *The result type is settled by the first argument (the pointer).* It means the
+  arguments' promotion rules (chapter 27) do not sway the result, so there is no
+  need to fret over "in which type is it calculated".
++ *Even on overflow the result is stored.* That value is the value wrapped round
+  into the result type. The example's `INT_MAX + 1` remaining as `-2147483648` is
+  that — and it matters that even for a signed value *it is defined behaviour in
+  this place*.
++ *Unsigned wrap-round is reported as "overflowed" too.* The example's `3u - 5u`
+  confirms it. The value itself is a defined result (`4294967294`), but checked
+  arithmetic reports that *it differs from the mathematical value*. In size
+  calculations this is the property needed.
 
 #qa[
-  What format is used when printing a `bool` with `printf`?
+  Are the `ckd_*` functions or macros? Do they not evaluate arguments several
+  times?
 ][
-  There is no dedicated format. A `bool` goes over as a variadic argument and is
-  promoted to `int` (chapter 53's promotion rule), so `%d` is used — the example did
-  so. Printing words a human can read with `%s` and the ternary operator is a
-  common practice too.
+  What the standard settles are macros, but they are pinned down not to evaluate
+  their arguments several times (implementations mostly expand them into compiler
+  builtins). So code such as `ckd_add(&r, i++, j)` is safe too.
 
-  The place to beware is the `scanf` side. There being no format that takes a
-  `bool` directly, it must be received as an `int` and moved. And `sizeof(bool)` is
-  usually 1, but *the standard does not promise it is 1* — do not assume this value
-  when calculating a struct layout (chapter 43).
+  But there is *another* trap. The judgement and the result must not be mixed
+  inside one expression.
+  ```c
+  printf("%s %d", ckd_add(&r, a, b) ? "overflow" : "fine", r);   /* dangerous */
+  ```
+  There is no settled order between the moment `r` is read and the moment `ckd_add`
+  writes to `r`, so the old value may be printed (chapter 20's story of ordering).
+  This mistake really did print a wrong value when this chapter's example was first
+  written. *Take the judgement into a variable, and use the result on the next
+  line* — that one line of discipline is the whole of it.
 ]
 
-Two remaining traps of `bool`. First, using `bool` in a *bit-field* works fine even
-with a width of 1, but the layout is implementation-defined (chapter 43). Second,
-an array of `bool` uses one byte per element — it is not compressed into bits like
-C++'s `vector<bool>`. To compress into bits, write the masks by hand (chapter 27)
-or use the tools of `<stdbit.h>`.
+== Where it is used — size calculation comes first
 
-== `nullptr` — not a renaming
-
-Chapter 6 distinguished the null triplets. `NULL` is *a macro*, and its definition
-is `0` or `((void *)0)` depending on the implementation. This freedom bore real
-accidents.
-
-*Accident 1 — the size goes out of step in variadic arguments.* A variadic function
-does not know the arguments' types and so reads the bits as they came (chapter 53).
-On an implementation where `NULL` is defined as `0`, writing
-`execl("/bin/ls", "ls", NULL)` sends an *`int` 0*, and on a machine where pointers
-are 8 bytes the upper 4 bytes remain as rubbish. The function, failing to recognise
-the end of the list, runs away. That is why old code had to write `(char *)0`.
-`nullptr` is always of pointer size, so it does not have this problem.
-
-*Accident 2 — whether it is an integer or a pointer blurs.* On an implementation
-where `NULL` is `0`, `foo(NULL)` is indistinguishable from passing the integer 0.
-In code that branches by type with `_Generic` (chapter 53), this ambiguity becomes
-an accident as it stands. `nullptr` has *a type of its own* called `nullptr_t`, so
-the branch is clear.
-
-*Accident 3 — going out of step with C++.* C++ brought in `nullptr` first, in 2011,
-for the same reasons. There were places in headers crossing the two languages
-(chapter 51) where `NULL`'s meaning divided, and C23's adopting the same word
-narrowed that gap.
+The `alloc_array` in the latter part of the example is the type. Calculating an
+allocation size is the place where checked arithmetic is most sorely needed. If
+`n * sz` overflows you end up *obtaining a small vessel and using it believing it
+big*, which leads straight to a buffer overflow accident. Several famous
+vulnerabilities took exactly this route.
 
 #dtable(
   columns: 3,
-  [], [`NULL`], [`nullptr`],
-  [identity], [a macro (implementation-defined)], [a keyword, of type `nullptr_t`],
-  [variadic arguments], [dangerous (size goes out of step)], [safe],
-  [`_Generic` branching], [ambiguous], [clear],
-  [comparing with an integer], [`NULL == 0` may work], [not possible — diagnosed],
-  [conversion to `bool`], [—], [possible (false)],
-  [redefinition], [possible (`#undef`)], [not possible],
+  [*place*], [*the old idiom*], [*now*],
+  [array allocation], [the check `n && SIZE_MAX/n < sz`], [`ckd_mul(&bytes, n, sz)`],
+  [growing a buffer], [just calculating `cap * 2`], [`ckd_mul(&cap2, cap, 2)`],
+  [joining lengths], [`len1 + len2 + 1`], [`ckd_add` twice],
+  [index calculation], [`base + off` just so], [`ckd_add` (compulsory for signed values)],
+  [numbers from input], [using it straight after `atoi`], [`strtol` (chapter 61) + a range check],
 )
 
-A few rules to pin down. `nullptr` converts to *any object pointer type* and to a
-function pointer too (chapter 54). Two `nullptr`s, and a `nullptr` and any pointer,
-can be compared with `==` and `!=`. Converted to `bool` it is false. But *it cannot
-be compared with an integer* and does not convert to an integer — `nullptr == 0` is
-subject to diagnosis. The language has, in effect, cut the old intuition that "a
-null pointer is the same thing as the integer 0".
+The last line matters. Checked arithmetic only catches the overflow of a
+*calculation*; it does not filter out a value that was too large to begin with. The
+check at the input-parsing stage (chapter 61) and the check at the calculation
+stage do not stand in for each other.
 
 #misconception[
-  "Using `nullptr` reduces null-dereference accidents"
+  "Use `ckd_*` and worry about integer overflow ends"
 ][
-  It is a different kind of problem. What `nullptr` prevents is accidents coming
-  from *the way null is written* (size going out of step, type ambiguity), not
-  accidents of dereferencing null. Confirming whether a pointer is null is still a
-  human's part (chapter 35), and reducing that burden is the part not of the
-  language but of design — data structures that do not make nulls in the first
-  place, conventions that report failure through the return value (Part XII).
+  Three things remain. First, *division* is not in this header — `INT_MIN / -1` is
+  still an outside-the-contract case you must block yourself. Second, *conversions*
+  are not checked. Assigning from a wide type to a narrow one is not arithmetic but
+  conversion (chapter 7's truncation), so a value being wrecked there is not
+  `ckd_*`'s business. Third, *floating point* is not its subject (chapter 63).
+
+  In summary, checked arithmetic is a tool answering the narrow and clear question
+  "did an addition, subtraction or multiplication overflow its vessel". It is a good
+  tool precisely because it is narrow.
 ]
 
-== The remaining promotions and the new words
+== Where this tool is absent
 
-*`static_assert`* — checks a condition at compile time and, if it is broken,
-*translation fails*. The example's first line is that. It differs in character from
-the run-time `assert` (chapter 65) — this one is a tool asking "does this code hold
-on this machine", used for pinning assumptions about type sizes, alignment and
-struct layout into the code. In C23 the message may be omitted.
+In an environment that cannot yet use the C23 header, prepare in two steps.
 
-*`alignas`, `alignof`* — the words for handling in the language the alignment seen
-in chapter 6. They are used to lay things out to fit a cache line (chapter 11's
-avoidance of false sharing) or to meet an alignment the hardware requires.
+```c
+#if defined(__has_include)
+#  if __has_include(<stdckdint.h>)
+#    include <stdckdint.h>
+#    define HAVE_CKDINT 1
+#  endif
+#endif
 
-*`thread_local`* — makes a variable that exists separately per strand. It is a tool
-for avoiding the problem of sharing seen in chapter 68 *by not sharing*. `errno` is
-in fact implemented this way (chapter 65).
+#ifndef HAVE_CKDINT                      /* fill in with the GCC/Clang extensions */
+#  define ckd_add(r, a, b) __builtin_add_overflow((a), (b), (r))
+#  define ckd_sub(r, a, b) __builtin_sub_overflow((a), (b), (r))
+#  define ckd_mul(r, a, b) __builtin_mul_overflow((a), (b), (r))
+#endif
+```
 
-*`constexpr`* — as seen in the example, it makes a real constant. A `const int` is
-not a constant *expression* and so could not be used for an array size or a `case`
-label (chapter 23), and that place was long the part of `#define`. `constexpr`
-reclaims that place with a typed name — this chapter's theme of macros being
-promoted into the language is repeated here too.
+Only beware that the argument order differs — the standard puts the result pointer
+first, the compiler builtins put it last. Gathering such shells in one place is the
+real shape of the portability layer spoken of in chapter 52, and Part XII's library
+does the same work.
 
-*`typeof`* — takes an expression's type down as it is. What had been used as a GCC
-extension for over thirty years became standard. It is especially handy when
-declaring a temporary variable inside a macro.
-
-#realcase[
-  The story of the underscored names — why `_Bool` looks like that
+#platform[
+  The road of leaving the checking to tools
 ][
-  Why was it not called `bool` from the start? Because if the standard makes a new
-  keyword, all existing code already using that word as a name breaks. The world had
-  mountains of code containing `typedef int bool;` or `struct bool { … };`.
-
-  So the standard uses *a name space reserved so that users cannot use it* — names
-  beginning with one underscore and a capital letter. `_Bool`, `_Static_assert`,
-  `_Alignas`, `_Atomic` (chapter 68) and `_Generic` are all products of this rule.
-  And headers laid pretty names on top as macros, so that *only those who included
-  them* used the short names. Old code that did not include them breaks in nothing.
-
-  C23's promotion is the judgement that "enough time has passed that the short names
-  may now be used". Even so the underscored names are still alive, and the two names
-  point at the same thing. It is a case where the standard's habit of not breaking
-  old code remains even in the names — the same character as chapter 59's `gets`
-  story, and a decision in the opposite direction.
-]
-
-== How to move existing code over
-
-There is no need to change it all at once. Fix an order and there is almost no
-risk.
-
-+ *First settle the compiler edition.* Check whether `-std=c23` (or `c2x`) can be
-  used, and whether it works on all the target platforms. If even one does not, go
-  to the shell strategy of number 5 below.
-+ *Clear away your own `BOOL`, `TRUE`, `FALSE`.* Delete the project header's
-  `typedef int BOOL;` and change it to `bool`. While doing so, look together for
-  *places that were comparing values* (the counterexample above) — it is rather a
-  place where bugs come to light.
-+ *Change `NULL` to `nullptr`.* Mechanical substitution finishes most of it, but
-  check two places by hand. Variadic calls (a real bug is mended here), and code
-  that used `NULL` like the integer 0 (a compile error arises here — which is a good
-  thing).
-+ *Take `_Static_assert`, `_Alignas` and `_Thread_local` to the names without
-  underscores.* They are different notations for the same thing, so there is no
-  risk. Then tidy away the now unnecessary `<stdbool.h>` and `<stdalign.h>`
-  includes.
-+ *If old editions must be supported too, put the shells in one place.* The same as
-  what was done in chapter 69.
-
-  ```c
-  #if __STDC_VERSION__ < 202311L
-  #  include <stdbool.h>
-  #  define nullptr ((void *)0)      /* not a complete substitute — see the caution below */
-  #  define static_assert _Static_assert
-  #endif
-  ```
-
-  This `nullptr` shell *cannot imitate the type as well.* In code doing `_Generic`
-  branching or type checking it may behave differently from expectations, so if
-  there is such code it is right to raise the edition rather than use the shell.
-
-#qa[
-  For a project that must keep compiling with an old standard, is this chapter
-  somebody else's story?
-][
-  No — two things remain. First, *the ability to read*. New code and libraries have
-  begun using these words, so when a `constexpr` or a `nullptr` appears you must
-  know its meaning. Second, *what to mend now*. Places passing `NULL` into variadic
-  arguments with the cast left out, places comparing truth with `== 1`, places
-  making constants with `#define` and losing the type — these are already dangerous
-  under the old standard too. C23's words merely have the language block that danger
-  for you; the danger itself was there all along.
+  There is also a way of catching overflow without mending the code. GCC's and
+  Clang's `-fsanitize=signed-integer-overflow` (UBSan) catches overflow during
+  execution and reports it, and `-ftrapv` stops the program on overflow. Both are
+  *for testing* — they show themselves only in a run in which an overflow actually
+  happened, so they are different in character from checked arithmetic, which
+  "blocks in code the places where it could happen". It is the same conclusion as
+  chapter 17's story of debuggers: tools help observation but do not stand in for
+  the contract.
 ]
 
 #recap[
   #dtable(
     columns: 2,
     [*to remember*], [*the point*],
-    [the meaning of promotion], [macro (letter substitution) → keyword (type, diagnosis, no redefinition)],
-    [`bool`], [it *normalises* nonzero values to 1 — comparing truths becomes safe],
-    [printing a `bool`], [`%d` (promoted to `int` in variadic arguments)],
-    [`nullptr`], [not a name but *a new type*. it prevents variadic and `_Generic` accidents],
-    [`nullptr`'s limits], [no comparison with or conversion to an integer. false as a `bool`],
-    [`constexpr`], [reclaims `#define` constants with a typed name],
-    [underscored names], [a product of the reserved name space, to avoid breaking old code],
-    [the order of moving], [check the edition → remove your own BOOL → substitute NULL → tidy underscores → shells],
+    [checking afterwards], [with signed values the check itself is outside the contract — it can be erased],
+    [the shape], [`bool overflowed = ckd_add(&result, a, b)`],
+    [the criterion], [does the mathematical result fit in *the result type*],
+    [the result type], [settled by the first argument. not swayed by promotion rules],
+    [even on overflow], [the wrapped value is stored (defined behaviour)],
+    [unsigned values], [wrap-round too is reported as "overflow"],
+    [one expression], [do not mix the judgement and the result],
+    [first place to apply it], [allocation size calculation],
+    [where it is absent], [make a shell with `__builtin_*_overflow`],
   )
 ]
 
-Across thirteen chapters we have walked the terrain of the standard library and the
-newest standard. We have seen what the standard promises and what it does not,
-where it is slippery and why.
-
-The two remaining chapters of this part go one layer down. The place chapter 42
-passed over saying only "it is expensive" — what map a program's memory is laid out
-on in an operating system and in an embedded chip respectively (chapter 71), and
-what an allocator actually does in the heap region of that map (chapter 72). Those
-two chapters become the ground for understanding the next part's design.
+We have learned how to ask about overflow according to the contract. The next
+chapter is this part's last and the most conspicuous change C23 made to the
+language — the story of things that were macros becoming keywords.

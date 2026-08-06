@@ -1,204 +1,279 @@
 #import "../../book/lib.typ": *
 
-= How to ask about overflow — `<stdckdint.h>`
+= Operations that do not split — `<stdatomic.h>`
 
 #prereq(
-  ([chapter 26, Integers], [the finiteness of integers]),
-  ([chapter 49, Undefined behaviour], [overflow is outside the contract]),
+  ([chapter 11, Memory divides], [the cache and the layers of memory]),
+  ([chapter 41, Lifetime and storage duration], [lifetime and sharing]),
 )
 
 #deepqa[
-  Chapter 7 said unsigned overflow is defined wrap-round while signed overflow is
-  outside the contract, and chapter 61 said `calloc` checks the product of the
-  element count and the size. Then how do we write the check for whether a
-  multiplication overflows ourselves?
+  Chapter 12 said the CPU does several things in one beat and even executes out of
+  order, and chapter 11 said each core carries its own cache. Then if two strands
+  increase the same variable by 1 at once — is the result 2?
 ][
-  That very "checking ourselves" is the code that has been written wrongly for half
-  a century. With signed values, *checking after it has overflowed is itself
-  already outside the contract*, so the compiler may erase the checking code
-  (chapter 13's editor), and with unsigned values the idiom that inserts a division
-  is hard to read and easy to get wrong. C23 tidied this place up at the level of
-  the language.
+  It may not be. `x = x + 1` is not one step to the machine but *three* (read, add,
+  write), and if two strands interleave these three steps they read the same value
+  and write the same value — one increment vanishes whole. On top of that, caches
+  differ per core, so the lag of "written but not visible to the other" is
+  compounded. This chapter's first example actually counts that loss out.
 ]
 
 #organizer[
-#idx("checked arithmetic")  We learn the checked arithmetic C23 brought in. Why
-  hand-written code that "checks after calculating whether it overflowed" is
-  dangerous, exactly what `ckd_add`, `ckd_sub` and `ckd_mul` promise, and how to
-  move the size calculations of existing code onto this tool.
+#idx("atomic operations")  We see what happens when several strands touch the same
+  memory at once, and learn the tool C11 brought into that place — atomic types and
+  operations. Why a data race is *outside the contract* rather than "slow", why
+#idx("data race")  `volatile` is not the answer, and when to touch and when to
+  leave alone the difficult handle called the memory order.
 ]
 
 #chapter-questions()
 
-== The trap of checking afterwards
+== The lost update — confirmed with the eyes
 
-We start from the most common hand-written check.
+#demo("examples-en/ch69/atomic.c")
 
-#antipattern[
-  Adding and then seeing whether it overflowed
+Four strands turned the same loop 200,000 times each. The expected value is
+800,000, but the unprotected `long` did not even get near it. The vanished share
+differs on every run — and this non-determinism is precisely the character of this
+class of bug. *A loss that does not reproduce.*
+
+The atomic variable's side is exactly 800,000 every time. Because
+`atomic_fetch_add` performs "read-add-write" as *one lump that cannot be split*.
+The name atom means just that — that which is not split further.
+
+#misconception[
+  "A race condition is a probabilistic performance problem where the value is
+  occasionally off"
 ][
-  ```c
-  int sum = a + b;
-  if (sum < a) { /* it overflowed */ }        /* ← this check can vanish */
-  ```
-  If `a` and `b` are signed integers, the moment `a + b` overflows it is already
-  undefined behaviour. The check after it has meaning only on the premise "if it
-  did not overflow", so the compiler judges that `sum < a` can never be true and
-  *erases the conditional entirely.* This pattern really did make checks vanish
-  quietly in several projects, and among them were security checks.
+  Wrong in two layers. First, it is not that the value goes off but that *the
+  contract breaks*. The standard from C11 onward settles it thus — if two strands
+  touch the same memory at once, at least one of them writing, and it is neither
+  atomic nor ordered, that is a *data race* and the whole program is undefined
+  behaviour (chapter 49). It means there is no guarantee that it ends at the level
+  of "one value being wrong".
 
-  For unsigned values, wrap-round being defined, the check above *does work*. But
-  going to multiplication makes even that awkward.
-  ```c
-  if (n != 0 && bytes / n != sz) { /* it overflowed */ }   /* correct but hard to read */
-  ```
+  Second, the compiler optimises on this premise. Assuming there is no race, it
+  puts the variable in a register, and then however much the other side changes the
+  value this loop *sees the old value forever*. This really is the common identity
+  of the infinite loop that "works in a debug build and hangs in release"
+  (chapter 17's release-only bug is replayed here).
 ]
 
-So compilers each put out extensions — GCC's and Clang's `__builtin_add_overflow`
-family, MSVC's `SafeInt`, the home-made macros of many projects. They worked well
-but *were not portable*, and to secure portability every project had to write the
-same shell again. It is the same pattern as chapter 60's `strlcpy` story — reality
-finds the answer first and the standard ratifies it belatedly.
+== Why `volatile` is not the answer
 
-== C23's answer — `ckd_add`, `ckd_sub`, `ckd_mul`
+In code that has long used C one often sees the practice of exchanging signals
+between strands with `volatile int flag;`. It is a wrong practice now. What
+`volatile` promises is one thing only — *the compiler will not remove or merge
+these accesses*. As will be seen in chapter 49, its purpose was hardware registers
+(places whose value changes from outside).
 
-#demo("examples-en/ch69/ckdint.c")
+There are two things `volatile` does not promise. *Atomicity* — the `x++` of a
+`volatile long x;` is still three steps and splits. And *ordering and visibility* —
+it does not prevent the CPU from changing the order of writes or from being late to
+show them to another core.
 
-The way to read it is this. All three macros have the same shape.
+#dtable(
+  columns: 4,
+  [], [*not split*], [*visibility between cores*], [*blocks reordering*],
+  [`volatile`], [no], [no], [no (against other accesses)],
+  [`_Atomic`], [yes], [yes], [yes (as much as the chosen order)],
+  [a mutex], [yes (the whole region)], [yes], [yes],
+)
+
+Summed up: *`volatile` for hardware registers, atomic types or mutexes for sharing
+between strands.* Java's and C\#'s `volatile` share only the name and differ in
+meaning (there it really does guarantee visibility), so bringing the habits of
+those languages into C is a common passage to accidents.
+
+== Atomic types and operations
+
+Using them is simple. Attach `_Atomic` before the type, or use the names the header
+gives (`atomic_int`, `atomic_long`, `atomic_bool`, `atomic_size_t` …).
 
 ```c
-bool overflowed = ckd_add(&result, left, right);
+#include <stdatomic.h>
+atomic_int  counter = 0;      /* = _Atomic int */
+_Atomic long total;
 ```
 
-There are four promises.
-
-+ *It calculates in infinite precision and then puts it in the vessel.* The
-  judgement is "does the mathematical result fit in the result type", and there is
-  no overflow in the intermediate calculation. So it judges exactly even when the
-  arguments' types differ from each other, and even when the result type is
-  narrower than the arguments — the example's `signed char <- 300` confirms it.
-+ *The result type is settled by the first argument (the pointer).* It means the
-  arguments' promotion rules (chapter 27) do not sway the result, so there is no
-  need to fret over "in which type is it calculated".
-+ *Even on overflow the result is stored.* That value is the value wrapped round
-  into the result type. The example's `INT_MAX + 1` remaining as `-2147483648` is
-  that — and it matters that even for a signed value *it is defined behaviour in
-  this place*.
-+ *Unsigned wrap-round is reported as "overflowed" too.* The example's `3u - 5u`
-  confirms it. The value itself is a defined result (`4294967294`), but checked
-  arithmetic reports that *it differs from the mathematical value*. In size
-  calculations this is the property needed.
-
-#qa[
-  Are the `ckd_*` functions or macros? Do they not evaluate arguments several
-  times?
-][
-  What the standard settles are macros, but they are pinned down not to evaluate
-  their arguments several times (implementations mostly expand them into compiler
-  builtins). So code such as `ckd_add(&r, i++, j)` is safe too.
-
-  But there is *another* trap. The judgement and the result must not be mixed
-  inside one expression.
-  ```c
-  printf("%s %d", ckd_add(&r, a, b) ? "overflow" : "fine", r);   /* dangerous */
-  ```
-  There is no settled order between the moment `r` is read and the moment `ckd_add`
-  writes to `r`, so the old value may be printed (chapter 20's story of ordering).
-  This mistake really did print a wrong value when this chapter's example was first
-  written. *Take the judgement into a variable, and use the result on the next
-  line* — that one line of discipline is the whole of it.
-]
-
-== Where it is used — size calculation comes first
-
-The `alloc_array` in the latter part of the example is the type. Calculating an
-allocation size is the place where checked arithmetic is most sorely needed. If
-`n * sz` overflows you end up *obtaining a small vessel and using it believing it
-big*, which leads straight to a buffer overflow accident. Several famous
-vulnerabilities took exactly this route.
+The operations are called as functions (or macros of those names). Using the
+ordinary operators (`++`, `+=`) also behaves atomically, but *the fact of being
+atomic is not visible in the code* and so is easy for a reader to miss, which is
+why the explicit functions are recommended.
 
 #dtable(
   columns: 3,
-  [*place*], [*the old idiom*], [*now*],
-  [array allocation], [the check `n && SIZE_MAX/n < sz`], [`ckd_mul(&bytes, n, sz)`],
-  [growing a buffer], [just calculating `cap * 2`], [`ckd_mul(&cap2, cap, 2)`],
-  [joining lengths], [`len1 + len2 + 1`], [`ckd_add` twice],
-  [index calculation], [`base + off` just so], [`ckd_add` (compulsory for signed values)],
-  [numbers from input], [using it straight after `atoi`], [`strtol` (chapter 61) + a range check],
+  [*operation*], [*what it does*], [*where it is used*],
+  [`atomic_load`], [read], [seeing the current value],
+  [`atomic_store`], [write], [setting a value],
+  [`atomic_fetch_add`, `_sub`], [add and return *the previous value*], [counters and statistics],
+  [`atomic_fetch_or`, `_and`, `_xor`], [bit manipulation], [sets of flags],
+  [`atomic_exchange`], [swap and return the previous value], [replacing in place],
+  [`atomic_compare_exchange_strong`], [change only if equal to the expected value (CAS)], [lock-free data structures],
+  [`atomic_compare_exchange_weak`], [the same, but it may fail in vain], [inside a loop],
+  [`atomic_flag_test_and_set`], [the most primitive test-and-set], [spinlocks],
 )
 
-The last line matters. Checked arithmetic only catches the overflow of a
-*calculation*; it does not filter out a value that was too large to begin with. The
-check at the input-parsing stage (chapter 61) and the check at the calculation
-stage do not stand in for each other.
+That `fetch_add` returns *the previous value* is a place often confused. To obtain
+"which number this is", use the return value; to know "how much it is now", it is
+the return value plus the increment, or a separate `atomic_load` — and the latter
+may change again in the meantime.
 
-#misconception[
-  "Use `ckd_*` and worry about integer overflow ends"
+#antipattern[
+  Believing that several atomic operations make their bundle atomic too
 ][
-  Three things remain. First, *division* is not in this header — `INT_MIN / -1` is
-  still an outside-the-contract case you must block yourself. Second, *conversions*
-  are not checked. Assigning from a wide type to a narrow one is not arithmetic but
-  conversion (chapter 7's truncation), so a value being wrecked there is not
-  `ckd_*`'s business. Third, *floating point* is not its subject (chapter 63).
-
-  In summary, checked arithmetic is a tool answering the narrow and clear question
-  "did an addition, subtraction or multiplication overflow its vessel". It is a good
-  tool precisely because it is narrow.
+  ```c
+  if (atomic_load(&count) < LIMIT)      /* ① read and */
+      atomic_fetch_add(&count, 1);      /* ② add — somebody cuts in between */
+  ```
+  If another strand raises the value between ① and ②, the limit is exceeded.
+  *Atomicity is a property of one operation, not of a region.* To protect a region,
+  bind it with a CAS loop or use a mutex.
+  ```c
+  int cur = atomic_load(&count);
+  do {
+      if (cur >= LIMIT) break;                 /* limit check and update as one lump */
+  } while (!atomic_compare_exchange_weak(&count, &cur, cur + 1));
+  ```
+  That on failure *the current value comes back held in `cur`* is the heart of this
+  idiom. So there is no need to read again inside the loop.
 ]
 
-== Where this tool is absent
-
-In an environment that cannot yet use the C23 header, prepare in two steps.
-
-```c
-#if defined(__has_include)
-#  if __has_include(<stdckdint.h>)
-#    include <stdckdint.h>
-#    define HAVE_CKDINT 1
-#  endif
-#endif
-
-#ifndef HAVE_CKDINT                      /* fill in with the GCC/Clang extensions */
-#  define ckd_add(r, a, b) __builtin_add_overflow((a), (b), (r))
-#  define ckd_sub(r, a, b) __builtin_sub_overflow((a), (b), (r))
-#  define ckd_mul(r, a, b) __builtin_mul_overflow((a), (b), (r))
-#endif
-```
-
-Only beware that the argument order differs — the standard puts the result pointer
-first, the compiler builtins put it last. Gathering such shells in one place is the
-real shape of the portability layer spoken of in chapter 52, and Part XII's library
-does the same work.
-
-#platform[
-  The road of leaving the checking to tools
+#qa[
+  What differs between `compare_exchange`'s strong and weak? Why is there a
+  separate edition that "fails in vain"?
 ][
-  There is also a way of catching overflow without mending the code. GCC's and
-  Clang's `-fsanitize=signed-integer-overflow` (UBSan) catches overflow during
-  execution and reports it, and `-ftrapv` stops the program on overflow. Both are
-  *for testing* — they show themselves only in a run in which an overflow actually
-  happened, so they are different in character from checked arithmetic, which
-  "blocks in code the places where it could happen". It is the same conclusion as
-  chapter 17's story of debuggers: tools help observation but do not stand in for
-  the contract.
+  Some CPUs (the ARM family and others) implement CAS as a pair of instructions,
+  "reserve and later write conditionally". If the reservation is broken in between
+  by an interrupt or by cache circumstances, it comes back as a failure even though
+  the value equalled the expectation — that is a *spurious failure*. `weak` exposes
+  this failure as it is and in exchange is faster, while `strong` retries
+  internally to guarantee "failure only when the value differed" and in exchange is
+  a little slower.
+
+  The rule is simple. *`weak` inside a loop, `strong` when trying only once without
+  a loop.* Since the loop will turn again anyway, a spurious failure is harmless
+  and only the gain remains.
+]
+
+== Memory order — not touching it is the default
+
+If no order is specified, as in `atomic_fetch_add(&x, 1)`, the strongest order,
+*sequential consistency* (`memory_order_seq_cst`), is used. It means every strand
+sees the order of atomic operations as one consistent story, and it is the model
+easiest for a human to reason about. In exchange it is the most expensive.
+
+C provides six orders. We learn their faces from a table — *most programs need only
+the default.*
+
+#dtable(
+  columns: 3,
+  [*order*], [*guarantee*], [*where it is used*],
+  [`seq_cst`], [one order globally], [the default. if in doubt, this],
+  [`acquire`], [later accesses cannot rise above it], [taking a lock, reads on the consumer side],
+  [`release`], [earlier accesses cannot sink below it], [releasing a lock, writes on the producer side],
+  [`acq_rel`], [both, in a read-modify-write operation], [state transitions with CAS],
+  [`relaxed`], [atomicity only. no ordering guarantee], [pure counters and statistics],
+  [`consume`], [effectively abandoned (implementations raise it to acquire)], [not used],
+)
+
+The two most common practical uses are these. First, *the producer-consumer flag*:
+fill the data and then raise the flag with `release`, and the consumer sees the
+flag with `acquire` and then reads the data. This pair guarantees "if the flag is
+visible the data is visible too." Second, *a pure statistics counter*: only the
+final sum need be right and there is no need to order it against other data, so
+`relaxed` is exactly the right tool.
+
+#antipattern[
+  Switching to `relaxed` for performance, just to see
+][
+  ```c
+  atomic_store_explicit(&ready, 1, memory_order_relaxed);   /* the flag */
+  ```
+  `relaxed` guarantees *only the atomicity of this variable*. There is no guarantee
+  that the data filled in beforehand is visible to the other side, so the consumer
+  can see the flag raised and yet read *the data from before it was filled*. Such
+  code mostly runs fine on x86 and then appears as an unreproducible bug on an ARM
+  device — because the reordering each piece of hardware permits differs.
+
+  The rule: *when a flag and data form a pair, `release`/`acquire`.* Until you
+  understand that pair, leave the default as it is. The time lost far exceeds the
+  nanoseconds saved here.
+]
+
+== The phrase "lock-free"
+
+That is what the example's last line asked with `atomic_is_lock_free`. If an atomic
+type is handled by a single CPU instruction it is *lock-free*, and if not the
+library uses a hidden lock behind the scenes. On today's mainstream machines
+integers of pointer size or smaller are mostly lock-free. Wrap a large struct in
+`_Atomic`, on the other hand, and — the syntax passes but — a hidden lock attaches
+and performance can become unexpectedly bad.
+
+#misconception[
+  "Atomic operations are always faster than a mutex"
+][
+  Mostly right when contention is low, but it reverses when contention is heavy. If
+  several cores fight over the same cache line, that line keeps travelling between
+  the cores (chapter 11's false sharing is replayed here). A CAS loop turns again
+  on every failure, and when contention is heavy this retrying is waste entire — a
+  mutex puts the failing strand to sleep while spinning burns a core.
+
+  And *writing lock-free data structures yourself* is a task of another order of
+  difficulty. The ABA problem (a value going from A to B and back to A, fooling the
+  CAS), when memory may be reclaimed, progress guarantees — these are topics for a
+  paper each. The right answer in the field is usually this: *atomic types for
+  counters and flags, a verified library or a mutex for data structures.*
+]
+
+== Where to use it and where not to
+
+#dtable(
+  columns: 3,
+  [*situation*], [*recommended tool*], [*reason*],
+  [statistics counters], [`atomic_fetch_add` (`relaxed`)], [no ordering is needed],
+  [a shutdown-request flag], [`atomic_bool` + `release`/`acquire`], [it pairs with data],
+  [initialising exactly once], [`call_once` (`<threads.h>`) or CAS], [do not write double-checked locking by hand],
+  [invariants over several values], [a mutex], [atomicity is per single variable],
+  [sharing a large struct], [a mutex], [an `_Atomic` struct means a hidden lock],
+  [sharing with a signal handler], [`sig_atomic_t` or a lock-free atomic type], [chapter 65's restrictions],
+  [hardware registers], [`volatile`], [it is not sharing between strands],
+)
+
+#realcase[
+  Why C11 brought in a memory model
+][
+  In the standard before C11 there was *no concept at all of there being several
+  strands.* Threads were the business of a library (POSIX threads and the like),
+  and the language defined optimisation on the premise that "a program flows in one
+  stream". In that gap questions piled up which nobody could answer exactly — must
+  the compiler assume another strand sees this write, is this reordering legal, is
+  this mutex-less code wrong.
+
+  Around 2004 Java tidied up its memory model first, and C++11 and C11 continued
+  that current by introducing *a memory model at the level of the language*. What
+  entered then was the definition of a data race, atomic types, and the six memory
+  orders. That we can today say in one line "a data race is undefined behaviour" is
+  thanks to that tidying — before it there was not even a language in which to write
+  that sentence.
 ]
 
 #recap[
   #dtable(
     columns: 2,
     [*to remember*], [*the point*],
-    [checking afterwards], [with signed values the check itself is outside the contract — it can be erased],
-    [the shape], [`bool overflowed = ckd_add(&result, a, b)`],
-    [the criterion], [does the mathematical result fit in *the result type*],
-    [the result type], [settled by the first argument. not swayed by promotion rules],
-    [even on overflow], [the wrapped value is stored (defined behaviour)],
-    [unsigned values], [wrap-round too is reported as "overflow"],
-    [one expression], [do not mix the judgement and the result],
-    [first place to apply it], [allocation size calculation],
-    [where it is absent], [make a shell with `__builtin_*_overflow`],
+    [data race], [not slowness but *outside the contract*. optimisation changes the code],
+    [`volatile`], [not a tool for sharing between strands. it is for hardware],
+    [the default order], [`seq_cst`. leaving it as it is is mostly the right answer],
+    [`fetch_add`], [it returns *the previous value*],
+    [two operations], [bundling them is not atomic — a CAS loop or a mutex],
+    [`weak`/`strong`], [`weak` if inside a loop],
+    [lock-free], [mostly yes for small integers. a hidden lock for large structs],
+    [data structures], [do not write them yourself],
   )
 ]
 
-We have learned how to ask about overflow according to the contract. The next
-chapter is this part's last and the most conspicuous change C23 made to the
-language — the story of things that were macros becoming keywords.
+We have seen operations that do not split. The next chapter is a tool in the
+opposite direction — C23's checked arithmetic, which asks according to the contract
+whether an operation *overflowed its vessel*.

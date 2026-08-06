@@ -175,7 +175,7 @@ free*.
 
 That choice became C's power and its danger. The power is expressiveness — arrays
 arrive with no extra syntax (chapter 37), and memory can be handled in bulk
-(chapter 76). The danger is the illusion that the number may be handled *like any
+(chapter 77). The danger is the illusion that the number may be handled *like any
 other number*.
 
 === The abstraction has thickened with time
@@ -266,7 +266,7 @@ Why leave it so loose — because machines really were different.
   data live in entirely separate address spaces. Function pointers have a
   different width from data pointers, and reading a constant out of flash needs
   separate instructions and a separate kind of pointer (AVR's `__flash`, the
-  `PROGMEM` idiom). Chapter 85's embedded story stands on this ground.
+  `PROGMEM` idiom). Chapter 86's embedded story stands on this ground.
 
   *IBM AS/400 (OS/400).* Pointers were 128 bits with a tag inside them, and the
   hardware refused forged ones. Code that converts an address to an integer and
