@@ -124,6 +124,40 @@ def fig_ptrmath(L):
     return "".join(out)
 
 
+# ── F8. 다차원 배열의 두 번의 점프 (38장) ────────────────────
+def fig_mdarray(L):
+    w, h = 780, 250
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    x0, y, cell = 50, 96, 56
+    # 12칸을 한 줄로 — 행 경계는 굵은 선으로 나눈다
+    for i in range(12):
+        out.append(box(x0 + i * cell, y, cell, 46))
+        out.append(text(x0 + i * cell + cell / 2, y + 29,
+                        f"{i // 4},{i % 4}", 12))
+    for r in (0, 4, 8, 12):
+        x = x0 + r * cell
+        out.append(f'<line x1="{x}" y1="{y - 6}" x2="{x}" y2="{y + 52}" '
+                   f'stroke="#111" stroke-width="2.6"/>')
+    out.append(text(x0, y - 46, L["title"], 14, "bold", anchor="start"))
+    for r in range(3):
+        out.append(text(x0 + (r * 4 + 2) * cell, y - 14, L["row"].format(r), 12,
+                        fill="#444"))
+    # 점프 1: a + 2  (행 크기)
+    x_from, x_to = x0, x0 + 8 * cell
+    out.append(f'<path d="M {x_from} {y + 78} C {x_from} {y + 118}, '
+               f'{x_to} {y + 118}, {x_to} {y + 78}" fill="none" stroke="#111" '
+               f'stroke-width="1.6" marker-end="url(#a)"/>')
+    out.append(text((x_from + x_to) / 2, y + 116, L["jump1"], 12.5, "bold"))
+    # 점프 2: +1 (원소 크기)
+    x2_from, x2_to = x0 + 8 * cell, x0 + 9 * cell
+    out.append(f'<line x1="{x2_from}" y1="{y + 66}" x2="{x2_to}" y2="{y + 66}" '
+               f'stroke="#111" stroke-width="1.6" marker-end="url(#a)"/>')
+    out.append(text(x2_to + 84, y + 70, L["jump2"], 12.5, "bold"))
+    out.append(text(x0, h - 14, L["note"], 12, anchor="start", fill="#444"))
+    out.append(TAIL)
+    return "".join(out)
+
+
 # ── F7. 포인터 값에 붙은 세 가지 (33장) ──────────────────────
 def fig_pointer_parts(L):
     w, h = 700, 250
@@ -167,6 +201,16 @@ FIGS = {
                    step="+1", rule="간격 = sizeof(원소). 끝 다음 자리는 만들 수 있으나 따라가면 안 된다"),
         "en": dict(title="+1 on a pointer moves one element, not one byte", past="a+8 (one past)",
                    step="+1", rule="the step is sizeof(element); one past the end may be formed, never followed"),
+    }),
+    "mdarray": (fig_mdarray, {
+        "ko": dict(title="a[2][1] 을 찾아가는 두 번의 점프 (int a[3][4])",
+                   row="행 {0}", jump1="a + 2 → 행 크기(16바이트)씩 두 번",
+                   jump2="+1 → 원소 크기(4바이트)",
+                   note="기억은 한 줄이다. 행 경계는 굵은 선일 뿐, 빈틈이 아니다."),
+        "en": dict(title="the two jumps that reach a[2][1] (int a[3][4])",
+                   row="row {0}", jump1="a + 2 → twice the row size (16 bytes)",
+                   jump2="+1 → one element (4 bytes)",
+                   note="memory is one run; the thick lines are row boundaries, not gaps."),
     }),
     "pointer-parts": (fig_pointer_parts, {
         "ko": dict(title="포인터 값에 붙어 다니는 것", value="포인터 값", value_sub="복사·비교할 수 있다",

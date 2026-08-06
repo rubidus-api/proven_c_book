@@ -23,13 +23,13 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-# 새로 끼우는 장: 81(간이 JSON — 두 판으로 짜 보기), 제12부 끝
-INSERTS = (81,)
+# 새로 끼우는 장: 38(다차원 배열), 37장 배열 바로 다음
+INSERTS = (38,)
 
 
 def remap(n: int) -> int:
     """옛 장 번호 → 새 장 번호."""
-    return n if n < 81 else n + 1
+    return n if n < 38 else n + 1
 
 
 PLACE = "«{}»"   # «n»

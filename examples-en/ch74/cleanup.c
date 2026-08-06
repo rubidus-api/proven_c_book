@@ -1,11 +1,12 @@
-/* 실패 경로에서 자원을 흘리지 않는 법 — 한 곳에 모아 역순으로 정리한다.
-   64장에서 본 `goto cleanup` 관용구가 proven 의 에러 값과 만나는 자리다. */
+/* How not to leak a resource on a failure path — everything gathered in one
+   place and released in reverse. The `goto cleanup` idiom of chapter 65 meeting
+   proven's error values. */
 #include <proven.h>
 
-/* 실패를 흉내 내기 위한 할당자: n 번째 할당부터는 반드시 실패한다. */
+/* An allocator for imitating failure: from the nth allocation on it always fails. */
 typedef struct {
     proven_allocator_t base;
-    int                budget;   /* 남은 성공 횟수 */
+    int                budget;   /* how many successes are left */
 } failing_ctx_t;
 
 static proven_result_mem_mut_t failing_alloc(void *ctx, proven_size_t size,
@@ -36,7 +37,7 @@ static void failing_free(void *ctx, void *ptr)
     f->base.free_fn(f->base.ctx, ptr);
 }
 
-/* 자원 둘을 잡고 일하는 함수. 어디서 실패하든 잡은 것만 정확히 되돌린다. */
+/* A function holding two resources. Wherever it fails, exactly what was taken is given back. */
 static proven_err_t join_two(proven_allocator_t alloc,
                              proven_u8str_view_t a,
                              proven_u8str_view_t b,
@@ -44,8 +45,8 @@ static proven_err_t join_two(proven_allocator_t alloc,
 {
     proven_err_t   err   = PROVEN_OK;
     bool           has_x = false;
-    proven_u8str_t x;                       /* 첫 번째 자원 */
-    proven_u8str_t y;                       /* 두 번째 자원 */
+    proven_u8str_t x;                       /* the first resource */
+    proven_u8str_t y;                       /* the second resource */
 
     proven_result_u8str_t rx = proven_u8str_create_from_view(alloc, a);
     if (!proven_is_ok(rx.err)) { err = rx.err; goto done; }
@@ -55,14 +56,14 @@ static proven_err_t join_two(proven_allocator_t alloc,
     if (!proven_is_ok(ry.err)) { err = ry.err; goto done; }
     y = ry.value;
 
-    /* 두 조각을 이어 붙인다 — 모자라면 늘린다(할당자가 필요한 이유) */
+    /* the two pieces joined — it grows if there is not enough room (why an allocator is needed) */
     err = proven_u8str_append_grow(alloc, &y, proven_u8str_as_view(&x));
     if (!proven_is_ok(err)) { proven_u8str_destroy(alloc, &y); goto done; }
 
-    *out = y;                               /* 성공: y 의 소유권을 넘긴다 */
-                                            /* x 는 아래에서 반납된다 */
+    *out = y;                               /* success: ownership of y is handed over */
+                                            /* x is given back below */
 done:
-    if (has_x) proven_u8str_destroy(alloc, &x);   /* 잡았으면 반드시 되돌린다 */
+    if (has_x) proven_u8str_destroy(alloc, &x);   /* if it was taken, it is always given back */
     return err;
 }
 
@@ -79,20 +80,20 @@ static void run(int budget)
     proven_err_t e = join_two(alloc, PROVEN_LIT("world"), PROVEN_LIT("hello, "), &out);
 
     if (proven_is_ok(e)) {
-        proven_println("budget={} -> ok: \"{}\"  (남은 예산 {})",
+        proven_println("budget={} -> ok: \"{}\"  (budget left {})",
                        PROVEN_ARG(budget), PROVEN_ARG(proven_u8str_as_view(&out)),
                        PROVEN_ARG(ctx.budget));
         proven_u8str_destroy(alloc, &out);
     } else {
-        proven_println("budget={} -> 실패(코드 {}) — 잡았던 것은 전부 반납됐다",
+        proven_println("budget={} -> failed (code {}) — everything taken was given back",
                        PROVEN_ARG(budget), PROVEN_ARG((int)e));
     }
 }
 
 int main(void)
 {
-    run(0);   /* 첫 할당부터 실패 */
-    run(1);   /* 첫 자원은 잡고 두 번째에서 실패 → x 를 흘리면 누수다 */
-    run(9);   /* 전부 성공 */
+    run(0);   /* it fails from the first allocation */
+    run(1);   /* the first resource is taken and the second fails -> letting x slip is a leak */
+    run(9);   /* everything succeeds */
     return 0;
 }
