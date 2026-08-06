@@ -195,8 +195,7 @@
   // 가로선으로 가른다 (저자 지시 2026-08-06).
   let cell(head, body, rail: false) = block(
     width: 100%, breakable: true,
-    stroke: if rail { (left: 2pt + black, rest: 0.5pt + black) }
-            else { 0.5pt + black },
+    stroke: 0.5pt + black,   // 소스·입력·출력 모두 같은 가는 실선
     inset: 0pt,
   )[
     #set par(first-line-indent: 0em)
