@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>42 Dynamic memory — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch41.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch43.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-42">42 Dynamic memory</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div class="open-body"><div>chapter 41, Lifetime and storage duration · the limits of automatic lifetime</div><div>chapter 2, The regions of memory · the warehouse (the heap)</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 41 taught automatic lifetime (dies with the function) and static lifetime (lives for the whole program). Then memory that is “sized according to input and must live only as long as needed” — in which of the two does it go?</p><div class="qa-a"><p><span class="dev-label">A.</span> Neither fits. We need memory whose size is settled at run time and whose lifetime is decided by the program’s logic — so there is a third place: <span id="idx-entry-72"></span><strong>allocated storage duration</strong>, the warehouse commonly called the <strong>heap</strong>. The rule of this place differs decisively from the other two — <strong>the programmer directly orders its birth and its death.</strong></p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">Part VII’s last place — memory whose size is settled at run time and which is <span id="idx-entry-73"></span>kept alive as long as you wish. <code>malloc</code> and <code>free</code>, the notion of ownership, and this world’s three representative accidents (leak, double free, use after free). The map of memory is completed here.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Could an array of pointers (<code>int **</code>) not be used, keeping the <code>m[i][j]</code> syntax?</li><li>Is it then best to avoid dynamic memory as far as possible?</li></ol></div></div><div></div><h3>42.1 Borrowing, and giving back</h3><p>The syntax is two functions. <code>malloc(number of bytes)</code> borrows that many contiguous slots from the warehouse and returns their starting address, and <code>free(address)</code> gives back what was borrowed.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch42/dyn.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> count <strong><span class="tok-x">=</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>scores <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>count </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>scores</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> borrowed from the warehouse </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>scores <strong><span class="tok-x">==</span></strong> nullptr<span class="tok-x">)</span> <span class="tok-x">{</span>                        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> borrowing can fail </span></em><em><span class="tok-c">*/</span></em>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">allocation failed</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <strong><span class="tok-t">int</span></strong> sum <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> count<span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        scores<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span>i <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <strong><span class="tok-x">*</span></strong> <span class="tok-n">10</span><span class="tok-x">;</span>
+        sum <strong><span class="tok-x">+=</span></strong> scores<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">total: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>scores</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                                   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> what is borrowed is returned </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>total: 150
+</code></pre></div></div><p>Three practices are stamped into the demonstration.</p><p><strong>Compute the size as <code>sizeof *pointer</code>.</strong> <code>count * sizeof *scores</code> is “the size of one element × the count”, asking for the size through <strong>the target</strong> rather than a type name — so the line needs no fixing later if the type changes.</p><p><strong>Borrowing can fail.</strong> <code>malloc</code> returns a null pointer when the warehouse is short — so <strong>check before writing</strong> (chapter 35′s rule becomes practice here). Write without checking and it is a null dereference and collapse.</p><p><strong>Give back what you borrowed.</strong> Forget <code>free</code> and those slots stay tied up until the program ends — a <strong>memory leak</strong>. It does not show in a short program, but in a long-running server it seeps away little by little and eventually eats the machine.</p><h3>42.2 The alignment of the address returned — because it does not know what will go in</h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch42/alloc_cost.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The alignment of the address malloc returns, and the price of borrowing and returning </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">time.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">N</span><span class="tok-p"> </span><span class="tok-n">300000</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">double</span></strong> <strong>seconds_since</strong><span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> timespec t0<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">struct</span></strong> timespec t1<span class="tok-x">;</span>
+    <strong>timespec_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>t1</strong><strong><span class="tok-x">,</span></strong><strong> TIME_UTC</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">double</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>t1<span class="tok-x">.</span>tv_sec <strong><span class="tok-x">-</span></strong> t0<span class="tok-x">.</span>tv_sec<span class="tok-x">)</span> <strong><span class="tok-x">+</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">double</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>t1<span class="tok-x">.</span>tv_nsec <strong><span class="tok-x">-</span></strong> t0<span class="tok-x">.</span>tv_nsec<span class="tok-x">)</span> <strong><span class="tok-x">/</span></strong> <span class="tok-n">1e9</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">volatile</span></strong> sink<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> holds the allocation so optimisation cannot erase it </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (1) alignment: not knowing what will be put in it, it gives the strictest ── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">alignment of max_align_t = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong>max_align_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">size_t</span></strong> misaligned <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>p<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        p<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> even asking for a single byte </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><span class="tok-x">(</span><strong><span class="tok-t">uintptr_t</span></strong><span class="tok-x">)</span>p<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">%</span></strong> <strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong>max_align_t</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">!=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> misaligned<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">of 8 one-byte requests, ones breaking the default alignment: </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> misaligned</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">address gap between two neighbouring blocks: </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-s"> bytes (for a request of 1)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>p</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>p</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>p</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (2) the price: the same work three ways ── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> timespec t0<span class="tok-x">;</span>
+    <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">long</span></strong> <strong><span class="tok-t">long</span></strong> acc <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+
+    <strong>timespec_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>t0</strong><strong><span class="tok-x">,</span></strong><strong> TIME_UTC</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> borrow and return every time </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>b <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">64</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>b<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+        b<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span>i<span class="tok-x">;</span>
+        acc <strong><span class="tok-x">+=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong><span class="tok-x">)</span>b<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        sink <strong><span class="tok-x">=</span></strong> b<span class="tok-x">;</span>
+        <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-t">double</span></strong> t_alloc <strong><span class="tok-x">=</span></strong> <strong>seconds_since</strong><strong><span class="tok-x">(</span></strong><strong>t0</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>reused <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">64</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>reused<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong>timespec_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>t0</strong><strong><span class="tok-x">,</span></strong><strong> TIME_UTC</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> borrow once and keep using it </span></em><em><span class="tok-c">*/</span></em>
+        reused<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span>i<span class="tok-x">;</span>
+        acc <strong><span class="tok-x">+=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong><span class="tok-x">)</span>reused<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        sink <strong><span class="tok-x">=</span></strong> reused<span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-t">double</span></strong> t_reuse <strong><span class="tok-x">=</span></strong> <strong>seconds_since</strong><strong><span class="tok-x">(</span></strong><strong>t0</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>reused</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>timespec_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>t0</strong><strong><span class="tok-x">,</span></strong><strong> TIME_UTC</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> N<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> put it on the stack instead </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">char</span></strong> b<span class="tok-x">[</span><span class="tok-n">64</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        b<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span>i<span class="tok-x">;</span>
+        acc <strong><span class="tok-x">+=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong><span class="tok-x">)</span>b<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        sink <strong><span class="tok-x">=</span></strong> b<span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-t">double</span></strong> t_stack <strong><span class="tok-x">=</span></strong> <strong>seconds_since</strong><strong><span class="tok-x">(</span></strong><strong>t0</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> iterations</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> N</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  malloc + free each time : </span></strong><strong><span class="tok-s">%7.4f</span></strong><strong><span class="tok-s"> s  (</span></strong><strong><span class="tok-s">%5.1f</span></strong><strong><span class="tok-s"> ns each)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> t_alloc</strong><strong><span class="tok-x">,</span></strong><strong> t_alloc </strong><strong><span class="tok-x">/</span></strong><strong> N </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">1e9</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  borrowed once, reused   : </span></strong><strong><span class="tok-s">%7.4f</span></strong><strong><span class="tok-s"> s  (</span></strong><strong><span class="tok-s">%5.1f</span></strong><strong><span class="tok-s"> ns each)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> t_reuse</strong><strong><span class="tok-x">,</span></strong><strong> t_reuse </strong><strong><span class="tok-x">/</span></strong><strong> N </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">1e9</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  a stack array           : </span></strong><strong><span class="tok-s">%7.4f</span></strong><strong><span class="tok-s"> s  (</span></strong><strong><span class="tok-s">%5.1f</span></strong><strong><span class="tok-s"> ns each)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> t_stack</strong><strong><span class="tok-x">,</span></strong><strong> t_stack </strong><strong><span class="tok-x">/</span></strong><strong> N </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">1e9</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">(total </span></strong><strong><span class="tok-s">%llu</span></strong><strong><span class="tok-s"> — a value used so the computation is not erased)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> acc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>alignment of max_align_t = 16 bytes
+of 8 one-byte requests, ones breaking the default alignment: 0
+address gap between two neighbouring blocks: 32 bytes (for a request of 1)
+
+300000 iterations
+  malloc + free each time :  0.0035 s  ( 11.8 ns each)
+  borrowed once, reused   :  0.0007 s  (  2.3 ns each)
+  a stack array           :  0.0007 s  (  2.2 ns each)
+
+(total 114739248 — a value used so the computation is not erased)
+</code></pre></div></div><p>The question the first part of the example answers is this. You borrowed a mere one byte with <code>malloc(1)</code> — may that address sit just anywhere?</p><p>It may not. Because <code>malloc</code> hands out the place <strong>without knowing what will go in</strong>. A <code>double</code> may be placed there, or a pointer, or a large struct. So the standard promises this — <strong>an address returned by the <code>malloc</code> family satisfies the alignment suitable for any basic type.</strong> The name given to that “strictest basic alignment” is <code>max_align_t</code>, and on this machine it is 16 bytes (chapter 6′s alignment rule made flesh).</p><p>Two things follow.</p><p><strong>First, borrowing small does not mean the place is small.</strong> In the example eight one-byte borrowings gave neighbouring blocks 32 bytes apart. It is because of the space left over to satisfy alignment and the management information (size, status) the allocator attaches to each block. It means <strong>a program that borrows countless small pieces uses far more memory than it asked for</strong>, and that is why the arena and pool approaches we see later were born (chapter 73).</p><p><strong>Second, stricter alignment must be requested separately.</strong> SIMD instructions or hardware DMA sometimes require 64-byte or 4096-byte alignment, and for that there is C11′s <code>aligned_alloc(alignment, size)</code>. Two rules must be kept — the alignment must be a power of two, and in C11 <strong>the size had to be a multiple of the alignment</strong> (C23 lifted that restriction). What it returns is still given back with <code>free</code>.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The name of aligned allocation differs by platform</p>The standard’s <code>aligned_alloc</code> came in relatively recently (C11), and before that each platform used a different function — POSIX’s <code>posix_memalign</code>, Windows’s <code>_aligned_malloc</code> (and its partner <code>_aligned_free</code>; on Windows this must not be given back with <code>free</code>). When you meet these names in old code, read them as “an allocation with a stated alignment.”</div><h3>42.3 The price of two cheap-looking lines — why allocation is expensive</h3><p>The latter part of the example repeats the same work three ways, 300,000 times, and measures the time. Borrowing and giving back every time is noticeably slower than reuse or the stack — a little over ten nanoseconds per round on this machine. The value itself differs by machine and allocator, but the fact of a <strong>two-orders-of-magnitude difference</strong> is the same everywhere.</p><p>Why is it expensive? <code>malloc</code> looks like the one line “give me slots” but is in fact one round trip to <strong>the warehouse management office</strong>.</p><ol><li><strong>Find a free piece of the right size.</strong> The allocator manages returned pieces in lists by size and picks a suitable one when a request comes. Searching the list, cutting a large piece when needed, putting the remainder back in the list — all of it is data-structure manipulation.</li><li><strong>Write management information.</strong> The size and status must be written per block so that <code>free</code> can later know “how many bytes this was.” So allocation involves <strong>writing</strong>.</li><li><strong>Ask the operating system when short.</strong> When the warehouse is empty it obtains more address space with a system call (<code>brk</code> or <code>mmap</code>). That means going into the kernel and back, which is far more expensive. Fortunately it does not happen often — the allocator takes plenty and cuts it up.</li><li><strong>With several threads, locks appear.</strong> The warehouse ledger is a shared resource, so contention between threads slows it (chapter 69′s story of races). That is why modern allocators keep a small cache per thread.</li><li><strong>The cache is cold.</strong> A freshly obtained address is usually not in the cache, so the first access is slow (chapter 11′s ladder). Conversely a reused buffer is already up in the cache — half the reason the reuse side is fast in the example is here.</li></ol><p>So a practical rule follows. <strong>Do not allocate inside a hot loop.</strong> Borrow once in advance and reuse, put what has a known size on the stack, or borrow many at once and cut them up. The last is the arena, and chapter 73 and Part XII are that story.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“<code>free</code> gives memory back to the operating system”</strong></p><p>Mostly it does not. <code>free</code> is <strong>writing in the allocator’s ledger that “this piece may be used again”</strong>, not returning it to the operating system. So it is normal for a program’s memory usage in the task manager to stay the same after releasing a large piece of data — the allocator is holding it for the next request (large blocks are sometimes returned).</p><p>This fact explains two things. First, the common misunderstanding of “I freed the memory, so why does it not go down?” Second, the phenomenon of a long-running server holding memory <strong>even with no leak</strong> — pieces scattered so that a large lump cannot be formed: <strong>fragmentation</strong>. Chapter 73 faces it head on.</p></div><h3>42.4 Borrowing in one dimension, using it as two</h3><p>Chapter 37 showed real multidimensional arrays such as <code>int m[3][4]</code>. But when the size is settled at run time that syntax cannot be used, and so the commonest shape in practice is <strong>to borrow one run and read it along two axes</strong>.</p><p>The heart of it is one line of arithmetic. Borrow <code>rows × cols</code> slots at once and find slot <code>(i, j)</code> as <code>i * cols + j</code>. That is exactly the layout of a real two-dimensional array (row-major, chapter 37) — so the performance is the same and the cache behaves the same way (chapter 11).</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch42/flat2d.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Allocating in one dimension and using it as two — the commonest shape in practice.</span></em>
+<em><span class="tok-c">   The subscript arithmetic is shut inside one macro instead of written by hand. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdckdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> The subscript macro: every argument wrapped in parentheses (chapter 52), and the</span></em>
+<em><span class="tok-c">   product raised to size_t. i and j are evaluated once, so side effects are safe. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">AT</span></strong><span class="tok-x">(</span>p<span class="tok-x">,</span><span class="tok-p"> </span>cols<span class="tok-x">,</span><span class="tok-p"> </span>i<span class="tok-x">,</span><span class="tok-p"> </span>j<span class="tok-x">)</span><span class="tok-p">  </span><span class="tok-x">(</span><span class="tok-x">(</span><span class="tok-p">p</span><span class="tok-x">)</span><span class="tok-x">[</span><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-p">i</span><span class="tok-x">)</span><span class="tok-p"> </span><strong><span class="tok-x">*</span></strong><span class="tok-p"> </span><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-p">cols</span><span class="tok-x">)</span><span class="tok-p"> </span><strong><span class="tok-x">+</span></strong><span class="tok-p"> </span><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-p">j</span><span class="tok-x">)</span><span class="tok-x">]</span><span class="tok-x">)</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> The size computation can overflow — if it does, no allocation is attempted (ch. 49, 70). </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong><strong>alloc_grid</strong><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> rows<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> cols<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">size_t</span></strong> cells<span class="tok-x">,</span> bytes<span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>ckd_mul</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>cells</strong><strong><span class="tok-x">,</span></strong><strong> rows</strong><strong><span class="tok-x">,</span></strong><strong> cols</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span>          <strong><span class="tok-k">return</span></strong> <span class="tok-n">NULL</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>ckd_mul</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>bytes</strong><strong><span class="tok-x">,</span></strong><strong> cells</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span>  <strong><span class="tok-k">return</span></strong> <span class="tok-n">NULL</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>bytes</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">size_t</span></strong> rows <strong><span class="tok-x">=</span></strong> <span class="tok-n">3</span><span class="tok-x">,</span> cols <strong><span class="tok-x">=</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>g <strong><span class="tok-x">=</span></strong> <strong>alloc_grid</strong><strong><span class="tok-x">(</span></strong><strong>rows</strong><strong><span class="tok-x">,</span></strong><strong> cols</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>g<span class="tok-x">)</span> <span class="tok-x">{</span> <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">allocation failed</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (1) filling and reading — one macro does the subscripts ─── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> rows<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> j <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> j <strong><span class="tok-x">&lt;</span></strong> cols<span class="tok-x">;</span> j<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+            <strong>AT</strong><strong><span class="tok-x">(</span></strong><strong>g</strong><strong><span class="tok-x">,</span></strong><strong> cols</strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">,</span></strong><strong> j</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>i <strong><span class="tok-x">*</span></strong> <span class="tok-n">10</span> <strong><span class="tok-x">+</span></strong> j<span class="tok-x">)</span><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">a 3x4 held in row-major order:</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> rows<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> j <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> j <strong><span class="tok-x">&lt;</span></strong> cols<span class="tok-x">;</span> j<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+            <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%3d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>AT</strong><strong><span class="tok-x">(</span></strong><strong>g</strong><strong><span class="tok-x">,</span></strong><strong> cols</strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">,</span></strong><strong> j</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (2) the memory is one continuous run ─────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">sweeping the same memory in one dimension: </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> k <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> k <strong><span class="tok-x">&lt;</span></strong> rows <strong><span class="tok-x">*</span></strong> cols<span class="tok-x">;</span> k<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong>k </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> g</strong><strong><span class="tok-x">[</span></strong><strong>k</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">(the same layout as a real int m[3][4] — row-major)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (3) the common accident: row and column swapped ──────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">AT(g, cols, 1, 2) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">   (row 2, item 3)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>AT</strong><strong><span class="tok-x">(</span></strong><strong>g</strong><strong><span class="tok-x">,</span></strong><strong> cols</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">AT(g, cols, 2, 1) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">   (row 3, item 2 — a different slot)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>AT</strong><strong><span class="tok-x">(</span></strong><strong>g</strong><strong><span class="tok-x">,</span></strong><strong> cols</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (4) an overflowing size request is refused ───────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>huge <strong><span class="tok-x">=</span></strong> <strong>alloc_grid</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">size_t</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">an absurd size request: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> huge </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">allocated</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">refused, the computation overflowed</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>huge</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>g</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>a 3x4 held in row-major order:
+    0  1  2  3
+   10 11 12 13
+   20 21 22 23
+
+sweeping the same memory in one dimension: 0 1 2 3 10 11 12 13 20 21 22 23
+(the same layout as a real int m[3][4] — row-major)
+
+AT(g, cols, 1, 2) = 12   (row 2, item 3)
+AT(g, cols, 2, 1) = 21   (row 3, item 2 — a different slot)
+
+an absurd size request: refused, the computation overflowed
+</code></pre></div></div><p>Three things need care here.</p><p><strong>First, do not scatter the subscript arithmetic by hand.</strong> Write <code>p[i * cols + j]</code> all over the code and the moment one place forgets <code>cols</code> it quietly reads a different slot. Shut it inside one macro, as the example does, and there is one place to fix. When writing the macro, keep chapter 52′s rules — <strong>wrap every argument in parentheses</strong>, and raise the product to <code>size_t</code> to avoid overflow.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">AT</span></strong><span class="tok-x">(</span>p<span class="tok-x">,</span><span class="tok-p"> </span>cols<span class="tok-x">,</span><span class="tok-p"> </span>i<span class="tok-x">,</span><span class="tok-p"> </span>j<span class="tok-x">)</span><span class="tok-p">  </span><span class="tok-x">(</span><span class="tok-x">(</span><span class="tok-p">p</span><span class="tok-x">)</span><span class="tok-x">[</span><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-p">i</span><span class="tok-x">)</span><span class="tok-p"> </span><strong><span class="tok-x">*</span></strong><span class="tok-p"> </span><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-p">cols</span><span class="tok-x">)</span><span class="tok-p"> </span><strong><span class="tok-x">+</span></strong><span class="tok-p"> </span><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-p">j</span><span class="tok-x">)</span><span class="tok-x">]</span><span class="tok-x">)</span></code></pre><p><strong>Second, the size computation itself can overflow.</strong> <code>rows * cols * sizeof(int)</code> is a product of three numbers, easy to overflow, and an overflow means <strong>borrowing a small vessel and using it as a large array</strong> — the worst kind of accident. The example checks with <code>ckd_mul</code> (chapters 49 and 70) first and does not even attempt the allocation if it overflows.</p><p><strong>Third, nail down the order of rows and columns in the documentation.</strong> <code>AT(g, cols, 1, 2)</code> and <code>AT(g, cols, 2, 1)</code> are different slots. Half the mistakes come from here, so name the parameters <code>rows</code> and <code>cols</code> plainly and write the order down.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Could an array of pointers (<code>int **</code>) not be used, keeping the <code>m[i][j]</code> syntax?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> It can, and it is a common method — allocate each row separately and hold their addresses in an array. The price is high, though.</p><p><strong>The memory is scattered.</strong> With rows far apart, chapter 11′s locality breaks and the cache hit rate falls. <strong>There are many allocations.</strong> One <code>malloc</code> per row, that many failure paths, and freeing must run in reverse just as many times. <strong>There is one more indirection.</strong> <code>m[i][j]</code> follows an address twice.</p><p>And decisively, <strong><code>int[3][4]</code> and <code>int **</code> are different types.</strong> Pass the name of a real two-dimensional array to a function taking <code>int **</code> and it is a compile error; force it through with a cast and it is outside the contract — because, as chapter 37 showed, <code>int m[3][4]</code> decays to <code>int (*)[4]</code>, not to <code>int **</code>. This misunderstanding is the most frequent accident with multidimensional arrays.</p><p>In short — <strong>a real two-dimensional array when the size is fixed; a one-dimensional allocation plus a subscript macro (or a VLA parameter, chapter 37) when it is settled at run time</strong>; and <code>int **</code> when the rows have genuinely different lengths (a ragged array).</p></p></div></div><h3>42.5 Ownership — who is responsible for giving it back</h3><p>The address <code>malloc</code> gave can be copied into several variables and can travel between functions. And yet <code>free</code> must be called <strong>exactly once</strong> — from which comes a core discipline of C programming: fixing one subject that at any moment holds the responsibility for releasing that memory, the notion of <strong>ownership</strong>. C has no syntax that enforces ownership — so ownership is expressed <strong>in comments, names and conventions</strong> (“this function transfers ownership of the returned pointer”, and so on). That modern languages lifted ownership into the type system (Rust’s ownership, C++‘s smart pointers) is the result of making the machine enforce this discipline — the concern of the neighbouring languages seen in chapter 1 arose exactly here.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The three representative accidents — leak, double free, use after free</p><p>Accidents with dynamic memory come with three faces. A <strong>leak</strong> is forgetting to give back — a slowly fatal disease. A <strong>double free</strong> is calling <code>free</code> twice on the same address, which wrecks the warehouse ledger so that every allocation after it is contaminated. The most dangerous is <strong>use after free</strong> — continuing to use the address of a slot that was given back. It is chapter 41′s dangling pointer reproduced in the heap, and since the warehouse soon hands that slot to another request, <strong>an attacker can put their own data in that place</strong>. In the lists of severe vulnerabilities of browsers and kernels, use-after-free is a top fixture even today, which is why systems programming as a whole has moved in the direction of “let the language enforce ownership.” The defence in C is discipline plus tools — the practice of assigning <code>nullptr</code> to a pointer right after <code>free</code>, and chapter 17′s sanitizers.</p><p>Neither is a cure-all, though. Assigning <code>nullptr</code> stops reuse and double free <strong>through that one variable</strong> only; any other alias holding the same address is left as it was — take it as a local defence for when there are no aliases. ASan catches use-after-free and double free very well, but detecting leaks needs LeakSanitizer to be on with it, and that depends on the platform and the settings (on a default build for Linux x86-64 the two usually come together).</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Is it then best to avoid dynamic memory as far as possible?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> That really is the first strategy, and the reason this book has come this far without <code>malloc</code> — data of known size is fastest and safest kept in automatic variables (the stack), where there is nothing to release and the three accidents are sealed off at the source. In embedded and safety-critical fields, conventions banning dynamic allocation outright are common. But data whose size is settled at run time (a list the user gave, the contents of a file) needs the warehouse in the end — and then the practical answer is to make ownership clear, check with tools, and use well-made components (of the family that manages allocation and boundaries together, like chapter 40′s proven).</p></div></div><h3>42.6 Closing Part VII</h3><p>The map of memory is complete — on the ladder of registers and caches (chapter 11) sit C’s three storage durations (automatic, static, dynamic), and pointers travel over them. We got the concept in chapter 34, the rules in chapters 35–36, contiguous memory and strings in chapters 37–39, a safe component in chapter 40, and lifetime and the warehouse in chapters 41–42. We have gone once round the place where C’s power and its danger live together.</p><p>We have seen dynamic memory’s syntax, discipline and price. How an allocator actually manages the warehouse, what alternative allocators and alternative standard libraries are widely used today, and what map a program’s memory is laid out on in an operating system and in an embedded chip are treated in two chapters at the end of Part XI (chapters 72 and 73).</p><p>The next part is short but long deferred — the structs and unions put off in Part V with “declarations that make types come after we have a memory model.” That condition is now met.</p>
+<div class="nav"><a href="ch41.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch43.html">Next →</a></div>
+</div></main></body></html>

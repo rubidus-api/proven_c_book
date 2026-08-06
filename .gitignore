@@ -1,0 +1,66 @@
+# ── Local operating docs ───────────────────────────────────────────────
+# Working AI/operating state, kept local by default. Only the root-level files
+# below are ignored; durable, shareable docs (README.md, CHANGELOG.md,
+# DECISIONS.md, docs/) stay tracked. To version-control these instead, set
+# "Operating docs tracking: tracked" in INIT.md and delete this block.
+/AGENTS.md
+/CONTEXT.md
+/MEMORY.md
+/BACKLOGS.md
+/WORKLOG.md
+/SPEC.md
+/REQUIREMENTS.md
+/LESSONS.md
+# Legacy rootsator files (TODO/HANDOFF/TESTS <=0.5, CHECKLIST <=0.6); keep them local if an older project still has them.
+/TODO.md
+/HANDOFF.md
+/TESTS.md
+/CHECKLIST.md
+*.local.md
+
+# ── Private material and credentials ────────────────────────────────────
+# Containment beats guessing: keep ANYTHING sensitive inside one of these
+# ignored directories. Then the rest of the project can be fully git-tracked
+# without enumerating secret filenames. Do NOT add broad filename globs such as
+# *token* or *secret* or *.key — they also hide normal source (tokenizer.c,
+# Keynote .key files, etc.).
+*_private/
+*_internal/
+secrets/
+
+# Environment files are the one common in-place secret; commit a template instead.
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# ── Cold planning history and generated output ──────────────────────────
+docs/plans/active/*.md
+docs/plans/archive/*.md
+!docs/plans/active/README.md
+!docs/plans/archive/README.md
+build/
+resources/prep/
+resources/cache/
+
+# ── Common local noise ──────────────────────────────────────────────────
+.DS_Store
+*.tmp
+*.log
+
+# ── 저장소에 담지 않는 것: 릴리스 묶음(zip) ─────────────────────────
+# zip 은 깃허브 릴리스 자산으로만 배포한다. 저장소에 함께 담으면 판마다
+# 23MB 씩 히스토리에 쌓여 Pages 빌드가 느려진다 (2026-08-06 히스토리 재작성).
+/dist/*.zip
+
+# ── 공개하지 않는 것: 원고 소스와 그 빌드 도구 ──────────────────────
+# 공개 저장소에는 "결과물"(dist/ PDF, docs/ HTML)과 예제 코드만 둔다.
+# 원고(Typst)와 조판 스크립트는 저자의 작업 공간에만 있다.
+/book/
+/book-en/
+/scripts/build-book.sh
+/scripts/build-book-en.sh
+/scripts/build-html.sh
+/scripts/wrap-html.py
+/scripts/release.sh
+/scripts/make-zip.py

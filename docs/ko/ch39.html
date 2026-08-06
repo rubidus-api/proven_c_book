@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>39 문자열 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch38.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch40.html" title="다음" aria-label="다음">→</a></span><a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-39">39 문자열</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>9장 문자와 텍스트 · 글자의 표현</div><div>37장 배열 · 배열과 첨자</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>9장에서 C가 택한 문자열 표현은 “끝에 표지를 세우는” NUL 종단이라 했고, 그 대가 세 가지(길이는 세어야 안다, NUL을 내용에 못 담는다, 표지를 잃으면 폭주)를 예고했다. 이제 배열(37장)을 배웠으니 — C 문자열의 정확한 정체를 스스로 정의해 보면?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>char 배열인데, 어딘가에 값 0인 바이트(NUL 문자, <code>'\0'</code>)가 있고, “문자열”이란 시작부터 그 표지 직전까지를 뜻한다는 약속</strong> — 이것이 전부다. 별도의 문자열 타입은 없다. 배열, 그리고 약속. 이 장은 그 약속의 사용법과 비용을 다룬다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-67"></span>C의 문자열을 정면으로 다룬다 — char 배열 + NUL 종단이라는 정체, 문자열 리터럴의 특별한 사정, 길이 재기의 진짜 비용, 그리고 한글이 드러내는 “글자 수 ≠ 바이트 수”의 실전까지. 널 삼형제의 마지막(NUL 문자)이 여기서 정식 취급된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>왜 C는 <code>const</code>를 붙이지 않았는가?</li><li>최신 표준과 앞으로의 표준에서는 어떤가?</li><li>한글 처리를 제대로 하려면 — 글자 단위로 다루려면 — 어떻게 해야 하는가?</li></ol></div></div><div></div><h3>39.1 정체 — 배열, 그리고 약속</h3><p><code>char greet[] = "안녕";</code> — 문자열 리터럴로 배열을 초기화하면, 컴파일러가 글자들의 바이트 <strong>뒤에 <code>'\0'</code>을 붙여</strong> 배열을 만든다. 시연으로 해부한다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch39/str.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">char</span></strong> greet<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">안녕</span><span class="tok-s">"</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 글자 2개 — 그러나 바이트는? </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">strlen(</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">안녕</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>strlen</strong><strong><span class="tok-x">(</span></strong><strong>greet</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <strong>strlen</strong><strong><span class="tok-x">(</span></strong><strong>greet</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong>greet</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof greet = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (NUL 종단 포함)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> greet</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>strlen("안녕") = 6
+EC 95 88 EB 85 95 
+sizeof greet = 7 (NUL 종단 포함)
+</code></pre></div></div><p>읽을거리가 겹겹이다. <code>strlen</code>(표준 <code>&lt;string.h></code>의 길이 재기)이 6을 답했다 — “안녕”은 <strong>글자 둘, 바이트 여섯</strong>이다(9장 UTF-8 표의 그대로: 한글 음절은 3바이트 구간). 바이트 덤프 <code>EC 95 88 EB 85 95</code>가 그 여섯 바이트의 민낯이고, <code>sizeof greet</code>는 7 — NUL 표지까지 담은 그릇의 크기다. 8장의 오개념(“한 글자=1바이트”)이 실행 결과로 반증되는 순간 이다.</p><p><code>strlen</code>의 <strong>비용</strong>도 이제 정확히 말할 수 있다 — 9장의 예고대로, NUL 종단에는 길이가 적혀 있지 않으므로 strlen은 <strong>표지를 만날 때까지 한 칸씩 산책</strong>한다. 문자열이 길수록 오래 걸리고(칸 수에 비례), 루프 조건 에서 매번 strlen을 부르는 코드가 고전적인 성능 함정이 되는 이유다 (시연의 루프가 사실 그 무늬다 — 짧은 문자열이라 무해하지만, 긴 문자열이라면 길이를 변수에 받아 두는 것이 관행이다).</p><h3>39.2 문자열 리터럴 — 읽기 전용의 땅</h3><p>배열 초기화가 아니라 포인터에 리터럴을 담을 수도 있다 — 그리고 여기에 중요한 차이가 있다:</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> buf<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">고칠 수 있다</span><span class="tok-s">"</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 내 배열로 복사됨 — 수정 가능 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>msg <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">고치면 안 된다</span><span class="tok-s">"</span><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 리터럴 원본을 가리킴 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>문자열 리터럴 자체는 프로그램에 구워진 <strong>읽기 전용 데이터</strong>다 — 수정을 시도하는 것은 계약 밖이고, 현대 환경에서는 대개 그 자리에서 붕괴한다 (리터럴이 쓰기 금지 구역에 배치되므로 — 6장의 보호 구역이 또 하나의 친절을 베푸는 셈이다). 그래서 리터럴을 가리키는 포인터는 <code>const char*</code> 로 선언하는 것이 규칙이다 — 23장의 <code>const</code>가 “바꾸지 않겠다”는 문서 였다면, 여기서는 “바꾸면 안 되는 것을 바꾸려는 실수”를 컴파일 시점에 막아 주는 자물쇠로 일한다.</p><h4>39.2.1 타입은 <code>const</code>가 아니다 — C의 이상한 자리</h4><p>그런데 여기에 C의 유명한 모순이 있다. <strong>수정하면 안 되는데, 타입에는 <code>const</code>가 붙어 있지 않다.</strong> <code>"abcdef"</code>의 타입은 <code>const char[7]</code>이 아니라 그냥 <code>char[7]</code>이다.</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">hello</span><span class="tok-s">"</span><span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> C: 경고 없이 통과한다 </span></em><em><span class="tok-c">*/</span></em>
+p<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">'</span><span class="tok-s">H</span><span class="tok-s">'</span><span class="tok-x">;</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 그러나 이것은 정의되지 않은 동작 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>컴파일러가 막아 주지 않는다는 뜻이다. “수정 불가”는 <strong>타입이 아니라 계약 으로만</strong> 존재하고, 어기면 49장의 정의되지 않은 동작이 된다 — 대개는 쓰기 금지 구역에 배치된 덕에 그 자리에서 죽지만, 그것은 구현의 친절이지 언어의 보장이 아니다.</p><p><strong>C++는 다르다.</strong> C++에서 문자열 리터럴의 타입은 <code>const char[N]</code>이고, 위 코드의 첫 줄이 <strong>컴파일 오류</strong>다. 85장에서 본 “두 언어의 차이” 목록에 이 항목이 들어간다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 왜 C는 <code>const</code>를 붙이지 않았는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> <strong>기존 코드를 깨뜨리지 않기 위해서다.</strong> <code>const</code>라는 낱말 자체가 C89에 와서야 표준에 들어왔는데(23장), 그 시점에 세상에는 이미 문자열 리터럴을 <code>char *</code>에 담아 쓰는 코드가 산더미처럼 쌓여 있었다. 리터럴의 타입을 <code>const char[N]</code>으로 바꾸는 순간 그 코드가 전부 진단 대상이 된다.</p><p>59장에서 본 <code>gets</code>의 장례가 20년 걸린 것과 같은 사정이다 — <strong>표준은 기존 코드를 지켜야 하는 기관</strong>이라, “옳은 타입”과 “이미 쓰인 코드”가 충돌하면 후자를 택하는 쪽으로 기운다. C++은 1998년에 처음 표준을 만들며 그런 짐이 없었기에 처음부터 <code>const</code>를 붙일 수 있었다(85장의 “형제이지 부모와 자식이 아니다”가 여기서도 확인된다).</p><p>그래서 실무의 규율이 언어를 대신한다. <strong>리터럴을 가리키는 포인터는 언제나 <code>const char *</code>로 선언한다.</strong> 그러면 타입이 못 하는 일을 사람이 적어 넣은 셈이 되고, 그 뒤로는 컴파일러가 지켜 준다. GCC·Clang의 <code>-Wwrite-strings</code>는 아예 리터럴의 타입을 <code>const char[N]</code>으로 바꿔 주는 선택지인데, 옛 코드에서 경고가 쏟아지는 탓에 기본값은 아니다.</p></p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 최신 표준과 앞으로의 표준에서는 어떤가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> <strong>C23까지 그대로다.</strong> 문자열 리터럴의 타입은 여전히 <code>char[N]</code>이고, 수정은 여전히 정의되지 않은 동작이다. C23은 두 가지를 바꾸면서도 이 자리는 건드리지 않았다 — <code>u8"..."</code>의 원소 타입을 <code>char8_t</code>로 정한 것과, 2의 보수를 못박은 것 모두 이 조항과는 별개다.</p><p>다음 판(C2y)에서도 바뀔 조짐은 보이지 않는다. 이유는 위와 같다 — 이제 와서 타입을 바꾸면 반세기 치 코드가 진단 대상이 되기 때문이다. 표준이 이 자리를 정리하는 방식은 타입을 고치는 것이 아니라 <strong>도구가 경고하게 하는</strong> 쪽이었고, 앞으로도 그럴 가능성이 높다.</p><p>요약하면 이렇게 기억하면 된다 — <strong>타입은 <code>char[N]</code>, 계약은 “수정 금지”, 방어는 <code>const char *</code>와 컴파일러 경고.</strong></p></p></div></div><h3>39.3 리터럴도 배열이다</h3><p>앞 절에서 “리터럴을 배열에 복사할 수도, 포인터로 가리킬 수도 있다”고 했는데, 한 걸음 더 들어가면 놀라운 사실이 있다 — <strong>문자열 리터럴 자체가 이미 배열이다.</strong> 타입까지 정확히 적으면 <code>"abcdef"</code>는 <code>char[7]</code>이다(여섯 글자 + NUL).</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch39/literal.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 문자열 리터럴의 정체 — 배열이라는 것, 이어 붙는다는 것, 그리고 접두사. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">inttypes.h</span><span class="tok-s">></span><span class="tok-p">   </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> PRIu64 — 이어 붙이기 규칙 위에 세워진 표준 매크로 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">wchar.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 서식 조각을 이름으로 두는 관용구 — 아래 printf 에서 이어 붙는다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">TEMP_FMT</span><span class="tok-p">  </span><span class="tok-s">"</span><span class="tok-s">%.1f</span><span class="tok-s">"</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">ID_FMT</span><span class="tok-p">    </span><span class="tok-s">"</span><span class="tok-s">%d</span><span class="tok-s">"</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 버전 문자열 조립 — 값은 한 곳에만 적는다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">MY_PROGRAM_VERSION</span><span class="tok-p">  </span><span class="tok-s">"</span><span class="tok-s">v3.1.2</span><span class="tok-s">"</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">PROGRAM_TITLE</span><span class="tok-p">       </span><span class="tok-s">"</span><span class="tok-s">my_program </span><span class="tok-s">"</span><span class="tok-p"> MY_PROGRAM_VERSION</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 숫자로 관리하는 버전은 두 겹 우회로 문자열이 된다(52장) </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">VER_MAJOR</span><span class="tok-p"> </span><span class="tok-n">3</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">VER_MINOR</span><span class="tok-p"> </span><span class="tok-n">1</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">STR_RAW</span></strong><span class="tok-x">(</span>x<span class="tok-x">)</span><span class="tok-p"> #x</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">STR</span></strong><span class="tok-x">(</span>x<span class="tok-x">)</span><span class="tok-p">     </span><strong>STR_RAW</strong><strong><span class="tok-x">(</span></strong><strong>x</strong><strong><span class="tok-x">)</span></strong>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">VERSION_FROM_NUMBERS</span><span class="tok-p">  </span><span class="tok-s">"</span><span class="tok-s">v</span><span class="tok-s">"</span><span class="tok-p"> </span><strong>STR</strong><strong><span class="tok-x">(</span></strong><strong>VER_MAJOR</strong><strong><span class="tok-x">)</span></strong><span class="tok-p"> </span><span class="tok-s">"</span><span class="tok-s">.</span><span class="tok-s">"</span><span class="tok-p"> </span><strong>STR</strong><strong><span class="tok-x">(</span></strong><strong>VER_MINOR</strong><strong><span class="tok-x">)</span></strong>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ① 리터럴은 배열이다 ─────────────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">abcdef</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">  (여섯 글자 + NUL)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">abcdef</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">       = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">  (빈 문자열도 NUL 한 칸)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 배열이므로 첨자를 붙일 수 있다 — 37장의 a[i] == *(a+i) 그대로 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">abcdef</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">[3] = </span></strong><strong><span class="tok-s">%c</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">abcdef</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">3[</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">abcdef</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">] = </span></strong><strong><span class="tok-s">%c</span></strong><strong><span class="tok-s">   ← 첨자가 교환된다(같은 뜻이다)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">abcdef</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ② 인접한 리터럴은 하나로 이어진다 ───────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">abc</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">def</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> -> "abcdef" </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof(</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">abc</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">def</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">abc</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">def</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 긴 문장을 줄 나눠 적을 때 — 역슬래시 없이도 된다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>help <strong><span class="tok-x">=</span></strong>
+        <span class="tok-s">"</span><span class="tok-s">사용법: tool [옵션] 파일</span><span class="tok-n">\n</span><span class="tok-s">"</span>
+        <span class="tok-s">"</span><span class="tok-s">  -v   자세히</span><span class="tok-n">\n</span><span class="tok-s">"</span>
+        <span class="tok-s">"</span><span class="tok-s">  -o   출력 파일</span><span class="tok-n">\n</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> help</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ③ 조각을 이름으로 두고 조립하기 ─────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong>PROGRAM_TITLE</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">숫자에서 조립: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> VERSION_FROM_NUMBERS</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">int</span></strong>    id   <strong><span class="tok-x">=</span></strong> <span class="tok-n">7</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong> temp <strong><span class="tok-x">=</span></strong> <span class="tok-n">36</span><span class="tok-x">.</span><span class="tok-n">5</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">id = </span></strong><strong><span class="tok-s">"</span></strong><strong> ID_FMT </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">, temp = </span></strong><strong><span class="tok-s">"</span></strong><strong> TEMP_FMT </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> id</strong><strong><span class="tok-x">,</span></strong><strong> temp</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 표준 라이브러리가 같은 기법을 쓴다 — 고정 폭 정수의 서식 매크로 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">uint64_t</span></strong> total <strong><span class="tok-x">=</span></strong> <span class="tok-n">1234567890123</span><strong><span class="tok-t">ULL</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">total = %</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIu64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> total</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ④ 접두사 — 인코딩을 정하는 글자 ─────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">  = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (char)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>    </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof u8</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (UTF-8)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-t">u8</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof L</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">  = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (wchar_t </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">바이트)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-t">L</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong>wchar_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof u</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">  = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (UTF-16)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof U</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">  = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (UTF-32)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-t">U</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 접두사가 있는 것과 없는 것을 이어 붙이면 있는 쪽을 따른다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> wchar_t <strong><span class="tok-x">*</span></strong>w <strong><span class="tok-x">=</span></strong> <strong><span class="tok-t">L</span></strong><span class="tok-s">"</span><span class="tok-s">wide</span><span class="tok-s">"</span> <span class="tok-s">"</span><span class="tok-s"> and narrow</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">L</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">wide</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> and narrow</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> -> 길이 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (와이드 문자열이 된다)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>wcslen</strong><strong><span class="tok-x">(</span></strong><strong>w</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>sizeof "abcdef" = 7  (여섯 글자 + NUL)
+sizeof ""       = 1  (빈 문자열도 NUL 한 칸)
+"abcdef"[3] = d
+3["abcdef"] = d   ← 첨자가 교환된다(같은 뜻이다)
+abcdef
+sizeof("abc" "def") = 7
+사용법: tool [옵션] 파일
+  -v   자세히
+  -o   출력 파일
+my_program v3.1.2
+숫자에서 조립: v3.1
+id = 7, temp = 36.5
+total = 1234567890123
+sizeof "AB"  = 3 (char)
+sizeof u8"AB" = 3 (UTF-8)
+sizeof L"AB"  = 12 (wchar_t 4바이트)
+sizeof u"AB"  = 6 (UTF-16)
+sizeof U"AB"  = 12 (UTF-32)
+L"wide" " and narrow" -> 길이 15 (와이드 문자열이 된다)
+</code></pre></div></div><p>출력의 첫 두 줄이 그 확인이다. <code>sizeof "abcdef"</code>가 7이고 <code>sizeof ""</code>도 1이다 — 포인터의 크기(8)가 아니라 <strong>배열의 크기</strong>가 나온다. 리터럴이 포인터로 무너지는 것은 37장에서 본 그 무너짐(decay)이고, <code>sizeof</code>는 무너짐의 예외라 배열의 진짜 크기가 보이는 것이다.</p><p>배열이라는 사실에서 재미있는 것이 따라 나온다. 배열이니 <strong>첨자를 붙일 수 있다.</strong></p><pre><code data-lang="c"><span class="tok-s">"</span><span class="tok-s">abcdef</span><span class="tok-s">"</span><span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 'd' </span></em><em><span class="tok-c">*/</span></em></code></pre><p>그리고 37장에서 배운 항등식 <code>a[i] ≡ *(a + i)</code>를 떠올리면, 덧셈이 교환법칙을 따르므로 <code>*(a + i) ≡ *(i + a) ≡ i[a]</code>가 된다. 즉</p><pre><code data-lang="c"><span class="tok-n">3</span><span class="tok-x">[</span><span class="tok-s">"</span><span class="tok-s">abcdef</span><span class="tok-s">"</span><span class="tok-x">]</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 역시 'd' — 문법적으로 완전히 합법이다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>예제가 둘 다 <code>d</code>를 찍는 것이 그 증거다. 실무에서 쓸 일은 없고(읽는 사람을 당황시킬 뿐이다) 난독화 대회에서나 보이는 표기지만, <strong>배열 첨자가 문법의 장식이 아니라 포인터 산술의 다른 표기일 뿐</strong>이라는 사실을 이보다 분명하게 보여 주는 예도 없다.</p><h3>39.4 이어 붙이기 — 인접한 리터럴은 하나가 된다</h3><p>문자열 리터럴 둘을 나란히 적으면 컴파일러가 하나로 이어 붙인다.</p><pre><code data-lang="c"><span class="tok-s">"</span><span class="tok-s">abc</span><span class="tok-s">"</span> <span class="tok-s">"</span><span class="tok-s">def</span><span class="tok-s">"</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> -> "abcdef" — 쉼표도 연산자도 없다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>예제의 <code>sizeof("abc" "def")</code>가 7인 것이 그 확인이다(3+3+NUL). 이 일은 전처리기가 아니라 <strong>번역 단계 6</strong>에서 일어난다(52장의 표) — 그래서 매크로가 만들어 낸 문자열 조각도 옆의 리터럴과 이어진다.</p><p>쓸모가 둘이다.</p><p><strong>① 긴 문장을 줄 나눠 적기.</strong> 역슬래시로 줄을 잇는 것보다 깔끔하다 — 들여쓰기가 문자열 안으로 들어가지 않기 때문이다.</p><pre><code data-lang="c"><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>help <strong><span class="tok-x">=</span></strong>
+    <span class="tok-s">"</span><span class="tok-s">사용법: tool [옵션] 파일</span><span class="tok-n">\n</span><span class="tok-s">"</span>
+    <span class="tok-s">"</span><span class="tok-s">  -v   자세히</span><span class="tok-n">\n</span><span class="tok-s">"</span>
+    <span class="tok-s">"</span><span class="tok-s">  -o   출력 파일</span><span class="tok-n">\n</span><span class="tok-s">"</span><span class="tok-x">;</span></code></pre><p><strong>② 조각을 이름으로 두고 조립하기.</strong> 이것이 실무에서 가장 자주 보는 용법이고, 세 가지 얼굴로 나타난다.</p><p><strong>버전 문자열 조립.</strong> 값을 한 곳에만 적고 여기저기서 엮는다.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">MY_PROGRAM_VERSION</span><span class="tok-p">  </span><span class="tok-s">"</span><span class="tok-s">v3.1.2</span><span class="tok-s">"</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">PROGRAM_TITLE</span><span class="tok-p">       </span><span class="tok-s">"</span><span class="tok-s">my_program </span><span class="tok-s">"</span><span class="tok-p"> MY_PROGRAM_VERSION</span>
+
+<strong>puts</strong><strong><span class="tok-x">(</span></strong><strong>PROGRAM_TITLE</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> my_program v3.1.2 </span></em><em><span class="tok-c">*/</span></em>
+<strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">build: </span></strong><strong><span class="tok-s">"</span></strong><strong> __DATE__ </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">"</span></strong><strong> __TIME__</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 컴파일러가 주는 리터럴과도 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>버전을 올릴 때 고칠 자리가 <strong>한 줄</strong>이라는 것이 요점이다. <code>__DATE__</code>처럼 컴파일러가 미리 정의해 둔 리터럴(52장)과도 그대로 엮이므로, 배너와 <code>--version</code> 출력을 이 방식으로 만드는 프로그램이 많다.</p><p><strong>서식 조각을 이름으로.</strong> 같은 기법을 <code>printf</code>의 서식에 쓴 것이다.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">ID_FMT</span><span class="tok-p">    </span><span class="tok-s">"</span><span class="tok-s">%d</span><span class="tok-s">"</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">TEMP_FMT</span><span class="tok-p">  </span><span class="tok-s">"</span><span class="tok-s">%.1f</span><span class="tok-s">"</span>
+
+<strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">id = </span></strong><strong><span class="tok-s">"</span></strong><strong> ID_FMT </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">, temp = </span></strong><strong><span class="tok-s">"</span></strong><strong> TEMP_FMT </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> id</strong><strong><span class="tok-x">,</span></strong><strong> temp</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p>서식 문자열이 <strong>상수여야 한다</strong>는 요구(56장의 형식 문자열 취약점, 그리고 컴파일러의 서식 검사)를 지키면서도 조각을 이름으로 관리할 수 있다. <code>printf(fmt_string_variable, …)</code>처럼 변수를 넘기는 순간 그 검사가 전부 사라지는 것과 대조적이다 — <strong>이어 붙이기는 컴파일 시간에 끝나므로 결과는 여전히 하나의 리터럴이다.</strong></p><p><strong>표준 라이브러리도 같은 기법을 쓴다.</strong> 68장과 부록 B에서 본 <code>&lt;inttypes.h></code>의 서식 매크로가 정확히 이 규칙 위에 서 있다.</p><pre><code data-lang="c"><strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">total = %</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIu64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> total</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p><code>PRIu64</code>가 <code>"lu"</code>나 <code>"llu"</code>(플랫폼마다 다르다)로 정의되어 있고, 앞뒤 조각과 이어 붙어 하나의 서식 문자열이 된다. 고정 폭 정수의 서식이 플랫폼마다 다르다는 문제를 <strong>이어 붙이기 하나로</strong> 푼 것이다.</p><p>세 사례가 결국 같은 한 가지다 — <strong>리터럴 조각에 이름을 붙여 두고 쓰는 자리에서 엮는다.</strong> 그리고 셋 다 52장의 <code>#</code> 연산자와 짝을 이룬다. 숫자로 관리하는 버전이라면 숫자를 문자열로 바꿔 엮을 수 있다.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">VER_MAJOR</span><span class="tok-p"> </span><span class="tok-n">3</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">VER_MINOR</span><span class="tok-p"> </span><span class="tok-n">1</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">STR_RAW</span></strong><span class="tok-x">(</span>x<span class="tok-x">)</span><span class="tok-p"> #x</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">STR</span></strong><span class="tok-x">(</span>x<span class="tok-x">)</span><span class="tok-p">     </span><strong>STR_RAW</strong><strong><span class="tok-x">(</span></strong><strong>x</strong><strong><span class="tok-x">)</span></strong><span class="tok-p">                     </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 두 겹 우회(52장) </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">VERSION</span><span class="tok-p">    </span><span class="tok-s">"</span><span class="tok-s">v</span><span class="tok-s">"</span><span class="tok-p"> </span><strong>STR</strong><strong><span class="tok-x">(</span></strong><strong>VER_MAJOR</strong><strong><span class="tok-x">)</span></strong><span class="tok-p"> </span><span class="tok-s">"</span><span class="tok-s">.</span><span class="tok-s">"</span><span class="tok-p"> </span><strong>STR</strong><strong><span class="tok-x">(</span></strong><strong>VER_MINOR</strong><strong><span class="tok-x">)</span></strong><span class="tok-p">   </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> "v3.1" </span></em><em><span class="tok-c">*/</span></em></code></pre><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>변수는 이어 붙지 않는다</p><pre><code data-lang="c"><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>unit <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">℃</span><span class="tok-s">"</span><span class="tok-x">;</span>
+<strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">temp = </span></strong><strong><span class="tok-s">%.1f</span></strong><strong><span class="tok-s">"</span></strong><strong> unit </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> t</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 컴파일 오류 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>이어 붙이기는 <strong>리터럴끼리</strong>의 규칙이다. <code>unit</code>은 변수이므로 이어 붙을 수 없다. 변수 내용을 끼우려면 자리표시자를 하나 더 쓰는 것이 정답이다 — <code>printf("temp = %.1f%s\n", t, unit)</code>.</p><p>같은 이유로, 이어 붙일 조각을 <code>#define</code>으로 둘 때는 <strong>그 매크로가 문자열 리터럴로 펼쳐져야</strong> 한다. <code>#define UNIT ℃</code>처럼 리터럴이 아닌 것으로 정의해 두면 이어 붙지 않는다.</p></div><h3>39.5 접두사 — 어떤 인코딩의 리터럴인가</h3><p>리터럴 앞에는 글자를 하나 붙여 <strong>어떤 문자 타입의 배열인가</strong>를 정할 수 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>표기</strong></th><th><strong>원소 타입</strong></th><th><strong>인코딩</strong></th><th><strong><code>sizeof "AB"</code></strong></th></tr><tr><td><code>"AB"</code></td><td><code>char</code></td><td>실행 문자 집합(대개 UTF-8)</td><td>3</td></tr><tr><td><code>u8"AB"</code></td><td><code>char8_t</code>(C23) / <code>char</code></td><td>UTF-8</td><td>3</td></tr><tr><td><code>u"AB"</code></td><td><code>char16_t</code></td><td>UTF-16</td><td>6</td></tr><tr><td><code>U"AB"</code></td><td><code>char32_t</code></td><td>UTF-32</td><td>12</td></tr><tr><td><code>L"AB"</code></td><td><code>wchar_t</code></td><td>구현이 정한다</td><td>예제의 기계에서 12</td></tr></table></div><p class="float-caption">표 39.1</p></figure><p>예제가 이 표를 실제로 찍는다. <code>L"AB"</code>가 12바이트인 것은 이 리눅스 기계의 <code>wchar_t</code>가 4바이트이기 때문이고 — <strong>윈도우에서는 2바이트라 6이 된다.</strong> 62장에서 “<code>wchar_t</code>의 크기가 구현마다 다르다”고 한 것이 리터럴 차원에서 드러나는 자리다.</p><p>문자 상수도 같은 접두사를 쓴다(<code>L'A'</code>, <code>u'A'</code>). 그리고 이어 붙이기와 접두사가 만나면 규칙이 하나 더 있다 — <strong>한쪽에만 접두사가 있으면 있는 쪽을 따르고</strong>(예제의 <code>L"wide" " and narrow"</code>가 와이드 문자열이 된다), <strong>서로 다른 접두사끼리 이어 붙이는 것은 계약 밖이다.</strong></p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>gets — 표준에서 퇴출당한 함수</p>NUL 종단의 세 번째 대가(표지를 잃으면 폭주)에 얽힌, C 표준 역사상 가장 유명한 장례식이 있다. 초창기 표준 라이브러리의 <code>gets</code>는 “한 줄을 읽어 배열에 담는” 함수였는데 — <strong>그릇의 크기를 받지 않았다</strong>. 입력이 그릇보다 길면 그대로 이웃 기억을 덮어쓰는, 경계 침범(37장)이 설계에 내장된 함수였던 것이다. 1988년 인터넷 최초의 대규모 웜(Morris worm)이 이 부류의 결함을 뚫고 퍼졌고, 수십 년의 사고 끝에 C11 표준이 <code>gets</code>를 <strong>삭제</strong>했다 — 표준이 자기 함수를 공식적으로 장례 치른 드문 사례다. 25장에서 이 책이 처음부터 <code>fgets</code>(그릇 크기를 받는 후계자)를 가르친 사연이 이것이고 — 다음 장에서 이 사고 부류 전체를 정면으로 본다.</div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 한글 처리를 제대로 하려면 — 글자 단위로 다루려면 — 어떻게 해야 하는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 두 층을 구별하는 것이 출발점이다. <strong>바이트 층</strong>(C 문자열의 세계)에서는 UTF-8을 그냥 바이트 열로 다루면 되고 — 복사·연결·저장·전송은 글자 경계를 몰라도 안전하다(UTF-8의 자기 동기화 설계 덕이다, 9장). <strong>글자 층</strong>이 필요한 일(글자 수 세기, 자르기, 대소문자)은 UTF-8 해독이 필요 하고, 표준 라이브러리의 지원이 빈약한 지점이라 라이브러리를 쓰는 것이 실무다 — proven의 u8str 계열이 정확히 이 자리를 맡는다(다음 장에서 첫 만남, 56장에서 본격). 수칙 하나만 명심하면 사고의 대부분이 예방된다: <strong>바이트 번호로 문자열을 자르지 말 것</strong> — 한글 음절의 허리를 자르면 깨진 바이트 열이 된다.</p></div></div><p>문자열의 정체와 비용을 알았다. 다음 장은 이 부의 전환점이다 — 경계 침범이라는 사고 부류의 해부, 그리고 이 책의 기반 기술 proven의 등장 이다. 25장에서 심은 “안전한 입력” 씨앗이 드디어 회수된다.</p>
+<div class="nav"><a href="ch38.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch40.html">다음 →</a></div>
+</div></main></body></html>

@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>81 Containers and algorithms — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch80.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch82.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-81">81 Containers and algorithms</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div class="open-body"><div>chapter 43, Structs · structs</div><div>chapter 42, Dynamic memory · a growing array</div><div>chapter 77, The foundation · views and bounds</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 36 taught that a C array’s size is settled at compile time, and chapter 42 that it can be grown with <code>realloc</code>. Then where is it easiest to go wrong when making a “growing array” yourself?</p><div class="qa-a"><p><span class="dev-label">A.</span> In three places. First, <strong>calculating the size to grow to</strong> — the multiplication wrap-round seen in chapter 77 happens here. Second, <strong>the state on failure</strong> — when <code>realloc</code> fails the original pointer is still valid, and the common code that assigns the return value straight into the original variable loses that original (a leak). Third, <strong>pointers after the growth</strong> — a pointer that pointed at an element becomes invalid after reallocation. Rather than getting these three right afresh every time you make a container, it is better to use one made properly once.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-114"></span>The tools that hold many — the growing array, the intrusive list, the ring buffer, the hash map. And as the answer to chapter 74′s fifth bug (unchecked callbacks) and the performance trap attached to that place, we see sorting <strong>guaranteed even in the worst case</strong> and hashing that <strong>withstands attack</strong>. Chapter 36′s arrays and chapter 43′s structs become practical components here.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>How much slower is a keyed hash? And where does the random secret come from if there is no OS?</li></ol></div></div><div></div><h3>81.1 The life cycle of the four containers</h3><p>First we see the four on one screen. How making, putting in, traversing and giving back differ between them is all in this example.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch81/tour.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The life of four containers — made, filled, walked and given back.</span></em>
+<em><span class="tok-c">   array, list, ring and map compared on one screen. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> an intrusive list: the node lives inside the data </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong>                id<span class="tok-x">;</span>
+    proven_list_node_t link<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> &lt;- this one slot is the hook it hangs on the list by </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span> <strong><span class="tok-t">task_t</span></strong><span class="tok-x">;</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    proven_allocator_t alloc <strong><span class="tok-x">=</span></strong> <strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (1) a growing array ─────────────────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_array_t ar <strong><span class="tok-x">=</span></strong> <strong>PROVEN_ARRAY_INIT</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>ar</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    proven_array_t arr <strong><span class="tok-x">=</span></strong> ar<span class="tok-x">.</span>value<span class="tok-x">;</span>
+
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;=</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>PROVEN_ARRAY_PUSH</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> i </strong><strong><span class="tok-x">*</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">array  len={} cap={} elem_size={}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">.</span></strong><strong>len</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">.</span></strong><strong>cap</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">.</span></strong><strong>elem_size</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> walked by index — no pointer is carried around </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_print</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">       content:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span>proven_size_t i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> arr<span class="tok-x">.</span>len<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong>proven_print</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>PROVEN_ARRAY_GET</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">int</span></strong> last <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>PROVEN_ARRAY_POP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>last</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">       pop -> {} (len {})</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>last</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">.</span></strong><strong>len</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>PROVEN_ARRAY_DESTROY</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (2) an intrusive list — not one allocation ──────────────── </span></em><em><span class="tok-c">*/</span></em>
+    task_t     items<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">{</span> <span class="tok-x">.</span>id <strong><span class="tok-x">=</span></strong> <span class="tok-n">10</span> <span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span> <span class="tok-x">.</span>id <strong><span class="tok-x">=</span></strong> <span class="tok-n">20</span> <span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span> <span class="tok-x">.</span>id <strong><span class="tok-x">=</span></strong> <span class="tok-n">30</span> <span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    proven_list_t list<span class="tok-x">;</span>
+    <strong>proven_list_init</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">3</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong>proven_list_push_back</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>items</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">.</span></strong><strong>link</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    proven_list_node_t <strong><span class="tok-x">*</span></strong>node<span class="tok-x">,</span> <strong><span class="tok-x">*</span></strong>tmp<span class="tok-x">;</span>
+    <strong>proven_print</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">list   from the front:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>PROVEN_LIST_FOR_EACH</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">)</span></strong> <span class="tok-x">{</span>
+        task_t <strong><span class="tok-x">*</span></strong>t <strong><span class="tok-x">=</span></strong> <strong>PROVEN_LIST_ENTRY</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> task_t</strong><strong><span class="tok-x">,</span></strong><strong> link</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_print</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>t</strong><strong><span class="tok-x">-></span></strong><strong>id</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  (the node is inside the data, so no allocation is needed)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> to unhook while walking, the SAFE version is used </span></em><em><span class="tok-c">*/</span></em>
+    <strong>PROVEN_LIST_FOR_EACH_SAFE</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> tmp</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">)</span></strong> <span class="tok-x">{</span>
+        task_t <strong><span class="tok-x">*</span></strong>t <strong><span class="tok-x">=</span></strong> <strong>PROVEN_LIST_ENTRY</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> task_t</strong><strong><span class="tok-x">,</span></strong><strong> link</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>t<span class="tok-x">-></span>id <strong><span class="tok-x">==</span></strong> <span class="tok-n">20</span><span class="tok-x">)</span> <strong>proven_list_remove</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>proven_print</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">       after removing 20:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>PROVEN_LIST_FOR_EACH</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">)</span></strong> <span class="tok-x">{</span>
+        <strong>proven_print</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>PROVEN_LIST_ENTRY</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> task_t</strong><strong><span class="tok-x">,</span></strong><strong> link</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">-></span></strong><strong>id</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (3) a ring buffer — fixed size, the past is dropped ─────── </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_ring_t rr <strong><span class="tok-x">=</span></strong> <strong>PROVEN_RING_INIT</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>rr</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_ring_t ring <strong><span class="tok-x">=</span></strong> rr<span class="tok-x">.</span>value<span class="tok-x">;</span>
+        <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;=</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_ring_push</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ring</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>i</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-t">int</span></strong> five <strong><span class="tok-x">=</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>
+        proven_err_t full <strong><span class="tok-x">=</span></strong> <strong>proven_ring_push</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ring</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>five</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ring   push when full -> err={} (it reports rather than overwrites)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                       </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>full</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-t">int</span></strong> v <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+        <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_ring_pop</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ring</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>v</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">       pop -> {} (the one put in first)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>v</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_ring_destroy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ring</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (4) a hash map — the key is owned or borrowed, as chosen ── </span></em><em><span class="tok-c">*/</span></em>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the map copies and owns the key (U8_OWNED) — a borrowing version exists too </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_map_t mr <strong><span class="tok-x">=</span></strong> <strong>PROVEN_MAP_INIT_U8_OWNED</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>mr</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_map_t map <strong><span class="tok-x">=</span></strong> mr<span class="tok-x">.</span>value<span class="tok-x">;</span>
+        <strong><span class="tok-t">int</span></strong> a <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">,</span> b <strong><span class="tok-x">=</span></strong> <span class="tok-n">2</span><span class="tok-x">;</span>
+        <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_map_set_u8_owned</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">alpha</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_map_set_u8_owned</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">beta</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>found <strong><span class="tok-x">=</span></strong> <strong>proven_map_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">,</span></strong>
+<strong>                        </strong><strong><span class="tok-x">(</span></strong><strong>proven_map_key_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>str</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">beta</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">map    get(</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">beta</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">) -> {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                       </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>found </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>found </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">       get(</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">absent</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">) -> {} (null when there is none)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                       </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">bool</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>proven_map_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">,</span></strong>
+<strong>                            </strong><strong><span class="tok-x">(</span></strong><strong>proven_map_key_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>str</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">absent</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> nullptr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_map_destroy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>array  len=5 cap=8 elem_size=4
+       content: 1 4 9 16 25
+       pop -> 25 (len 4)
+list   from the front: 10 20 30  (the node is inside the data, so no allocation is needed)
+       after removing 20: 10 30
+ring   push when full -> err=2 (it reports rather than overwrites)
+       pop -> 1 (the one put in first)
+map    get("beta") -> 2
+       get("absent") -> true (null when there is none)
+</code></pre></div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>container</strong></th><th><strong>making</strong></th><th><strong>allocation</strong></th><th><strong>traversal</strong></th><th><strong>giving back</strong></th></tr><tr><td><code>array</code></td><td><code>PROVEN_ARRAY_INIT(alloc, T, n)</code></td><td>grows</td><td>by index</td><td><code>PROVEN_ARRAY_DESTROY</code></td></tr><tr><td><code>list</code></td><td><code>proven_list_init(&amp;l)</code></td><td><strong>none</strong></td><td><code>PROVEN_LIST_FOR_EACH</code></td><td>unnecessary</td></tr><tr><td><code>ring</code></td><td><code>PROVEN_RING_INIT(alloc, T, n)</code></td><td>once, fixed</td><td>by popping</td><td><code>proven_ring_destroy</code></td></tr><tr><td><code>map</code></td><td><code>PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)</code></td><td>grows (rehashing)</td><td>by key lookup</td><td><code>proven_map_destroy</code></td></tr></table></div><p class="float-caption">Table 81.1</p></figure><p>That only the list has no allocation stands out — because the node lives inside the data. So a list is the only container that <strong>cannot fail for lack of memory</strong>, and it is especially loved in embedded work (chapter 83).</p><h3>81.2 The growing array</h3><p><code>proven_array_t</code> is a byte buffer that knows the element size and alignment. Open it up and why the type is filled in by macros becomes clear.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+    proven_allocator_t alloc<span class="tok-x">;</span>       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> it remembers the allocator given at creation </span></em><em><span class="tok-c">*/</span></em>
+    proven_byte_t     <strong><span class="tok-x">*</span></strong>data<span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the byte buffer </span></em><em><span class="tok-c">*/</span></em>
+    proven_size_t      len<span class="tok-x">;</span>         <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the number of elements held now </span></em><em><span class="tok-c">*/</span></em>
+    proven_size_t      cap<span class="tok-x">;</span>         <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the number of elements it can hold </span></em><em><span class="tok-c">*/</span></em>
+    proven_size_t      elem_size<span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the size of one element </span></em><em><span class="tok-c">*/</span></em>
+    proven_size_t      align<span class="tok-x">;</span>       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the element's alignment requirement </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span> <strong><span class="tok-t">proven_array_t</span></strong><span class="tok-x">;</span></code></pre><p><strong>That the array remembers the allocator</strong> differs from strings. A string takes an allocator per operation (chapter 79), while an array takes one at creation and keeps it inside — making <code>push</code> pass an allocator every time it grows would make the code noisy. So the allocator is not given again at destruction either (<code>PROVEN_ARRAY_DESTROY(&amp;arr)</code>).</p><p>C having no generics, the type is filled in by macros.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch81/arr.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    proven_allocator_t alloc <strong><span class="tok-x">=</span></strong> <strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    proven_result_array_t made <strong><span class="tok-x">=</span></strong> <strong>PROVEN_ARRAY_INIT</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>made</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">array creation failed</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    proven_array_t arr <strong><span class="tok-x">=</span></strong> made<span class="tok-x">.</span>value<span class="tok-x">;</span>
+
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;=</span></strong> <span class="tok-n">6</span><span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> past a capacity of 4 it grows by itself </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>PROVEN_ARRAY_PUSH</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> i </strong><strong><span class="tok-x">*</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+            <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">push failed</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+            <strong>PROVEN_ARRAY_DESTROY</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+            <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+        <span class="tok-x">}</span>
+    <span class="tok-x">}</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">count: </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> arr</strong><strong><span class="tok-x">.</span></strong><strong>len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> arr<span class="tok-x">.</span>len<span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>PROVEN_ARRAY_GET</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>PROVEN_ARRAY_DESTROY</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>count: 6
+1 4 9 16 25 36 
+</code></pre></div></div><p><code>PROVEN_ARRAY_INIT(alloc, int, 4)</code> means “an array to hold ints, initial capacity 4”, and <code>PROVEN_ARRAY_PUSH</code> writes the type again to <strong>check at compile time that it matches</strong>. At the fifth element, which exceeded the capacity of 4, the array grew by itself — and that growth happens through the allocator (exactly chapter 78′s rule; the array remembers the allocator it was given at creation).</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Holding an element pointer and then pushing</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>first <strong><span class="tok-x">=</span></strong> <strong>PROVEN_ARRAY_GET_MUT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>PROVEN_ARRAY_PUSH</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>arr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">42</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the buffer may move here </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-x">*</span></strong>first <strong><span class="tok-x">=</span></strong> <span class="tok-n">7</span><span class="tok-x">;</span>                               <em><span class="tok-c">/*</span></em><em><span class="tok-c"> writes at the old address — use after free </span></em><em><span class="tok-c">*/</span></em></code></pre><p>When the array grows the contents move to a new buffer and a pointer to the old address becomes invalid. It is the form in which the use after free learned in chapter 42 appears on a container. The rule is one — <strong>after changing a container, obtain it again by index.</strong> The habit of carrying an index rather than a pointer becomes the defence here.</p></div><h3>81.3 The intrusive list — linking without allocation</h3><p><code>proven_list_t</code> is an <strong>intrusive</strong> linked list — the node does not hold the data; rather a link field is planted inside the data struct. It amounts to putting one <code>proven_list_node_t link;</code> slot inside a <code>struct</code> made in chapter 43.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> proven_list_node_t <span class="tok-x">{</span>
+    <strong><span class="tok-t">struct</span></strong> proven_list_node_t <strong><span class="tok-x">*</span></strong>next<span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> proven_list_node_t <strong><span class="tok-x">*</span></strong>prev<span class="tok-x">;</span>
+<span class="tok-x">}</span> <strong><span class="tok-t">proven_list_node_t</span></strong><span class="tok-x">;</span>
+
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+    proven_list_node_t head<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a sentinel pointing at itself </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span> <strong><span class="tok-t">proven_list_t</span></strong><span class="tok-x">;</span></code></pre><p>That <code>head</code> is a <strong>sentinel</strong> is this implementation’s knack. In an empty list <code>head.next</code> and <code>head.prev</code> point at head itself, and so not one “is it null” check appears in the insertion and deletion code — a pattern the Linux kernel long used.</p><p>What is good about it? <strong>There is nothing to allocate separately</strong> in order to put something in the list — because the node is the data. A list can be used even in an environment with no heap (chapter 83), and hanging the same object on two lists at once is a matter of keeping two link fields. The price is that the data struct must know about the list.</p><p>Getting back the other way is the problem, and one macro solves it.</p><pre><code data-lang="c">task_t <strong><span class="tok-x">*</span></strong>t <strong><span class="tok-x">=</span></strong> <strong>PROVEN_LIST_ENTRY</strong><strong><span class="tok-x">(</span></strong><strong>node</strong><strong><span class="tok-x">,</span></strong><strong> task_t</strong><strong><span class="tok-x">,</span></strong><strong> link</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p>It is the macro that <strong>works the struct’s starting address back</strong> from the address of the <code>link</code> member — the <code>offsetof</code> seen in chapter 43 used here in the flesh. This one line returning from node to data is nearly the whole of the intrusive list.</p><p>There are two traversal macros.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>macro</strong></th><th><strong>what it does</strong></th><th><strong>when</strong></th></tr><tr><td><code>PROVEN_LIST_FOR_EACH(it, &amp;l)</code></td><td>traverses from the front</td><td>when only reading</td></tr><tr><td><code>PROVEN_LIST_FOR_EACH_SAFE(it, tmp, &amp;l)</code></td><td>holds the next node in advance</td><td>★ when removing while traversing</td></tr></table></div><p class="float-caption">Table 81.2</p></figure><p>The star matters. Remove a node during traversal and its <code>next</code> becomes meaningless, so the loop loses its way. The <code>_SAFE</code> edition turns with <strong>the next node already in hand</strong>, so removing the present node is safe. It is why the example used it when detaching item</p><ol><li value="20"></li></ol><p>It is worth knowing too that both macros require the iteration variables to be <strong>declared in advance</strong> (<code>proven_list_node_t *node, *tmp;</code>). The macro does not put a declaration in the <code>for</code>’s initialiser — a kernel practice carried on from the C89 days.</p><h3>81.4 The ring buffer — a stream of fixed size</h3><p><code>proven_ring_t</code> is a fixed-size circular buffer. It is used where a producer and a consumer come and go, for the most recent N of a log, and for streams such as audio and sensor samples where <strong>what has passed may be thrown away</strong>. The size being fixed, what to do when it is full is part of the contract — and here too the default is to report rather than quietly overwrite (the example’s <code>err=2</code> is that confirmation).</p><p>There are only <code>push</code> and <code>pop</code>, and both <strong>copy the element</strong>. Putting in gives an address, and taking out gives the address of the place to receive it.</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> v <strong><span class="tok-x">=</span></strong> <span class="tok-n">42</span><span class="tok-x">;</span>
+proven_err_t e <strong><span class="tok-x">=</span></strong> <strong>proven_ring_push</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ring</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>v</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> copies the value in </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">int</span></strong> out<span class="tok-x">;</span>
+e <strong><span class="tok-x">=</span></strong> <strong>proven_ring_pop</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ring</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>out</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> copies the value out </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Thanks to this design no pointer into an element inside the ring leaks outward — holding a pointer in a circular buffer and having that place overwritten is a classic accident, and it was blocked by the interface.</p><h3>81.5 The hash map, and data structures under attack</h3><p><code>proven_map_t</code> is an open-addressing hash map. Keys are integers or byte sequences, and string keys have two modes — <strong>a borrowed key</strong> (the caller keeps the bytes alive) and <strong>an owned key</strong> (the map copies and holds it). Chapter 78′s owning-borrowing distinction appears here as it is too.</p><p>The kind of key is settled at creation.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>creation macro</strong></th><th><strong>key</strong></th><th><strong>caution</strong></th></tr><tr><td><code>PROVEN_MAP_INIT_INT(alloc, T, n)</code></td><td>an integer (<code>key.id</code>)</td><td>the fastest</td></tr><tr><td><code>PROVEN_MAP_INIT_U8_BORROWED(alloc, T, n)</code></td><td>a string (borrowed)</td><td>★ the key bytes must outlive the map</td></tr><tr><td><code>PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)</code></td><td>a string (copied)</td><td>a copy cost on insertion. safe in exchange</td></tr></table></div><p class="float-caption">Table 81.3</p></figure><p>The key is passed as one union — <code>.id</code> for an integer, <code>.str</code> for a string.</p><pre><code data-lang="c">proven_map_key_t k <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>str <strong><span class="tok-x">=</span></strong> <strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">beta</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>v <strong><span class="tok-x">=</span></strong> <strong>proven_map_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>map</strong><strong><span class="tok-x">,</span></strong><strong> k</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> null if absent </span></em><em><span class="tok-c">*/</span></em></code></pre><p><strong>Lookup answers with null.</strong> The reason it returns a pointer rather than a bundle is that “absent” is not a failure but a normal answer (distinct from chapter 76′s error branches). And that pointer <strong>points inside the map</strong>, so it becomes invalid the next time the map grows — the same rule as with arrays.</p><p>There are three functions for putting in. <code>proven_map_set</code> (general), <code>proven_map_set_u8_owned</code> (copying a string key in), and <code>proven_map_set_with_scratch</code> (giving the temporary memory separately). The last is used when the temporary buffers of internal work such as rehashing are to be obtained from another allocator — a device for keeping dead memory from piling up when running a map on an arena.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch81/wordcount.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> Words counted, sorted and printed — a map, an array and a sort at once </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span> proven_u8str_view_t word<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> count<span class="tok-x">;</span> <span class="tok-x">}</span> <strong><span class="tok-t">entry_t</span></strong><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> a comparator must be a total order: ties are broken consistently too (avoiding chapter 50's counterexample) </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>by_count_desc</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>a<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>b<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> entry_t <strong><span class="tok-x">*</span></strong>x <strong><span class="tok-x">=</span></strong> a<span class="tok-x">,</span> <strong><span class="tok-x">*</span></strong>y <strong><span class="tok-x">=</span></strong> b<span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>x<span class="tok-x">-></span>count <strong><span class="tok-x">!=</span></strong> y<span class="tok-x">-></span>count<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span>x<span class="tok-x">-></span>count <strong><span class="tok-x">&lt;</span></strong> y<span class="tok-x">-></span>count<span class="tok-x">)</span> <strong><span class="tok-x">-</span></strong> <span class="tok-x">(</span>x<span class="tok-x">-></span>count <strong><span class="tok-x">></span></strong> y<span class="tok-x">-></span>count<span class="tok-x">)</span><span class="tok-x">;</span>
+
+    proven_size_t n <strong><span class="tok-x">=</span></strong> x<span class="tok-x">-></span>word<span class="tok-x">.</span>size <strong><span class="tok-x">&lt;</span></strong> y<span class="tok-x">-></span>word<span class="tok-x">.</span>size <strong><span class="tok-x">?</span></strong> x<span class="tok-x">-></span>word<span class="tok-x">.</span>size <strong><span class="tok-x">:</span></strong> y<span class="tok-x">-></span>word<span class="tok-x">.</span>size<span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> c <strong><span class="tok-x">=</span></strong> <strong>proven_memcmp</strong><strong><span class="tok-x">(</span></strong><strong>x</strong><strong><span class="tok-x">-></span></strong><strong>word</strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong><span class="tok-x">,</span></strong><strong> y</strong><strong><span class="tok-x">-></span></strong><strong>word</strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong><span class="tok-x">,</span></strong><strong> n</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>c <strong><span class="tok-x">!=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> c<span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span>x<span class="tok-x">-></span>word<span class="tok-x">.</span>size <strong><span class="tok-x">></span></strong> y<span class="tok-x">-></span>word<span class="tok-x">.</span>size<span class="tok-x">)</span> <strong><span class="tok-x">-</span></strong> <span class="tok-x">(</span>x<span class="tok-x">-></span>word<span class="tok-x">.</span>size <strong><span class="tok-x">&lt;</span></strong> y<span class="tok-x">-></span>word<span class="tok-x">.</span>size<span class="tok-x">)</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    proven_allocator_t alloc <strong><span class="tok-x">=</span></strong> <strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>text <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">the quick fox the lazy dog the fox</span><span class="tok-s">"</span><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a map with string keys: by default a keyed hash that stands up to HashDoS </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_map_t made_map <strong><span class="tok-x">=</span></strong>
+        <strong>proven_map_create</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">16</span></strong><strong><span class="tok-x">,</span></strong><strong> PROVEN_KEY_TYPE_U8_OWNED</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>made_map</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    proven_map_t counts <strong><span class="tok-x">=</span></strong> made_map<span class="tok-x">.</span>value<span class="tok-x">;</span>
+
+    proven_u8str_view_t all <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_from_cstr</strong><strong><span class="tok-x">(</span></strong><strong>text</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_u8str_view_t space <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_from_cstr</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_size_t start <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><span class="tok-x">;</span><span class="tok-x">;</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_size_t hit <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_find</strong><strong><span class="tok-x">(</span></strong><strong>all</strong><strong><span class="tok-x">,</span></strong><strong> start</strong><strong><span class="tok-x">,</span></strong><strong> space</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        proven_size_t end <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span>hit <strong><span class="tok-x">==</span></strong> PROVEN_INDEX_NOT_FOUND<span class="tok-x">)</span> <strong><span class="tok-x">?</span></strong> all<span class="tok-x">.</span>size <strong><span class="tok-x">:</span></strong> hit<span class="tok-x">;</span>
+        proven_u8str_view_t w <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_slice</strong><strong><span class="tok-x">(</span></strong><strong>all</strong><strong><span class="tok-x">,</span></strong><strong> start</strong><strong><span class="tok-x">,</span></strong><strong> end </strong><strong><span class="tok-x">-</span></strong><strong> start</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>seen <strong><span class="tok-x">=</span></strong> <strong>proven_map_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>counts</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>proven_map_key_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>str</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> w </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-t">int</span></strong> next <strong><span class="tok-x">=</span></strong> seen <strong><span class="tok-x">?</span></strong> <strong><span class="tok-x">*</span></strong>seen <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span> <strong><span class="tok-x">:</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>proven_map_set</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>counts</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>proven_map_key_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>str</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> w </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>next</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span>
+            <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>hit <strong><span class="tok-x">==</span></strong> PROVEN_INDEX_NOT_FOUND<span class="tok-x">)</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+        start <strong><span class="tok-x">=</span></strong> hit <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">distinct words: </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> counts</strong><strong><span class="tok-x">.</span></strong><strong>len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the counts gathered into an array and sorted </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_array_t made_arr <strong><span class="tok-x">=</span></strong> <strong>PROVEN_ARRAY_INIT</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> entry_t</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>made_arr</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    proven_array_t list <strong><span class="tok-x">=</span></strong> made_arr<span class="tok-x">.</span>value<span class="tok-x">;</span>
+
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>words<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-s">"</span><span class="tok-s">the</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">quick</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">fox</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">lazy</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">dog</span><span class="tok-s">"</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <strong><span class="tok-k">sizeof</span></strong> words <strong><span class="tok-x">/</span></strong> <strong><span class="tok-k">sizeof</span></strong> words<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_u8str_view_t w <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_view_from_cstr</strong><strong><span class="tok-x">(</span></strong><strong>words</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>c <strong><span class="tok-x">=</span></strong> <strong>proven_map_get</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>counts</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>proven_map_key_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>str</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> w </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        entry_t e <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>word <strong><span class="tok-x">=</span></strong> w<span class="tok-x">,</span> <span class="tok-x">.</span>count <strong><span class="tok-x">=</span></strong> c <strong><span class="tok-x">?</span></strong> <strong><span class="tok-x">*</span></strong>c <strong><span class="tok-x">:</span></strong> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>PROVEN_ARRAY_PUSH</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">,</span></strong><strong> entry_t</strong><strong><span class="tok-x">,</span></strong><strong> e</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <strong>proven_array_sort</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">,</span></strong><strong> by_count_desc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> O(n log n) guaranteed even in the worst case </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> list<span class="tok-x">.</span>len<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong><span class="tok-k">const</span></strong> entry_t <strong><span class="tok-x">*</span></strong>e <strong><span class="tok-x">=</span></strong> <strong>PROVEN_ARRAY_GET</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">,</span></strong><strong> entry_t</strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%.*s</span></strong><strong><span class="tok-s"> = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>e</strong><strong><span class="tok-x">-></span></strong><strong>word</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">const</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>e</strong><strong><span class="tok-x">-></span></strong><strong>word</strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong><span class="tok-x">,</span></strong><strong> e</strong><strong><span class="tok-x">-></span></strong><strong>count</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <strong>PROVEN_ARRAY_DESTROY</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>list</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_map_destroy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>counts</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>distinct words: 5
+  the = 3
+  fox = 2
+  dog = 1
+  lazy = 1
+  quick = 1
+</code></pre></div></div><p>This one example contains all of this chapter’s tools — it counts with a map, gathers into an array, sorts and prints. Chapter 79′s views were used to cut the words, so string copying happens only once, when the map owns the key.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>HashDoS — when hash maps became a target of attack</p><p>In 2011 several web frameworks collapsed at once through the same vulnerability. If an attacker chose <strong>keys that crowd into the same bucket</strong> and sent thousands of them as parameters in one request, insertion that had been <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math> on average became <math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math> and the whole degenerated to <math><mi>𝑂</mi><mrow><mo>(</mo><msup><mi>𝑛</mi><mn>2</mn></msup><mo>)</mo></mrow></math>, so a few requests stopped a server. The cause was that the hash function was public and collisions <strong>could be calculated</strong>.</p><p>Today’s prescription is a <strong>keyed hash</strong> — draw a random secret per process and mix it into the hash, and the attacker cannot precompute collisions. It is why proven’s <code>proven_map_create</code> uses SipHash-2-4 and a random seed by default for string keys, and conversely why there is a separate <code>proven_map_create_trusted</code> using the faster FNV-1a for cases where the keys all come from my own code. <strong>The default is the safe side, and the fast side states itself in the name</strong> — the principle met repeatedly in this part.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> How much slower is a keyed hash? And where does the random secret come from if there is no OS?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> SipHash is slower than FNV-1a, but by an amount proportional to the string length, and the share hash computation takes in the whole of a map operation is mostly not large. The random secret is drawn once from the operating system’s source of randomness — and in an environment with no OS (chapter 83) there is nowhere to draw it from, so it falls back to FNV-1a. The library does not hide this fact but writes it in the documentation, and the grounds are clear: <strong>where there is no attacker there is no need for an attacker model either.</strong> There exists no outsider choosing keys inside your firmware.</p></div></div><h3>81.6 Sorting with a worst-case guarantee</h3><p>The two problems seen in chapter 74 — the unchecked comparator, and the algorithm that collapses in the worst case — are treated together here.</p><span id="idx-entry-115"></span><p><code>proven_array_sort</code> is <strong>introsort</strong>. It begins as a fast quicksort and, if the recursion becomes too deep, switches to heapsort. So the average is as fast as quicksort and <math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math> is <strong>guaranteed</strong> even in the worst case — the complexity attack seen in chapter 74 does not work. To carry the header’s wording over as it is: “<math><mi>𝑂</mi><mrow><mo>(</mo><mrow><mi>𝑛</mi><mo form="prefix" lspace="0.16666666666666666em" rspace="0.16666666666666666em">log</mo><mi>𝑛</mi></mrow><mo>)</mo></mrow></math> is not an average but a guarantee.”</p><p>On the comparator side the language cannot help, so the contract is stated in the documentation and in examples. The example’s <code>by_count_desc</code> is the model — descending by count, and <strong>ties broken by the word</strong>. It contrasts exactly with chapter 74′s counterexample (the comparator that sees only the first letter).</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Ties may be handled however you like”</strong></p>They may not. A comparator must form a <strong>total order</strong> — 0 if equal, consistently greater and less, and the signs of <code>cmp(a,b)</code> and <code>cmp(b,a)</code> must be opposite. Break this and the result is not merely jumbled; depending on the implementation it may even <strong>trespass outside the array</strong> (because the partitioning algorithm judges its boundaries from the comparison results). A comparator that returns anything at all for ties is therefore a bug, not a taste.</div><h3>81.7 Bytes into letters — hashes and encodings</h3><p>We note the remaining tools in the same box too.</p><ul><li><strong>Hashes by purpose</strong> — for the map’s internals (fast mixing), for integrity checking (CRC-32), for cryptographic use (SHA-256), and the keyed hash seen above (SipHash). The library distinguishes them because <strong>the same word “hash” means entirely different demands</strong> — using SHA-256 where only speed is needed is waste, and using FNV-1a where adversarial input comes is dangerous.</li><li><strong>hex and Base64</strong> — two standards for moving bytes into text. The principle here is the same. Wrong input (hex of odd length, wrong padding) is <strong>not guessed at and mended</strong> but refused with <code>PROVEN_ERR_INVALID_ENCODING</code> (that norm from chapter 79).</li></ul><div class="dev recap"><p class="dev-label">Recap</p><p>Containers in summary.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>tool</strong></th><th><strong>shape</strong></th><th><strong>where it fits</strong></th><th><strong>caution</strong></th></tr><tr><td><code>array</code></td><td>a growing contiguous array</td><td>an ordered list</td><td>pointers invalid after growth</td></tr><tr><td><code>list</code></td><td>an intrusive linked list</td><td>joining without allocation</td><td>the data holds the link</td></tr><tr><td><code>ring</code></td><td>fixed-size circular</td><td>streams, the most recent N</td><td>the contract when full</td></tr><tr><td><code>map</code></td><td>open-addressing hash</td><td>finding by key</td><td>choose whether the key is owned</td></tr><tr><td><code>array_sort</code></td><td>introsort</td><td>sorting anything</td><td>the comparator must be a total order</td></tr><tr><td>four hashes</td><td>by purpose</td><td>map, integrity, cryptography, anti-attack</td><td>do not mix the purposes</td></tr></table></div><p class="float-caption">Table 81.4</p></figure></div><p>That is as far as the world of pure computation — it all runs even with no operating system. In the next chapter we go outside. Files, streams, time, random numbers — the places that touch the OS.</p>
+<div class="nav"><a href="ch80.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch82.html">Next →</a></div>
+</div></main></body></html>

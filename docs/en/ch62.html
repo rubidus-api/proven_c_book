@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>62 Characters and locales — &lt;ctype.h&gt;, &lt;locale.h&gt;, &lt;wchar.h&gt; — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch61.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch63.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-62">62 Characters and locales — <code>&lt;ctype.h></code>, <code>&lt;locale.h></code>, <code>&lt;wchar.h></code></h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div class="open-body"><div>chapter 9, Characters and text · letters and encodings</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 9 said a character is a number in a code chart and an encoding is the way of writing that number as bytes. Then what is a call like <code>isalpha('가')</code> asking?</p><div class="qa-a"><p><span class="dev-label">A.</span> It is a wrongly thrown question. The functions of <code>&lt;ctype.h></code> judge <strong>one byte</strong>. In UTF-8 “가” is three bytes, so it cannot go in as an argument to begin with, and even if it did each byte would merely be looked at separately. This header is a tool of the ASCII days; to handle multibyte characters you need the wide-character family (<code>&lt;wctype.h></code>) or code that handles the encoding yourself.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">We look at the functions that handle a single character. It is the simplest header in appearance, yet two of C’s subtlest traps are here — that <strong>passing a <code>char</code> as it stands is outside the contract</strong>, and that <strong>the answer depends on the global state called the locale</strong>. Chapter 9′s encoding story returns at the level of functions.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>If a program only ever handles ASCII, can locales and wide characters be ignored?</li></ol></div></div><div></div><h3>62.1 The first trap — do not pass a <code>char</code> as it stands</h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch62/ctype.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">ctype.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">limits.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> The ctype functions take an int — but that int is not a char </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">CHAR_MIN = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (char on this machine is </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           CHAR_MIN</strong><strong><span class="tok-x">,</span></strong><strong> CHAR_MIN </strong><strong><span class="tok-x">&lt;</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">signed</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">unsigned</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the ASCII range gives no trouble </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">isalpha('A') = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, isdigit('7') = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, isspace(' ') = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>isalpha</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">!=</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>isdigit</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">7</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">!=</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>isspace</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">!=</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> bytes of 128 and above are the trouble: passed as a char they go negative </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">char</span></strong> bytes<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><span class="tok-x">0x</span><span class="tok-n">C7</span><span class="tok-x">,</span> <span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><span class="tok-x">0x</span><span class="tok-n">41</span><span class="tok-x">,</span> <span class="tok-s">'</span><span class="tok-s">A</span><span class="tok-s">'</span><span class="tok-x">,</span> <span class="tok-s">'</span><span class="tok-n">\0</span><span class="tok-s">'</span> <span class="tok-x">}</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the first byte of the Korean syllable 가 in CP949 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">byte 0xC7 held in a char: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the right idiom: convert to unsigned char before passing </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the right call: isalpha((unsigned char)b) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>isalpha</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong>bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">!=</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> toupper and tolower follow the same rule </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>s <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">Hello, World!</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">char</span></strong> up<span class="tok-x">[</span><span class="tok-n">32</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><span class="tok-x">;</span> s<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">&amp;&amp;</span></strong> i <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span> <strong><span class="tok-x">&lt;</span></strong> <strong><span class="tok-k">sizeof</span></strong> up<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        up<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><strong>toupper</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong>s</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    up<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">'</span><span class="tok-n">\0</span><span class="tok-s">'</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">toupper applied: [</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">]</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> up</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> EOF is a valid argument too — which is why the parameter type is int </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">isalpha(EOF) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (EOF is an allowed argument)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>isalpha</strong><strong><span class="tok-x">(</span></strong><strong>EOF</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">!=</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>CHAR_MIN = -128 (char on this machine is signed)
+isalpha('A') = 1, isdigit('7') = 1, isspace(' ') = 1
+byte 0xC7 held in a char: -57
+the right call: isalpha((unsigned char)b) = 0
+toupper applied: [HELLO, WORLD!]
+isalpha(EOF) = 0 (EOF is an allowed argument)
+</code></pre></div></div><p>Every function of <code>&lt;ctype.h></code> takes an <code>int</code>. And the argument value the standard requires is <strong>a value representable as an <code>unsigned char</code>, or <code>EOF</code></strong>.</p><p>The problem is that implementations where <code>char</code> is signed are common (chapter 26). As the example’s output shows, put a 0xC7 byte in a <code>char</code> and it becomes −57, and passing that straight to <code>isalpha</code> is passing <strong>a value that is not permitted</strong> — outside the contract. Real implementations are mostly built as array indexes, so the accident of reading before the array with a negative index occurs.</p><p>The idiom is one.</p><pre><code data-lang="c"><strong>isalpha</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong>c</strong><strong><span class="tok-x">)</span></strong>
+<strong>toupper</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong>c</strong><strong><span class="tok-x">)</span></strong></code></pre><p>That <code>EOF</code> is a valid argument is worth remembering too — that is why the argument type is <code>int</code> and not <code>char</code> (the same root as chapter 58′s <code>fgetc</code> story).</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Passing a <code>char</code> as it stands</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> line<span class="tok-x">;</span>
+<strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>p<span class="tok-x">)</span> <span class="tok-x">{</span> <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>isspace</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">...</span></strong> <span class="tok-x">;</span> p<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> outside the contract at bytes ≥ 0x80 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Unless there is a guarantee that only ASCII arrives, always convert.</p><pre><code data-lang="c"><strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>p<span class="tok-x">)</span> <span class="tok-x">{</span> <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>isspace</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">*</span></strong><strong>p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">...</span></strong> <span class="tok-x">;</span> p<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span></code></pre><p>In a program handling Korean, Japanese or European text, this one line divides a real accident from no accident.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> If a program only ever handles ASCII, can locales and wide characters be ignored?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> It looks that way for a while, and then two places catch you. First, programs mostly receive other people’s input — nothing stops a file name, a user name or a pasted string from carrying Korean or an emoji. Second, the locale changes <strong>even the handling of ASCII</strong>. The famous case is the Turkish locale, where <code>toupper('i')</code> becomes the dotted capital <code>İ</code>; in a locale whose decimal point is a comma, even <code>printf("%f")</code> prints differently.</p><p>So this book’s advice is not “you may ignore it” but <strong>“be aware of the moment you step outside the default locale.”</strong> A design that handles bytes as they are, like chapter 79′s UTF-8 views, shrinks the problem the most.</p></p></div></div><h3>62.2 The second trap — the locale</h3><p>The judgements of <code>&lt;ctype.h></code> depend on <strong>the current locale</strong>. The default is the <code>"C"</code> locale, and calling <code>setlocale(LC_ALL, "")</code> changes it to the locale the environment variables settle. From that moment the set of bytes for which <code>isalpha</code> returns true may differ.</p><p>What the locale changes is not only character classification.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>category</strong></th><th><strong>what changes</strong></th><th><strong>where to beware</strong></th></tr><tr><td><code>LC_CTYPE</code></td><td>character classification, case conversion</td><td><code>isalpha</code>, <code>toupper</code></td></tr><tr><td><code>LC_NUMERIC</code></td><td>the decimal point character</td><td>★ <code>printf("%f")</code>, <code>strtod</code></td></tr><tr><td><code>LC_COLLATE</code></td><td>string sorting order</td><td><code>strcoll</code>, <code>strxfrm</code></td></tr><tr><td><code>LC_TIME</code></td><td>date and time notation</td><td><code>strftime</code> (chapter 64)</td></tr><tr><td><code>LC_MONETARY</code></td><td>currency notation</td><td><code>localeconv</code></td></tr></table></div><p class="float-caption">Table 62.1</p></figure><p><code>LC_NUMERIC</code> is especially dangerous. In German and French locales the decimal point is a comma, so <code>printf("%f", 3.14)</code> prints <code>3,140000</code> and <code>strtod("3.14", …)</code> stops at 3. It means that <strong>numbers to be shown to a human</strong> and <strong>numbers to be written to a file or protocol</strong> must follow different rules.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The pattern in which a locale wrecked data</p><p>It really has happened repeatedly that the same program writes <code>3.14</code> on the developer’s machine (an English locale) and <code>3,14</code> on the user’s machine (a German locale). A CSV file fails to parse column by column, a configuration file cannot be read back after being saved, or the JSON two countries’ servers exchange goes out of step.</p><p>The prescription is clear. <strong>Numbers a machine will read are handled by a path that does not depend on the locale</strong> — keep the <code>"C"</code> locale, handle the notation of the digits yourself, or use locale-independent functions. It is also why C11′s <code>&lt;uchar.h></code> and several libraries lay a separate path to avoid this problem.</p></div><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“If <code>setlocale</code> is not called there is no locale problem”</strong></p>Broadly right, but there is an exception. <strong>Another library</strong> the program uses may call <code>setlocale</code> (GUI toolkits commonly do), and from that moment my code’s <code>printf("%f")</code> is affected too. Moreover the locale is <strong>process-global</strong>, so in a program running along several strands it becomes a race. Thread-local locales such as POSIX’s <code>uselocale</code> and <code>newlocale</code> arose for that reason, but they are not in standard C.</div><h3>62.3 Wide characters — <code>&lt;wchar.h></code>, <code>&lt;wctype.h></code>, <code>&lt;uchar.h></code></h3><p>C95 brought in <code>wchar_t</code> and its functions. The idea was “one character as one unit”, but reality betrayed the idea.</p><ul><li>The <strong>size of <code>wchar_t</code> differs by implementation.</strong> Linux has 4 bytes (close to UTF-32), Windows 2 bytes (it being UTF-16, characters of the supplementary planes become two units). That is, “one character = one <code>wchar_t</code>” does not hold everywhere.</li><li>The conversion functions (<code>mbstowcs</code> and so on) <strong>depend on the locale.</strong> To handle a UTF-8 string the locale must be UTF-8.</li><li>So portable programs often choose, instead of wide characters, to <strong>handle the UTF-8 byte sequence as it is</strong>.</li></ul><p>The <code>char16_t</code> and <code>char32_t</code> of <code>&lt;uchar.h></code>, added by C11, have fixed sizes and so avoid this problem. But library support is thin, so in the field a dedicated Unicode library is still used, or it is handled by hand.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Windows and UTF-16</p>The “W” family of Windows API functions takes UTF-16 (<code>wchar_t</code>). So a Windows program must go between UTF-8 and UTF-16 at the boundary, and it must not be forgotten that this conversion can fail (unpaired surrogates). It is the place where chapter 17′s chain-of-encodings story is replayed at the API layer, and the <code>u16</code> family treated in Part XII’s string chapter is exactly the tool that lays this bridge.</div><div class="dev recap"><p class="dev-label">Recap</p><p>Characters and locales in summary.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>situation</strong></th><th><strong>rule</strong></th><th><strong>if got wrong</strong></th></tr><tr><td>calling <code>&lt;ctype.h></code></td><td>convert with <code>(unsigned char)</code></td><td>a negative argument — outside the contract</td></tr><tr><td>handling <code>EOF</code></td><td>the argument type is <code>int</code></td><td>confusion with 0xFF</td></tr><tr><td>multibyte characters</td><td>judging byte by byte is meaningless</td><td>a judgement on a split character</td></tr><tr><td>numeric input and output</td><td>a locale-independent path for machines</td><td>the decimal point changes and parsing fails</td></tr><tr><td>sorting</td><td><code>strcoll</code> for humans</td><td><code>strcmp</code> is not dictionary order</td></tr><tr><td><code>wchar_t</code></td><td>the size differs by implementation</td><td>miscounting characters on Windows</td></tr><tr><td>recommended</td><td>UTF-8 byte sequences + conversion only at the boundary</td><td>—</td></tr></table></div><p class="float-caption">Table 62.2</p></figure></div><p>We have passed the world of the single character. The next chapter is the world of numbers — how real-number calculation reports failure in the standard library.</p>
+<div class="nav"><a href="ch61.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch63.html">Next →</a></div>
+</div></main></body></html>

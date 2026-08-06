@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>39 Strings — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch38.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch40.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-39">39 Strings</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div class="open-body"><div>chapter 9, Characters and text · the representation of letters</div><div>chapter 37, Arrays · arrays and subscripts</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 9 said the string representation C chose is NUL termination, “planting a marker at the end”, and foreshadowed its three prices (the length must be counted, a NUL cannot be held as content, lose the marker and it runs away). Now that you have learned arrays (chapter 37) — how would you define a C string exactly, yourself?</p><div class="qa-a"><p><span class="dev-label">A.</span> <strong>A char array, somewhere in which there is a byte of value 0 (the NUL character, <code>'\0'</code>), plus the agreement that “the string” means from the start to just before that marker</strong> — that is all. There is no separate string type. An array, and an agreement. This chapter treats the use and the cost of that agreement.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-67"></span>C’s string faced head on — its identity as a char array plus NUL termination, the special circumstances of string literals, the real cost of measuring length, and the practical matter of “character count ≠ byte count” that Hangul brings out. The last of the three nulls (the NUL character) gets its formal treatment here.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why did C not attach <code>const</code>?</li><li>What of the newest standard and the ones to come?</li><li>To handle Hangul properly — to work in units of characters — what must be done?</li></ol></div></div><div></div><h3>39.1 The identity — an array, and an agreement</h3><p><code>char greet[] = "안녕";</code> — initialise an array with a string literal and the compiler builds the array by <strong>appending <code>'\0'</code> after</strong> the bytes of the characters. The demonstration dissects it.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch39/str.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> Korean text is kept here on purpose: the point is that a character</span></em>
+<em><span class="tok-c">       and a byte are not the same thing. </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">char</span></strong> greet<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">안녕</span><span class="tok-s">"</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> two characters — but how many bytes? </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">strlen(</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">안녕</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>strlen</strong><strong><span class="tok-x">(</span></strong><strong>greet</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <strong>strlen</strong><strong><span class="tok-x">(</span></strong><strong>greet</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong>greet</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof greet = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (the NUL terminator included)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> greet</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>strlen("안녕") = 6
+EC 95 88 EB 85 95 
+sizeof greet = 7 (the NUL terminator included)
+</code></pre></div></div><p>There are layers to read. <code>strlen</code> (the length measurement of the standard <code>&lt;string.h></code>) answered 6 — “안녕” is <strong>two characters, six bytes</strong> (exactly chapter 9′s UTF-8 table: Hangul syllables live in the 3-byte range). The byte dump <code>EC 95 88 EB 85 95</code> is the bare face of those six bytes, and <code>sizeof greet</code> is 7 — the size of a container that also holds the NUL marker. This is the moment chapter 8′s misconception (“one character = one byte”) is disproved by an execution result.</p><p><code>strlen</code>’s <strong>cost</strong> can now be stated exactly too — as chapter 9 foretold, NUL termination does not write the length down, so strlen <strong>walks one slot at a time until it meets the marker</strong>. The longer the string the longer it takes (proportional to the slot count), which is why code calling strlen in a loop condition every time is a classic performance trap (the demonstration’s loop is in fact that pattern — harmless for a short string, but for a long one the practice is to take the length into a variable first).</p><h3>39.2 String literals — read-only ground</h3><p>Instead of initialising an array you may hold a literal in a pointer — and here lies an important difference:</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> buf<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">you may change this</span><span class="tok-s">"</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> copied into my array — modifiable </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>msg <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">you must not change this</span><span class="tok-s">"</span><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> points at the literal itself </span></em><em><span class="tok-c">*/</span></em></code></pre><p>A string literal is itself <strong>read-only data</strong> baked into the program — attempting to modify it is outside the contract, and in a modern environment it usually collapses on the spot (literals being placed in a write-forbidden region — chapter 6′s protected zone doing another kindness). So the rule is to declare pointers to literals as <code>const char*</code> — where chapter 23′s <code>const</code> was documentation saying “I will not change this”, here it works as a lock that stops, at compile time, the mistake of trying to change what must not be changed.</p><h4>39.2.1 The type is not <code>const</code> — C’s odd place</h4><p>And here lies C’s famous contradiction. <strong>It must not be modified, and yet its type carries no <code>const</code>.</strong> The type of <code>"abcdef"</code> is not <code>const char[7]</code> but plain <code>char[7]</code>.</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">hello</span><span class="tok-s">"</span><span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> C: it passes without a warning </span></em><em><span class="tok-c">*/</span></em>
+p<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">'</span><span class="tok-s">H</span><span class="tok-s">'</span><span class="tok-x">;</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> but this is undefined behaviour </span></em><em><span class="tok-c">*/</span></em></code></pre><p>That is, the compiler does not block it. “Not modifiable” exists <strong>only as a contract, not as a type</strong>, and breaking it is chapter 49′s undefined behaviour — mostly it dies on the spot thanks to being placed in a write-protected region, but that is the implementation’s kindness, not the language’s guarantee.</p><p><strong>C++ differs.</strong> In C++ a string literal’s type is <code>const char[N]</code>, and the first line above is <strong>a compile error</strong>. This item belongs in the list of “differences between the two languages” seen in chapter 85.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why did C not attach <code>const</code>?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> <strong>So as not to break existing code.</strong> The word <code>const</code> itself entered the standard only with C89 (chapter 23), and by then the world already had mountains of code putting string literals into a <code>char *</code>. The moment the literal’s type became <code>const char[N]</code>, all of that code would be subject to diagnosis.</p><p>It is the same circumstance as <code>gets</code>’s funeral taking twenty years (chapter 59) — <strong>the standard is an institution that must protect existing code</strong>, so when “the right type” and “code already written” collide it leans towards the latter. C++, first standardised in 1998, carried no such burden and could attach <code>const</code> from the start (chapter 85′s “siblings, not parent and child” is confirmed here too).</p><p>So discipline stands in for the language. <strong>A pointer at a literal is always declared <code>const char *</code>.</strong> Then what the type cannot do has been written in by a human, and from there the compiler keeps it. GCC’s and Clang’s <code>-Wwrite-strings</code> is an option that changes a literal’s type to <code>const char[N]</code> outright, but it is not the default because warnings pour out of old code.</p></p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> What of the newest standard and the ones to come?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> <strong>It stands as it is up to C23.</strong> A string literal’s type is still <code>char[N]</code> and modifying one is still undefined behaviour. C23 changed two things while leaving this place alone — settling <code>u8"..."</code>‘s element type as <code>char8_t</code> and pinning down two’s complement are both separate from this clause.</p><p>Nor is there any sign of change in the next edition (C2y). The reason is the one above — changing the type now would make half a century of code subject to diagnosis. The way the standard tidies this place has been not to mend the type but <strong>to let the tools warn</strong>, and that is likely to remain so.</p><p>In summary, remember it like this — <strong>the type is <code>char[N]</code>, the contract is “do not modify”, and the defence is <code>const char *</code> plus compiler warnings.</strong></p></p></div></div><h3>39.3 A literal is an array too</h3><p>The previous section said a literal may be copied into an array or pointed at by a pointer, and one step further in there is a surprising fact — <strong>a string literal is itself already an array.</strong> Written with its type exactly, <code>"abcdef"</code> is <code>char[7]</code> (six characters + the NUL).</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch39/literal.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> What a string literal really is — an array, adjacent ones join, and the prefixes. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">inttypes.h</span><span class="tok-s">></span><span class="tok-p">   </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> PRIu64 — a standard macro built on the joining rule </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">wchar.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> the idiom of giving a format fragment a name — it joins in the printf below </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">TEMP_FMT</span><span class="tok-p">  </span><span class="tok-s">"</span><span class="tok-s">%.1f</span><span class="tok-s">"</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">ID_FMT</span><span class="tok-p">    </span><span class="tok-s">"</span><span class="tok-s">%d</span><span class="tok-s">"</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> assembling a version string — the value is written in one place only </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">MY_PROGRAM_VERSION</span><span class="tok-p">  </span><span class="tok-s">"</span><span class="tok-s">v3.1.2</span><span class="tok-s">"</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">PROGRAM_TITLE</span><span class="tok-p">       </span><span class="tok-s">"</span><span class="tok-s">my_program </span><span class="tok-s">"</span><span class="tok-p"> MY_PROGRAM_VERSION</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> a version kept as numbers becomes a string through a double indirection (chapter 52) </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">VER_MAJOR</span><span class="tok-p"> </span><span class="tok-n">3</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">VER_MINOR</span><span class="tok-p"> </span><span class="tok-n">1</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">STR_RAW</span></strong><span class="tok-x">(</span>x<span class="tok-x">)</span><span class="tok-p"> #x</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">STR</span></strong><span class="tok-x">(</span>x<span class="tok-x">)</span><span class="tok-p">     </span><strong>STR_RAW</strong><strong><span class="tok-x">(</span></strong><strong>x</strong><strong><span class="tok-x">)</span></strong>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">VERSION_FROM_NUMBERS</span><span class="tok-p">  </span><span class="tok-s">"</span><span class="tok-s">v</span><span class="tok-s">"</span><span class="tok-p"> </span><strong>STR</strong><strong><span class="tok-x">(</span></strong><strong>VER_MAJOR</strong><strong><span class="tok-x">)</span></strong><span class="tok-p"> </span><span class="tok-s">"</span><span class="tok-s">.</span><span class="tok-s">"</span><span class="tok-p"> </span><strong>STR</strong><strong><span class="tok-x">(</span></strong><strong>VER_MINOR</strong><strong><span class="tok-x">)</span></strong>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (1) a literal is an array ───────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">abcdef</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">  (six characters + NUL)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">abcdef</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">       = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">  (an empty string is still one NUL)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> being an array, it takes a subscript — chapter 37's a[i] == *(a+i) as it is </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">abcdef</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">[3] = </span></strong><strong><span class="tok-s">%c</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">abcdef</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">3[</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">abcdef</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">] = </span></strong><strong><span class="tok-s">%c</span></strong><strong><span class="tok-s">   &lt;- the subscript commutes (it means the same)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">abcdef</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (2) adjacent literals join into one ─────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">abc</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">def</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> -> "abcdef" </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof(</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">abc</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">def</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">abc</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">def</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> writing a long message across lines — no backslashes needed </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>help <strong><span class="tok-x">=</span></strong>
+        <span class="tok-s">"</span><span class="tok-s">usage: tool [options] file</span><span class="tok-n">\n</span><span class="tok-s">"</span>
+        <span class="tok-s">"</span><span class="tok-s">  -v   verbose</span><span class="tok-n">\n</span><span class="tok-s">"</span>
+        <span class="tok-s">"</span><span class="tok-s">  -o   output file</span><span class="tok-n">\n</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> help</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (3) naming the fragments and assembling them ────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong>PROGRAM_TITLE</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">assembled from numbers: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> VERSION_FROM_NUMBERS</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">int</span></strong>    id   <strong><span class="tok-x">=</span></strong> <span class="tok-n">7</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong> temp <strong><span class="tok-x">=</span></strong> <span class="tok-n">36</span><span class="tok-x">.</span><span class="tok-n">5</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">id = </span></strong><strong><span class="tok-s">"</span></strong><strong> ID_FMT </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">, temp = </span></strong><strong><span class="tok-s">"</span></strong><strong> TEMP_FMT </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> id</strong><strong><span class="tok-x">,</span></strong><strong> temp</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the standard library uses the same technique — format macros for fixed-width integers </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">uint64_t</span></strong> total <strong><span class="tok-x">=</span></strong> <span class="tok-n">1234567890123</span><strong><span class="tok-t">ULL</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">total = %</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIu64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> total</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (4) prefixes — the letter that settles the encoding ─── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">  = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (char)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>    </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof u8</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (UTF-8)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-t">u8</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof L</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">  = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (wchar_t is </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-t">L</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong>wchar_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof u</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">  = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (UTF-16)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof U</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">  = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (UTF-32)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-t">U</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">AB</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> join one with a prefix and one without and the prefixed one wins </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> wchar_t <strong><span class="tok-x">*</span></strong>w <strong><span class="tok-x">=</span></strong> <strong><span class="tok-t">L</span></strong><span class="tok-s">"</span><span class="tok-s">wide</span><span class="tok-s">"</span> <span class="tok-s">"</span><span class="tok-s"> and narrow</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">L</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">wide</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> and narrow</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> -> length </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (it becomes a wide string)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>wcslen</strong><strong><span class="tok-x">(</span></strong><strong>w</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>sizeof "abcdef" = 7  (six characters + NUL)
+sizeof ""       = 1  (an empty string is still one NUL)
+"abcdef"[3] = d
+3["abcdef"] = d   &lt;- the subscript commutes (it means the same)
+abcdef
+sizeof("abc" "def") = 7
+usage: tool [options] file
+  -v   verbose
+  -o   output file
+my_program v3.1.2
+assembled from numbers: v3.1
+id = 7, temp = 36.5
+total = 1234567890123
+sizeof "AB"  = 3 (char)
+sizeof u8"AB" = 3 (UTF-8)
+sizeof L"AB"  = 12 (wchar_t is 4 bytes)
+sizeof u"AB"  = 6 (UTF-16)
+sizeof U"AB"  = 12 (UTF-32)
+L"wide" " and narrow" -> length 15 (it becomes a wide string)
+</code></pre></div></div><p>The output’s first two lines are that confirmation. <code>sizeof "abcdef"</code> is 7 and <code>sizeof ""</code> is 1 — not a pointer’s size (8) but <strong>the array’s size</strong>. A literal decaying into a pointer is the decay seen in chapter 37, and <code>sizeof</code> being the exception to decay is why the array’s real size shows.</p><p>Something amusing follows from its being an array. Being an array, <strong>a subscript can be attached.</strong></p><pre><code data-lang="c"><span class="tok-s">"</span><span class="tok-s">abcdef</span><span class="tok-s">"</span><span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 'd' </span></em><em><span class="tok-c">*/</span></em></code></pre><p>And recalling the identity <code>a[i] ≡ *(a + i)</code> learned in chapter 37, since addition commutes, <code>*(a + i) ≡ *(i + a) ≡ i[a]</code>. That is,</p><pre><code data-lang="c"><span class="tok-n">3</span><span class="tok-x">[</span><span class="tok-s">"</span><span class="tok-s">abcdef</span><span class="tok-s">"</span><span class="tok-x">]</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 'd' as well — entirely legal grammatically </span></em><em><span class="tok-c">*/</span></em></code></pre><p>That the example prints <code>d</code> for both is the evidence. There is no use for it in practice (it merely bewilders the reader) and it is notation seen only in obfuscation contests, but no example shows more clearly that <strong>the array subscript is not a decoration of the grammar but another notation for pointer arithmetic</strong>.</p><h3>39.4 Concatenation — adjacent literals become one</h3><p>Write two string literals side by side and the compiler joins them into one.</p><pre><code data-lang="c"><span class="tok-s">"</span><span class="tok-s">abc</span><span class="tok-s">"</span> <span class="tok-s">"</span><span class="tok-s">def</span><span class="tok-s">"</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> -> "abcdef" — no comma, no operator </span></em><em><span class="tok-c">*/</span></em></code></pre><p>That the example’s <code>sizeof("abc" "def")</code> is 7 confirms it (3+3+NUL). This happens not in the preprocessor but in <strong>translation phase 6</strong> (chapter 52′s table) — so a string fragment produced by a macro joins with the literal beside it too.</p><p>There are two uses.</p><p><strong>① Writing a long sentence over several lines.</strong> It is cleaner than joining lines with a backslash — because the indentation does not go inside the string.</p><pre><code data-lang="c"><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>help <strong><span class="tok-x">=</span></strong>
+    <span class="tok-s">"</span><span class="tok-s">usage: tool [options] file</span><span class="tok-n">\n</span><span class="tok-s">"</span>
+    <span class="tok-s">"</span><span class="tok-s">  -v   verbose</span><span class="tok-n">\n</span><span class="tok-s">"</span>
+    <span class="tok-s">"</span><span class="tok-s">  -o   output file</span><span class="tok-n">\n</span><span class="tok-s">"</span><span class="tok-x">;</span></code></pre><p><strong>② Keeping fragments under names and assembling them.</strong> This is the use most often seen in practice, and it appears with three faces.</p><p><strong>Assembling a version string.</strong> The value is written in one place and woven in elsewhere.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">MY_PROGRAM_VERSION</span><span class="tok-p">  </span><span class="tok-s">"</span><span class="tok-s">v3.1.2</span><span class="tok-s">"</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">PROGRAM_TITLE</span><span class="tok-p">       </span><span class="tok-s">"</span><span class="tok-s">my_program </span><span class="tok-s">"</span><span class="tok-p"> MY_PROGRAM_VERSION</span>
+
+<strong>puts</strong><strong><span class="tok-x">(</span></strong><strong>PROGRAM_TITLE</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> my_program v3.1.2 </span></em><em><span class="tok-c">*/</span></em>
+<strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">build: </span></strong><strong><span class="tok-s">"</span></strong><strong> __DATE__ </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">"</span></strong><strong> __TIME__</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> with the compiler's own literals too </span></em><em><span class="tok-c">*/</span></em></code></pre><p>The point is that raising the version means mending <strong>one line</strong>. It weaves just as well with literals the compiler predefines (<code>__DATE__</code>, chapter 52), so many programs build their banner and <code>--version</code> output this way.</p><p><strong>Keeping format fragments under names.</strong> The same technique applied to <code>printf</code>’s format.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">ID_FMT</span><span class="tok-p">    </span><span class="tok-s">"</span><span class="tok-s">%d</span><span class="tok-s">"</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">TEMP_FMT</span><span class="tok-p">  </span><span class="tok-s">"</span><span class="tok-s">%.1f</span><span class="tok-s">"</span>
+
+<strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">id = </span></strong><strong><span class="tok-s">"</span></strong><strong> ID_FMT </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">, temp = </span></strong><strong><span class="tok-s">"</span></strong><strong> TEMP_FMT </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> id</strong><strong><span class="tok-x">,</span></strong><strong> temp</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p>The demand that a format string <strong>be a constant</strong> (chapter 56′s format string vulnerability, and the compiler’s format checking) is kept while the fragments are managed under names. It contrasts with passing a variable, as in <code>printf(fmt_string_variable, …)</code>, which makes all that checking vanish at once — <strong>concatenation finishes at compile time, so the result is still one literal.</strong></p><p><strong>The standard library uses the same technique.</strong> The format macros of <code>&lt;inttypes.h></code> seen in chapter 68 and appendix B stand exactly on this rule.</p><pre><code data-lang="c"><strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">total = %</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIu64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> total</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p><code>PRIu64</code> is defined as <code>"lu"</code> or <code>"llu"</code> (it differs by platform) and joins with the fragments before and after into one format string. The problem that the format for a fixed-width integer differs by platform was solved <strong>by concatenation alone</strong>.</p><p>The three cases come to the same one thing — <strong>give literal fragments names and weave them at the place of use.</strong> And all three pair with chapter 52′s <code>#</code> operator. If the version is managed as numbers, the numbers can be turned into strings and woven.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">VER_MAJOR</span><span class="tok-p"> </span><span class="tok-n">3</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">VER_MINOR</span><span class="tok-p"> </span><span class="tok-n">1</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">STR_RAW</span></strong><span class="tok-x">(</span>x<span class="tok-x">)</span><span class="tok-p"> #x</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">STR</span></strong><span class="tok-x">(</span>x<span class="tok-x">)</span><span class="tok-p">     </span><strong>STR_RAW</strong><strong><span class="tok-x">(</span></strong><strong>x</strong><strong><span class="tok-x">)</span></strong><span class="tok-p">                     </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> double expansion (chapter 52) </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">VERSION</span><span class="tok-p">    </span><span class="tok-s">"</span><span class="tok-s">v</span><span class="tok-s">"</span><span class="tok-p"> </span><strong>STR</strong><strong><span class="tok-x">(</span></strong><strong>VER_MAJOR</strong><strong><span class="tok-x">)</span></strong><span class="tok-p"> </span><span class="tok-s">"</span><span class="tok-s">.</span><span class="tok-s">"</span><span class="tok-p"> </span><strong>STR</strong><strong><span class="tok-x">(</span></strong><strong>VER_MINOR</strong><strong><span class="tok-x">)</span></strong><span class="tok-p">   </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> "v3.1" </span></em><em><span class="tok-c">*/</span></em></code></pre><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Variables do not join</p><pre><code data-lang="c"><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>unit <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">°C</span><span class="tok-s">"</span><span class="tok-x">;</span>
+<strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">temp = </span></strong><strong><span class="tok-s">%.1f</span></strong><strong><span class="tok-s">"</span></strong><strong> unit </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> t</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a compile error </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Concatenation is a rule <strong>between literals</strong>. <code>unit</code> is a variable and so cannot join. To insert a variable’s content the answer is one more placeholder — <code>printf("temp = %.1f%s\n", t, unit)</code>.</p><p>For the same reason, when keeping a fragment to be joined in a <code>#define</code>, <strong>that macro must expand to a string literal</strong>. Define it as something that is not a literal and it will not join.</p></div><h3>39.5 Prefixes — a literal of which encoding</h3><p>A letter may be attached before a literal to settle <strong>which character type’s array it is</strong>.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>notation</strong></th><th><strong>element type</strong></th><th><strong>encoding</strong></th><th><strong><code>sizeof "AB"</code></strong></th></tr><tr><td><code>"AB"</code></td><td><code>char</code></td><td>the execution character set (mostly UTF-8)</td><td>3</td></tr><tr><td><code>u8"AB"</code></td><td><code>char8_t</code> (C23) / <code>char</code></td><td>UTF-8</td><td>3</td></tr><tr><td><code>u"AB"</code></td><td><code>char16_t</code></td><td>UTF-16</td><td>6</td></tr><tr><td><code>U"AB"</code></td><td><code>char32_t</code></td><td>UTF-32</td><td>12</td></tr><tr><td><code>L"AB"</code></td><td><code>wchar_t</code></td><td>the implementation settles it</td><td>12 on the example’s machine</td></tr></table></div><p class="float-caption">Table 39.1</p></figure><p>The example really prints this table. That <code>L"AB"</code> is 12 bytes is because this Linux machine’s <code>wchar_t</code> is 4 bytes — <strong>on Windows it is 2 bytes and this becomes 6.</strong> It is where chapter 62′s “the size of <code>wchar_t</code> differs by implementation” shows itself at the level of literals.</p><p>Character constants take the same prefixes (<code>L'A'</code>, <code>u'A'</code>). And where concatenation meets prefixes there is one more rule — <strong>if only one side has a prefix, the prefixed side wins</strong> (the example’s <code>L"wide" " and narrow"</code> becomes a wide string), and <strong>joining two different prefixes is outside the contract.</strong></p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>gets — the function expelled from the standard</p>Attached to the third price of NUL termination (lose the marker and it runs away) is the most famous funeral in the history of the C standard. <code>gets</code> in the early standard library was a function that “reads a line and puts it into an array” — and <strong>it did not take the container’s size</strong>. If the input was longer than the container it overwrote the neighbouring memory as it went: a function with the boundary violation of chapter 37 built into its design. In 1988 the internet’s first large-scale worm (the Morris worm) spread through defects of this class, and after decades of accidents the C11 standard <strong>deleted</strong> <code>gets</code> — a rare case of a standard formally burying one of its own functions. That is the reason this book taught <code>fgets</code> (the successor that takes the container’s size) from the start in chapter 25 — and the next chapter faces this whole class of accident head on.</div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> To handle Hangul properly — to work in units of characters — what must be done?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Distinguishing two layers is the starting point. At the <strong>byte layer</strong> (the world of C strings) you may treat UTF-8 simply as a byte sequence — copying, joining, storing and transmitting are safe without knowing character boundaries (thanks to UTF-8′s self-synchronising design, chapter 9). Work that needs the <strong>character layer</strong> (counting characters, cutting, case conversion) requires UTF-8 decoding, and since the standard library’s support is thin there, using a library is the practice — proven’s u8str family takes exactly this place (first met in the next chapter, in earnest in chapter 56). Keep one rule in mind and most accidents are prevented: <strong>do not cut a string by byte index</strong> — cut through the waist of a Hangul syllable and you get a broken byte sequence.</p></div></div><p>We know the string’s identity and cost. The next chapter is this part’s turning point — a dissection of the class of accident called the boundary violation, and the appearance of this book’s underlying technology, proven. The “safe input” seed planted in chapter 25 is finally collected.</p>
+<div class="nav"><a href="ch38.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch40.html">Next →</a></div>
+</div></main></body></html>

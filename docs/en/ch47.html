@@ -1,0 +1,426 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>47 Real numbers — the mathematics of approximation — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch46.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch48.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-47">47 Real numbers — the mathematics of approximation</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div class="open-body"><div>chapter 8, Representing numbers · the contract called IEEE 754</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 8 said <code>0.1 + 0.2</code> and <code>0.3</code> are neighbours one final bit (1 ulp) apart, and that comparison must change into “are they close enough?”. Then how is the criterion of “enough” — the epsilon — decided?</p><div class="qa-a"><p><span class="dev-label">A.</span> That it must vary with the size of the values is the lesson of chapter 8′s third incident. Near 0 the ticks are dense so a small fixed value will do, but around <math><msup><mn>10</mn><mn>16</mn></msup></math> the tick spacing itself exceeds 1 and the same criterion becomes meaningless. So practice keeps two — <strong>absolute error</strong> (for near 0) and <strong>relative error</strong> (proportional to size). This chapter’s demonstration shows both side by side.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">The world of approximation learned on the page in chapter 8 finally comes down <span id="idx-entry-79"></span>into C code. Choosing between <code>float</code> and <code>double</code>, the correct way to compare (epsilon — absolute and relative), and the special values (infinity, NaN). Chapter 8′s three incidents are confirmed by execution results.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Should real numbers then not be used for things like money?</li></ol></div></div><div></div><h3>47.1 Choosing a type, and comparing</h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch47/eps.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">math.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> absolute error: used for comparisons near 0 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">bool</span></strong> <strong>near_abs</strong><span class="tok-x">(</span><strong><span class="tok-t">double</span></strong> a<span class="tok-x">,</span> <strong><span class="tok-t">double</span></strong> b<span class="tok-x">,</span> <strong><span class="tok-t">double</span></strong> eps<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">return</span></strong> <strong>fabs</strong><strong><span class="tok-x">(</span></strong><strong>a </strong><strong><span class="tok-x">-</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">&lt;</span></strong> eps<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> relative error: as values grow the spacing grows, so the tolerance scales with size </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">bool</span></strong> <strong>near_rel</strong><span class="tok-x">(</span><strong><span class="tok-t">double</span></strong> a<span class="tok-x">,</span> <strong><span class="tok-t">double</span></strong> b<span class="tok-x">,</span> <strong><span class="tok-t">double</span></strong> rel<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">double</span></strong> scale <strong><span class="tok-x">=</span></strong> <strong>fabs</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">></span></strong> <strong>fabs</strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">?</span></strong> <strong>fabs</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">:</span></strong> <strong>fabs</strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <strong>fabs</strong><strong><span class="tok-x">(</span></strong><strong>a </strong><strong><span class="tok-x">-</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">&lt;=</span></strong> rel <strong><span class="tok-x">*</span></strong> scale<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">double</span></strong> sum <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">1</span> <strong><span class="tok-x">+</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">2</span><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1 + 0.2 == 0.3 ?      </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">compare with absolute eps? </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>near_abs</strong><strong><span class="tok-x">(</span></strong><strong>sum</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1e-9</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%.20f</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%.20f</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">double</span></strong> big <strong><span class="tok-x">=</span></strong> <span class="tok-n">1e16</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">1e16 + 1 == 1e16 ?      </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">  (gap wider than 1)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> big </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> big</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">compare with relative eps? </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>near_rel</strong><strong><span class="tok-x">(</span></strong><strong>big </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> big</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1e-12</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>0.1 + 0.2 == 0.3 ?      0
+compare with absolute eps? 1
+0.30000000000000004441
+0.29999999999999998890
+1e16 + 1 == 1e16 ?      1  (gap wider than 1)
+compare with relative eps? 1
+</code></pre></div></div><p>The first three lines are the execution check of chapter 8′s first incident — <code>==</code> is false, and printed to twenty digits the two numbers diverge at the end. Use <code>near_abs</code> (absolute error) and it becomes true.</p><p>The latter part checks the third incident (absorption) — add 1 to <math><msup><mn>10</mn><mn>16</mn></msup></math> and the value is unchanged, because at that size the gap between representable neighbours is already wider than 1 (chapter 8′s tick calculation). Here the right tool is not absolute error but <code>near_rel</code> (relative error).</p><p>Reduced to practical rules there are three. <strong>The default is <code>double</code></strong> — as chapter 8 showed, the room in precision is of a different order, and <code>float</code> is chosen only where memory and bandwidth are tight. <strong>Do not use <code>==</code></strong> — code asking whether two reals are equal is almost always suspect (there are exceptions, such as comparing against an integer or against 0, but they must be judged consciously). <strong>The tolerance comes from the problem</strong> — it is decided by looking at the nature of the calculation and the size of the values; there is no magic constant.</p><h3>47.2 Special values — infinity and NaN</h3><p>IEEE 754 (chapter 8) defines special values besides ordinary numbers. <strong>Infinity</strong> (positive and negative) comes out of overflow or division by zero, and <strong>NaN</strong> (Not a Number) means “not a number” — the result of an undefinable operation such as <math><mfrac><mn>0</mn><mn>0</mn></mfrac></math> or the square root of a negative.</p><p>One thing has to be stated exactly here. Integer division by zero is outside the contract (chapter 27), and floating-point division by zero is commonly said to “be defined and give infinity”. <strong>That, however, is not a promise of the C language itself.</strong> The standard’s rule for division leaves the behaviour undefined when the second operand is zero — for reals as much as for integers. Infinity appears in implementations that support IEC 60559 (that is, IEEE 754) semantics. In such an implementation, dividing a finite non-zero value by zero gives a signed infinity and raises the divide-by-zero exception, while <math><mfrac><mn>0</mn><mn>0</mn></mfrac></math> falls on the NaN side. Today’s mainstream compilers on x86-64 and AArch64 behave that way, but it is not something the standard forces on every implementation.</p><div class="dev platform"><p class="dev-label">Platform note. Where this distinction actually bites</p><p>The mark by which an implementation declares that it follows IEC 60559 for binary floating point is <code>__STDC_IEC_60559_BFP__</code> (BFP = binary floating point). Where that macro is defined, annex F semantics are a contract and the behaviour above may be expected. Decimal floating point is marked separately, by <code>__STDC_IEC_60559_DFP__</code>.</p><p>It must not be confused with the similarly named <code>__STDC_IEC_60559_BF16_TYPES__</code> — that is a <strong>separate</strong> feature mark, about whether bfloat16 types are provided, and has nothing to do with the semantics of ordinary binary floating-point operations. And note further that <strong>a type having the same format as IEC 60559 and the operations following annex F are two different questions</strong> — the former is what <code>__STDC_IEC_60559_TYPES__</code> speaks to; what is needed here is the latter. Where it does not — some embedded toolchains, and builds that deliberately switch annex F semantics off with something like <code>-ffast-math</code> — the guarantee of infinity and NaN goes away. <strong>Portable code screens out a zero divisor first.</strong></p></div><h4>47.2.1 Opening the bits directly</h4><p>Having seen the layout in chapter 8, we now print the bits of real values and check them. To move a representation we use <code>memcpy</code> rather than a union — by chapter 45′s rule that is the safest passage for “moving a value”, and compilers mostly make the copy disappear.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch47/bits.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Opening up a real number — how sign, exponent and fraction really sit in it.</span></em>
+<em><span class="tok-c">   Type punning goes through memcpy, not a union (the rule of chapters 36 and 45). </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">inttypes.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">math.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">uint64_t</span></strong> <strong>bits_of</strong><span class="tok-x">(</span><strong><span class="tok-t">double</span></strong> d<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">uint64_t</span></strong> u<span class="tok-x">;</span>
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>u</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>d</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> u</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the representation moved as it is </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> u<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">uint32_t</span></strong> <strong>bits_of_f</strong><span class="tok-x">(</span><strong><span class="tok-t">float</span></strong> f<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">uint32_t</span></strong> u<span class="tok-x">;</span>
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>u</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>f</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> u</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> u<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> double: 1 sign + 11 exponent + 52 fraction </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>dump</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>label<span class="tok-x">,</span> <strong><span class="tok-t">double</span></strong> d<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">uint64_t</span></strong> u <strong><span class="tok-x">=</span></strong> <strong>bits_of</strong><strong><span class="tok-x">(</span></strong><strong>d</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">unsigned</span></strong> sign <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>u <strong><span class="tok-x">>></span></strong> <span class="tok-n">63</span><span class="tok-x">)</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">unsigned</span></strong> expo <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-x">(</span>u <strong><span class="tok-x">>></span></strong> <span class="tok-n">52</span><span class="tok-x">)</span> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">7FF</span><strong><span class="tok-t">u</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">uint64_t</span></strong> frac <strong><span class="tok-x">=</span></strong> u <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">FFFFFFFFFFFFF</span><strong><span class="tok-t">u</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%-12s</span></strong><strong><span class="tok-s"> %016</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  sign </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s">  exp </span></strong><strong><span class="tok-s">%4u</span></strong><strong><span class="tok-s">(=</span></strong><strong><span class="tok-s">%+5d</span></strong><strong><span class="tok-s">)  frac %013</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx64</strong><strong><span class="tok-x">,</span></strong>
+<strong>           label</strong><strong><span class="tok-x">,</span></strong><strong> u</strong><strong><span class="tok-x">,</span></strong><strong> sign</strong><strong><span class="tok-x">,</span></strong><strong> expo</strong><strong><span class="tok-x">,</span></strong>
+<strong>           expo </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">1022</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>expo </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-n">1023</span></strong><strong><span class="tok-x">,</span></strong><strong> frac</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>expo <strong><span class="tok-x">==</span></strong> <span class="tok-x">0x</span><span class="tok-n">7FF</span><span class="tok-x">)</span>      <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  &lt;- </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> frac </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">NaN</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">infinity</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">else</span></strong> <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>expo <strong><span class="tok-x">==</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span>     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  &lt;- </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> frac </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">subnormal</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">zero</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">-- the bits of a double (1 sign + 11 exponent + 52 fraction) --</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">1.0</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">-1.0</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.5</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">5</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">2.0</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.3</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1+0.2</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.0</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">-0.0</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">inf</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> INFINITY</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">NaN</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> NAN</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">-- 0.1 + 0.2 and 0.3 differ in their bits --</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1+0.2 = </span></strong><strong><span class="tok-s">%.20f</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.3     = </span></strong><strong><span class="tok-s">%.20f</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the bits: %016</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> vs %016</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  (the last bit)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>bits_of</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>bits_of</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">-- move one ULP from 1.0 and the last digit of the fraction rises by 1 --</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong> one <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">.</span><span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong> next <strong><span class="tok-x">=</span></strong> <strong>nextafter</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">1.0        %016</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>bits_of</strong><strong><span class="tok-x">(</span></strong><strong>one</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">next value %016</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  difference </span></strong><strong><span class="tok-s">%.17g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>bits_of</strong><strong><span class="tok-x">(</span></strong><strong>next</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> next </strong><strong><span class="tok-x">-</span></strong><strong> one</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">equal to DBL_EPSILON? </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong>next </strong><strong><span class="tok-x">-</span></strong><strong> one</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1p-52</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">-- a float uses the same structure, more narrowly (1 + 8 + 23) --</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">float</span></strong> f <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">1</span><strong><span class="tok-t">f</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">uint32_t</span></strong> fu <strong><span class="tok-x">=</span></strong> <strong>bits_of_f</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1f       %08</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx32 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  sign </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s">  exp </span></strong><strong><span class="tok-s">%3u</span></strong><strong><span class="tok-s">(=</span></strong><strong><span class="tok-s">%+4d</span></strong><strong><span class="tok-s">)  frac %06</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx32 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           fu</strong><strong><span class="tok-x">,</span></strong><strong> fu </strong><strong><span class="tok-x">>></span></strong><strong> </strong><strong><span class="tok-n">31</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>fu </strong><strong><span class="tok-x">>></span></strong><strong> </strong><strong><span class="tok-n">23</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">FF</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong>fu </strong><strong><span class="tok-x">>></span></strong><strong> </strong><strong><span class="tok-n">23</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">FF</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-n">127</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           fu </strong><strong><span class="tok-x">&amp;</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">7FFFFF</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">printing (double)0.1f gives </span></strong><strong><span class="tok-s">%.17g</span></strong><strong><span class="tok-s"> — the trace of narrowing to float</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">double</span></strong><strong><span class="tok-x">)</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">-- below the smallest normal number come the subnormals --</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong> small <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">1p-1022</span><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the smallest normal number </span></em><em><span class="tok-c">*/</span></em>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">2^-1022</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> small</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">half</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> small </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> subnormal </span></em><em><span class="tok-c">*/</span></em>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">2^-1074</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1p-1074</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the smallest subnormal </span></em><em><span class="tok-c">*/</span></em>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">half again</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1p-1074</span></strong><strong> </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> it sinks to zero </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>-- the bits of a double (1 sign + 11 exponent + 52 fraction) --
+1.0          3ff0000000000000  sign 0  exp 1023(=   +0)  frac 0000000000000
+-1.0         bff0000000000000  sign 1  exp 1023(=   +0)  frac 0000000000000
+0.5          3fe0000000000000  sign 0  exp 1022(=   -1)  frac 0000000000000
+2.0          4000000000000000  sign 0  exp 1024(=   +1)  frac 0000000000000
+0.1          3fb999999999999a  sign 0  exp 1019(=   -4)  frac 999999999999a
+0.3          3fd3333333333333  sign 0  exp 1021(=   -2)  frac 3333333333333
+0.1+0.2      3fd3333333333334  sign 0  exp 1021(=   -2)  frac 3333333333334
+0.0          0000000000000000  sign 0  exp    0(=-1022)  frac 0000000000000  &lt;- zero
+-0.0         8000000000000000  sign 1  exp    0(=-1022)  frac 0000000000000  &lt;- zero
+inf          7ff0000000000000  sign 0  exp 2047(=+1024)  frac 0000000000000  &lt;- infinity
+NaN          7ff8000000000000  sign 0  exp 2047(=+1024)  frac 8000000000000  &lt;- NaN
+
+-- 0.1 + 0.2 and 0.3 differ in their bits --
+0.1+0.2 = 0.30000000000000004441
+0.3     = 0.29999999999999998890
+the bits: 3fd3333333333334 vs 3fd3333333333333  (the last bit)
+
+-- move one ULP from 1.0 and the last digit of the fraction rises by 1 --
+1.0        3ff0000000000000
+next value 3ff0000000000001  difference 2.2204460492503131e-16
+equal to DBL_EPSILON? yes
+
+-- a float uses the same structure, more narrowly (1 + 8 + 23) --
+0.1f       3dcccccd  sign 0  exp 123(=  -4)  frac 4ccccd
+printing (double)0.1f gives 0.10000000149011612 — the trace of narrowing to float
+
+-- below the smallest normal number come the subnormals --
+2^-1022      0010000000000000  sign 0  exp    1(=-1022)  frac 0000000000000
+half         0008000000000000  sign 0  exp    0(=-1022)  frac 8000000000000  &lt;- subnormal
+2^-1074      0000000000000001  sign 0  exp    0(=-1022)  frac 0000000000001  &lt;- subnormal
+half again   0000000000000000  sign 0  exp    0(=-1022)  frac 0000000000000  &lt;- zero
+</code></pre></div></div><p>Five things from the output are worth pointing at.</p><p><strong>First, <code>1.0</code> is remarkably tidy.</strong> The exponent field holds 1023 (the bias itself, so the actual exponent is 0) and the fraction is all zeros — the hidden bit alone makes <math><mn>1.0</mn><mo lspace="0.2222222222222222em" rspace="0.2222222222222222em">×</mo><msup><mn>2</mn><mn>0</mn></msup></math>. <code>2.0</code> raises the exponent by one, <code>0.5</code> lowers it by one, and flipping the sign bit gives <code>-1.0</code>.</p><p><strong>Second, <code>0.1</code> shows the cut mark of an unending fraction.</strong> Its fraction ends in <code>999999999999a</code>, and that final <code>a</code> is the trace of <strong>rounding</strong>. It is chapter 8′s mathematics box — “it does not come out even in binary” — laid bare in bits.</p><p><strong>Third, <code>0.1 + 0.2</code> and <code>0.3</code> differ by one last bit.</strong> The two bit patterns end <code>...3334</code> and <code>...3333</code>, exactly one apart. That is why the <code>==</code> comparison is false, and why this chapter talks about tolerances.</p><p><strong>Fourth, the identity of one ULP becomes visible.</strong> Adding the integer 1 to the bits of <code>1.0</code> gives the very next real number, and the difference is <code>DBL_EPSILON</code> (<math><msup><mn>2</mn><mrow><mo>{</mo><mrow><mo>−</mo><mn>52</mn></mrow><mo>}</mo></mrow></msup></math>). “The smallest distinguishable difference near 1.0” turns out to be a single bit.</p><p><strong>Fifth, the subnormals appear at the floor.</strong> Halve the smallest normal number and the exponent cannot go lower, so <strong>zeros begin to fill the front of the fraction</strong> instead — that state, with the exponent field all zeros, is a subnormal. Precision is given up little by little on the way down to zero, and when the last bit disappears the value becomes zero. This design, fading out instead of falling abruptly to zero, is called <strong>gradual underflow</strong>.</p><div class="dev platform"><p class="dev-label">Platform note. subnormals can be slow</p>Arithmetic on subnormals is far slower than on normal numbers on some hardware (tens of times, on some machines). So signal processing and game engines sometimes switch on a mode that flushes subnormals to zero — a trade of a little accuracy for the removal of a worst-case stall. Standard C has no portable way to switch that mode on (it is a compiler option or a platform API).</div><p>NaN has one famous property — <strong>it is not even equal to itself.</strong> If <code>x != x</code> is true then x is NaN, and that is the classic idiom for detecting NaN (today one uses <code>isnan()</code>). Being a value that breaks the basic property of the relation “equality”, NaN mixed into sorting or searching algorithms produces strange results — which is why checking for NaN at the boundary is the practice when handling real-number data.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The accumulation of 0.1 seconds — the Patriot missile incident</p>There is an event in which chapter 8′s “small discrepancies accumulate” led directly to human lives. In the 1991 Gulf War a Patriot air-defence system failed to intercept an incoming missile and 28 people died, and the heart of the cause analysis was floating-point error. The system counted time in units of 0.1 seconds — and as chapter 8 showed, 0.1 is an infinite fraction in binary, so a minute error arises each time it is held. Because that system used a 24-bit container the error was relatively large, and after 100 hours of continuous operation without a reboot the accumulated error reached about 0.34 seconds. In those 0.34 seconds the target moved more than 500 metres, and the tracking window was looking at the wrong piece of sky. “Approximation is faithful but not harmless” — the heaviest confirmation of chapter 8′s lesson.</div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Should real numbers then not be used for things like money?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Not using them is the standard — this is exactly the place for the fixed point learned in chapter 8. Handle amounts as real numbers in units of won and discrepancies at the 0.1-won level accumulate until the ledger does not balance, so the practice of financial software is to compute in <strong>integers of the smallest unit</strong> and put the decimal point in only when displaying. Reduced to a rule — <strong>integers (fixed point) where the exact decimal value matters, floating point for physical quantities and scientific computation.</strong> It is fitting the tool to the problem, and the grounds for that judgement are the nature of representation learned in chapter 8 and here.</p></div></div><p>We can handle the world of approximation in C. The next chapter is this part’s central subject — how a program deals with the fact that a computation can fail: the story of errors and contracts.</p>
+<div class="nav"><a href="ch46.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch48.html">Next →</a></div>
+</div></main></body></html>

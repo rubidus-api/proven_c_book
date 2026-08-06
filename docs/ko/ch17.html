@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>17 개발환경 구축 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch16.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch18.html" title="다음" aria-label="다음">→</a></span><a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-17">17 개발환경 구축</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>16장 일반적인 컴파일 과정 · 전처리·컴파일·어셈블·링크의 네 단계</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>16장에서 컴파일러에게 <code>-E</code>, <code>-S</code> 같은 부탁을 하며 명령줄에서 일했다. 요즘은 클릭으로 다 되는 세상인데, 왜 명령줄인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 일반론이기 때문이다. 그래픽 개발 도구는 저마다 생김새가 다르고 몇 해 마다 바뀌지만, <code>cc hello.c -o hello</code>라는 문장은 반세기째 모든 플랫폼에서 통하는 공용어다. 그리고 어떤 그래픽 도구를 쓰든 그 “빌드” 버튼의 밑바닥에서 실제로 도는 것이 바로 이 명령들이다 — 밑바닥을 아는 사람은 도구를 갈아타도 길을 잃지 않는다. 이 책이 명령줄을 기준으로 삼는 이유다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">16장의 릴레이를 내 컴퓨터에서 돌릴 도구를 갖춘다. 어느 플랫폼에서든 통하는 일반론이 본문이고, 특정 운영체제에 묶이는 구체적 설치법은 “플랫폼 노트” 상자로 격리해 두었다 — 상자는 이 책의 예시 플랫폼인 Windows 기준이며, 건너뛰어도 본문은 이어진다. 컴파일러와 편집기에 <span id="idx-entry-40"></span>이어, 프로그램을 멈춰 세워 들여다보는 디버거와 그 맹점, 그리고 버그를 <span id="idx-entry-41"></span>실행 중에 잡아 주는 그물(새니타이저)까지 장만하면 이 부가 끝난다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>컴파일러가 두 계열이나 되는 이유가 있는가? 하나만 있으면 헷갈릴 일도 없을 텐데.</li><li>그러면 예제에서 한글 출력을 아예 피하는 것이 정답인가?</li><li>그러면 <code>printf</code> 디버깅은 이제 그만두어야 하는가?</li><li>경고도 켜고 새니타이저도 있는데, 그래도 버그가 남는 이유는 무엇인가?</li></ol></div></div><div></div><h3>17.1 필요한 것은 셋뿐이다</h3><p>개발환경이라는 말이 거창하지만, C 프로그래밍에 필요한 것은 셋뿐이다.</p><ul><li><strong>컴파일러</strong> — 16장의 네 주자 일체. 이 책은 gcc와 clang 두 계열을 기준으로 한다(둘 다 무료이고 모든 주요 플랫폼에 있다).</li><li><strong>텍스트 편집기</strong> — 소스 코드는 그냥 텍스트 파일이므로(8장), 글자를 적을 수 있는 도구면 무엇이든 된다. 어떤 편집기를 쓰는가는 취향의 영역이라 이 책은 정하지 않는다.</li><li><strong>터미널</strong> — 명령을 적어 넣는 창. 모든 운영체제에 기본으로 있다.</li></ul><p>일과의 모양도 단순하다 — <strong>편집하고, 컴파일하고, 실행한다.</strong> 이 세 박자 의 반복이 프로그래밍의 기본 사이클이고, 이 책의 모든 예제가 이 사이클 위에서 돈다(물론 독자는 지면으로 읽기만 해도 된다 — 1장의 약속대로, 이 장의 설치조차 시연이지 숙제가 아니다).</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Windows에서 컴파일러 설치하기</p><p>이 책의 예시 플랫폼은 Windows다. 두 갈래 중 하나(또는 둘 다)를 고르면 된다 — 이 책의 예제는 어느 쪽으로도 동일하게 빌드된다.</p><p><strong>갈래 1 — LLVM clang (권장).</strong> LLVM 프로젝트의 공식 Windows 배포판을 설치한다. 터미널(PowerShell)에서 한 줄이면 된다:</p><pre><code data-lang="text">> winget install LLVM.LLVM</code></pre><p>(또는 llvm.org 의 릴리스 페이지에서 설치 프로그램을 받아도 같다.) 설치 후 새 터미널에서 <code>clang --version</code>이 판 번호를 답하면 준비 끝 이다. 이후 이 책의 <code>cc</code> 자리에 <code>clang</code>을 쓰면 된다:</p><pre><code data-lang="text">> clang hello.c -o hello.exe
+> .\hello.exe
+안녕, 세상!</code></pre><p><strong>갈래 2 — MinGW-w64 gcc.</strong> gcc의 Windows 이식판이다. MSYS2라는 꾸러미 관리 환경(msys2.org)을 설치한 뒤, 그 터미널에서:</p><pre><code data-lang="text">$ pacman -S mingw-w64-ucrt-x86_64-gcc
+$ gcc --version</code></pre><p><strong>셋째 길 — Visual Studio(MSVC)에 관하여.</strong> Microsoft의 자체 컴파일러와 통합 환경도 훌륭한 선택지이지만, 이 책의 명령·선택지 표기(gcc/clang 계열)와 달라서 여기서 다루지는 않는다. 관심 있는 독자는 Microsoft의 공식 문서(<code>learn.microsoft.com/cpp</code>)가 설치부터 첫 프로그램까지 자세히 안내하므로 그쪽을 따르면 된다.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 컴파일러가 두 계열이나 되는 이유가 있는가? 하나만 있으면 헷갈릴 일도 없을 텐데.</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 경쟁이 곧 품질이기 때문이다 — 그리고 프로그래머에게는 공짜 검증 도구이기 때문이다. 같은 코드를 gcc와 clang 양쪽으로 컴파일해 보면, 한쪽이 놓친 경고를 다른 쪽이 잡아 주는 일이 흔하다. 두 독립적인 구현이 모두 통과시키는 코드는 표준(계약서)에 맞게 쓰였을 가능성이 훨씬 높다 — 12장의 표현을 빌리면, 방언이 아니라 표준어로 말하고 있다는 교차 증거다. 실제로 이 책의 수록 예제들도 두 컴파일러로 교차 검증한다.</p></div></div><h3>17.2 경고 — 공짜 검토를 켜 두어라</h3><p>설치 직후에 들일 습관이 하나 있다. 컴파일러에게 <strong>경고</strong>를 넉넉히 켜 달라고 부탁하는 것이다:</p><pre><code data-lang="text">$ cc -Wall -Wextra hello.c -o hello</code></pre><span id="idx-entry-42"></span><p><code>-Wall -Wextra</code>는 “수상한 구석을 최대한 알려 달라”는 뜻이다(이름과 달리 <code>-Wall</code>이 전부는 아니라서 관행상 둘을 함께 쓴다). 경고는 오류가 아니라 <strong>컴파일러의 무료 코드 검토</strong>다 — 계약(표준) 위반까지는 아니어도 사고 나기 좋은 무늬를 짚어 준다. 이 책의 모든 예제는 이 두 선택지를 켠 채, 경고 0개로 검증된다.</p><h3>17.3 한글이 깨질 때 — 인코딩의 사슬</h3><p>여기서 한국어권 독자가 거의 반드시 겪는 문제를 미리 짚어 둔다. 이 책의 예제가 출력 문자열을 대부분 영어로 쓰는 것도 이 사정 때문이다 — 한글을 찍는 순간, 프로그램 하나가 아니라 <strong>네 겹의 인코딩 설정이 전부 맞아야</strong> 글자가 제대로 나온다.</p><p>사슬의 네 고리는 이렇다.</p><ul><li><strong>① 소스 파일의 인코딩</strong> — 소스는 결국 바이트 열이다(9장). 편집기가 UTF-8로 저장했는지, 아니면 옛 한국어 윈도우의 기본이던 CP949(EUC-KR 계열)로 저장했는지에 따라 같은 “안녕”이 다른 바이트가 된다.</li><li><strong>② 컴파일러가 읽는 인코딩</strong> — 컴파일러는 소스가 어떤 인코딩인지 <strong>추측하거나 기본값을 가정한다</strong>. 소스는 UTF-8인데 컴파일러가 CP949로 읽으면, 문자열 리터럴의 바이트가 그 자리에서 어그러진다.</li><li><strong>③ 실행 문자 집합</strong> — 컴파일러가 실행 파일에 심는 바이트가 무엇인가 (9장의 5단계, 52장의 번역 단계에서 본 그 변환이다).</li><li><strong>④ 터미널이 해석하는 인코딩</strong> — 프로그램이 뱉은 바이트를 창이 어떤 표로 읽는가. 여기가 어긋나면 앞의 셋이 완벽해도 화면에는 깨진 글자가 뜬다.</li></ul><p>네 고리 중 하나만 어긋나도 증상은 똑같이 “글자가 깨진다”로 나타나므로, 초보자가 원인을 짚기가 유난히 어렵다. 진단의 요령은 <strong>어느 고리에서 깨졌는지 좁히는 것</strong>이다 — 소스를 16진으로 열어 보면(①②를 가름), 파일로 출력을 돌려 보면(④를 가름) 범인이 드러난다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Windows에서 한글이 깨질 때</p><p>Windows가 이 문제의 최대 격전지다. 오랫동안 한국어 Windows의 기본 코드 페이지가 CP949였고, 그 위에 UTF-8 세계가 얹히면서 고리마다 설정이 갈렸기 때문이다. 실전 처방을 도구별로 적어 둔다.</p><p><strong>공통 — 소스는 UTF-8로.</strong> 편집기에서 “UTF-8”로 저장한다. 다만 Windows 도구들과의 호환을 위해 <strong>BOM이 붙은 UTF-8</strong>(UTF-8 with signature)을 권하는 경우가 있다 — MSVC는 BOM이 있으면 UTF-8임을 확신하고 읽는다. gcc·clang은 BOM 없는 UTF-8을 기본으로 잘 읽는다.</p><p><strong>Visual Studio(MSVC)</strong> — 파일을 “인코딩을 지정하여 저장”으로 UTF-8(BOM 포함)로 두거나, 컴파일 옵션 <code>/utf-8</code>을 주어 소스와 실행 문자 집합을 모두 UTF-8로 못박는 것이 가장 확실하다. 자세한 안내는 Microsoft 공식 문서에 있다.</p><p><strong>VS Code</strong> — 오른쪽 아래 상태 표시줄에 현재 파일의 인코딩이 뜬다. 거기서 “Save with Encoding → UTF-8”로 바꾸고, 설정에서 <code>"files.encoding": "utf8"</code>을 기본으로 두면 ①이 고정된다. 자동 감지 (<code>files.autoGuessEncoding</code>)는 편해 보이지만 추측이 틀리면 오히려 파일을 망칠 수 있으니, 팀 작업에서는 끄고 명시하는 쪽이 안전하다.</p><p><strong>터미널(④)</strong> — Windows 콘솔은 현재 코드 페이지로 바이트를 해석한다. <code>chcp 65001</code>로 UTF-8 코드 페이지로 바꾸면 UTF-8 출력이 제대로 보인다. Windows Terminal은 UTF-8을 기본에 가깝게 다루므로 옛 콘솔 창보다 사고가 적다. 반대로 CP949로 맞춰 둔 콘솔에서 UTF-8 프로그램을 돌리면 자모가 깨져 보이는데 — 프로그램이 틀린 것이 아니라 <strong>읽는 표가 다른</strong> 것이다 (9장의 그 이야기가 화면에서 재현되는 것이다).</p><p><strong>MinGW·MSYS2 / WSL</strong> — 이쪽은 대개 UTF-8이 기본이라 사고가 적다. 다만 MinGW로 만든 프로그램을 옛 Windows 콘솔에서 돌리면 ④가 어긋날 수 있다는 것은 같다.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 예제에서 한글 출력을 아예 피하는 것이 정답인가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 학습 단계에서는 그렇게 하는 편이 이롭다 — 이 책의 예제가 그런 선택을 했다. 배우려는 것이 포인터인데 인코딩 설정 때문에 막히면, 정작 배울 것에서 멀어지기 때문이다. 다만 <strong>피하는 것이 해결은 아니다.</strong> 실무의 프로그램은 결국 한글을 다루게 되고, 그때는 이 사슬을 하나씩 고정하는 것이 정공법이다 — 소스 UTF-8, 컴파일러에 UTF-8 명시, 터미널 UTF-8. 세 곳을 못박아 두면 그 뒤로는 조용하다. 문자열을 <strong>다루는</strong> 쪽의 규칙 (글자 수 ≠ 바이트 수, 경계에서 자르지 않기)은 9장과 39장에서 이미 배운 그대로다.</p></div></div><h3>17.4 디버거 — 멈춰 세워 들여다보기</h3><p>프로그램이 틀린 답을 낼 때 가장 먼저 하는 일은 대개 <code>printf</code>를 심는 것이다. 나쁜 방법이 아니다 — 어디서나 되고, 준비가 필요 없다. 다만 찍을 자리를 <strong>미리 알아야</strong> 하고, 한 번 찍을 때마다 다시 컴파일해야 하며, 찍히는 것은 그 순간 그 변수뿐이다.</p><p><strong>디버거</strong>(debugger)는 그 제약을 걷어낸다. 프로그램을 원하는 지점에서 멈춰 세우고, 그 순간의 모든 변수를 들여다보고, 한 줄씩 걸어 보고, 어떻게 여기까지 왔는지 호출의 사슬을 되짚는다. 표준 도구는 GNU의 <code>gdb</code>와 LLVM의 <code>lldb</code>이고, 명령 이름만 다를 뿐 하는 일은 같다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>하고 싶은 일</strong></th><th><strong>gdb 명령</strong></th><th><strong>뜻</strong></th></tr><tr><td>여기서 멈춰라</td><td><code>break sum_all</code></td><td>중단점(breakpoint)</td></tr><tr><td>시작</td><td><code>run</code></td><td>프로그램 실행</td></tr><tr><td>이 값이 뭐지</td><td><code>print n</code></td><td>변수·수식 평가</td></tr><tr><td>한 줄 진행</td><td><code>next</code> / <code>step</code></td><td>건너뛰기 / 함수 안으로</td></tr><tr><td>여기까지 어떻게 왔나</td><td><code>backtrace</code></td><td>호출 사슬(call stack)</td></tr><tr><td>이 변수가 바뀌면 멈춰라</td><td><code>watch s</code></td><td>감시점(watchpoint)</td></tr><tr><td>함수 끝날 때까지</td><td><code>finish</code></td><td>반환값까지 보여 준다</td></tr></table></div><p class="float-caption">표 17.1</p></figure><p>예제로 쓸 프로그램은 이렇다. 합이 150이어야 하는데 100이 나온다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch17/bug.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>sum_all</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>a<span class="tok-x">,</span> <strong><span class="tok-t">int</span></strong> n<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> s <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n <strong><span class="tok-x">-</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> bug: stops one short </span></em><em><span class="tok-c">*/</span></em>
+        s <strong><span class="tok-x">+=</span></strong> a<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> s<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> data<span class="tok-x">[</span><span class="tok-n">5</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-n">10</span><span class="tok-x">,</span> <span class="tok-n">20</span><span class="tok-x">,</span> <span class="tok-n">30</span><span class="tok-x">,</span> <span class="tok-n">40</span><span class="tok-x">,</span> <span class="tok-n">50</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sum = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (should be 150)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>sum_all</strong><strong><span class="tok-x">(</span></strong><strong>data</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">5</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>sum = 100 (should be 150)
+</code></pre></div></div><p>디버거로 붙잡으면 이렇게 보인다(gdb 17.2로 실제 실행한 것이다).</p><pre><code data-lang="text">$ gcc -std=c23 -g -O0 bug.c -o bug
+$ gdb -q ./bug
+(gdb) break sum_all
+Breakpoint 1 at 0x1154: file bug.c, line 4.
+(gdb) run
+Breakpoint 1, sum_all (a=0x7fff5302c8a0, n=5) at bug.c:4
+4     int s = 0;
+(gdb) print n
+$1 = 5
+(gdb) next
+5     for (int i = 0; i &lt; n - 1; i++)   /* bug: stops one short */
+(gdb) next
+6         s += a[i];
+(gdb) print a[4]
+$3 = 50
+(gdb) finish
+Run till exit from sum_all (a=..., n=5) at bug.c:4
+Value returned is $4 = 100</code></pre><p><code>n</code>은 5로 제대로 들어왔고, 배열의 마지막 칸 <code>a[4]</code>에는 50이 멀쩡히 있는데 반환값은 100이다. 재료는 옳고 계산이 틀렸다는 뜻이므로 남은 곳은 루프의 경계뿐이다 — <code>i &lt; n - 1</code>. 이 좁혀 가는 과정 자체가 디버거의 쓸모다.</p><h3>17.5 디버그 빌드의 옵션 — <code>-g</code>와 <code>-O0</code>은 다른 스위치다</h3><p>디버거가 변수 이름과 줄 번호를 알려면 컴파일러가 그 정보를 실행 파일에 넣어 두어야 한다. 그것이 <code>-g</code>다.</p><ul><li><code>-g</code> — <strong>디버그 정보</strong>(debug info)를 넣는다. 변수 이름, 타입, 줄 번호, 함수의 경계가 실행 파일 안에 함께 실린다.</li><li><code>-O0</code> — 최적화를 끈다. 소스의 문장과 기계 명령이 거의 일대일로 대응 하므로, 한 줄씩 걷기와 변수 보기가 정확하게 동작한다.</li><li><code>-Og</code> — “디버깅하기 좋을 만큼만” 최적화한다. <code>-O0</code>보다 빠르면서 <code>-O2</code>보다 훨씬 잘 보인다. 디버깅용 기본값으로 좋다.</li><li><code>-g3</code> — 매크로 정의까지 넣는다. <code>print MAX_LEN</code> 같은 것이 된다.</li><li><code>-fno-omit-frame-pointer</code> — 호출 사슬을 되짚는 실마리를 남긴다. 프로파일러와 크래시 보고에도 도움이 된다.</li></ul><p><code>assert</code>(48장)와 관련한 스위치도 하나 있다. <code>-DNDEBUG</code>를 주면 모든 <code>assert</code>가 통째로 사라진다 — 릴리스 빌드가 대개 그렇게 만들어진다. 검사를 지운다는 것은 <strong>디버그 빌드에서 걸리던 것이 릴리스에서는 그냥 지나간다</strong>는 뜻이므로, 사라져서는 안 되는 검사는 <code>assert</code>가 아니라 보통 <code>if</code>로 써야 한다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>-g</code>를 붙이면 프로그램이 느려진다”</strong></p>그럴듯하지만 아니다. <code>-g</code>는 <strong>정보를 덧붙일 뿐</strong> 생성되는 기계 명령을 바꾸지 않는다 — 실행 파일이 커질 뿐 속도는 같다. 느려지는 원인은 함께 쓰는 <code>-O0</code>이다. 둘은 서로 다른 스위치이고, <code>-O2 -g</code>처럼 함께 쓸 수 있다. 실무에서는 릴리스 빌드도 <code>-g</code>로 만들어 디버그 정보를 별도 파일로 떼어 보관하는 것이 정석이다 — 출하하는 실행 파일은 가볍게 유지하면서, 현장에서 온 크래시 보고를 그 정보로 해독할 수 있기 때문이다. 정보를 버리면 그 순간부터 사고 현장은 주소 숫자의 나열이 된다.</div><h3>17.6 디버거의 맹점 — 최적화된 빌드</h3><p>문제는 릴리스 빌드다. 앞의 같은 프로그램을 <code>-O2 -g</code>로 만들어 붙잡으면 이렇게 된다(역시 실제 캡처다).</p><pre><code data-lang="text">$ gcc -std=c23 -g -O2 bug.c -o bug
+$ gdb -q ./bug
+(gdb) break sum_all
+Function "sum_all" not defined.
+(gdb) break main
+Breakpoint 1 at 0x1040: file bug.c, line 12.
+(gdb) run
+Breakpoint 1, main () at bug.c:12
+12      printf("sum = %d (should be 150)\n", sum_all(data, 5));
+(gdb) info locals
+data = &lt;optimized out></code></pre><p>찾던 함수가 <strong>없다</strong>. 컴파일러가 <code>sum_all</code>을 호출 자리에 펼쳐 넣고 (인라인), 상수 배열의 합을 아예 컴파일 시간에 계산해 버려서, 실행 파일 안에 그런 함수가 남아 있지 않기 때문이다. 배열 <code>data</code>도 마찬가지로 “최적화되어 사라졌다”. 13장에서 배운 편집자의 권리가, 여기서는 관찰자의 시야를 가리는 형태로 나타난 것이다.</p><p>최적화 빌드에서 흔히 만나는 맹점을 모으면 이렇다.</p><ul><li><code>&lt;optimized out></code> — 변수가 레지스터에만 있거나 아예 없어져 값을 볼 수 없다(11장의 레지스터가 여기서 되돌아온다).</li><li><strong>줄 번호가 튄다</strong> — 한 줄씩 걸으면 12 → 15 → 12처럼 오간다. 컴파일러가 명령을 재배열했기 때문이고, 디버거는 거짓말을 하는 것이 아니라 뒤섞인 실제 순서를 보여 주는 것이다.</li><li><strong>호출 사슬이 짧다</strong> — 인라인된 함수와 꼬리 호출(tail call)은 스택에 프레임을 남기지 않는다.</li><li><strong>중단점이 걸리지 않는다</strong> — 지워진 코드에는 멈출 자리가 없다.</li></ul><h3>17.7 디버그에선 되는데 릴리스에서만 틀린다</h3><p>가장 곤혹스러운 상황이고, 원인의 대부분은 하나로 모인다 — <strong>프로그램은 이미 깨져 있었고, 디버그 빌드가 우연히 그것을 가려 주고 있었다.</strong> 최적화가 멀쩡한 코드를 망가뜨린 것이 아니라, 계약 밖의 코드(13장·49장)가 전제로 쓰이면서 비로소 증상이 드러난 것이다. 흔한 뿌리는 다음과 같다.</p><ul><li><strong>초기화하지 않은 지역 변수</strong> — <code>-O0</code>에서는 스택의 그 자리가 마침 0이라 잘 돌다가, 배치가 바뀌면 쓰레기 값이 들어온다.</li><li><strong>경계를 넘는 쓰기</strong> — 넘어간 자리에 무엇이 놓였느냐가 빌드마다 다르다. 디버그 빌드에서는 여유 공간을 덮고 지나가던 것이, 릴리스에서는 하필 중요한 값을 덮는다.</li><li><strong>계약 밖을 전제로 삼는 최적화</strong> — 부호 있는 오버플로는 없다(7장), 엄격한 앨리어싱(13장)은 지켜진다, 널을 역참조한 뒤라면 널일 리 없다 — 이런 전제는 <code>-O2</code>에서만 실제 코드 변형으로 나타난다.</li><li><strong><code>volatile</code>을 빠뜨린 폴링 루프</strong> — 13장에서 본 그대로, <code>-O0</code>에서는 매번 읽던 것이 <code>-O2</code>에서 한 번만 읽히고 굳는다.</li><li><strong>사라진 <code>assert</code></strong> — <code>-DNDEBUG</code>로 검사가 통째로 빠지면서 잘못된 입력이 그대로 흘러 들어간다.</li><li><strong>타이밍이 바뀌며 드러나는 경쟁</strong> — 여러 갈래로 도는 프로그램(12장)에서 빨라진 코드가 순서를 바꾸어 놓는다. 디버거를 붙이면 느려져서 증상이 사라지는, 이른바 하이젠버그(Heisenbug)의 전형이다.</li><li><strong>실수 계산의 미세한 차이</strong> — <code>-ffast-math</code>류의 선택지는 결합 법칙을 가정해 순서를 바꾸므로 마지막 자리가 달라질 수 있다(8장).</li></ul><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>“우리 코드는 디버그에서 잘 됩니다” — 커널이 플래그로 항복한 이야기</p>13장에서 본 엄격한 앨리어싱은 이 부류의 대표다. 손으로 짠 파서가 바이트 버퍼를 폭이 다른 포인터로 들여다보는 코드는 <code>-O0</code>에서 완벽하게 돌고, <code>-O2</code>에서 조용히 다른 답을 낸다. 리눅스 커널은 이 문제를 코드로 일일이 고치는 대신 빌드 전체를 <code>-fno-strict-aliasing</code>으로 컴파일하는 길을 택했다 — 규칙 하나 때문에 플래그 하나를 통째로 끈 것이다. 개인 프로젝트에서 흉내 낼 일은 아니지만, “릴리스에서만 나는 버그”가 얼마나 현실적인 문제인지를 보여 주는 가장 유명한 사례다.</div><h3>17.8 디버거를 믿기 어려울 때의 도구들</h3><p>디버거를 못 쓰거나 믿기 어려운 자리는 실제로 있다 — 최적화 빌드에서만 재현되는 버그, 붙이는 순간 사라지는 타이밍 버그, 디버거를 띄울 수 없는 운영 환경, 그리고 화면도 키보드도 없는 임베디드 보드. 그럴 때의 순서는 대략 이렇다.</p><ol><li><strong><code>-Og -g</code>로 다시 세워 본다.</strong> 최적화를 완전히 끄지 않으면서 시야를 되찾는 첫 시도다. 여기서 증상이 남아 있다면 디버거가 다시 쓸 만해진다.</li><li><strong>새니타이저를 켠다.</strong> 다음 절의 도구들이다. 이들은 사고를 <strong>일어나는 순간에</strong> 잡으므로, 최적화 빌드에서만 나는 버그의 원인을 대개 여기서 찾는다. 릴리스와 같은 <code>-O2</code>에 얹어 쓸 수 있다는 점이 중요하다.</li><li><strong>가설을 플래그로 검증한다.</strong> <code>-fno-strict-aliasing</code>을 켜서 증상이 사라지면 원인이 앨리어싱 쪽임을 알 수 있다. 다만 이것은 <strong>진단</strong>이지 치료가 아니다 — 원인을 확인했으면 코드를 고친다.</li><li><strong>경고와 정적 분석을 최대로 올린다.</strong> <code>-Wall -Wextra</code>에 더해 <code>-fanalyzer</code>(GCC)나 <code>clang --analyze</code>는 실행 없이 잡아낸다.</li><li><strong>로그와 코어 덤프를 남긴다.</strong> 운영 환경에서는 이것이 유일한 창이다. 릴리스 빌드에 <code>-g</code>를 넣어 두었다면(앞의 오개념 상자) 사후에 그 덤프를 디버거로 열어 사고 지점을 소스 줄로 되짚을 수 있다.</li><li><strong>이분 탐색으로 좁힌다.</strong> 최적화 단계를 낮춰 가며(<code>-O2</code> → <code>-O1</code> → <code>-O0</code>) 어디서 갈리는지 보고, 버전 관리의 이력을 반으로 갈라 가며 언제 들어온 버그인지 찾는다(85장의 <code>git bisect</code>).</li><li><strong>최소 재현을 만든다.</strong> 문제를 재현하는 가장 작은 프로그램으로 줄이면 원인이 저절로 드러나는 일이 많고, 남에게 물어볼 수 있는 형태가 된다.</li></ol><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>디버거 설치와 Windows 사정</p><p><strong>Linux·macOS</strong> — <code>gdb</code>는 배포판의 패키지 관리자로, <code>lldb</code>는 LLVM 패키지에 함께 온다. macOS는 <code>lldb</code>가 기본이다.</p><p><strong>Windows(MSYS2·MinGW)</strong> — <code>pacman -S mingw-w64-ucrt-x86_64-gdb</code>로 받는다. MinGW로 만든 실행 파일은 이 <code>gdb</code>로 붙잡는다.</p><p><strong>Windows(LLVM)</strong> — <code>lldb</code>가 함께 설치된다. 다만 MSVC 계열이 쓰는 PDB 형식의 디버그 정보와의 궁합은 도구 조합에 따라 달라진다.</p><p><strong>Visual Studio</strong> — 통합 디버거의 완성도가 매우 높고, 조사식·메모리 창· 시간 여행 디버깅(Time Travel Debugging, WinDbg)까지 갖추고 있다. 명령을 외울 필요 없이 F5·F10·F11로 앞의 표와 같은 일을 한다.</p><p>어느 쪽이든 개념은 같다 — 중단점, 한 줄 진행, 변수 보기, 호출 사슬. 도구가 바뀌어도 이 넷을 찾으면 된다.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 <code>printf</code> 디버깅은 이제 그만두어야 하는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 아니다. 둘은 경쟁 관계가 아니라 쓰는 자리가 다르다. 디버거는 <strong>한 순간을 깊게</strong> 보는 도구이고, 로그는 <strong>긴 시간을 넓게</strong> 보는 도구다. 타이밍 문제, 오래 도는 서버, 임베디드, 재현이 어려운 사고에서는 로그가 유일한 창인 경우가 많다. 실무의 요령은 임시로 심었다 지우는 <code>printf</code> 대신 <strong>켜고 끌 수 있는 로그</strong>를 처음부터 코드에 두는 것이다 — 그러면 같은 창을 개발 중에도, 운영 중에도 쓸 수 있다.</p></div></div><h3>17.9 새니타이저 — 실행 중에 치는 그물</h3><p>현대 C 개발환경의 필수 장비가 하나 더 있다. 컴파일 때가 아니라 <strong>실행 중에</strong> 사고를 잡는 도구, <strong>새니타이저</strong>(sanitizer)다.</p><p>원리는 이렇다 — 컴파일할 때 특별한 선택지를 주면, 컴파일러가 프로그램 곳곳에 <strong>감시 코드</strong>를 심어 준다. 그 프로그램을 실행하면 감시 코드가 메모리 접근과 연산을 지켜보다가, 잘못이 <strong>일어나는 순간</strong> 현장을 짚으며 프로그램을 세운다. 대표 선수는 셋이다.</p><ul><li><strong>ASan</strong>(AddressSanitizer) — 메모리 사고 담당. 경계를 넘는 접근, 해제 한 기억을 다시 만지기 같은, 제7부에서 만날 위험들을 현장에서 잡는다.</li><li><strong>UBSan</strong>(UndefinedBehaviorSanitizer) — 계약 위반 담당. 부호 있는 오버플로(7장), 폭 이상 시프트(7장) 같은 <strong>정의되지 않은 동작</strong>이 실행 중에 실제로 일어나면 그 자리에서 알린다. 49장의 주역이다.</li><li><strong>TSan</strong>(ThreadSanitizer) — 경쟁 사고 담당. 여러 코어(12장)가 같은 데이터를 다투는 문제를 잡는다. 이 책의 범위 밖이지만 이름은 알아 둔다.</li></ul><p>쓰는 법은 컴파일 선택지 하나다:</p><pre><code data-lang="text">$ cc -fsanitize=address,undefined -g hello.c -o hello
+$ ./hello</code></pre><p>(<code>-g</code>는 “사고 지점을 소스 몇 번째 줄인지로 알려 달라”는 부가 정보 선택지다.) 이렇게 빌드한 프로그램은 조금 느려지는 대신, 사고를 조용히 지나치지 않는다 — 7장에서 본 “오버플로는 조용하다”에 대한 현대의 응답이 바로 이 도구들이다. 이 책의 뒷부분(제7부, 제9부)에서 위험한 코드를 다룰 때, 새니타이저가 사고를 잡아내는 장면을 지면에서 여러 번 보게 된다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Windows에서 새니타이저 쓰기</p><p>플랫폼마다 지원 폭이 달라서, Windows의 사정을 정직하게 적어 둔다.</p><ul><li><strong>ASan·UBSan</strong>: 갈래 1의 <strong>clang으로 쓸 수 있다</strong> — 위의 <code>-fsanitize=address,undefined</code> 선택지가 그대로 통한다. 갈래 2의 MinGW-w64 gcc는 Windows에서 새니타이저를 지원하지 않는다 — 새니타이저를 쓰려면 clang을 고르면 된다(두 갈래를 다 설치해 두고 평소엔 아무 쪽, 검사할 땐 clang을 쓰는 것도 좋은 배치다).</li><li><strong>TSan</strong>: Windows 자체를 지원하지 않는다(리눅스·macOS 전용). Windows 에서 굳이 쓰려면 WSL(Windows 안의 리눅스 환경, Microsoft 공식 기능)을 통하는 길이 있다 — 다만 이 책의 범위에서는 필요하지 않다.</li></ul><p>참고로 MSVC도 자체 ASan을 지원한다(<code>/fsanitize=address</code>) — 상세는 앞서 언급한 Microsoft 공식 문서에 있다.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 경고도 켜고 새니타이저도 있는데, 그래도 버그가 남는 이유는 무엇인가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 각 도구가 보는 범위가 다르기 때문이다. 경고는 <strong>컴파일 시점</strong>에 코드의 생김새를 보고, 새니타이저는 <strong>실행 시점</strong>에 실제로 일어난 일을 본다 — 즉 실행해 보지 않은 경로의 사고는 새니타이저도 모른다. 그래서 현대적 C 개발은 그물을 겹친다: 경고(항상) + 새니타이저(시험 실행) + 두 컴파일러 교차(습관) + 그리고 애초에 사고 나기 어려운 부품을 쓰는 것. 마지막 항목이 이 책 후반의 proven이 서는 자리다(40장) — 도구는 그물이고, 좋은 부품은 애초에 떨어지지 않는 발판이다.</p></div></div><h3>17.10 제3부를 닫으며</h3><p>첫 프로그램을 읽었고(15장), 그것이 실행 파일이 되는 릴레이를 구경했으며(16장), 그 릴레이를 내 책상에서 돌릴 도구와 그물까지 갖췄다(17장). 이제 준비는 끝났다.</p><p>다음 두 장은 이 부의 마무리이자 지도다. 우리가 방금 깐 gcc·clang 말고 세상에 어떤 C 컴파일러들이 현역으로 도는지(18장), 그리고 임베디드 개발자들이 make 와 git 곁에 무엇을 더 들고 일하는지(86장)를 훑는다. 지금 전부 설치할 필요는 없다 — 언젠가 그 이름들을 만났을 때 “무엇의 이름인지” 알아보는 것이 목적이다.</p><p>그다음 부부터 본격적인 언어 공부다 — 새 문법을 나열하는 것이 아니라, 15장의 헬로 월드 <strong>한 편을 완전히 읽어 내는 것</strong>이 제4부의 목표다.</p>
+<div class="nav"><a href="ch16.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch18.html">다음 →</a></div>
+</div></main></body></html>

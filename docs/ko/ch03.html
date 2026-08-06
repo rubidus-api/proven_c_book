@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3 프로그램과 프로세스 — 실행된다는 것 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch02.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch04.html" title="다음" aria-label="다음">→</a></span><a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-3">3 프로그램과 프로세스 — 실행된다는 것</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>2장 기억의 구역들 · 기억이 코드·정적·스택·힙으로 나뉜다는 지도</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>2장에서 프로그램의 기억이 코드·정적·스택·힙으로 나뉜다고 했다. 그런데 그 구역들은 언제, 누가 마련해 주는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 프로그램이 <strong>실행되는 순간</strong>, 대개 운영체제가 마련한다. 디스크에 놓인 실행 파일은 아직 아무 기억도 갖고 있지 않다 — 그저 “코드는 이렇고, 정적 구역은 이만큼 필요하다”는 설계도다. 그 설계도를 읽어 실제 기억을 펼치고, 작업대를 세우고, 첫 명령으로 뛰어들게 하는 일 — 그것이 실행이고, 그렇게 살아난 한 벌을 <strong>프로세스</strong>라 부른다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-3"></span>파일로 있는 <strong>프로그램</strong>과, 실행되어 살아 있는 <strong>프로세스</strong>의 차이를 가른다. 운영체제가 프로세스에게 무엇을 주는지(자기만의 주소 공간, 열린 파일, 종료 상태), 그리고 프로세스가 어떻게 태어나는지 — 유닉스 계열의 <span id="idx-entry-4"></span><code>fork</code>와 윈도우의 방식 — 를 짧게 본다. <strong>여기 나오는 것은 C 표준이 아니다.</strong> 표준이 약속하는 것과 운영체제가 주는 것의 경계를 처음으로 긋는 장이기도 하다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>“자기만의 기억”이라는 말이 이상하다 — 기계에 붙은 메모리는 하나 아닌가?</li><li>그러면 프로세스를 지금 알아 두어야 하는 이유는 무엇인가?</li></ol></div></div><div></div><h3>3.1 프로그램은 명사, 프로세스는 동사</h3><p>구별은 단순하다.</p><ul><li><strong>프로그램</strong> — 디스크에 놓인 파일. 죽어 있다. 복사할 수 있고, 옮길 수 있다.</li><li><strong>프로세스</strong> — 실행되어 살아 있는 한 벌. 기억을 갖고, 진행 중인 위치를 갖고, 열린 파일을 갖고, 언젠가 끝나며 <strong>종료 상태</strong>를 남긴다.</li></ul><p>같은 프로그램을 세 번 실행하면 프로세스가 셋 생긴다. 셋은 같은 코드를 공유하지만 <strong>기억은 각자 따로</strong>다 — 한쪽에서 값을 바꿔도 다른 쪽은 모른다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>운영체제가 프로세스에게 주는 것</strong></th><th><strong>무엇인가</strong></th><th><strong>이 책에서</strong></th></tr><tr><td>주소 공간</td><td>자기만의 기억 지도(2장의 네 구역)</td><td>72장</td></tr><tr><td>실행 위치</td><td>지금 어느 명령을 하는 중인지</td><td>—</td></tr><tr><td>열린 파일 목록</td><td>표준 입출력을 포함한 통로</td><td>10장·58장</td></tr><tr><td>명령줄 인자·환경</td><td>실행할 때 건네받은 값들</td><td>50장</td></tr><tr><td>종료 상태</td><td>끝나며 남기는 한 숫자</td><td>15장·50장</td></tr></table></div><p class="float-caption">표 3.1</p></figure><p>이 목록에서 두 가지가 이후 장들과 곧장 이어진다. 첫째, 10장에서 볼 <strong>표준 입력·출력·오류</strong>는 운영체제가 프로세스에게 미리 열어 준 통로다 — 프로그램이 직접 여는 것이 아니다. 둘째, 15장의 헬로 월드가 끝내며 돌려주는 <code>0</code>이 바로 <strong>종료 상태</strong>이고, 그 숫자를 받는 쪽은 이 프로세스를 실행한 누군가다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> “자기만의 기억”이라는 말이 이상하다 — 기계에 붙은 메모리는 하나 아닌가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 물리적으로는 하나지만, 운영체제가 프로세스마다 <strong>다른 지도</strong>를 보여 준다. 프로세스가 보는 주소는 물리 주소가 아니라 그 프로세스만의 번호이고, 하드웨어가 그것을 실제 자리로 옮겨 준다(가상 메모리). 그래서 두 프로세스가 똑같은 주소를 써도 서로 다른 자리를 만지고, 한쪽이 무너져도 다른 쪽은 멀쩡하다.</p><p>이 격리가 없는 세계도 있다 — 운영체제 없이 도는 작은 칩에서는 프로세스라는 개념 자체가 없고, 코드 하나가 기계 전체를 쓴다(72장). 그래서 이 장의 이야기는 “C가 도는 모든 곳”의 이야기가 아니라 <strong>운영체제 위에서 돌 때</strong>의 이야기다.</p></p></div></div><h3>3.2 프로세스는 어떻게 태어나는가</h3><p>여기서부터는 운영체제마다 다르다. 두 갈래를 얼굴만 익힌다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>유닉스 계열 — <code>fork</code>와 <code>exec</code></p><p>유닉스 계열(리눅스·macOS·BSD)은 프로세스를 만드는 일을 <strong>두 걸음</strong>으로 나눈다. 이 설계가 셸과 파이프라인(10장)의 뿌리다.</p><ul><li><strong><code>fork()</code></strong> — 지금 프로세스를 <strong>복제한다</strong>. 복제된 쪽(자식)은 부모와 같은 코드, 같은 기억 내용, 같은 열린 파일을 갖고 시작한다. 기묘한 것은 이 함수가 <strong>두 번 돌아온다</strong>는 점이다 — 부모에게는 자식의 번호(PID)를, 자식에게는 0을 돌려준다. 그 반환값으로 자기가 누구인지 안다.</li><li><strong><code>exec</code> 계열</strong> — 지금 프로세스의 <strong>내용을 다른 프로그램으로 갈아 끼운다</strong>. 기억이 통째로 새 프로그램의 것으로 바뀌고, 돌아오지 않는다(성공하면).</li><li><strong><code>wait</code> 계열</strong> — 부모가 자식이 끝나기를 기다리고 <strong>종료 상태</strong>를 받는다.</li></ul><pre><code data-lang="c"><strong><span class="tok-t">pid_t</span></strong> pid <strong><span class="tok-x">=</span></strong> <strong>fork</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>pid <strong><span class="tok-x">==</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> <span class="tok-x">{</span>               <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 자식 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>execl</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">/bin/ls</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ls</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>_exit</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">127</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>               <em><span class="tok-c">/*</span></em><em><span class="tok-c"> exec 이 실패했을 때만 여기 온다 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span> <strong><span class="tok-k">else</span></strong> <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>pid <strong><span class="tok-x">></span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> <span class="tok-x">{</span>         <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 부모 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> status<span class="tok-x">;</span>
+    <strong>waitpid</strong><strong><span class="tok-x">(</span></strong><strong>pid</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>status</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span></code></pre><p>터미널에서 명령을 하나 치면 셸이 정확히 이 일을 한다 — 자기를 복제하고, 복제된 쪽을 그 명령으로 갈아 끼우고, 끝나기를 기다린다. 10장에서 본 리다이렉션과 파이프도 이 사이에서 일어난다: <strong>복제한 뒤 갈아 끼우기 전에</strong> 자식의 입출력 통로를 바꿔 두는 것이다. 두 걸음으로 나눈 설계가 그 자리를 만들어 준 셈이다.</p><p>복제라고 해서 기억을 통째로 베끼지는 않는다. 오늘의 구현은 <strong>쓸 때까지 미룬다</strong>(copy-on-write) — 부모와 자식이 같은 자리를 공유하다가, 어느 한쪽이 쓰는 순간 그 부분만 복사한다.</p></div><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>윈도우 — <code>CreateProcess</code></p><p>윈도우에는 <code>fork</code>가 없다. 대신 <strong>한 걸음</strong>이다 — <code>CreateProcess</code>가 “이 프로그램을 새 프로세스로 시작하라”고 한 번에 지시한다. 복제 단계가 없으므로 자식은 부모의 기억을 물려받지 않고, 부모가 물려주고 싶은 것(열린 통로, 환경, 작업 디렉터리)은 인자로 명시한다.</p><p>두 방식의 성격 차이가 이식에서 드러난다. 유닉스 코드의 “복제한 뒤 조금 고쳐서 갈아 끼운다”는 무늬는 윈도우에서 그대로 옮겨지지 않고, 필요한 것을 <strong>인자로 적어 넘기는</strong> 형태로 다시 써야 한다. POSIX 쪽에도 이 무늬를 한 걸음으로 만든 <code>posix_spawn</code>이 있다.</p></div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“이런 것도 C 표준에 들어 있겠지”</strong></p><p>들어 있지 않다. <strong><code>fork</code>도 <code>exec</code>도 <code>CreateProcess</code>도 C 표준이 아니다.</strong> C 표준이 프로세스에 대해 말하는 것은 놀랄 만큼 적다 — 프로그램이 시작해서 <code>main</code>이 돌고, 끝나며 종료 상태를 남긴다는 정도다. 프로세스를 새로 만들거나, 다른 프로그램을 실행하거나, 자식을 기다리는 방법은 표준에 없다(그나마 <code>system</code> 하나가 “명령 문자열을 실행한다”고만 정해져 있고, 그것이 무엇을 뜻하는지는 구현에 맡긴다).</p><p>왜 이렇게 인색한가 — C가 <strong>운영체제가 없는 기계에서도 돌아야 하기</strong> 때문이다(57장의 자유 사용 구현). 프로세스가 없는 칩에도 C는 있어야 하므로, 프로세스는 표준의 밖, 운영체제의 영역에 남았다.</p><p>이 경계 감각이 이 책 전체에서 중요하다. <strong>표준에 있는 것은 어디서나 통하고, 그 밖의 것은 그 운영체제에서만 통한다.</strong> 이 책이 운영체제에 묶인 이야기를 “플랫폼 노트” 상자에 따로 담는 이유이기도 하다.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 프로세스를 지금 알아 두어야 하는 이유는 무엇인가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 세 가지가 곧 필요해지기 때문이다.</p><p>첫째, 10장의 <strong>스트림</strong>이 어디서 오는지 — 표준 입출력은 프로세스가 태어날 때 이미 열려 있는 통로다. 둘째, 15장의 헬로 월드가 남기는 <strong>종료 상태</strong> <code>0</code>이 누구에게 가는지. 셋째, 2장에서 본 <strong>네 구역</strong>이 프로세스마다 따로라는 것 — 전역 변수가 “프로그램 전체에서 하나”라는 말은 <strong>한 프로세스 안에서 하나</strong>라는 뜻이다.</p><p>더 깊은 이야기 — 여러 갈래로 도는 프로그램(스레드), 프로세스 사이의 통신, 신호 — 는 이 책의 범위를 넘지만, 그중 C 표준이 다루는 조각들은 제자리에서 만난다(신호는 65장, 스레드와 원자적 연산은 69장).</p></p></div></div><div class="dev recap"><p class="dev-label">복습 정리</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>프로그램 / 프로세스</td><td>파일 / 실행되어 살아 있는 한 벌</td></tr><tr><td>운영체제가 주는 것</td><td>주소 공간, 열린 통로, 종료 상태</td></tr><tr><td>기억은 각자</td><td>같은 프로그램을 여러 번 실행해도 서로 모른다</td></tr><tr><td>유닉스</td><td><code>fork</code>(복제) + <code>exec</code>(갈아 끼우기) 두 걸음</td></tr><tr><td>윈도우</td><td><code>CreateProcess</code> 한 걸음</td></tr><tr><td>표준 밖</td><td>프로세스는 C 표준의 영역이 아니다 — OS 가 준다</td></tr></table></div><p class="float-caption">표 3.2</p></figure></div><p>제1부가 끝났다. C가 어떤 언어이고 왜 지금 배우는지(1장), 프로그램이 기억을 어떻게 나눠 쓰는지(2장), 그리고 실행된다는 것이 무엇인지(3장)까지 — 바닥을 깔았다.</p><p>다음 부는 그 바닥 아래로 한 층 더 내려간다. 컴퓨터를 세 부품으로 그리는 것에서 시작해, 비트에서 글자까지 표현의 사다리를 오르고, 기계가 왜 이렇게 복잡해졌는지를 본다.</p>
+<div class="nav"><a href="ch02.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch04.html">다음 →</a></div>
+</div></main></body></html>

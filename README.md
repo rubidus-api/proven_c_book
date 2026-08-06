@@ -1,0 +1,115 @@
+# Proven C Book — 프로븐 C 라이브러리와 함께하는 현대적 C 입문
+
+*[English README](README-en.md)*
+
+> 정수는 왜 감아 도는가. 포인터는 왜 그냥 숫자가 아닌가. 컴파일러는 무엇을
+> 약속하고 무엇을 약속하지 않는가.
+>
+> 이 책은 문법 목록이 아니라 **그 질문들에 답하는 책**이다. 컴퓨터가 어떻게
+> 생겼는지에서 출발해, C23을 기본값으로 삼고, 마지막 부에서
+> [proven](https://github.com/rubidus-api) C 라이브러리로 이어진다.
+
+- **현재 판**: v0.15.1 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.1/proven_c_book-v0.15.1-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.1/proven_c_book-v0.15.1-en.pdf)
+- **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.1/proven_c_book-v0.15.1-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.1/proven_c_book-v0.15.1-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.1/proven_c_book-v0.15.1-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.15.1-ko.pdf) · [en PDF](dist/proven_c_book-v0.15.1-en.pdf)
+- 13부 87장 + 부록 A~E + 찾아보기 — 한국어판 553쪽, 영어판 583쪽
+- 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
+
+## 어떤 책인가
+
+C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인데 0이 아닌」 것이
+되었는지, 문자 하나가 왜 여러 벌의 문자집합으로 갈라졌는지, `signal`이 왜
+고쳐진 판이 아니라 공통분모로 표준에 들어왔는지 — 이런 자리들은 문법을 외워서는
+넘을 수 없고, 넘지 못하면 나중에 정확히 그 자리에서 사고가 난다.
+
+이 책은 그 자리들을 **하나씩 짚어 가며 읽는 책**이다. 각 장은 「이 장이 기대는
+것 → 돌아보기 → 이 장이 끝나면 → 이 장에서 답할 질문」으로 열고, 본문은
+설명·즉문즉답·흔한 오해·실제 사례·반례가 번갈아 나온다. 연습문제는 없다.
+부담 없이 끝까지 읽히는 쪽을 택했고, 그 대가로 수행 훈련은 다른 책과 자기
+프로그램에 맡겼다.
+
+**첫 프로그램이 늦다.** 헬로 월드는 제3부에서야 나온다. 그전까지는 기억이
+어떻게 나뉘는지, 수와 글자가 어떻게 표현되는지, 캐시가 왜 속도를 지배하는지를
+세운다. 빨리 만들어 보고 싶다면 15장부터 읽고 1장으로 돌아와도 좋다.
+
+## 무엇이 들어 있나
+
+| 부 | 무엇을 하는가 | 이런 장이 있다 |
+| --- | --- | --- |
+| 1~2부 | 컴퓨터가 어떻게 생겼는지 | 기억의 분화 — 레지스터·캐시·다층의 사다리 / 수의 표현 — IEEE 754라는 계약 / 문자와 텍스트 — 표준 속의 흉터 |
+| 3~4부 | 첫 프로그램과 최소 도구 | 헬로 월드 / 컴파일러의 지형 — 현역 C 컴파일러들 |
+| 5~6부 | 선언·값·흐름 | 암묵적 변환 — 승격과 통상 산술 변환 / 반복 — 루프와 불변식 |
+| 7부 | **기억** | 널 — 삼형제의 정식 취급 / 포인터의 규칙 — 정렬과 프로버넌스 / 다차원 배열 / 수명과 저장 기간 |
+| 8~9부 | 자료의 모양과 깊은 구석 | 공용체와 표현 / 실수 — 근사의 수학 / **정의되지 않은 동작** |
+| 10부 | 구성 | 전처리기와 번역 단계 / 함수를 값으로 / 선언을 읽는 법 — 두 독법과 `typedef` |
+| 11부 | **표준 라이브러리 정독** | 스트림의 실제 / 신호 `<signal.h>` / 비지역 점프 `<setjmp.h>` / 넘침을 묻는 법 `<stdckdint.h>` / 할당자의 속 |
+| 12부 | **proven — 검증된 기본기** | 50년째 출하되는 다섯 가지 버그 / 에러는 값이다 / 할당은 매개변수다 / 세 판으로 짜 보기 — 간이 JSON |
+| 13부 | 닫으며 | 실전의 C / 임베디드의 도구 상자 / 모던 C 총정리 |
+
+부록은 연산자 조회표, `printf`·`scanf` 서식 완전 정리, 암묵 변환 요약, 더
+읽을거리와 표준 문서, C 문법 전문(EBNF) 다섯이다.
+
+## 이 책이 다른 점
+
+- **인쇄된 실행 결과는 전부 실제 출력이다.** 예제 120개를 매 빌드마다
+  컴파일·실행해 그 출력을 지면에 싣는다(GCC 기준, Clang으로 교차 검증).
+  사람이 옮겨 적은 출력은 한 줄도 없다.
+- **주장을 재려고 코드를 돌린다.** "`-O2`에서는 `longjmp` 뒤에 비 `volatile`
+  지역 변수가 옛 값으로 되돌아간다" 같은 서술은 실제로 두 최적화 수준으로
+  빌드해 확인한 결과를 싣는다. 표준 문서로 확인할 것은 표준 문서로, 기계로
+  확인할 것은 기계로 확인했다.
+- **오늘의 C.** C23이 기본값이다. `bool`·`nullptr`·`[[noreturn]]`·
+  `<stdckdint.h>`가 처음부터 나오고, 옛 관행은 역사로만 다룬다.
+- **두 판을 함께 낸다.** 한국어판과 영어판, 그리고 예제까지 판마다 갈라
+  둔다(영어판은 주석과 출력 문구가 영어인 `examples-en/` 트리). 두 트리 모두
+  매 빌드마다 전수 검증한다.
+- **AI를 보조 도구로 삼아 집필했다.** 구성·방침·수록 여부는 저자가 정하고
+  검토했으며, 예제는 기계가 매번 실제로 돌려 검증한다 — 누가 썼든 *돌지 않는
+  코드는 이 책에 실리지 않는다*.
+
+## 예제 직접 돌려 보기
+
+본문에 실린 예제는 전부 이 저장소에 있고, 한 번에 빌드·실행해 볼 수 있다.
+
+```sh
+scripts/verify-examples.sh              # 한국어판 예제 전수 빌드 + 실행 + 출력 캡처
+scripts/verify-examples.sh examples-en  # 영어판 예제 트리
+CC=clang scripts/verify-examples.sh     # 다른 컴파일러로 교차 검증
+```
+
+- C23 컴파일러가 필요하다(GCC 14+ 또는 Clang 16+).
+- `#include <proven...>`을 쓰는 예제는 `vendor/proven`이 자동으로 함께
+  빌드된다.
+
+> 원고(Typst 소스)와 조판 스크립트는 공개하지 않는다. 저장소의 `scripts/`에는
+> 예제 검증과 점검 도구만 둔다. 이 저장소가 담는 것은 완성된 책(PDF·HTML)과
+> 예제 코드다.
+
+## 구성
+
+```
+dist/        배포물 — PDF(ko·en)와 zip 묶음
+docs/        GitHub Pages 가 서비스하는 HTML 판 (ko/, en/)
+examples/    본문에 실리는 예제 120개 — 전부 검증된 것
+examples-en/ 같은 예제의 영어판 (주석·문자열·출력이 영어)
+scripts/     예제 검증 스크립트
+vendor/      proven 라이브러리 스냅샷 (예제 링크용)
+```
+
+## 라이선스
+
+- **본문**(생성된 PDF·HTML): **CC BY-NC-SA 4.0** — 저장소의
+  [LICENSE](LICENSE)가 정본이다. 출처를 밝히면 공유·개작할 수 있으나
+  영리 이용은 불가하며, 개작물에도 같은 라이선스를 적용해야 한다.
+- **예제 코드**(`examples/`, `examples-en/`, `scripts/`): **MIT** — [LICENSE-CODE](LICENSE-CODE).
+  책에서 배운 코드는 제약 없이 가져다 쓸 수 있다.
+- `vendor/proven/`: 원저작물의 라이선스를 따른다.
+
+자세한 안내는 [LICENSE-NOTICE.md](LICENSE-NOTICE.md)에 있다.
+
+---
+
+초안이므로 오류가 남아 있을 것이다. 틀린 서술, 동작하지 않는 예제, 오탈자를
+발견하면 이슈로 알려 주시면 고맙게 반영한다. 연락은 rubidus@gmail.com.

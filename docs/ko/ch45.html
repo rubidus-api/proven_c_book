@@ -1,0 +1,478 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>45 공용체와 표현 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch44.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch46.html" title="다음" aria-label="다음">→</a></span><a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-45">45 공용체와 표현</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>43장 구조체 · 구조체의 배치</div><div>5장 워드와 주소 · 표현을 바이트로 본다</div><div>13장 컴파일러 최적화 · 엄격한 앨리어싱</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>13장에서 “float의 비트를 uint32의 눈으로 읽는” 옛 기법이 엄격한 앨리어싱 위반이며, 옳은 방법은 memcpy나 공용체라고 했다. 그러면 공용체란 정확히 무엇이길래 그 자리에 서는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>여러 멤버가 같은 기억을 공유하는 타입</strong>이다. 구조체가 멤버들을 나란히 놓는다면(43장), 공용체는 멤버들을 <strong>겹쳐</strong> 놓는다 — 크기는 가장 큰 멤버에 맞고, 어느 순간에든 실제로 담긴 것은 하나다. “같은 비트를 이 눈으로도 저 눈으로도 본다”는 5장의 관점이 문법이 된 것이다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-77"></span>같은 기억을 다른 눈으로 보는 장치 — 공용체다. 그리고 이 장은 표현의 장이기도 하다: 5장에서 예약한 엔디안 관찰 시연을 실행하고, 구조체의 숨은 빈틈(패딩)을 눈으로 확인한다. 표현과 추상의 분리라는 이 책의 후렴구가 마지막으로 크게 울리는 자리다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>공용체는 그러면 언제 쓰는 것이 정석인가?</li></ol></div></div><div></div><h3>45.1 공용체 — 겹쳐 놓기</h3><p>문법은 구조체와 쌍둥이다. <code>struct</code>를 <code>union</code>으로 바꾸면 된다:</p><pre><code data-lang="c"><strong><span class="tok-t">union</span></strong> bits32 <span class="tok-x">{</span>
+    <strong><span class="tok-t">uint32_t</span></strong> as_int<span class="tok-x">;</span>
+    <strong><span class="tok-t">float</span></strong>    as_float<span class="tok-x">;</span>
+<span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>멤버 접근도 같다(<code>u.as_int</code>). 다른 것은 기억의 배치뿐이다 — 두 멤버가 같은 4바이트를 공유하므로, <code>as_float</code>에 쓰고 <code>as_int</code>로 읽으면 <strong>같은 비트를 다른 해석으로</strong> 보게 된다. C 표준은 이 “쓴 멤버와 다른 멤버로 읽기”(타입 퍼닝)를 공용체에 한해 허용한다 — 13장의 포인터 캐스트 방식과 달리 계약 안이라는 점이 결정적 차이다(다만 읽은 값이 그 타입의 유효한 값이 아닐 수 있다는 주의는 남는다).</p><h3>45.2 표현을 눈으로 — 엔디안과 패딩</h3><p>5장에서 “이 확인을 C로 실제로 해 보이는 것이 이 장의 시연”이라 예약해 두었다. 이제 갚는다. 여기서는 공용체 대신 가장 이식성 좋은 방법 — 36장에서 배운 바이트의 눈(<code>unsigned char</code>)과 <code>memcpy</code> — 을 쓴다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch45/endian.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">uint32_t</span></strong> value <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">12345678</span><strong><span class="tok-t">u</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> bytes<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">;</span>
+
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong>bytes</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>value</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> value</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 표현을 바이트로 들여다본다 </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">value: 0x</span></strong><strong><span class="tok-s">%08X</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> value</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">memory order: </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">this machine is </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">-endian</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">78</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">little</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">big</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">struct</span></strong> padded <span class="tok-x">{</span>
+        <strong><span class="tok-t">char</span></strong>  tag<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 1바이트 </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">int</span></strong>   count<span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 4바이트 — 정렬 때문에 앞에 빈틈이 생긴다 </span></em><em><span class="tok-c">*/</span></em>
+    <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">1 + 4 = 5, but sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> padded</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>value: 0x12345678
+memory order: 78 56 34 12
+this machine is little-endian
+1 + 4 = 5, but sizeof = 8
+</code></pre></div></div><p>첫 부분이 5장의 그림 그대로다. <code>0x12345678</code>이 메모리에 <code>78 56 34 12</code> 순서로 놓였다 — 이 책의 검증 기계는 리틀 엔디안이라는 뜻이고, 5장의 도해가 실물로 확인된 것이다. (빅 엔디안 기계에서 이 예제를 돌리면 <code>12 34 56 78</code>이 찍히고 판정 문장도 바뀐다 — 코드는 그대로다.)</p><p>둘째 부분은 구조체의 숨은 사정이다. <code>char</code> 하나(1바이트)와 <code>int</code> 하나(4바이트)를 담은 구조체의 크기가 5가 아니라 8이다 — 6장의 정렬 규칙 때문에 <code>char</code> 뒤에 3바이트의 <strong>패딩</strong>(padding, 빈틈)이 끼워진 것이다. int 멤버가 4의 배수 자리에서 시작해야 기계가 한 움큼에 집을 수 있기 때문이다(6장). 그래서 실무 관행 하나가 나온다 — <strong>큰 멤버부터 배치하면 빈틈이 줄어든다.</strong> 구조체 수백만 개를 다루는 코드에서는 이 배치 하나가 메모리와 캐시 효율(11장)을 좌우한다. 배치 규칙과, 빈틈을 없애거나 정렬을 강제하는 방법(<code>pack</code>·<code>alignas</code>)은 44장에서 자세히 다뤘다 — 여기서는 그 빈틈이 <strong>실제로 존재한다</strong>는 사실을 눈으로 확인하는 것이 목적이다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>빈틈이 흘린 비밀 — 커널의 패딩 정보 유출</p>패딩은 아무도 쓰지 않는 빈칸이라 무해해 보이지만, 보안의 눈으로 보면 <strong>초기화되지 않은 기억</strong>이다. 운영체제 커널이 구조체를 사용자 프로그램 에게 통째로 복사해 줄 때 이 빈틈이 함께 건너가는데 — 멤버들은 전부 채워 넣었어도 빈틈에는 그 자리에 남아 있던 <strong>다른 데이터의 잔해</strong>가 들어 있다. 공격자는 이 부스러기를 모아 커널 메모리의 내용이나 주소 배치를 엿볼 수 있고, 그것이 다음 공격의 발판이 된다. 리눅스를 비롯한 주요 커널들이 이 부류의 정보 유출 취약점을 수십 건 고쳐 왔고, 오늘의 대응은 단순하다 — 사용자에게 넘기는 구조체는 <strong>멤버를 채우기 전에 통째로 0으로 지운다</strong>. 23장에서 “선언과 동시에 초기화한다”고 한 규칙이, 보이지 않는 빈칸에까지 적용되는 순간이다.</div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“구조체를 그대로 파일에 쓰거나 네트워크로 보내면 된다”</strong></p>솔깃한 생각이고, 실제로 많이 시도된 방법이다 — 구조체의 바이트를 통째로 저장하면 코드가 짧아지니까. 그러나 이 장이 방금 보인 두 사실이 그것을 가로막는다: 바이트 순서가 기계마다 다르고(엔디안), 빈틈의 크기와 위치도 컴파일러·플랫폼마다 다르다(패딩). 한 기계에서 쓴 파일이 다른 기계에서 깨지는 것이다 — 5장의 NUXI 사건이 파일 형식의 세계에서 재현되는 셈이다. 정답은 <strong>직렬화</strong>(serialization)다: 멤버를 하나씩, 약속된 크기와 바이트 순서로(네트워크 바이트 순서 — 5장) 적고 읽는 코드를 명시적으로 쓰는 것. 표현은 기계의 사정이고, 파일과 통신은 약속의 세계라는 것 — 두 세계를 잇는 다리는 손으로 놓아야 한다.</div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 공용체는 그러면 언제 쓰는 것이 정석인가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 두 가지 자리다. 첫째, 방금 본 <strong>표현 들여다보기</strong>(타입 퍼닝) — 부동 소수점 비트를 검사하거나 하드웨어 레지스터를 여러 눈으로 보는 저수준 코드다. 둘째, 더 흔한 쓰임인 <strong>태그된 공용체</strong>(tagged union): 구조체 안에 “지금 어느 멤버가 유효한가”를 알리는 표시(태그)와 공용체를 함께 넣어, “이 값은 정수이거나, 실수이거나, 문자열이다” 같은 선택형 데이터를 표현하는 것이다. 인터프리터의 값 표현, 설정 파일 파서 같은 곳의 기본 도구이고 — 6장에서 본 태그 포인터가 비트 차원의 같은 발상이었다. 현대 언어들의 열거형(Rust의 enum, Swift의 associated value)이 이 패턴을 언어 차원으로 끌어올린 것이다.</p></div></div><h3>45.3 비트 필드 — 한 워드를 쪼개 쓰기</h3><p>구조체 멤버 뒤에 콜론과 수를 적으면 <strong>비트 필드</strong>(bit field)가 된다 — 그 멤버가 차지할 비트 수를 직접 지정하는 것이다. 여기에 공용체를 겹치면 “통째로 한 워드로 보는 눈”과 “필드로 나눠 보는 눈”을 동시에 갖게 된다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch45/bitfield.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 실무에서 흔한 모양: 장치 레지스터 한 워드를 필드로 나눠 보고,</span></em>
+<em><span class="tok-c">   같은 기억을 통째로 32비트 정수로도 본다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">union</span></strong> control_reg <span class="tok-x">{</span>
+    <strong><span class="tok-t">uint32_t</span></strong> raw<span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 통째로 읽고 쓰는 눈 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+        <strong><span class="tok-t">uint32_t</span></strong> enable   <strong><span class="tok-x">:</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 비트 1개 </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">uint32_t</span></strong> mode     <strong><span class="tok-x">:</span></strong> <span class="tok-n">3</span><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 비트 3개 </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">uint32_t</span></strong> priority <strong><span class="tok-x">:</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">uint32_t</span></strong> reserved <strong><span class="tok-x">:</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">uint32_t</span></strong> counter  <strong><span class="tok-x">:</span></strong> <span class="tok-n">16</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span> f<span class="tok-x">;</span>                          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 필드로 보는 눈 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 구조체 안에 공용체를 넣는 실무 무늬: 태그 + 내용 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">enum</span></strong> msg_kind <span class="tok-x">{</span> MSG_INT<span class="tok-x">,</span> MSG_TEXT<span class="tok-x">,</span> MSG_POINT <span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-t">struct</span></strong> message <span class="tok-x">{</span>
+    <strong><span class="tok-t">enum</span></strong> msg_kind kind<span class="tok-x">;</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 어느 눈으로 볼지 알려 주는 태그 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong>      flags <strong><span class="tok-x">:</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 작은 상태 몇 개 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong>      urgent <strong><span class="tok-x">:</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">union</span></strong> <span class="tok-x">{</span>                       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이름 없는 공용체 (C11) </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">int</span></strong>  number<span class="tok-x">;</span>
+        <strong><span class="tok-t">char</span></strong> text<span class="tok-x">[</span><span class="tok-n">16</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x<span class="tok-x">,</span> y<span class="tok-x">;</span> <span class="tok-x">}</span> point<span class="tok-x">;</span>
+    <span class="tok-x">}</span><span class="tok-x">;</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>show</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">struct</span></strong> message <strong><span class="tok-x">*</span></strong>m<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">kind=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> flags=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> urgent=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> -> </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>m</strong><strong><span class="tok-x">-></span></strong><strong>kind</strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">-></span></strong><strong>flags</strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">-></span></strong><strong>urgent</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">switch</span></strong> <span class="tok-x">(</span>m<span class="tok-x">-></span>kind<span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong><span class="tok-k">case</span></strong> MSG_INT<span class="tok-x">:</span>   <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">number </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">-></span></strong><strong>number</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">case</span></strong> MSG_TEXT<span class="tok-x">:</span>  <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">text </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">-></span></strong><strong>text</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">case</span></strong> MSG_POINT<span class="tok-x">:</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">point (</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">-></span></strong><strong>point</strong><strong><span class="tok-x">.</span></strong><strong>x</strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">-></span></strong><strong>point</strong><strong><span class="tok-x">.</span></strong><strong>y</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">union</span></strong> control_reg r <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>raw <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    r<span class="tok-x">.</span>f<span class="tok-x">.</span>enable <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    r<span class="tok-x">.</span>f<span class="tok-x">.</span>mode <strong><span class="tok-x">=</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>
+    r<span class="tok-x">.</span>f<span class="tok-x">.</span>priority <strong><span class="tok-x">=</span></strong> <span class="tok-n">9</span><span class="tok-x">;</span>
+    r<span class="tok-x">.</span>f<span class="tok-x">.</span>counter <strong><span class="tok-x">=</span></strong> <span class="tok-n">1000</span><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">raw   = 0x</span></strong><strong><span class="tok-s">%08x</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>raw</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">fields: enable=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> mode=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> priority=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> counter=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>enable</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>mode</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>priority</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>counter</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 통째로 쓰고 필드로 읽기 — 같은 기억을 두 눈으로 본다 </span></em><em><span class="tok-c">*/</span></em>
+    r<span class="tok-x">.</span>raw <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">000A0013</span><strong><span class="tok-t">u</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">after raw write: enable=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> mode=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> priority=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> counter=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>enable</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>mode</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>priority</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>counter</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof(union control_reg) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> r</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">struct</span></strong> message a <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>kind <strong><span class="tok-x">=</span></strong> MSG_INT<span class="tok-x">,</span> <span class="tok-x">.</span>flags <strong><span class="tok-x">=</span></strong> <span class="tok-n">3</span><span class="tok-x">,</span> <span class="tok-x">.</span>urgent <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-x">.</span>number <strong><span class="tok-x">=</span></strong> <span class="tok-n">42</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> message b <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>kind <strong><span class="tok-x">=</span></strong> MSG_TEXT<span class="tok-x">,</span> <span class="tok-x">.</span>flags <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">,</span> <span class="tok-x">.</span>urgent <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> b<span class="tok-x">.</span>text<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">hello</span><span class="tok-s">"</span><span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    b<span class="tok-x">.</span>text<span class="tok-x">[</span><span class="tok-n">5</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">'</span><span class="tok-n">\0</span><span class="tok-s">'</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> message c <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>kind <strong><span class="tok-x">=</span></strong> MSG_POINT<span class="tok-x">,</span> <span class="tok-x">.</span>flags <strong><span class="tok-x">=</span></strong> <span class="tok-n">8</span><span class="tok-x">,</span> <span class="tok-x">.</span>urgent <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">,</span>
+                         <span class="tok-x">.</span>point <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> <span class="tok-n">3</span><span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">-</span></strong><span class="tok-n">7</span> <span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>c</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof(struct message) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> message</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>raw   = 0x03e8009b
+fields: enable=1 mode=5 priority=9 counter=1000
+after raw write: enable=1 mode=1 priority=1 counter=10
+sizeof(union control_reg) = 4
+kind=0 flags=3 urgent=1 -> number 42
+kind=1 flags=0 urgent=0 -> text "hello"
+kind=2 flags=8 urgent=0 -> point (3, -7)
+sizeof(struct message) = 24
+</code></pre></div></div><p>앞부분이 하드웨어 레지스터를 다루는 전형적인 무늬다. <code>r.f.mode = 5</code>처럼 필드에 쓰면 라이브러리 도움 없이도 비트 자리에 값이 들어가고, <code>r.raw</code>로 읽으면 그 결과가 한 워드로 보인다. 반대로 <code>r.raw</code>에 통째로 쓰고 필드로 읽는 것도 된다 — 출력의 세 번째 줄이 그 확인이다.</p><p>편해 보이지만 <strong>이식성의 대가</strong>가 크다. 표준이 정해 주지 않는 것이 많기 때문이다.</p><ul><li><strong>비트가 놓이는 순서</strong> — 낮은 자리부터 채울지 높은 자리부터 채울지는 구현 정의(implementation-defined)다. 그래서 같은 선언이 컴파일러마다 다른 배치를 낼 수 있다.</li><li><strong>경계를 넘는 필드</strong> — 저장 단위를 걸치는 필드를 허용할지도 구현이 정한다. 패딩이 얼마나 끼는지도 마찬가지다.</li><li><strong>부호</strong> — 그냥 <code>int x : 1;</code>은 부호 있는 1비트라 값이 0과 −1이 된다. 의도한 것이 아니라면 <code>unsigned</code>를 명시해야 한다.</li><li><strong>주소를 얻을 수 없다</strong> — 비트 필드에는 <code>&amp;</code>를 쓸 수 없다. 배열로 만들 수도 없다.</li><li><strong>원자적이지 않다</strong> — 같은 워드에 놓인 두 필드를 서로 다른 스레드가 건드리면 12장의 거짓 공유와 같은 부류의 사고가 난다.</li></ul><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“비트 필드로 파일·네트워크 형식을 그대로 표현할 수 있다”</strong></p>가장 흔한 오해이고, 이식성 사고의 단골이다. 파일 형식이나 프로토콜은 <strong>바이트와 비트의 배치가 규격으로 정해져 있는데</strong>, 비트 필드의 배치는 구현이 정한다. 컴파일러를 바꾸거나 다른 기계로 옮기는 순간 필드가 엉뚱한 자리에서 읽힌다 — 엔디안(앞 절)까지 겹치면 더 나빠진다. 외부 형식을 다룰 때의 정공법은 <strong>바이트 배열을 놓고 시프트와 마스크로 직접 뽑아 쓰는 것</strong>이다(7장). 비트 필드는 어디까지나 <strong>한 프로그램 안에서 기억을 아끼는 용도</strong>로 본다.</div><p>오늘날 비트 필드를 권하지 않는 이유가 이것이다. 그럼에도 이 문법을 알아야 하는 이유는 분명하다 — 임베디드 SDK의 레지스터 정의, 오래된 코드베이스의 플래그 묶음, 커널 자료구조에서 여전히 만나기 때문이다. <strong>읽을 줄은 알되, 새로 쓸 때는 한 번 더 생각한다</strong>가 실무의 감각이다.</p><h3>45.4 구조체와 공용체를 섞는 실무 무늬</h3><p>예제의 뒷부분은 다른 이야기다. 구조체 안에 태그와 공용체를 함께 넣은 <strong>태그된 공용체</strong>(tagged union)로, 앞의 문답에서 이름만 나온 그 무늬다.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> message <span class="tok-x">{</span>
+    <strong><span class="tok-t">enum</span></strong> msg_kind kind<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 어느 눈으로 볼지 알려 주는 태그 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong>      flags <strong><span class="tok-x">:</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 작은 상태들 — 비트 필드가 여기서 쓰인다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong>      urgent <strong><span class="tok-x">:</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">union</span></strong> <span class="tok-x">{</span>                  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이름 없는 공용체 (C11) </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">int</span></strong>  number<span class="tok-x">;</span>
+        <strong><span class="tok-t">char</span></strong> text<span class="tok-x">[</span><span class="tok-n">16</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x<span class="tok-x">,</span> y<span class="tok-x">;</span> <span class="tok-x">}</span> point<span class="tok-x">;</span>
+    <span class="tok-x">}</span><span class="tok-x">;</span>
+<span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>세 가지가 겹쳐 있다. 태그, 비트 필드로 아낀 상태 플래그, 그리고 <strong>이름 없는 공용체</strong>(anonymous union, C11)다. 이름이 없으면 멤버를 한 단계 덜 거쳐 <code>m->number</code>처럼 바로 쓸 수 있어서, 태그된 공용체가 훨씬 읽기 좋아 진다.</p><p>규율은 하나뿐이고, 그것이 전부다 — <strong>태그가 말하는 멤버만 읽는다.</strong> <code>kind</code>가 <code>MSG_TEXT</code>인데 <code>number</code>를 읽으면 45장 첫 절에서 본 “다른 눈으로 보기”가 되어 의미 없는 값이 나온다. 그래서 이런 자료를 다루는 코드는 거의 언제나 예제의 <code>show</code>처럼 <strong>태그로 분기하는 <code>switch</code> 하나</strong>를 통과 하도록 만든다. 접근을 한 곳에 모으면 규율을 지킬 자리도 한 곳이 된다.</p><p><code>sizeof(struct message)</code>가 24바이트로 나온 것도 읽어 둘 만하다 — 태그 4바이트 + 비트 필드가 든 워드 + 16바이트 공용체에, 정렬을 맞추는 패딩(앞 절)이 더해진 결과다. 표현은 언제나 이렇게 <strong>선언한 것보다 조금 더</strong> 차지한다.</p><h4>45.4.1 실물 하나 — 2바이트 조합형 한글</h4><p>이 무늬가 교과서 속 이야기만은 아니다. 한글을 컴퓨터에 담던 시절, 한 워드를 셋으로 쪼개 쓰는 방식이 실제 표준이 된 적이 있다 — <strong>조합형</strong>이다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch45/johab.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 2바이트 조합형 한글 — 한 워드를 초성·중성·종성으로 쪼갠 실제 사례.</span></em>
+<em><span class="tok-c">   (유니코드 설명이 목적이므로 이 예제에는 한글이 들어간다.) </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 조합형 낱자 이름표. 코드값 0·1 은 채움/미사용이라 비워 둔다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">const</span></strong> CHO<span class="tok-x">[</span><span class="tok-n">32</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span>
+    <span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">G</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">GG</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">N</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">5</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">D</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">6</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">DD</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">7</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">R</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">M</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">9</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">B</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">10</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">BB</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">11</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">S</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">12</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">SS</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">13</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">NG</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">14</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">J</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">15</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">JJ</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">16</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">C</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">17</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">K</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">18</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">T</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">19</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">P</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">20</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">H</span><span class="tok-s">"</span><span class="tok-x">,</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">const</span></strong> JUNG<span class="tok-x">[</span><span class="tok-n">32</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span>
+    <span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">A</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">AE</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">5</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YA</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">6</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YAE</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">7</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">EO</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">10</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">E</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">11</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YEO</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">12</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YE</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">13</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">O</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">14</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">WA</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">15</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">WAE</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">18</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">OE</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">19</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YO</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">20</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">U</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">21</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">WEO</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">22</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">WE</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">23</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">WI</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">26</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YU</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">27</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">EU</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">28</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YI</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">29</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">I</span><span class="tok-s">"</span><span class="tok-x">,</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">const</span></strong> JONG<span class="tok-x">[</span><span class="tok-n">32</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span>
+    <span class="tok-x">[</span><span class="tok-n">1</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">(none)</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">G</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">5</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">N</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">9</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">L</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">17</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">M</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">19</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">B</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">21</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">S</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">23</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">NG</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">29</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">H</span><span class="tok-s">"</span><span class="tok-x">,</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ① 시프트와 마스크로 뽑는다 — 표준이 정확히 약속하는 길 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>split_by_shift</strong><span class="tok-x">(</span><strong><span class="tok-t">uint16_t</span></strong> w<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">unsigned</span></strong> cho  <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span>w <strong><span class="tok-x">>></span></strong> <span class="tok-n">10</span><span class="tok-x">)</span> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">1f</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">unsigned</span></strong> jung <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span>w <strong><span class="tok-x">>></span></strong>  <span class="tok-n">5</span><span class="tok-x">)</span> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">1f</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">unsigned</span></strong> jong <strong><span class="tok-x">=</span></strong>  w        <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">1f</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  시프트/마스크: 표시비트=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> 초성=</span></strong><strong><span class="tok-s">%2u</span></strong><strong><span class="tok-s">(</span></strong><strong><span class="tok-s">%-2s</span></strong><strong><span class="tok-s">) 중성=</span></strong><strong><span class="tok-s">%2u</span></strong><strong><span class="tok-s">(</span></strong><strong><span class="tok-s">%-3s</span></strong><strong><span class="tok-s">) 종성=</span></strong><strong><span class="tok-s">%2u</span></strong><strong><span class="tok-s">(</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>w </strong><strong><span class="tok-x">>></span></strong><strong> </strong><strong><span class="tok-n">15</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> cho</strong><strong><span class="tok-x">,</span></strong><strong> CHO</strong><strong><span class="tok-x">[</span></strong><strong>cho</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> CHO</strong><strong><span class="tok-x">[</span></strong><strong>cho</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">?</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           jung</strong><strong><span class="tok-x">,</span></strong><strong> JUNG</strong><strong><span class="tok-x">[</span></strong><strong>jung</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> JUNG</strong><strong><span class="tok-x">[</span></strong><strong>jung</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">?</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           jong</strong><strong><span class="tok-x">,</span></strong><strong> JONG</strong><strong><span class="tok-x">[</span></strong><strong>jong</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> JONG</strong><strong><span class="tok-x">[</span></strong><strong>jong</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">?</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ② 비트 필드 + 공용체로 본다 — 편하지만 배치는 구현이 정한다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">union</span></strong> johab <span class="tok-x">{</span>
+    <strong><span class="tok-t">uint16_t</span></strong> raw<span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+        <strong><span class="tok-t">uint16_t</span></strong> jong <strong><span class="tok-x">:</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이 순서가 표준의 약속이 아니다 </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">uint16_t</span></strong> jung <strong><span class="tok-x">:</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">uint16_t</span></strong> cho  <strong><span class="tok-x">:</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">uint16_t</span></strong> mark <strong><span class="tok-x">:</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span> f<span class="tok-x">;</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> "가" 와 "한" 의 조합형 코드 — 실제 표에서 가져온 값이다. </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">uint16_t</span></strong> GA  <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">8861</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 1 00010 00011 00001 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">uint16_t</span></strong> HAN <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">D065</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 1 10100 00011 00101 </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">가 = 0x</span></strong><strong><span class="tok-s">%04X</span></strong><strong><span class="tok-s">, 한 = 0x</span></strong><strong><span class="tok-s">%04X</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> GA</strong><strong><span class="tok-x">,</span></strong><strong> HAN</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">가:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <strong>split_by_shift</strong><strong><span class="tok-x">(</span></strong><strong>GA</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">한:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <strong>split_by_shift</strong><strong><span class="tok-x">(</span></strong><strong>HAN</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">union</span></strong> johab u <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>raw <strong><span class="tok-x">=</span></strong> GA <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">비트 필드로 본 '가': mark=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> 초성=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> 중성=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> 종성=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           u</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>mark</strong><strong><span class="tok-x">,</span></strong><strong> u</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>cho</strong><strong><span class="tok-x">,</span></strong><strong> u</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>jung</strong><strong><span class="tok-x">,</span></strong><strong> u</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>jong</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  (이 컴파일러에서는 시프트/마스크와 같은 값이 나왔다.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">   비트를 낮은 자리부터 채우는 구현이라 그렇고, 표준의 약속은 아니다.)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ③ 둘째 바이트가 ASCII 와 겹친다 — 조합형의 유명한 함정 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> bytes<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>GA <strong><span class="tok-x">>></span></strong> <span class="tok-n">8</span><span class="tok-x">)</span><span class="tok-x">,</span>
+                               <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>GA <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">ff</span><span class="tok-x">)</span><span class="tok-x">,</span> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">'가' 의 두 바이트: </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  둘째 바이트 0x</span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s"> 는 ASCII '</span></strong><strong><span class="tok-s">%c</span></strong><strong><span class="tok-s">' 다 — 바이트 단위로 'a' 를 찾으면</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  글자 속을 잘못 짚는다: strchr 결과 = </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>strchr</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>bytes</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">a</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">찾음(오검출)</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">못 찾음</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>가 = 0x8861, 한 = 0xD065
+
+가:
+  시프트/마스크: 표시비트=1 초성= 2(G ) 중성= 3(A  ) 종성= 1((none))
+한:
+  시프트/마스크: 표시비트=1 초성=20(H ) 중성= 3(A  ) 종성= 5(N)
+
+비트 필드로 본 '가': mark=1 초성=2 중성=3 종성=1
+  (이 컴파일러에서는 시프트/마스크와 같은 값이 나왔다.
+   비트를 낮은 자리부터 채우는 구현이라 그렇고, 표준의 약속은 아니다.)
+
+'가' 의 두 바이트: 88 61
+  둘째 바이트 0x61 는 ASCII 'a' 다 — 바이트 단위로 'a' 를 찾으면
+  글자 속을 잘못 짚는다: strchr 결과 = 찾음(오검출)
+</code></pre></div></div><p>설계는 이 장에서 배운 그대로다. 16비트를 넷으로 나눠, 맨 앞 한 비트는 “이것은 한글”이라는 표시로 쓰고 나머지 15비트를 5비트씩 셋으로 잘라 <strong>초성·중성·종성</strong>에 준다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>비트</strong></th><th><strong>15</strong></th><th><strong>14–10 / 9–5 / 4–0</strong></th><th><strong>뜻</strong></th></tr><tr><td>자리</td><td>표시</td><td>초성 / 중성 / 종성</td><td>각 5비트</td></tr><tr><td><code>가</code> = <code>0x8861</code></td><td>1</td><td>2 / 3 / 1</td><td>ㄱ + ㅏ + (없음)</td></tr><tr><td><code>한</code> = <code>0xD065</code></td><td>1</td><td>20 / 3 / 5</td><td>ㅎ + ㅏ + ㄴ</td></tr></table></div><p class="float-caption">표 45.1</p></figure><p>낱자에 붙은 번호에는 규칙이 있다. 초성은 ㄱ부터 ㅎ까지 2–20으로 이어지고(0·1은 채움과 예약), 종성은 “없음”이 1이며 2부터 29까지 이어진다. 중성만 8·9, 16·17, 24·25가 비어 있는데 — 모음을 넉 자리씩 묶어 배치한 흔적이다. 예제의 이름표에서 그 빈자리가 보인다.</p><p>이 방식이 준 것은 분명했다. 낱자만 조합하면 <strong>현대 한글 11,172자를 모두</strong> 적을 수 있었다. 같은 시기의 <strong>완성형</strong>(KS C 5601-1987)은 자주 쓰는 2,350자만 표에 담았고, 그래서 “펲시”·“똠방각하” 같은 글자를 아예 적지 못하는 유명한 사고가 있었다. 조합형은 표를 늘리는 대신 <strong>규칙으로 만들어 내는</strong> 길을 택한 것이다.</p><div class="dev realcase"><p class="dev-label">실제 사례. 조합형이 남긴 세 가지 교훈</p><p><strong>첫째, 둘째 바이트가 ASCII와 겹친다.</strong> <code>가</code>는 <code>88 61</code>인데 뒤 바이트 <code>0x61</code>은 그대로 <code>'a'</code>다. 그래서 바이트 단위로 <code>'a'</code>를 찾는 코드가 글자 한복판을 짚는다 — 예제의 마지막 줄이 그 오검출을 실제로 보여 준다. 9장에서 본 “바이트와 글자는 다르다”가 여기서 사고로 나타난다.</p><p><strong>둘째, 배치는 표준이 정해 주지 않는다.</strong> 예제의 공용체는 이 컴파일러에서 마침 시프트/마스크와 같은 값을 냈지만, 그것은 이 구현이 비트를 낮은 자리부터 채우기 때문이다. 앞 절의 규칙 그대로 — <strong>외부 형식은 시프트와 마스크로 다룬다.</strong></p><p><strong>셋째, 규칙이 표를 이긴 자리가 있다.</strong> 유니코드는 조합형과 같은 발상을 더 단정하게 가져갔다. 한글 음절의 코드는 <code>0xAC00 + (초성 * 21 + 중성) * 28 + 종성</code>으로 <strong>계산된다</strong> — 비트를 자르는 대신 곱셈으로 자리를 정할 뿐, “낱자를 조합해 글자를 만든다”는 생각은 같다. 조합형은 사라졌지만(윈도우 95가 완성형 계열의 통합 코드를 택하면서 자리를 잃었다) 그 발상은 오늘의 표준 속에 남았다.</p></div><h3>45.5 제8부를 닫으며</h3><p>타입을 만드는 두 문법을 얻었다 — 나란히 놓는 구조체(43장)와 겹쳐 놓는 공용체(45장). 그리고 그 과정에서 표현의 현실(엔디안·패딩)을 눈으로 확인했다. 제2부의 배경지식이 문법으로 완전히 회수된 것이다.</p><p>다음 부는 정밀의 부다 — 8장에서 배운 근사의 수학이 C의 실수 타입으로 내려오고(47장), 32장에서 씨앗을 심은 계약의 관점이 오류 처리로 자라며 (48장), 이 책이 곳곳에서 예고해 온 “계약 밖”의 세계 — 정의되지 않은 동작 — 를 정면으로 만난다(49장).</p>
+<div class="nav"><a href="ch44.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch46.html">다음 →</a></div>
+</div></main></body></html>

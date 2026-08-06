@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>45 Unions and representation — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch44.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch46.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-45">45 Unions and representation</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div class="open-body"><div>chapter 43, Structs · the layout of a struct</div><div>chapter 5, Words and addresses · seeing a representation as bytes</div><div>chapter 13, Compiler optimisation · strict aliasing</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 13 said the old technique of “reading a float’s bits through uint32′s eye” violates strict aliasing, and that the correct methods are memcpy or a union. Then what exactly is a union, that it stands in that place?</p><div class="qa-a"><p><span class="dev-label">A.</span> <strong>A type whose several members share the same memory.</strong> If a struct lays members side by side (chapter 43), a union lays them <strong>overlapping</strong> — its size fits the largest member, and at any moment only one thing is really held. Chapter 5′s perspective, “seeing the same bits through this eye and through that”, made into syntax.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-77"></span>The device for seeing the same memory through a different eye — the union. And this is a chapter of representation too: we run the endianness demonstration booked in chapter 5 and confirm with our own eyes the hidden gaps (padding) in a struct. It is where this book’s refrain, the separation of representation from abstraction, rings out loudest for the last time.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>When, then, is a union the standard thing to use?</li></ol></div></div><div></div><h3>45.1 The union — laying things over one another</h3><p>The syntax is a twin of the struct’s. Change <code>struct</code> to <code>union</code>:</p><pre><code data-lang="c"><strong><span class="tok-t">union</span></strong> bits32 <span class="tok-x">{</span>
+    <strong><span class="tok-t">uint32_t</span></strong> as_int<span class="tok-x">;</span>
+    <strong><span class="tok-t">float</span></strong>    as_float<span class="tok-x">;</span>
+<span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>Member access is the same (<code>u.as_int</code>). The only difference is the layout of memory — the two members share the same four bytes, so write to <code>as_float</code> and read <code>as_int</code> and you see <strong>the same bits under a different interpretation</strong>. The C standard permits this “read through a member other than the one written” (type punning) for unions in particular — unlike chapter 13′s pointer-cast approach, it is inside the contract, which is the decisive difference (though the caution remains that the value read may not be a valid value of that type).</p><h3>45.2 Representation with our own eyes — endianness and padding</h3><p>Chapter 5 booked “actually doing this check in C is this chapter’s demonstration.” Now we pay. Here, instead of a union, we use the most portable method — the eye of bytes (<code>unsigned char</code>) learned in chapter 36, and <code>memcpy</code>.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch45/endian.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">uint32_t</span></strong> value <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">12345678</span><strong><span class="tok-t">u</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> bytes<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">;</span>
+
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong>bytes</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>value</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> value</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> look into the representation byte by byte </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">value: 0x</span></strong><strong><span class="tok-s">%08X</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> value</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">memory order: </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">this machine is </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">-endian</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">78</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">little</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">big</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">struct</span></strong> padded <span class="tok-x">{</span>
+        <strong><span class="tok-t">char</span></strong>  tag<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 1 byte </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">int</span></strong>   count<span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 4 bytes — alignment opens a gap in front of it </span></em><em><span class="tok-c">*/</span></em>
+    <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">1 + 4 = 5, but sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> padded</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>value: 0x12345678
+memory order: 78 56 34 12
+this machine is little-endian
+1 + 4 = 5, but sizeof = 8
+</code></pre></div></div><p>The first part is exactly chapter 5′s picture. <code>0x12345678</code> sits in memory in the order <code>78 56 34 12</code> — meaning this book’s verification machine is little-endian, and chapter 5′s diagram is confirmed in the flesh. (Run this example on a big-endian machine and <code>12 34 56 78</code> is printed and the verdict sentence changes — the code stays the same.)</p><p>The second part is the struct’s hidden circumstances. A struct holding one <code>char</code> (1 byte) and one <code>int</code> (4 bytes) has size 8, not 5 — because chapter 6′s alignment rule inserted three bytes of <strong>padding</strong> after the <code>char</code>. The int member must start at a multiple of four for the machine to grab it in one handful (chapter 6). So one practical habit follows — <strong>lay the large members first and the gaps shrink.</strong> In code handling millions of structs this one layout decision governs memory and cache efficiency (chapter 11). The layout rules, and the ways to remove gaps or force alignment (<code>pack</code>, <code>alignas</code>), were treated in detail in chapter 44 — the purpose here is to confirm with our own eyes that the gap <strong>really exists</strong>.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The secret spilled by a gap — padding information leaks in kernels</p>Padding looks harmless, being empty space nobody uses, but through the eye of security it is <strong>uninitialised memory</strong>. When an operating system kernel copies a struct whole to a user program, those gaps cross over too — and although every member was filled in, the gaps contain <strong>the remains of other data</strong> that happened to be there. An attacker can gather these crumbs to glimpse the contents or address layout of kernel memory, and that becomes the foothold for the next attack. Major kernels including Linux have fixed dozens of information-leak vulnerabilities of this class, and today’s response is simple — a struct handed to userspace is <strong>wiped to zero whole before its members are filled</strong>. It is the moment chapter 23′s rule of “initialise at the point of declaration” extends even to invisible blanks.</div><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“You can just write a struct to a file or send it over a network as it is”</strong></p>A tempting thought, and one much attempted — storing a struct’s bytes whole makes the code short. But the two facts this chapter has just shown block it: byte order differs by machine (endianness), and the size and position of the gaps differ by compiler and platform (padding). A file written on one machine breaks on another — chapter 5′s NUXI incident reproduced in the world of file formats. The right answer is <strong>serialisation</strong>: writing explicit code that writes and reads members one at a time, in an agreed size and byte order (network byte order — chapter 5). Representation is the machine’s business and files and communication are a world of agreements — the bridge between the two worlds must be laid by hand.</div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> When, then, is a union the standard thing to use?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> In two places. First, the <strong>looking into representation</strong> (type punning) just seen — low-level code inspecting floating-point bits or viewing a hardware register through several eyes. Second, and more common, the <strong>tagged union</strong>: putting into a struct both a union and a mark (a tag) saying “which member is valid now”, to represent alternative data such as “this value is an integer, or a real number, or a string.” It is the basic tool of interpreters’ value representations and configuration-file parsers — and chapter 6′s tagged pointer was the same idea at the bit level. Modern languages’ enumerations (Rust’s enum, Swift’s associated values) lifted this pattern to the level of the language.</p></div></div><h3>45.3 Bit fields — cutting up one word</h3><p>Write a colon and a number after a struct member and it becomes a <strong>bit field</strong> — you specify directly how many bits that member occupies. Overlay a union on that and you have both “the eye that sees it whole as one word” and “the eye that sees it divided into fields” at once.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch45/bitfield.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> A shape common in practice: one device register word divided into fields,</span></em>
+<em><span class="tok-c">   with the same memory also seen whole as a 32-bit integer. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">union</span></strong> control_reg <span class="tok-x">{</span>
+    <strong><span class="tok-t">uint32_t</span></strong> raw<span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the eye that reads and writes it whole </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+        <strong><span class="tok-t">uint32_t</span></strong> enable   <strong><span class="tok-x">:</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> one bit </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">uint32_t</span></strong> mode     <strong><span class="tok-x">:</span></strong> <span class="tok-n">3</span><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> three bits </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">uint32_t</span></strong> priority <strong><span class="tok-x">:</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">uint32_t</span></strong> reserved <strong><span class="tok-x">:</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">uint32_t</span></strong> counter  <strong><span class="tok-x">:</span></strong> <span class="tok-n">16</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span> f<span class="tok-x">;</span>                          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the eye that sees fields </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> the practical pattern of a union inside a struct: a tag plus the content </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">enum</span></strong> msg_kind <span class="tok-x">{</span> MSG_INT<span class="tok-x">,</span> MSG_TEXT<span class="tok-x">,</span> MSG_POINT <span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-t">struct</span></strong> message <span class="tok-x">{</span>
+    <strong><span class="tok-t">enum</span></strong> msg_kind kind<span class="tok-x">;</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the tag telling which eye to look through </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong>      flags <strong><span class="tok-x">:</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a few small states </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong>      urgent <strong><span class="tok-x">:</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">union</span></strong> <span class="tok-x">{</span>                       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> an anonymous union (C11) </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">int</span></strong>  number<span class="tok-x">;</span>
+        <strong><span class="tok-t">char</span></strong> text<span class="tok-x">[</span><span class="tok-n">16</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x<span class="tok-x">,</span> y<span class="tok-x">;</span> <span class="tok-x">}</span> point<span class="tok-x">;</span>
+    <span class="tok-x">}</span><span class="tok-x">;</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>show</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">struct</span></strong> message <strong><span class="tok-x">*</span></strong>m<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">kind=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> flags=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> urgent=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> -> </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>m</strong><strong><span class="tok-x">-></span></strong><strong>kind</strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">-></span></strong><strong>flags</strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">-></span></strong><strong>urgent</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">switch</span></strong> <span class="tok-x">(</span>m<span class="tok-x">-></span>kind<span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong><span class="tok-k">case</span></strong> MSG_INT<span class="tok-x">:</span>   <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">number </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">-></span></strong><strong>number</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">case</span></strong> MSG_TEXT<span class="tok-x">:</span>  <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">text </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">-></span></strong><strong>text</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">case</span></strong> MSG_POINT<span class="tok-x">:</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">point (</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">-></span></strong><strong>point</strong><strong><span class="tok-x">.</span></strong><strong>x</strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">-></span></strong><strong>point</strong><strong><span class="tok-x">.</span></strong><strong>y</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">union</span></strong> control_reg r <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>raw <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    r<span class="tok-x">.</span>f<span class="tok-x">.</span>enable <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    r<span class="tok-x">.</span>f<span class="tok-x">.</span>mode <strong><span class="tok-x">=</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>
+    r<span class="tok-x">.</span>f<span class="tok-x">.</span>priority <strong><span class="tok-x">=</span></strong> <span class="tok-n">9</span><span class="tok-x">;</span>
+    r<span class="tok-x">.</span>f<span class="tok-x">.</span>counter <strong><span class="tok-x">=</span></strong> <span class="tok-n">1000</span><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">raw   = 0x</span></strong><strong><span class="tok-s">%08x</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>raw</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">fields: enable=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> mode=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> priority=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> counter=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>enable</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>mode</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>priority</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>counter</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> write it whole and read it as fields — the same memory through two eyes </span></em><em><span class="tok-c">*/</span></em>
+    r<span class="tok-x">.</span>raw <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">000A0013</span><strong><span class="tok-t">u</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">after raw write: enable=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> mode=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> priority=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> counter=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>enable</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>mode</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>priority</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>counter</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof(union control_reg) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> r</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">struct</span></strong> message a <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>kind <strong><span class="tok-x">=</span></strong> MSG_INT<span class="tok-x">,</span> <span class="tok-x">.</span>flags <strong><span class="tok-x">=</span></strong> <span class="tok-n">3</span><span class="tok-x">,</span> <span class="tok-x">.</span>urgent <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-x">.</span>number <strong><span class="tok-x">=</span></strong> <span class="tok-n">42</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> message b <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>kind <strong><span class="tok-x">=</span></strong> MSG_TEXT<span class="tok-x">,</span> <span class="tok-x">.</span>flags <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">,</span> <span class="tok-x">.</span>urgent <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> b<span class="tok-x">.</span>text<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">hello</span><span class="tok-s">"</span><span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    b<span class="tok-x">.</span>text<span class="tok-x">[</span><span class="tok-n">5</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">'</span><span class="tok-n">\0</span><span class="tok-s">'</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> message c <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>kind <strong><span class="tok-x">=</span></strong> MSG_POINT<span class="tok-x">,</span> <span class="tok-x">.</span>flags <strong><span class="tok-x">=</span></strong> <span class="tok-n">8</span><span class="tok-x">,</span> <span class="tok-x">.</span>urgent <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">,</span>
+                         <span class="tok-x">.</span>point <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> <span class="tok-n">3</span><span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">-</span></strong><span class="tok-n">7</span> <span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>c</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof(struct message) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> message</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>raw   = 0x03e8009b
+fields: enable=1 mode=5 priority=9 counter=1000
+after raw write: enable=1 mode=1 priority=1 counter=10
+sizeof(union control_reg) = 4
+kind=0 flags=3 urgent=1 -> number 42
+kind=1 flags=0 urgent=0 -> text "hello"
+kind=2 flags=8 urgent=0 -> point (3, -7)
+sizeof(struct message) = 24
+</code></pre></div></div><p>The first part is the typical pattern for handling a hardware register. Write to a field as in <code>r.f.mode = 5</code> and the value goes into the bit positions without library help, and reading <code>r.raw</code> shows the result as one word. The reverse — writing <code>r.raw</code> whole and reading the fields — works too; the output’s third line is the check.</p><p>Convenient though it looks, <strong>the price in portability</strong> is large, because much is not fixed by the standard.</p><ul><li><strong>The order the bits are laid in</strong> — whether they fill from the low end or the high end is implementation-defined. So the same declaration may produce different layouts on different compilers.</li><li><strong>Fields crossing a boundary</strong> — whether a field straddling a storage unit is allowed is also up to the implementation. So is how much padding is inserted.</li><li><strong>Sign</strong> — a plain <code>int x : 1;</code> is a signed one-bit field, so its values are 0 and −1. If that was not the intention, <code>unsigned</code> must be stated.</li><li><strong>Its address cannot be taken</strong> — <code>&amp;</code> cannot be applied to a bit field. Nor can they be made into an array.</li><li><strong>It is not atomic</strong> — if two threads touch two fields sitting in the same word, an accident of the same family as chapter 12′s false sharing occurs.</li></ul><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Bit fields can represent a file or network format directly”</strong></p>The commonest misunderstanding, and a fixture of portability accidents. A file format or protocol has <strong>the layout of its bytes and bits fixed by specification</strong>, whereas a bit field’s layout is fixed by the implementation. Change compiler or move to another machine and the fields are read at the wrong places — worse still when endianness (the previous section) is layered on. The proper method for an external format is <strong>laying out a byte array and extracting directly with shifts and masks</strong> (chapter 7). Regard bit fields strictly as <strong>a way of saving memory within one program</strong>.</div><p>That is why bit fields are not recommended today. The reason to know the syntax nonetheless is clear — you still meet them in the register definitions of embedded SDKs, in the flag bundles of old codebases, and in kernel data structures. <strong>Be able to read them, but think twice before writing new ones</strong> is the practical instinct.</p><h3>45.4 The practical pattern of mixing structs and unions</h3><p>The latter part of the example is a different story. It is a <strong>tagged union</strong> — a struct holding a tag and a union together — the pattern named in the exchange above.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> message <span class="tok-x">{</span>
+    <strong><span class="tok-t">enum</span></strong> msg_kind kind<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the tag telling which eye to look with </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong>      flags <strong><span class="tok-x">:</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> small states — bit fields earn their place here </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong>      urgent <strong><span class="tok-x">:</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">union</span></strong> <span class="tok-x">{</span>                  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> an anonymous union (C11) </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">int</span></strong>  number<span class="tok-x">;</span>
+        <strong><span class="tok-t">char</span></strong> text<span class="tok-x">[</span><span class="tok-n">16</span><span class="tok-x">]</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x<span class="tok-x">,</span> y<span class="tok-x">;</span> <span class="tok-x">}</span> point<span class="tok-x">;</span>
+    <span class="tok-x">}</span><span class="tok-x">;</span>
+<span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>Three things are layered here. The tag, the state flags saved by bit fields, and an <strong>anonymous union</strong> (C11). With no name, members can be used one step more directly, as <code>m->number</code>, which makes a tagged union far more readable.</p><p>There is only one discipline and it is everything — <strong>read only the member the tag says.</strong> If <code>kind</code> is <code>MSG_TEXT</code> and you read <code>number</code>, it becomes the “looking through another eye” of this chapter’s first section and gives a meaningless value. So code handling such data is almost always made to pass through <strong>a single <code>switch</code> on the tag</strong>, like the example’s <code>show</code>. Gather the access in one place and the place to keep the discipline is one place too.</p><p>That <code>sizeof(struct message)</code> came out as 24 bytes is worth reading as well — a 4-byte tag plus the word holding the bit fields plus the 16-byte union, with padding (the previous section) added for alignment. Representation always takes <strong>a little more</strong> than what was declared.</p><h4>45.4.1 One real specimen — two-byte Johab Hangul</h4><p>This pattern is not only a textbook affair. When Hangul was first being put into computers, splitting one word into three parts became an actual standard — <strong>Johab</strong> (조합형, “the combining form”).</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch45/johab.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Two-byte Johab Hangul — a real case of one word split into initial,</span></em>
+<em><span class="tok-c">   medial and final jamo. (Hangul appears here because the subject is an</span></em>
+<em><span class="tok-c">   encoding of Hangul.) </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> Names of the jamo. Codes 0 and 1 are fill/unused, so they stay empty. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">const</span></strong> CHO<span class="tok-x">[</span><span class="tok-n">32</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span>
+    <span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">G</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">GG</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">N</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">5</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">D</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">6</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">DD</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">7</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">R</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">M</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">9</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">B</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">10</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">BB</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">11</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">S</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">12</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">SS</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">13</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">NG</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">14</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">J</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">15</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">JJ</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">16</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">C</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">17</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">K</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">18</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">T</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">19</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">P</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">20</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">H</span><span class="tok-s">"</span><span class="tok-x">,</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">const</span></strong> JUNG<span class="tok-x">[</span><span class="tok-n">32</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span>
+    <span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">A</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">AE</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">5</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YA</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">6</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YAE</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">7</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">EO</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">10</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">E</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">11</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YEO</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">12</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YE</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">13</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">O</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">14</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">WA</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">15</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">WAE</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">18</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">OE</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">19</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YO</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">20</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">U</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">21</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">WEO</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">22</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">WE</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">23</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">WI</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">26</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YU</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">27</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">EU</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">28</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">YI</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">29</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">I</span><span class="tok-s">"</span><span class="tok-x">,</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">const</span></strong> JONG<span class="tok-x">[</span><span class="tok-n">32</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span>
+    <span class="tok-x">[</span><span class="tok-n">1</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">(none)</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">G</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">5</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">N</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">9</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">L</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">17</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">M</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">19</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">B</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">[</span><span class="tok-n">21</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">S</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">23</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">NG</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-x">[</span><span class="tok-n">29</span><span class="tok-x">]</span><strong><span class="tok-x">=</span></strong><span class="tok-s">"</span><span class="tok-s">H</span><span class="tok-s">"</span><span class="tok-x">,</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> (1) Extract with shifts and masks — the way the standard pins down </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>split_by_shift</strong><span class="tok-x">(</span><strong><span class="tok-t">uint16_t</span></strong> w<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">unsigned</span></strong> cho  <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span>w <strong><span class="tok-x">>></span></strong> <span class="tok-n">10</span><span class="tok-x">)</span> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">1f</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">unsigned</span></strong> jung <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span>w <strong><span class="tok-x">>></span></strong>  <span class="tok-n">5</span><span class="tok-x">)</span> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">1f</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">unsigned</span></strong> jong <strong><span class="tok-x">=</span></strong>  w        <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">1f</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  shift/mask: flag=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> cho=</span></strong><strong><span class="tok-s">%2u</span></strong><strong><span class="tok-s">(</span></strong><strong><span class="tok-s">%-2s</span></strong><strong><span class="tok-s">) jung=</span></strong><strong><span class="tok-s">%2u</span></strong><strong><span class="tok-s">(</span></strong><strong><span class="tok-s">%-3s</span></strong><strong><span class="tok-s">) jong=</span></strong><strong><span class="tok-s">%2u</span></strong><strong><span class="tok-s">(</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>w </strong><strong><span class="tok-x">>></span></strong><strong> </strong><strong><span class="tok-n">15</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> cho</strong><strong><span class="tok-x">,</span></strong><strong> CHO</strong><strong><span class="tok-x">[</span></strong><strong>cho</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> CHO</strong><strong><span class="tok-x">[</span></strong><strong>cho</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">?</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           jung</strong><strong><span class="tok-x">,</span></strong><strong> JUNG</strong><strong><span class="tok-x">[</span></strong><strong>jung</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> JUNG</strong><strong><span class="tok-x">[</span></strong><strong>jung</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">?</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           jong</strong><strong><span class="tok-x">,</span></strong><strong> JONG</strong><strong><span class="tok-x">[</span></strong><strong>jong</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> JONG</strong><strong><span class="tok-x">[</span></strong><strong>jong</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">?</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> (2) View it with bit fields in a union — handy, but the layout is</span></em>
+<em><span class="tok-c">   implementation-defined </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">union</span></strong> johab <span class="tok-x">{</span>
+    <strong><span class="tok-t">uint16_t</span></strong> raw<span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+        <strong><span class="tok-t">uint16_t</span></strong> jong <strong><span class="tok-x">:</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> this order is not promised by the standard </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-t">uint16_t</span></strong> jung <strong><span class="tok-x">:</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">uint16_t</span></strong> cho  <strong><span class="tok-x">:</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">uint16_t</span></strong> mark <strong><span class="tok-x">:</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span> f<span class="tok-x">;</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> The Johab codes of 가 and 한, taken from the real table. </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">uint16_t</span></strong> GA  <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">8861</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 1 00010 00011 00001 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">uint16_t</span></strong> HAN <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">D065</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 1 10100 00011 00101 </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">GA(가) = 0x</span></strong><strong><span class="tok-s">%04X</span></strong><strong><span class="tok-s">, HAN(한) = 0x</span></strong><strong><span class="tok-s">%04X</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> GA</strong><strong><span class="tok-x">,</span></strong><strong> HAN</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">GA (가):</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>  <strong>split_by_shift</strong><strong><span class="tok-x">(</span></strong><strong>GA</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">HAN (한):</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong>split_by_shift</strong><strong><span class="tok-x">(</span></strong><strong>HAN</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">union</span></strong> johab u <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>raw <strong><span class="tok-x">=</span></strong> GA <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">through bit fields: mark=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> cho=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> jung=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s"> jong=</span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           u</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>mark</strong><strong><span class="tok-x">,</span></strong><strong> u</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>cho</strong><strong><span class="tok-x">,</span></strong><strong> u</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>jung</strong><strong><span class="tok-x">,</span></strong><strong> u</strong><strong><span class="tok-x">.</span></strong><strong>f</strong><strong><span class="tok-x">.</span></strong><strong>jong</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  (On this compiler it matched the shift/mask result, because this</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">   implementation fills bits from the low end. That is not a promise.)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (3) The second byte collides with ASCII — Johab's famous trap </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> bytes<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>GA <strong><span class="tok-x">>></span></strong> <span class="tok-n">8</span><span class="tok-x">)</span><span class="tok-x">,</span>
+                               <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>GA <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">ff</span><span class="tok-x">)</span><span class="tok-x">,</span> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">the two bytes of 가: </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  the second byte 0x</span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s"> is ASCII '</span></strong><strong><span class="tok-s">%c</span></strong><strong><span class="tok-s">' — searching bytes for 'a'</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  lands inside a character: strchr result = </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>strchr</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>bytes</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">a</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">found (false hit)</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">not found</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>GA(가) = 0x8861, HAN(한) = 0xD065
+
+GA (가):
+  shift/mask: flag=1 cho= 2(G ) jung= 3(A  ) jong= 1((none))
+HAN (한):
+  shift/mask: flag=1 cho=20(H ) jung= 3(A  ) jong= 5(N)
+
+through bit fields: mark=1 cho=2 jung=3 jong=1
+  (On this compiler it matched the shift/mask result, because this
+   implementation fills bits from the low end. That is not a promise.)
+
+the two bytes of 가: 88 61
+  the second byte 0x61 is ASCII 'a' — searching bytes for 'a'
+  lands inside a character: strchr result = found (false hit)
+</code></pre></div></div><p>The design is exactly what this chapter has taught. Sixteen bits are divided into four: the leading bit marks “this is Hangul”, and the remaining fifteen are cut into three fields of five bits each — <strong>initial, medial and final</strong> jamo.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>bits</strong></th><th><strong>15</strong></th><th><strong>14–10 / 9–5 / 4–0</strong></th><th><strong>meaning</strong></th></tr><tr><td>field</td><td>flag</td><td>initial / medial / final</td><td>five bits each</td></tr><tr><td><code>가</code> = <code>0x8861</code></td><td>1</td><td>2 / 3 / 1</td><td>ㄱ + ㅏ + (none)</td></tr><tr><td><code>한</code> = <code>0xD065</code></td><td>1</td><td>20 / 3 / 5</td><td>ㅎ + ㅏ + ㄴ</td></tr></table></div><p class="float-caption">Table 45.1</p></figure><p>The numbers given to the jamo follow a rule. Initials run 2–20 from ㄱ to ㅎ (0 and 1 are fill and reserved), and finals start with 1 for “none” and run on to 29. Only the medials leave 8–9, 16–17 and 24–25 empty — the trace of laying the vowels out in groups of four. The gaps are visible in the example’s tables.</p><p>What it bought was clear: combining jamo let it write <strong>all 11,172 modern Hangul syllables</strong>. The rival of the time, the <strong>precomposed</strong> standard (KS C 5601-1987), listed only the 2,350 syllables in common use, which famously left ordinary names and words unwritable. Johab chose to <strong>generate</strong> syllables by rule rather than enlarge a table.</p><div class="dev realcase"><p class="dev-label">In practice. Three lessons Johab left behind</p><p><strong>First, the second byte collides with ASCII.</strong> 가 is <code>88 61</code>, and the trailing byte <code>0x61</code> is plain <code>'a'</code>. Code searching bytes for <code>'a'</code> therefore lands in the middle of a character — the last line of the example shows the false hit happening. Chapter 9′s “a byte is not a character” turns into a bug right here.</p><p><strong>Second, the layout is not fixed by the standard.</strong> The example’s union happened to agree with the shift/mask result on this compiler, but only because this implementation fills bits from the low end. The rule of the previous section stands: <strong>handle external formats with shifts and masks.</strong></p><p><strong>Third, there is a place where rule beat table.</strong> Unicode took the same idea further and tidier. The code of a Hangul syllable is <strong>computed</strong>: <code>0xAC00 + (initial * 21 + medial) * 28 + final</code> — multiplication instead of bit slicing, but the same thought that syllables are made by combining jamo. Johab itself faded (Windows 95 adopted a unified precomposed code and left it behind), yet its idea lives on inside today’s standard.</p></div><h3>45.5 Closing Part VIII</h3><p>We have the two syntaxes for making types — the struct that lays things side by side (chapter 43) and the union that lays them over one another (chapter 45). And along the way we confirmed the realities of representation (endianness, padding) with our own eyes. Part II’s background knowledge has been fully collected into syntax.</p><p>The next part is the part of precision — chapter 8′s mathematics of approximation comes down into C’s floating types (chapter 47), the perspective of the contract whose seed was planted in chapter 32 grows into error handling (chapter 48), and we meet head on the world “outside the contract” that this book has foreshadowed throughout — undefined behaviour (chapter 49).</p>
+<div class="nav"><a href="ch44.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch46.html">Next →</a></div>
+</div></main></body></html>

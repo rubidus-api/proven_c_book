@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>44 구조체를 부리는 법 — 임시 값, 이름 붙은 인자, 배치 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch43.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch45.html" title="다음" aria-label="다음">→</a></span><a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-44">44 구조체를 부리는 법 — 임시 값, 이름 붙은 인자, 배치</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>43장 구조체 · 구조체의 정의</div><div>37장 배열 · 배열과 값 전달</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>43장에서 구조체는 값이라 대입하면 통째로 복사되고 함수에 넘기면 사본이 건너간다고 했다. 그런데 37장에서는 배열을 함수에 넘기면 포인터로 무너져 <strong>원본이 건드려진다</strong>고 했다. 두 말이 부딪히지 않는가 — 구조체 안에 배열이 있으면 어느 쪽인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 구조체가 이긴다. 배열이 포인터로 무너지는 것은 <strong>배열 그 자체를 인자로 적었을 때</strong>의 규칙이고, 구조체 멤버로 들어간 배열은 구조체라는 값의 일부라 복사 대상이다. 그래서 C에서 배열을 진짜로 <strong>값처럼</strong> 넘기는 유일한 방법이 “구조체로 감싸기”다. 이 장의 두 번째 예제가 그 대비를 실측으로 보인다 — 값으로 넘긴 쪽은 원본이 그대로이고, 포인터로 무너진 쪽은 원본이 바뀐다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">43장이 구조체의 문법이었다면 이 장은 <strong>쓰는 법</strong>이다. 구조체 안의 구조체를 <span id="idx-entry-75"></span>참조하는 표기, 그 자리에서 만들어 넘기는 임시 구조체(복합 리터럴), 그것으로 만드는 “순서 없는 이름 붙은 인자” 관용구, 그리고 멤버 사이에 <span id="idx-entry-76"></span>끼는 패딩과 그것을 없애거나 강제하는 방법까지. 마지막으로 배열을 값으로 넘기는 유일한 길과 그 대가를 잰다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>s.frame->size.y</code>처럼 길게 이어진 표기는 어디서 끊어 읽는가?</li><li>이 관용구에 함정은 없는가?</li><li>그러면 파일 형식이나 통신 규약을 다룰 때는 packed 구조체를 쓰는 것이 정답인가?</li></ol></div></div><div></div><h3>44.1 중첩과 접근 — 점과 화살표를 섞어 읽기</h3><p>구조체의 멤버가 또 구조체일 수 있다. 이때 표기는 겹쳐 적을 뿐이다.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> point <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x<span class="tok-x">,</span> y<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-t">struct</span></strong> rect  <span class="tok-x">{</span> <strong><span class="tok-t">struct</span></strong> point origin<span class="tok-x">;</span> <strong><span class="tok-t">struct</span></strong> point size<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-t">struct</span></strong> scene <span class="tok-x">{</span> <strong><span class="tok-t">struct</span></strong> rect *frame<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>name<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-t">struct</span></strong> rect  r  <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>origin <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> <span class="tok-n">2</span> <span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">.</span>size <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> <span class="tok-n">30</span><span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> <span class="tok-n">40</span> <span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-t">struct</span></strong> scene s  <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>frame <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">&amp;</span></strong>r<span class="tok-x">,</span> <span class="tok-x">.</span>name <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">main</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+r<span class="tok-x">.</span>origin<span class="tok-x">.</span>x        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 값 안의 값        : 점 + 점 </span></em><em><span class="tok-c">*/</span></em>
+s<span class="tok-x">.</span>frame<span class="tok-x">-></span>size<span class="tok-x">.</span>y   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 값 안의 포인터    : 점 + 화살표 + 점 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">(</span><strong><span class="tok-x">&amp;</span></strong>r<span class="tok-x">)</span><span class="tok-x">-></span>origin<span class="tok-x">.</span>y    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 화살표는 (*p).의 줄임일 뿐이다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>규칙은 하나뿐이다. <strong>왼쪽이 값이면 점, 포인터면 화살표.</strong> <code>p->x</code>는 <code>(*p).x</code>의 줄임이고(43장), 줄임이 생긴 이유는 포인터로 구조체를 다루는 일이 압도적으로 흔해서다. 실제로 <code>(*p).x</code>라고 적힌 코드를 보면 대개 옛 코드이거나 연산자 우선순위를 설명하는 자리다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>s.frame->size.y</code>처럼 길게 이어진 표기는 어디서 끊어 읽는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 왼쪽에서 오른쪽으로, 한 단계씩 내려간다. <code>s</code>(장면) → <code>.frame</code>(그 안의 포인터) → <code>->size</code>(가리키는 사각형의 크기) → <code>.y</code>(그 점의 y). 각 화살표는 <strong>역참조가 한 번 일어난다</strong>는 표시이므로, 화살표의 개수만큼 널 검사가 필요한 포인터가 있다는 뜻이기도 하다. <code>s.frame</code>이 널이면 이 표기는 그 자리에서 무너진다 — 긴 사슬은 읽기 편한 만큼 검사를 감추기도 한다.</p></div></div><h3>44.2 임시 구조체 — 복합 리터럴</h3><p>이름 붙은 변수를 만들지 않고 <strong>그 자리에서</strong> 구조체 값을 하나 만드는 표기가 복합 리터럴이다(C99).</p><pre><code data-lang="c"><strong>draw_</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> draw_opts</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>width</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">40</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>title</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">차트</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 인자로 바로 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> point<span class="tok-x">)</span><span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> a<span class="tok-x">.</span>x <strong><span class="tok-x">+</span></strong> dx<span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> a<span class="tok-x">.</span>y <strong><span class="tok-x">+</span></strong> dy <span class="tok-x">}</span><span class="tok-x">;</span>       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 반환값으로 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>성질 세 가지를 챙긴다.</p><p><strong>첫째, 이것은 lvalue다.</strong> 이름이 없을 뿐 진짜 객체라서 주소를 얻을 수 있고 멤버에 대입할 수도 있다. 예제의 <code>&amp;(struct draw_opts){ … }</code>가 그 확인이다. “임시값(rvalue)이라 주소를 못 얻는다”고 생각하기 쉬운데, C의 복합 리터럴은 그렇지 않다 — C++의 임시 객체와 다른 점이다.</p><p><strong>둘째, 수명은 문장이 아니라 블록 끝까지다.</strong> 블록 안에 적은 복합 리터럴은 그 블록이 끝날 때까지 산다(자동 저장 기간). 그래서 같은 블록 안에서는 주소를 들고 다녀도 안전하다.</p><p><strong>셋째, 그러므로 함수 밖으로 주소를 내보내면 매달린 포인터다.</strong></p><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>복합 리터럴의 주소를 반환하기</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> point <strong><span class="tok-x">*</span></strong><strong>make</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> x<span class="tok-x">,</span> <strong><span class="tok-t">int</span></strong> y<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">return</span></strong> <strong><span class="tok-x">&amp;</span></strong><span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> point<span class="tok-x">)</span><span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> x<span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> y <span class="tok-x">}</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 함수가 끝나면 사라진다 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span></code></pre><p>36장의 지역 변수 주소 반환과 정확히 같은 사고다. 값을 돌려주려면 <strong>값으로</strong> 돌려주거나(<code>struct point make(...)</code>), 호출자가 준 자리에 채우거나, 동적 할당(42장)을 쓴다. 파일 유효 범위에 적은 복합 리터럴은 정적 저장 기간이라 이 문제가 없지만, 그 자리에는 대개 이름을 붙이는 편이 낫다.</p></div><h3>44.3 이름 붙은 인자 — 구조체 하나로 넘기기</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch44/opts.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 임시 구조체(복합 리터럴)로 "이름 붙은 매개변수"를 만들고,</span></em>
+<em><span class="tok-c">   구조체 복사가 배열 멤버까지 옮긴다는 사실을 확인한다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ① 이름으로 넘기는 매개변수 ─────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> draw_opts <span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong>         width<span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 0 이면 기본값 80 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong>         height<span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 0 이면 기본값 24 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">bool</span></strong>        grid<span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>title<span class="tok-x">;</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>draw_</strong><span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> draw_opts o<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> w <strong><span class="tok-x">=</span></strong> o<span class="tok-x">.</span>width  <strong><span class="tok-x">?</span></strong> o<span class="tok-x">.</span>width  <strong><span class="tok-x">:</span></strong> <span class="tok-n">80</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> h <strong><span class="tok-x">=</span></strong> o<span class="tok-x">.</span>height <strong><span class="tok-x">?</span></strong> o<span class="tok-x">.</span>height <strong><span class="tok-x">:</span></strong> <span class="tok-n">24</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%3d</span></strong><strong><span class="tok-s">x</span></strong><strong><span class="tok-s">%-3d</span></strong><strong><span class="tok-s"> grid=</span></strong><strong><span class="tok-s">%-5s</span></strong><strong><span class="tok-s"> title=</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> w</strong><strong><span class="tok-x">,</span></strong><strong> h</strong><strong><span class="tok-x">,</span></strong>
+<strong>           o</strong><strong><span class="tok-x">.</span></strong><strong>grid</strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">true</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">false</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> o</strong><strong><span class="tok-x">.</span></strong><strong>title</strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> o</strong><strong><span class="tok-x">.</span></strong><strong>title</strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">(없음)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 호출자가 중괄호를 적지 않아도 되게 감싼다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">draw</span></strong><span class="tok-x">(</span><strong><span class="tok-x">...</span></strong><span class="tok-x">)</span><span class="tok-p"> </span><strong>draw_</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> draw_opts</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> __VA_ARGS__ </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ② 배열을 값으로 넘기기 ─────────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> row <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> cell<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 배열을 구조체로 감싸면 값이 된다 </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>total</strong><span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> row r<span class="tok-x">)</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 사본이 통째로 건너온다 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> t <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> t <strong><span class="tok-x">+=</span></strong> r<span class="tok-x">.</span>cell<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    r<span class="tok-x">.</span>cell<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-n">999</span><span class="tok-x">;</span>                  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 사본만 바뀐다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> t<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>total_raw</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> cell<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">)</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 배열 매개변수는 포인터로 무너진다 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> t <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> t <strong><span class="tok-x">+=</span></strong> cell<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    cell<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-n">999</span><span class="tok-x">;</span>                    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 원본이 바뀐다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> t<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">이름으로 넘기기 (순서 무관, 빠뜨려도 됨)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">.</span></strong><strong>title</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">차트</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>height</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">20</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>width</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">40</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">.</span></strong><strong>grid</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">true</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                                     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 전부 기본값 </span></em><em><span class="tok-c">*/</span></em>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 복합 리터럴은 주소를 얻을 수 있고, 수명은 이 블록의 끝까지다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> draw_opts *p = &amp;(<strong><span class="tok-t">struct</span></strong> draw_opts)<span class="tok-x">{</span> <span class="tok-x">.</span>width <strong><span class="tok-x">=</span></strong> <span class="tok-n">5</span><span class="tok-x">,</span> <span class="tok-x">.</span>title <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">임시</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  임시 구조체의 주소로 접근: width=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> title=</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> p</strong><strong><span class="tok-x">-></span></strong><strong>width</strong><strong><span class="tok-x">,</span></strong><strong> p</strong><strong><span class="tok-x">-></span></strong><strong>title</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">배열을 값으로 / 포인터로</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> row r <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>cell <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-n">2</span><span class="tok-x">,</span> <span class="tok-n">3</span><span class="tok-x">,</span> <span class="tok-n">4</span><span class="tok-x">,</span> <span class="tok-n">5</span><span class="tok-x">,</span> <span class="tok-n">6</span><span class="tok-x">,</span> <span class="tok-n">7</span><span class="tok-x">,</span> <span class="tok-n">8</span> <span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 호출과 원본 읽기를 반드시 갈라 적는다 - 한 표현식에 섞으면 순서가 없다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> t1 <strong><span class="tok-x">=</span></strong> <strong>total</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  값으로  : 합 </span></strong><strong><span class="tok-s">%2d</span></strong><strong><span class="tok-s">,  호출 뒤 원본 cell[0] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> t1</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>cell</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> t2 <strong><span class="tok-x">=</span></strong> <strong>total_raw</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">.</span></strong><strong>cell</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  포인터로: 합 </span></strong><strong><span class="tok-s">%2d</span></strong><strong><span class="tok-s">,  호출 뒤 원본 cell[0] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> t2</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>cell</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 구조체 대입도 통째 복사다 — 배열 멤버까지 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> row copy <strong><span class="tok-x">=</span></strong> r<span class="tok-x">;</span>
+    copy<span class="tok-x">.</span>cell<span class="tok-x">[</span><span class="tok-n">1</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">-</span></strong><span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  대입 사본 수정 뒤 원본 cell[1] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, 사본 cell[1] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           r</strong><strong><span class="tok-x">.</span></strong><strong>cell</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> copy</strong><strong><span class="tok-x">.</span></strong><strong>cell</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>이름으로 넘기기 (순서 무관, 빠뜨려도 됨)
+   40x20  grid=false title=차트
+   80x24  grid=true  title=(없음)
+   80x24  grid=false title=(없음)
+  임시 구조체의 주소로 접근: width=5 title=임시
+
+배열을 값으로 / 포인터로
+  값으로  : 합 36,  호출 뒤 원본 cell[0] = 1
+  포인터로: 합 36,  호출 뒤 원본 cell[0] = 999
+  대입 사본 수정 뒤 원본 cell[1] = 2, 사본 cell[1] = -1
+</code></pre></div></div><p>여기서부터가 실무에서 코드를 가장 많이 바꾸는 관용구다. 인자가 대여섯 개인 함수를 생각해 보자.</p><pre><code data-lang="c"><strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">40</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">20</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">false</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">true</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">차트</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 세 번째 참은 무엇인가? </span></em><em><span class="tok-c">*/</span></em></code></pre><p>C에는 다른 언어의 이름 붙은 인자(named argument)나 기본값이 없다. 그러나 <strong>지정 초기화 + 복합 리터럴</strong>을 겹치면 사실상 같은 것을 얻는다.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> draw_opts <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> width<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> height<span class="tok-x">;</span> <strong><span class="tok-t">bool</span></strong> grid<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>title<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>draw_</strong><span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> draw_opts o<span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">draw</span></strong><span class="tok-x">(</span><strong><span class="tok-x">...</span></strong><span class="tok-x">)</span><span class="tok-p"> </span><strong>draw_</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> draw_opts</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> __VA_ARGS__ </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong>
+
+<strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">.</span></strong><strong>title</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">차트</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>height</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">20</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>width</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">40</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 순서 무관 </span></em><em><span class="tok-c">*/</span></em>
+<strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">.</span></strong><strong>grid</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">true</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                                  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 나머지는 기본값 </span></em><em><span class="tok-c">*/</span></em>
+<strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                                              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 전부 기본값 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>얻는 것이 네 가지다.</p><ol><li><strong>순서에서 자유롭다.</strong> 지정 초기화는 이름으로 자리를 정하므로 호출자가 편한 순서로 적는다.</li><li><strong>빠뜨린 것은 0이다.</strong> 적지 않은 멤버는 0(포인터는 널)으로 채워진다는 표준의 약속이 곧 “기본값”이 된다. 그래서 <strong>0이 뜻이 통하는 기본값이 되도록</strong> 필드를 설계하는 것이 요령이다 — 예제가 <code>width == 0</code>을 “기본 80” 으로 읽는 것이 그 예다.</li><li><strong>호출부가 자기 설명적이다.</strong> 위 <code>false, true, 3</code>이 무엇인지 묻지 않아도 된다.</li><li><strong>나중에 필드를 늘려도 기존 호출이 깨지지 않는다.</strong> 인자 목록을 바꾸면 모든 호출부를 고쳐야 하지만, 구조체에 멤버를 하나 더하는 것은 기존 호출부에 아무 영향이 없다(그 멤버는 0이 된다). 오래 유지되는 API에서 이 성질이 특히 값지다.</li></ol><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 이 관용구에 함정은 없는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 셋을 조심한다.</p><p>첫째, <strong>초기화 항목들 사이의 평가 순서는 정해져 있지 않다.</strong> <code>draw(.width = i++, .height = i)</code>처럼 부수 효과를 섞으면 결과를 예측할 수 없다(20장). 인자에는 값만 적는다.</p><p>둘째, <strong>0이 유효한 값인 필드</strong>가 있으면 “빠뜨림”과 “0을 지정함”을 구별할 수 없다. 그런 필드는 의미를 뒤집어 설계하거나(<code>no_grid</code> 대신 <code>grid</code>), 별도의 존재 표시 필드를 둔다.</p><p>셋째, <strong>큰 구조체를 매번 만들어 넘기는 비용</strong>이다. 옵션 구조체는 대개 작아서 문제가 없지만, 커지면 <code>const struct opts *</code>로 받고 호출부에서 <code>&amp;(struct opts){ … }</code>를 넘기는 변형을 쓴다 — 주소를 얻을 수 있다는 위 성질이 여기서 일한다.</p></p></div></div><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>실무에서 만나는 이름 붙은 인자</p>이 무늬는 널리 쓰인다. 리눅스 커널의 여러 초기화 함수, <code>struct sigaction</code>(65장)이나 <code>struct timespec</code>처럼 표준·POSIX API가 옵션을 구조체로 받는 방식, 그래픽 라이브러리들의 <code>..._desc</code> 구조체(예: 여러 GPU API의 <code>..._DESC</code>)가 모두 같은 착상이다. “인자가 많아지면 구조체로 묶는다”는 것은 C에서 거의 관용이라 할 만하고, C99의 지정 초기화가 그것을 읽기 좋게 만들어 주었다.</div><h3>44.4 패딩 — 멤버 사이의 빈자리</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch44/layout.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 구조체의 배치 - 패딩, 재배열, 강제 정렬 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">struct</span></strong> loose  <span class="tok-x">{</span> <strong><span class="tok-t">char</span></strong>  a<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> b<span class="tok-x">;</span> <strong><span class="tok-t">char</span></strong> c<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 작은 것 사이에 큰 것 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> tight  <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong>   b<span class="tok-x">;</span> <strong><span class="tok-t">char</span></strong> a<span class="tok-x">;</span> <strong><span class="tok-t">char</span></strong> c<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 큰 것부터 늘어놓기   </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-k">#pragma</span></strong><span class="tok-p"> pack(push, 1)                         </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 여기서부터 패딩 금지 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> packed <span class="tok-x">{</span> <strong><span class="tok-t">char</span></strong>  a<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> b<span class="tok-x">;</span> <strong><span class="tok-t">char</span></strong> c<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-k">#pragma</span></strong><span class="tok-p"> pack(pop)                             </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 원래 규칙으로 복귀   </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-t">struct</span></strong> cacheline <span class="tok-x">{</span> <strong>alignas</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">64</span></strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-t">int</span></strong> counter<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 강제로 넓게 정렬 </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-t">struct</span></strong> nested <span class="tok-x">{</span> <strong><span class="tok-t">struct</span></strong> loose inner<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> tag<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>report</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>name<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> size<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> align<span class="tok-x">,</span>
+                   <strong><span class="tok-t">size_t</span></strong> oa<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> ob<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> oc<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%-8s</span></strong><strong><span class="tok-s"> 크기 </span></strong><strong><span class="tok-s">%2zu</span></strong><strong><span class="tok-s">  정렬 </span></strong><strong><span class="tok-s">%2zu</span></strong><strong><span class="tok-s">   오프셋 a=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> b=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> c=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           name</strong><strong><span class="tok-x">,</span></strong><strong> size</strong><strong><span class="tok-x">,</span></strong><strong> align</strong><strong><span class="tok-x">,</span></strong><strong> oa</strong><strong><span class="tok-x">,</span></strong><strong> ob</strong><strong><span class="tok-x">,</span></strong><strong> oc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>report</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">loose</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">,</span></strong><strong> c</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>report</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">tight</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> tight</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> tight</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> tight</strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> tight</strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> tight</strong><strong><span class="tok-x">,</span></strong><strong> c</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>report</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">packed</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> packed</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> packed</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> packed</strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> packed</strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> packed</strong><strong><span class="tok-x">,</span></strong><strong> c</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">cacheline 크기 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">  정렬 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> cacheline</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> cacheline</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">nested    크기 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">  inner 오프셋 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">  tag 오프셋 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> nested</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> nested</strong><strong><span class="tok-x">,</span></strong><strong> inner</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> nested</strong><strong><span class="tok-x">,</span></strong><strong> tag</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 멤버 세 개의 크기 합과 구조체 크기의 차이 = 패딩 바이트 수 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">size_t</span></strong> members <strong><span class="tok-x">=</span></strong> <strong><span class="tok-k">sizeof</span></strong><span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">+</span></strong> <strong><span class="tok-k">sizeof</span></strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">+</span></strong> <strong><span class="tok-k">sizeof</span></strong><span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">loose: 멤버 합 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, 실제 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> -> 패딩 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> 바이트</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           members</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> members</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>loose    크기 12  정렬  4   오프셋 a=0 b=4 c=8
+tight    크기  8  정렬  4   오프셋 a=4 b=0 c=5
+packed   크기  6  정렬  1   오프셋 a=0 b=1 c=5
+
+cacheline 크기 64  정렬 64
+nested    크기 16  inner 오프셋 0  tag 오프셋 12
+
+loose: 멤버 합 6, 실제 12 -> 패딩 6 바이트
+</code></pre></div></div><p><code>char</code>, <code>int</code>, <code>char</code> 세 멤버의 크기 합은 6인데 구조체는 12바이트다. 6바이트가 <strong>패딩</strong>으로 들어간 것이다. 이유는 6장의 정렬이다 — <code>int</code>는 4의 배수 주소에 놓여야 하므로, 첫 <code>char</code> 뒤에 3바이트를 비워 <code>b</code>를 4번지로 민다. 그리고 마지막 <code>char</code> 뒤에도 3바이트가 붙는다(<strong>꼬리 패딩</strong>): 이 구조체를 배열로 늘어놓았을 때 다음 원소의 <code>int</code>도 정렬을 지켜야 하기 때문이다.</p><p>규칙 셋으로 정리된다.</p><ol><li>각 멤버는 <strong>자기 정렬의 배수 오프셋</strong>에 놓인다.</li><li>구조체 전체의 정렬은 <strong>멤버 정렬의 최댓값</strong>이다.</li><li>구조체 크기는 그 정렬의 <strong>배수로 올림</strong>된다(꼬리 패딩).</li></ol><p>그래서 <strong>멤버 순서만 바꿔도 크기가 준다.</strong> 예제의 <code>tight</code>은 큰 것부터 늘어놓아 12바이트를 8바이트로 줄였다. 구조체를 수백만 개 늘어놓는 프로그램에서는 이 한 줄의 재배열이 메모리와 캐시 적중률을 함께 바꾼다(11장).</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“패딩 바이트에는 0이 들어 있다”</strong></p><p>아니다. 패딩의 값은 <strong>정해져 있지 않다</strong>. 초기화로 0이 들어갈 수도, 이전에 그 자리를 쓰던 값이 남아 있을 수도 있다. 여기서 세 가지 실무 함정이 나온다.</p><ul><li><strong><code>memcmp</code>로 구조체를 비교하면 안 된다</strong>(60장) — 값이 같아도 패딩이 달라 “다르다”가 나올 수 있다. 멤버별로 비교한다.</li><li><strong>구조체를 통째로 해시하면 안 된다</strong> — 같은 이유로 같은 값이 다른 해시를 낸다.</li><li><strong>구조체를 그대로 파일이나 네트워크로 내보내면 안 된다</strong> — 패딩의 쓰레기 값이 함께 나가고(정보 누출이 되기도 한다), 받는 쪽의 배치가 다르면 해석도 어긋난다.</li></ul><p>구조체 대입(<code>b = a;</code>)이 패딩까지 복사하는지도 표준이 약속하지 않는다. <strong>의미 있는 것은 멤버뿐</strong>이라고 기억하면 전부 설명된다.</p></div><h3>44.5 패딩을 없애는 법, 정렬을 강제하는 법</h3><p>패딩이 곤란한 자리가 분명히 있다 — 파일 형식이나 통신 규약처럼 <strong>바이트 배치가 바깥에서 정해진</strong> 경우다. 그래서 구현들은 패딩을 끄는 장치를 제공한다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>packed 와 pragma pack — 표준이 아니다</p><pre><code data-lang="c"><strong><span class="tok-k">#pragma</span></strong><span class="tok-p"> pack(push, 1)          </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> MSVC·GCC·Clang 공통으로 널리 쓰인다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> header <span class="tok-x">{</span> <strong><span class="tok-t">char</span></strong> kind<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> length<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-k">#pragma</span></strong><span class="tok-p"> pack(pop)              </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 반드시 되돌린다 </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-t">struct</span></strong> header2 <span class="tok-x">{</span> <strong><span class="tok-t">char</span></strong> kind<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> length<span class="tok-x">;</span> <span class="tok-x">}</span> <strong><span class="tok-k">__attribute__</span></strong><span class="tok-x">((</span>packed<span class="tok-x">))</span><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> GCC·Clang </span></em><em><span class="tok-c">*/</span></em></code></pre><p>둘 다 <strong>표준 C가 아니다.</strong> 예제에서 <code>#pragma pack(1)</code>은 6바이트, 정렬 1의 구조체를 만들었다. <code>push</code>/<code>pop</code>을 짝지어 쓰지 않으면 그 뒤에 포함되는 헤더의 구조체 배치까지 바뀌어, 라이브러리와 배치가 어긋나는 고약한 버그가 난다 — 헤더 안에서 pack 을 열어 둔 채 끝내지 않는 것이 대표적 사고다.</p></div><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>packed 구조체의 멤버 주소를 넘기기</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> <strong><span class="tok-k">__attribute__</span></strong><span class="tok-x">((</span>packed<span class="tok-x">))</span> h <span class="tok-x">{</span> <strong><span class="tok-t">char</span></strong> k<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> len<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-t">void</span></strong> <strong>take</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p<span class="tok-x">)</span><span class="tok-x">;</span>
+<strong>take</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">.</span></strong><strong>len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 정렬되지 않은 주소 — 계약 밖이다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>packed 구조체의 멤버는 정렬이 어긋난 자리에 있을 수 있다. 그 주소를 평범한 <code>int *</code>로 넘기면, 받는 쪽은 정렬을 가정하고 접근한다 — 관대한 기계(x86) 에서는 느려질 뿐이지만 엄격한 기계에서는 그 자리에서 죽는다(6장). GCC와 Clang은 이 자리에 <code>-Waddress-of-packed-member</code> 경고를 낸다.</p><p>값을 읽는 것(<code>int n = s.len;</code>)은 컴파일러가 바이트를 모아 처리해 주므로 안전하다. <strong>주소를 새는 것</strong>이 문제다.</p></div><p><strong>정렬을 강제하는</strong> 반대 방향의 도구도 있고, 이쪽은 C23의 표준 낱말이다(71장).</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> cacheline <span class="tok-x">{</span> <strong>alignas</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">64</span></strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-t">int</span></strong> counter<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 64바이트 경계에 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>예제에서 이 구조체는 크기 64, 정렬 64가 됐다. 쓰는 자리가 분명하다 — 11장에서 본 <strong>거짓 공유</strong>를 피하려고 갈래마다 다른 캐시 라인에 카운터를 두거나, DMA·SIMD처럼 하드웨어가 정렬을 요구하는 경우다. 다만 공짜가 아니다: 위 구조체는 <code>int</code> 하나를 담으려고 64바이트를 쓴다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 파일 형식이나 통신 규약을 다룰 때는 packed 구조체를 쓰는 것이 정답인가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 더 안전한 정답이 따로 있다. <strong>바이트 열과 구조체 사이를 손으로 옮기는 것</strong> 이다.</p><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 읽기: 버퍼에서 필드를 하나씩 꺼낸다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">uint32_t</span></strong> len<span class="tok-x">;</span>
+<strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>len</strong><strong><span class="tok-x">,</span></strong><strong> buf </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+len <strong><span class="tok-x">=</span></strong> <strong>le32toh</strong><strong><span class="tok-x">(</span></strong><strong>len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 엔디안까지 명시한다 (5장) </span></em><em><span class="tok-c">*/</span></em></code></pre><p>packed 구조체를 버퍼에 겹쳐 놓는 방식(<code>struct h *p = (struct h *)buf;</code>)은 세 가지를 한꺼번에 가정한다 — 패딩 없음, 정렬 맞음, 엔디안 같음. 그중 하나만 어긋나도 조용히 깨지고, 게다가 타입을 갈아 끼우는 접근은 별칭 규칙 (49장)에도 걸린다. 필드별 <code>memcpy</code>는 길지만 세 가정을 전부 코드에 드러낸다. 제12부의 라이브러리가 하는 일도 바로 이 지루한 작업을 한 자리에 모으는 것이다.</p></p></div></div><h3>44.6 배열을 값으로 넘기기 — 되는가, 그리고 해야 하는가</h3><p>예제 후반이 그 대비다. <code>total(struct row r)</code>는 사본을 받아 고쳤고 원본은 그대로였다(<code>cell[0] = 1</code>). <code>total_raw(int cell[8])</code>은 포인터로 무너져 원본을 고쳤다(<code>cell[0] = 999</code>). 대입 <code>struct row copy = r;</code> 역시 배열 멤버까지 통째로 복사한다.</p><p>그러므로 이렇게 정리된다. <strong>C에서 배열을 값 의미론으로 다루고 싶으면 구조체로 감싼다.</strong> 이것이 유일한 방법이고, 실제로 쓰이는 자리도 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>쓸 만한 자리</strong></th><th><strong>이유</strong></th></tr><tr><td>작은 고정 크기 벡터·행렬(<code>struct vec3</code>, <code>struct mat4</code>)</td><td>값처럼 계산하는 것이 자연스럽다</td></tr><tr><td>고정 크기 식별자·키(<code>struct uuid { unsigned char b[16]; }</code>)</td><td>복사가 싸고 실수 여지가 없다</td></tr><tr><td>배열을 <strong>반환</strong>해야 할 때</td><td>배열은 반환할 수 없지만 구조체는 된다</td></tr><tr><td>불변으로 넘기고 싶을 때</td><td>사본이라 호출된 쪽이 원본을 못 건드린다</td></tr></table></div><p class="float-caption">표 44.1</p></figure><p>대가도 분명하다.</p><p><strong>스택 사용량.</strong> 사본은 대개 호출된 함수의 스택 프레임에 놓인다. 16KiB짜리 구조체를 값으로 넘기면 호출 한 번에 그만큼이 더 쌓인다 — 실제로 재어 보면 호출 전후의 스택 위치가 구조체 크기만큼 벌어진다. 스택은 대개 8MiB 안팎이고 (36장), 재귀나 갈래마다 따로 잡히는 스택(68장)에서는 훨씬 작을 수 있다. 큰 구조체를 값으로 넘기는 재귀는 스택 넘침의 지름길이다.</p><p><strong>복사 비용.</strong> 다만 “복사가 반드시 일어난다”고 말하면 부정확하다. 호출 규약이 정한다 — 작은 구조체(대개 두 워드 이하)는 <strong>레지스터로</strong> 건너가 복사랄 것이 없고, 큰 구조체는 호출자가 메모리에 만들어 그 주소를 숨겨 넘기는 방식이 흔하다. 게다가 함수가 인라인되면 컴파일러가 사본 자체를 없애 버릴 수도 있다. 그래서 정확한 문장은 이렇다: <strong>의미는 언제나 복사이고, 실제 비용은 크기와 호출 규약과 최적화가 정한다.</strong></p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“구조체를 값으로 넘기면 항상 느리다”</strong></p><p>크기에 달렸다. <code>struct point { int x, y; }</code>처럼 작은 것은 값으로 넘기는 편이 오히려 빠르고 읽기도 좋다 — 포인터를 넘기면 역참조가 생기고, 컴파일러가 “이 포인터로 누가 값을 바꿀 수 있다”고 의심해야 해서 최적화가 줄어든다.</p><p>실무의 어림 규칙은 이렇다. <strong>두어 워드까지는 값으로, 그보다 크면 <code>const 포인터</code>로.</strong> 그리고 이 선택은 성능만의 문제가 아니라 계약의 문제이기도 하다 — 값으로 받으면 “원본을 건드리지 않는다”가 문법으로 보장되고, 포인터로 받으면 <code>const</code>로 약속할 뿐이다.</p></div><div class="dev recap"><p class="dev-label">복습 정리</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>접근</td><td>왼쪽이 값이면 <code>.</code>, 포인터면 <code>-></code>(=<code>(*p).</code>)</td></tr><tr><td>복합 리터럴</td><td><code>(struct T){…}</code> — lvalue이고 수명은 <strong>블록 끝</strong></td></tr><tr><td>주소 반환</td><td>복합 리터럴의 주소를 함수 밖으로 내보내지 않는다</td></tr><tr><td>이름 붙은 인자</td><td>옵션 구조체 + 지정 초기화. 빠뜨린 멤버는 0</td></tr><tr><td>기본값 설계</td><td><strong>0이 뜻이 통하는 기본값</strong>이 되게 필드를 정한다</td></tr><tr><td>패딩</td><td>정렬 때문에 생긴다. 값은 정해져 있지 않다</td></tr><tr><td>멤버 순서</td><td>큰 것부터 늘어놓으면 크기가 준다</td></tr><tr><td><code>memcmp</code>·해시·직렬화</td><td>구조체를 통째로 다루지 않는다</td></tr><tr><td><code>pack</code></td><td>표준 아님. <code>push</code>/<code>pop</code> 짝, 멤버 주소를 새지 않는다</td></tr><tr><td><code>alignas</code></td><td>표준. 거짓 공유 회피·하드웨어 요구</td></tr><tr><td>배열을 값으로</td><td>구조체로 감싸면 된다. 스택과 크기를 함께 본다</td></tr></table></div><p class="float-caption">표 44.2</p></figure></div><p>구조체를 부리는 법을 익혔다. 다음 장은 같은 기억을 <strong>다른 눈으로</strong> 보는 장치 — 공용체와 표현의 세계다. 5장에서 예약해 둔 엔디안 관찰 시연이 드디어 열린다.</p>
+<div class="nav"><a href="ch43.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch45.html">다음 →</a></div>
+</div></main></body></html>
