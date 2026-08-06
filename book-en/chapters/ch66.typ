@@ -29,8 +29,9 @@
 #idx("signal")  A close reading of one header, `<signal.h>`. Where it came from (a Unix
   inheritance), the exact shape of its two functions with their arguments and
   return values, what `sig_atomic_t` really is, the list of what a handler may do,
-  POSIX's `sigaction` and the inside of its structures, and how servers, shells
-  and terminals actually use signals.
+  why memory cannot be allocated inside one, how the kernel saves and restores
+  registers, POSIX's `sigaction` and the inside of its structures, and how
+  servers, the JVM and garbage collectors actually use signals.
 ]
 
 #chapter-questions()
@@ -191,6 +192,137 @@ Since C11, lock-free atomic types such as `atomic_int` may also be used in a
 handler (chapter 69). In a program with several threads that is the more accurate
 choice — `sig_atomic_t` guarantees only *signal versus main flow*, not thread
 against thread.
+
+== Handlers and memory — why `malloc` is not on the list
+
+The most keenly felt absence from the permitted list is memory allocation. To
+record anything inside a handler you need a vessel, and neither `malloc` nor
+`free` may be called. Seeing why at the machine level makes the rule stick.
+
+An allocator manages a data structure called the *free list* (chapter 42). One
+`malloc` is a multi-step update that detaches a piece from that list and rewrites
+the links of its neighbours. There is necessarily a moment when the update is
+half done, and a signal can cut in *at exactly that moment*.
+
+#dtable(
+  columns: 2,
+  [*The moment it cuts in*], [*If the handler calls `malloc`*],
+  [The free-list links are half rewritten], [It follows a half-rewritten list and hands out the wrong piece],
+  [Just before the block's size is written], [A later `free` returns it with the wrong size],
+  [While the allocator's lock is held], [It waits for a lock it holds itself — deadlock],
+)
+
+The third row is the nastiest. Modern allocators keep an internal lock against
+being called from several threads at once. Let the thread holding that lock take
+a signal, and let the handler call `malloc` again, and the lock is never
+released. *The program does not die; it stops* — the hardest kind of accident to
+diagnose.
+
+There is one worse combination. Escaping from a handler with `longjmp`
+(chapter 67). Here the trouble comes without calling `malloc` again — because you
+*jump out still holding the lock*. From then on the main flow's first `malloc`
+hangs. Half the reason chapter 67 calls jumping from a handler dangerous is this.
+
+#qa[
+  Then what do you do when a handler really must record something?
+][
+  *Take it in advance.* Allocate the vessel you need *before* installing the
+  handler, and let the handler only write into it. A static array is better still
+  — there is no allocation at all.
+
+  ```c
+  static char report[4096];               /* obtained up front */
+  static volatile sig_atomic_t report_len;
+  ```
+
+  If the amount to record is not bounded, it was never a job for a handler. Raise
+  a flag and hand it to the main flow. If something truly must be recorded now —
+  a crash report, where the next moment is certain death — put it in a
+  pre-allocated buffer and push it out with `write`. That is what Redis's crash
+  report, seen later, does.
+]
+
+== What a signal saves and restores — the register context and `errno`
+
+A handler cuts in halfway through a function and *returns to exactly that place*,
+even though half-computed values are scattered across the registers. How?
+
+*Because the operating system saves every register and restores them.* When
+delivering a signal the kernel builds a signal frame on the stack and puts the
+whole current register set into it (on Linux, `ucontext_t` is that vessel). When
+the handler returns, `sigreturn` puts those values back. So *whichever
+instruction boundary it cut in at, the computation carries on.*
+
+#demo("examples-en/ch66/sig_context.c")
+
+The third part of the demonstration confirms it. A signal taken in the middle of
+a thousand-round computation (at round 500) leaves the result equal to the one
+computed undisturbed.
+
+#qa[
+  Does `setjmp`/`longjmp` not do the same thing?
+][
+  No. This is the decisive difference between the two devices.
+
+  #dtable(
+    columns: 3,
+    keycol: false,
+    [], [*A signal*], [*`longjmp` (chapter 67)*],
+    [Who saves], [The kernel], [The `setjmp` macro],
+    [What is saved], [*Every* register], [Only the callee-saved ones (eight slots)],
+    [Where it returns], [The very instruction interrupted], [The place that called `setjmp`],
+    [Local variables], [All intact], [*No guarantee unless `volatile`*],
+  )
+
+  A signal, then, is *a complete context switch*, and `longjmp` is *a partial
+  restoration*. That is why a handler may return into the middle of an expression
+  while `longjmp` may only be used in the four contexts the standard fixes
+  (chapter 67).
+]
+
+=== `errno` is the exception — you must look after it yourself
+
+If the kernel looks after the registers, what is left? *State at the C level.*
+The one most often hit is `errno`.
+
+A handler that calls nothing but `write` still changes `errno` when that call
+fails. If the main flow was about to read the reason for a failed call, the value
+it reads is the one the signal left behind.
+
+The first part of the demonstration shows it in the flesh — `errno`, which was
+`ENOENT` (2) before the signal, came back as `EBADF` (9) after the handler. An
+attempt to open a missing file was turned into a bad-file-descriptor error.
+
+The prescription is two lines. *Save on the way in, restore on the way out.*
+
+```c
+static void on_signal(int sig) {
+    int saved = errno;          /* first line */
+    /* … raise a flag, write, … */
+    errno = saved;              /* last line */
+}
+```
+
+Code that omits it *mostly works* — the fault shows only when a signal happens to
+arrive at that moment. So it is better kept as a discipline.
+
+#platform[
+  Where the stack goes — the red zone and an alternate stack
+][
+  The kernel builds the signal frame *on the current stack*. Two pieces of
+  practical knowledge follow.
+
+  First, the x86-64 SysV convention has a 128-byte *red zone* below the stack
+  pointer that a function may use without growing the stack. The kernel skips
+  that zone when building a signal frame — otherwise it would overwrite the
+  interrupted function's temporaries. The practice of building kernel code with
+  `-mno-red-zone` comes from here.
+
+  Second, if the `SIGSEGV` came from *the stack overflowing*, there is no stack on
+  which to build the handler either. So POSIX provides `sigaltstack` to register a
+  separate stack for handlers, used by passing `SA_ONSTACK`. Tools that diagnose
+  stack overflow stand on this device.
+]
 
 == The working pattern — raise a flag and return at once
 
@@ -392,6 +524,37 @@ those with timeouts), so robust code keeps the retry loop as well.
   above.
 ]
 
+=== Which software uses signals, and why
+
+The reason for using signals differs from program to program, and those reasons
+make the device's place clear.
+
+#dtable(
+  columns: 3,
+  [*What*], [*What it uses them for*], [*Why it had to be a signal*],
+  [nginx, Apache], [`SIGHUP` to reload configuration, `SIGUSR2` to swap the executable], [The cheapest channel by which an operator gets *from outside to inside*. No port, no socket],
+  [PostgreSQL], [Query cancellation and shutdown requests (the handler only raises a flag)], [One process per connection, so a signal between processes *is* the means of communication],
+  [Redis], [`SIGSEGV`/`SIGBUS` handlers that print a crash report], [The *last chance* to record the state at the moment of death — into a pre-allocated buffer, out through `write`],
+  [The HotSpot JVM], [`SIGSEGV` for null checks and safepoints], [Removes the check from the normal path entirely and leaves the rare case to a hardware trap],
+  [WebAssembly runtimes], [`SIGSEGV`/`SIGBUS` trap handlers for out-of-bounds access], [Leaves bounds checking to guard pages, removing a compare from every access],
+  [The Boehm GC], [`mprotect` + `SIGSEGV` as a write barrier, signals to stop threads], [The only way to put a collector on a C program without help from the language],
+  [libuv, Node.js], [A dedicated thread and a pipe turn signals into events], [To mix with an event loop, a signal must become a file descriptor],
+  [CPython], [The handler only raises a flag; the bytecode loop checks it], [Interpreter state cannot be touched from a handler — the permitted list again],
+  [libcurl], [Ignores `SIGPIPE`; older versions used `SIGALRM` to time out name resolution], [A legacy of days with no other way to impose a timeout. Risky enough to deserve its own off switch (`CURLOPT_NOSIGNAL`)],
+)
+
+They sort into three groups. *Instructions arriving from outside* (nginx,
+PostgreSQL — the channel of operation), *lifting a hardware trap into user code*
+(the JVM, WebAssembly, the GC, Redis — emptying the normal path and signalling
+only the exception), and *turning signals into events* (libuv, CPython — the
+modern prescription for getting around the permitted list).
+
+The middle group is the interesting one. "Remove the null check and catch it with
+`SIGSEGV`" is the archetype of an optimization that *pushes the cost onto the
+rare case* — one instruction is deleted from the normal path at the price of a
+long trip through the kernel and a handler when the accident happens. It is the
+same calculation as chapter 11's "a rare branch may be expensive."
+
 #antipattern("cleaning up directly in the handler")[
   ```c
   static void on_term(int sig) {
@@ -422,6 +585,8 @@ those with timeouts), so robust code keeps the retry loop as well.
     [`signal`'s return], [*The previous* disposition; `SIG_ERR` means failure],
     [Inside a handler], [The permitted list is all there is — in practice, one assignment],
     [`volatile sig_atomic_t`], [Both are needed: one against half values, one against optimisation],
+    [Allocation], [`malloc` is barred by the free list and the lock — obtain vessels *in advance*],
+    [Context], [The kernel restores every register. Only `errno` must be saved by hand],
     [POSIX], [`sigaction` fills the three gaps (reset, re-entry, `EINTR`)],
     [In practice], [Handler raises a flag, the main flow cleans up; ignore `SIGPIPE`],
     [Modern alternatives], [`signalfd`, `kqueue`, a dedicated thread — turn signals into *events*],

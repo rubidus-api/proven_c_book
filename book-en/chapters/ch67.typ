@@ -25,9 +25,10 @@
 #organizer[
 #idx("non-local jump")  A close reading of one header, `<setjmp.h>`. Why it exists (the makeshift of a
   language without exceptions), the exact shape and return values of the two
-  words, what `jmp_buf` really is, the four contexts the standard permits and the
-  `volatile` rule, and how real software such as libjpeg and Lua uses it — along
-  with today's alternatives.
+  words, the eight slots of `jmp_buf` and which registers come back, the
+  `volatile` rule that follows from them (measured on a real build), how real
+  software such as libjpeg and PostgreSQL copes with the memory left behind by a
+  jump, and today's alternatives.
 ]
 
 #chapter-questions()
@@ -185,6 +186,56 @@ The standard is also explicit about what is *not* saved: *the state of the
 floating-point environment, of open files, or of any other component of the
 abstract machine.* That one sentence produces every pitfall in the next section.
 
+=== Looking inside the eight slots
+
+On this implementation (glibc, x86-64) the 200 bytes of a `jmp_buf` divide thus.
+
+#dtable(
+  columns: 2,
+  [*Part*], [*Size*],
+  [Eight register slots (`long [8]`)], [64 bytes],
+  [Whether the signal mask was saved (`int` + padding)], [8 bytes],
+  [Room for the signal mask], [128 bytes],
+)
+
+Print the eight slots and their order appears — RBX, RBP, R12, R13, R14, R15, the
+stack pointer, the return address. That is exactly the list the x86-64 SysV
+calling convention marks *callee-saved* (chapter 39's calling convention).
+
+Two things stand out.
+
+*First, three of the slots hold scrambled values.* Print the slots for RBP, the
+stack pointer and the return address and they do not look like stack addresses.
+glibc stores them mixed with a per-thread guard value — a device against
+overwriting a `jmp_buf` to jump to an address of the attacker's choosing. It
+confirms the rule that the inside of a `jmp_buf` is not to be edited by hand.
+
+*Second, registers not on that list are not saved.* RAX, RCX, RDX, RSI, RDI and
+R8--R11 are the ones the convention marks "the caller's business" (caller-saved),
+so `setjmp` does not keep them.
+
+=== And that is the `volatile` rule
+
+Read those two facts from a local variable's point of view and the next section's
+rule follows by itself. A compiler puts a local in one of three places.
+
+#dtable(
+  columns: 3,
+  [*Where the variable was*], [After `longjmp`], [*Why*],
+  [In memory on the stack], [The changed value, intact], [`longjmp` restores only the stack *pointer*. It does not touch the contents],
+  [In a callee-saved register], [The old value from `setjmp`], [That slot is restored wholesale from the `jmp_buf`],
+  [In a caller-saved register], [Anything at all], [It is neither saved nor restored],
+)
+
+Turn optimization off and the compiler mostly puts locals on the stack, so only
+the first row happens — which is why nothing *appears* wrong at `-O0`. Turn it on
+and heavily used variables move into registers, and the second and third rows
+appear.
+
+It is also why the standard writes *"indeterminate representation"* rather than
+"becomes the old value". The result depends on where the variable was, so the
+standard promises none of them.
+
 == What happens to values on return — the `volatile` rule
 
 The most practical rule in this chapter. The standard (§7.13.2.1) settles it thus.
@@ -256,6 +307,44 @@ So code that uses this device keeps one discipline without exception — *gather
 the places that take and release resources inside the function that called
 `setjmp`.* Having jumped back, that function can clean up itself.
 
+=== The quieter accident — a pointer reverts to its old value
+
+The previous counter-example was a `free` *that never ran*. There is a quieter
+one. The cleanup code runs perfectly well, but *the pointer saying what to free*
+falls foul of the previous section's rule and reverts to its old value.
+
+#demo("examples-en/ch67/jmp_leak.c")
+
+At `-O0` both survive, but build the same code at `-O1` or above and the
+non-`volatile` one reverts to the null it held at `setjmp` (we checked). Then
+`free(risky)` frees null, does nothing, and 64 bytes leak for good — clear the
+static copy and ASan reports it as "Direct leak of 64 byte(s)".
+
+*There is cleanup code, and it still leaks.* Reading the code will not show it,
+and it appears only in the optimized build that ships. Of the accidents in this
+pattern it is the hardest to diagnose.
+
+There is an opposite direction too. If the old value is not null but *an address
+already freed*, it is a double free.
+
+#antipattern("Code that reverts to an old address and frees it twice")[
+  ```c
+  char *p = malloc(64);
+  if (setjmp(env) == 0) {
+      free(p);            /* freed once */
+      p = malloc(128);    /* and taken afresh */
+      work(p);            /* a longjmp happens here */
+  }
+  free(p);                /* if p reverted, this frees what was already freed */
+  ```
+  Chapter 42's double free, reproduced exactly. The allocator's ledger is wrecked,
+  so every allocation after it is contaminated.
+]
+
+The discipline is one line — *do not keep a pointer that must survive a `longjmp`
+in an automatic local.* Give it `volatile`, or put it in a static variable or a
+context struct. The `load_image` of the next demonstration does exactly that.
+
 #demo("examples-en/ch67/jmp_error.c")
 
 The demonstration's `load_image` is that structure. The `malloc` happens *before*
@@ -300,6 +389,64 @@ plentiful.
   hardly any choice besides `setjmp`/`longjmp`. Designed afresh today one would
   take chapter 48's "failure as a value", but within the constraints of the 1990s
   it was a reasonable decision.
+]
+
+=== How do they cope with memory — the answer is always the same
+
+Read the previous table again, this time asking only "who frees the memory taken
+before the jump?"
+
+#dtable(
+  columns: 3,
+  [*What*], [*Who frees it*], [*The device*],
+  [libjpeg], [One call to `jpeg_destroy_*`], [The library ties every allocation into pools of its own memory manager],
+  [libpng], [One `png_destroy_read_struct`], [The same way],
+  [Lua], [The garbage collector], [Every allocation is registered in the interpreter's state],
+  [PostgreSQL], [Resetting a memory context where the error is caught], [An arena per query and per transaction],
+  [Test frameworks], [Wholesale, when a test ends], [An arena per test, or separate processes altogether],
+)
+
+*The common thread is visible — they are all arenas.* The flaw that `longjmp`
+cleans up nothing was worked around by a structure in which *no individual `free`
+is needed*: tie everything taken into one bundle, and at the place you jump back
+to, throw away that one bundle.
+
+So one more conclusion attaches. *Use `setjmp` without an arena and a leak is a
+matter of time.* Part XII's arena is also the precondition that makes this
+pattern legitimate.
+
+#realcase("PostgreSQL's `PG_TRY`/`PG_CATCH`")[
+  PostgreSQL builds something very like exceptions out of this device.
+  `PG_TRY` and `PG_CATCH` are macros, and inside them are `sigsetjmp` and a global
+  exception stack. Reporting an error deep down jumps to the nearest `PG_CATCH`.
+
+  But a single query takes thousands of pieces of memory. How is that coped with?
+  *Memory contexts.* Every allocation belongs to some context, and resetting that
+  context where the error is caught makes thousands of pieces vanish at once. An
+  arena used as if it were a language feature.
+
+  And the previous section's rule is written into that source as a convention —
+  *a local variable modified inside a `PG_TRY` block and used in the `PG_CATCH`
+  must be declared `volatile`.* It is precisely the list of what a large C program
+  needs in order to use this device safely: one arena, one `volatile` convention,
+  and macros around the jump so that people never write `longjmp` themselves.
+]
+
+#qa[
+  What happens to `alloca` and variable-length arrays?
+][
+  Those alone are cleaned up automatically. They were taken from the stack, so
+  when the stack pointer rewinds they go with it — the VLAs of the skipped frames
+  do not leak.
+
+  The standard does nail down one thing, though. *A `longjmp` that would leave the
+  scope of an identifier with a variably modified type is undefined behaviour* —
+  the implementation loses its chance to tidy that place. So the rule becomes "do
+  not jump across a block in which a VLA is alive."
+
+  From the memory point of view it comes to this — *what was taken from the stack
+  is cleaned up for free; what was taken from the heap is cleaned up by nobody.*
+  That one line is why all the libraries above went to arenas.
 ]
 
 == POSIX's `sigsetjmp`/`siglongjmp`
@@ -382,7 +529,9 @@ written in the code, and the compiler checks it. `setjmp` is needed only when
     [`setjmp`], [A macro. 0 when called directly, `val` when jumped to (0 becomes 1)],
     [Context restriction], [Controlling expression, comparison with a constant, `!`, expression statement — four only],
     [`longjmp`'s premises], [The saving function is still alive, and it is the same thread],
-    [`jmp_buf`], [An array type. Stack pointer, return address, callee-saved registers],
+    [`jmp_buf`], [An array type. Eight callee-saved slots plus room for a signal mask],
+    [Registers], [Only callee-saved ones are restored → stack locals live, register locals revert],
+    [Pointers], [`free` through a reverted pointer means a leak or a double free — measured],
     [The `volatile` rule], [Automatic, non-`volatile`, changed in between → no guarantee (measured)],
     [Resources], [Nobody cleans up — keep taking and releasing in one function],
     [Today's choice], [Mostly return values and `goto cleanup`. Legitimate only in deep parsers],
