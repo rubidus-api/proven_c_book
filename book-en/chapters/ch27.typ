@@ -63,7 +63,7 @@ causes accidents if it does not know the difference.
   Outside the contract — undefined behaviour. It is one of the rare cases where
   what is undefined in mathematics is undefined in C too, but the result is not
   as well-behaved as in mathematics: on many machines the program collapses on
-  the spot, and under some optimisations stranger things happen (chapter 48).
+  the spot, and under some optimisations stranger things happen (chapter 49).
   Checking for zero before dividing is the programmer's job — and having learned
   branching in chapter 30, we will be able to write that check in code.
 ]
@@ -113,7 +113,7 @@ changed with the editions.
 #misconception[
   "C23 mandated two's complement, so the negative-shift problem is gone"
 ][
-  Two's complement representation was indeed mandated (chapter 65). The shift
+  Two's complement representation was indeed mandated (chapter 66). The shift
   clause, however, was left alone — *left-shifting a signed negative value is
   still outside the contract in C23*, and *right-shifting a negative value is
   still implementation-defined*. That gcc and clang do an arithmetic shift is a

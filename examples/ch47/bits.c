@@ -1,5 +1,5 @@
 /* 실수의 속을 열어 본다 — 부호·지수·가수가 실제로 어떻게 들어 있는가.
-   타입 퍼닝은 공용체가 아니라 memcpy 로 한다(36·44장의 규칙). */
+   타입 퍼닝은 공용체가 아니라 memcpy 로 한다(36·45장의 규칙). */
 #include <inttypes.h>
 #include <math.h>
 #include <stdio.h>

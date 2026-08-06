@@ -1,199 +1,195 @@
 #import "../../book/lib.typ": *
 
-= The traps of reading and writing — `<stdio.h>` ②
+= Streams in reality — `<stdio.h>` ①
 
 #prereq(
-  ([chapter 57, Streams in reality], [the state of a stream]),
-  ([chapter 39, Safe input, and the appearance of proven], [safe input]),
+  ([chapter 10, The origin of streams], [the origin of streams]),
+  ([chapter 22, Output], [output in reality]),
 )
 
 #deepqa[
-  Chapter 39 said `gets` was deleted from the standard, and chapter 55 said its
-  funeral took decades. Then what exactly was wrong with `gets`, and why did it
-  take so long?
+  Chapter 10 said a stream is "a band whose other end the program does not know",
+  and that this is why the same program serves screen, file and other programs
+  alike. Then *when* do the bytes a program wrote actually arrive at their
+  destination?
 ][
-  The problem is simple — *it does not take the size of the destination buffer.*
-  Its signature is only `char *gets(char *s)`, so there is no way at all to know
-  how much may be written, and if the input is long it necessarily overflows. It is
-  one of the rare functions for which "use it carefully and it is fine" does not
-  hold — a safe way to use it does not exist.
-
-  It took long because of the standard's character (chapter 56). Not breaking code
-  already written is the standard's duty, so C99 marked it "do not use"
-  (deprecated) and only C11 deleted it. For over twenty years in between, every
-  compiler spat warnings and yet compiled it.
+  Usually not at once. The standard library keeps a *buffer* per stream, gathers
+  bytes there and sends them out in one go — because system calls are expensive (we
+  meet this again in Part XII). There are three ways of deciding when to empty it.
+  *Full buffering* is when the buffer fills, *line buffering* when a newline is
+  met, *unbuffered* is immediately. Standard output connected to a terminal is
+  usually line-buffered, and when redirected to a file it turns into full
+  buffering — meaning *the moment at which the same program's output appears
+  changes with what it is connected to*, and that is this chapter's first trap.
 ]
 
 #organizer[
-  We begin with the story of the only function ever *deleted* from the standard
-  library. Why `gets` died, what stands in its place, and what traps that
-  replacement carries in its turn. Then the remaining dangers of formatted input
-  and output, and how safe the functions known as safe really are.
+  We look at the floor beneath the header used most. How a stream is really opened
+  and closed, when the buffer is emptied, where failure shows itself — and the
+  misuse of `feof`, the place introductory books get wrong over and over. The
+  notion of a stream learned in chapter 10 becomes an API here.
 ]
 
 #chapter-questions()
 
-== The death of `gets` and its successors
+== Open, write, close — failure can happen three times
 
-The hole the 1988 internet worm bored into was exactly this function (chapter 39).
-Today `gets` is not in the standard, and three remain in its place.
+#demo("examples-en/ch58/streams.c")
 
-#dtable(
-  columns: 3,
-  [*function*], [*status*], [*assessment*],
-  [`gets`], [deleted in C11], [there is no way to use it. mend it wherever it is seen in old code],
-  [`fgets`], [standard], [the realistic standard solution. but truncation must be checked by hand],
-  [`gets_s`], [C11 annex K (optional)], [implementations barely exist — treated in chapter 65],
-)
+It is worth noticing that the example checks for failure in three places.
 
-`fgets` is the right answer, but it is not the end in itself. As seen in
-chapter 57, if the buffer is too small it quietly reads only the front piece.
+*① `fopen`* — on failure it returns null. The reason is left in `errno`, and
+`perror` prints it as a sentence a human can read (chapter 65). The file may not
+exist, permission may be lacking, or too many files may be open.
 
-#demo("examples-en/ch58/reading.c")
+*② Writing* — `fprintf` returns the number of characters printed and gives a
+negative value on failure. Code that checks it is rare, but if the disk fills or a
+pipe breaks it shows itself here.
 
-The difference between the two approaches is clear. The fixed buffer split the
-long line into five pieces, while the edition that reads while growing returned
-the 34-byte line whole.
-
-The rules for reading code come to three in the end.
-
-+ Turn the loop on `fgets`'s return value (whether it is null).
-+ Check whether the line read has a newline and judge *whether it was truncated*.
-+ Erase the newline with `buf[strcspn(buf, "\n")] = '\0';` — this idiom is safer
-  than hand-written code based on `strlen`.
+*③ `fclose`* — here is the real trap. It is the place where what remained in the
+buffer is finally sent out, so *it is common for a write failure to show itself
+for the first time on closing*. A program that must not lose data therefore always
+checks `fclose`'s return value.
 
 #antipattern[
-  `scanf("%s", buf)` — reading a string without a width
+  Ignoring the failure of closing
 ][
   ```c
-  char name[32];
-  scanf("%s", name);        /* exactly the same danger as gets */
+  fprintf(f, "%s\n", important);
+  fclose(f);                  /* nobody asked whether it failed */
+  puts("saved");              /* it may in fact not have been saved */
   ```
-  Give `%s` no width and it writes without knowing the destination's size. Always
-  write *a number one less than the buffer size*, as in `scanf("%31s", name)` (for
-  the NUL). And that this number must be written by hand is this API's weakness —
-  change the buffer size and the format string must be mended with it, which is
-  easy to forget.
+  In buffered writing, the moment at which "it succeeded" may be said is *after
+  closing has succeeded*. If it must truly be nailed to the disk, flush with
+  `fflush` before closing and call the platform's synchronisation call (`fsync` and
+  the like) as well — that is what a database does.
 ]
 
-== The remaining traps of formatted input
+== How to know the end of a file — the misuse of `feof`
 
-Chapter 55 took the grammar apart, so here we gather only the places where
-accidents happen.
+The most widespread wrong answer is here.
 
-*First, not checking the return value.* The `scanf` family returns the number of
-items filled. Without checking it you end up using the *previous value* of the
-variable that failed (we see it in the flesh in chapter 71).
+#demo("examples-en/ch58/feof_bad.c")
 
-*Second, leftover input.* After `scanf("%d", &n)` a newline remains in the input
-buffer. Call `fgets` in that state and it reads an empty line. Not mixing them is
-the best policy, and if you must mix, empty the rest of the line and move on.
+Why is `while (!feof(f))` wrong? `feof` is *not a prophet but a recorder* — the
+mark saying "the end of the file was reached" is turned on only *after* a read has
+failed. So right after reading the last value it is still off, the loop turns once
+more, and the result of the failed read (= the previous value, unchanged) is used
+as it stands. That 30 was printed twice in the example is the evidence.
 
-*Third, integer overflow.* Give `99999999999` to a `%d` and it is outside the
-contract. If the range must be checked, read with `strtol` (chapter 60).
-
-*Fourth, `%s` and the locale.* The definition of whitespace may change with the
-locale (chapter 61).
-
-#misconception[
-  "`snprintf` instead of `sprintf` is safe"
-][
-  Half right. `snprintf` is safe in that it does not overrun the buffer, but it
-  brings in the new danger of *quietly truncating*. And the meaning of its return
-  value is peculiar — it is not the number of characters written but *the number of
-  characters that would have been needed*.
-
-  ```c
-  int need = snprintf(buf, sizeof buf, "%s/%s", dir, name);
-  if (need < 0 || (size_t)need >= sizeof buf) {
-      /* truncated — this path must not be used as it is */
-  }
-  ```
-
-  Leave this check out and it becomes "I used the safe function and opened the
-  wrong file." We run this pattern for real in chapter 71.
-]
-
-== The traps on the output side
-
-*`printf`'s return value* — code that checks it is rare, but it fails in the
-situation of a broken pipe (`program | head`, say). For a program that keeps logs
-there is a value worth checking.
-
-*The format string vulnerability* — the one treated in chapter 55. The rule is
-one. The format string must always be a constant written by the program.
-
-*`%n`* — the conversion that *writes* the number of characters printed to where
-the argument points. Being the passage that promotes a format string vulnerability
-into an arbitrary memory write, several implementations block it by default today.
-There is almost no reason to use it.
-
-*Buffering and order* — mix `printf` (standard output, usually line-buffered) with
-`fprintf(stderr, ...)` (mostly unbuffered) and the order in which things appear on the
-screen can be reversed. Half of the occasions on which "the output vanished"
-during debugging are this, and the other half are cases where the buffer was not
-emptied just before a collapse.
-
-#realcase[
-  Why output vanishes — buffers and abnormal termination
-][
-  When a program dies by `abort` or a signal, the output remaining in the buffer
-  vanishes with it. That is why the inference "the last printed line came out, so
-  execution reached at least there" is dangerous — in reality several more lines
-  may have run and died trapped in the buffer.
-
-  The practice of sending debugging output to `stderr` came from here. What the
-  standard promises about `stderr` goes only as far as *"it is not fully buffered"*
-  (that is, it is unbuffered or line-buffered), and real implementations mostly make it
-  unbuffered. So the record right up to the moment of death is *likely* to survive, but
-  that is not a guarantee — it can be set again with `setvbuf`, and the manner of
-  abnormal termination changes the outcome too. It is also
-  the reason chapter 17 discussed debuggers and logs together.
-]
-
-== The remaining functions that handle files
+The rule is one. *Control the loop by the reading function's return value.* `feof`
+and `ferror` are used after the loop ends, to tell "why did it end".
 
 #dtable(
   columns: 3,
-  [*function*], [*what it does*], [*to beware of*],
-  [`remove`], [delete a file], [implementation-defined for an open file],
-  [`rename`], [change a name], [if the target exists it fails or overwrites, depending on the implementation],
-  [`tmpfile`], [create a temporary file], [deleted automatically on closing. the only portable safe edition],
-  [`tmpnam`], [generate a temporary name], [★ a race condition — it can be intercepted between receiving the name and creating the file],
-  [`setvbuf`], [specify the buffering mode], [it may be called only right after opening the stream],
-  [`freopen`], [reconnect a stream], [used when turning `stdout` to a file],
+  [*function*], [*success*], [*end or failure*],
+  [`fgets`], [the buffer pointer], [null — tell them apart with `feof`/`ferror`],
+  [`fscanf`], [the number of items filled], [0 (format mismatch) or `EOF`],
+  [`fgetc`], [the character read (an unsigned char as an int)], [`EOF`],
+  [`fread`], [the number of *elements* read], [fewer than requested means the end or an error],
 )
 
-`tmpnam` is in the standard, but not using it is the right answer — because
-another program can slip in between the returning of the name and the creating of
-a file with that name (the class of race called TOCTOU). Within the standard
-`tmpfile` is the answer, and if a platform API is permitted, `mkstemp` (POSIX).
-
-#qa[
-  Then can "safe file handling" be written with standard I/O alone?
+#misconception[
+  "The result of `fgetc` may be put in a `char`"
 ][
-  Mostly it can. But there are clearly places where the standard gives no answer —
-  handling directories, file locking, atomic replacement (writing to a temporary
-  file and then renaming), permissions, symbolic links. All of these are the
-  territory of platform APIs, and so a serious program lays one thin layer over
-  standard I/O. Part XII's file layer is exactly that layer.
+  It may not. `fgetc` returns an `int`, and that value is either *a character in
+  0–255* or *`EOF`* (usually −1). The moment it goes into a `char` the two can no
+  longer be told apart — on an implementation where `char` is signed, a 0xFF byte
+  becomes −1 and is identical to `EOF`, and where it is unsigned, `EOF` becomes 255
+  and it never ends. So `int c; while ((c = fgetc(f)) != EOF)` is the canonical
+  form. This one line is also the idiom most often miscopied in introductions to C.
 ]
 
+== Lines longer than the buffer
+
+That is what the last part of the example shows. If the buffer is too small
+`fgets` reads *only that far* and stops — it is not an error. So without checking
+whether a newline is in there, what you believed to be "one line" may in fact be
+the front piece of a line.
+
+Read `one\n` with a 4-byte buffer and it comes split in two: `one` (no newline)
+and `\n` (a newline only). When code handling long lines in the field forgets this
+fact, one line is quietly processed as two records.
+
+#qa[
+  What is done when the line length is unknown?
+][
+  There are three roads. First, *a big enough buffer plus a newline check* — if
+  there is no newline, read the rest away or treat it as an error. Second, *reading
+  while growing it yourself* — gather one character at a time with `fgetc` and
+  enlarge the buffer when needed (chapter 42's dynamic allocation). Third, *a
+  function the platform gives* — POSIX's `getline` enlarges by itself, but it is
+  not standard. To write with the standard alone the second is the right answer,
+  and using a library so as not to write that code every time is Part XII's story.
+]
+
+== Text mode and binary mode
+
+That is the `b` attached to `fopen`'s second argument. On the Unix family there is
+no difference, but on Windows there is — text mode turns `\n` into `\r\n` when
+writing and turns it back when reading. So opening a binary file in text mode
+quietly changes the bytes.
+
+#platform[
+  Windows' line-ending conversion
+][
+  When handling binary data (images, compressed files, serialised structs) always
+  open with `"rb"` or `"wb"`. Open in text mode and a 0x0A byte grows into 0x0D
+  0x0A, and on reading it shrinks the other way — *the file's size and content
+  differ*. It is the place where the CR/LF story seen in chapter 9 is replayed in
+  the file API.
+
+  Conversely, opening a text file in binary mode on Windows leaves a `\r` at the
+  end of the line, so a line read with `fgets` ends with an invisible `\r` — the
+  cause of a failing comparison is often here.
+]
+
+#antipattern[
+  `fflush(stdin)`
+][
+  ```c
+  scanf("%d", &n);
+  fflush(stdin);      /* the intent is to empty the input buffer — it is outside the contract */
+  ```
+  `fflush` is a function for *output* streams. Using it on an input stream is
+  behaviour the standard does not define (some implementations merely support it as
+  an extension), and it cannot be used in portable code. To throw away the
+  remaining input you must read it away yourself.
+
+  ```c
+  int c;
+  while ((c = getchar()) != '\n' && c != EOF) { }
+  ```
+]
+
+== File position and size
+
+`fseek` and `ftell` handle position, but with restrictions. On a text stream the
+value `ftell` returns is *not guaranteed to be a byte offset*, and `fseek` is safe
+only with that value or with the combination of `SEEK_SET` and 0. On a large file
+`long` may be too small, so the non-standard `fseeko` and `ftello` (POSIX) or a
+platform API become necessary.
+
+The idiom "to learn a file's size, go to the end and `ftell`" is safe only in
+binary mode, and even then it is meaningless if the file is changing.
+
 #recap[
-  Reading and writing in summary.
+  `<stdio.h>` streams in summary.
 
   #dtable(
     columns: 3,
-    [*what you want to do*], [*what to use*], [*what to check*],
-    [read one line], [`fgets`], [whether null + whether there is a newline (truncation)],
-    [a line of unknown length], [an `fgetc` loop + reallocation], [preserve the original when `realloc` fails],
-    [print into a string], [`snprintf`], [return value ≥ buffer size means truncation],
-    [parse user input], [`fgets` + `strtol`/`sscanf`], [the item count and the range],
-    [temporary file], [`tmpfile`], [`tmpnam` is a race condition],
-    [debugging output], [`fprintf(stderr, …)`], [not fully buffered (mostly unbuffered) — likely to survive],
-    [never to be used], [`gets`, `%s` without a width, `%n`], [—],
+    [*place*], [*rule*], [*if got wrong*],
+    [`fopen`], [check for null], [null dereference],
+    [writing], [check the return value (optional), check `fclose` (compulsory)], [quiet data loss],
+    [loop control], [by the reading return value], [misuse of `feof` — the last value duplicated],
+    [`fgetc`], [put it in an `int`], [confusing `EOF` with 0xFF],
+    [`fgets`], [check for a newline], [a long line processed split],
+    [binary files], [`"rb"`/`"wb"`], [byte corruption on Windows],
+    [emptying input], [read it away yourself], [`fflush(stdin)` is outside the contract],
+    [position], [byte meaning only in binary mode], [misunderstanding in text mode],
   )
 ]
 
-We have crossed the minefield of input and output. The next chapter is another
-minefield just as famous — the string functions.
+We have seen the skeleton of streams. The next chapter is the functions that
+actually read and write on top of it — and the story of a function *deleted* from
+the standard.

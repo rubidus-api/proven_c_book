@@ -1,151 +1,173 @@
 #import "../../book/lib.typ": *
 
-= Errors and contracts
+= Real numbers — the mathematics of approximation
 
 #prereq(
-  ([chapter 32, The meaning of a function], [how a function reports failure]),
-  ([chapter 39, Safe input, and the appearance of proven], [the idiom of safe input]),
+  ([chapter 8, Representing numbers], [the contract called IEEE 754]),
 )
 
 #deepqa[
-  At the end of chapter 32 the `fact` function was said to stand on an "implicit
-  promise" (n at least 0; overflow at 13 or above). But that promise was written
-  nowhere in the code — does it then exist?
+  Chapter 8 said `0.1 + 0.2` and `0.3` are neighbours one final bit (1 ulp) apart,
+  and that comparison must change into "are they close enough?". Then how is the
+  criterion of "enough" — the epsilon — decided?
 ][
-  It exists, but *in an unkept state* — and that is the heart of the problem. Every
-  function has an implicit contract: for what inputs it works properly
-  (preconditions), and what it guarantees on success (postconditions). If that
-  contract is in neither documentation nor code, a violation passes silently and
-  goes off later somewhere unrelated. This chapter is the story of ways to *make
-  the contract visible*.
+  That it must vary with the size of the values is the lesson of chapter 8's third
+  incident. Near 0 the ticks are dense so a small fixed value will do, but around
+  $10^16$ the tick spacing itself exceeds 1 and the same criterion becomes
+  meaningless. So practice keeps two — *absolute error* (for near 0) and
+  *relative error* (proportional to size). This chapter's demonstration shows both
+  side by side.
 ]
 
 #organizer[
-#idx("contract")  The seed of the contract planted in chapter 32 grows — what a
-  function demands and what it promises (preconditions and postconditions), how
-  failure is reported (C's way: errors are values), and the devices that force
-  that value to be checked. The design idea of proven, seen in chapter 39, is
-  organised here into principles.
+  The world of approximation learned on the page in chapter 8 finally comes down
+#idx("comparing reals")  into C code. Choosing between `float` and `double`, the
+  correct way to compare (epsilon — absolute and relative), and the special values
+  (infinity, NaN). Chapter 8's three incidents are confirmed by execution results.
 ]
 
 #chapter-questions()
 
-== Errors are values — C's way
+== Choosing a type, and comparing
 
-Many modern languages have a separate channel for failure (exceptions); C has
-none. In C failure is *reported through the return value* — the function's result
-itself carries "did it succeed?" out with it. There are three conventions.
+#demo("examples-en/ch47/eps.c")
 
-- *A success/failure boolean* plus receiving the result through a pointer
-  (chapter 34's `&` idiom).
-- *A special value* marking failure — `malloc`'s null (chapter 41), `fgets`'s
-  null, a negative return, and so on.
-- *An error code* returned with 0 meaning success — the tradition of the system
-  call family.
+The first three lines are the execution check of chapter 8's first incident —
+`==` is false, and printed to twenty digits the two numbers diverge at the end.
+Use `near_abs` (absolute error) and it becomes true.
 
-We see the first in a demonstration. It is the fact learned in chapter 27, that
-division by zero is outside the contract, governed by a function's contract.
+The latter part checks the third incident (absorption) — add 1 to $10^16$ and the
+value is unchanged, because at that size the gap between representable neighbours
+is already wider than 1 (chapter 8's tick calculation). Here the right tool is not
+absolute error but `near_rel` (relative error).
 
-#demo("examples-en/ch47/errval.c")
+Reduced to practical rules there are three. *The default is `double`* — as
+chapter 8 showed, the room in precision is of a different order, and `float` is
+chosen only where memory and bandwidth are tight. *Do not use `==`* — code asking
+whether two reals are equal is almost always suspect (there are exceptions, such
+as comparing against an integer or against 0, but they must be judged
+consciously). *The tolerance comes from the problem* — it is decided by looking at
+the nature of the calculation and the size of the values; there is no magic
+constant.
 
-Three things to read. *The contract is written in comments* — what is demanded
-stands beside the code. *On failure the output argument is not touched* —
-"nothing is changed on failure" is part of the contract too. And
-*`[[nodiscard]]`* — the C23 notation by which the compiler warns if a call
-discards this return value. It is a brake on the freedom of chapter 21's "it is
-legal to discard a return value", saying "this one value must not be discarded."
-That is exactly why chapter 39's proven functions wear this notation.
+== Special values — infinity and NaN
 
-#misconception[
-  "Error handling is an incidental chore that makes code untidy"
-][
-  A common impression for a beginner, and C's error handling really is
-  conspicuously verbose — an `if` attaches to every call. But invert the
-  perspective and it is exactly the opposite: *the error path is half of the
-  program.* That a file may be missing, memory may run short, input may be
-  nonsense, is not an exceptional situation but ordinary reality. The evidence is
-  that the overwhelmingly common cause in real accident analyses is "the return
-  value was not checked" — code written only for the success path is code half
-  written. How to reduce the verbosity (gathering into a common cleanup point,
-  using a type that wraps failure) is a matter of technique; the principle of
-  *checking* is not a matter of compromise.
+IEEE 754 (chapter 8) defines special values besides ordinary numbers. *Infinity*
+(positive and negative) comes out of overflow or division by zero, and *NaN* (Not
+a Number) means "not a number" — the result of an undefinable operation such as
+$0/0$ or the square root of a negative.
+
+One thing has to be stated exactly here. Integer division by zero is outside the
+contract (chapter 27), and floating-point division by zero is commonly said to
+"be defined and give infinity". *That, however, is not a promise of the C
+language itself.* The standard's rule for division leaves the behaviour
+undefined when the second operand is zero — for reals as much as for integers.
+Infinity appears in implementations that support IEC 60559 (that is, IEEE 754)
+semantics. In such an implementation, dividing a finite non-zero value by zero
+gives a signed infinity and raises the divide-by-zero exception, while $0/0$
+falls on the NaN side. Today's mainstream compilers on x86-64 and AArch64 behave
+that way, but it is not something the standard forces on every implementation.
+
+#platform("Where this distinction actually bites")[
+  The mark by which an implementation declares that it follows IEC 60559 for
+  binary floating point is `__STDC_IEC_60559_BFP__` (BFP = binary floating
+  point). Where that macro is defined, annex F semantics are a contract and the
+  behaviour above may be expected. Decimal floating point is marked separately,
+  by `__STDC_IEC_60559_DFP__`.
+
+  It must not be confused with the similarly named
+  `__STDC_IEC_60559_BF16_TYPES__` — that is a *separate* feature mark, about
+  whether bfloat16 types are provided, and has nothing to do with the semantics
+  of ordinary binary floating-point operations. And note further that *a type
+  having the same format as IEC 60559 and the operations following annex F are
+  two different questions* — the former is what `__STDC_IEC_60559_TYPES__`
+  speaks to; what is needed here is the latter. Where it does not — some embedded
+  toolchains, and builds that deliberately switch annex F semantics off with
+  something like `-ffast-math` — the guarantee of infinity and NaN goes away.
+  *Portable code screens out a zero divisor first.*
 ]
 
-== The contract in code — assert and defence
+=== Opening the bits directly
 
-#idx("assert")There is a tool for writing a precondition as *code* rather than
-documentation — `assert(condition)` of `<assert.h>`. If the condition is false it
-stops the program at once and reports the location. Distinguishing its use
-exactly is important:
+Having seen the layout in chapter 8, we now print the bits of real values and
+check them. To move a representation we use `memcpy` rather than a union — by
+chapter 45's rule that is the safest passage for "moving a value", and compilers
+mostly make the copy disappear.
 
-- *`assert` catches the programmer's mistakes* — an internal invariant meaning "if
-  we have reached here, this condition must be true" (the same word as
-  chapter 31's invariant). Practice is for it to be switched off in release builds
-  (`NDEBUG`).
-- *What came from outside is not for assert but for checking* — user input, file
-  contents and network data are things for which "being wrong is normal", so they
-  must always be checked at run time and handled with error values. Validating
-  input with assert becomes the accident of the check disappearing entirely in the
-  release build.
+#demo("examples-en/ch47/bits.c")
 
-This distinction is the contract's two faces — the inside (invariants I must
-keep) with assert, the outside (promises the other party may not keep) with checks
-and error values.
+Five things from the output are worth pointing at.
 
-== const — the cheapest contract
+*First, `1.0` is remarkably tidy.* The exponent field holds 1023 (the bias
+itself, so the actual exponent is 0) and the fraction is all zeros — the hidden
+bit alone makes $1.0 times 2^0$. `2.0` raises the exponent by one, `0.5` lowers
+it by one, and flipping the sign bit gives `-1.0`.
 
-There is one more tool for writing a contract in code. It is `const`, introduced
-in chapter 23 as "documentation saying I will not change this" and used in
-#idx("const")chapter 42 as the mark "this function does not touch the original."
-Seen again from this chapter's perspective, const is *the contract clause that
-can be written most cheaply* — adding one word in one place in a function
-signature promises the caller "your data is safe" and hands the compiler the job
-of watching over that promise.
+*Second, `0.1` shows the cut mark of an unending fraction.* Its fraction ends in
+`999999999999a`, and that final `a` is the trace of *rounding*. It is chapter 8's
+mathematics box — "it does not come out even in binary" — laid bare in bits.
 
-Its effect spans three layers.
+*Third, `0.1 + 0.2` and `0.3` differ by one last bit.* The two bit patterns end
+`...3334` and `...3333`, exactly one apart. That is why the `==` comparison is
+false, and why this chapter talks about tolerances.
 
-*① For people — the burden of reading falls.* The moment you see the signature
-`void render(const struct scene *s)`, it is settled that this function does not
-change scene. Not having to read the function's body — in a large codebase there
-is scarcely a more valuable saving. It is the substance of chapter 23's "the more
-of a piece of code that does not vary, the easier it is to read."
+*Fourth, the identity of one ULP becomes visible.* Adding the integer 1 to the
+bits of `1.0` gives the very next real number, and the difference is
+`DBL_EPSILON` ($2^{-52}$). "The smallest distinguishable difference near 1.0"
+turns out to be a single bit.
 
-*② For the compiler — it becomes grounds for optimisation.* Chapter 13 showed the
-editor holding a value in a register, and the key to that judgement was "can this
-value change in the meantime?". const is a signal helping that judgement — though
-it must be stated exactly: *const is not itself a magic optimisation switch.*
-Data arriving through a pointer may still be changed by another route (aliasing),
-so const alone does not let the compiler be certain of everything. The definite
-gain is on the side of *objects actually declared const* (global constants,
-`static const` tables) — the compiler may plant the value directly in the code
-(constant propagation) or place it in a read-only region, making it unmodifiable
-outright (chapter 38's string literals lived in that place).
+*Fifth, the subnormals appear at the floor.* Halve the smallest normal number and
+the exponent cannot go lower, so *zeros begin to fill the front of the fraction*
+instead — that state, with the exponent field all zeros, is a subnormal. Precision
+is given up little by little on the way down to zero, and when the last bit
+disappears the value becomes zero. This design, fading out instead of falling
+abruptly to zero, is called *gradual underflow*.
 
-*③ For the layers of memory — sharing becomes safe.* Data that does not change
-*has no reason to be copied.* Many places may read the same thing together, and
-from chapter 11's cache perspective several cores may share and read the same
-cache line without any contention — because the false sharing of chapter 12 is an
-accident that requires *writing*. That is why the practice of passing large data
-as a `const` pointer instead of by value (chapter 42) is both safe and fast.
+#platform("subnormals can be slow")[
+  Arithmetic on subnormals is far slower than on normal numbers on some hardware
+  (tens of times, on some machines). So signal processing and game engines
+  sometimes switch on a mode that flushes subnormals to zero — a trade of a
+  little accuracy for the removal of a worst-case stall. Standard C has no
+  portable way to switch that mode on (it is a compiler option or a platform API).
+]
 
-So modern practice is simple — *make const the default and release only what must
-change.* Widening a contract costs; narrowing it takes one word.
+NaN has one famous property — *it is not even equal to itself.* If `x != x` is
+true then x is NaN, and that is the classic idiom for detecting NaN (today one
+uses `isnan()`). Being a value that breaks the basic property of the relation
+"equality", NaN mixed into sorting or searching algorithms produces strange
+results — which is why checking for NaN at the boundary is the practice when
+handling real-number data.
+
+#realcase[
+  The accumulation of 0.1 seconds — the Patriot missile incident
+][
+  There is an event in which chapter 8's "small discrepancies accumulate" led
+  directly to human lives. In the 1991 Gulf War a Patriot air-defence system
+  failed to intercept an incoming missile and 28 people died, and the heart of the
+  cause analysis was floating-point error. The system counted time in units of 0.1
+  seconds — and as chapter 8 showed, 0.1 is an infinite fraction in binary, so a
+  minute error arises each time it is held. Because that system used a 24-bit
+  container the error was relatively large, and after 100 hours of continuous
+  operation without a reboot the accumulated error reached about 0.34 seconds. In
+  those 0.34 seconds the target moved more than 500 metres, and the tracking window
+  was looking at the wrong piece of sky. "Approximation is faithful but not
+  harmless" — the heaviest confirmation of chapter 8's lesson.
+]
 
 #qa[
-  How does chapter 39's proven implement this principle?
+  Should real numbers then not be used for things like money?
 ][
-  Three things follow this chapter's principles exactly. First, *failure appears
-  in the type* — it returns an `{err, val}` bundle, so writing code that "takes the
-  value out without asking whether it succeeded" becomes awkward instead. Second,
-  *it forces the check with `[[nodiscard]]`* — discard it and the compiler warns.
-  Third, *it takes boundaries and sizes as part of the contract* — blocking, at
-  the API level, the root of the boundary violations seen in chapters 36–38.
-  In summary: a design that writes the contract not in documentation but in
-  *types and signatures*. Regard it as implementing, as a component inside C, the
-  same direction as the concerns of Rust and Zig seen in chapter 1.
+  Not using them is the standard — this is exactly the place for the fixed point
+  learned in chapter 8. Handle amounts as real numbers in units of won and
+  discrepancies at the 0.1-won level accumulate until the ledger does not balance,
+  so the practice of financial software is to compute in *integers of the smallest
+  unit* and put the decimal point in only when displaying. Reduced to a rule —
+  *integers (fixed point) where the exact decimal value matters, floating point
+  for physical quantities and scientific computation.* It is fitting the tool to
+  the problem, and the grounds for that judgement are the nature of representation
+  learned in chapter 8 and here.
 ]
 
-We can handle contracts and errors. But there remains a world this book has kept
-deferring under the names "outside the contract" and "undefined behaviour". The
-next chapter faces that world head on — the most misunderstood and most expensive
-subject in C.
+We can handle the world of approximation in C. The next chapter is this part's
+central subject — how a program deals with the fact that a computation can fail:
+the story of errors and contracts.

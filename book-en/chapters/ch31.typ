@@ -79,7 +79,7 @@ and is the least frequently seen of the three.
   correctness]. Even if you do not write it out every time, the habit of asking
   "what fact does not change in this loop?" becomes the eye that catches most
   loop bugs — turning one too few or one too many, the off-by-one. It is also the
-  first exercise in the perspective of code as contract (chapter 47).
+  first exercise in the perspective of code as contract (chapter 48).
 ]
 
 #qa[

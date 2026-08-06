@@ -93,7 +93,7 @@ saves great confusion later. They get formal treatment in Part VII
 - *The NUL character* — an entirely different object. It is a single
   *character* of value 0, at position 0 of the character table (chapter 9),
   written `'\0'` in C. It is one byte of data and is used to mark the end of a
-  string (chapter 38). It lives in the world of characters.
+  string (chapter 39). It lives in the world of characters.
 
 All three have "null" in the name and all three have a 0 tangled up in them
 somewhere, so they are easy to mix up, but the pointer's null and the

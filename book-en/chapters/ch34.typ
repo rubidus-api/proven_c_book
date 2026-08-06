@@ -106,7 +106,7 @@ its value is mostly settled at compile time, and it works on a type
   not the concept but *the price of breaking the rules*: code that follows an
   empty pointer (next chapter), or invents a number in someone else's land
   (chapters 35–37), or keeps the number of a slot that has vanished
-  (chapters 39–41),
+  (chapters 39–42),
   causes accidents quietly, late and largely. That is why all the remaining
   chapters of this part are chapters of "rules" — the concept ended today, and
   now we learn the safety code.
@@ -175,7 +175,7 @@ free*.
 
 That choice became C's power and its danger. The power is expressiveness — arrays
 arrive with no extra syntax (chapter 37), and memory can be handled in bulk
-(chapter 74). The danger is the illusion that the number may be handled *like any
+(chapter 75). The danger is the illusion that the number may be handled *like any
 other number*.
 
 === The abstraction has thickened with time
@@ -266,7 +266,7 @@ Why leave it so loose — because machines really were different.
   data live in entirely separate address spaces. Function pointers have a
   different width from data pointers, and reading a constant out of flash needs
   separate instructions and a separate kind of pointer (AVR's `__flash`, the
-  `PROGMEM` idiom). Chapter 83's embedded story stands on this ground.
+  `PROGMEM` idiom). Chapter 84's embedded story stands on this ground.
 
   *IBM AS/400 (OS/400).* Pointers were 128 bits with a tag inside them, and the
   hardware refused forged ones. Code that converts an address to an integer and

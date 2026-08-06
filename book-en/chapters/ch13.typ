@@ -168,7 +168,7 @@ aliasing) was written into the text. That assumption is what lets the editor
 treat two things as unrelated and rearrange and cache them. The price is a duty
 on the programmer's side — code that breaks the assumption (reading the same
 storage through the eyes of a different type) becomes a violation of the
-contract (revisited with the safe methods in chapter 44).
+contract (revisited with the safe methods in chapter 45).
 
 *C11* (2011) is the response to the multicore era of chapter 12 — a *memory
 model* pinning down as a clause "when a write by one core becomes visible to
@@ -204,11 +204,11 @@ release").
 
 There are two correct methods — copy the bytes with `memcpy` (modern compilers
 recognise this copy and optimise it away for free), or use the union we learn in
-the next part (chapter 44 does this demonstration properly). The point is not the
+the next part (chapter 45 does this demonstration properly). The point is not the
 technique but the perspective: *a contract violation is not "slightly dangerous
 code" but the act of telling the compiler something untrue as if it were true.*
 That is why the result is not "slightly odd" but "anything at all" — the
-standard's name for this state is *undefined behaviour* (UB), and chapter 48 of
+standard's name for this state is *undefined behaviour* (UB), and chapter 49 of
 this book is its head-on treatment.
 
 #realcase[
@@ -236,7 +236,7 @@ this book is its head-on treatment.
   editor's skill, and there is no reason to give up several-fold performance. The
   right road is one: know the contract and write inside it. The criterion must be
   "correct on the abstract machine", not "it ran on my computer" — what happens to
-  code outside the contract is faced head on in chapter 48 (undefined behaviour).
+  code outside the contract is faced head on in chapter 49 (undefined behaviour).
 ]
 
 The materials are now all assembled. Memory is a ladder (chapter 11), execution

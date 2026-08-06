@@ -1,5 +1,5 @@
 /* Opening up a real number — how sign, exponent and fraction really sit in it.
-   Type punning goes through memcpy, not a union (the rule of chapters 36 and 44). */
+   Type punning goes through memcpy, not a union (the rule of chapters 36 and 45). */
 #include <inttypes.h>
 #include <math.h>
 #include <stdio.h>

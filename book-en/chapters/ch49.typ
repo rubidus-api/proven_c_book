@@ -1,319 +1,287 @@
 #import "../../book/lib.typ": *
 
-= The three faces of `main` — entry point and exit status
+= Undefined behaviour
 
 #prereq(
-  ([chapter 3, Programs and processes], [what it is to run as a process]),
-  ([chapter 19, The structure of a program], [the skeleton of a program]),
+  ([chapter 13, Compiler optimisation], [the abstract machine and observable behaviour]),
+  ([chapter 48, Errors and contracts], [what it means to break a contract]),
 )
 
 #deepqa[
-  Chapter 3 said a process leaves one number, the *exit status*, as it ends, and
-  chapter 14's hello world ended with `return 0;`. So who receives that 0, and
-  what happens if a nonzero value is returned?
+  Chapter 13 said that violating strict aliasing is "the act of telling the
+  compiler something untrue as if it were true." Then what has the standard
+  permitted the implementation by leaving some behaviour "undefined"?
 ][
-  The receiver is *whoever ran this program* — the terminal's shell, a build tool,
-  a script, or another program that launched this one as a child. They judge "did
-  it end well?" from that one number and decide what to do next. So `main`'s return
-  value is not decoration but *the program's last conversation with the outside
-  world*.
+  It decided *to demand nothing at all.* The standard's sentence is cold — for
+  undefined behaviour the standard "imposes no requirements". That is, such a
+  program has no correct execution result whatever. The common misunderstanding is
+  "dangerous behaviour, but it mostly works as expected", whereas in the eye of the
+  contract the whole program *loses its meaning*. That difference is this chapter
+  entire.
 ]
 
 #organizer[
-#idx("main")  We face head on the `main` that chapter 14 passed over as merely
-  "the agreed starting point". The *three forms* the standard permits, the exact
-  contract of the command-line arguments `argc` and `argv`, and where the returned
-#idx("exit status")  value goes and what it becomes — including the conventions
-  of Linux, Windows and embedded targets. Why `void main()` is wrong is settled
-  here too.
+  We face head on the world this book has kept deferring under the name "outside
+  the contract". What UB exactly is and why it exists, why it is not "a little
+  dangerous" but "anything at all is possible" — and how to avoid and catch it in
+  practice. The contract narrative begun in Part II is completed here.
 ]
 
 #chapter-questions()
 
-== The three forms the standard permits
+== Three grey zones — UB, unspecified, implementation-defined
 
-The C standard pins `main`'s definition down like this — the return type must be
-`int`, and the parameters must be *none*, or *two*, or *some other
-implementation-defined manner*. Hence three faces.
-
-#dtable(
-  columns: 3,
-  [*form*], [*when to use it*], [*status*],
-  [`int main(void)`], [when command-line arguments are not used], [standard],
-  [`int main(int argc, char *argv[])`], [when arguments are taken], [standard],
-  [other forms], [extended arguments such as `envp`], [*implementation-defined*],
-)
-
-The second form's `char *argv[]` may equally be written `char **argv` (exactly
-chapter 38's rule that array parameters decay into pointers). The names are free
-too — `argc` and `argv` are only convention.
-
-The representative third form is
-`int main(int argc, char *argv[], char *envp[])`. Unix-family systems and Windows
-commonly support it, but it is *not standard*, and the portable road to reading
-environment variables is `getenv` (chapter 57).
-
-#antipattern[
-  `void main()`
-][
-  ```c
-  void main(void) { … }        /* not standard */
-  ```
-  A notation often seen in old textbooks and Turbo C-era code. The standard pinned
-  the return type to `int`, so this notation is *outside the contract in a hosted
-  environment*. Many compilers warn about it and some treat it as an error.
-
-  Only two exceptional circumstances need be known. First, in a *freestanding
-  implementation* (chapter 55) the name and form of the starting function are the
-  implementation's to decide, so there really are embedded compilers that
-  officially support `void main(void)` — there being nowhere to receive the return
-  value, they remove that code to save size. Second, that is *that compiler's
-  promise*, not the standard's. In hosted code it is always `int`.
-]
-
-== The contract of `argc` and `argv`
-
-#demo("examples-en/ch49/entry.c")
-
-What the standard promises is as follows, and these promises form the skeleton of
-argument-handling code.
-
-+ `argc` is *zero or more*. There may be no arguments at all.
-+ `argv[0]` is *the program name* — though if the name cannot be known it may be
-  an empty string. So code that computes a path trusting `argv[0]` unconditionally
-  is dangerous.
-+ `argv[1]` through `argv[argc-1]` are the actual arguments.
-+ *`argv[argc]` is necessarily a null pointer.* The example confirmed it. That is
-  why traversal taking null as the end marker, as in
-  `for (char **p = argv; *p; p++)`, works.
-+ These strings *may be modified* and are valid while the program runs.
-
-#qa[
-  Must the code that interprets arguments be written by hand? Things like `-v`
-  and `--help`.
-][
-  Two things must be divided first — *receiving the arguments* and *interpreting
-  them* are different jobs.
-
-  *Receiving them is in the standard.* The `argc` and `argv` just seen are that, and
-  on any platform the arguments come in through these two parameters. Nothing is
-  lacking in that place.
-
-  *It is the parser that is absent.* Rules for *interpreting* — "`-v` means verbose,
-  `--out FILE` is an option with a value attached, the rest are file names" — are not
-  provided by standard C at all. It means there is no function like `getopt` in
-  `<stdlib.h>`. So that work divides into three roads.
-
-  *Write it yourself* — for a short program this is enough. Scan `argv`,
-  distinguish with `strcmp`, and for arguments with an attached value read the next
-  slot. To convert to a number use `strtol`, not `atoi` (chapter 57).
-
-  *Platform tools* — the Unix family has POSIX's `getopt` (`<unistd.h>`) and GNU's
-  `getopt_long` (which handles the `--name` form), and glibc has `argp`, which even
-  builds the help text. All of them belong to the platform, not the standard.
-  Windows' C runtime has no `getopt`, so porting projects mostly put one `getopt`
-  implementation into the repository or use a parser of their own.
-
-  *A library* — as the scale grows (subcommands, generated help, merging with a
-  configuration file), use a library dedicated to argument parsing.
-
-  Whichever road, keep one rule: *arguments are input from outside.* Chapter 40's
-  rules for handling input — do not trust lengths, check the failure of numeric
-  conversion, do not concatenate paths blindly — apply just the same.
-]
-
-#platform[
-  How the arguments reach the program — Unix and Windows
-][
-  That `argv` is standard does not mean *the way it is made* is the same. The two
-  worlds are opposites.
-
-  *The Unix family* — the side launching the program passes *an array of strings* in
-  the first place (chapter 3's `execve`). The shell handles quotes and wildcards
-  first and cuts them into pieces, so the `argv` a program receives is already
-  divided. The kernel carries that array over to the new process as it is.
-
-  *Windows* — `CreateProcess` passes *one string* (chapter 3). That is, the dividing
-  is the receiving side's part. So the C runtime, in its startup code, cuts that one
-  line by rule and makes the `argv` it hands to `main` — `argc` and `argv` arriving as
-  the standard says is because the runtime does that work for you.
-
-  This difference leaves two things in practice. First, on Windows the *original
-  command line* can be seen directly and cut by hand if needed — `GetCommandLineW`
-  returns that one line and `CommandLineToArgvW` cuts it by the standard rules. To
-  receive Unicode arguments intact, using `wmain` (or those two functions) is the
-  practice. Second, *the cutting rules differ by platform* — the handling of quotes
-  and backslashes especially. Hence the advice, when launching another program and
-  building its arguments, to use APIs that *pass the arguments as an array rather than
-  joining a string by hand* (`posix_spawn`, and `CreateProcess`'s argument-assembly
-  rules) — the same grain as chapter 60's `system` counterexample.
-]
-
-== The value returned — three notations, one meaning
-
-There are three ways to end `main`, and all three mean the same thing.
-
-```c
-return 0;              /* explicit */
-return EXIT_SUCCESS;   /* the name from <stdlib.h>. its value is 0 */
-}                      /* just ending — since C99 the same as return 0; */
-```
-
-The last is a special case introduced in C99. *For `main` alone*, ending without a
-return value counts as having returned 0 (in other functions, not returning a
-value and then using it is outside the contract). The standard belatedly ratified
-what was common in C89-era code.
-
-To report failure, use `EXIT_FAILURE`. As the example confirmed, the common value
-is 1, but *the standard does not promise it is 1* — it is only "a nonzero value
-meaning failure." Returning any other number is *implementation-defined*.
+#idx("implementation-defined")#idx("unspecified")#idx("undefined behaviour (UB)")Let
+us first separate three confusable words. Organised through the cases this book
+has met so far:
 
 #dtable(
   columns: 3,
-  [*way of ending*], [*what it does*], [*caution*],
-  [`return n;` (in main)], [the same as `exit(n)`], [all the cleanup procedures run],
-  [`exit(n)`], [end the program from anywhere], [runs `atexit` functions, flushes streams],
-  [`quick_exit(n)`], [quick termination (C11)], [only `at_quick_exit` runs],
-  [`_Exit(n)`], [immediate termination], [it does *not* clean up],
-  [`abort()`], [abnormal termination], [no cleanup. a core dump may be left],
+  [*kind*], [*the standard's attitude*], [*examples met in this book*],
+  [implementation-defined], [the implementation decides and *documents it*], [the size of `int` (chapter 26), the signedness of `char`],
+  [unspecified], [one of a fixed set of choices, with no duty to document], [the order of evaluating subexpressions in one expression (chapter 32)],
+  [undefined behaviour (UB)], [it imposes no requirements at all], [signed overflow (chapter 7), boundary violation (chapter 37), null dereference (chapter 35)],
 )
 
-The example's `atexit` shows that cleanup procedure — the registered function ran
-after `main` ended. Flushing open streams (chapter 57's buffers) is included in
-it. So *ending with `_Exit` or `abort` can lose output.*
+The first two are worlds where "there are several answers but there is an answer."
+Only UB is a world where there is no answer at all.
 
-#misconception[
-  "Any number at all can be returned as the exit status"
+== Why it exists
+
+There are two reasons for leaving an outside-the-contract region. First, *because
+machines differ* — chapter 7's shift of at least the width is the representative
+case. x86 and older ARM respond differently, and had the standard chosen one side
+the other machine would have to insert correction code every time. Instead of
+taking sides it said "do not write that code." Second, *to obtain premises for
+optimisation* — as chapter 7 showed, the premise that "signed integers do not
+overflow" is what lets the compiler analyse and reorder loops (chapter 13). These
+clauses are the price of C remaining the language of speed for half a century.
+
+== The real face of "anything at all"
+
+UB's result is not only a collapse. The pattern seen in chapter 13 is more
+frightening — *the compiler reads UB as "a thing that cannot happen" and deletes
+code.* A null check disappears entirely (if the pointer was already dereferenced,
+it infers "it cannot be null"), an overflow check disappears (since signed
+overflow is premised not to happen), a loop becomes infinite or vanishes
+altogether. So UB's representative symptom is not "dying on the spot" but *a bug
+that appears somewhere unrelated, disappears when the optimisation level changes,
+and is hard to reproduce.*
+
+#realcase[
+  The vanished null check — Linux kernel CVE-2009-1897
 ][
-  You may return it, but *there is no guarantee the receiver sees it as it is.*
-  Unix-family systems use only *the low eight bits* when conveying a child's exit
-  status. So the status of a program that ended with `return 300;`, seen from the
-  shell, is not 300 but 44 (300 − 256).
-
-  ```text
-  $ ./ex ; echo $?
-  44
-  ```
-
-  Windows conveys a 32-bit exit code as it is, so it has no such truncation. The
-  portable rule is one — *0 for success, 1 for failure, and otherwise only small
-  numbers in the range 0–125.* Do not send large or negative numbers out as a
-  status.
+  There was an incident in which this pattern really went off in the kernel. The
+  code went roughly like this — the pointer `tun` was dereferenced first to take a
+  value out, and below that a null check `if (!tun) return ...;`. The order was a
+  mistake, but to a human eye it looks like "the check is still there, so a null
+  will be caught." The compiler's inference was different: *it was already
+  dereferenced → had it been null that would have been UB at that moment → UB is
+  premised not to happen → therefore tun is not null → the null check below is dead
+  code.* The check was removed entirely by optimisation and, combined with an
+  environment in which the null page could be mapped, became a
+  privilege-escalation vulnerability. The compiler worked by the rules; what
+  collapsed was the contract.
 ]
 
-== Conventions — who reads that number, and how
+== Before the computation even begins — the UB of a file's shape
 
-#platform[
-  Linux and the Unix family
+Undefined behaviour usually brings to mind an accident *during execution*, such as
+an overflow or a null dereference. Yet read the standard's list (annex J.2) from the
+top and something surprising appears — *the second entry is about the last character
+of a file*.
+
+#dtable(
+  columns: 2,
+  [*what the standard requires*], [*break it and*],
+  [a non-empty source file must end in a new-line character], [undefined behaviour],
+  [that new-line must not be one preceded by a backslash], [undefined behaviour],
+  [the file must not end in a partial preprocessing token or comment], [undefined behaviour],
+)
+
+That is, *a file whose last line has no new-line at the end* is outside the contract
+however perfect its grammar. This provision has been there since C89 and remains in
+C23 (ISO/IEC 9899:2024) — it is the second entry of annex J.2. C++, for reference,
+dropped the clause in 2011 (deciding that a missing new-line counts as one appended).
+It is a rare place where the two languages parted.
+
+Why should such a thing be UB? Recall the *translation phases* seen in chapter 52 and
+the answer appears. The preprocessor works by lines, and one directive is complete
+only when a new-line ends it. If the file ends with no new-line, the last line is left
+*unfinished*, and what happens next differs by implementation. The third row's
+"partial token" is the same circumstance — if the file ends with an unclosed string
+literal or a comment with no `*/`, the preprocessor has no ground on which to judge
+whether to keep reading into the next file.
+
+Today's compilers mostly append a new-line quietly (older GCC gave
+`warning: no newline at end of file`). So the place this clause makes trouble in
+practice is not the compiler but *the other tools that handle the file*.
+
+#realcase[
+  The practical noise one new-line makes — git and the Unix tools
 ][
-  The shell keeps the last command's status in `$?`. The conventions are:
+  POSIX defines a *line* as "a string ending in a new-line". So a file missing the
+  final new-line becomes, in the eyes of the tools, "a file whose last line is
+  unfinished", and the following happens.
 
-  #dtable(
-    columns: 2,
-    [*value*], [*meaning*],
-    [0], [success],
-    [1], [a general failure],
-    [2], [a usage error (the convention of many tools)],
-    [126], [found but not executable, for permission and similar reasons (shell)],
-    [127], [command not found (shell)],
-    [128 + N], [killed by signal N (the shell's notation)],
-  )
+  - *A mark is left in git's diff* — that famous `\ No newline at end of file` line.
+    If somebody later adds the new-line, a line whose content did not change is *caught
+    as a changed line*, making the diff dirty and making conflicts likely at that place
+    when branches are merged. The red mark on the last line in GitHub's web view is the
+    same thing.
+  - *Joining files runs lines together* — with `cat a.txt b.txt`, `a`'s last line and
+    `b`'s first line become one line. It is especially tiresome in builds that make
+    source or configuration by joining fragments.
+  - *Tools that count lines miss one* — `wc -l` counts new-lines, so an unfinished last
+    line is not counted.
 
-  Thanks to these conventions a script can decide its flow from the status alone,
-  as in `if ./program; then …`, and `make` and CI notice failure. The BSD family
-  has a finer convention in `<sysexits.h>` (`EX_USAGE` 64 and so on), but it is not
-  widely used.
-
-  Caution: values of 128 and above are confusable with being killed by a signal, so
-  it is better for a program not to return them itself.
+  So today's practice is one line — *end a text file with a new-line.* An editor
+  setting (add a final new-line automatically), `.editorconfig`'s
+  `insert_final_newline`, and the formatting tools seen in chapter 83 do that work for
+  you. The C standard's clause is, in effect, the oldest ground for that practice.
 ]
 
-#platform[
-  Windows
-][
-  The same number is called the *exit code*, read as `%ERRORLEVEL%` in a batch
-  file and `$LASTEXITCODE` in PowerShell. To receive a child's code from a program
-  you use `GetExitCodeProcess`.
+== Other curious pieces of UB
 
-  Two differences. *It is not truncated to the low eight bits* (the full 32 bits),
-  and certain values can be read as overlapping with system error codes. An
-  ordinary program is still safest using 0 and 1.
-]
+As of C23, annex J.2 lists *218 kinds* of undefined behaviour. Most are things one will
+never meet in a lifetime, but among them are several entries that make one ask "even
+this?". We pick out those that happen in *the world of characters and names*, unrelated
+to computation at run time.
 
-#platform[
-  Embedded — there is nowhere to return to
+#dtable(
+  columns: 3,
+  [*this code*], [*what is wrong*], [*the standard's place*],
+  [a file ending with no new-line], [the one seen in the previous section], [5.1.1.2],
+  [a `/*` comment left unclosed at end of file], [ending in a partial comment is the same entry], [5.1.1.2],
+  [a string with its quote unclosed at end of file], [a partial preprocessing token], [5.1.1.2],
+  [`#include "dir\file.h"`], [a `\` inside a header name is UB — writing a Windows path as it stands hits this], [6.4.7],
+  [`#include <a//b.h>`], [`//`, `/*`, `'` and `"` likewise are UB], [6.4.7],
+  [`#define defined(x) …`], [using `defined` as a macro name], [6.10.9],
+  [using `assert` after `#undef assert`], [erasing a standard library macro and then using it], [7.1.3],
+  [`int _Value;`, `int __x;`], [trespassing on the reserved name space (chapter 69)], [7.1.3],
+  [`memcpy(p, q, 0)` with `p` null], [even at size 0 a null pointer is outside the contract (see below)], [7.26.2],
+  [`printf("%s", NULL)`], [passing null as a string], [7.23.6.1],
+  [`short a[10]; short *p = &a[15];`], [*merely making* an out-of-range pointer is UB, without dereferencing], [6.5.7],
+  [`if (p > q)` on unrelated objects], [comparing with a relational operator (chapter 36)], [6.5.9],
+  [`towctrans` under another locale], [UB if `LC_CTYPE` differs from when `wctrans` was called], [7.31.3.2],
+)
+
+The first three are the other faces of the "file shape" entry seen in the previous
+section. A file ending with an unclosed comment or string falls under the same clause —
+it looks as though it would fail to compile anyway, but in the standard's eyes it is a
+place where *not even a diagnosis is required*.
+
+The two rows in the middle are especially practical. Writing `#include "utils\str.h"`
+on Windows is *undefined behaviour as far as the standard goes* — in reality MSVC
+handles it for you, but it becomes a problem the moment you port. What the standard
+guarantees is `/` alone, and happily the Windows compilers accept `/` too. Hence the
+advice always to use `/` in header paths.
+
+The `short *p = &a[15];` row surprises people too. *Without reading or writing
+anything*, merely making the pointer is outside the contract (only up to one past the
+array's end is permitted). It is why "I only compute the address and never use it" does
+not hold, and the ground on which chapter 36 drew a boundary round pointer arithmetic.
+
+The last row shows this list's character well. One wide-character conversion function
+carries the condition that "the locale must be the same as when `wctrans` was called",
+and breaking it is UB. Most of the 218 are of this grain — very narrow, very specific,
+and never met in a lifetime.
+
+#realcase[
+  UB sometimes shrinks — the story of `memcpy(NULL, NULL, 0)`
 ][
-  On a machine with no operating system there is nobody to receive a status when
-  `main` ends. So `main` in this world usually *does not end*.
+  The ninth row of the table was long a matter of dispute. "The size is 0 so nothing
+  will happen — what does it matter whether the pointer is null?" one thinks, but the
+  standard required `memcpy`'s two pointers to be *valid* regardless of the size. So
+  code handling an empty array slipped outside the contract through no fault of its own.
 
   ```c
-  int main(void)
-  {
-      init();
-      for (;;) {            /* turns forever */
-          poll();
-      }
+  void copy(int *dst, const int *src, size_t n) {
+      memcpy(dst, src, n * sizeof *dst);   /* UB if n == 0 and both are null */
   }
   ```
 
-  And if it does end, what happens is also the implementation's business — the
-  startup code may hold it in an infinite loop, reset the chip, or let it wander
-  anywhere. So embedded coding conventions often explicitly require that "`main`
-  does not return." That the entry point may not even be called `main` is exactly
-  as chapter 55 showed — the function the reset vector points at is the starting
-  point, and that function copies `.data`, fills `.bss` with zeros and then calls
-  `main` (chapter 69).
+  There was real damage too. The compiler gains the premise that `memcpy`'s arguments
+  are not null, and so can *erase a null check that follows* — the pattern seen in
+  chapter 13 and in this chapter. Sanitizers (chapter 17) catch it as well.
+
+  Yet this clause has been settled to *go away*. The committee accepted proposal N3322,
+  so in the next edition (C2y) giving null pointers to zero-length operations becomes
+  defined behaviour — `memcpy(NULL, NULL, 0)`, `memcmp(NULL, NULL, 0)`,
+  `(int *)NULL + 0` and `(int *)NULL - (int *)NULL` all become legal. The committee even
+  recommended that implementers apply the change retroactively to older standards.
+
+  This story leaves two lessons. First, *the UB list is not a fixed scripture* — clauses
+  that are useless for optimisation and merely torment people do get tidied away over
+  time. Second, even so, *whether the compiler you are using now reflects that change is
+  another matter.* For the time being, code that checks `n == 0` first is still right.
 ]
 
-#realcase[
-  The tool ecosystem built by one exit status
+#misconception[
+  "These are theoretical quibbles; nothing actually happens"
 ][
-  It is interesting to see how much the single convention "0 is success" supports.
-  The shell's `&&` and `||`, `make` stopping when one rule fails, CI judging a build
-  failure, a container deciding a restart from a process's exit code, a test runner
-  counting passes and failures — all of it reads this one number.
+  In most places nothing really does happen. But that is precisely this chapter's
+  theme — *nothing happening is not a guarantee.* A file with no new-line is quiet at
+  the compiler and makes noise down the tool chain, and `memcpy(NULL, NULL, 0)` is fine
+  until the day the optimisation level is raised and the null check vanishes.
 
-  The Unix philosophy of "joining small programs with text streams", seen in
-  chapter 9, in fact had one more channel. Data flows through streams, and
-  *success and failure flow through the exit status.* So making a program that
-  behaves like a tool requires two things: results to standard output, error
-  messages to standard error, and *success or failure always carried in the exit
-  status.*
+  The practical attitude is this. *Keep the clauses that can be kept for free.* Put a
+  new-line at the end of a file, use `/` in header paths, do not begin a name with two
+  underscores — the cost of these is zero, and in exchange you gain one thing: "in this
+  place I need not suspect anything."
 ]
+
+== How to avoid it — discipline, tools, and components
+
+Defence in practice is three layers.
+
+*Discipline* — the rules this book has passed through are the list: initialise
+before use (chapter 23), keep boundaries (chapter 37), check for null
+(chapter 35), change one variable only once in one statement (chapter 32), do not
+take shortcuts outside the contract (pointer casts, assumptions about
+representation) (chapters 11 and 36).
+
+*Tools* — the nets equipped in chapter 17. Compiler warnings catch at compile
+time; UBSan and ASan catch at run time. The *checked arithmetic* brought in by
+C23 is a tool of this layer too — functions that report overflow as a value
+instead of making it UB:
+
+#demo("examples-en/ch49/checked.c")
+
+`ckd_add` returns "did it overflow?" as its return value — the standard's answer
+to the trap learned in chapter 7 ("signed overflow is outside the contract"),
+governed by the discipline learned in chapter 48 ("errors are values").
+
+*Components* — using an API in which violating the contract is difficult to begin
+with (chapter 40's proven is that layer). Chapter 17's metaphor — tools are nets,
+good components are footholds — is completed here.
 
 #qa[
-  If `main` is a special function, may it be called recursively or have its
-  address taken?
+  Must all the UB be memorised? I hear the standard has hundreds of them.
 ][
-  In hosted C, `main` is grammatically an ordinary function, so both calling it and
-  taking its address are syntactically possible. But *the norm is not to* — C++
-  forbids it outright, and in C too it is a place entangled with startup code and
-  library initialisation, with nothing to gain. It is better for the reader as
-  well to treat the program's start as happening once.
-
-  Know one thing instead. That `main` is the starting point is a statement from
-  *the C program's point of view*. In reality, startup code (something like `crt0`)
-  runs before it, preparing the static region and gathering the arguments before
-  calling `main` (chapter 69). `main` is not "the first code that runs" but "the
-  first of the code we write that runs."
+  Memorising is not the goal — the list is vast and continually refined. What works
+  in practice is *an instinct*: the habit of asking "are my grounds for saying this
+  code is correct in the contract, or is it that it ran on my computer?" And
+  backing that instinct with tools — turning warnings on, running tests under
+  sanitizers, cross-checking with two compilers (chapter 17). The reason this book
+  has repeated "is it correct on the abstract machine" since Part II is precisely
+  to plant that instinct.
 ]
 
-#recap[
-  #dtable(
-    columns: 2,
-    [*to remember*], [*the point*],
-    [three forms], [`int main(void)`, `int main(int, char *[])`, implementation-defined],
-    [`void main()`], [not standard (embedded extensions are another matter)],
-    [`argv[0]`], [the program name — it may be empty],
-    [`argv[argc]`], [necessarily null. the end marker for traversal],
-    [ways of ending], [`return`/`exit` (they clean up) / `_Exit`, `abort` (they do not)],
-    [the C99 special case], [`main` returns 0 even when it ends without a value],
-    [the range of values], [small numbers 0–125. Unix conveys only the low eight bits],
-    [conventions], [0 success, 1 failure, 2 usage error (Unix)],
-    [embedded], [`main` usually does not return],
-  )
-]
+== Closing Part IX
 
-We have seen the program's beginning and end. Now we move on to the story of a
-program *divided across several files* — the place where chapter 16's linker
-appears again.
+The part of precision is over — how to handle approximation (chapter 47), how to
+handle failure (chapter 48), and how to know the world outside the contract
+(chapter 49). The three chapters share one theme: *C is a language that entrusts
+much to the programmer, and the person who knows what has been entrusted writes
+safe code.*
+
+The last parts remain. Every program so far has been a single file — now it grows
+into several files (chapter 51), we face the layer of preprocessing and
+translation (chapter 52), we learn the terrain of the standard library
+(chapter 56), we treat proven head on (Part XII), and we close the book with the
+practices of modern C (chapter 85).
+
+The next part is the story of *composing* a program. Its first chapter is the
+place we have used only as a six-line convention until now — `main` itself. We see
+its three forms, and where the value it returns goes.

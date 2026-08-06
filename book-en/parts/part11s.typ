@@ -4,7 +4,7 @@ the field actually runs into arise mostly not in the language but in the
 failure with a single value, functions that return a static buffer, character
 classification whose answer changes with the locale.
 
-Chapter 55 spread out the map of the terrain, so in this part we walk each of its
+Chapter 56 spread out the map of the terrain, so in this part we walk each of its
 regions ourselves. Taking the headers one by one, we look less at *what is there*
 than at *where one slips*. Lists of functions are compressed into tables, and the
 pages are spent on the traps and how to mend them.

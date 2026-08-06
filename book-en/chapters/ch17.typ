@@ -137,7 +137,7 @@ The four links in the chain:
   string literals are mangled right there.
 - *③ the execution character set* — what bytes the compiler embeds in the
   executable (stage 5 of chapter 9; the conversion seen in the translation
-  phases of chapter 51).
+  phases of chapter 52).
 - *④ the encoding the terminal interprets* — which table the window reads the
   program's bytes with. Get this wrong and the screen shows broken characters
   even if the first three are perfect.
@@ -193,7 +193,7 @@ culprit appears.
   to pin each link of the chain — UTF-8 source, UTF-8 stated to the compiler,
   UTF-8 terminal. Pin those three and it stays quiet thereafter. The rules for
   *handling* strings (character count ≠ byte count, do not cut at a boundary)
-  are as already learned in chapters 9 and 38.
+  are as already learned in chapters 9 and 39.
 ]
 
 == The debugger — stopping to look inside
@@ -269,7 +269,7 @@ put that information into the executable. That is `-g`.
 - `-fno-omit-frame-pointer` — leaves the thread for tracing back the call chain.
   It also helps profilers and crash reports.
 
-There is one switch related to `assert` (chapter 47). Give `-DNDEBUG` and every
+There is one switch related to `assert` (chapter 48). Give `-DNDEBUG` and every
 `assert` disappears entirely — release builds are usually made that way. Erasing
 the checks means *what was caught in the debug build passes silently in
 release*, so a check that must not disappear should generally be written as an
@@ -328,7 +328,7 @@ The blind spots commonly met in optimised builds:
 
 The most vexing situation, and most of the causes converge on one — *the program
 was already broken, and the debug build happened to be hiding it.* Optimisation
-did not break sound code; code outside the contract (chapters 13 and 48) was
+did not break sound code; code outside the contract (chapters 13 and 49) was
 taken as a premise, and only then did the symptom appear. The common roots:
 
 - *uninitialised local variables* — under `-O0` that stack slot happens to be 0
@@ -387,7 +387,7 @@ boards with neither screen nor keyboard. The order of attack is roughly this.
   dump in a debugger afterwards and trace the crash site back to source lines.
 + *Narrow by bisection.* Lower the optimisation level (`-O2` → `-O1` → `-O0`) to
   see where behaviour diverges, and halve the version-control history to find
-  when the bug entered (chapter 82's `git bisect`).
+  when the bug entered (chapter 83's `git bisect`).
 + *Make a minimal reproduction.* Reducing the problem to the smallest program
   that reproduces it often exposes the cause by itself, and turns it into
   something you can ask others about.
@@ -443,7 +443,7 @@ three main players.
 - *UBSan* (UndefinedBehaviorSanitizer) — in charge of contract violations. When
   *undefined behaviour* such as signed overflow (chapter 7) or a shift at least
   as wide as the type (chapter 7) actually happens at run time, it says so on
-  the spot. It is the protagonist of chapter 48.
+  the spot. It is the protagonist of chapter 49.
 - *TSan* (ThreadSanitizer) — in charge of race accidents. It catches several
   cores (chapter 12) fighting over the same data. Outside this book's scope, but
   worth knowing by name.
@@ -490,7 +490,7 @@ several times.
   executed. So modern C development layers its nets: warnings (always) +
   sanitizers (test runs) + crossing two compilers (habit) + and using components
   that are hard to have accidents with in the first place. That last item is
-  where this book's proven stands later on (chapter 39) — tools are nets, and
+  where this book's proven stands later on (chapter 40) — tools are nets, and
   good components are footholds you do not fall off to begin with.
 ]
 
@@ -503,7 +503,7 @@ that relay (chapter 17). The preparation is done.
 The next chapter is this part's finish and a map: which C compilers, other than
 the gcc and clang we just installed, are in active service in the world
 (chapter 18). What embedded developers carry beside make and git is a wide
-enough subject that it waits until the end of the book (chapter 83).
+enough subject that it waits until the end of the book (chapter 84).
 
 From the part after that, the real study of the language begins — not a list of
 new syntax, but the goal of Part IV: *reading one piece of chapter 15's hello

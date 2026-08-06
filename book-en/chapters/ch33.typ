@@ -25,7 +25,7 @@
   and understood most shallowly: *assignment*. That it is an expression, that the
   left side is evaluated too, that compound assignment evaluates the left side
   only once, and where the contract ends. The vocabulary built here carries into
-  chapter 45's gathering of the operators and chapter 48's undefined behaviour.
+  chapter 46's gathering of the operators and chapter 49's undefined behaviour.
 ]
 
 #chapter-questions()
@@ -152,7 +152,7 @@ still outside the contract, and so is `x <<= 40` (chapter 27).
 
 Now the famous expressions can be judged. The code below *carries no output* —
 printing the result of an expression outside the contract would leave the false
-knowledge "on this compiler it comes out like this" (chapter 48's principle).
+knowledge "on this compiler it comes out like this" (chapter 49's principle).
 
 ```c
 int i = 0, a[4] = {0};
@@ -180,7 +180,7 @@ f(i++);               /* one argument cannot overlap */
   ```
   Meeting such code, read it not as "what is the result" but as *"this code has no
   meaning"*. Outside the contract does not mean the value is strange; it means the
-  compiler may generate anything at all and owes you no diagnostic (chapter 48).
+  compiler may generate anything at all and owes you no diagnostic (chapter 49).
 
   The safe shape splits the statements.
   ```c
@@ -215,7 +215,7 @@ but what went in*. That `(int)d` is 3 after `d = 3.9` is the same story
   [`int n = 3.9;`], [truncated toward zero to 3], [fine, but confirm the intent],
   [`unsigned u = -1;`], [wraps to the maximum], [fine (unsigned is modular)],
   [`int n = 3e30;`], [a real that does not fit an `int` → *outside the contract*], [UB],
-  [`float f = 0.1;`], [narrowed from double to single], [fine; precision is lost (chapter 46)],
+  [`float f = 0.1;`], [narrowed from double to single], [fine; precision is lost (chapter 47)],
 )
 
 Turning on `-Wconversion` makes the compiler point at such places. It is a noisy

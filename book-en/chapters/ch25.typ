@@ -75,7 +75,7 @@ deliberate credit).
   Reading a line is a structure in which you tell the container's size as you
   read, so overflow is blocked at the source — what accidents the old ways that
   do not state a size caused, and how this two-stage practice seals them off, is
-  the story of chapter 38. Getting the safe grain into your hands from the start
+  the story of chapter 39. Getting the safe grain into your hands from the start
   — that is this book's choice.
 ]
 
@@ -91,7 +91,7 @@ taking one road on success and another on failure. So the example above
 discarded the return value and laid a floor for the failing case by initialising
 `n` to 0 (chapter 23's habit). The fork appears in the next part (chapter 29),
 and the discipline of "report failure as a value and always check it" is
-established formally in chapter 47 — checking input will be that discipline's
+established formally in chapter 48 — checking input will be that discipline's
 first real exercise.
 
 #misconception[

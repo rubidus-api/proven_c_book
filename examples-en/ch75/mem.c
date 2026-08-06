@@ -57,7 +57,7 @@ int main(void)
     proven_println("copy 15 into 8  -> err={} (if it does not fit, nothing is written)",
                    PROVEN_ARG((int)e2));
 
-    /* overlapping regions go through move. Chapter 59's memcpy/memmove split holds here too */
+    /* overlapping regions go through move. Chapter 60's memcpy/memmove split holds here too */
     proven_err_t e3 = proven_mem_move(storage + 2, 13,
                                       proven_mem_view_slice_unchecked(view, 0, 5));
     show("after move", (proven_mem_view_t){ .ptr = storage, .size = 7 });

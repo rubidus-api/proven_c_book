@@ -1,177 +1,179 @@
 #import "../../book/lib.typ": *
 
-= Numbers — `<math.h>`, `<fenv.h>`, `<tgmath.h>`
+= Characters and locales — `<ctype.h>`, `<locale.h>`, `<wchar.h>`
 
 #prereq(
-  ([chapter 46, Real numbers], [the mathematics of approximation]),
-  ([chapter 8, Representing numbers], [IEEE 754]),
+  ([chapter 9, Characters and text], [letters and encodings]),
 )
 
 #deepqa[
-  Chapter 46 said not to compare reals with `==`, and chapter 8 said 0.1 is not
-  exactly representable. Then how does a mathematical function tell you when it
-  receives "input it cannot calculate"?
+  Chapter 9 said a character is a number in a code chart and an encoding is the way
+  of writing that number as bytes. Then what is a call like `isalpha('가')` asking?
 ][
-  There are two paths. It gives NaN or an infinity as the *return value*, and at
-  the same time leaves the reason in *`errno`* — `EDOM` for outside the domain,
-  `ERANGE` when the result exceeds the representable range. But an implementation
-  may choose to report through the floating-point exception flags (`<fenv.h>`)
-  instead of `errno`, so to check portably you must be ready to look at both. In
-  the field it is usually simpler to check the return value with `isnan` and
-  `isinf`.
+  It is a wrongly thrown question. The functions of `<ctype.h>` judge *one byte*. In
+  UTF-8 "가" is three bytes, so it cannot go in as an argument to begin with, and
+  even if it did each byte would merely be looked at separately. This header is a
+  tool of the ASCII days; to handle multibyte characters you need the wide-character
+  family (`<wctype.h>`) or code that handles the encoding yourself.
 ]
 
 #organizer[
-  We look at how real-number calculation reports failure. The mathematics of
-  approximation learned in chapters 8 and 46 becomes the contract of functions here
-  — calls outside the domain, results beyond the range, the properties of NaN and
-  infinity, and the hidden global state called the rounding mode.
+  We look at the functions that handle a single character. It is the simplest
+  header in appearance, yet two of C's subtlest traps are here — that *passing a
+  `char` as it stands is outside the contract*, and that *the answer depends on the
+  global state called the locale*. Chapter 9's encoding story returns at the level
+  of functions.
 ]
 
 #chapter-questions()
 
-== The properties of NaN and infinity
+== The first trap — do not pass a `char` as it stands
 
-#demo("examples-en/ch62/math.c")
+#demo("examples-en/ch62/ctype.c")
 
-Four things to point out in the output.
+Every function of `<ctype.h>` takes an `int`. And the argument value the standard
+requires is *a value representable as an `unsigned char`, or `EOF`*.
 
-*① NaN is not equal to itself.* IEEE 754 settled it so. Hence the old idiom that
-if `x != x` is true then `x` is NaN, while the standard function is `isnan(x)`.
-Because of this property, sorting an array containing NaN with `qsort` breaks the
-comparator's total order and the result collapses (chapter 60).
+The problem is that implementations where `char` is signed are common
+(chapter 26). As the example's output shows, put a 0xC7 byte in a `char` and it
+becomes −57, and passing that straight to `isalpha` is passing *a value that is not
+permitted* — outside the contract. Real implementations are mostly built as array
+indexes, so the accident of reading before the array with a negative index occurs.
 
-*② Dividing a real by zero is not outside the contract.* Unlike integer division
-(chapter 27), in an IEEE 754 environment it yields an infinity or a NaN. But the
-same holds that *the very fact of dividing by zero is usually a bug*.
+The idiom is one.
 
-*③ `sqrt(-1)` is `EDOM`, `exp(1000)` is `ERANGE`.* The former is outside the
-domain, the latter a case where the result exceeded the representable range. If you
-mean to look at `errno`, set it to 0 just before the call (chapter 64).
+```c
+isalpha((unsigned char)c)
+toupper((unsigned char)c)
+```
 
-*④ 0.0 and −0.0 are equal under `==`.* But the sign bit differs, and `1/0.0` and
-`1/-0.0` are +∞ and −∞ respectively. If the sign must be distinguished, use
-`signbit`.
+That `EOF` is a valid argument is worth remembering too — that is why the argument
+type is `int` and not `char` (the same root as chapter 58's `fgetc` story).
 
-#misconception[
-  "Comparing reals is safe if you use an epsilon"
+#antipattern[
+  Passing a `char` as it stands
 ][
-  The epsilon comparison learned in chapter 46 is not omnipotent. Absolute error
-  (`fabs(a-b) < eps`) becomes meaningless when the values are large — near 1e9,
-  1e-9 is not even representable — and relative error collapses near zero. The
-  prescription in the field is *settling a tolerance that fits the situation*, not
-  using a universal constant. And it is better to ask first whether it can be
-  handled with integers or fixed point so that the comparison is not needed at all
-  (chapter 8's story of calculating money).
+  ```c
+  char *p = line;
+  while (*p) { if (isspace(*p)) ... ; p++; }   /* outside the contract at bytes ≥ 0x80 */
+  ```
+  Unless there is a guarantee that only ASCII arrives, always convert.
+  ```c
+  while (*p) { if (isspace((unsigned char)*p)) ... ; p++; }
+  ```
+  In a program handling Korean, Japanese or European text, this one line divides a
+  real accident from no accident.
 ]
 
 #qa[
-  How do the functions of `math.h` report failure — the return value alone cannot say?
+  If a program only ever handles ASCII, can locales and wide characters be ignored?
 ][
-  In three ways. *Outside the domain* (say `sqrt(-1)`) they return NaN and set
-  `errno` to `EDOM`. *Beyond the range* (say `exp(1000)`) they return infinity and
-  set `ERANGE`. And the floating-point exception flags of `<fenv.h>` are raised.
+  It looks that way for a while, and then two places catch you. First, programs
+  mostly receive other people's input — nothing stops a file name, a user name or
+  a pasted string from carrying Korean or an emoji. Second, the locale changes
+  *even the handling of ASCII*. The famous case is the Turkish locale, where
+  `toupper('i')` becomes the dotted capital `İ`; in a locale whose decimal point
+  is a comma, even `printf("%f")` prints differently.
 
-  The trouble is that *how far each of the three is honoured varies between
-  implementations*. So the practical idiom is to clear `errno = 0` before the call
-  and check immediately after (chapter 64). To inspect the value itself use
-  `isnan` and `isinf` — they say what they mean, unlike tricks such as `x != x`.
+  So this book's advice is not "you may ignore it" but *"be aware of the moment
+  you step outside the default locale."* A design that handles bytes as they are,
+  like chapter 77's UTF-8 views, shrinks the problem the most.
 ]
 
-== Functions often got wrong
+== The second trap — the locale
+
+The judgements of `<ctype.h>` depend on *the current locale*. The default is the
+`"C"` locale, and calling `setlocale(LC_ALL, "")` changes it to the locale the
+environment variables settle. From that moment the set of bytes for which
+`isalpha` returns true may differ.
+
+What the locale changes is not only character classification.
 
 #dtable(
   columns: 3,
-  [*function*], [*what it does*], [*trap*],
-  [`pow(x, y)`], [raising to a power], [used for an integer power it can be slow and inexact],
-  [`round`, `nearbyint`], [rounding], [`round` goes away from zero, `nearbyint` follows the current mode],
-  [`floor`, `ceil`, `trunc`], [cutting to an integer], [the direction differs for negatives],
-  [`fmod`, `remainder`], [the remainder], [their sign rules differ from each other],
-  [`abs`, `fabs`], [absolute value], [★ `abs` is for integers. used on a real it truncates],
-  [`atan2(y, x)`], [angle], [the argument order is `y, x`],
-  [`isnan`, `isinf`], [classification], [they are macros — they cannot be used as function pointers],
+  [*category*], [*what changes*], [*where to beware*],
+  [`LC_CTYPE`], [character classification, case conversion], [`isalpha`, `toupper`],
+  [`LC_NUMERIC`], [the decimal point character], [★ `printf("%f")`, `strtod`],
+  [`LC_COLLATE`], [string sorting order], [`strcoll`, `strxfrm`],
+  [`LC_TIME`], [date and time notation], [`strftime` (chapter 64)],
+  [`LC_MONETARY`], [currency notation], [`localeconv`],
 )
 
-`pow(x, 2)` is widely used, but for an integer square `x * x` is faster and exact.
-The compiler often optimises it, but not always.
-
-The mistake of using `abs` on a real is especially quiet. `<stdlib.h>`'s `abs`
-takes an `int`, so `abs(-1.5)` turns −1.5 into 1. Today's compilers warn, but it is
-easy to miss in a file that does not include `<math.h>`.
-
-== Rounding modes and floating-point exceptions — `<fenv.h>`
-
-Floating-point operations have two pieces of *hidden global state*.
-
-*The rounding mode* — the default is "to the nearest value, ties to even". It can
-be changed with `fesetround`, and once changed every subsequent real operation is
-affected.
-
-*The exception flags* — flags are raised when division by zero, overflow,
-inexactness and so on occur. They are read with `fetestexcept` and cleared with
-`feclearexcept`. They are finer than `errno`, but to use this facility
-`#pragma STDC FENV_ACCESS ON` must be turned on — and then the compiler refrains
-from reordering real operations, so optimisation is reduced.
-
-#antipattern[
-  Turning on `-ffast-math` and checking for NaN
-][
-  ```sh
-  cc -O2 -ffast-math app.c        # tells the compiler "take it that NaN and infinity do not exist"
-  ```
-  ```c
-  if (isnan(x)) { /* this branch can vanish entirely */ }
-  ```
-  Options of the `-ffast-math` family tell the compiler it may assume
-  associativity and ignore the existence of NaN and −0.0. Speed is gained, but *the
-  checking code can vanish under optimisation* — the real-number edition of the
-  "bug that appears only in release" seen in chapter 17. In a program where
-  numerical accuracy matters, not turning it on is the default.
-]
-
-== Type-generic — `<tgmath.h>`
-
-`sqrt` is for `double`, `sqrtf` for `float`, `sqrtl` for `long double`. Include
-`<tgmath.h>` and the edition fitting the argument's type is chosen by `sqrt(x)`
-alone — the representative case of the `_Generic` seen in chapter 52 being used in
-the standard library.
-
-It is convenient but has a price. Being macros, they cannot be passed as function
-pointers, and there may be implementations that evaluate the argument twice, so
-putting in an expression with side effects is dangerous.
+`LC_NUMERIC` is especially dangerous. In German and French locales the decimal
+point is a comma, so `printf("%f", 3.14)` prints `3,140000` and
+`strtod("3.14", …)` stops at 3. It means that *numbers to be shown to a human* and
+*numbers to be written to a file or protocol* must follow different rules.
 
 #realcase[
-  The same calculation, a different answer — the history of excess precision
+  The pattern in which a locale wrecked data
 ][
-  x86's old floating-point unit (x87) calculated internally in 80 bits. So it
-  happened that the same `double` operation differed depending on whether it was
-  still in a register or had been stored to memory — change the optimisation level
-  and the result changed minutely, and `x == y` that had been true could become
-  false.
+  It really has happened repeatedly that the same program writes `3.14` on the
+  developer's machine (an English locale) and `3,14` on the user's machine (a
+  German locale). A CSV file fails to parse column by column, a configuration file
+  cannot be read back after being saved, or the JSON two countries' servers
+  exchange goes out of step.
 
-  C99 made this circumstance explicit with `FLT_EVAL_METHOD`, and today's 64-bit
-  x86 uses SSE so the problem has greatly diminished. But the possibility of "the
-  same code, a different answer" still remains in compilation options and the
-  target machine — the reason chapter 46 said "real-number calculation needs
-  reproducibility looked after separately."
+  The prescription is clear. *Numbers a machine will read are handled by a path
+  that does not depend on the locale* — keep the `"C"` locale, handle the notation
+  of the digits yourself, or use locale-independent functions. It is also why C11's
+  `<uchar.h>` and several libraries lay a separate path to avoid this problem.
+]
+
+#misconception[
+  "If `setlocale` is not called there is no locale problem"
+][
+  Broadly right, but there is an exception. *Another library* the program uses may
+  call `setlocale` (GUI toolkits commonly do), and from that moment my code's
+  `printf("%f")` is affected too. Moreover the locale is *process-global*, so in a
+  program running along several strands it becomes a race. Thread-local locales
+  such as POSIX's `uselocale` and `newlocale` arose for that reason, but they are
+  not in standard C.
+]
+
+== Wide characters — `<wchar.h>`, `<wctype.h>`, `<uchar.h>`
+
+C95 brought in `wchar_t` and its functions. The idea was "one character as one
+unit", but reality betrayed the idea.
+
+- The *size of `wchar_t` differs by implementation.* Linux has 4 bytes (close to
+  UTF-32), Windows 2 bytes (it being UTF-16, characters of the supplementary
+  planes become two units). That is, "one character = one `wchar_t`" does not hold
+  everywhere.
+- The conversion functions (`mbstowcs` and so on) *depend on the locale.* To handle
+  a UTF-8 string the locale must be UTF-8.
+- So portable programs often choose, instead of wide characters, to *handle the
+  UTF-8 byte sequence as it is*.
+
+The `char16_t` and `char32_t` of `<uchar.h>`, added by C11, have fixed sizes and so
+avoid this problem. But library support is thin, so in the field a dedicated
+Unicode library is still used, or it is handled by hand.
+
+#platform[
+  Windows and UTF-16
+][
+  The "W" family of Windows API functions takes UTF-16 (`wchar_t`). So a Windows
+  program must go between UTF-8 and UTF-16 at the boundary, and it must not be
+  forgotten that this conversion can fail (unpaired surrogates). It is the place
+  where chapter 17's chain-of-encodings story is replayed at the API layer, and the
+  `u16` family treated in Part XII's string chapter is exactly the tool that lays
+  this bridge.
 ]
 
 #recap[
-  Numbers in summary.
+  Characters and locales in summary.
 
   #dtable(
     columns: 3,
-    [*situation*], [*what to use*], [*what to beware of*],
-    [checking for NaN], [`isnan`], [`x == NaN` is always false],
-    [checking for infinity], [`isinf`], [dividing a real by zero is not UB],
-    [the kind of a value], [`fpclassify`], [the existence of subnormal numbers],
-    [domain and range errors], [the return value + `errno`], [`errno = 0` just before the call],
-    [integer squares], [`x * x`], [`pow(x, 2)`],
-    [absolute value of a real], [`fabs`], [`abs` (for integers)],
-    [per-type functions], [`<tgmath.h>`], [macros — no arguments with side effects],
-    [fast-math options], [off by default], [checking code vanishes],
+    [*situation*], [*rule*], [*if got wrong*],
+    [calling `<ctype.h>`], [convert with `(unsigned char)`], [a negative argument — outside the contract],
+    [handling `EOF`], [the argument type is `int`], [confusion with 0xFF],
+    [multibyte characters], [judging byte by byte is meaningless], [a judgement on a split character],
+    [numeric input and output], [a locale-independent path for machines], [the decimal point changes and parsing fails],
+    [sorting], [`strcoll` for humans], [`strcmp` is not dictionary order],
+    [`wchar_t`], [the size differs by implementation], [miscounting characters on Windows],
+    [recommended], [UTF-8 byte sequences + conversion only at the boundary], [—],
   )
 ]
 
-We have passed numbers. The next chapter is time — a place with unusually much
-that the standard does not settle for you.
+We have passed the world of the single character. The next chapter is the world of
+numbers — how real-number calculation reports failure in the standard library.

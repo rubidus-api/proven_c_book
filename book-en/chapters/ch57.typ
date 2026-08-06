@@ -1,195 +1,162 @@
 #import "../../book/lib.typ": *
 
-= Streams in reality — `<stdio.h>` ①
+= The whole map of the standard library
 
 #prereq(
-  ([chapter 10, The origin of streams], [the origin of streams]),
-  ([chapter 22, Output], [output in reality]),
+  ([chapter 56, The terrain of the standard library], [the character of the standard library]),
 )
 
 #deepqa[
-  Chapter 10 said a stream is "a band whose other end the program does not know",
-  and that this is why the same program serves screen, file and other programs
-  alike. Then *when* do the bytes a program wrote actually arrive at their
-  destination?
+  Chapter 56 said the standard library is "thin and old", and that the standard
+  pins down not only the grammar but the list of libraries and the contract of each
+  function. Then exactly how many headers are there, and how has that list grown?
 ][
-  Usually not at once. The standard library keeps a *buffer* per stream, gathers
-  bytes there and sends them out in one go — because system calls are expensive (we
-  meet this again in Part XII). There are three ways of deciding when to empty it.
-  *Full buffering* is when the buffer fills, *line buffering* when a newline is
-  met, *unbuffered* is immediately. Standard output connected to a terminal is
-  usually line-buffered, and when redirected to a file it turns into full
-  buffering — meaning *the moment at which the same program's output appears
-  changes with what it is connected to*, and that is this chapter's first trap.
+  Thirty-one as of C23. C89 began with fifteen, C95 added two concerning wide
+  characters, C99 nine, C11 five, and C23 a few more. That the speed of growth is
+  almost the same as the language's speed of change tells the character of this
+  list — *once something enters it stays effectively forever, and so it takes long
+  to let anything in*. It is the other side of the story of `gets`'s funeral taking
+  decades (chapter 40).
 ]
 
 #organizer[
-  We look at the floor beneath the header used most. How a stream is really opened
-  and closed, when the buffer is emptied, where failure shows itself — and the
-  misuse of `feof`, the place introductory books get wrong over and over. The
-  notion of a stream learned in chapter 10 becomes an API here.
+  We spread into a table every header the C standard settles, without missing one.
+  Which header entered in which edition, what can be used even without an
+  operating system, and in what order the remaining chapters of this part walk
+  those regions. It is the chapter that redraws chapter 56's terrain map at a
+  larger scale.
 ]
 
 #chapter-questions()
 
-== Open, write, close — failure can happen three times
+== Freestanding and hosted — two worlds
 
-#demo("examples-en/ch57/streams.c")
+The standard divides implementations in two. A *hosted implementation* is the
+ordinary environment running on top of an operating system, and a *freestanding
+implementation* is an environment with no operating system — firmware, a kernel, a
+bootloader.
 
-It is worth noticing that the example checks for failure in three places.
-
-*① `fopen`* — on failure it returns null. The reason is left in `errno`, and
-`perror` prints it as a sentence a human can read (chapter 64). The file may not
-exist, permission may be lacking, or too many files may be open.
-
-*② Writing* — `fprintf` returns the number of characters printed and gives a
-negative value on failure. Code that checks it is rare, but if the disk fills or a
-pipe breaks it shows itself here.
-
-*③ `fclose`* — here is the real trap. It is the place where what remained in the
-buffer is finally sent out, so *it is common for a write failure to show itself
-for the first time on closing*. A program that must not lose data therefore always
-checks `fclose`'s return value.
-
-#antipattern[
-  Ignoring the failure of closing
-][
-  ```c
-  fprintf(f, "%s\n", important);
-  fclose(f);                  /* nobody asked whether it failed */
-  puts("saved");              /* it may in fact not have been saved */
-  ```
-  In buffered writing, the moment at which "it succeeded" may be said is *after
-  closing has succeeded*. If it must truly be nailed to the disk, flush with
-  `fflush` before closing and call the platform's synchronisation call (`fsync` and
-  the like) as well — that is what a database does.
-]
-
-== How to know the end of a file — the misuse of `feof`
-
-The most widespread wrong answer is here.
-
-#demo("examples-en/ch57/feof_bad.c")
-
-Why is `while (!feof(f))` wrong? `feof` is *not a prophet but a recorder* — the
-mark saying "the end of the file was reached" is turned on only *after* a read has
-failed. So right after reading the last value it is still off, the loop turns once
-more, and the result of the failed read (= the previous value, unchanged) is used
-as it stands. That 30 was printed twice in the example is the evidence.
-
-The rule is one. *Control the loop by the reading function's return value.* `feof`
-and `ferror` are used after the loop ends, to tell "why did it end".
+The difference between the two is exactly the difference in the header list. The
+headers a freestanding implementation must provide are only the following; the
+rest may or may not be there.
 
 #dtable(
   columns: 3,
-  [*function*], [*success*], [*end or failure*],
-  [`fgets`], [the buffer pointer], [null — tell them apart with `feof`/`ferror`],
-  [`fscanf`], [the number of items filled], [0 (format mismatch) or `EOF`],
-  [`fgetc`], [the character read (an unsigned char as an int)], [`EOF`],
-  [`fread`], [the number of *elements* read], [fewer than requested means the end or an error],
+  [*header*], [*what*], [*note*],
+  [`<float.h>`], [the limits of real types], [defines values only],
+  [`<limits.h>`], [the limits of integer types], [defines values only],
+  [`<stdarg.h>`], [variadic arguments], [chapter 53],
+  [`<stdbool.h>`], [`bool`], [C99. effectively unnecessary in C23],
+  [`<stddef.h>`], [`size_t`, `NULL`, `offsetof`], [the most basic of the basics],
+  [`<stdint.h>`], [fixed-width integers], [C99],
+  [`<stdalign.h>`], [`alignas`, `alignof`], [C11. keywords in C23],
+  [`<stdnoreturn.h>`], [`noreturn`], [C11. to be retired in C23],
+  [`<iso646.h>`], [alternative spellings such as `and`, `or`], [C95],
+  [`<stdbit.h>`], [bit manipulation], [added in C23],
+  [`<stdckdint.h>`], [checked arithmetic], [added in C23],
 )
 
-#misconception[
-  "The result of `fgetc` may be put in a `char`"
-][
-  It may not. `fgetc` returns an `int`, and that value is either *a character in
-  0–255* or *`EOF`* (usually −1). The moment it goes into a `char` the two can no
-  longer be told apart — on an implementation where `char` is signed, a 0xFF byte
-  becomes −1 and is identical to `EOF`, and where it is unsigned, `EOF` becomes 255
-  and it never ends. So `int c; while ((c = fgetc(f)) != EOF)` is the canonical
-  form. This one line is also the idiom most often miscopied in introductions to C.
-]
+That C23 lengthened this list is worth noticing. The two that newly entered are *pure
+computation needing no operating system*, so they can be provided in a freestanding
+environment too, and what they do (counting bits and checking overflow) is especially
+handy in embedded work. That the list grows in the direction of "what works without an
+OS" shows this division's character too.
 
-== Lines longer than the buffer
+And a whole header being required differs from only some of its declarations being
+required — `<string.h>`, for example, is not freestanding-required, but if an
+implementation provides it the contracts inside must follow the standard.
 
-That is what the last part of the example shows. If the buffer is too small
-`fgets` reads *only that far* and stops — it is not an error. So without checking
-whether a newline is in there, what you believed to be "one line" may in fact be
-the front piece of a line.
+That this list is short is the background of this whole book — in embedded work
+neither `printf` nor `malloc` is a given (Part XII's freestanding story begins
+here).
 
-Read `one\n` with a 4-byte buffer and it comes split in two: `one` (no newline)
-and `\n` (a newline only). When code handling long lines in the field forgets this
-fact, one line is quietly processed as two records.
+== The whole list
+
+Every header the standard settles. "Edition" is the edition in which that header
+entered the standard, and the chapter of this part that treats it is written
+alongside.
+
+#dtable(
+  columns: 4,
+  [*header*], [*edition*], [*what it holds*], [*in this part*],
+  [`<assert.h>`], [C89], [`assert` — the diagnosis that catches contract violations], [chapter 65],
+  [`<complex.h>`], [C99], [complex arithmetic], [chapter 63],
+  [`<ctype.h>`], [C89], [character classification and conversion], [chapter 62],
+  [`<errno.h>`], [C89], [the error-number global], [chapter 65],
+  [`<fenv.h>`], [C99], [the floating-point environment (rounding, exceptions)], [chapter 63],
+  [`<float.h>`], [C89], [the limits of real types], [chapters 26, 63],
+  [`<inttypes.h>`], [C99], [formats and conversions for fixed-width integers], [appendix B, chapter 66],
+  [`<iso646.h>`], [C95], [alternative spellings of operators], [chapter 66],
+  [`<limits.h>`], [C89], [the limits of integer types], [chapter 26],
+  [`<locale.h>`], [C89], [locale settings], [chapter 62],
+  [`<math.h>`], [C89], [mathematical functions], [chapter 63],
+  [`<setjmp.h>`], [C89], [non-local jumps], [chapter 65],
+  [`<signal.h>`], [C89], [signal handling], [chapter 65],
+  [`<stdalign.h>`], [C11], [specifying and querying alignment], [chapter 66],
+  [`<stdarg.h>`], [C89], [variadic arguments], [chapter 53],
+  [`<stdatomic.h>`], [C11], [atomic operations], [chapter 67],
+  [`<stdbit.h>`], [C23], [bit manipulation (counting, rotating and so on)], [chapter 66],
+  [`<stdbool.h>`], [C99], [`bool`, `true`, `false`], [chapter 66],
+  [`<stdckdint.h>`], [C23], [arithmetic that checks for overflow], [chapters 49, 68],
+  [`<stddef.h>`], [C89], [`size_t`, `ptrdiff_t`, `NULL`, `offsetof`], [chapter 66],
+  [`<stdint.h>`], [C99], [fixed-width integer types], [chapters 26, 66],
+  [`<stdio.h>`], [C89], [stream input and output, files], [chapters 51, 59],
+  [`<stdlib.h>`], [C89], [conversion, random numbers, allocation, sorting, program termination], [chapter 61],
+  [`<stdnoreturn.h>`], [C11], [`noreturn`], [chapter 66],
+  [`<string.h>`], [C89], [strings and memory blocks], [chapter 60],
+  [`<tgmath.h>`], [C99], [type-generic mathematical functions], [chapter 63],
+  [`<threads.h>`], [C11], [threads, mutexes, condition variables], [chapter 66],
+  [`<time.h>`], [C89], [time and the calendar], [chapter 64],
+  [`<uchar.h>`], [C11], [UTF-16 and UTF-32 character types], [chapter 62],
+  [`<wchar.h>`], [C95], [wide-character input, output and strings], [chapter 62],
+  [`<wctype.h>`], [C95], [wide-character classification], [chapter 62],
+)
 
 #qa[
-  What is done when the line length is unknown?
+  How many of these are actually used often?
 ][
-  There are three roads. First, *a big enough buffer plus a newline check* — if
-  there is no newline, read the rest away or treat it as an error. Second, *reading
-  while growing it yourself* — gather one character at a time with `fgetc` and
-  enlarge the buffer when needed (chapter 41's dynamic allocation). Third, *a
-  function the platform gives* — POSIX's `getline` enlarges by itself, but it is
-  not standard. To write with the standard alone the second is the right answer,
-  and using a library so as not to write that code every time is Part XII's story.
+  Most programs live on about five — `<stdio.h>`, `<stdlib.h>`, `<string.h>`,
+  `<stdint.h>`, and as needed `<math.h>` or `<time.h>`. The rest are things you
+  "know exist and look up when needed". So this part's aim too is not memorising
+  but *keeping the map in your head* — roughly where what is, and which regions are
+  slippery.
 ]
 
-== Text mode and binary mode
-
-That is the `b` attached to `fopen`'s second argument. On the Unix family there is
-no difference, but on Windows there is — text mode turns `\n` into `\r\n` when
-writing and turns it back when reading. So opening a binary file in text mode
-quietly changes the bytes.
-
-#platform[
-  Windows' line-ending conversion
+#misconception[
+  "If it is in the standard library it is a safe and portable function"
 ][
-  When handling binary data (images, compressed files, serialised structs) always
-  open with `"rb"` or `"wb"`. Open in text mode and a 0x0A byte grows into 0x0D
-  0x0A, and on reading it shrinks the other way — *the file's size and content
-  differ*. It is the place where the CR/LF story seen in chapter 9 is replayed in
-  the file API.
-
-  Conversely, opening a text file in binary mode on Windows leaves a `\r` at the
-  end of the line, so a line read with `fgets` ends with an invisible `\r` — the
-  cause of a failing comparison is often here.
+  Being in the standard means *it is everywhere*, not *it is safe*. `gets` was in
+  the 1989 standard and was deleted only in 2011 (chapter 59). `strncpy`, contrary
+  to its name, is not a safe copying function (chapter 60), and `atoi` has no way
+  at all to report failure (chapter 61). Some functions of *the same name even
+  behave differently according to the locale* (chapter 62). Using the standard
+  library means not "using what has been verified" but *"using what has a stated
+  contract"*, and reading that contract is still our part.
 ]
 
-#antipattern[
-  `fflush(stdin)`
+#realcase[
+  The accident one header called down — `<strings.h>` is not standard
 ][
-  ```c
-  scanf("%d", &n);
-  fflush(stdin);      /* the intent is to empty the input buffer — it is outside the contract */
-  ```
-  `fflush` is a function for *output* streams. Using it on an input stream is
-  behaviour the standard does not define (some implementations merely support it as
-  an extension), and it cannot be used in portable code. To throw away the
-  remaining input you must read it away yourself.
-
-  ```c
-  int c;
-  while ((c = getchar()) != '\n' && c != EOF) { }
-  ```
+  There is a place confusable by similarity of name. `<string.h>` is standard but
+  `<strings.h>` (plural) is POSIX. Functions such as `strcasecmp` and `bzero` are
+  in there, so code using it does not compile on Windows. Conversely `strlcpy` and
+  `strlcat` came out of OpenBSD and spread to several Unixes but *were not
+  standard* — only in C23 were functions of similar intent so much as discussed.
+  The guess "it is used a lot, so it must be standard" is a common beginning of
+  portability accidents.
 ]
-
-== File position and size
-
-`fseek` and `ftell` handle position, but with restrictions. On a text stream the
-value `ftell` returns is *not guaranteed to be a byte offset*, and `fseek` is safe
-only with that value or with the combination of `SEEK_SET` and 0. On a large file
-`long` may be too small, so the non-standard `fseeko` and `ftello` (POSIX) or a
-platform API become necessary.
-
-The idiom "to learn a file's size, go to the end and `ftell`" is safe only in
-binary mode, and even then it is meaningless if the file is changing.
 
 #recap[
-  `<stdio.h>` streams in summary.
-
   #dtable(
-    columns: 3,
-    [*place*], [*rule*], [*if got wrong*],
-    [`fopen`], [check for null], [null dereference],
-    [writing], [check the return value (optional), check `fclose` (compulsory)], [quiet data loss],
-    [loop control], [by the reading return value], [misuse of `feof` — the last value duplicated],
-    [`fgetc`], [put it in an `int`], [confusing `EOF` with 0xFF],
-    [`fgets`], [check for a newline], [a long line processed split],
-    [binary files], [`"rb"`/`"wb"`], [byte corruption on Windows],
-    [emptying input], [read it away yourself], [`fflush(stdin)` is outside the contract],
-    [position], [byte meaning only in binary mode], [misunderstanding in text mode],
+    columns: 2,
+    [*to remember*], [*the point*],
+    [number of headers], [thirty-one as of C23. grown from C89's fifteen],
+    [freestanding], [only eleven are guaranteed without an operating system (C23 added two)],
+    [speed of entering], [slow. the speed of leaving is slower],
+    [standard = safe], [no. standard = *the contract is written down*],
+    [`<strings.h>`], [not standard (POSIX). do not be fooled by the name],
   )
 ]
 
-We have seen the skeleton of streams. The next chapter is the functions that
-actually read and write on top of it — and the story of a function *deleted* from
-the standard.
+The map is spread out, so we walk. The next two chapters are the region used the
+most and slipped in the most — stream input and output.

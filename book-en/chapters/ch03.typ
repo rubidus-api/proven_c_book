@@ -44,11 +44,11 @@ does not know.
 #dtable(
   columns: 3,
   [*what the OS gives a process*], [*what it is*], [*in this book*],
-  [address space], [a memory map of its own (chapter 2's four regions)], [chapter 69],
+  [address space], [a memory map of its own (chapter 2's four regions)], [chapter 70],
   [execution position], [which instruction it is in the middle of], [—],
-  [the list of open files], [the passages including standard input and output], [chapters 10 and 57],
-  [command-line arguments and environment], [the values handed over at running], [chapter 49],
-  [exit status], [the one number it leaves as it ends], [chapters 15 and 49],
+  [the list of open files], [the passages including standard input and output], [chapters 10 and 58],
+  [command-line arguments and environment], [the values handed over at running], [chapter 50],
+  [exit status], [the one number it leaves as it ends], [chapters 15 and 50],
 )
 
 Two things in this list connect straight to later chapters. First, the *standard
@@ -69,7 +69,7 @@ and the side receiving that number is whoever ran this process.
 
   There is a world without this isolation too — on a small chip running with no
   operating system there is no concept of a process at all, and one piece of code uses
-  the whole machine (chapter 69). So this chapter's story is not the story of
+  the whole machine (chapter 70). So this chapter's story is not the story of
   "everywhere C runs" but the story of *when it runs on an operating system*.
 ]
 
@@ -142,7 +142,7 @@ From here it differs by operating system. We learn the faces of two branches.
   is left to the implementation).
 
   Why so stingy — because C *must run on machines with no operating system too*
-  (chapter 56's freestanding implementation). C must exist on chips that have no
+  (chapter 57's freestanding implementation). C must exist on chips that have no
   processes, so processes remained outside the standard, in the operating system's
   territory.
 
@@ -165,8 +165,8 @@ From here it differs by operating system. We learn the faces of two branches.
 
   The deeper stories — programs running along several strands (threads), communication
   between processes, signals — are beyond this book's scope, but the pieces of them the
-  C standard treats are met in their places (signals in chapter 64, threads and atomic
-  operations in chapter 66).
+  C standard treats are met in their places (signals in chapter 65, threads and atomic
+  operations in chapter 67).
 ]
 
 #recap[

@@ -188,7 +188,7 @@ wrong, but *reading each other's letters verbatim causes accidents*.
   You can — put a multi-byte number in memory and read just its first slot as a
   single byte. If the first slot holds the least significant piece, it is
   little-endian. Actually doing this check in C is the demonstration in
-  chapter 44 (unions) — that is where we get the tool for reading the same
+  chapter 45 (unions) — that is where we get the tool for reading the same
   storage through different eyes.
 ]
 
@@ -210,7 +210,7 @@ There were times when a number was not even one number. In the 8086's segmented
 scheme an address was two pieces, "segment:offset", and several notations named
 the same physical slot (`0x0000:0x0010` and `0x0001:0x0000` are the same place).
 Some machines put program memory and data memory in altogether separate address
-spaces (the Harvard architecture — the small chips of chapter 83 still do).
+spaces (the Harvard architecture — the small chips of chapter 84 still do).
 
 And sometimes what rides inside the number is not a number at all.
 

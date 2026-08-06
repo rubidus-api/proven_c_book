@@ -84,7 +84,7 @@ comes out fine. The format `%f` in fact expects a double, and the float argument
 arrived as a double after promotion (which is why printf has no float-specific
 format at all). The "contract between format and materials" learned in
 chapter 22 has this promotion rule as a hidden clause — the full contract, and
-how to write variadic functions yourself, is faced head on in chapter 52.
+how to write variadic functions yourself, is faced head on in chapter 53.
 
 #realcase[
   The conversion that destroyed a rocket — Ariane 5, 1996
@@ -113,7 +113,7 @@ how to write variadic functions yourself, is faced head on in chapter 52.
   truncated (chapter 7's narrowing), and `(unsigned)-1` becomes an enormous
   positive number. C's cast means not "read these bits as that type" but
   "*convert* this value into a value of that type" — if you want to leave the
-  bits alone and change only the eye, chapter 44's union or `memcpy` is that
+  bits alone and change only the eye, chapter 45's union or `memcpy` is that
   channel. Not writing the two demands with the same syntax is one of C's few
   kindnesses.
 ]

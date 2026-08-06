@@ -106,7 +106,7 @@ those in frequent use:
   [`FLT_RADIX`], [the base of the exponent], [2],
 )
 
-`DBL_EPSILON` is met again in chapter 46 when comparing floating-point numbers —
+`DBL_EPSILON` is met again in chapter 47 when comparing floating-point numbers —
 it is the value used to set the criterion for judging "equal".
 
 #demo("examples-en/ch26/limits.c")
@@ -172,7 +172,7 @@ not on the other is itself eloquent about the difference between the two worlds.
   intermediate calculation overflows, not the final value* — worrying about the
   container is done for every intermediate step of an expression, not for the
   result, and that is why checked arithmetic of the kind proven provides exists
-  (chapter 39).
+  (chapter 40).
 ]
 
 #qa[
@@ -185,7 +185,7 @@ not on the other is itself eloquent about the difference between the two worlds.
   trap in advance — whether `char` is signed or unsigned *differs by platform*
   (it is a third type, neither of the two). So `char` is not used for numeric
   work; when a byte is needed, modern practice uses `uint8_t`. The proper story
-  of strings and `char` is in chapter 38.
+  of strings and `char` is in chapter 39.
 ]
 
 The containers of integers are sorted. The next chapter takes the operations on

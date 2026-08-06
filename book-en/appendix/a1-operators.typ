@@ -2,7 +2,7 @@
 
 = Appendix A — Operator lookup
 
-Operators are *explained* in chapter 45, "Expressions and operators". That
+Operators are *explained* in chapter 46, "Expressions and operators". That
 chapter gives each operator as a contract — operand constraints, result type,
 grey zones — and says why each rule is the way it is. This appendix does not
 repeat any of that. What is here is the one-page table you scan when a piece
@@ -69,9 +69,9 @@ mathematics.
 #dtable(
   columns: 2,
   [*What you are after*], [*Where it is*],
-  [Per-operator contracts (operands, result, grey zones)], [Chapter 45, "Expressions and operators"],
+  [Per-operator contracts (operands, result, grey zones)], [Chapter 46, "Expressions and operators"],
   [Assignment, side effects, evaluation order], [Chapter 33],
   [The rules of pointer arithmetic], [Chapter 37],
-  [Telling UB, unspecified and implementation-defined apart], [Chapter 48],
+  [Telling UB, unspecified and implementation-defined apart], [Chapter 49],
   [What an implementation must document], [Appendix D],
 )

@@ -1,196 +1,274 @@
 #import "../../book/lib.typ": *
 
-= Structs
+= Dynamic memory
 
 #prereq(
-  ([chapter 23, Declaring variables], [declaring a variable]),
-  ([chapter 37, Arrays], [several values under one name]),
+  ([chapter 41, Lifetime and storage duration], [the limits of automatic lifetime]),
+  ([chapter 2, The regions of memory], [the warehouse (the heap)]),
 )
 
 #deepqa[
-  Chapter 23 said "a type is a set of values plus an agreement about operations",
-  and every type used so far has been one that already existed (int, double, char,
-  pointers). Then what does it mean for a programmer to *make a new type*?
+  Chapter 41 taught automatic lifetime (dies with the function) and static
+  lifetime (lives for the whole program). Then memory that is "sized according to
+  input and must live only as long as needed" — in which of the two does it go?
 ][
-  It is settling a new shape of memory and giving it a name. Declare "I shall call
-  a lump of two integers side by side a point", and from that moment point is a
-  fully-fledged type from which variables can be made, which can be passed to
-  functions and laid out as an array. If chapter 37's array was *a repetition of
-  the same type*, a struct is *a bundle of different types* — and the moment that
-  bundle gets a name, the program's vocabulary grows.
+  Neither fits. We need memory whose size is settled at run time and whose
+  lifetime is decided by the program's logic — so there is a third place:
+#idx("heap")  *allocated storage duration*, the warehouse commonly called the
+  *heap*. The rule of this place differs decisively from the other two — *the
+  programmer directly orders its birth and its death.*
 ]
 
 #organizer[
-  We keep the promise put off in Part V with "declarations that make types come
-#idx("struct")  after we have a memory model." The type that binds several
-  values into one — the struct. Declaration and initialisation, the two access
-  notations (`.` and `->`), and how a struct travels as a value.
+  Part VII's last place — memory whose size is settled at run time and which is
+#idx("dynamic allocation")  kept alive as long as you wish. `malloc` and `free`,
+  the notion of ownership, and this world's three representative accidents (leak,
+  double free, use after free). The map of memory is completed here.
 ]
 
 #chapter-questions()
 
-== Declaration, initialisation, access
+== Borrowing, and giving back
 
-#demo("examples-en/ch42/point.c")
+The syntax is two functions. `malloc(number of bytes)` borrows that many
+contiguous slots from the warehouse and returns their starting address, and
+`free(address)` gives back what was borrowed.
 
-*Declaration* is `struct point { int x; int y; };` — each item inside the braces
-is called a *member*. The declaration itself takes no memory. It is only a
-definition saying "a type of this shape exists"; a variable appears when you
-write `struct point a;`.
+#demo("examples-en/ch42/dyn.c")
 
-For *initialisation* we recommend, as in the demonstration, writing the member
-names — the *designated initializer* (C99): `{ .x = 3, .y = 4 }`. It reads better
-than the order-dependent `{3, 4}` and stays safe if members are added or
-reordered. Members not written are filled with 0.
+Three practices are stamped into the demonstration.
 
-*Access* has two notations — a dot for a value (`a.x`), an arrow for a pointer
-(`p->x`). The arrow is in fact an abbreviation of `(*p).x` (chapter 34's
-dereference plus dot). Handling structs through pointers is overwhelmingly common,
-which is why it got its own notation.
+*Compute the size as `sizeof *pointer`.* `count * sizeof *scores` is "the size of
+one element × the count", asking for the size through *the target* rather than a
+type name — so the line needs no fixing later if the type changes.
 
-*Compound literal* — the demonstration's
-`(struct point){ .x = ..., .y = ... }` is the notation for "making one unnamed
-struct value on the spot" (C99). It is useful for handing a struct over
-immediately as a return value or an argument.
+*Borrowing can fail.* `malloc` returns a null pointer when the warehouse is short
+— so *check before writing* (chapter 35's rule becomes practice here). Write
+without checking and it is a null dereference and collapse.
 
-== Zeroing the whole thing — `{ 0 }` and `{ }`
+*Give back what you borrowed.* Forget `free` and those slots stay tied up until
+the program ends — a *memory leak*. It does not show in a short program, but in a
+long-running server it seeps away little by little and eventually eats the
+machine.
 
-The previous section passed over "members you leave out are filled with zero"
-in a single clause. That clause is the foundation of an idiom used every day,
-so it is worth a section of its own.
+== The alignment of the address returned — because it does not know what will go in
 
-```c
-struct config c = {0};   /* the old idiom */
-struct config c = {};    /* C23 onwards — the empty initializer */
-```
+#demo("examples-en/ch42/alloc_cost.c")
 
-#demo("examples-en/ch42/zeroinit.c")
+The question the first part of the example answers is this. You borrowed a mere
+one byte with `malloc(1)` — may that address sit just anywhere?
 
-=== What is actually guaranteed
+It may not. Because `malloc` hands out the place *without knowing what will go
+in*. A `double` may be placed there, or a pointer, or a large struct. So the
+standard promises this — *an address returned by the `malloc` family satisfies
+the alignment suitable for any basic type.* The name given to that "strictest
+basic alignment" is `max_align_t`, and on this machine it is 16 bytes (chapter
+6's alignment rule made flesh).
 
-The standard (C23 §6.7.11) gives this a name: *default initialization*.
-Anything not initialised explicitly is filled in as follows.
+Two things follow.
 
-#dtable(
-  columns: 2,
-  [*Type of the member*], [*What it is filled with*],
-  [Pointer], [*A null pointer*],
-  [Arithmetic type (integer, floating)], [(positive or unsigned) zero],
-  [Decimal floating type], [Positive zero; the quantum exponent is implementation-defined],
-  [Aggregate (struct, array, union)], [The same rules again, *recursively*],
-)
+*First, borrowing small does not mean the place is small.* In the example eight
+one-byte borrowings gave neighbouring blocks 32 bytes apart. It is because of the
+space left over to satisfy alignment and the management information (size,
+status) the allocator attaches to each block. It means *a program that borrows
+countless small pieces uses far more memory than it asked for*, and that is why
+the arena and pool approaches we see later were born (chapter 71).
 
-That answers this section's central question: *pointer members are
-initialised to null* — recursively, including pointers inside nested structs.
-In the demonstration both `path` and `in.note` come out null.
+*Second, stricter alignment must be requested separately.* SIMD instructions or
+hardware DMA sometimes require 64-byte or 4096-byte alignment, and for that there
+is C11's `aligned_alloc(alignment, size)`. Two rules must be kept — the alignment
+must be a power of two, and in C11 *the size had to be a multiple of the
+alignment* (C23 lifted that restriction). What it returns is still given back
+with `free`.
 
-#qa[
-  Is "filled with zero" not the same thing as "made null" for a pointer?
+#platform[
+  The name of aligned allocation differs by platform
 ][
-  On the overwhelming majority of implementations the result is the same, but
-  *the promise is a different promise.*
-
-  What the standard guarantees is "becomes a null pointer value", not
-  "becomes all-bits-zero" (chapter 35, on what null really is). Implementations
-  where the representation of null is not all-bits-zero have existed, and the
-  standard still leaves room for them. So `{0}` and `{}` give you null
-  everywhere, while `memset(&c, 0, sizeof c)` only ever gives you all-bits-zero.
-  On an implementation where those two promises come apart, the latter is not
-  null.
-
-  The same goes for floating point: `{0}` promises the value 0.0, `memset`
-  promises a bit pattern. The working rule is simple — *use an initializer to
-  empty a struct, and keep `memset` for other purposes* (such as the padding
-  question below).
+  The standard's `aligned_alloc` came in relatively recently (C11), and before
+  that each platform used a different function — POSIX's `posix_memalign`,
+  Windows's `_aligned_malloc` (and its partner `_aligned_free`; on Windows this
+  must not be given back with `free`). When you meet these names in old code, read
+  them as "an allocation with a stated alignment."
 ]
 
-=== The fine difference between `{0}` and `{}` — padding
+== The price of two cheap-looking lines — why allocation is expensive
 
-They are nearly the same, and they part company in one place. For an
-aggregate subject to default initialization, C23 states that *any padding is
-initialized to zero bits*. With `{}` the *whole object* is subject to default
-initialization, so the gaps between members are zero too. With `{0}` the
-first member is initialised explicitly, so what gets default initialization
-is *the remaining members* — the struct's own padding bytes are not covered,
-and their values are unspecified.
+The latter part of the example repeats the same work three ways, 300,000 times,
+and measures the time. Borrowing and giving back every time is noticeably slower
+than reuse or the stack — a little over ten nanoseconds per round on this
+machine. The value itself differs by machine and allocator, but the fact of a
+*two-orders-of-magnitude difference* is the same everywhere.
 
-In the demonstration all 48 bytes come out zero, but that is this
-implementation's behaviour, not a promise.
+Why is it expensive? `malloc` looks like the one line "give me slots" but is in
+fact one round trip to *the warehouse management office*.
 
-The distinction is usually irrelevant, and then suddenly matters when you
-compare whole structs with `memcmp` or write them out byte-wise to a file or
-a socket. The rule for those cases:
++ *Find a free piece of the right size.* The allocator manages returned pieces in
+  lists by size and picks a suitable one when a request comes. Searching the
+  list, cutting a large piece when needed, putting the remainder back in the list
+  — all of it is data-structure manipulation.
++ *Write management information.* The size and status must be written per block
+  so that `free` can later know "how many bytes this was." So allocation involves
+  *writing*.
++ *Ask the operating system when short.* When the warehouse is empty it obtains
+  more address space with a system call (`brk` or `mmap`). That means going into
+  the kernel and back, which is far more expensive. Fortunately it does not happen
+  often — the allocator takes plenty and cuts it up.
++ *With several threads, locks appear.* The warehouse ledger is a shared resource,
+  so contention between threads slows it (chapter 67's story of races). That is
+  why modern allocators keep a small cache per thread.
++ *The cache is cold.* A freshly obtained address is usually not in the cache, so
+  the first access is slow (chapter 11's ladder). Conversely a reused buffer is
+  already up in the cache — half the reason the reuse side is fast in the example
+  is here.
 
-- You only need the values to be right → `{0}` or `{}`.
-- The padding must be zero too (comparison, serialisation) → `{}` in C23;
-  otherwise `memset` first and then assign the members you need.
+So a practical rule follows. *Do not allocate inside a hot loop.* Borrow once in
+advance and reuse, put what has a known size on the stack, or borrow many at once
+and cut them up. The last is the arena, and chapter 71 and Part XII are that
+story.
 
 #misconception[
-  "`{0}` only zeroes the first member"
+  "`free` gives memory back to the operating system"
 ][
-  It does not. `{0}` spells out one member, but *everything left out is
-  default-initialised* (§6.7.11). A struct with a hundred members is fully
-  zeroed and nulled by that one `{0}`.
+  Mostly it does not. `free` is *writing in the allocator's ledger that "this
+  piece may be used again"*, not returning it to the operating system. So it is
+  normal for a program's memory usage in the task manager to stay the same after
+  releasing a large piece of data — the allocator is holding it for the next
+  request (large blocks are sometimes returned).
 
-  The inverted misconception is just as common: "if I write only
-  `{ .retries = 3 }`, the rest is garbage." Also false. Designated or
-  positional, *if there is any initializer at all*, the members you leave out
-  are default-initialised — the third line of the demonstration is the check.
-  Garbage is what you get when there is no initializer whatsoever
-  (`struct config c;`).
+  This fact explains two things. First, the common misunderstanding of "I freed
+  the memory, so why does it not go down?" Second, the phenomenon of a
+  long-running server holding memory *even with no leak* — pieces scattered so
+  that a large lump cannot be formed: *fragmentation*. Chapter 71 faces it head
+  on.
 ]
 
-#platform("Can you use `{}`?")[
-  The empty initializer `{}` became standard in C23. GCC and Clang accepted
-  it as an extension before that, but such code was not portable. If you must
-  also support C17 and earlier, use `{0}` — bearing in mind that when the
-  first member is itself a struct or an array, some compilers warn and you
-  end up writing `{ {0} }`. Not having that annoyance is another point in
-  favour of `{}`.
-]
+== Borrowing in one dimension, using it as two
 
-== A struct is a value
+Chapter 37 showed real multidimensional arrays such as `int m[3][4]`. But when
+the size is settled at run time that syntax cannot be used, and so the commonest
+shape in practice is *to borrow one run and read it along two axes*.
 
-In C a struct is treated *like a value* — assign it and it is copied whole, pass
-it to a function and it crosses over copied, exactly by chapter 32's rule, and it
-can be returned whole with `return`. The demonstration's `moved(a, 10, -1)` is
-the check: a is unchanged and a new value b came out.
+The heart of it is one line of arithmetic. Borrow `rows × cols` slots at once and
+find slot `(i, j)` as `i * cols + j`. That is exactly the layout of a real
+two-dimensional array (row-major, chapter 37) — so the performance is the same
+and the cache behaves the same way (chapter 11).
 
-This copying is a *shallow copy* that transcribes the members as they are. If all
-the members are numbers there is no problem, but if a member is a pointer the
-address is duplicated as it is, so original and copy point at the same place —
-this fact becomes a decisive trap later when handling data that points at itself.
+#demo("examples-en/ch42/flat2d.c")
 
-In practice, though, rather than passing large structs by value it is common to
-*pass a pointer* — to save the cost of copying (recall chapter 11's ladder of
-memory and it is clear that copying a large lump is not free). When only reading,
-the practice is to receive it as a const pointer, as in
-`const struct point *p` — chapter 23's `const` working as a contract mark saying
-"this function does not touch the original."
+Three things need care here.
+
+*First, do not scatter the subscript arithmetic by hand.* Write
+`p[i * cols + j]` all over the code and the moment one place forgets `cols` it
+quietly reads a different slot. Shut it inside one macro, as the example does,
+and there is one place to fix. When writing the macro, keep chapter 52's rules —
+*wrap every argument in parentheses*, and raise the product to `size_t` to avoid
+overflow.
+
+```c
+#define AT(p, cols, i, j)  ((p)[(size_t)(i) * (size_t)(cols) + (size_t)(j)])
+```
+
+*Second, the size computation itself can overflow.* `rows * cols * sizeof(int)`
+is a product of three numbers, easy to overflow, and an overflow means *borrowing
+a small vessel and using it as a large array* — the worst kind of accident. The
+example checks with `ckd_mul` (chapters 49 and 68) first and does not even attempt
+the allocation if it overflows.
+
+*Third, nail down the order of rows and columns in the documentation.*
+`AT(g, cols, 1, 2)` and `AT(g, cols, 2, 1)` are different slots. Half the mistakes
+come from here, so name the parameters `rows` and `cols` plainly and write the
+order down.
 
 #qa[
-  Writing `struct point` with `struct` every time is a nuisance — can it not be
-  shortened?
+  Could an array of pointers (`int **`) not be used, keeping the `m[i][j]` syntax?
 ][
-  Traditionally an alias has been made with `typedef` — `typedef struct point point_t;` and the like. But this is a point where taste and schools divide
-  (there is the counter-argument that an alias hides the information "this is a
-  struct"), so this book writes `struct` so the identity is visible on the page.
-  Either way, consistency is what matters.
+  It can, and it is a common method — allocate each row separately and hold their
+  addresses in an array. The price is high, though.
+
+  *The memory is scattered.* With rows far apart, chapter 11's locality breaks and
+  the cache hit rate falls. *There are many allocations.* One `malloc` per row,
+  that many failure paths, and freeing must run in reverse just as many times.
+  *There is one more indirection.* `m[i][j]` follows an address twice.
+
+  And decisively, *`int[3][4]` and `int **` are different types.* Pass the name of
+  a real two-dimensional array to a function taking `int **` and it is a compile
+  error; force it through with a cast and it is outside the contract — because,
+  as chapter 37 showed, `int m[3][4]` decays to `int (*)[4]`, not to `int **`.
+  This misunderstanding is the most frequent accident with multidimensional
+  arrays.
+
+  In short — *a real two-dimensional array when the size is fixed; a
+  one-dimensional allocation plus a subscript macro (or a VLA parameter,
+  chapter 37) when it is settled at run time*; and `int **` when the rows have
+  genuinely different lengths (a ragged array).
+]
+
+== Ownership — who is responsible for giving it back
+
+The address `malloc` gave can be copied into several variables and can travel
+between functions. And yet `free` must be called *exactly once* — from which
+comes a core discipline of C programming: fixing one subject that at any moment
+holds the responsibility for releasing that memory, the notion of *ownership*. C
+has no syntax that enforces ownership — so ownership is expressed *in comments,
+names and conventions* ("this function transfers ownership of the returned
+pointer", and so on). That modern languages lifted ownership into the type system
+(Rust's ownership, C++'s smart pointers) is the result of making the machine
+enforce this discipline — the concern of the neighbouring languages seen in
+chapter 1 arose exactly here.
+
+#realcase[
+  The three representative accidents — leak, double free, use after free
+][
+  Accidents with dynamic memory come with three faces. A *leak* is forgetting to
+  give back — a slowly fatal disease. A *double free* is calling `free` twice on
+  the same address, which wrecks the warehouse ledger so that every allocation
+  after it is contaminated. The most dangerous is *use after free* — continuing to
+  use the address of a slot that was given back. It is chapter 41's dangling
+  pointer reproduced in the heap, and since the warehouse soon hands that slot to
+  another request, *an attacker can put their own data in that place*. In the
+  lists of severe vulnerabilities of browsers and kernels, use-after-free is a top
+  fixture even today, which is why systems programming as a whole has moved in the
+  direction of "let the language enforce ownership." The defence in C is
+  discipline plus tools — the practice of assigning `nullptr` to a pointer right
+  after `free`, and chapter 17's sanitizers.
+
+  Neither is a cure-all, though. Assigning `nullptr` stops reuse and double free
+  *through that one variable* only; any other alias holding the same address is
+  left as it was — take it as a local defence for when there are no aliases.
+  ASan catches use-after-free and double free very well, but detecting leaks
+  needs LeakSanitizer to be on with it, and that depends on the platform and the
+  settings (on a default build for Linux x86-64 the two usually come together).
 ]
 
 #qa[
-  Can a struct hold itself as a member — it seems necessary for making something
-  like a list.
+  Is it then best to avoid dynamic memory as far as possible?
 ][
-  It cannot hold itself *by value* (the size would be infinite). But it can hold
-  *a pointer to itself*, and that is precisely the seed of linked data structures:
-  `struct node { int value; struct node *next; };`. Let chapter 34's pointers and
-  chapter 41's dynamic memory meet in that one line and structures such as linked
-  lists and trees open up — a world of data structures beyond this book's scope,
-  but worth knowing that the key that opens the door is here.
+  That really is the first strategy, and the reason this book has come this far
+  without `malloc` — data of known size is fastest and safest kept in automatic
+  variables (the stack), where there is nothing to release and the three accidents
+  are sealed off at the source. In embedded and safety-critical fields, conventions
+  banning dynamic allocation outright are common. But data whose size is settled at
+  run time (a list the user gave, the contents of a file) needs the warehouse in
+  the end — and then the practical answer is to make ownership clear, check with
+  tools, and use well-made components (of the family that manages allocation and
+  boundaries together, like chapter 40's proven).
 ]
 
-We have a way of binding values together. The next chapter is how to *use* it —
-the temporary struct made and handed over on the spot, the order-free named
-arguments obtained from it, and how to deal with the empty space that gets in
-between members (padding).
+== Closing Part VII
+
+The map of memory is complete — on the ladder of registers and caches
+(chapter 11) sit C's three storage durations (automatic, static, dynamic), and
+pointers travel over them. We got the concept in chapter 34, the rules in
+chapters 35–36, contiguous memory and strings in chapters 37–39, a safe component
+in chapter 40, and lifetime and the warehouse in chapters 41–42. We have gone
+once round the place where C's power and its danger live together.
+
+We have seen dynamic memory's syntax, discipline and price. How an allocator
+actually manages the warehouse, what alternative allocators and alternative
+standard libraries are widely used today, and what map a program's memory is laid
+out on in an operating system and in an embedded chip are treated in two chapters
+at the end of Part XI (chapters 70 and 71).
+
+The next part is short but long deferred — the structs and unions put off in
+Part V with "declarations that make types come after we have a memory model."
+That condition is now met.

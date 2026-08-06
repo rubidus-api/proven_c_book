@@ -11,7 +11,7 @@
 #define MY_PROGRAM_VERSION  "v3.1.2"
 #define PROGRAM_TITLE       "my_program " MY_PROGRAM_VERSION
 
-/* 숫자로 관리하는 버전은 두 겹 우회로 문자열이 된다(51장) */
+/* 숫자로 관리하는 버전은 두 겹 우회로 문자열이 된다(52장) */
 #define VER_MAJOR 3
 #define VER_MINOR 1
 #define STR_RAW(x) #x

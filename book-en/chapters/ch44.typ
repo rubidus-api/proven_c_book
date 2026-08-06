@@ -1,270 +1,374 @@
 #import "../../book/lib.typ": *
 
-= Unions and representation
+= Using structs — temporary values, named arguments, layout
 
 #prereq(
-  ([chapter 42, Structs], [the layout of a struct]),
-  ([chapter 5, Words and addresses], [seeing a representation as bytes]),
-  ([chapter 13, Compiler optimisation], [strict aliasing]),
+  ([chapter 43, Structs], [defining a struct]),
+  ([chapter 37, Arrays], [arrays and passing by value]),
 )
 
 #deepqa[
-  Chapter 13 said the old technique of "reading a float's bits through uint32's
-  eye" violates strict aliasing, and that the correct methods are memcpy or a
-  union. Then what exactly is a union, that it stands in that place?
+  Chapter 43 said a struct is a value, so assigning copies it whole and passing it
+  to a function sends a copy. But chapter 37 said that passing an array to a
+  function makes it decay into a pointer so that *the original is touched*. Do the
+  two not collide — which is it when a struct contains an array?
 ][
-  *A type whose several members share the same memory.* If a struct lays members
-  side by side (chapter 42), a union lays them *overlapping* — its size fits the
-  largest member, and at any moment only one thing is really held. Chapter 5's
-  perspective, "seeing the same bits through this eye and through that", made into
-  syntax.
+  The struct wins. An array decaying into a pointer is the rule for *when the
+  array itself is written as an argument*; an array that has gone in as a struct
+  member is part of the value that is the struct and is therefore copied. So the
+  only way in C to pass an array truly *like a value* is "wrapping it in a
+  struct." This chapter's second example shows that contrast by measurement — the
+  side passed by value leaves the original untouched, and the side that decayed
+  into a pointer changes it.
 ]
 
 #organizer[
-#idx("union")  The device for seeing the same memory through a different eye —
-  the union. And this is a chapter of representation too: we run the endianness
-#idx("padding")  demonstration booked in chapter 5 and confirm with our own eyes
-  the hidden gaps (padding) in a struct. It is where this book's refrain, the
-  separation of representation from abstraction, rings out loudest for the last
-  time.
+  If chapter 43 was the syntax of the struct, this chapter is *how to use it*.
+#idx("compound literal")  The notation for referring to a struct inside a
+  struct, the temporary struct made and handed over on the spot (the compound
+  literal), the idiom of "order-free named arguments" built from it, and the
+#idx("padding")  padding that gets in between members and how to remove it or
+  force it. Finally we measure the only road for passing an array by value, and
+  its price.
 ]
 
 #chapter-questions()
 
-== The union — laying things over one another
+== Nesting and access — reading dots and arrows mixed
 
-The syntax is a twin of the struct's. Change `struct` to `union`:
+A struct's member may itself be a struct. The notation is simply layered.
 
 ```c
-union bits32 {
-    uint32_t as_int;
-    float    as_float;
-};
+struct point { int x, y; };
+struct rect  { struct point origin; struct point size; };
+struct scene { struct rect *frame; const char *name; };
+
+struct rect  r  = { .origin = { .x = 1, .y = 2 }, .size = { .x = 30, .y = 40 } };
+struct scene s  = { .frame = &r, .name = "main" };
+
+r.origin.x        /* value inside value        : dot + dot */
+s.frame->size.y   /* pointer inside value      : dot + arrow + dot */
+(&r)->origin.y    /* the arrow is only an abbreviation of (*p). */
 ```
 
-Member access is the same (`u.as_int`). The only difference is the layout of
-memory — the two members share the same four bytes, so write to `as_float` and
-read `as_int` and you see *the same bits under a different interpretation*. The C
-standard permits this "read through a member other than the one written" (type
-punning) for unions in particular — unlike chapter 13's pointer-cast approach, it
-is inside the contract, which is the decisive difference (though the caution
-remains that the value read may not be a valid value of that type).
-
-== Representation with our own eyes — endianness and padding
-
-Chapter 5 booked "actually doing this check in C is this chapter's
-demonstration." Now we pay. Here, instead of a union, we use the most portable
-method — the eye of bytes (`unsigned char`) learned in chapter 36, and `memcpy`.
-
-#demo("examples-en/ch44/endian.c")
-
-The first part is exactly chapter 5's picture. `0x12345678` sits in memory in the
-order `78 56 34 12` — meaning this book's verification machine is little-endian,
-and chapter 5's diagram is confirmed in the flesh. (Run this example on a
-big-endian machine and `12 34 56 78` is printed and the verdict sentence changes
-— the code stays the same.)
-
-The second part is the struct's hidden circumstances. A struct holding one `char`
-(1 byte) and one `int` (4 bytes) has size 8, not 5 — because chapter 6's
-alignment rule inserted three bytes of *padding* after the `char`. The int member
-must start at a multiple of four for the machine to grab it in one handful
-(chapter 6). So one practical habit follows — *lay the large members first and
-the gaps shrink.* In code handling millions of structs this one layout decision
-governs memory and cache efficiency (chapter 11). The layout rules, and the ways
-to remove gaps or force alignment (`pack`, `alignas`), were treated in detail in
-chapter 43 — the purpose here is to confirm with our own eyes that the gap
-*really exists*.
-
-#realcase[
-  The secret spilled by a gap — padding information leaks in kernels
-][
-  Padding looks harmless, being empty space nobody uses, but through the eye of
-  security it is *uninitialised memory*. When an operating system kernel copies a
-  struct whole to a user program, those gaps cross over too — and although every
-  member was filled in, the gaps contain *the remains of other data* that happened
-  to be there. An attacker can gather these crumbs to glimpse the contents or
-  address layout of kernel memory, and that becomes the foothold for the next
-  attack. Major kernels including Linux have fixed dozens of information-leak
-  vulnerabilities of this class, and today's response is simple — a struct handed
-  to userspace is *wiped to zero whole before its members are filled*. It is the
-  moment chapter 23's rule of "initialise at the point of declaration" extends
-  even to invisible blanks.
-]
-
-#misconception[
-  "You can just write a struct to a file or send it over a network as it is"
-][
-  A tempting thought, and one much attempted — storing a struct's bytes whole
-  makes the code short. But the two facts this chapter has just shown block it:
-  byte order differs by machine (endianness), and the size and position of the
-  gaps differ by compiler and platform (padding). A file written on one machine
-  breaks on another — chapter 5's NUXI incident reproduced in the world of file
-  formats. The right answer is *serialisation*: writing explicit code that writes
-  and reads members one at a time, in an agreed size and byte order (network byte
-  order — chapter 5). Representation is the machine's business and files and
-  communication are a world of agreements — the bridge between the two worlds must
-  be laid by hand.
-]
+There is only one rule. *If the left is a value, a dot; if a pointer, an arrow.*
+`p->x` is an abbreviation of `(*p).x` (chapter 43), and the abbreviation exists
+because handling structs through pointers is overwhelmingly common. Indeed, code
+written as `(*p).x` is usually old code or a place explaining operator
+precedence.
 
 #qa[
-  When, then, is a union the standard thing to use?
+  Where do you break a long chain like `s.frame->size.y` when reading it?
 ][
-  In two places. First, the *looking into representation* (type punning) just
-  seen — low-level code inspecting floating-point bits or viewing a hardware
-  register through several eyes. Second, and more common, the *tagged union*:
-  putting into a struct both a union and a mark (a tag) saying "which member is
-  valid now", to represent alternative data such as "this value is an integer, or
-  a real number, or a string." It is the basic tool of interpreters' value
-  representations and configuration-file parsers — and chapter 6's tagged pointer
-  was the same idea at the bit level. Modern languages' enumerations (Rust's enum,
-  Swift's associated values) lifted this pattern to the level of the language.
+  Left to right, one step down at a time. `s` (the scene) → `.frame` (the pointer
+  inside it) → `->size` (the size of the rectangle pointed at) → `.y` (that
+  point's y). Each arrow is a mark that *one dereference happens*, so it also
+  means there are as many pointers needing a null check as there are arrows. If
+  `s.frame` is null this notation collapses on the spot — a long chain, as easy as
+  it is to read, also hides the checks.
 ]
 
-== Bit fields — cutting up one word
+== The temporary struct — the compound literal
 
-Write a colon and a number after a struct member and it becomes a *bit field* —
-you specify directly how many bits that member occupies. Overlay a union on that
-and you have both "the eye that sees it whole as one word" and "the eye that sees
-it divided into fields" at once.
-
-#demo("examples-en/ch44/bitfield.c")
-
-The first part is the typical pattern for handling a hardware register. Write to
-a field as in `r.f.mode = 5` and the value goes into the bit positions without
-library help, and reading `r.raw` shows the result as one word. The reverse —
-writing `r.raw` whole and reading the fields — works too; the output's third line
-is the check.
-
-Convenient though it looks, *the price in portability* is large, because much is
-not fixed by the standard.
-
-- *The order the bits are laid in* — whether they fill from the low end or the
-  high end is implementation-defined. So the same declaration may produce
-  different layouts on different compilers.
-- *Fields crossing a boundary* — whether a field straddling a storage unit is
-  allowed is also up to the implementation. So is how much padding is inserted.
-- *Sign* — a plain `int x : 1;` is a signed one-bit field, so its values are 0 and
-  −1. If that was not the intention, `unsigned` must be stated.
-- *Its address cannot be taken* — `&` cannot be applied to a bit field. Nor can
-  they be made into an array.
-- *It is not atomic* — if two threads touch two fields sitting in the same word,
-  an accident of the same family as chapter 12's false sharing occurs.
-
-#misconception[
-  "Bit fields can represent a file or network format directly"
-][
-  The commonest misunderstanding, and a fixture of portability accidents. A file
-  format or protocol has *the layout of its bytes and bits fixed by
-  specification*, whereas a bit field's layout is fixed by the implementation.
-  Change compiler or move to another machine and the fields are read at the wrong
-  places — worse still when endianness (the previous section) is layered on. The
-  proper method for an external format is *laying out a byte array and extracting
-  directly with shifts and masks* (chapter 7). Regard bit fields strictly as *a
-  way of saving memory within one program*.
-]
-
-That is why bit fields are not recommended today. The reason to know the syntax
-nonetheless is clear — you still meet them in the register definitions of embedded
-SDKs, in the flag bundles of old codebases, and in kernel data structures.
-*Be able to read them, but think twice before writing new ones* is the practical
-instinct.
-
-== The practical pattern of mixing structs and unions
-
-The latter part of the example is a different story. It is a *tagged union* — a
-struct holding a tag and a union together — the pattern named in the exchange
-above.
+The notation for making one struct value *on the spot*, without making a named
+variable, is the compound literal (C99).
 
 ```c
-struct message {
-    enum msg_kind kind;      /* the tag telling which eye to look with */
-    unsigned      flags : 4; /* small states — bit fields earn their place here */
-    unsigned      urgent : 1;
-    union {                  /* an anonymous union (C11) */
-        int  number;
-        char text[16];
-        struct { int x, y; } point;
-    };
-};
+draw_((struct draw_opts){ .width = 40, .title = "chart" });   /* straight as an argument */
+return (struct point){ .x = a.x + dx, .y = a.y + dy };        /* as a return value */
 ```
 
-Three things are layered here. The tag, the state flags saved by bit fields, and
-an *anonymous union* (C11). With no name, members can be used one step more
-directly, as `m->number`, which makes a tagged union far more readable.
+Take away three properties.
 
-There is only one discipline and it is everything — *read only the member the tag
-says.* If `kind` is `MSG_TEXT` and you read `number`, it becomes the "looking
-through another eye" of this chapter's first section and gives a meaningless
-value. So code handling such data is almost always made to pass through *a single
-`switch` on the tag*, like the example's `show`. Gather the access in one place
-and the place to keep the discipline is one place too.
+*First, it is an lvalue.* It merely has no name; it is a real object, so its
+address can be taken and its members assigned to. The example's
+`&(struct draw_opts){ … }` is the check. It is easy to think "being a temporary
+(an rvalue) its address cannot be taken", but C's compound literal is not like
+that — a difference from C++'s temporary objects.
 
-That `sizeof(struct message)` came out as 24 bytes is worth reading as well — a
-4-byte tag plus the word holding the bit fields plus the 16-byte union, with
-padding (the previous section) added for alignment. Representation always takes
-*a little more* than what was declared.
+*Second, its lifetime is the end of the block, not of the statement.* A compound
+literal written inside a block lives until that block ends (automatic storage
+duration). So within the same block it is safe to carry its address about.
 
-=== One real specimen — two-byte Johab Hangul
+*Third, therefore, sending its address out of the function is a dangling
+pointer.*
 
-This pattern is not only a textbook affair. When Hangul was first being put
-into computers, splitting one word into three parts became an actual standard —
-*Johab* (조합형, "the combining form").
-
-#demo("examples-en/ch44/johab.c")
-
-The design is exactly what this chapter has taught. Sixteen bits are divided
-into four: the leading bit marks "this is Hangul", and the remaining fifteen are
-cut into three fields of five bits each — *initial, medial and final* jamo.
-
-#dtable(
-  columns: 4,
-  keycol: false,
-  [*bits*], [*15*], [*14–10 / 9–5 / 4–0*], [*meaning*],
-  [field], [flag], [initial / medial / final], [five bits each],
-  [`가` = `0x8861`], [1], [2 / 3 / 1], [ㄱ + ㅏ + (none)],
-  [`한` = `0xD065`], [1], [20 / 3 / 5], [ㅎ + ㅏ + ㄴ],
-)
-
-The numbers given to the jamo follow a rule. Initials run 2–20 from ㄱ to ㅎ
-(0 and 1 are fill and reserved), and finals start with 1 for "none" and run on
-to 29. Only the medials leave 8–9, 16–17 and 24–25 empty — the trace of laying
-the vowels out in groups of four. The gaps are visible in the example's tables.
-
-What it bought was clear: combining jamo let it write *all 11,172 modern Hangul
-syllables*. The rival of the time, the *precomposed* standard (KS C 5601-1987),
-listed only the 2,350 syllables in common use, which famously left ordinary
-names and words unwritable. Johab chose to *generate* syllables by rule rather
-than enlarge a table.
-
-#realcase("Three lessons Johab left behind")[
-  *First, the second byte collides with ASCII.* 가 is `88 61`, and the trailing
-  byte `0x61` is plain `'a'`. Code searching bytes for `'a'` therefore lands in
-  the middle of a character — the last line of the example shows the false hit
-  happening. Chapter 9's "a byte is not a character" turns into a bug right here.
-
-  *Second, the layout is not fixed by the standard.* The example's union happened
-  to agree with the shift/mask result on this compiler, but only because this
-  implementation fills bits from the low end. The rule of the previous section
-  stands: *handle external formats with shifts and masks.*
-
-  *Third, there is a place where rule beat table.* Unicode took the same idea
-  further and tidier. The code of a Hangul syllable is *computed*:
-  `0xAC00 + (initial * 21 + medial) * 28 + final` — multiplication instead of bit
-  slicing, but the same thought that syllables are made by combining jamo. Johab
-  itself faded (Windows 95 adopted a unified precomposed code and left it
-  behind), yet its idea lives on inside today's standard.
+#antipattern[
+  Returning the address of a compound literal
+][
+  ```c
+  struct point *make(int x, int y)
+  {
+      return &(struct point){ .x = x, .y = y };   /* it vanishes when the function ends */
+  }
+  ```
+  Exactly the same accident as returning the address of a local variable in
+  chapter 36. To return a value, return it *by value*
+  (`struct point make(...)`), fill a place the caller provided, or use dynamic
+  allocation (chapter 42). A compound literal written at file scope has static
+  storage duration and does not have this problem, but in that place it is usually
+  better to give it a name.
 ]
 
-== Closing Part VIII
+== Named arguments — passing one struct
 
-We have the two syntaxes for making types — the struct that lays things side by
-side (chapter 42) and the union that lays them over one another (chapter 44). And
-along the way we confirmed the realities of representation (endianness, padding)
-with our own eyes. Part II's background knowledge has been fully collected into
-syntax.
+#demo("examples-en/ch44/opts.c")
 
-The next part is the part of precision — chapter 8's mathematics of approximation
-comes down into C's floating types (chapter 46), the perspective of the contract
-whose seed was planted in chapter 32 grows into error handling (chapter 47), and
-we meet head on the world "outside the contract" that this book has foreshadowed
-throughout — undefined behaviour (chapter 48).
+From here comes the idiom that changes code most in practice. Consider a function
+with five or six arguments.
+
+```c
+draw(40, 20, false, true, 3, "chart");    /* what is the third true? */
+```
+
+C has neither other languages' named arguments nor default values. But overlay
+*designated initialisers with a compound literal* and you effectively get the
+same thing.
+
+```c
+struct draw_opts { int width; int height; bool grid; const char *title; };
+static void draw_(struct draw_opts o);
+#define draw(...) draw_((struct draw_opts){ __VA_ARGS__ })
+
+draw(.title = "chart", .height = 20, .width = 40);   /* order-free */
+draw(.grid = true);                                   /* the rest are defaults */
+draw();                                               /* all defaults */
+```
+
+Four things are gained.
+
++ *Freedom from order.* A designated initialiser fixes the slot by name, so the
+  caller writes in whatever order suits.
++ *What is left out is 0.* The standard's promise that unwritten members are
+  filled with 0 (null for pointers) becomes the "default value". So the knack is
+  to design the fields *so that 0 makes sense as the default* — the example
+  reading `width == 0` as "the default 80" is that.
++ *The call site is self-explanatory.* You need not ask what the `false, true, 3`
+  above are.
++ *Adding a field later does not break existing calls.* Change an argument list
+  and every call site must be fixed, but adding one member to a struct has no
+  effect on existing calls at all (that member becomes 0). In an API maintained
+  for a long time this property is especially valuable.
+
+#qa[
+  Are there no traps in this idiom?
+][
+  Beware of three.
+
+  First, *the order of evaluation between initialiser items is not fixed.* Mix in
+  side effects, as in `draw(.width = i++, .height = i)`, and the result is
+  unpredictable (chapter 20). Write only values in the arguments.
+
+  Second, if there is *a field for which 0 is a valid value*, "left out" cannot be
+  told from "0 was specified". Design such a field with its meaning inverted
+  (`grid` rather than `no_grid`), or add a separate presence field.
+
+  Third, *the cost of building and passing a large struct every time*. Option
+  structs are usually small enough not to matter, but when they grow, use the
+  variant of receiving `const struct opts *` and passing
+  `&(struct opts){ … }` at the call site — the property above, that an address can
+  be taken, works here.
+]
+
+#realcase[
+  Named arguments as met in practice
+][
+  This pattern is widespread. Various initialisation functions in the Linux
+  kernel, the way standard and POSIX APIs take options as a struct (such as
+  `struct sigaction`, chapter 65, or `struct timespec`), and the `..._desc`
+  structs of graphics libraries (the `..._DESC` of several GPU APIs, say) are all
+  the same idea. "When arguments grow numerous, bind them into a struct" is
+  practically an idiom in C, and C99's designated initialisers made it read well.
+]
+
+== Padding — the empty space between members
+
+#demo("examples-en/ch44/layout.c")
+
+The sizes of the three members `char`, `int`, `char` sum to 6, and yet the struct
+is 12 bytes. Six bytes went in as *padding*. The reason is chapter 6's alignment —
+`int` must sit at an address that is a multiple of 4, so three bytes are left
+empty after the first `char` to push `b` to offset 4. And three bytes attach after
+the last `char` too (*trailing padding*): because when this struct is laid out as
+an array, the next element's `int` must keep its alignment as well.
+
+It comes down to three rules.
+
++ Each member sits at *an offset that is a multiple of its own alignment*.
++ The whole struct's alignment is *the maximum of its members' alignments*.
++ The struct's size is *rounded up to a multiple* of that alignment (trailing
+  padding).
+
+So *merely changing the order of members shrinks the size.* The example's `tight`
+lays the large one first and reduces 12 bytes to 8. In a program laying out
+millions of structs, this one line of reordering changes both memory and cache
+hit rate (chapter 11).
+
+#misconception[
+  "Padding bytes contain 0"
+][
+  They do not. The value of padding is *unspecified*. Initialisation may put 0
+  there, or whatever previously used that place may remain. Three practical traps
+  come from this.
+
+  - *Do not compare structs with `memcmp`* (chapter 60) — equal values may come
+    out "different" because the padding differs. Compare member by member.
+  - *Do not hash a struct whole* — for the same reason, the same value gives
+    different hashes.
+  - *Do not send a struct as it is to a file or a network* — the rubbish in the
+    padding goes with it (and can be an information leak), and if the receiving
+    side's layout differs the interpretation goes wrong too.
+
+  Whether struct assignment (`b = a;`) copies the padding as well is not promised
+  by the standard either. Remember that *only the members are meaningful* and it
+  is all explained.
+]
+
+== How to remove padding, how to force alignment
+
+There are certainly places where padding is inconvenient — when *the byte layout
+is fixed from outside*, as in a file format or a communication protocol. So
+implementations provide devices for turning padding off.
+
+#platform[
+  packed and pragma pack — not standard
+][
+  ```c
+  #pragma pack(push, 1)          /* widely used, common to MSVC, GCC and Clang */
+  struct header { char kind; int length; };
+  #pragma pack(pop)              /* always put it back */
+
+  struct header2 { char kind; int length; } __attribute__((packed));  /* GCC and Clang */
+  ```
+  Neither is *standard C*. In the example `#pragma pack(1)` made a struct of 6
+  bytes with alignment 1. Fail to pair `push` with `pop` and the layout of structs
+  in headers included afterwards changes too, giving the nasty bug of a layout that
+  disagrees with a library — leaving pack open inside a header without closing it
+  is the representative accident.
+]
+
+#antipattern[
+  Passing the address of a packed struct's member
+][
+  ```c
+  struct __attribute__((packed)) h { char k; int len; };
+  void take(int *p);
+  take(&s.len);          /* an unaligned address — outside the contract */
+  ```
+  A packed struct's member may sit at a misaligned place. Pass its address as an
+  ordinary `int *` and the receiving side accesses it assuming alignment — on a
+  tolerant machine (x86) merely slower, on a strict machine dead on the spot
+  (chapter 6). GCC and Clang issue the warning
+  `-Waddress-of-packed-member` here.
+
+  Reading the value (`int n = s.len;`) is safe, because the compiler gathers the
+  bytes for you. It is *leaking the address* that is the problem.
+]
+
+There is a tool in the opposite direction, *forcing alignment*, and this one is a
+standard word of C23 (chapter 69).
+
+```c
+struct cacheline { alignas(64) int counter; };   /* on a 64-byte boundary */
+```
+
+In the example this struct became size 64, alignment 64. Its uses are clear —
+putting each thread's counter on a different cache line to avoid the *false
+sharing* seen in chapter 11, or meeting a hardware requirement such as DMA or
+SIMD. It is not free, though: the struct above uses 64 bytes to hold one `int`.
+
+#qa[
+  So when handling a file format or a communication protocol, is a packed struct
+  the right answer?
+][
+  There is a safer right answer: *moving between the byte sequence and the struct
+  by hand.*
+
+  ```c
+  /* reading: take the fields out of the buffer one at a time */
+  uint32_t len;
+  memcpy(&len, buf + 1, sizeof len);
+  len = le32toh(len);            /* state the endianness too (chapter 5) */
+  ```
+
+  Laying a packed struct over a buffer (`struct h *p = (struct h *)buf;`) assumes
+  three things at once — no padding, correct alignment, matching endianness. Get
+  one of them wrong and it breaks silently, and besides, access through a swapped
+  type runs into the aliasing rules (chapter 49). Field-by-field `memcpy` is longer
+  but exposes all three assumptions in the code. What Part XII's library does is
+  exactly to gather this tedious work into one place.
+]
+
+== Passing an array by value — can it be done, and should it?
+
+The latter part of the example is that contrast. `total(struct row r)` received a
+copy and changed it, and the original was untouched (`cell[0] = 1`).
+`total_raw(int cell[8])` decayed into a pointer and changed the original
+(`cell[0] = 999`). The assignment `struct row copy = r;` likewise copies the array
+member whole.
+
+So it comes to this. *If you want to handle an array with value semantics in C,
+wrap it in a struct.* It is the only way, and there are places where it is really
+used.
+
+#dtable(
+  columns: 2,
+  [*where it is worthwhile*], [*why*],
+  [small fixed-size vectors and matrices (`struct vec3`, `struct mat4`)], [calculating with them like values is natural],
+  [fixed-size identifiers and keys (`struct uuid { unsigned char b[16]; }`)], [copying is cheap and leaves no room for mistakes],
+  [when an array must be *returned*], [an array cannot be returned but a struct can],
+  [when you want to pass it immutably], [being a copy, the callee cannot touch the original],
+)
+
+The price is clear too.
+
+*Stack usage.* The copy is usually placed in the called function's stack frame.
+Pass a 16 KiB struct by value and that much more is piled on per call — measure
+it and the stack position before and after the call really does widen by the
+struct's size. The stack is usually about 8 MiB (chapter 36), and can be far
+smaller in recursion or on a per-thread stack (chapter 66). Recursion passing
+large structs by value is the shortest road to stack overflow.
+
+*The cost of copying.* But saying "a copy always happens" would be inaccurate.
+The calling convention decides — a small struct (usually up to two words) crosses
+*in registers* with nothing worth calling a copy, and for a large struct it is
+common for the caller to build it in memory and pass its address hidden. Moreover,
+if the function is inlined the compiler may remove the copy itself. So the
+accurate sentence is: *the meaning is always a copy, and the real cost is decided
+by size, calling convention and optimisation.*
+
+#misconception[
+  "Passing a struct by value is always slow"
+][
+  It depends on size. Something small like `struct point { int x, y; }` is if
+  anything faster passed by value, and reads better too — pass a pointer and a
+  dereference appears, and the compiler must suspect "someone may change the value
+  through this pointer", which reduces optimisation.
+
+  The rough practical rule: *up to a couple of words by value, larger than that by
+  `const` pointer.* And this choice is a matter not only of performance but of
+  contract — receive by value and "the original is not touched" is guaranteed by
+  the syntax; receive by pointer and it is only promised with `const`.
+]
+
+#recap[
+  #dtable(
+    columns: 2,
+    [*to remember*], [*the point*],
+    [access], [dot if the left is a value, `->` if a pointer (= `(*p).`)],
+    [compound literal], [`(struct T){…}` — an lvalue whose lifetime is *the block's end*],
+    [returning an address], [do not send a compound literal's address out of the function],
+    [named arguments], [an options struct + designated initialisers. omitted members are 0],
+    [designing defaults], [fix the fields so that *0 makes sense as the default*],
+    [padding], [it arises from alignment. its value is unspecified],
+    [member order], [lay the large ones first and the size shrinks],
+    [`memcmp`, hashing, serialising], [do not handle a struct whole],
+    [`pack`], [not standard. pair `push`/`pop`, do not leak member addresses],
+    [`alignas`], [standard. avoiding false sharing, hardware requirements],
+    [array by value], [wrap it in a struct. watch the stack and the size together],
+  )
+]
+
+We have learned how to use structs. The next chapter is the device for seeing the
+same memory *through a different eye* — the world of unions and representation.
+The endianness demonstration booked in chapter 5 finally opens.
