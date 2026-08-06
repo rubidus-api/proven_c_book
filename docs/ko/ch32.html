@@ -125,9 +125,9 @@ figure.tbl { text-align:center; }
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 .dev.open > p, .dev.open > div { margin:.3rem 0; padding:0; }
 /* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
-.dev.open > ol.qlist { margin:.35rem 0; padding-left:1.35rem; }
-.dev.open > ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
-.dev.open > ol.qlist li::marker { color:var(--muted); font-weight:700; }
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
 .dev.open > p:last-child, .dev.open > div:last-child { margin-bottom:0; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
 .dev.open .qa-a { border:none; border-left:2px solid var(--muted);
@@ -258,7 +258,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-32">32 함수의 의미 — 값 복사와 부수효과</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div>24장 함수 선언과 정의 · 함수의 선언과 정의</div><div>20장 수식 · 값이 건네지는 방식</div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><p>24장에서 매개변수는 “재료를 받는 변수 선언”이라 했다. 그러면 함수 안에서 그 매개변수를 <strong>바꾸면</strong> — 밖에서 재료로 넘긴 변수도 바뀌는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 바뀌지 않는다 — 그리고 이것이 C 함수의 의미를 정하는 단 하나의 규칙이다: <strong>값은 복사되어 건너간다.</strong> 매개변수는 재료의 값을 복사받은 별개의 변수이고, 함수 안의 어떤 일도 원본에 닿지 않는다. 말보다 증명이 빠르다 — 바로 시연한다.</p></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p>제6부의 마무리다. 함수 호출에서 값이 <strong>어떻게</strong> 건너가는지(복사), <span id="idx-entry-58"></span>부수효과와 평가 순서의 정식 규칙(20장 씨앗의 회수), 재귀라는 새로운 반복, 그리고 조건 연산자 <code>?:</code>까지. 마지막에 심는 씨앗 — 계약이라는 관점 — 은 제9부에서 꽃핀다.</div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><ol class="qlist"><li>값 복사가 규칙이라면, 큰 구조체를 넘길 때마다 통째로 복사되는가 — 비용이 만만치 않을 텐데.</li></ol></div><div></div><h3>32.1 값 복사 — 원본은 안전하다</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch32/copy.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2 id="loc-32">32 함수의 의미 — 값 복사와 부수효과</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>24장 함수 선언과 정의 · 함수의 선언과 정의</div><div>20장 수식 · 값이 건네지는 방식</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>24장에서 매개변수는 “재료를 받는 변수 선언”이라 했다. 그러면 함수 안에서 그 매개변수를 <strong>바꾸면</strong> — 밖에서 재료로 넘긴 변수도 바뀌는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 바뀌지 않는다 — 그리고 이것이 C 함수의 의미를 정하는 단 하나의 규칙이다: <strong>값은 복사되어 건너간다.</strong> 매개변수는 재료의 값을 복사받은 별개의 변수이고, 함수 안의 어떤 일도 원본에 닿지 않는다. 말보다 증명이 빠르다 — 바로 시연한다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">제6부의 마무리다. 함수 호출에서 값이 <strong>어떻게</strong> 건너가는지(복사), <span id="idx-entry-58"></span>부수효과와 평가 순서의 정식 규칙(20장 씨앗의 회수), 재귀라는 새로운 반복, 그리고 조건 연산자 <code>?:</code>까지. 마지막에 심는 씨앗 — 계약이라는 관점 — 은 제9부에서 꽃핀다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>값 복사가 규칙이라면, 큰 구조체를 넘길 때마다 통째로 복사되는가 — 비용이 만만치 않을 텐데.</li></ol></div></div><div></div><h3>32.1 값 복사 — 원본은 안전하다</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch32/copy.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">void</span></strong> <strong>try_change</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> x<span class="tok-x">)</span>
 <span class="tok-x">{</span>
