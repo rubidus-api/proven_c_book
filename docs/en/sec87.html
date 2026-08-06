@@ -39,6 +39,8 @@ main p { text-indent: 1em; }
 /* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
 .dev p { text-indent: 0; }
 .dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
 .chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 code { background:none; padding:0; font-size:.95em; }
