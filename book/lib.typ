@@ -197,22 +197,45 @@
 ]
 
 // 메모리 사물함 도해: 주소 라벨 + 내용 셀 (+ 강조 칸 인덱스)
+//
+// ★ HTML 로도 반드시 나가야 한다. grid·stack·box 는 조판 전용이라
+//   HTML 내보내기에서 아무것도 그리지 않는다 — 5장의 그림들이 캡션만 남고
+//   사라졌던 원인이다(저자 지적 2026-08-06). HTML 에서는 표로 낸다.
 #let memrow(start, cells, highlight: (), caption: none) = {
-  align(center, block(inset: (y: 6pt))[
-    #grid(
-      columns: cells.len(),
-      column-gutter: 0pt,
-      ..cells.enumerate().map(((i, c)) => {
-        let w = if i in highlight { 1.6pt } else { 0.5pt }
-        stack(
-          box(width: 3.2em, inset: 4pt, stroke: w + black,
-            align(center, raw(c))),
-          box(width: 3.2em, inset: (top: 3pt),
-            align(center, text(size: 0.96em, raw(str(start + i))))),
-        )
+  if _html {
+    html.elem("div", attrs: (class: "memrow"), {
+      html.elem("table", attrs: (class: "mem"), {
+        html.elem("tr", {
+          for (i, c) in cells.enumerate() {
+            html.elem("td",
+              attrs: (class: if i in highlight { "cell hi" } else { "cell" }),
+              raw(c))
+          }
+        })
+        html.elem("tr", {
+          for (i, _) in cells.enumerate() {
+            html.elem("td", attrs: (class: "addr"), raw(str(start + i)))
+          }
+        })
       })
-    )
-  ])
+    })
+  } else {
+    align(center, block(inset: (y: 6pt))[
+      #grid(
+        columns: cells.len(),
+        column-gutter: 0pt,
+        ..cells.enumerate().map(((i, c)) => {
+          let w = if i in highlight { 1.6pt } else { 0.5pt }
+          stack(
+            box(width: 3.2em, inset: 4pt, stroke: w + black,
+              align(center, raw(c))),
+            box(width: 3.2em, inset: (top: 3pt),
+              align(center, text(size: 0.96em, raw(str(start + i))))),
+          )
+        })
+      )
+    ])
+  }
   _float-caption(_L.fig, _fig-no, caption)
 }
 
