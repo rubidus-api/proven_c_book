@@ -6,6 +6,17 @@ This project follows Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed
+- **깃 히스토리 재작성**(저자 지시, 2026-08-06) — 공개 저장소의 `main` 을 현재
+  내용 그대로의 **단일 커밋**으로 접었다. 판마다 배포물이 쌓여 팩이 200MB 를
+  넘었고, GitHub Pages 가 저장소를 통째로 받느라 빌드가 10분 제한에 걸리던
+  문제를 없앤다. 새로 clone 하면 `.git` 이 **200.7MiB → 12MiB**.
+  - 릴리스 묶음(`dist/*.zip`)은 이제 저장소에 담지 않는다 — 깃허브 릴리스
+    자산으로만 배포한다(판마다 23MB 절약). PDF 사본은 그대로 둔다.
+  - 이전 히스토리(main 20개·manuscript 144개 커밋과 옛 태그 전부)는 로컬
+    `proven_c_book_private/git-history-backup-2026-08-06.git` 미러에 보존했다.
+  - 원고 브랜치(`manuscript`, 로컬 전용)는 손대지 않았다.
+
 ## [v0.15.1] - 2026-08-06
 
 ### Changed
