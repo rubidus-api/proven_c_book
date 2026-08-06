@@ -111,20 +111,21 @@ figure.tbl { text-align:center; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
              font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
 /* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
-   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06). */
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
 .dev.open { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0; margin:.75rem 0; }
-.dev.open:first-of-type { margin-top:1rem; }
-.dev.open > .dev-label { margin:0; padding:.45rem .9rem; text-indent:0;
-  border-bottom:1px solid var(--fg);
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
   font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
-.dev.open > *:not(.dev-label) { padding:.1rem .9rem; margin:.3rem 0; }
-.dev.open > *:not(.dev-label):first-of-type { margin-top:.45rem; }
-.dev.open > *:not(.dev-label):last-child { margin-bottom:.45rem; }
+.dev.open > p, .dev.open > div { margin:.3rem 0; padding:0; }
+.dev.open > p:last-child, .dev.open > div:last-child { margin-bottom:0; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
 .dev.open .qa-a { border:none; border-left:2px solid var(--muted);
-  padding:.1rem 0 .1rem .7rem; margin:.4rem .9rem; }
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
@@ -139,14 +140,14 @@ figure.tbl { text-align:center; }
   background:none; }
 .qa-box .qa-a { border-top:1px solid var(--fg); }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
-.dev.recap { border:1px solid var(--fg); border-radius:0; padding:0;
-  margin:1.15rem 0; background:none; }
-.dev.recap > .dev-label { margin:0; padding:.5rem .9rem; text-indent:0;
-  border-bottom:1px solid var(--fg);
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
   font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > *:not(.dev-label) { padding:.2rem .9rem; }
-.dev.recap > figure.tbl { padding:.5rem .9rem; margin:0; }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -338,8 +339,8 @@ of 8 one-byte requests, ones breaking the default alignment: 0
 address gap between two neighbouring blocks: 32 bytes (for a request of 1)
 
 300000 iterations
-  malloc + free each time :  0.0046 s  ( 15.5 ns each)
-  borrowed once, reused   :  0.0006 s  (  2.1 ns each)
+  malloc + free each time :  0.0035 s  ( 11.8 ns each)
+  borrowed once, reused   :  0.0006 s  (  2.0 ns each)
   a stack array           :  0.0007 s  (  2.2 ns each)
 
 (total 114739248 — a value used so the computation is not erased)
