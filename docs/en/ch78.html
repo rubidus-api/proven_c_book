@@ -122,6 +122,10 @@ figure.tbl { text-align:center; }
   font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 .dev.open > p, .dev.open > div { margin:.3rem 0; padding:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open > ol.qlist { margin:.35rem 0; padding-left:1.35rem; }
+.dev.open > ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open > ol.qlist li::marker { color:var(--muted); font-weight:700; }
 .dev.open > p:last-child, .dev.open > div:last-child { margin-bottom:0; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
 .dev.open .qa-a { border:none; border-left:2px solid var(--muted);
@@ -181,6 +185,14 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox > div, .dev.platform > div, .dev.recap > div,
 .dev.recap > figure, .dev.mathbox > figure {
   margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern { border-style:dashed; }
 .dev.platform { border-style:double; }
@@ -244,7 +256,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <a href="../ko/">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-78">78 Containers and algorithms</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div>chapter 42, Structs · structs</div><div>chapter 41, Dynamic memory · a growing array</div><div>chapter 74, The foundation · views and bounds</div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div>Chapter 36 taught that a C array’s size is settled at compile time, and chapter 41 that it can be grown with <code>realloc</code>. Then where is it easiest to go wrong when making a “growing array” yourself?</div><div class="dev qa-a"><p class="dev-label">A</p><p>. In three places. First, <strong>calculating the size to grow to</strong> — the multiplication wrap-round seen in chapter 74 happens here. Second, <strong>the state on failure</strong> — when <code>realloc</code> fails the original pointer is still valid, and the common code that assigns the return value straight into the original variable loses that original (a leak). Third, <strong>pointers after the growth</strong> — a pointer that pointed at an element becomes invalid after reallocation. Rather than getting these three right afresh every time you make a container, it is better to use one made properly once.</p></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><span id="idx-entry-111"></span>The tools that hold many — the growing array, the intrusive list, the ring buffer, the hash map. And as the answer to chapter 71′s fifth bug (unchecked callbacks) and the performance trap attached to that place, we see sorting <strong>guaranteed even in the worst case</strong> and hashing that <strong>withstands attack</strong>. Chapter 36′s arrays and chapter 42′s structs become practical components here.</div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><p>How much slower is a keyed hash? And where does the random secret come from if there is no OS?</p></div><div></div><h3>78.1 The life cycle of the four containers</h3><p>First we see the four on one screen. How making, putting in, traversing and giving back differ between them is all in this example.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch78/tour.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The life of four containers — made, filled, walked and given back.</span></em>
+<h2 id="loc-78">78 Containers and algorithms</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div>chapter 42, Structs · structs</div><div>chapter 41, Dynamic memory · a growing array</div><div>chapter 74, The foundation · views and bounds</div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div>Chapter 36 taught that a C array’s size is settled at compile time, and chapter 41 that it can be grown with <code>realloc</code>. Then where is it easiest to go wrong when making a “growing array” yourself?</div><div class="dev qa-a"><p class="dev-label">A</p><p>. In three places. First, <strong>calculating the size to grow to</strong> — the multiplication wrap-round seen in chapter 74 happens here. Second, <strong>the state on failure</strong> — when <code>realloc</code> fails the original pointer is still valid, and the common code that assigns the return value straight into the original variable loses that original (a leak). Third, <strong>pointers after the growth</strong> — a pointer that pointed at an element becomes invalid after reallocation. Rather than getting these three right afresh every time you make a container, it is better to use one made properly once.</p></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><span id="idx-entry-111"></span>The tools that hold many — the growing array, the intrusive list, the ring buffer, the hash map. And as the answer to chapter 71′s fifth bug (unchecked callbacks) and the performance trap attached to that place, we see sorting <strong>guaranteed even in the worst case</strong> and hashing that <strong>withstands attack</strong>. Chapter 36′s arrays and chapter 42′s structs become practical components here.</div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><ol class="qlist"><li>How much slower is a keyed hash? And where does the random secret come from if there is no OS?</li></ol></div><div></div><h3>78.1 The life cycle of the four containers</h3><p>First we see the four on one screen. How making, putting in, traversing and giving back differ between them is all in this example.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch78/tour.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The life of four containers — made, filled, walked and given back.</span></em>
 <em><span class="tok-c">   array, list, ring and map compared on one screen. </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
 

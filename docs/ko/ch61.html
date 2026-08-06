@@ -122,6 +122,10 @@ figure.tbl { text-align:center; }
   font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 .dev.open > p, .dev.open > div { margin:.3rem 0; padding:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open > ol.qlist { margin:.35rem 0; padding-left:1.35rem; }
+.dev.open > ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open > ol.qlist li::marker { color:var(--muted); font-weight:700; }
 .dev.open > p:last-child, .dev.open > div:last-child { margin-bottom:0; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
 .dev.open .qa-a { border:none; border-left:2px solid var(--muted);
@@ -181,6 +185,14 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox > div, .dev.platform > div, .dev.recap > div,
 .dev.recap > figure, .dev.mathbox > figure {
   margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern { border-style:dashed; }
 .dev.platform { border-style:double; }
@@ -244,7 +256,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-61">61 문자와 로케일 — <code>&lt;ctype.h></code>·<code>&lt;locale.h></code>·<code>&lt;wchar.h></code></h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div>9장 문자와 텍스트 · 글자와 인코딩</div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div>9장에서 문자는 코드표의 번호이고 인코딩은 그 번호를 바이트로 적는 방식 이라 했다. 그러면 <code>isalpha('가')</code> 같은 호출은 무엇을 묻는 것인가?</div><div class="dev qa-a"><p class="dev-label">답</p><p>. 잘못 던진 물음이다. <code>&lt;ctype.h></code>의 함수들은 <strong>한 바이트</strong>를 판정한다. UTF-8에서 “가”는 세 바이트이므로 애초에 인자로 들어갈 수 없고, 넣더라도 각 바이트를 따로 볼 뿐이다. 이 헤더는 아스키 시절의 도구이고, 여러 바이트 문자를 다루려면 와이드 문자 계열(<code>&lt;wctype.h></code>)이나 인코딩을 직접 다루는 코드가 필요하다.</p></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p>한 글자를 다루는 함수들을 본다. 겉보기에 가장 단순한 헤더인데, C에서 가장 미묘한 함정 두 개가 여기 있다 — <strong><code>char</code>를 그대로 넘기면 계약 밖</strong> 이라는 것과, <strong>답이 로케일이라는 전역 상태에 달렸다</strong>는 것. 9장의 인코딩 이야기가 함수 차원에서 되돌아온다.</div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><p>아스키만 쓰는 프로그램이라면 로케일과 와이드 문자는 몰라도 되는가?</p></div><div></div><h3>61.1 첫 번째 함정 — <code>char</code>를 그대로 넘기지 않는다</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch61/ctype.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2 id="loc-61">61 문자와 로케일 — <code>&lt;ctype.h></code>·<code>&lt;locale.h></code>·<code>&lt;wchar.h></code></h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div>9장 문자와 텍스트 · 글자와 인코딩</div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div>9장에서 문자는 코드표의 번호이고 인코딩은 그 번호를 바이트로 적는 방식 이라 했다. 그러면 <code>isalpha('가')</code> 같은 호출은 무엇을 묻는 것인가?</div><div class="dev qa-a"><p class="dev-label">답</p><p>. 잘못 던진 물음이다. <code>&lt;ctype.h></code>의 함수들은 <strong>한 바이트</strong>를 판정한다. UTF-8에서 “가”는 세 바이트이므로 애초에 인자로 들어갈 수 없고, 넣더라도 각 바이트를 따로 볼 뿐이다. 이 헤더는 아스키 시절의 도구이고, 여러 바이트 문자를 다루려면 와이드 문자 계열(<code>&lt;wctype.h></code>)이나 인코딩을 직접 다루는 코드가 필요하다.</p></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p>한 글자를 다루는 함수들을 본다. 겉보기에 가장 단순한 헤더인데, C에서 가장 미묘한 함정 두 개가 여기 있다 — <strong><code>char</code>를 그대로 넘기면 계약 밖</strong> 이라는 것과, <strong>답이 로케일이라는 전역 상태에 달렸다</strong>는 것. 9장의 인코딩 이야기가 함수 차원에서 되돌아온다.</div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><ol class="qlist"><li>아스키만 쓰는 프로그램이라면 로케일과 와이드 문자는 몰라도 되는가?</li></ol></div><div></div><h3>61.1 첫 번째 함정 — <code>char</code>를 그대로 넘기지 않는다</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch61/ctype.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">ctype.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">limits.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>

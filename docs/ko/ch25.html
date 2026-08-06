@@ -122,6 +122,10 @@ figure.tbl { text-align:center; }
   font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 .dev.open > p, .dev.open > div { margin:.3rem 0; padding:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open > ol.qlist { margin:.35rem 0; padding-left:1.35rem; }
+.dev.open > ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open > ol.qlist li::marker { color:var(--muted); font-weight:700; }
 .dev.open > p:last-child, .dev.open > div:last-child { margin-bottom:0; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
 .dev.open .qa-a { border:none; border-left:2px solid var(--muted);
@@ -181,6 +185,14 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox > div, .dev.platform > div, .dev.recap > div,
 .dev.recap > figure, .dev.mathbox > figure {
   margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern { border-style:dashed; }
 .dev.platform { border-style:double; }
@@ -244,7 +256,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-25">25 입력</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div>22장 출력 · 출력의 두 갈래</div><div>10장 스트림의 기원 · 스트림은 양방향이다</div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div>10장에서 입력도 출력처럼 “문자가 한 줄씩 흐르는 띠”라 했고, 사람의 입력은 엔터로 끝나는 줄 단위가 자연스럽다고 했다(행 버퍼링). 그러면 프로그램이 입력을 받는 자연스러운 단위도 — 줄인가?</div><div class="dev qa-a"><p class="dev-label">답</p><p>. 바로 그렇다 — 그리고 그것이 이 장의 설계 원리다. 사람은 한 줄을 적고 엔터를 친다. 그러니 프로그램도 <strong>한 줄을 통째로</strong> 받아 온 다음, 그 안에서 필요한 값을 찾아 읽는 것이 흐름의 결을 따르는 방식이다. 글자의 띠에서 줄을 뜨는 일과, 뜬 줄을 해석하는 일 — 이 둘을 나누면 각각이 단순해진다.</p></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p>22장의 예고를 완결한다 — 저장할 곳(변수)이 생겼으니 입력을 받는다. 이 책이 처음부터 가르치는 방식은 현대적 관행 그대로다: <strong>한 줄을 통째로 읽고, 그 줄을 해석한다.</strong> 읽기와 해석의 분리 — 이 두 단계 구조가 편리함과 안전함의 원천이다. 제5부가 여기서 완성된다.</div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><p>왜 두 단계로 나누는가? 입력에서 바로 <code>%d</code>를 읽어 주는 함수(<code>scanf</code>)도 있다고 들었는데.</p></div><div></div><h3>25.1 두 단계 — 읽고, 해석한다</h3><p>시연부터 본다. 표준 입력에서 정수 하나를 받아 제곱을 알려 주는 프로그램이다. (이 실행에서 표준 입력으로 준 내용을 가운데 상자에 보였다.)</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch25/read.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2 id="loc-25">25 입력</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div>22장 출력 · 출력의 두 갈래</div><div>10장 스트림의 기원 · 스트림은 양방향이다</div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div>10장에서 입력도 출력처럼 “문자가 한 줄씩 흐르는 띠”라 했고, 사람의 입력은 엔터로 끝나는 줄 단위가 자연스럽다고 했다(행 버퍼링). 그러면 프로그램이 입력을 받는 자연스러운 단위도 — 줄인가?</div><div class="dev qa-a"><p class="dev-label">답</p><p>. 바로 그렇다 — 그리고 그것이 이 장의 설계 원리다. 사람은 한 줄을 적고 엔터를 친다. 그러니 프로그램도 <strong>한 줄을 통째로</strong> 받아 온 다음, 그 안에서 필요한 값을 찾아 읽는 것이 흐름의 결을 따르는 방식이다. 글자의 띠에서 줄을 뜨는 일과, 뜬 줄을 해석하는 일 — 이 둘을 나누면 각각이 단순해진다.</p></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p>22장의 예고를 완결한다 — 저장할 곳(변수)이 생겼으니 입력을 받는다. 이 책이 처음부터 가르치는 방식은 현대적 관행 그대로다: <strong>한 줄을 통째로 읽고, 그 줄을 해석한다.</strong> 읽기와 해석의 분리 — 이 두 단계 구조가 편리함과 안전함의 원천이다. 제5부가 여기서 완성된다.</div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><ol class="qlist"><li>왜 두 단계로 나누는가? 입력에서 바로 <code>%d</code>를 읽어 주는 함수(<code>scanf</code>)도 있다고 들었는데.</li></ol></div><div></div><h3>25.1 두 단계 — 읽고, 해석한다</h3><p>시연부터 본다. 표준 입력에서 정수 하나를 받아 제곱을 알려 주는 프로그램이다. (이 실행에서 표준 입력으로 준 내용을 가운데 상자에 보였다.)</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch25/read.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
 <span class="tok-x">{</span>

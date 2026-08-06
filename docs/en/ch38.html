@@ -122,6 +122,10 @@ figure.tbl { text-align:center; }
   font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 .dev.open > p, .dev.open > div { margin:.3rem 0; padding:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open > ol.qlist { margin:.35rem 0; padding-left:1.35rem; }
+.dev.open > ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open > ol.qlist li::marker { color:var(--muted); font-weight:700; }
 .dev.open > p:last-child, .dev.open > div:last-child { margin-bottom:0; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
 .dev.open .qa-a { border:none; border-left:2px solid var(--muted);
@@ -181,6 +185,14 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox > div, .dev.platform > div, .dev.recap > div,
 .dev.recap > figure, .dev.mathbox > figure {
   margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern { border-style:dashed; }
 .dev.platform { border-style:double; }
@@ -244,7 +256,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <a href="../ko/">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-38">38 Strings</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div>chapter 9, Characters and text · the representation of letters</div><div>chapter 37, Arrays · arrays and subscripts</div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div>Chapter 9 said the string representation C chose is NUL termination, “planting a marker at the end”, and foreshadowed its three prices (the length must be counted, a NUL cannot be held as content, lose the marker and it runs away). Now that you have learned arrays (chapter 37) — how would you define a C string exactly, yourself?</div><div class="dev qa-a"><p class="dev-label">A</p><p>. <strong>A char array, somewhere in which there is a byte of value 0 (the NUL character, <code>'\0'</code>), plus the agreement that “the string” means from the start to just before that marker</strong> — that is all. There is no separate string type. An array, and an agreement. This chapter treats the use and the cost of that agreement.</p></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><span id="idx-entry-66"></span>C’s string faced head on — its identity as a char array plus NUL termination, the special circumstances of string literals, the real cost of measuring length, and the practical matter of “character count ≠ byte count” that Hangul brings out. The last of the three nulls (the NUL character) gets its formal treatment here.</div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><p>Why did C not attach <code>const</code>?</p><p>What of the newest standard and the ones to come?</p><p>To handle Hangul properly — to work in units of characters — what must be done?</p></div><div></div><h3>38.1 The identity — an array, and an agreement</h3><p><code>char greet[] = "안녕";</code> — initialise an array with a string literal and the compiler builds the array by <strong>appending <code>'\0'</code> after</strong> the bytes of the characters. The demonstration dissects it.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch38/str.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2 id="loc-38">38 Strings</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div>chapter 9, Characters and text · the representation of letters</div><div>chapter 37, Arrays · arrays and subscripts</div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div>Chapter 9 said the string representation C chose is NUL termination, “planting a marker at the end”, and foreshadowed its three prices (the length must be counted, a NUL cannot be held as content, lose the marker and it runs away). Now that you have learned arrays (chapter 37) — how would you define a C string exactly, yourself?</div><div class="dev qa-a"><p class="dev-label">A</p><p>. <strong>A char array, somewhere in which there is a byte of value 0 (the NUL character, <code>'\0'</code>), plus the agreement that “the string” means from the start to just before that marker</strong> — that is all. There is no separate string type. An array, and an agreement. This chapter treats the use and the cost of that agreement.</p></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><span id="idx-entry-66"></span>C’s string faced head on — its identity as a char array plus NUL termination, the special circumstances of string literals, the real cost of measuring length, and the practical matter of “character count ≠ byte count” that Hangul brings out. The last of the three nulls (the NUL character) gets its formal treatment here.</div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><ol class="qlist"><li>Why did C not attach <code>const</code>?</li><li>What of the newest standard and the ones to come?</li><li>To handle Hangul properly — to work in units of characters — what must be done?</li></ol></div><div></div><h3>38.1 The identity — an array, and an agreement</h3><p><code>char greet[] = "안녕";</code> — initialise an array with a string literal and the compiler builds the array by <strong>appending <code>'\0'</code> after</strong> the bytes of the characters. The demonstration dissects it.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch38/str.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
