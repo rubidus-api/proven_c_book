@@ -17,7 +17,7 @@ as cases in the body. How to obtain the standard document is in appendix D.
   47).
 - The Unicode Standard — character sets, encodings and normalisation (chapter 9).
 - POSIX (IEEE Std 1003.1) — the system interfaces outside standard C (the background of
-  chapter 80).
+  chapter 81).
 
 == The language's history
 
@@ -40,9 +40,9 @@ as cases in the body. How to obtain the standard document is in appendix D.
   (chapters 56 and 59).
 - Denial of service using hash collisions (many web frameworks, 2011) and the
   algorithmic complexity attack paper (2003) — cases of a data structure's worst case
-  becoming a security problem (chapters 72 and 79).
+  becoming a security problem (chapters 73 and 80).
 - The Debian OpenSSL random number defect (CVE-2008-0166) — predictable keys
-  (chapter 80).
+  (chapter 81).
 - The Linux kernel's adoption of `-fno-strict-aliasing` and removal of VLAs (2018) —
   compromises of reality (chapters 13, 17 and 37).
 

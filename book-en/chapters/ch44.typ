@@ -266,7 +266,7 @@ implementations provide devices for turning padding off.
 ]
 
 There is a tool in the opposite direction, *forcing alignment*, and this one is a
-standard word of C23 (chapter 69).
+standard word of C23 (chapter 70).
 
 ```c
 struct cacheline { alignas(64) int counter; };   /* on a 64-byte boundary */
@@ -326,7 +326,7 @@ The price is clear too.
 Pass a 16 KiB struct by value and that much more is piled on per call — measure
 it and the stack position before and after the call really does widen by the
 struct's size. The stack is usually about 8 MiB (chapter 36), and can be far
-smaller in recursion or on a per-thread stack (chapter 66). Recursion passing
+smaller in recursion or on a per-thread stack (chapter 67). Recursion passing
 large structs by value is the shortest road to stack overflow.
 
 *The cost of copying.* But saying "a copy always happens" would be inaccurate.

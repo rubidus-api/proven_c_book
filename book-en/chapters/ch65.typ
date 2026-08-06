@@ -48,7 +48,7 @@ as a macro pointing at thread-local storage.
   [`strerror(n)`], [error number → a sentence], [★ a static buffer. not thread-safe],
   [`perror(s)`], [`s: reason` to `stderr`], [the habit of attaching a context string],
   [`strerror_r`], [fills a caller's buffer], [POSIX. there are two editions, hence confusion],
-  [`strerror_s`], [the same intent], [annex K (chapter 66)],
+  [`strerror_s`], [the same intent], [annex K (chapter 67)],
 )
 
 The error numbers the standard names are only three — `EDOM` (domain), `ERANGE`
@@ -105,24 +105,16 @@ It confirms at compile time, so the run-time cost is zero, and it is used on
 static_assert(sizeof(int) >= 4, "this code assumes a 32-bit int");
 ```
 
-== Signals — interference flying in from outside
+== Signals — see the next chapter
 
-`<signal.h>` handles events coming from outside the program (Ctrl+C, a wrong
-memory access, an arithmetic error). The signals the standard settles are only six
-(`SIGINT`, `SIGSEGV`, `SIGFPE`, `SIGILL`, `SIGABRT`, `SIGTERM`); the rest are the
-platform's.
+`<signal.h>` deals with events that come from outside the program (Ctrl+C, an
+invalid memory access, an arithmetic error). The standard defines only six signals
+(`SIGINT`, `SIGSEGV`, `SIGFPE`, `SIGILL`, `SIGABRT`, `SIGTERM`); the rest belong to
+the platform.
 
-The heart of it is the fact that *there is almost nothing that can be done inside a
-handler.* What the standard permits is about this much.
-
-- assigning a value to a variable of type `volatile sig_atomic_t`
-- calling `_Exit` or `abort`
-- setting the handler for the same signal again
-
-Neither `printf` nor `malloc` may be called — because the signal can cut in while
-those functions are halfway through executing (they are not *async-signal-safe*).
-The idiom in the field is "the handler only raises a flag; the real handling
-happens in the main flow."
+One discipline is worth putting down here — *there is almost nothing a handler may
+do.* Neither `printf` nor `malloc` may be called. So the working idiom becomes
+"the handler raises a flag, the main flow does the work."
 
 ```c
 static volatile sig_atomic_t stop = 0;
@@ -130,16 +122,10 @@ static void on_int(int sig) { (void)sig; stop = 1; }
 /* in the main loop: while (!stop) { ... } */
 ```
 
-#misconception[
-  "`SIGSEGV` can be caught and the program kept running"
-][
-  It can be caught but it cannot be kept running. `SIGSEGV` is a signal that comes
-  *after the contract has already been broken* (chapter 49's undefined behaviour).
-  Return normally from the handler and the same instruction is executed again and
-  repeats endlessly, or it runs on over a damaged state. Leaving a stack trace for
-  debugging and ending with `_Exit` is the realistic best, and "recovery" is mending
-  the code so that the access is not made in the first place.
-]
+There is enough in this header to fill a chapter, so it has one — the history, the
+shape of the functions with their arguments and return values, what `sig_atomic_t`
+really is, POSIX's `sigaction` and the inside of its structures, and the real uses
+in servers, shells and terminals, all in chapter 66.
 
 == Non-local jumps — `setjmp`/`longjmp`
 

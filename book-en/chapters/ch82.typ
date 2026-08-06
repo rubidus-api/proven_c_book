@@ -1,286 +1,319 @@
 #import "../../book/lib.typ": *
 
-= Writing it three times — a tiny JSON
+= The boundaries — running things overlapped, and when there is no OS
 
 #prereq(
-  ([chapter 74, Errors are values], [returning failure as a value]),
-  ([chapter 75, Foundations — byte, view, checked arithmetic], [borrowed slices and overflow checks]),
-  ([chapter 76, Allocation — allocators, arenas, pools], [where memory comes from]),
-  ([chapter 77, Strings], [refuse rather than truncate]),
+  ([chapter 68, Operations that do not split], [operations that do not split]),
+  ([chapter 71, A program's map of memory], [when there is no OS]),
 )
 
 #deepqa[
-  Part XII has walked through five contracts one at a time — errors are values,
-  a view is borrowed, the allocator is a parameter, state is not copied, refuse
-  rather than truncate. So what changes in code when all five apply *at once,
-  inside one program*?
+  Chapter 12 said cores became several because of the clock's limits, and that
+  accidents such as false sharing arise. Then how many different meanings does the
+  phrase "doing several things at once" have?
 ][
-  What changes is not the syntax but *where things are written down*. Written in
-  plain C, container sizes, failure handling and the source of memory are
-  scattered through the code as convention; written with proven, the same things
-  come out in types, return values and parameters. Rather than describe the
-  difference, this chapter writes the same program several times and shows it.
+  At least two. *Concurrency* is several tasks progressing by turns while waiting for
+  each other, and it holds even with one core — such is a server doing other work
+  while waiting for input and output. *Parallelism* is several cores really
+  calculating at the same moment. The former is a problem of *structure*, the latter a
+  problem of *performance*. This chapter's coroutines treat the former and the job
+  system the latter.
 ]
 
 #organizer[
-#idx("JSON")  The chapter that closes Part XII — an exercise without exercises. We write a
-  very small JSON reader and writer in three editions — plain C, proven, and an
-  extended proven that takes nesting — and watch where they part company. The
-  last one shows how to handle depth without recursion. No new syntax appears.
-  What appears is *choice*.
+  The last chapter of Part XII. We see the two ways of running several things
+#idx("coroutine")  overlapped (stackless coroutines and the job system), why
+  allocators and pointer provenance become a problem in a program running along
+  several strands, and what shape this library takes in a place with no operating
+  system at all. The last section is *when it is better not to use it*.
 ]
 
 #chapter-questions()
 
-== What we are building
+== Stackless coroutines — overlapping without threads
 
-Build all of it and this becomes a parser textbook rather than this book. So the
-scope is narrowed like this.
+If a function can do some work, stop, and later start again *from that place*, much
+becomes easy. Because the code can be written in order instead of a state machine
+being written by hand.
+
+#demo("examples-en/ch82/coro.c")
+
+The heart of it is the last line — the state this coroutine remembers is *4 bytes*.
+There is no separate stack, no thread and no allocation. It is a tidying up of an old
+knack in C in which macros make re-entry points with `switch` and `case` (a cousin of
+Duff's device — that syntax seen in chapter 30 is used again here).
+
+The price is clear too. *Local variables do not survive* — stop and come back and they
+are gone, so state that must be maintained has to be kept in a struct. It is why the
+example kept `sent` as a struct member. And, being implemented with `switch`,
+`PROVEN_CORO_YIELD` cannot be put inside another `switch`.
+
+Even so the reason this model is loved in embedded work is plain. If one task is
+4 bytes, hundreds may be raised with no burden, and since no stack is taken separately
+the memory usage can be calculated at compile time.
+
+#misconception[
+  "A coroutine is a light version of a thread"
+][
+  What they do is entirely different. Threads are switched by the operating system
+  *cutting in as it pleases* (pre-emption), while a coroutine stops only where it
+  itself wrote `YIELD` (co-operation). So race conditions do not arise between
+  coroutines — because two coroutines never run at the same moment. There is a price
+  in exchange. If one coroutine calculates long without yielding, all the rest starve.
+  And coroutines cannot use several cores — which is why the next section's job system
+  exists separately.
+]
+
+== The job system — using several cores
+
+`proven_job_sys_t` is a small system equipped with a queue of work and worker threads.
+Its characteristic is that the queue's size is *fixed* — if it overflows, submission
+fails, and that failure comes as a value. The judgement is that an infinitely growing
+queue is merely a device for putting the problem off until memory is exhausted.
+
+There are five doors, and their order is itself the contract.
+
+```c
+proven_job_sys_t *sys;
+proven_err_t e = proven_job_system_init(alloc, 4, 256, &sys);  /* ① 4 workers, queue 256 */
+bool ok = proven_job_submit(sys, routine, arg);                /* ② submit (false if full) */
+bool did = proven_job_execute_one(sys);                        /* ③ this thread handles one too */
+proven_job_system_close(sys);                                  /* ④ take no more */
+proven_job_system_destroy(sys);                                /* ⑤ join the workers and clean up */
+```
+
+That it is an *opaque type* stands out — the inside of `proven_job_sys_t` is not in the
+header and it is handled only by pointer (the opaque type of chapter 55 in the flesh).
+Platform resources such as threads and locks are inside, and their layout is not to be
+exposed to user code.
+
+That ④ and ⑤ are divided is a contract too. *Closing* is "no more submissions are
+taken", and *destroying* is "wait for the workers to finish and then clean up". Between
+them, the header requires the producer threads to be joined.
+
+`proven_job_execute_one` is a little special. It lets *the submitting side handle one
+item of work itself* — so when submission fails because the queue is full, instead of
+merely waiting one can handle one and try again (a simple form of work stealing).
+
+#antipattern[
+  Overlapping closing with submitting
+][
+  ```c
+  /* thread A */                    /* thread B */
+  proven_job_submit(sys, job);      proven_job_system_destroy(sys);
+  ```
+  A pattern the header explicitly forbids. The correct order is *close, join all the
+  producers, then destroy*. Such ordering contracts are not solved by hiding a lock
+  inside the data structure — rather, a hidden lock increases the code that "mistakenly
+  believes it works". It is also why this library puts no locks in its containers and
+  pins down that *shared mutation is synchronised by the caller*.
+]
+
+== Threads, allocators, and provenance
+
+In a program running along several strands the allocator demands special care. If two
+threads use one arena together, the simple action seen in chapter 77 of "cutting from
+the front" becomes a race at once. The prescription is mostly *one per thread* — and
+then no synchronisation is needed at all.
+
+Pointer *provenance*, whose name only was seen in chapter 14, becomes practical here
+too. Since even at the same address it matters which allocation a pointer came from,
+giving a block obtained from one allocator back to another is a contract violation
+(as in chapter 77's counterexample) even if the address happens to match. The library's
+name came from here.
+
+== When there is no OS — freestanding
+
+This is the constraint that most shaped this library. It is the demand to run in the
+very environment chapter 56 gave as the reason the standard library is thin — a place
+with no operating system, no heap and no files.
+
+#idx("freestanding")What changes in a freestanding build is this.
+
+- `platform/` is not included at all. Files, time and OS randomness disappear.
+- Allocation is done with an arena over a static buffer (chapter 77). There is no
+  `malloc`.
+- Strings are handled with `_borrow` over stack and static buffers (chapter 78).
+- The panic handler is registered by you — there may be no console to print to, so it
+  becomes a matter of lighting an LED, kicking a watchdog or rebooting.
+- Real-number formatting uses large-integer arithmetic, so it can be taken out whole
+  if it is not needed.
+
+Why the disciplines of the earlier chapters — "take the allocator as an argument", "a
+view is borrowed", "no hidden globals" — were so persistent shows itself here. Those
+disciplines were not a taste but *the minimum condition for running in this
+environment*.
+
+=== The actual build procedure
+
+Left in words alone it stays vague, so here is the order.
+
++ *Take `platform/` out of the compilation list.* Leave only `src/proven/*.c`. Files,
+  time, OS randomness, streams, mmap and the job system go out with it.
++ *Define `PROVEN_FREESTANDING`* (`-DPROVEN_FREESTANDING=1`). `proven_heap_allocator()`
+  then returns *an unusable value* (all zeros), and if it is used by mistake
+  `proven_alloc_is_valid` says false.
++ *Take the backing memory statically.* Put one array where the linker script knows it
+  and lay an arena over it (chapter 77).
++ *Register a panic handler.* There being no console, one of an LED, a watchdog or a
+  reboot (chapter 75's example).
++ *Take out what is not needed.* If real-number formatting is not used,
+  `-DPROVEN_FMT_NO_FLOAT` strips the large-integer arithmetic code out whole.
+
+```c
+/* the skeleton of a freestanding program */
+static proven_byte_t g_pool[8 * 1024];      /* the memory budget is settled here */
+
+int main(void)
+{
+    proven_set_panic_handler(board_panic);
+    proven_arena_t arena = proven_arena_create(
+        (proven_mem_mut_t){ .ptr = g_pool, .size = sizeof g_pool });
+    proven_allocator_t alloc = proven_arena_as_allocator(&arena);
+
+    for (;;) {
+        proven_arena_reset(&arena);          /* taken back each turn */
+        handle_one_event(alloc);
+    }
+}
+```
+
+These twenty lines contain all of this part's discipline — *the allocator is an
+argument*, *lifetime is per arena*, *`main` does not return* (chapter 50), and *the
+memory budget is written as a number in the source*.
+
+#realcase[
+  The same code in two worlds — and its price
+][
+  Keeping as one set the code that runs both in embedded work and on a host really is
+  of great value. If a protocol parser can be tested on a PC and put into the firmware
+  as it stands, the time spent floundering on a board with no debugging environment
+  shrinks greatly. It is why many embedded teams keep a separate "test build that runs
+  on the host", and what makes that structure possible is exactly the design of
+  *confining platform dependence to one layer*. The price is that the API becomes a
+  little more formal — code that works anywhere is specialised to nowhere.
+]
+
+== Where this library stands — what it is, and what it is not
+
+Before closing the part its place has to be made clear. The design seen so far —
+taking an allocator as a parameter, returning failure as a value, views that
+carry a length, refusing rather than truncating — was not invented by proven.
+Zig's allocator parameter, Rust's `Result` and slices, recent C++'s `span` and
+`expected`, and the in-house C conventions of many companies have all moved in
+the same direction. There is considerable common ground about it.
+
+*proven, however, is not that common ground itself.* It is *one attempt* to
+implement that direction in C23 — neither a standard nor an industry component.
+The distinction matters for a simple reason: the direction has been verified in
+many places, this implementation has not yet. What to take from this part is the
+direction rather than the code, and if you do take the code, take it knowing what
+follows.
+
+=== What has been verified so far
+
+What this book has put in print is exactly this much.
 
 #dtable(
   columns: 2,
-  keycol: false,
-  [*In*], [*Out*],
-  [One flat object — `{ "key": value, ... }`], [Nesting (in the first two editions; the third solves it)],
-  [Four kinds of value — string, integer, boolean, null], [Reals, exponent notation],
-  [Reading and writing back (a round trip)], [`\u` escapes, comments],
-  [Where a failure happened], [Recovery, partial parses],
+  [*confirmed*], [*not confirmed*],
+  [this book's 94 examples build and run under GCC 14 and Clang 22], [behaviour under other compilers (MSVC, older GCC)],
+  [they all pass on x86-64 Linux], [continuous verification on other systems and architectures],
+  [the contracts of the API the examples use match the documentation], [coverage of the whole API],
+  [the platform layer has two branches, POSIX and Win32], [continuous automated verification of the Win32 branch],
 )
 
-Even narrowed, everything this part is about fits inside: the size of the
-container, pointing into someone else's memory, integer overflow, how failure is
-announced, and who provides the memory. Nesting is taken up in the last section
-by a *third edition* — without recursion, on an explicit stack.
+That is, what this book vouches for is that *the code printed here runs in this
+environment* — not that the whole library is verified in every environment. The
+book claims no more than that.
 
-== The plain C edition
+=== Stability — what may still change
 
-#demo("examples-en/ch82/json_plain.c")
+proven is not at 1.0. The edition this book uses is a snapshot of the
+`v26.07.23b` line, and that means:
 
-It will read as familiar. This is *the most common shape* such a thing takes in
-C: fixed-size arrays to hold it, `char` arrays to copy strings into, `-1` plus a
-`char err[]` to report failure.
+- *The API may change.* Names and signatures are still being tidied. There is no
+  guarantee that this book's examples compile unchanged against the next edition.
+- *No ABI is promised.* Struct layouts may change, so mixing pre-compiled
+  binaries is not advisable at this stage; building from source alongside your
+  own code is safer.
+- *Pin the edition.* If you use it in earnest, vendor a specific snapshot into
+  your repository (as this book does under `vendor/proven`) and move it
+  deliberately.
 
-This is not *bad* code. It is code that needs someone to keep it. The last line
-of the demonstration shows the price: given a value longer than the container,
-127 of 159 characters survived and the rest was *cut silently.* The single line
-`if (i + 1 < cap)` in `take_string` decided that, and the caller has no way of
-learning it happened.
+=== What is not there yet
 
-#dtable(
-  columns: 3,
-  [*Place*], [*What the code says*], [*What the code does not say*],
-  [Length of a value], [`char str[128]`], [What happens past 128 characters],
-  [Number of pairs], [`MAX_PAIRS 16`], [Who notices the seventeenth pair],
-  [Failure], [`return -1` + `err[]`], [What happens if the caller does not check],
-  [Numbers], [`strtol`], [That overflow must be read from `errno`],
-  [Memory], [A static array], [Whether the parser's usage is visible outside],
-)
+Set down honestly, the following are absent or thin in this edition.
 
-The right-hand column is this code's *oral tradition*. It lives in comments, in
-convention and in someone's memory — not in the types.
-
-== The proven edition
-
-#demo("examples-en/ch82/json_proven.c")
-
-It reads the same grammar and writes the same result. But the right-hand column
-of that table has moved to the left.
-
-*Values are not copied.* A string value is a `proven_u8str_view_t` — a borrowed
-slice pointing into the source buffer (chapter 75). With no container there is
-nothing to overflow and nothing to truncate. In exchange one contract appears:
-*it is valid only while the source lives.* That contract is written in the type's
-name.
-
-*Failure arrives as a value.* `jresult` returns a `proven_err_t` together with
-*where it stopped*. The last two lines of the demonstration are that in the
-flesh: when there is no room for another pair it refuses instead of trimming
-(`err 1`), and a number too large to hold is refused rather than wrapped
-(`err 9`).
-
-*The source of memory is a parameter.* `json_parse` takes an arena
-(chapter 76). It does not know where the memory comes from and does not need to.
-Give it a static array and it runs without a heap; give it a heap allocator and
-it runs on the heap. Neither requires touching the parser.
-
-*Integer overflow is checked by hand.* `PROVEN_CKD_MUL` and `PROVEN_CKD_ADD`
-check at every carry. Not "return, then look at `errno`" but failure as a value
-at the moment of overflow.
-
-#dtable(
-  columns: 3,
-  [*Place*], [*Plain C*], [*proven*],
-  [String value], [Copied into `char str[128]` — cut if longer], [Borrowed as a `view` — no cut, a lifetime contract],
-  [Number of pairs], [Fixed `MAX_PAIRS`], [A `cap` the caller chooses; `NOMEM` beyond it],
-  [Failure], [`-1` plus a written reason], [`proven_err_t` plus the byte it stopped at],
-  [Number parsing], [`strtol` + `errno` (easy to forget)], [Checked arithmetic at every digit],
-  [Memory], [Static array (the parser decides)], [An arena (the caller decides)],
-  [Writing], [`snprintf` — cut if it does not fit], [A growing `u8str` — failure if it does not fit],
-)
-
-== One step further — nesting, without recursion
-
-The two editions so far read one flat object. Real JSON nests. How is that
-usually written? *Recursive descent*: when a value turns out to be an object,
-call yourself again to read what is inside. It is short and it reads well.
-
-That brevity has a price attached. *The input decides the depth.* Nest a
-thousand deep and a thousand frames pile up; nest a hundred thousand deep and
-the stack gives way. It is chapter 40 exactly — the stack is narrow (a few MiB
-usually), and when it overflows the program dies with no way to check for it.
-For a parser reading files other people wrote, that is an *attack surface*.
-
-So the extended edition uses no recursion. Both parsing and output are loops
-driven by an explicit stack. Depth becomes the length of an array, so crossing
-the limit can be *refused as a value* instead of collapsing the stack.
-
-#demo("examples-en/ch82/json_nested.c")
-
-The last two lines of the output are the point of the design. Given the same
-200-deep input, a limit of 32 refuses at the 32nd level (`err 2`), and a limit
-of 256 reads it through and builds 200 nodes. *Neither run dies* — depth is a
-setting, not an incident.
-
-=== What was used where
-
-This edition draws on the tools of Part XII across the board. Gathered in one
-place, each takes on one problem.
-
-#dtable(
-  columns: 3,
-  [*Tool*], [*What it takes on*], [*Without it*],
-  [Arena (chapter 76)], [Takes the memory of one parse in a lump and drops it in a lump], [Every node needs a matching `free`],
-  [Pool (chapter 76)], [Recycles slots of exactly one `jnode`], [Same-size allocations fragment the heap],
-  [Intrusive list (chapter 75)], [Hooks a child onto its parent — through a link inside the node], [A separate child array must be allocated and grown],
-  [Dynamic array], [Stacks the open containers — the *explicit stack*], [You end up leaning on the call stack (that is, recursion)],
-  [`view` (chapter 75)], [Borrows keys and strings from the source], [Every character needs a copy and a container],
-  [Checked arithmetic (chapter 75)], [Watches overflow at every carry], [One forgotten `errno` and it wraps],
-  [`proven_err_t` (chapter 74)], [Depth exceeded, no room, bad syntax — all as values], [Either death, or a silent trim],
-)
-
-*The intrusive list* earns its keep especially here. Rather than allocating an
-array for the children, each node carries one link (`proven_list_node_t link`)
-that threads it onto the parent's list. The link was created along with the node,
-so *adding a child costs no new allocation* — and one more place that could fail
-disappears.
+- *Performance and size comparisons.* No benchmarks against the standard library
+  or other C libraries are published. That is why this book makes no performance
+  claim — a performance claim without data is advertising.
+- *Outside users.* There is little record of use in projects beyond the author's.
+- *A wide platform matrix.* The freestanding branch is designed for, but the list
+  of continuously verified targets is narrow.
+- *A long compatibility history.* The trust an old library earns — "it has been
+  carried across many editions already" — accumulates only with time.
 
 #qa[
-  Does dropping recursion not make the code longer and harder to read?
+  Then what is this part to be read for?
 ][
-  Longer, yes. What would be ten lines in a recursive version becomes thirty of
-  stack frames and state transitions. Recursion also reads more easily — it is
-  closer to the model in a person's head.
+  Two things. One is *how to read a design* — the eye that asks, of whatever
+  library you meet, "how does it report failure, who supplies the memory, where
+  is the length, what happens at the boundary?" That eye remains whether or not
+  you use proven.
 
-  It is still written this way for one reason: *the input must not decide how
-  much resource is consumed.* In the recursive version depth eats the call
-  stack, an *invisible* resource that can be neither checked nor capped. With an
-  explicit stack, depth is `stack.len` — a *number you can see* — and the cap is
-  a parameter.
-
-  Out of that comes the working rule for code at a boundary (files, networks,
-  plug-ins): *do not read a format with depth using recursion.* If you do, put a
-  limit on the depth and count it.
+  The other is *grounds for a choice*. If, looking at the table above, you judge
+  that it is too early for your project, that too is the result of reading this
+  part properly. It means the same as the preface saying that deciding you do not
+  need proven is a fine outcome too.
 ]
 
-#realcase("Deep nesting is a real attack")[
-  "Depth bombs" are an old class of attack on JSON and XML parsers. Send a few
-  kilobytes with a hundred thousand brackets in it and a recursive parser
-  overflows the stack while reading it and the process dies — denial of service.
-  Stopping a server with a few dozen bytes of input is a good return on effort.
+== When it is better not to use it
 
-  That is why widely used parsers nearly all impose a depth limit. It is also why
-  this example takes `max_depth` as a parameter — and why the limit is set by the
-  *caller rather than the library*, since what counts as reasonable differs from
-  one place of use to another.
-]
+We close honestly. There are cases where this library is not the answer.
 
-#misconception[
-  "Removing recursion removes stack overflow"
-][
-  It does not remove it — it *moves* it. An explicit stack eats memory too. The
-  difference is that this memory sits on the heap (or in an arena), its length
-  can be counted, and a cap can be placed on it.
-
-  The point is not "recursion is bad" but *keep the resource where you can see
-  it*. If the depth is a constant you chose (as in code reading your own config
-  file), recursion is the better choice. If someone else chooses the depth, it is
-  better to hold that resource in your hand and count it.
-]
-
-== So what actually changed
+- *Short, script-like programs* — for a twenty-line tool, ownership discipline and
+  allocator parameters are mere formality. The standard library is enough.
+- *A codebase that already has other conventions* — a large project mostly already has
+  its own string, container and error conventions. Mix two conventions and conversion
+  code arises at every boundary, and those boundaries become the places of new bugs.
+- *Places like C++ and Rust where the language already solves the problem* — in an
+  environment where the language handles ownership and error propagation, there is
+  little reason to lay a C library on top.
+- *Work that one standard function finishes* — exactly as this book said in
+  chapter 56. The right attitude is neither "do not use it" nor "use it
+  unconditionally" but *knowing the contract and choosing*.
 
 #qa[
-  The proven edition is the longer one. Where is the gain?
+  Then what remains of what was learned in this part if proven is not used?
 ][
-  What it is longer by is *the checking that should have been there.* The plain
-  edition's brevity was bought by not checking, and that checking did not vanish
-  — it moved onto a person.
-
-  Count the difference and it comes to this. In the plain edition there are five
-  places a person must remember to be careful: the container size, the maximum
-  pair count, checking the return value, checking `errno`, and the size of the
-  static array. In the proven edition those five moved into types, parameters and
-  return values. *What had to be remembered became what can be read* — that is
-  the gain.
-
-  And it grows with the code. Five things can be remembered in a 200-line parser.
-  They cannot be remembered in a 20,000-line program.
-]
-
-#qa[
-  Is the plain edition useless, then?
-][
-  No — and this distinction is the most important thing in the chapter.
-
-  The plain edition is excellent *when the conditions are narrow*: input you made
-  yourself, sizes you know, code that never leaves this program. There its
-  brevity is the virtue. What is dangerous is when that code *crosses a
-  boundary*. The moment it reads a file someone else wrote, or bytes off a
-  network, or runs inside a long-lived program, all five unwritten things become
-  seeds of an incident.
-
-  That is why chapter 72's five bugs have been shipping for half a century. Not
-  because the code was bad, but because *code written for narrow conditions moved
-  somewhere wide.*
-]
-
-#misconception[
-  "Using a library stops you making these mistakes"
-][
-  A library does not *stop* mistakes. It *exposes* them. Ignore the `jresult` in
-  the proven edition and the outcome matches the plain edition — except that
-  writing it that way is more awkward, and where `[[nodiscard]]` is attached the
-  compiler speaks up (chapter 74).
-
-  What a tool can do ends at *making the correct path the easy path*. Beyond that
-  it is always the user's part — which is also why this book explained the
-  problems before it introduced the library.
-]
-
-#realcase("Where a real JSON parser gets harder")[
-  What all three editions left out is where the real difficulty lives. `\u`
-  escapes must handle UTF-16 surrogate pairs (chapter 9), and reals bring along
-  the rounding problems of chapter 8 — read `0.1` and write it back, and do the
-  same characters come out?
-
-  That is why widely used parsers run to thousands of lines, and it is worth
-  remembering that a good share of those lines are not features but *boundaries*.
+  Almost all of it. Strings that carry their length, writes that refuse rather than
+  truncate, errors that come back as values, allocation visible in the signature, the
+  distinction of owning and borrowing, size calculation done with checked arithmetic,
+  comparators that keep a total order, hashes that assume adversarial input — these are
+  not a library but *design principles*, and they can be applied by hand to any C code.
+  Open chapter 73's table again and the right-hand column is entirely such items. What
+  this part really wanted to sell is not the code but that column.
 ]
 
 #recap[
+  A summary of the whole of Part XII — problems and answers.
+
   #dtable(
-    columns: 2,
-    [*What to keep*], [*The point*],
-    [One program, two editions], [Not the syntax but *what gets written down* differs],
-    [Plain C], [Short. The price of that brevity is five things a person must remember],
-    [proven], [Longer. It is longer by the checks moved into types, returns and parameters],
-    [Cut versus refuse], [Failure comes back as a value instead of a silent trim],
-    [Source of memory], [The caller provides it; the parser does not decide],
-    [Boundaries], [Code written for narrow conditions gets dangerous somewhere wide],
-    [Nesting and depth], [An explicit stack instead of recursion — depth becomes a setting, not an incident],
-  )
+  columns: 3,
+    [*chapter 73's problem*], [*the answer*], [*chapter*],
+    [strings that do not know the size], [views (ptr+size), refusing rather than truncating], [chapters 76 and 78],
+    [unconfirmed failure], [errors as values, `[[nodiscard]]`], [chapter 75],
+    [format mismatch], [`{}` and `PROVEN_ARG` (`_Generic`)], [chapter 79],
+    [unclear ownership], [the allocator parameter, owning versus borrowing], [chapter 77],
+    [unchecked callbacks], [documented contracts, introsort, keyed hashes], [chapter 80],
+    [the hidden type of bytes], [`proven_byte_t`], [chapter 76],
+    [environments with no OS], [separating the platform layer, static arenas], [chapter 82],
+)
 ]
 
-Part XII ends here. We have seen the five contracts one at a time, and finally
-watched all five meet inside one program, written three times. The last part closes the
-book — C in practice, the embedded toolbox, and everything gathered up.
+With this, the promise this book made in chapter 1 has been kept — showing C's problems
+first, and showing one answer to them through to the end. The two remaining chapters
+are the story beyond these pages. In the next chapter we look round the terrain of
+practice (build tools, version control, real projects), and in the last we gather up the
+road this book has travelled.

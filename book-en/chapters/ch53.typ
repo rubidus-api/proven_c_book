@@ -110,7 +110,7 @@ explain what they are. So every variadic function must obtain that information
 
 All three share the property that they hold only *if a human keeps the
 agreement*, because the information for a compiler to check simply does not
-exist. That is why chapter 72 counts this among "the five bugs C has been
+exist. That is why chapter 73 counts this among "the five bugs C has been
 shipping for fifty years."
 
 == `_Generic` — catching the type at compile time
@@ -142,7 +142,7 @@ string there is no place for format and arguments to disagree.
 
 == proven's `PROVEN_ARG` — the structure in the flesh
 
-The `proven_println("{}", PROVEN_ARG(x))` used in chapter 78 is exactly this
+The `proven_println("{}", PROVEN_ARG(x))` used in chapter 79 is exactly this
 structure. Taken apart, the real implementation is three pieces.
 
 *① A bundle carrying a type tag and a value.* The library represents one argument
@@ -224,8 +224,8 @@ guessing at counts, and no format-argument mismatch.
   and the list maintained by hand. So it is used for *a finite, well-known set of
   types*, as in the standard library's `<tgmath.h>` (choosing maths functions by
   type) or this section's `PROVEN_ARG`. When real generics are needed, C still
-  stamps code out with macros (chapter 79's container macros) or passes `void *`
-  with a size (chapter 72's `qsort`).
+  stamps code out with macros (chapter 80's container macros) or passes `void *`
+  with a size (chapter 73's `qsort`).
 ]
 
 == History — from varargs to stdarg
