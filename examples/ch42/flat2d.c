@@ -8,7 +8,7 @@
    i 와 j 를 두 번 평가하지 않으므로 부수효과가 있는 인자도 안전하다. */
 #define AT(p, cols, i, j)  ((p)[(size_t)(i) * (size_t)(cols) + (size_t)(j)])
 
-/* 크기 계산은 넘칠 수 있다 — 넘치면 할당을 시도하지 않는다(49·68장). */
+/* 크기 계산은 넘칠 수 있다 — 넘치면 할당을 시도하지 않는다(49·69장). */
 static int *alloc_grid(size_t rows, size_t cols)
 {
     size_t cells, bytes;

@@ -23,13 +23,13 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-# 새로 끼우는 장: 38(다차원 배열), 37장 배열 바로 다음
-INSERTS = (38,)
+# 새로 끼우는 장: 66(신호), 65장 진단과 제어 바로 다음
+INSERTS = (66,)
 
 
 def remap(n: int) -> int:
     """옛 장 번호 → 새 장 번호."""
-    return n if n < 38 else n + 1
+    return n if n < 66 else n + 1
 
 
 PLACE = "«{}»"   # «n»

@@ -6,6 +6,26 @@ This project follows Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.13.0] - 2026-08-06
+
+### Added
+- **66장 「신호 — `<signal.h>`」 신설** — 65장의 한 절이던 것을 장으로 세웠다
+  (옛 66장 이후 한 칸 밀림, 총 86장).
+  - *역사* — 유닉스의 "믿을 수 없는 신호", 4.2BSD 의 수정, POSIX `sigaction`,
+    그리고 C 표준이 왜 고쳐진 쪽이 아니라 공통분모를 담았는지(OS 없는 곳에서도
+    돌아야 한다).
+  - *함수의 모양* — `signal`·`raise` 의 선언, 인자별 의미(`SIG_DFL`·`SIG_IGN`·
+    함수 포인터), 반환값(이전 처리 방식, `SIG_ERR`), 표준의 여섯 신호와 기본 동작.
+  - *처리기 계약* — 표준 §7.14.1.1 의 허용 목록을 표로 옮기고, `printf` 가 왜
+    금지인지(버퍼·잠금·교착), `sig_atomic_t` 와 `volatile` 이 각각 무엇을 막는지.
+  - *자료형 속* — `struct sigaction` 의 네 멤버와 공용체로 겹치는 두 처리기,
+    주요 깃발 넷, `siginfo_t` 의 `si_code`·`si_addr` 등.
+  - *실제 사용 사례* — `SIGTERM` 정상 종료(컨테이너 유예 시간), `SIGHUP` 설정
+    재적재(nginx), `SIGPIPE` 무시가 정답인 이유, `EINTR` 재시도, `SIGWINCH`,
+    자기 파이프 요령과 `signalfd`·`kqueue`, 스레드에서의 배달 규칙과 `sigwait`.
+  - 예제 3종(`sig_basic`·`sig_flag`·`sig_action`). `signal` 이 처리 뒤
+    `SIG_DFL` 로 되돌아가는 구현 정의 동작을 실측으로 보인다.
+
 ## [v0.12.1] - 2026-08-06
 
 ### Added

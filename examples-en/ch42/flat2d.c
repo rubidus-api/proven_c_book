@@ -8,7 +8,7 @@
    product raised to size_t. i and j are evaluated once, so side effects are safe. */
 #define AT(p, cols, i, j)  ((p)[(size_t)(i) * (size_t)(cols) + (size_t)(j)])
 
-/* The size computation can overflow — if it does, no allocation is attempted (ch. 49, 68). */
+/* The size computation can overflow — if it does, no allocation is attempted (ch. 49, 69). */
 static int *alloc_grid(size_t rows, size_t cols)
 {
     size_t cells, bytes;
