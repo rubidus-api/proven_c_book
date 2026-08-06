@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>68 새 표준이 보탠 것과 *_s 논쟁 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch67.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch69.html" title="다음" aria-label="다음">→</a></span><a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-68">68 새 표준이 보탠 것과 <code>*_s</code> 논쟁</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>57장 표준 라이브러리 전체 지도 · 표준 라이브러리의 전체 지도</div><div>59장 읽고 쓰기의 함정 · 경계와 잘림</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>57장에서 헤더가 늘어나는 속도가 언어의 변화 속도와 같다고 했고, 59장에서는 <code>gets</code>의 장례가 20년 걸렸다고 했다. 그러면 그 자리를 메우려고 표준이 들여온 “안전한 함수”들은 지금 어디에 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 대부분 <strong>어디에도 없다</strong>. C11이 부속서 K(Annex K)로 <code>gets_s</code>·<code>strcpy_s</code> 같은 함수 수십 개를 들였지만, 그것은 <strong>선택 사항</strong>이었고 주요 구현들이 채택을 거부했다. 이 책을 만든 기계에서 확인한 결과도 그렇다 — 예제가 찍은 “부속서 K: 이 구현에는 없다”가 그것이다. 이 장의 뒷부분이 그 이야기다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">이 부의 마지막 장이다. C99·C11·C23이 표준 라이브러리에 보탠 헤더들을 훑고, 그다음 이 언어의 가장 유명한 실패한 시도 — “안전한 함수”를 표준에 들이려던 부속서 K — 의 전말을 본다. <code>gets_s</code>·<code>strcpy_s</code>가 왜 널리 쓰이지 않는지, Microsoft의 같은 이름 함수들은 무엇이 다른지까지.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>부속서 K의 <code>*_s</code> 함수들이 실패했다면, 그 자리를 지금은 무엇이 채우는가?</li></ol></div></div><div></div><h3>68.1 C99가 보탠 것</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>헤더</strong></th><th><strong>무엇</strong></th><th><strong>오늘의 위치</strong></th></tr><tr><td><code>&lt;stdint.h></code></td><td>고정 폭 정수(<code>int32_t</code> 등)</td><td>사실상 필수. 26장</td></tr><tr><td><code>&lt;inttypes.h></code></td><td>그 타입들의 서식 매크로</td><td><code>PRId32</code> 계열. 부록 B</td></tr><tr><td><code>&lt;stdbool.h></code></td><td><code>bool</code>·<code>true</code>·<code>false</code></td><td>C23에서 키워드가 되어 불필요</td></tr><tr><td><code>&lt;complex.h></code></td><td>복소수</td><td>선택 사항. 지원이 고르지 않다</td></tr><tr><td><code>&lt;fenv.h></code></td><td>부동소수점 환경</td><td>63장</td></tr><tr><td><code>&lt;tgmath.h></code></td><td>타입 제네릭 수학</td><td>63장</td></tr></table></div><p class="float-caption">표 68.1</p></figure><p><code>&lt;stdint.h></code>가 이 목록의 승자다. “정확히 32비트”를 표준적으로 표현할 방법이 드디어 생겼고, 그 전까지 프로젝트마다 자기 <code>typedef</code>를 두던 관행이 정리됐다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 부속서 K의 <code>*_s</code> 함수들이 실패했다면, 그 자리를 지금은 무엇이 채우는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 하나가 아니라 셋이 나눠 가졌다. <strong>컴파일러의 진단</strong>(경고와 <code>_FORTIFY_SOURCE</code> 같은 강화 빌드), <strong>새니타이저</strong>(17장), 그리고 <strong>길이를 함께 나르는 API 설계</strong>다. 마지막 것이 이 책이 밀어 온 방향이고, 77·79장의 뷰가 그 구현이다.</p><p>교훈은 함수 이름에 <code>_s</code>를 붙이는 것으로는 안전이 오지 않는다는 것이다. 실패를 확인하게 만들고, 경계를 타입 안에 넣고, 도구가 검사할 수 있게 만드는 쪽이 실제로 통했다. 74장이 다섯 버그를 그렇게 정리한 이유다.</p></p></div></div><h3>68.2 C11이 보탠 것</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>헤더</strong></th><th><strong>무엇</strong></th><th><strong>오늘의 위치</strong></th></tr><tr><td><code>&lt;stdatomic.h></code></td><td>원자적 연산·메모리 순서</td><td>동시성의 토대. 12장의 그 이야기</td></tr><tr><td><code>&lt;threads.h></code></td><td>스레드·뮤텍스·조건 변수</td><td>★ 채택이 더디다 — 대개 pthread를 쓴다</td></tr><tr><td><code>&lt;stdalign.h></code></td><td><code>alignas</code>·<code>alignof</code></td><td>C23에서 키워드로</td></tr><tr><td><code>&lt;stdnoreturn.h></code></td><td><code>noreturn</code></td><td>C23에서 폐기 예정. <code>[[noreturn]]</code>으로</td></tr><tr><td><code>&lt;uchar.h></code></td><td><code>char16_t</code>·<code>char32_t</code></td><td>62장</td></tr></table></div><p class="float-caption">표 68.2</p></figure><p><code>&lt;threads.h></code>의 사정이 흥미롭다. 표준에 있는데도 오랫동안 glibc가 제공하지 않아, 이식성 있는 코드는 여전히 POSIX 스레드를 쓴다. <strong>표준에 들어가는 것과 쓸 수 있게 되는 것은 다른 일</strong>이라는 사실을 보여 주는 사례다.</p><h3>68.3 C23이 보탠 것</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch68/newheaders.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">__STDC_WANT_LIB_EXT1__</span><span class="tok-p"> </span><span class="tok-n">1</span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdckdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdalign.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ① 부속서 K 가 실제로 있는가 — 구현이 알려 준다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#ifdef</span></strong><span class="tok-p"> __STDC_LIB_EXT1__</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">부속서 K: 있음 (__STDC_LIB_EXT1__)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#else</span></strong>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">부속서 K: 이 구현에는 없다</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#endif</span></strong>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ② C23 의 검사 산술 — 넘침을 값으로 알려 준다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> a <strong><span class="tok-x">=</span></strong> <span class="tok-n">2000000000</span><span class="tok-x">,</span> b <strong><span class="tok-x">=</span></strong> <span class="tok-n">2000000000</span><span class="tok-x">,</span> sum<span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>ckd_add</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>sum</strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ckd_add: 넘쳤다 (int 로는 담을 수 없다)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">else</span></strong>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ckd_add: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">size_t</span></strong> count <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">1</span> <strong><span class="tok-x">/</span></strong> <span class="tok-n">2</span><span class="tok-x">,</span> elem <strong><span class="tok-x">=</span></strong> <span class="tok-n">8</span><span class="tok-x">,</span> bytes<span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>ckd_mul</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>bytes</strong><strong><span class="tok-x">,</span></strong><strong> count</strong><strong><span class="tok-x">,</span></strong><strong> elem</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ckd_mul: 넘쳤다 — 할당을 시도하지 않는다</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ③ 고정 폭 정수와 정렬 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">int32_t=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes, alignof(max_align_t)=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int32_t</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong>max_align_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ④ C23 의 bool 은 키워드다 — &lt;stdbool.h> 없이 쓴다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">bool</span></strong> ready <strong><span class="tok-x">=</span></strong> <span class="tok-n">true</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">bool 은 키워드: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> ready </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">true</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">false</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ⑤ 표준이 정한 매크로로 판을 확인한다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">__STDC_VERSION__ = </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">L</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>__STDC_VERSION__</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>부속서 K: 이 구현에는 없다
+ckd_add: 넘쳤다 (int 로는 담을 수 없다)
+ckd_mul: 넘쳤다 — 할당을 시도하지 않는다
+int32_t=4 bytes, alignof(max_align_t)=16
+bool 은 키워드: true
+__STDC_VERSION__ = 202000L
+</code></pre></div></div><p><code>&lt;stdckdint.h></code>가 이 판의 실용적 승자다. 60장에서 본 크기 계산의 감김을 <strong>값으로</strong> 알려 준다 — <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code>은 넘치면 참을 돌려주고, 결과는 감긴 값이 아니라 “쓸 수 없음”으로 다루면 된다.</p><p><code>&lt;stdbit.h></code>도 새로 왔다. 앞의 0 개수 세기, 켜진 비트 세기, 2의 거듭제곱 올림 같은 비트 조작이 표준 함수가 됐다 — 그전까지는 컴파일러 내장 함수 (<code>__builtin_clz</code> 등)에 기대던 자리다.</p><p>그 밖에 C23은 <code>bool</code>·<code>true</code>·<code>false</code>·<code>static_assert</code>·<code>thread_local</code>을 키워드로 승격시키고, <code>nullptr</code>을 들였으며(35장), <code>&lt;stdbool.h></code>· <code>&lt;stdnoreturn.h></code> 같은 호환용 헤더를 사실상 은퇴시켰다.</p><h3>68.4 부속서 K — “안전한 함수”의 실패한 시도</h3><p>이제 이 장의 본론이다.</p><p>2000년대 초, Microsoft는 자사 컴파일러에 <code>strcpy_s</code>·<code>sprintf_s</code> 같은 함수들을 넣고 기존 함수 사용에 경고를 띄우기 시작했다. 그 설계를 표준으로 만들자는 제안이 C11의 <strong>부속서 K</strong>(Bounds-checking interfaces)로 들어갔다.</p><p>핵심 착상은 셋이었다.</p><ol><li>목적지 크기를 <strong>반드시</strong> 인자로 받는다.</li><li>문제가 생기면 잘라 넘어가지 않고 <strong>오류를 돌려준다</strong>(<code>errno_t</code>).</li><li>계약 위반이 감지되면 프로그램이 정한 <strong>제약 처리기</strong>를 부른다.</li></ol><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">__STDC_WANT_LIB_EXT1__</span><span class="tok-p"> </span><span class="tok-n">1</span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">char</span></strong> dst<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">;</span>
+errno_t e <strong><span class="tok-x">=</span></strong> <strong>strcpy_s</strong><strong><span class="tok-x">(</span></strong><strong>dst</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> dst</strong><strong><span class="tok-x">,</span></strong><strong> src</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 넘치면 오류 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>방향은 57장에서 우리가 정리한 “필요한 것”과 닮았다. 그런데 결과는 실패였다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>부속서 K가 채택되지 못한 이유</p><p>2015년, C 표준 위원회 문서 N1967 “Field Experience With Annex K”가 실태를 조사했다. 요지는 냉정했다 — <strong>널리 구현되지 않았고, 구현된 곳에서도 서로 다르게 동작하며, 실제 코드를 더 안전하게 만들었다는 증거가 없다</strong>.</p><p>구체적으로는 이런 사정들이었다.</p><ul><li><strong>Microsoft의 함수와 표준의 함수가 같지 않다.</strong> 이름은 같은데 인자와 동작이 어긋나는 경우가 있어, 한쪽에 맞춘 코드가 다른 쪽에서 깨졌다.</li><li><strong>glibc를 비롯한 주요 구현이 채택하지 않았다.</strong> 오늘까지도 그렇다 — 앞의 예제가 “이 구현에는 없다”를 찍은 이유다.</li><li><strong>제약 처리기라는 전역 상태</strong>가 라이브러리 사이에 충돌을 일으켰다.</li><li>기존 코드를 기계적으로 바꿔 놓았을 뿐, 실제 결함은 <strong>크기를 잘못 계산하는 자리</strong>에 남아 있었다.</li></ul><p>위원회는 부속서 K를 제거하자는 논의까지 갔고, 결국 남기되 사실상 권장하지 않는 상태로 정리됐다. “표준에 넣으면 안전해진다”는 기대가 현실에서 어떻게 어긋나는지 보여 주는 대표 사례다.</p></div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>_s</code> 붙은 함수를 쓰면 안전하다”</strong></p><p>세 가지를 확인해야 한다. 첫째, <strong>그 함수가 있는가</strong> — 표준 부속서 K는 선택이고 대부분의 유닉스 계열에 없다. 둘째, <strong>어느 쪽 판인가</strong> — 표준의 것과 Microsoft의 것이 다를 수 있다. 셋째, <strong>무엇이 안전해지는가</strong> — 크기를 받는다는 것이지, 여러분이 넘긴 크기가 옳다는 뜻이 아니다. <code>sizeof</code> 대신 <code>strlen</code>을 넘기는 실수는 <code>_s</code> 함수에서도 똑같이 사고다.</p><p>이식성 있는 코드에서 현실적인 선택은 지금도 이렇다 — 표준 안에서는 <code>snprintf</code>와 명시적 경계 검사, 플랫폼이 허용하면 <code>strlcpy</code> 계열, 그리고 반복되는 위험 지대에는 검사를 내장한 부품(제12부).</p></div><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Windows에서 만나는 <code>_s</code> 함수들</p><p>MSVC는 <code>strcpy_s</code>·<code>sprintf_s</code>·<code>fopen_s</code> 등을 오래전부터 제공하고, 기존 함수를 쓰면 <code>C4996</code> 경고를 낸다. 경고를 끄려면 <code>_CRT_SECURE_NO_WARNINGS</code>를 정의하는 것이 관행이다.</p><p>주의할 점은 <strong>이 함수들이 표준 부속서 K와 완전히 같지 않다</strong>는 것이다. 예를 들어 인자 검증 실패 시의 동작과 반환값 규칙이 다를 수 있다. 그래서 Windows 전용 코드가 아니라면 <code>_s</code> 계열에 기대지 않고, 크로스 플랫폼 프로젝트는 대개 자체 래퍼를 하나 두는 쪽을 택한다.</p></div><h3>68.5 이 부가 남기는 것</h3><p>열 장에 걸쳐 표준 라이브러리를 걸었다. 함수 이름을 외우는 것이 목적이 아니었으므로, 남길 것은 몇 가지 태도다.</p><ol><li><strong>계약을 먼저 읽는다.</strong> 크기를 받는가, 실패를 어떻게 알리는가, 돌려준 포인터의 주인은 누구인가.</li><li><strong>반환값을 버리지 않는다.</strong> 특히 <code>fclose</code>·<code>snprintf</code>·<code>scanf</code> 계열.</li><li><strong>전역 상태를 의심한다.</strong> <code>errno</code>, 로케일, 정적 버퍼, 반올림 모드.</li><li><strong>표준에 있다고 안전한 것은 아니다.</strong> <code>gets</code>가 22년을 살아남았다.</li><li><strong>플랫폼 확장은 이득과 이식성을 저울질해서.</strong></li></ol><div class="dev recap"><p class="dev-label">복습 정리</p><p>판별 표.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>판</strong></th><th><strong>대표 보탬</strong></th><th><strong>실제로 쓰이는가</strong></th></tr><tr><td>C99</td><td><code>&lt;stdint.h></code>·<code>&lt;inttypes.h></code></td><td>예 — 사실상 필수</td></tr><tr><td>C99</td><td><code>&lt;complex.h></code></td><td>드물다</td></tr><tr><td>C11</td><td><code>&lt;stdatomic.h></code></td><td>예 — 동시성의 토대</td></tr><tr><td>C11</td><td><code>&lt;threads.h></code></td><td>드물다 — pthread가 우세</td></tr><tr><td>C11</td><td>부속서 K(<code>*_s</code>)</td><td>아니오 — 이 장의 이야기</td></tr><tr><td>C23</td><td><code>&lt;stdckdint.h></code></td><td>예 — 크기 계산의 정답</td></tr><tr><td>C23</td><td><code>&lt;stdbit.h></code></td><td>늘어나는 중</td></tr><tr><td>C23</td><td>키워드 승격(<code>bool</code>·<code>nullptr</code> 등)</td><td>예</td></tr></table></div><p class="float-caption">표 68.3</p></figure></div><p>판별 표의 아래 세 줄 — <code>&lt;stdatomic.h></code>, <code>&lt;stdckdint.h></code>, 키워드 승격 — 은 얼굴만 비쳤다. 이 부의 남은 세 장이 그 셋을 하나씩 자세히 다룬다. 동시성의 토대부터 시작한다.</p>
+<div class="nav"><a href="ch67.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch69.html">다음 →</a></div>
+</div></main></body></html>

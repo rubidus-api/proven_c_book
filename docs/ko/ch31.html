@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>31 반복 — 루프와 불변식 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch30.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch32.html" title="다음" aria-label="다음">→</a></span><a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-31">31 반복 — 루프와 불변식</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>30장 결정 · 조건으로 갈라지는 흐름</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>4장에서 “단순한 걸음이라도 1초에 수십억 번이면 어떤 복잡한 일이든 지을 수 있다”고 했다. 그런데 30장까지의 우리 프로그램은 위에서 아래로 한 번 흐르고 끝난다 — 수십억 번의 걸음은 어디서 나오는 것인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 같은 문장들을 <strong>다시 실행하는</strong> 장치에서 나온다. 조건이 참인 동안 블록으로 <strong>되돌아가는</strong> 것 — 루프다. 분기가 흐름을 가르는 장치였다면 루프는 흐름을 감아올리는 장치이고, 이 둘을 갖추는 순간 C는 계산 가능한 모든 것을 적을 수 있는 언어가 된다(이론적으로도 그렇다 — 4장의 계산 모델이 요구하는 전부가 “순차, 분기, 반복”이다).</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">프로그램의 진짜 힘 — 되풀이 — 를 손에 넣는다. 루프 3형제(<code>while</code>, <code>for</code>, <code>do-while</code>)와 새 연산자들(<code>++</code>, <code>+=</code>), 루프를 옳게 읽고 쓰는 <span id="idx-entry-57"></span>생각의 틀(불변식)까지. 그리고 12장에서 예약해 둔 재회 — Duff’s device — 를 드디어 만난다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>조건이 영영 거짓이 안 되면 어떻게 되는가?</li></ol></div></div><div></div><h3>31.1 루프 3형제</h3><p><strong><code>while</code></strong> — 가장 원초적인 형태다. “조건이 참인 동안, 블록을 반복하라”:</p><pre><code data-lang="c"><strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span>조건<span class="tok-x">)</span> <span class="tok-x">{</span>
+    반복할 문장들
+<span class="tok-x">}</span></code></pre><p>조건을 <strong>먼저</strong> 검사하므로, 처음부터 거짓이면 한 번도 돌지 않는다.</p><p><strong><code>for</code></strong> — 반복의 살림살이(시작·조건·갱신)를 한 줄에 모은 형태다. 시연으로 본다 — 1부터 100까지의 합이다:</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch31/sum.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> sum <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;=</span></strong> <span class="tok-n">100</span><span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        sum <strong><span class="tok-x">+=</span></strong> i<span class="tok-x">;</span>               <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 불변식: sum == 1 + 2 + ... + (i - 1)... 갱신 후엔 ...+ i </span></em><em><span class="tok-c">*/</span></em>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sum of 1..100 = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>sum of 1..100 = 5050
+</code></pre></div></div><p><code>for (int i = 1; i &lt;= 100; i += 1)</code>을 세 칸으로 읽는다 — <strong>시작</strong>(<code>int i = 1</code>: 루프 변수를 만들고), <strong>조건</strong>(<code>i &lt;= 100</code>: 돌기 전마다 검사), <strong>갱신</strong>(<code>i += 1</code>: 한 바퀴 끝날 때마다 실행). 새 연산자 <code>+=</code>는 23장 대입의 줄임꼴로 <code>i = i + 1</code>과 같고, 더 줄인 <code>i++</code>(증가 연산자)도 같은 일을 한다 — 관용적으로 <code>for (...; i++)</code> 꼴을 가장 많이 보게 된다. (<code>++</code>에는 앞에 붙는 꼴과 뒤에 붙는 꼴, 그리고 수식 안에서의 미묘한 사정이 있는데 — 다음 장의 시퀀스 포인트 이야기와 함께 다룬다.)</p><p><strong><code>do-while</code></strong> — 블록을 <strong>먼저</strong> 한 번 실행하고 조건을 검사하는 형태다 (<code>do { ... } while (조건);</code>). “최소 한 번은 해야 하는 일”(메뉴를 먼저 보여 주고 반복 여부를 묻는 류)에 쓰이고, 셋 중 등장 빈도가 가장 낮다.</p><div class="dev mathbox"><p class="dev-label">수학.<span style="white-space: pre-wrap">&#x20;&#x20;</span>루프 불변식 — 반복을 증명하는 눈</p><p>루프를 “옳게” 읽는 도구가 하나 있다 — <strong>불변식</strong>(invariant): 매 바퀴의 같은 지점에서 항상 성립하는 명제다. 시연의 루프라면, 몸통에 들어설 때마다</p><math display="block"><mtext>sum</mtext><mo>=</mo><mn>1</mn><mo>+</mo><mn>2</mn><mo>+</mo><mi>⋯</mi><mo>+</mo><mrow><mo>(</mo><mrow><mi>𝑖</mi><mo>−</mo><mn>1</mn></mrow><mo>)</mo></mrow></math><p>이 성립한다(첫 바퀴에는 빈 합 = 0). 몸통이 <code>sum += i</code>를 하면 등식의 오른쪽이 <math><mi>⋯</mi><mo>+</mo><mi>𝑖</mi></math>까지 자라고, 갱신이 <math><mi>𝑖</mi></math>를 올리면 다시 같은 꼴이 된다 — 불변식이 <strong>유지</strong>된다. 루프가 끝나는 순간은 <math><mi>𝑖</mi><mo>=</mo><mn>101</mn></math>이므로, 불변식에 대입하면 sum = 1 + … + 100. 즉 [불변식 + 종료 조건 = 루프의 정확성 증명]이다. 매번 이렇게 적진 않더라도, “이 루프에서 변하지 않는 사실이 무엇인가”를 묻는 습관은 루프 버그의 대부분 — 하나 모자라게/많게 도는 off-by-one — 을 잡아 주는 눈이 된다. 계약 으로서의 코드라는 관점(48장)의 첫 연습이기도 하다.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 조건이 영영 거짓이 안 되면 어떻게 되는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 무한 루프다 — 프로그램이 그 자리를 영원히 돈다. 대개는 갱신을 잊은 버그의 결과지만, 의도적인 무한 루프(<code>while (true)</code>)도 어엿한 관용구다 — 서버처럼 “끝나지 않는 것이 정상”인 프로그램의 뼈대가 그것이고, 안에서 조건을 보아 <code>break</code>(루프 탈출 — switch의 그 break와 같은 낱말이다)로 나온다. 위험한 것은 무한 루프 자체가 아니라 <strong>의도치 않은</strong> 무한 루프다.</p></div></div><h3>31.2 재회 — Duff’s device</h3><p>12장에서 예약한 전설을 만날 시간이다. 이제 우리는 switch의 폴스루 (30장)와 루프(이 장)를 모두 알고 있다.</p><p>1983년, 루카스필름의 Tom Duff는 데이터를 장치로 복사하는 루프가 너무 느려 고심하고 있었다. 한 바퀴마다 드는 살림 비용(조건 검사·갱신)을 줄이려 여덟 개씩 묶어 처리(언롤링)하되 — 개수가 8의 배수가 아닐 때의 나머지 처리를, 그는 아무도 상상 못 한 방법으로 해결했다:</p><pre><code data-lang="c"><strong><span class="tok-k">switch</span></strong> <span class="tok-x">(</span>count <strong><span class="tok-x">%</span></strong> <span class="tok-n">8</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+<strong><span class="tok-k">case</span></strong> <span class="tok-n">0</span><span class="tok-x">:</span> <strong><span class="tok-k">do</span></strong> <span class="tok-x">{</span> <strong><span class="tok-x">*</span></strong>to <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong>from<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">case</span></strong> <span class="tok-n">7</span><span class="tok-x">:</span>      <strong><span class="tok-x">*</span></strong>to <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong>from<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">case</span></strong> <span class="tok-n">6</span><span class="tok-x">:</span>      <strong><span class="tok-x">*</span></strong>to <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong>from<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">case</span></strong> <span class="tok-n">5</span><span class="tok-x">:</span>      <strong><span class="tok-x">*</span></strong>to <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong>from<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">case</span></strong> <span class="tok-n">4</span><span class="tok-x">:</span>      <strong><span class="tok-x">*</span></strong>to <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong>from<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">case</span></strong> <span class="tok-n">3</span><span class="tok-x">:</span>      <strong><span class="tok-x">*</span></strong>to <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong>from<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">case</span></strong> <span class="tok-n">2</span><span class="tok-x">:</span>      <strong><span class="tok-x">*</span></strong>to <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong>from<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">case</span></strong> <span class="tok-n">1</span><span class="tok-x">:</span>      <strong><span class="tok-x">*</span></strong>to <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong>from<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+        <span class="tok-x">}</span> <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><span class="tok-x">(</span>count <strong><span class="tok-x">-=</span></strong> <span class="tok-n">8</span><span class="tok-x">)</span> <strong><span class="tok-x">></span></strong> <span class="tok-n">0</span><span class="tok-x">)</span><span class="tok-x">;</span>
+<span class="tok-x">}</span></code></pre><p>(<code>*to</code>, <code>*from++</code> 부분은 34장의 포인터 문법이라 아직 겉모양만 보면 된다 — 핵심은 구조다.) 읽는 법: switch가 <strong>루프의 한복판으로</strong> 건너 뛴다. <code>case</code>는 이름표일 뿐이라는 30장의 사실을 기억하면 — 이름표가 <code>do-while</code>의 몸통 <strong>안에</strong> 찍혀 있어도 문법 위반이 아니다. 첫 진입은 나머지 개수만큼만 처리하는 지점으로 뛰어들고, 이후는 do-while이 여덟 줄짜리 몸통을 통째로 돈다. 나머지 처리와 언롤링이 한 몸이 된 것이다.</p><p>Duff 자신도 “발견하고 나서 자부심과 혐오감이 뒤섞였다”는 소감을 남긴 이 코드는, 합법과 기괴함의 경계에서 C 문법의 유연함(어쩌면 헐거움)을 보여 주는 기념비다. 그리고 오늘의 교훈은 12장에서 예고한 그대로다 — <strong>이 곡예는 이제 사람의 일이 아니다.</strong> 현대 컴파일러는 평범하게 쓴 루프를 알아서 언롤링한다(13장의 편집자). Duff’s device는 박물관의 걸작으로 감상하고, 우리의 루프는 시연의 <code>for</code>처럼 평범하고 읽기 쉽게 쓰는 것 — 그것이 모던 C다.</p><p>반복까지 갖추며 흐름의 도구가 완성됐다 — 순차(19장), 분기(30장), 반복(31장). 다음 장은 제6부의 마무리로, 함수라는 장치의 <strong>의미</strong>를 파고든다 — 값은 어떻게 건너가는가, 부수효과란 정확히 무엇인가, 그리고 20장에서 심어 둔 씨앗(평가 순서)의 정식 답까지.</p>
+<div class="nav"><a href="ch30.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch32.html">다음 →</a></div>
+</div></main></body></html>

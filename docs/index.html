@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proven C Book</title>
+<style>
+:root { color-scheme: light dark; --fg:#1a1a1a; --bg:#fdfdfc; --muted:#666;
+        --rule:#ddd; --accent:#3b6ea5; }
+@media (prefers-color-scheme: dark) {
+  :root { --fg:#e6e6e6; --bg:#16181a; --muted:#9aa0a6; --rule:#333; --accent:#7aa9d6; }
+}
+body { margin:0; background:var(--bg); color:var(--fg);
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.7; }
+main { max-width:38rem; margin:0 auto; padding:4rem 1.2rem; }
+h1 { font-size:2rem; margin:0 0 .3rem; }
+.sub { color:var(--muted); margin:0 0 .4rem; }
+.badge { display:inline-block; border:1px solid #b0483c; color:#b0483c;
+         border-radius:3px; padding:.1rem .45rem; font-size:.8rem; font-weight:700; }
+ul { list-style:none; padding:0; }
+li { border-top:1px solid var(--rule); padding:.9rem 0; }
+a { color:var(--accent); text-decoration:none; }
+a:hover { text-decoration:underline; }
+.small { color:var(--muted); font-size:.88rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Proven C Book</h1>
+  <p class="sub">proven 라이브러리에 기반한 모던 C 입문 · Modern C, built on the proven library</p>
+  <p><span class="badge">v0.1.0 · draft</span></p>
+  <ul>
+    <li><a href="ko/"><strong>한국어판 읽기 (HTML)</strong></a>
+        <div class="small">12부 58장 + 부록 A~E + 찾아보기. 완성본.</div></li>
+    <li><a href="en/"><strong>English edition (HTML)</strong></a>
+        <div class="small">Translation in progress — front matter only for now.</div></li>
+    <li><a href="https://github.com/rubidus-api/proven_c_book/tree/main/dist"><strong>PDF 내려받기 / Download PDF</strong></a>
+        <div class="small">PDF와 HTML을 묶은 zip 릴리스도 같은 자리에 있다.</div></li>
+    <li><a href="https://github.com/rubidus-api/proven_c_book"><strong>GitHub 저장소</strong></a>
+        <div class="small">오류 신고는 이슈로 받는다 / Error reports welcome as issues.</div></li>
+  </ul>
+</main>
+</body>
+</html>

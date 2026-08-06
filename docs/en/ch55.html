@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>55 How to read a declaration — two readings and typedef — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch54.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch56.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-55">55 How to read a declaration — two readings and <code>typedef</code></h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div class="open-body"><div>chapter 54, Functions as values · the notation of a function pointer</div><div>chapter 37, Arrays · the array declarator</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>While learning function pointers in chapter 54 a declaration like <code>int (*(*s)(void))(int);</code> appeared, and we passed on saying only “it is hard to read, so use a <code>typedef</code>”. But by what rule are such declarations built — why do they twist like this?</p><div class="qa-a"><p><span class="dev-label">A.</span> Because a C declaration is not <strong>writing down a type</strong> but <strong>writing down how that name is used</strong>. Dennis Ritchie’s design principle was that declaration reflects use. <code>int *p;</code> reads “<strong><code>*p</code> is an int</strong>”, and <code>int a[3];</code> reads “<code>a[3]</code> is an int”. This principle is elegant in the simple cases, but once <code>*</code> and <code>[]</code> and <code>()</code> overlap, parentheses intrude because of precedence and it quickly turns rough. Hence the separate need for <strong>rules for reading</strong>.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-92"></span>C’s most notorious place — we learn how to read a declaration such as <code>char *(*table[4])(int)</code>. There are only two principles: reading <strong>from the outside in</strong>, and reading <strong>from the innermost name outward</strong>. That the two have different uses, and how to unfold this rough declaration in <span id="idx-entry-93"></span>layers with <code>typedef</code>. Finally we introduce a tool that does the job for you.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>I have heard of a “clockwise spiral rule” too — is it the same thing?</li><li><code>typedef</code>’s syntax is odd — why is it not <code>typedef newname = type</code>?</li><li>Then why practise reading such declarations at all?</li><li>If a tool exists, must one bother learning to read by hand?</li></ol></div></div><div></div><h3>55.1 The two readings</h3><p>One rule suffices to begin. The three symbols attaching beside the name in a declaration have different strengths.</p><ul><li><code>[]</code> (array) and <code>()</code> (function) attach <strong>to the right of the name</strong>, and <code>*</code> (pointer) attaches <strong>to the left</strong>.</li><li>The two on the right are <strong>stronger</strong> than the one on the left. So <code>int *a[3]</code> is “an array of pointers”, not “a pointer to an array”.</li><li>To reverse the order, bind with parentheses — <code>int (*a)[3]</code>.</li></ul><p>On this difference of strength the two readings arise.</p><p><strong>Reading ① — from the innermost name outward (the right-left rule).</strong> Find the identifier, start there, and go outward alternately, <strong>looking right first and then left</strong>. On meeting a parenthesis, read all of its inside and then step out. The charm of this method is that what you say as you read connects in English word order.</p><p><strong>Reading ② — from the outside in.</strong> Start from the type name (the leftmost thing, such as <code>int</code> or <code>char</code>) and wrap your way in asking “this is a what of a what”. In a declaration with no identifier at all — the <strong>abstract declarator</strong> written in a cast or in <code>sizeof</code> — there is no name to start from, so this is the only road.</p><p>The two readings arrive at the same conclusion. Use whichever suits the occasion.</p><h3>55.2 Reading ① in practice — connecting it in English word order</h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch55/decl.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The two ways of reading a declaration, confirmed with the eyes.</span></em>
+<em><span class="tok-c">   Whether the type built up out of typedefs really is the original one is</span></em>
+<em><span class="tok-c">   checked too. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> (1) the difference of one star ──────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">int</span></strong>  <strong><span class="tok-x">*</span></strong>pa<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> pa: array[3] of pointer to int   </span></em><em><span class="tok-c">*/</span></em>
+<strong>int</strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>ap</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ap: pointer to array[3] of int   </span></em><em><span class="tok-c">*/</span></em>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> (2) when a function joins in ─────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">int</span></strong>  <strong><span class="tok-x">*</span></strong><strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> f: function(void) returning pointer to int </span></em><em><span class="tok-c">*/</span></em>
+<strong>int</strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>g</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> g: pointer to function(void) returning int </span></em><em><span class="tok-c">*/</span></em>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> (3) the notorious shape: array[4] of pointer to function(int) returning pointer to char </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>table<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> (4) the same type, built one typedef layer at a time </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">char</span></strong>           <strong><span class="tok-x">*</span></strong><strong><span class="tok-t">charptr</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> pointer to char                  </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> charptr         <strong>handler</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> function(int) returning charptr  </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> handler        <strong><span class="tok-x">*</span></strong><strong><span class="tok-t">handler_ptr</span></strong><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> pointer to that function         </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> handler_ptr     table4<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> array[4] of that pointer         </span></em><em><span class="tok-c">*/</span></em>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> whether the types built by the two roads really match, checked at compile time </span></em><em><span class="tok-c">*/</span></em>
+<strong>static_assert</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong>table4</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong>table</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">they must be the same type</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong>shout</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> n<span class="tok-x">)</span>  <span class="tok-x">{</span> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>n<span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">shout</span><span class="tok-s">"</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong>quiet</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> n<span class="tok-x">)</span>  <span class="tok-x">{</span> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>n<span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">quiet</span><span class="tok-s">"</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">int  *pa[3]  : whole </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, element </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">  -> </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> pointers</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> pa</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> pa</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> pa </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> pa</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">int (*ap)[3] : whole </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, what it points to </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> ap</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>ap</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (3) actually filled in and used </span></em><em><span class="tok-c">*/</span></em>
+    table<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> shout<span class="tok-x">;</span>
+    table<span class="tok-x">[</span><span class="tok-n">1</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> quiet<span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">table[0](1) = </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">, table[1](2) = </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> table</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> table</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a variable made with (4)'s typedefs fits the same slot as it is </span></em><em><span class="tok-c">*/</span></em>
+    table4 other <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> quiet<span class="tok-x">,</span> shout <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">other[0](3) = </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">   (the same type, built with typedefs)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> other</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the form without an identifier (an abstract declarator): used in casts and sizeof </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof(char *(*)(int)) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">   (a nameless function pointer type)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>int  *pa[3]  : whole 24, element 8  -> 3 pointers
+int (*ap)[3] : whole 8, what it points to 12
+table[0](1) = shout, table[1](2) = quiet
+other[0](3) = quiet   (the same type, built with typedefs)
+sizeof(char *(*)(int)) = 8   (a nameless function pointer type)
+</code></pre></div></div><p>We read the example’s declarations one at a time. What you say is most natural strung together in English — because C’s declaration syntax was designed to follow English word order.</p><p><strong><code>int *pa[3];</code></strong></p><ol><li>Start from the identifier <code>pa</code> — “pa is”</li><li>Look right: <code>[3]</code> — “array 3 of”</li><li>The right is finished, so look left: <code>*</code> — “pointer to”</li><li>What remains: <code>int</code> — “int”</li></ol><p>Read through: <strong>“pa is array 3 of pointer to int”</strong> — an array of three pointers. The example confirmed it with 24 bytes in total and 8 bytes per element.</p><p><strong><code>int (*ap)[3];</code></strong></p><ol><li>Start from <code>ap</code> — “ap is”</li><li>To the right is the end of the parenthesis, so we cannot go. Look left: <code>*</code> — “pointer to”</li><li>Step out of the parenthesis. Right again: <code>[3]</code> — “array 3 of”</li><li>What remains: <code>int</code></li></ol><p><strong>“ap is pointer to array 3 of int”</strong> — one pointer (8 bytes), and what it points at is a 12-byte array. That is the example’s second line.</p><p><strong><code>char *(*table[4])(int);</code></strong> — this chapter’s protagonist.</p><ol><li>Start from <code>table</code> — “table is”</li><li>Right: <code>[4]</code> — “array 4 of”</li><li>Left: <code>*</code> — “pointer to”</li><li>Outside the parenthesis, right: <code>(int)</code> — “function (int) returning”</li><li>Left: <code>*</code> — “pointer to”</li><li>What remains: <code>char</code></li></ol><p><strong>“table is array 4 of pointer to function (int) returning pointer to char”</strong> — a table of functions taking one integer and giving back a string. The example actually put two functions in and called them.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> I have heard of a “clockwise spiral rule” too — is it the same thing?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> It is the same thing drawn to be easy to memorise, and it mostly works. But there has long been the objection that the spiral rule, being <strong>a summary of the right-left rule</strong>, is drawn confusingly for some forms. Written exactly, the rule is this — <strong>start from the identifier, read right as far as you can go, and when you can go no further read left. Parentheses are the boundary.</strong> Use the spiral picture as a visual nickname for that sentence.</p></div></div><h3>55.3 Reading ② — when there is no name</h3><p>Casts and <code>sizeof</code> take a type written without a name. The last line of the example, <code>sizeof(char *(*)(int))</code>, is that. Such a form is called an <strong>abstract declarator</strong>, and the way to read it is simple — <strong>find the place where the name ought to be, lay a name there, and read by reading ①.</strong></p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">(</span><strong><span class="tok-x">*</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> there is no name </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>x<span class="tok-x">)</span><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span>       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> put x in the empty place and </span></em><em><span class="tok-c">*/</span></em>
+                      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> "x is pointer to function (int) returning pointer to char" </span></em><em><span class="tok-c">*/</span></em></code></pre><p>The empty place is usually after the star of <code>(*)</code>, or before <code>[]</code> or <code>()</code>. Thanks to this knack, reading ①′s muscle can be used as it is.</p><p><strong>Then when is reading ② used.</strong> When the shells are several layers deep — as in a declaration taking a function pointer as an argument — and you want to know first which is the outermost.</p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>qsort</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>base<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> size<span class="tok-x">,</span>
+           <strong><span class="tok-t">int</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>cmp<span class="tok-x">)</span><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span><span class="tok-x">)</span><span class="tok-x">;</span></code></pre><p>Reading from the outside in, the skeleton is grasped first: “this is a function <code>qsort</code>, returning <code>void</code>, with four arguments of which the last is <strong>a function pointer</strong>.” The details are then confirmed with reading ①. When reading somebody else’s header in the field this order is the comfortable one.</p><h3>55.4 <code>typedef</code> — dividing into layers and naming them</h3><p>The most practical answer to a rough declaration is <strong>dividing it into layers by naming them</strong>. The example’s ④ is that demonstration.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">char</span></strong>       <strong><span class="tok-x">*</span></strong><strong><span class="tok-t">charptr</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> pointer to char           </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> charptr     <strong>handler</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> function(int) returning charptr </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> handler    <strong><span class="tok-x">*</span></strong><strong><span class="tok-t">handler_ptr</span></strong><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> pointer to that function  </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> handler_ptr table4<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> array[4] of that pointer  </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Each of the four lines lays on just one layer. The final <code>table4</code> is <strong>exactly the same type</strong> as the example ③′s <code>char *(*table[4])(int)</code>, and the example’s <code>static_assert</code> confirms it at compile time. In the field it is more common to name only one or two layers than to slice this finely.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>handler_fn<span class="tok-x">)</span><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> when one layer is enough </span></em><em><span class="tok-c">*/</span></em>
+handler_fn table<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">;</span></code></pre><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> <code>typedef</code>’s syntax is odd — why is it not <code>typedef newname = type</code>?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Because <code>typedef</code> is a word that comes in the position of a <strong>storage-class specifier</strong>. Grammatically <code>typedef int count;</code> is placed where <code>static int count;</code> or <code>extern int count;</code> would be. So read it like this — <strong>“in the place where this declaration would create a variable, a type name is created instead.”</strong></p><p>This understanding pays in practice. Seeing <code>typedef int arr[3];</code> unfolds as “had there been no <code>typedef</code>, <code>arr</code> would have been an array variable of three ints → therefore <code>arr</code> is the name of that type.” The declaration reading is reused as it is.</p></p></div></div><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Hiding a pointer behind a <code>typedef</code></p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> node <strong><span class="tok-x">*</span></strong><strong><span class="tok-t">node</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> that it is a pointer vanishes from the name </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> node n<span class="tok-x">)</span><span class="tok-x">;</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> what is the const attaching to? </span></em><em><span class="tok-c">*/</span></em></code></pre><p><code>const node n</code> is not “what is pointed at is const” but <strong>“the pointer itself is const”</strong> (<code>struct node *const</code>). It cannot be known from the name alone, so it is commonly got wrong.</p><p>Practice splits in two. <strong>Do not hide pointers</strong> (recommended) — leave the type name as <code>struct node</code> and write <code>struct node *</code>. Or if you do hide it, <strong>mark it in the name</strong> — as in <code>node_ptr</code>. The Linux kernel’s coding conventions pinned down “do not use pointer <code>typedef</code>s” for the same reason.</p><p>There is an exception, though. When making an <strong>opaque type</strong> you hide it on purpose — in a handle whose innards the user must not know (the position of <code>FILE *</code>, say), hiding is the design. Just distinguish hiding from losing by accident.</p></div><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“<code>typedef</code> makes a new type”</strong></p><p>It does not. <code>typedef</code> makes only an <strong>alias</strong>, treated as entirely the same as the original type.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-t">meters</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-t">seconds</span></strong><span class="tok-x">;</span>
+meters  d <strong><span class="tok-x">=</span></strong> <span class="tok-n">10</span><span class="tok-x">;</span>
+seconds t <strong><span class="tok-x">=</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>
+d <strong><span class="tok-x">=</span></strong> t<span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> no warning — both are just int </span></em><em><span class="tok-c">*/</span></em></code></pre><p>If you hoped the compiler would catch the mistake of “assigning seconds to metres”, you will be disappointed. To distinguish types for real you must wrap them in a struct — <code>struct meters { int v; };</code> and then the assignment becomes an error (thanks to chapter 43′s property that a struct is a value). A device like C++‘s strong type aliases does not exist in C.</p></div><h3>55.5 The real thing — declarations that actually shipped</h3><p>What follows is not exercise material. These are <strong>declarations from libraries that really shipped</strong>, read by the procedure. The point of the section is to confirm there is nothing to be afraid of.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch55/monster.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Gnarly declarations that really shipped — and how a procedure unravels them. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">signal.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> -- (1) the standard's signal — exactly as it stands in C §7.14.1.1:</span></em>
+<em><span class="tok-c">      void (*signal(int sig, void (*func)(int)))(int);</span></em>
+<em><span class="tok-c">   Split into layers with typedef it becomes this. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">void</span></strong> <strong>handler_t</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> name the function type itself </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>on_int</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> sig<span class="tok-x">)</span> <span class="tok-x">{</span> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>sig<span class="tok-x">;</span> <span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> -- (2) the shape of X11's XSetErrorHandler:</span></em>
+<em><span class="tok-c">      int (*XSetErrorHandler(int (*handler)(Display *, XErrorEvent *)))();</span></em>
+<em><span class="tok-c">   Copied as is, with stand-in types for Display and XErrorEvent. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> dummy<span class="tok-x">;</span> <span class="tok-x">}</span> <strong><span class="tok-t">Display</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> code<span class="tok-x">;</span> <span class="tok-x">}</span> <strong><span class="tok-t">XErrorEvent</span></strong><span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>my_error_handler</strong><span class="tok-x">(</span>Display <strong><span class="tok-x">*</span></strong>d<span class="tok-x">,</span> XErrorEvent <strong><span class="tok-x">*</span></strong>e<span class="tok-x">)</span>
+<span class="tok-x">{</span> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>d<span class="tok-x">;</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  error handler: code=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> e</strong><strong><span class="tok-x">-></span></strong><strong>code</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> Raw: "a function taking a handler and returning the previous handler" </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong>int</strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>set_error_handler</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>handler</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>Display </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">,</span></strong><strong> XErrorEvent </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong>
+           <span class="tok-x">(</span>Display <strong><span class="tok-x">*</span></strong><span class="tok-x">,</span> XErrorEvent <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>current<span class="tok-x">)</span><span class="tok-x">(</span>Display <strong><span class="tok-x">*</span></strong><span class="tok-x">,</span> XErrorEvent <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>prev<span class="tok-x">)</span><span class="tok-x">(</span>Display <strong><span class="tok-x">*</span></strong><span class="tok-x">,</span> XErrorEvent <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">=</span></strong> current<span class="tok-x">;</span>
+    current <strong><span class="tok-x">=</span></strong> handler<span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> prev<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> The same with typedef — one line becomes three, and all three read </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">int</span></strong> <strong>error_handler_t</strong><strong><span class="tok-x">(</span></strong><strong>Display </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">,</span></strong><strong> XErrorEvent </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> error_handler_t <strong><span class="tok-x">*</span></strong><strong>set_error_handler2</strong><span class="tok-x">(</span>error_handler_t <strong><span class="tok-x">*</span></strong>handler<span class="tok-x">)</span>
+<span class="tok-x">{</span> <strong><span class="tok-k">return</span></strong> <strong>set_error_handler</strong><strong><span class="tok-x">(</span></strong><strong>handler</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> -- (3) an array of pointers to functions — a dispatch table ---------- </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>cmd_add</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">,</span> <strong><span class="tok-t">int</span></strong> b<span class="tok-x">)</span> <span class="tok-x">{</span> <strong><span class="tok-k">return</span></strong> a <strong><span class="tok-x">+</span></strong> b<span class="tok-x">;</span> <span class="tok-x">}</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>cmd_mul</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">,</span> <strong><span class="tok-t">int</span></strong> b<span class="tok-x">)</span> <span class="tok-x">{</span> <strong><span class="tok-k">return</span></strong> a <strong><span class="tok-x">*</span></strong> b<span class="tok-x">;</span> <span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> int (*table[2])(int, int) — an array of "pointer to function taking two</span></em>
+<em><span class="tok-c">   ints and returning int". Read by the procedure, that is what comes out. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong>int</strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>table</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">,</span> <strong><span class="tok-t">int</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> cmd_add<span class="tok-x">,</span> cmd_mul <span class="tok-x">}</span><span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> -- (4) a function returning a pointer to an array -------------------- </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong>int</strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>rows</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">void</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> "function returning pointer to int[4]" </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> grid<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">{</span><span class="tok-n">1</span><span class="tok-x">,</span><span class="tok-n">2</span><span class="tok-x">,</span><span class="tok-n">3</span><span class="tok-x">,</span><span class="tok-n">4</span><span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span><span class="tok-n">5</span><span class="tok-x">,</span><span class="tok-n">6</span><span class="tok-x">,</span><span class="tok-n">7</span><span class="tok-x">,</span><span class="tok-n">8</span><span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span><span class="tok-n">9</span><span class="tok-x">,</span><span class="tok-n">10</span><span class="tok-x">,</span><span class="tok-n">11</span><span class="tok-x">,</span><span class="tok-n">12</span><span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> grid<span class="tok-x">;</span>                        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> decays to int (*)[4] </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (1) signal returns the *previous* handler — hence the function-pointer return </span></em><em><span class="tok-c">*/</span></em>
+    handler_t <strong><span class="tok-x">*</span></strong>old <strong><span class="tok-x">=</span></strong> <strong>signal</strong><strong><span class="tok-x">(</span></strong><strong>SIGINT</strong><strong><span class="tok-x">,</span></strong><strong> on_int</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">signal returns the previous handler: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           old </strong><strong><span class="tok-x">==</span></strong><strong> SIG_ERR </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">SIG_ERR</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">a previous value</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>signal</strong><strong><span class="tok-x">(</span></strong><strong>SIGINT</strong><strong><span class="tok-x">,</span></strong><strong> old </strong><strong><span class="tok-x">==</span></strong><strong> SIG_ERR </strong><strong><span class="tok-x">?</span></strong><strong> SIG_DFL </strong><strong><span class="tok-x">:</span></strong><strong> old</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (2) the same pattern — install, and get the previous one back </span></em><em><span class="tok-c">*/</span></em>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">installing an X11-style error handler:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>prev<span class="tok-x">)</span><span class="tok-x">(</span>Display <strong><span class="tok-x">*</span></strong><span class="tok-x">,</span> XErrorEvent <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">=</span></strong> <strong>set_error_handler</strong><strong><span class="tok-x">(</span></strong><strong>my_error_handler</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  previous handler: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> prev </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">present</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">none (first install)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    Display d <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-n">0</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    XErrorEvent e <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>code <strong><span class="tok-x">=</span></strong> <span class="tok-n">42</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    error_handler_t <strong><span class="tok-x">*</span></strong>prev2 <strong><span class="tok-x">=</span></strong> <strong>set_error_handler2</strong><strong><span class="tok-x">(</span></strong><strong>my_error_handler</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> typedef form </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  the typedef version does the same: previous handler </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           prev2 </strong><strong><span class="tok-x">==</span></strong><strong> my_error_handler </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">identical</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">different</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>my_error_handler</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>d</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>e</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (3) the dispatch table </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">dispatch table: add(3,4)=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, mul(3,4)=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> table</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> table</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (4) a pointer to an array </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>g<span class="tok-x">)</span><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <strong>rows</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">pointer to array: g[2][1] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (one step is </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           g</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>g</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>signal returns the previous handler: a previous value
+
+installing an X11-style error handler:
+  previous handler: none (first install)
+  the typedef version does the same: previous handler identical
+  error handler: code=42
+
+dispatch table: add(3,4)=7, mul(3,4)=12
+pointer to array: g[2][1] = 10 (one step is 16 bytes)
+</code></pre></div></div><h4>55.5.1 ① The monster the standard itself produced — <code>signal</code></h4><p>This declaration stands in the standard’s <code>&lt;signal.h></code> exactly as written (§7.14.1.1).</p><pre><code data-lang="c"><strong>void</strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>signal</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong> sig</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-t">void</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>func</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span><span class="tok-x">;</span></code></pre><p>At first sight it is a forest of parentheses, but following the procedure of the previous section it takes five steps. <strong>Start at the name, look right first, and go left when the right is exhausted.</strong></p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Step</strong></th><th><strong>What is in view</strong></th><th><strong>The sentence so far</strong></th></tr><tr><td>1</td><td><code>signal</code></td><td>signal is</td></tr><tr><td>2</td><td>to the right: <code>(int sig, void (*func)(int))</code></td><td>… a <strong>function</strong> taking an <code>int</code> and “a pointer to a function taking <code>int</code> and returning <code>void</code>”</td></tr><tr><td>3</td><td>to the left: <code>*</code></td><td>… returning <strong>a pointer</strong></td></tr><tr><td>4</td><td>outside the parentheses, right: <code>(int)</code></td><td>… that pointer points at <strong>a function</strong> taking <code>int</code></td></tr><tr><td>5</td><td>leftmost: <code>void</code></td><td>… returning <code>void</code></td></tr></table></div><p class="float-caption">Table 55.1</p></figure><p>In one sentence: <strong>“<code>signal</code> takes a signal number and a handler, and returns</strong><strong>the previous handler</strong><strong>.”</strong> That also explains why the return type is so rough — installing must hand back the previous one so it can be restored later. The first line of the demonstration actually takes that previous handler and restores it.</p><p>One <code>typedef</code> makes the declaration ordinary.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">void</span></strong> <strong>handler_t</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> name the function type </span></em><em><span class="tok-c">*/</span></em>
+handler_t <strong><span class="tok-x">*</span></strong><strong>signal</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> sig<span class="tok-x">,</span> handler_t <strong><span class="tok-x">*</span></strong>func<span class="tok-x">)</span><span class="tok-x">;</span></code></pre><p>The standard does not write it that way for historical reasons — this function existed long before layering with <code>typedef</code> became the habit.</p><h4>55.5.2 ② Rougher in the wild — X11′s error handler</h4><p>From the X Window System’s manual:</p><pre><code data-lang="c"><strong>int</strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>XSetErrorHandler</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>handler</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>Display </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">,</span></strong><strong> XErrorEvent </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">(</span><span class="tok-x">)</span><span class="tok-x">;</span></code></pre><p>The pattern is <strong>identical</strong> to <code>signal</code>: take a handler, return the previous one. The only difference is that the handler takes two arguments, so a layer of parentheses looks thicker. By the procedure, the number of steps is the same.</p><p>The second block of the demonstration transplants the pattern and runs it — a raw <code>set_error_handler</code> and a <code>set_error_handler2</code> layered with <code>typedef</code> do the same work. The latter shows that this rough declaration is really the one line <strong>“a function taking a handler and returning a handler.”</strong></p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">int</span></strong> <strong>error_handler_t</strong><strong><span class="tok-x">(</span></strong><strong>Display </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">,</span></strong><strong> XErrorEvent </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+error_handler_t <strong><span class="tok-x">*</span></strong><strong>XSetErrorHandler</strong><span class="tok-x">(</span>error_handler_t <strong><span class="tok-x">*</span></strong>handler<span class="tok-x">)</span><span class="tok-x">;</span></code></pre><div class="dev realcase"><p class="dev-label">In practice. The same pattern is everywhere</p><p>Once recognised, “take a handler and return the previous handler” shows up all over: the standard’s <code>signal</code>, X11′s <code>XSetErrorHandler</code> and <code>XSetIOErrorHandler</code>, and most callback-registration functions in GUI and game frameworks. The reason is the same in each — <strong>it must be possible to restore</strong>. Code that plugs a library in has no way to put things back afterwards unless installation hands back what was there.</p><p>For the same reason <code>qsort</code> and <code>bsearch</code> take a comparison function (<code>int (*compar)(const void *, const void *)</code>), and POSIX’s <code>pthread_create</code> takes a start routine (<code>void *(*)(void *)</code>). Most rough-looking declarations come from one idea: <strong>passing behaviour as a value.</strong></p></div><h4>55.5.3 ③ And the genuinely pointless ones</h4><p>Declaration quizzes on the internet have their regulars.</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><span class="tok-x">(</span><strong><span class="tok-x">*</span></strong><span class="tok-x">(</span><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">*</span></strong>foo<span class="tok-x">[</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-x">)</span><span class="tok-x">)</span><span class="tok-x">[</span><span class="tok-x">]</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> an example from cdecl's own documentation </span></em><em><span class="tok-c">*/</span></em>
+<strong>int</strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>bar</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">10</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">void</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span><span class="tok-x">;</span></code></pre><p>The procedure works on these too. The first is <strong>“an array of arrays of 8 of pointer to pointer to function returning pointer to array of pointer to <code>char</code>”</strong>. More important than having read it is the judgement that follows: <strong>do not put such a declaration in your code.</strong></p><p>The difference between these and the two above is this chapter’s point. The first two are declarations <strong>worth untangling</strong> — they are really used and the pattern carries meaning. The last has no meaning; it only shows what the grammar permits.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Then why practise reading such declarations at all?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Three practical reasons.</p><p><strong>First, you do not get to choose other people’s code.</strong> Standard headers, old libraries and kernel structures carry these declarations as they are. Unable to read one, you cannot use the function.</p><p><strong>Second, you have to read error messages.</strong> When a function-pointer type does not match, the compiler prints types like <code>int (*)(Display *, XErrorEvent *)</code> verbatim. Knowing the procedure turns that message into a sentence.</p><p><strong>Third, deciding what to wrap in a <code>typedef</code> requires reading it first.</strong> Give a name to something you have not understood and the name will lie.</p><p>But the purpose is <strong>reading</strong>. For writing, always divide into layers with <code>typedef</code> — the tool in the next section helps with that judgement; it does not replace it.</p></p></div></div><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Only geniuses read complicated declarations”</strong></p><p>Not so, because there is a procedure. As the table above shows, <code>signal</code> is five steps and X11′s is five steps. The number of steps is set by <strong>how many layers of parentheses there are</strong>, not by anyone’s talent.</p><p>The real reasons it feels hard are two: <strong>scanning with the eye instead of following the procedure</strong>, and <strong>trying to grasp the whole meaning at once</strong>. A machine does not read that way — it peels one layer at a time and appends what it peeled to a sentence. Do the same and mistakes almost stop happening, especially with the steps written down on paper.</p></div><h3>55.6 Leaving it to a tool — <code>cdecl</code></h3><p>A program that does this reading for you has existed for a long time. It is <strong><code>cdecl</code></strong>, which appeared in the 1980s and is still maintained (its current maintainer is Paul J. Lucas, GPLv3). Give it a declaration and it unfolds it into English; speak English and it builds the declaration.</p><pre><code data-lang="text">cdecl> explain char *(*table[4])(int)
+cdecl> declare table as array 4 of pointer to function (int) returning pointer to char</code></pre><p>The first line does what we did by hand above, and the second is the opposite direction — <strong>it builds a C declaration from what was said in English</strong>. It can be installed as a package on Linux distributions (<code>cdecl</code>), and there is <code>cdecl.org</code> for using it in a browser without installing.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> If a tool exists, must one bother learning to read by hand?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> It is worth learning for two reasons. First, <strong>reading happens constantly while opening a tool is occasional.</strong> You do not open a browser every time you meet an <code>int (*p)[3]</code> while skimming somebody’s code. Second, there is <strong>the writing side</strong>. A tool reads for you, but “what declaration should be written in this place” is settled in the end by whoever knows the rules — and the usual right answer is this chapter’s conclusion: <strong>do not write it roughly in one line; divide it into layers with <code>typedef</code>.</strong></p></div></div><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>to remember</strong></th><th><strong>the point</strong></th></tr><tr><td>design principle</td><td>a declaration reflects <strong>use</strong> — hence the twisting</td></tr><tr><td>difference of strength</td><td><code>[]</code>, <code>()</code> (right) are stronger than <code>*</code> (left). parentheses reverse it</td></tr><tr><td>reading ①</td><td>start from the identifier → right first, then left → in English word order</td></tr><tr><td>reading ②</td><td>from the outside in. essential for an abstract declarator with <strong>no name</strong></td></tr><tr><td>abstract declarator</td><td>lay a name in the empty place and read by reading ①</td></tr><tr><td><code>typedef</code></td><td>a word in the storage-class position — a <strong>type name</strong> is created instead of a variable</td></tr><tr><td><code>typedef</code>’s limit</td><td>an alias only, not a new type. to distinguish, use a struct</td></tr><tr><td>hiding pointers</td><td>not recommended (the meaning of <code>const</code> blurs). the exception is an opaque type</td></tr><tr><td>tool</td><td><code>cdecl</code> (explain/declare), <code>cdecl.org</code></td></tr></table></div><p class="float-caption">Table 55.2</p></figure></div><p>We have gained the muscle for reading declarations. From the next chapter we enter the terrain of the standard library — the part where, on top of the language learned so far, we see what contracts and traps the functions the world has piled up over half a century carry.</p>
+<div class="nav"><a href="ch54.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch56.html">Next →</a></div>
+</div></main></body></html>

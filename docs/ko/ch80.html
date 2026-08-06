@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>80 형식화와 파싱 — 타입을 두 번 적지 않기 — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch79.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch81.html" title="다음" aria-label="다음">→</a></span><a href="../en/">English</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-80">80 형식화와 파싱 — 타입을 두 번 적지 않기</h2><div class="dev open prereq"><p class="dev-label">이 장이 기대는 것</p><div class="open-body"><div>53장 가변 인자 함수 · 가변 인자와 서식 문자열</div><div>56장 표준 라이브러리의 지형 · printf 계약</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>53장에서 가변 인자에는 타입 정보가 실려 가지 않는다고 했고, 56장에서는 그래서 서식 문자열이 “스택을 어떻게 읽을지”를 혼자 정한다고 했다. 그러면 인자에서 타입을 가져오려면 무엇이 필요한가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>호출 자리에서</strong> 타입을 붙잡아 값과 함께 실어 보내면 된다. 즉 인자를 그대로 넘기지 않고 <code>{타입 꼬리표, 값}</code> 꾸러미로 감싸는 것이다. 남은 문제는 “타입 꼬리표를 어떻게 자동으로 붙이는가”인데, 그 답이 C11의 <code>_Generic</code>이다 — 표현식의 타입에 따라 컴파일 시간에 서로 다른 코드를 <span id="idx-entry-112"></span>고르는 장치. 실행 시간 비용은 0이고, 28장에서 배운 암묵적 변환 규칙과 달리 여기서는 타입이 <strong>보존된다</strong>.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">74장의 셋째 버그 — 서식과 인자의 불일치 — 에 대한 답이다. <code>{}</code>라는 타입 없는 자리표시자가 어떻게 타입 안전을 얻는지, 그 밑에서 <code>_Generic</code>이 무엇을 하는지, 그리고 반대 방향인 파싱에서 실패가 어떻게 값으로 드러나는지를 본다. 56장에서 뜯어본 <code>printf</code>·<code>scanf</code>의 대안이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>PROVEN_ARG</code>가 정확히 무엇을 하는가?</li><li>스캐너에도 서식 문자열이 있는가?</li></ol></div></div><div></div><h3>80.1 <code>{}</code> — 타입이 없는 자리표시자</h3><p>규칙은 셋뿐이다.</p><ul><li><code>{}</code> — 여기에 다음 인자를 넣는다. 타입은 적지 않는다.</li><li><code>{:...}</code> — 콜론 뒤에 서식 지정(폭·정렬·자릿수)을 적는다.</li><li><code>{{</code> <code>}}</code> — 중괄호 글자 자체.</li></ul><p><code>%d</code>가 없으니 <code>%d</code>와 <code>double</code>이 어긋날 자리도 없다. 56장에서 본 불일치의 가능성이 문법 차원에서 제거된 것이다.</p><h4>80.1.1 콜론 뒤의 문법 전부</h4><p>지정자의 순서는 정해져 있고, 전부 생략할 수 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>자리</strong></th><th><strong>쓸 수 있는 것</strong></th><th><strong>뜻</strong></th></tr><tr><td>채움</td><td>아무 글자</td><td>빈자리를 채울 글자. <strong>정렬 기호 앞에</strong> 온다</td></tr><tr><td>정렬</td><td><code>&lt;</code> <code>></code> <code>^</code></td><td>왼쪽·오른쪽·가운데. 기본은 수는 오른쪽, 그 밖은 왼쪽</td></tr><tr><td>부호</td><td><code>+</code></td><td>양수에도 부호를 붙인다</td></tr><tr><td>대체 형식</td><td><code>#</code></td><td><code>0x</code>·<code>0b</code>·<code>0</code> 접두사를 붙인다</td></tr><tr><td>0 채움</td><td><code>0</code></td><td>폭 앞에 붙이면 0으로 채운다(부호 뒤에 들어간다)</td></tr><tr><td>폭</td><td>수</td><td>최소 글자 수. 넘쳐도 자르지 않는다</td></tr><tr><td>정밀도</td><td><code>.수</code></td><td>실수의 소수 자릿수</td></tr><tr><td>꼴</td><td><code>x X o b f e g</code></td><td>16진(소·대)·8진·2진·고정·지수·짧은 쪽</td></tr></table></div><p class="float-caption">표 80.1</p></figure><p>56장의 <code>printf</code> 서식과 대응하지만 세 가지가 다르다. <strong>정렬 기호가 앞에</strong> 오고(<code>%-10s</code> 대신 <code>{:&lt;10}</code>), <strong>채움 글자를 고를 수 있고</strong>(<code>{:*>8}</code>), <strong>타입 글자가 없다</strong>(<code>%d</code>의 <code>d</code>가 사라졌다 — 타입은 인자에서 온다).</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch80/spec.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 자리표시자 문법 전부 — 채움·정렬·폭·정밀도·꼴, 그리고 사용자 타입.</span></em>
+<em><span class="tok-c">   {} 하나로 시작해 표 하나를 그리는 데까지 간다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 라이브러리가 모르는 타입을 찍는 법: 그리는 함수를 하나 주면 된다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> num<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> den<span class="tok-x">;</span> <span class="tok-x">}</span> <strong><span class="tok-t">frac_t</span></strong><span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> proven_err_t <strong>render_frac</strong><span class="tok-x">(</span>proven_fmt_sink_t out<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>obj<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> frac_t <strong><span class="tok-x">*</span></strong>f <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> frac_t <strong><span class="tok-x">*</span></strong><span class="tok-x">)</span>obj<span class="tok-x">;</span>
+    proven_byte_t buf<span class="tok-x">[</span><span class="tok-n">32</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    proven_u8str_t s <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_borrow</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> buf</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_fmt_result_t r <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_append_fmt</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{}/{}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                                    </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">-></span></strong><strong>num</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                                    </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">-></span></strong><strong>den</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> r<span class="tok-x">.</span>err<span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <strong>proven_fmt_put</strong><strong><span class="tok-x">(</span></strong><strong>out</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>proven_u8str_as_view</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    proven_byte_t buf<span class="tok-x">[</span><span class="tok-n">256</span><span class="tok-x">]</span><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ① 정렬과 채움 ───────────────────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">|{:>8}|{:&lt;8}|{:^8}|  (오른쪽·왼쪽·가운데)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ab</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ab</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ab</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">|{:*>8}|{:-&lt;8}|{:.^8}|  (채움 문자를 앞에 적는다)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ab</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ab</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ab</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">|{:08}|{:+}|{:+}|      (0 채움, 부호 강제)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">42</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">42</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">42</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ② 진법과 대체 형식 ──────────────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{:x} {:X} {:#x} {:o} {:b} {:#b}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">255</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">255</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">255</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">8</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">5</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">5</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ③ 실수 — 자릿수와 꼴 ────────────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{} {:.2} {:.0} {:f} {:e} {:g}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">14159</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">14159</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">14159</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">14159</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">14159</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">14159</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">아주 큰 수/작은 수: {} {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">1e20</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">5e-7</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ④ 중괄호 자체 ───────────────────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">중괄호는 {{ 와 }} 로 적는다</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ⑤ 사용자 타입 ───────────────────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    frac_t half <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>num <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-x">.</span>den <strong><span class="tok-x">=</span></strong> <span class="tok-n">2</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    proven_arg_t a <strong><span class="tok-x">=</span></strong> <strong>proven_arg_custom</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>half</strong><strong><span class="tok-x">,</span></strong><strong> render_frac</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">사용자 타입: {} (폭도 먹는다: |{:>8}|)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ⑥ 세 갈래의 형식화 — 거부 / 자름 / 성장 ─────────────── </span></em><em><span class="tok-c">*/</span></em>
+    proven_u8str_t small <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_borrow</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">8</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 내용 7바이트까지 </span></em><em><span class="tok-c">*/</span></em>
+
+    proven_fmt_result_t r1 <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_append_fmt</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>small</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">가나다라마바사아</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">append_fmt        err={} written={} required={}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>r1</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>r1</strong><strong><span class="tok-x">.</span></strong><strong>written</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>r1</strong><strong><span class="tok-x">.</span></strong><strong>required</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    proven_fmt_result_t r2 <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_append_fmt_trunc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>small</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">abcdefghij</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">append_fmt_trunc  err={} written={} required={} 내용=</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">{}</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>r2</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>r2</strong><strong><span class="tok-x">.</span></strong><strong>written</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>r2</strong><strong><span class="tok-x">.</span></strong><strong>required</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>proven_u8str_as_view</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>small</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    proven_allocator_t alloc <strong><span class="tok-x">=</span></strong> <strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_result_u8str_t made <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_create</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>made</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_u8str_t g <strong><span class="tok-x">=</span></strong> made<span class="tok-x">.</span>value<span class="tok-x">;</span>
+        proven_fmt_result_t r3 <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_append_fmt_grow</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>g</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{} {} {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                                              </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">자라난다</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                                              </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">2026</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                                              </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">true</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">append_fmt_grow   err={} 내용=</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">{}</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                       </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>r3</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>proven_u8str_as_view</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>g</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>proven_u8str_destroy</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>g</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ⑦ 표 그리기 — 폭 지정의 실제 쓸모 ───────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{:&lt;10}{:>6}{:>9}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">이름</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">개수</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">비율</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{:-&lt;25}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>names<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-s">"</span><span class="tok-s">alpha</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">beta</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">gamma</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong>         counts<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-n">7</span><span class="tok-x">,</span> <span class="tok-n">128</span><span class="tok-x">,</span> <span class="tok-n">3</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">3</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{:&lt;10}{:>6}{:>9.2}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>names</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                       </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>counts</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>counts</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-n">138</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">100</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>|      ab|ab      |   ab   |  (오른쪽·왼쪽·가운데)
+|******ab|ab------|...ab...|  (채움 문자를 앞에 적는다)
+|00000042|+42|-42|      (0 채움, 부호 강제)
+ff FF 0xff 10 101 0b101
+3.141590 3.14 3 3.141590 3.141590e+00 3.14159
+아주 큰 수/작은 수: 1.000000e+20 5.000000e-07
+중괄호는 { 와 } 로 적는다
+사용자 타입: 1/2 (폭도 먹는다: |     1/2|)
+append_fmt        err=2 written=0 required=24
+append_fmt_trunc  err=2 written=7 required=10 내용="abcdefg"
+append_fmt_grow   err=0 내용="자라난다 2026 true"
+
+이름    개수   비율
+-------------------------
+alpha          7     5.07
+beta         128    92.75
+gamma          3     2.17
+</code></pre></div></div><p>예제가 이 표를 한 줄씩 실물로 보여 준다. 몇 가지만 짚는다.</p><p><strong>① 채움은 정렬 앞에 적는다.</strong> <code>{:*>8}</code>은 “별표로 채워 오른쪽 정렬”이다. 순서를 바꾸면(<code>{:>*8}</code>) 뜻이 되지 않는다.</p><p><strong>② <code>{:08}</code>의 0은 부호 뒤에 들어간다.</strong> <code>-42</code>를 폭 8로 0 채움하면 <code>-0000042</code>이지 <code>000000-42</code>가 아니다 — 56장에서 본 <code>%08d</code>와 같은 규칙이다.</p><p><strong>③ 실수의 기본 표기가 <code>printf</code>와 다르다.</strong> 아주 큰 수와 아주 작은 수를 <code>printf("%f")</code>는 <code>100000000000000000000.000000</code>이나 <code>0.000000</code>으로 찍지만, 이 라이브러리는 <code>1.000000e+20</code>과 <code>5.000000e-07</code>로 지수 표기를 쓴다. <strong>정보를 잃지 않는 쪽</strong>을 기본으로 삼은 것인데, 두 로그를 비교하기 전에 알아 두어야 할 차이다. 고정 표기가 필요하면 <code>{:f}</code>로 강제한다.</p><p><strong>④ <code>{:g}</code>는 왕복 가능한 가장 짧은 표기를 준다.</strong> <code>3.14159</code>가 그대로 나오는 것이 그 결과다 — 8장에서 본 “읽었다 쓰면 같은 값” 성질을 지키는 표기다.</p><h4>80.1.2 라이브러리가 모르는 타입 찍기</h4><p><code>{}</code>에 넣을 수 있는 것은 <code>_Generic</code> 목록에 있는 타입뿐이다. 그러면 내 구조체는 어떻게 찍는가 — <strong>그리는 함수를 하나 주면 된다.</strong></p><pre><code data-lang="c"><strong><span class="tok-k">static</span></strong> proven_err_t <strong>render_frac</strong><span class="tok-x">(</span>proven_fmt_sink_t out<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>obj<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> frac_t <strong><span class="tok-x">*</span></strong>f <strong><span class="tok-x">=</span></strong> obj<span class="tok-x">;</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ... 만들어서 ... </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> <strong>proven_fmt_put</strong><strong><span class="tok-x">(</span></strong><strong>out</strong><strong><span class="tok-x">,</span></strong><strong> view</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 내보낸다 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span>
+
+proven_arg_t a <strong><span class="tok-x">=</span></strong> <strong>proven_arg_custom</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>half</strong><strong><span class="tok-x">,</span></strong><strong> render_frac</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{} 그리고 |{:>8}|</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p><code>proven_fmt_sink_t</code>는 “바이트를 받는 구멍”이고, <code>proven_fmt_put</code>으로 내보낸다. 예제의 출력에서 보듯 <strong>폭과 정렬이 사용자 타입에도 그대로 적용된다.</strong></p><p>여기에 알아 둘 계약이 하나 있다. <strong>그리는 함수는 <code>{}</code> 하나당 두 번 불린다</strong> — 한 번은 길이를 세는 가짜 구멍으로(폭·정렬을 계산해야 하므로), 한 번은 진짜로. 그래서 이 함수는 <strong>결정적</strong>이어야 하고 대상을 고쳐서는 안 된다. 두 번의 결과가 다르면 라이브러리는 어긋난 칸을 찍는 대신 <code>INVALID_ARG</code>를 돌려준다. 할당 없이 정렬을 맞추기 위해 치른 대가다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch80/fmt.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 화면이 아니라 문자열로 형식화한다 — 버퍼는 스택에서 빌린다 </span></em><em><span class="tok-c">*/</span></em>
+    proven_byte_t buf<span class="tok-x">[</span><span class="tok-n">64</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    proven_u8str_t out <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_borrow</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> buf</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">int</span></strong>      port <strong><span class="tok-x">=</span></strong> <span class="tok-n">8080</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong>   load <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">4237</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>host <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">example.org</span><span class="tok-s">"</span><span class="tok-x">;</span>
+
+    proven_fmt_result_t r <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_append_fmt</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>out</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{}:{} load={:.2}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>host</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>port</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>load</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_u8str_view_t v <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_as_view</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>out</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">formatted : </span></strong><strong><span class="tok-s">%.*s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>v</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">const</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>v</strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 그릇이 모자라면? 자르지 않고 거부한다 </span></em><em><span class="tok-c">*/</span></em>
+    proven_byte_t small_buf<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    proven_u8str_t small <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_borrow</strong><strong><span class="tok-x">(</span></strong><strong>small_buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> small_buf</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_fmt_result_t r2 <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_append_fmt</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>small</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{}:{}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                                    </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>host</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>port</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">into 8 bytes: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> (err=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>r2</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ok</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">refused</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>r2</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 정렬과 자릿수 — 49장의 폭/정밀도에 해당한다 </span></em><em><span class="tok-c">*/</span></em>
+    proven_u8str_t line <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_borrow</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> buf</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>proven_u8str_reset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>line</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    proven_fmt_result_t r3 <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_append_fmt</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>line</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">|{:>10}|{:&lt;10}|{:.3}|</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                                    </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>host</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>host</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                                    </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>load</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>r3</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        proven_u8str_view_t v <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_as_view</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>line</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">aligned   : </span></strong><strong><span class="tok-s">%.*s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>v</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">const</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>v</strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>formatted : example.org:8080 load=0.42
+into 8 bytes: refused (err=2)
+aligned   : |example.org|example.org|0.424|
+</code></pre></div></div><p>이 예제는 화면이 아니라 <strong>문자열로</strong> 형식화한다 — 75장에서 본 <code>proven_println</code>이 이 기계를 표준 출력에 연결한 판이다. 세 가지를 짚을 수 있다.</p><p><strong>첫째, 서식화도 실패할 수 있다.</strong> 8바이트 그릇에 <code>example.org:8080</code>을 넣을 수 없으므로 거부됐다. 79장의 원칙이 여기서도 그대로다 — 자르느니 실패를 돌려준다. <code>snprintf</code>와 정반대의 기본값이다.</p><p><strong>둘째, 서식 지정 문법이 조금 다르다.</strong> <code>{:>10}</code>의 <code>></code>는 오른쪽 정렬, <code>{:&lt;10}</code>은 왼쪽 정렬, <code>{:.3}</code>은 소수 셋째 자리다. 56장의 <code>%10s</code>·<code>%-10s</code>·<code>%.3f</code>와 대응하지만, <strong>타입 글자가 없다</strong>는 점이 다르다.</p><p><strong>셋째, 반올림은 하되 자릿수는 지킨다.</strong> <code>load=0.42</code>는 <code>{:.2}</code>가 만든 것이다.</p><h4>80.1.3 어느 형식화 함수를 쓸 것인가</h4><p>79장의 세 갈래가 형식화에도 그대로 있다. 표로 정리하면 고를 일이 없다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>함수</strong></th><th><strong>모자랄 때</strong></th><th><strong>할당자</strong></th><th><strong>쓰는 자리</strong></th></tr><tr><td><code>proven_println(fmt, …)</code></td><td>—</td><td>필요 없음</td><td>화면에 한 줄</td></tr><tr><td><code>proven_print(fmt, …)</code></td><td>—</td><td>필요 없음</td><td>줄바꿈 없이</td></tr><tr><td><code>proven_eprint(fmt, …)</code></td><td>—</td><td>필요 없음</td><td>표준 오류로</td></tr><tr><td><code>proven_u8str_append_fmt</code></td><td>거부(원본 보존)</td><td>필요 없음</td><td>고정 버퍼. 기본값</td></tr><tr><td><code>proven_u8str_append_fmt_trunc</code></td><td>들어가는 만큼</td><td>필요 없음</td><td>로그 한 줄처럼 잘려도 되는 자리</td></tr><tr><td><code>proven_u8str_append_fmt_grow</code></td><td>늘린다</td><td>필요</td><td>길이를 모를 때</td></tr><tr><td><code>proven_u8str_append_fmt_with_scratch</code></td><td>늘린다</td><td>필요(+임시용)</td><td>임시 기억을 따로 주고 싶을 때</td></tr></table></div><p class="float-caption">표 80.2</p></figure><p>세 함수 모두 <code>proven_fmt_result_t</code>를 돌려주는데, 이 꾸러미에는 <code>err</code> 말고 숫자가 둘 더 있다.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+    proven_err_t  err<span class="tok-x">;</span>
+    proven_size_t written<span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 실제로 쓴 바이트 수 </span></em><em><span class="tok-c">*/</span></em>
+    proven_size_t required<span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 전부 쓰려면 필요했던 바이트 수 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span> <strong><span class="tok-t">proven_fmt_result_t</span></strong><span class="tok-x">;</span></code></pre><p><code>required</code>가 56장에서 본 <code>snprintf</code>의 반환값과 같은 정보다. 다른 점은 <strong>그것이 이름 있는 칸에 들어 있다</strong>는 것 — <code>snprintf</code>는 “반환값이 버퍼 크기 이상이면 잘린 것”이라는 규약을 사람이 기억해야 했지만, 여기서는 <code>err</code>가 이미 그것을 말해 주고 <code>required</code>는 “그래서 얼마나 필요했나”에 답한다. 예제 <code>spec.c</code>의 출력에서 <code>written=7 required=10</code>이 그 쓰임이다 — 버퍼를 얼마나 키워야 하는지 그대로 알 수 있다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>PROVEN_ARG</code>가 정확히 무엇을 하는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> <code>_Generic</code>으로 인자의 타입을 골라, 그 타입에 맞는 꼬리표를 붙인 작은 구조체를 만든다. 개념만 옮기면 이런 모양이다.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">PROVEN_ARG</span></strong><span class="tok-x">(</span>x<span class="tok-x">)</span><span class="tok-p"> </span><strong>_Generic</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong>x</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong>          \</strong>
+<strong>    </strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">:</span></strong><strong>          proven_arg_i32</strong><strong><span class="tok-x">,</span></strong><strong>            \</strong>
+<strong>    </strong><strong><span class="tok-t">double</span></strong><strong><span class="tok-x">:</span></strong><strong>       proven_arg_f64</strong><strong><span class="tok-x">,</span></strong><strong>            \</strong>
+<strong>    </strong><strong><span class="tok-k">const</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">:</span></strong><strong> proven_arg_cstr</strong><strong><span class="tok-x">,</span></strong><strong>           \</strong>
+<strong>    </strong><strong><span class="tok-t">bool</span></strong><strong><span class="tok-x">:</span></strong><strong>         proven_arg_bool            \</strong>
+<strong>    </strong><em><span class="tok-c">/*</span></em><em><span class="tok-c"> ... </span></em><em><span class="tok-c">*/</span></em><strong> </strong><strong><span class="tok-x">)</span></strong><span class="tok-x">(</span><span class="tok-p">x</span><span class="tok-x">)</span></code></pre><p><code>_Generic</code>은 <strong>컴파일 시간에</strong> 가지를 고르므로 실행 시간에 타입을 판별하는 비용이 없다. 그리고 목록에 없는 타입을 넘기면 <strong>컴파일 오류</strong>가 난다 — 56장의 <code>printf</code>가 무엇이든 받아 주던 것과 정반대다.</p></p></div></div><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span><code>PROVEN_ARG</code> 없이 값을 그냥 넘기기</p><pre><code data-lang="c"><strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">count={}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> count</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 컴파일되지 않는다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>꾸러미가 아닌 날값을 넘겼으므로 타입이 맞지 않아 빌드가 실패한다. 성가시게 느껴질 수 있지만 이것이 설계의 요점이다 — <strong>감싸는 일을 잊으면 프로그램이 만들어지지 않는다.</strong> 잊어도 컴파일되고 실행 중에 이상해지는 <code>printf</code>와의 차이가 여기에 있다.</p></div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“자리표시자에 타입이 없으니 느릴 것이다”</strong></p>반대다. <code>printf</code>는 <strong>실행 중에</strong> 서식 문자열을 한 글자씩 해석하며 다음에 무엇을 꺼낼지 결정한다. <code>{}</code>도 서식을 훑는 것은 같지만, 각 인자의 타입은 이미 꼬리표로 정해져 있어 추측이 없다. 무엇보다 타입 불일치로 인한 UB가 없으므로 방어 코드도 필요 없다. 비용의 차이는 대개 무시할 만하고, 이 라이브러리의 실수 형식화는 정확성 쪽에 더 신경을 쓴 편이다 — 56장에서 본 <code>%f</code>의 반올림 규칙을 그대로 재현하는 것이 오히려 까다로운 일이다.</div><h3>80.2 반대 방향 — 스캐너</h3><p>파싱은 형식화의 거울이지만, 실패의 성격이 다르다. 형식화는 그릇이 모자랄 때만 실패하는데, 파싱은 <strong>입력이 기대와 다를 때마다</strong> 실패한다. 그리고 56장에서 본 대로 <code>sscanf</code>는 “몇 개나 성공했는가”만 알려 준다 — 어디서 왜 멈췄는지는 말해 주지 않는다.</p><span id="idx-entry-113"></span><p>proven의 스캐너는 커서를 가진 객체다. 뷰 위에 놓고, 하나씩 읽어 나간다. 읽을 때마다 결과가 꾸러미로 온다.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+    proven_u8str_view_t view<span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 읽고 있는 입력(빌린 것) </span></em><em><span class="tok-c">*/</span></em>
+    proven_size_t       cursor<span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 어디까지 읽었는가 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span> <strong><span class="tok-t">proven_scan_t</span></strong><span class="tok-x">;</span></code></pre><p>두 칸뿐이라는 사실이 두 가지를 말해 준다. 첫째, <strong>스캐너는 입력을 소유하지 않는다</strong> — 뷰 위에 얹힌 커서일 뿐이라 만들 때 할당이 없고 파괴도 없다. 둘째, <strong>커서를 손으로 저장하고 되돌릴 수 있다</strong>. 구조체를 통째로 복사해 두었다가 실패하면 되돌리면 되므로, “몇 글자 미리 보고 판단하는” 파서를 어렵지 않게 짤 수 있다.</p><pre><code data-lang="c">proven_scan_t save <strong><span class="tok-x">=</span></strong> sc<span class="tok-x">;</span>         <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 되돌리기 위한 표시 </span></em><em><span class="tok-c">*/</span></em>
+proven_result_i64_t n <strong><span class="tok-x">=</span></strong> <strong>proven_scan_i64</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>sc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>n</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> sc <strong><span class="tok-x">=</span></strong> save<span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 실패했으니 없던 일로 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>읽는 함수는 여섯이고, 전부 커서를 앞으로 민다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>함수</strong></th><th><strong>읽는 것</strong></th><th><strong>돌려주는 것</strong></th></tr><tr><td><code>proven_scan_i64(&amp;sc)</code></td><td>부호 있는 정수</td><td><code>{err, val}</code></td></tr><tr><td><code>proven_scan_u64(&amp;sc)</code></td><td>부호 없는 정수</td><td><code>{err, val}</code></td></tr><tr><td><code>proven_scan_f64(&amp;sc)</code></td><td>실수</td><td><code>{err, val}</code></td></tr><tr><td><code>proven_scan_str(&amp;sc)</code></td><td>공백 전까지의 낱말</td><td><code>{err, view}</code> — <strong>원본을 가리키는 뷰</strong></td></tr><tr><td><code>proven_scan_skip_whitespace(&amp;sc)</code></td><td>공백을 건너뛴다</td><td>—</td></tr><tr><td><code>proven_scan_skip_until(&amp;sc, t)</code></td><td><code>t</code>가 나올 때까지 건너뛴다</td><td><code>err</code>(없으면 커서 그대로)</td></tr></table></div><p class="float-caption">표 80.3</p></figure><p><code>proven_scan_str</code>이 <strong>복사하지 않고 뷰를 돌려준다</strong>는 점이 중요하다 — 79장의 “복사 없는 텍스트 처리”가 파싱에서도 그대로다. 대신 그 뷰는 원본 입력이 살아 있는 동안만 유효하다(77장).</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch80/lines.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 한 줄에서 "이름 나이" 꼴을 해석한다 — 실패는 값으로 드러난다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>parse_line</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>line<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    proven_scan_t sc <strong><span class="tok-x">=</span></strong> <strong>proven_scan_init</strong><strong><span class="tok-x">(</span></strong><strong>proven_u8str_view_from_cstr</strong><strong><span class="tok-x">(</span></strong><strong>line</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    proven_result_u8str_view_t name <strong><span class="tok-x">=</span></strong> <strong>proven_scan_str</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>sc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>name</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">] -> no name found</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> line</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    proven_result_i64_t age <strong><span class="tok-x">=</span></strong> <strong>proven_scan_i64</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>sc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>age</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">] -> age is not a number</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> line</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">] -> name </span></strong><strong><span class="tok-s">%.*s</span></strong><strong><span class="tok-s">, age </span></strong><strong><span class="tok-s">%lld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> line</strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>name</strong><strong><span class="tok-x">.</span></strong><strong>val</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">const</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>name</strong><strong><span class="tok-x">.</span></strong><strong>val</strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>age</strong><strong><span class="tok-x">.</span></strong><strong>val</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>parse_line</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">alice 33</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>parse_line</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">bob thirty</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>parse_line</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">   </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>[alice 33] -> name alice, age 33
+[bob thirty] -> age is not a number
+[   ] -> no name found
+</code></pre></div></div><p>세 입력이 세 갈래로 갈린 것이 핵심이다. <code>bob thirty</code>는 이름은 읽혔지만 나이에서 멈췄고, 공백뿐인 줄은 이름부터 실패했다. <code>sscanf</code>라면 둘 다 “항목 하나 성공” 또는 “0”으로 뭉뚱그려졌을 것이다.</p><p>커서를 가진다는 것에는 또 다른 이점이 있다. <strong>어디까지 읽었는지</strong>를 알 수 있어서, 남은 부분을 다른 방식으로 처리하거나 오류 메시지에 위치를 실을 수 있다. 25장에서 <code>sscanf</code>로 줄을 해석할 때 “몇 글자를 소비했는지 알 수 없다”고 했던 문제의 답이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 스캐너에도 서식 문자열이 있는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 있다. 이렇게 쓴다.</p><pre><code data-lang="c"><strong>proven_scan_fmt_cursor</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>sc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{}:{}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                       </strong><strong>PROVEN_SCAN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>host</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_SCAN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>port</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p>형식화와 대칭이고, 인자는 담을 곳의 주소를 감싼 것이다. 다만 헤더가 정직하게 밝혀 두는 주의사항이 하나 있다 — 서식 중간에서 실패하면 <strong>그 전까지 채워진 값은 이미 바뀌어 있다</strong>는 것이다. 76장에서 배운 실패 원자성이 여기서는 보장되지 않으므로, 꼭 필요하면 커서와 목적지를 미리 저장해 두었다가 되돌려야 한다. 계약을 숨기지 않고 문서에 적어 두는 것이 이 라이브러리의 방식이다.</p></p></div></div><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>파서가 관대하면 무슨 일이 생기는가</p>HTTP 요청 처리에서 반복적으로 드러난 문제가 있다. 서버와 프록시가 같은 요청을 <strong>조금씩 다르게</strong> 해석하면, 공격자가 그 틈으로 두 번째 요청을 몰래 끼워 넣을 수 있다(request smuggling). 한쪽은 헤더의 이상한 공백을 너그럽게 넘기고 다른 쪽은 엄격히 거부하는 식의 차이가 원인이었다. 교훈은 79장의 인코딩 이야기와 정확히 같다 — <strong>애매한 입력은 고쳐 읽지 말고 거부하라.</strong> 실패를 값으로 돌려주는 파서는 그 거부를 표현할 수단을 갖춘 파서이기도 하다.</div><div class="dev recap"><p class="dev-label">복습 정리</p><p>형식화·파싱 요약.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>하는 일</strong></th><th><strong>API</strong></th><th><strong>메모</strong></th></tr><tr><td>화면에 한 줄</td><td><code>proven_println(fmt, ARG…)</code></td><td>에러 반환하되 강요 안 함</td></tr><tr><td>문자열로 형식화</td><td><code>proven_u8str_append_fmt(&amp;s, …)</code></td><td>모자라면 거부</td></tr><tr><td>자를 것을 허용</td><td><code>…_append_fmt_trunc</code></td><td>이름으로 의도를 밝힘</td></tr><tr><td>늘려 가며</td><td><code>…_append_fmt_grow(alloc, …)</code></td><td>할당자 필요</td></tr><tr><td>인자 감싸기</td><td><code>PROVEN_ARG(x)</code></td><td><code>_Generic</code> — 없는 타입은 컴파일 오류</td></tr><tr><td>스캐너 시작</td><td><code>proven_scan_init(view)</code></td><td>커서를 가진 객체</td></tr><tr><td>하나씩 읽기</td><td><code>proven_scan_i64/f64/str</code></td><td>꾸러미로 결과와 실패</td></tr><tr><td>서식으로 읽기</td><td><code>proven_scan_fmt_cursor(…)</code></td><td>중간 실패 시 부분 변경 주의</td></tr></table></div><p class="float-caption">표 80.4</p></figure></div><p>문자열을 담고, 만들고, 되읽는 어휘가 갖춰졌다. 다음은 <strong>여럿을 담는</strong> 도구 들이다 — 자라는 배열, 리스트, 링 버퍼, 해시 맵, 그리고 74장에서 예고한 “최악에도 보장이 있는” 알고리즘들.</p>
+<div class="nav"><a href="ch79.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch81.html">다음 →</a></div>
+</div></main></body></html>

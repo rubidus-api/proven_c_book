@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proven C Book — An Introduction to Modern C with the Proven C Library</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<header class="cover"><h1>Proven C Book</h1><p class="cover-sub">An Introduction to Modern C with the Proven C Library</p><p><span class="badge">draft</span></p><p class="cover-meta">v0.15.1 · last updated 2026-08-06</p><p class="cover-author">rubidus</p><p class="cover-links"><a href="mailto:rubidus@gmail.com">rubidus@gmail.com</a><a href="https://github.com/rubidus-api/proven_c_book">github.com/rubidus-api/proven_c_book</a></p><div class="cover-blurb"><p>An introduction to C, and an introduction to the proven C library.</p><p>Written for readers who are just starting out with C.</p></div></header><div class="note">This edition is a <strong>draft</strong>. For the paginated index and exact typesetting, see the <a href="https://github.com/rubidus-api/proven_c_book/tree/main/dist">PDF</a>.</div><h3>Contents</h3><div class="toc"><div class="toc-group toc-front"><a href="sec01.html">Preface</a><a href="sec02.html">A note on this translation</a></div><h4 class="toc-part">Part I — Ground</h4><div class="toc-group"><a href="ch01.html">1 Setting the scene</a><a href="ch02.html">2 The regions of memory — where a program puts what</a><a href="ch03.html">3 Programs and processes — what it is to be run</a></div><h4 class="toc-part">Part II — How computing works</h4><div class="toc-group"><a href="ch04.html">4 A simple model of the machine — the birth of C</a><a href="ch05.html">5 Words and addresses — the archetype of C</a><a href="ch06.html">6 Special knowledge about addresses — address 0, alignment, low bits</a><a href="ch07.html">7 Representing integers — sign, overflow, shift</a><a href="ch08.html">8 Representing numbers — the contract called IEEE 754</a><a href="ch09.html">9 Characters and text — scars in the standard</a><a href="ch10.html">10 The origin of streams — punched cards, line printers, printing terminals</a><a href="ch11.html">11 Memory divides — registers, caches, a ladder of layers</a><a href="ch12.html">12 The machinery of speed — the birth of the standard</a><a href="ch13.html">13 Compiler optimisation — the abstract machine</a><a href="ch14.html">14 And so C is an abstract language</a></div><h4 class="toc-part">Part III — The first program</h4><div class="toc-group"><a href="ch15.html">15 Hello world</a><a href="ch16.html">16 The general shape of compilation</a><a href="ch17.html">17 Setting up a development environment</a><a href="ch18.html">18 The compiler landscape — C compilers in active service</a></div><h4 class="toc-part">Part IV — A minimal toolbox</h4><div class="toc-group"><a href="ch19.html">19 The structure of a program</a><a href="ch20.html">20 Expressions — the things that become values</a><a href="ch21.html">21 Using functions — how to call</a><a href="ch22.html">22 Output</a></div><h4 class="toc-part">Part V — Declarations: how names are made</h4><div class="toc-group"><a href="ch23.html">23 Declaring variables</a><a href="ch24.html">24 Declaring and defining functions</a><a href="ch25.html">25 Input</a></div><h4 class="toc-part">Part VI — Values and flow</h4><div class="toc-group"><a href="ch26.html">26 Integers — a world of finite numbers</a><a href="ch27.html">27 Integer operations — division, bits</a><a href="ch28.html">28 Implicit conversions — promotion and the usual arithmetic conversions</a><a href="ch29.html">29 Booleans and comparison</a><a href="ch30.html">30 Deciding — if and switch</a><a href="ch31.html">31 Repetition — loops and invariants</a><a href="ch32.html">32 The meaning of a function — copying values and side effects</a><a href="ch33.html">33 Assignment and side effects</a></div><h4 class="toc-part">Part VII — Memory</h4><div class="toc-group"><a href="ch34.html">34 Objects, addresses, pointers</a><a href="ch35.html">35 Null — the three siblings, formally</a><a href="ch36.html">36 The rules of pointers — alignment and provenance</a><a href="ch37.html">37 Arrays</a><a href="ch38.html">38 Multidimensional arrays</a><a href="ch39.html">39 Strings</a><a href="ch40.html">40 Safe input, and the appearance of proven</a><a href="ch41.html">41 Lifetime and storage duration</a><a href="ch42.html">42 Dynamic memory</a></div><h4 class="toc-part">Part VIII — The shape of data</h4><div class="toc-group"><a href="ch43.html">43 Structs</a><a href="ch44.html">44 Using structs — temporary values, named arguments, layout</a><a href="ch45.html">45 Unions and representation</a></div><h4 class="toc-part">Part IX — Deep corners</h4><div class="toc-group"><a href="ch46.html">46 Expressions and operators</a><a href="ch47.html">47 Real numbers — the mathematics of approximation</a><a href="ch48.html">48 Errors and contracts</a><a href="ch49.html">49 Undefined behaviour</a></div><h4 class="toc-part">Part X — Structure</h4><div class="toc-group"><a href="ch50.html">50 The three faces of main — entry point and exit status</a><a href="ch51.html">51 Several files — splitting and linking</a><a href="ch52.html">52 The preprocessor and the translation phases</a><a href="ch53.html">53 Variadic functions</a><a href="ch54.html">54 Functions as values — the function pointer</a><a href="ch55.html">55 How to read a declaration — two readings and typedef</a><a href="ch56.html">56 The terrain of the standard library</a></div><h4 class="toc-part">Part XI — Reading the standard library</h4><div class="toc-group"><a href="ch57.html">57 The whole map of the standard library</a><a href="ch58.html">58 Streams in reality — &lt;stdio.h&gt; ①</a><a href="ch59.html">59 The traps of reading and writing — &lt;stdio.h&gt; ②</a><a href="ch60.html">60 Strings and memory — &lt;string.h&gt;</a><a href="ch61.html">61 The drawer of odds and ends — &lt;stdlib.h&gt;</a><a href="ch62.html">62 Characters and locales — &lt;ctype.h&gt;, &lt;locale.h&gt;, &lt;wchar.h&gt;</a><a href="ch63.html">63 Numbers — &lt;math.h&gt;, &lt;fenv.h&gt;, &lt;tgmath.h&gt;</a><a href="ch64.html">64 Time — &lt;time.h&gt;</a><a href="ch65.html">65 Diagnosis and control — &lt;errno.h&gt;, &lt;assert.h&gt;, &lt;signal.h&gt;, &lt;setjmp.h&gt;</a><a href="ch66.html">66 Signals — &lt;signal.h&gt;</a><a href="ch67.html">67 Non-local jumps — &lt;setjmp.h&gt;</a><a href="ch68.html">68 What the new standards added, and the *_s controversy</a><a href="ch69.html">69 Operations that do not split — &lt;stdatomic.h&gt;</a><a href="ch70.html">70 How to ask about overflow — &lt;stdckdint.h&gt;</a><a href="ch71.html">71 From macro to keyword — bool, nullptr and their companions</a><a href="ch72.html">72 A program’s map of memory — operating systems and embedded</a><a href="ch73.html">73 Inside the allocator — the heap, alternative allocators, alternative standard libraries</a></div><h4 class="toc-part">Part XII — proven — fundamentals, verified</h4><div class="toc-group"><a href="ch74.html">74 The five bugs shipped for fifty years</a><a href="ch75.html">75 Getting started — there is nothing to install</a><a href="ch76.html">76 Errors are values</a><a href="ch77.html">77 The foundation — bytes, views, and arithmetic that does not overflow</a><a href="ch78.html">78 Allocation is a parameter</a><a href="ch79.html">79 Strings and text</a><a href="ch80.html">80 Formatting and parsing — not writing the type twice</a><a href="ch81.html">81 Containers and algorithms</a><a href="ch82.html">82 The outside world — files, streams, time, random numbers</a><a href="ch83.html">83 The boundaries — running things overlapped, and when there is no OS</a><a href="ch84.html">84 Writing it three times — a tiny JSON</a></div><h4 class="toc-part">Part XIII — Closing</h4><div class="toc-group"><a href="ch85.html">85 C in practice — tools, projects, and territories</a><a href="ch86.html">86 The embedded toolbox — compilers and the tools beside them</a><a href="ch87.html">87 Modern C, gathered up</a></div><h4 class="toc-part">Front and back matter</h4><div class="toc-group"><a href="sec90.html">Appendix A — Operator lookup</a><a href="sec91.html">Appendix B — printf and scanf formats in full</a><a href="sec92.html">Appendix C — Implicit conversions in summary</a><a href="sec93.html">Appendix D — Further reading and the standard document</a><a href="sec94.html">Appendix E — How grammar is written (EBNF) and the whole C grammar</a><a href="sec95.html">Bibliography and sources</a><a href="sec96.html">Index</a></div></div><hr style="border:none;border-top:1px solid var(--rule);margin:2.4rem 0"><h2>Preface</h2><p>This book is an introduction to proven, a C library I wrote, and it is also an introduction to the C language. There is a reason for that awkward double stance.</p><p>Before you can recommend a tool, you have to show why it is needed. The problems proven addresses live in the subtle corners of C — the limits of representation, the rules of conversion, the lifetime of storage, the areas the standard declines to promise anything about. To those who have not seen those corners, proven looks like an unnecessary contraption. To those who know them well, on the other hand, their own ways of handling them already exist, and there is little reason to reach for proven.</p><p>So I decided to explain the problems first and the library afterwards. It was written with a first-time reader in mind, so it begins with how a computer is built and goes on through types and flow, pointers and arrays, the lifetime of storage and the standard library. Even if proven turns out not to be what you need, the earlier parts should be of use in themselves. Having read them you may well decide you do not need proven — and that is a fine outcome too. It will have helped you solve problems in C either way.</p><p>C has a long history, and in it are all sorts of scars and contortions and serious deliberations, each an attempt to get past the real limits and difficulties of its time. Tracing those marks has been an interesting and enjoyable thing to do, so adding my own effort and my own marks to them was the natural next step. That proven exists, and that this book exists, comes less from necessity than from the affection of someone who likes C; I will not pretend otherwise. That the affection has spilled into rather more explanation and rather more pages than strictly needed — for that I apologise to the reader in advance.</p><p>My thanks go in advance to everyone who reads this. That someone spends their time sharing and discussing my work is always a happy thing.</p><h3>What this book intends, and how to use it</h3><p>One thing must be clear first. <strong>Reading alone will not grow your ability to program.</strong> This book has no exercises, no assignments, no “try it yourself”. It sets out a situation, asks a question, and gives an answer to it — that is all. What it intends is that the reader end up with a firm grounding in C, and with a feel and an eye for the traps and dangers built into it. That is somewhat different from the ability to actually produce code: standing in front of an empty file and breaking a problem into pieces, digging out the name of a function that will not come to mind, clearing the errors a compiler has poured out one by one, narrowing down the cause when the output is not what you expected. That grows <strong>only by writing it yourself.</strong> This book does not do that work for you, and I will not claim it can. That part has to continue in some other course of practice, or in small programs of your own.</p><p>That is a flaw in the book, and also a deliberate choice. Exercises and assignments swell the length and the reader’s burden along with it. I chose the side that gets read to the end without strain, and gave up drill in exchange. <strong>This is a book for understanding, not a book for making something quickly.</strong></p><p>I should also say in advance that the first program comes late. Hello, world does not appear until Part III. Until then the book lays the groundwork — how a computer is built, how storage is divided, how numbers and letters are represented. That order is deliberate, so that C is met as a set of ideas rather than as syntax. A reader in a hurry to build something may find it slow-going. Such a reader may read chapter 15, hello world, first and come back to chapter 1. The order does not matter.</p><p>What the book intends is <strong>a firm foundation</strong>: not a quick result but an understanding that lasts. Skills picked up from other books and courses sit far more steadily on top of it. The gap between someone who knows why integers wrap, why a pointer is not simply a number, and what a compiler does and does not promise, and someone who does not, only widens with time.</p><p>Every piece of code in this book has actually been compiled and run. The printed output is not transcribed by hand: it is what the machine produced when the examples were run during the build, cross-checked with two compilers (gcc and clang).</p><p>One more disclosure. <strong>This book was written with AI as an assisting tool.</strong> What to cover and in what order, which principles the exposition follows, what to include and what to leave out — all of that I decided; the manuscript was written to those instructions and then reviewed by me. Technical claims were checked against the standard and primary sources, and, as said above, the examples are verified by a machine that actually runs them on every build — which means that whether a human or an AI wrote it, <strong>code that does not run does not appear in this book</strong>.</p><p>Errors will remain nonetheless. Those are mine, not the tool’s. If you find one, please tell me.</p><h3>Copyright and contact</h3><dl class="metalist"><dt>author</dt><dd>rubidus</dd><dt>contact</dt><dd><a href="mailto:rubidus@gmail.com">rubidus@gmail.com</a></dd><dt>repository</dt><dd><a href="https://github.com/rubidus-api/proven_c_book">github.com/rubidus-api/proven_c_book</a></dd><dt>edition</dt><dd>v0.15.1 — draft</dd><dt>last updated</dt><dd>2026-08-06</dd></dl><p><strong>The text</strong> — Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0). You may share and adapt it freely so long as you credit the source; commercial use is not permitted, and adaptations must carry the same licence.<br><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">https://creativecommons.org/licenses/by-nc-sa/4.0/</a></p><p><strong>The example code</strong> — the MIT licence. Take it and use it freely. The proven library used in the examples is under its own licence (MIT at present).</p><p>Every demonstration in this book prints output really obtained by compiling and running the code. The typesetting is done with Typst.</p><p>This book keeps being corrected. What you are reading is the edition numbered above; corrections and additions follow it. The newest edition and the record of changes are on the author’s GitHub. If you are holding an older copy, look there first. Error reports and suggestions are received in the same place.</p>
+
+</div></main></body></html>

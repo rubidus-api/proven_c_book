@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>44 Using structs — temporary values, named arguments, layout — Proven C Book</title><style>
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { flex:1 1 auto; }
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
+     border-left:4px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style></head>
+<body>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch43.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch45.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<main><div class="wrap">
+<h2 id="loc-44">44 Using structs — temporary values, named arguments, layout</h2><div class="dev open prereq"><p class="dev-label">What this chapter builds on</p><div class="open-body"><div>chapter 43, Structs · defining a struct</div><div>chapter 37, Arrays · arrays and passing by value</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 43 said a struct is a value, so assigning copies it whole and passing it to a function sends a copy. But chapter 37 said that passing an array to a function makes it decay into a pointer so that <strong>the original is touched</strong>. Do the two not collide — which is it when a struct contains an array?</p><div class="qa-a"><p><span class="dev-label">A.</span> The struct wins. An array decaying into a pointer is the rule for <strong>when the array itself is written as an argument</strong>; an array that has gone in as a struct member is part of the value that is the struct and is therefore copied. So the only way in C to pass an array truly <strong>like a value</strong> is “wrapping it in a struct.” This chapter’s second example shows that contrast by measurement — the side passed by value leaves the original untouched, and the side that decayed into a pointer changes it.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">If chapter 43 was the syntax of the struct, this chapter is <strong>how to use it</strong>. <span id="idx-entry-75"></span>The notation for referring to a struct inside a struct, the temporary struct made and handed over on the spot (the compound literal), the idiom of “order-free named arguments” built from it, and the <span id="idx-entry-76"></span>padding that gets in between members and how to remove it or force it. Finally we measure the only road for passing an array by value, and its price.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Where do you break a long chain like <code>s.frame->size.y</code> when reading it?</li><li>Are there no traps in this idiom?</li><li>So when handling a file format or a communication protocol, is a packed struct the right answer?</li></ol></div></div><div></div><h3>44.1 Nesting and access — reading dots and arrows mixed</h3><p>A struct’s member may itself be a struct. The notation is simply layered.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> point <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x<span class="tok-x">,</span> y<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-t">struct</span></strong> rect  <span class="tok-x">{</span> <strong><span class="tok-t">struct</span></strong> point origin<span class="tok-x">;</span> <strong><span class="tok-t">struct</span></strong> point size<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-t">struct</span></strong> scene <span class="tok-x">{</span> <strong><span class="tok-t">struct</span></strong> rect *frame<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>name<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-t">struct</span></strong> rect  r  <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>origin <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> <span class="tok-n">2</span> <span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">.</span>size <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> <span class="tok-n">30</span><span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> <span class="tok-n">40</span> <span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-t">struct</span></strong> scene s  <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>frame <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">&amp;</span></strong>r<span class="tok-x">,</span> <span class="tok-x">.</span>name <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">main</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+r<span class="tok-x">.</span>origin<span class="tok-x">.</span>x        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> value inside value        : dot + dot </span></em><em><span class="tok-c">*/</span></em>
+s<span class="tok-x">.</span>frame<span class="tok-x">-></span>size<span class="tok-x">.</span>y   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> pointer inside value      : dot + arrow + dot </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">(</span><strong><span class="tok-x">&amp;</span></strong>r<span class="tok-x">)</span><span class="tok-x">-></span>origin<span class="tok-x">.</span>y    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the arrow is only an abbreviation of (*p). </span></em><em><span class="tok-c">*/</span></em></code></pre><p>There is only one rule. <strong>If the left is a value, a dot; if a pointer, an arrow.</strong> <code>p->x</code> is an abbreviation of <code>(*p).x</code> (chapter 43), and the abbreviation exists because handling structs through pointers is overwhelmingly common. Indeed, code written as <code>(*p).x</code> is usually old code or a place explaining operator precedence.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Where do you break a long chain like <code>s.frame->size.y</code> when reading it?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Left to right, one step down at a time. <code>s</code> (the scene) → <code>.frame</code> (the pointer inside it) → <code>->size</code> (the size of the rectangle pointed at) → <code>.y</code> (that point’s y). Each arrow is a mark that <strong>one dereference happens</strong>, so it also means there are as many pointers needing a null check as there are arrows. If <code>s.frame</code> is null this notation collapses on the spot — a long chain, as easy as it is to read, also hides the checks.</p></div></div><h3>44.2 The temporary struct — the compound literal</h3><p>The notation for making one struct value <strong>on the spot</strong>, without making a named variable, is the compound literal (C99).</p><pre><code data-lang="c"><strong>draw_</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> draw_opts</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>width</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">40</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>title</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">chart</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> straight as an argument </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> point<span class="tok-x">)</span><span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> a<span class="tok-x">.</span>x <strong><span class="tok-x">+</span></strong> dx<span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> a<span class="tok-x">.</span>y <strong><span class="tok-x">+</span></strong> dy <span class="tok-x">}</span><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> as a return value </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Take away three properties.</p><p><strong>First, it is an lvalue.</strong> It merely has no name; it is a real object, so its address can be taken and its members assigned to. The example’s <code>&amp;(struct draw_opts){ … }</code> is the check. It is easy to think “being a temporary (an rvalue) its address cannot be taken”, but C’s compound literal is not like that — a difference from C++‘s temporary objects.</p><p><strong>Second, its lifetime is the end of the block, not of the statement.</strong> A compound literal written inside a block lives until that block ends (automatic storage duration). So within the same block it is safe to carry its address about.</p><p><strong>Third, therefore, sending its address out of the function is a dangling pointer.</strong></p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Returning the address of a compound literal</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> point <strong><span class="tok-x">*</span></strong><strong>make</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> x<span class="tok-x">,</span> <strong><span class="tok-t">int</span></strong> y<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">return</span></strong> <strong><span class="tok-x">&amp;</span></strong><span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> point<span class="tok-x">)</span><span class="tok-x">{</span> <span class="tok-x">.</span>x <strong><span class="tok-x">=</span></strong> x<span class="tok-x">,</span> <span class="tok-x">.</span>y <strong><span class="tok-x">=</span></strong> y <span class="tok-x">}</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> it vanishes when the function ends </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span></code></pre><p>Exactly the same accident as returning the address of a local variable in chapter 36. To return a value, return it <strong>by value</strong> (<code>struct point make(...)</code>), fill a place the caller provided, or use dynamic allocation (chapter 42). A compound literal written at file scope has static storage duration and does not have this problem, but in that place it is usually better to give it a name.</p></div><h3>44.3 Named arguments — passing one struct</h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch44/opts.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Making "named parameters" out of a temporary struct (a compound literal),</span></em>
+<em><span class="tok-c">   and confirming that copying a struct carries an array member along too. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (1) parameters passed by name ───────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> draw_opts <span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong>         width<span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 0 means the default, 80 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong>         height<span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 0 means the default, 24 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">bool</span></strong>        grid<span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>title<span class="tok-x">;</span>
+<span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>draw_</strong><span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> draw_opts o<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> w <strong><span class="tok-x">=</span></strong> o<span class="tok-x">.</span>width  <strong><span class="tok-x">?</span></strong> o<span class="tok-x">.</span>width  <strong><span class="tok-x">:</span></strong> <span class="tok-n">80</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> h <strong><span class="tok-x">=</span></strong> o<span class="tok-x">.</span>height <strong><span class="tok-x">?</span></strong> o<span class="tok-x">.</span>height <strong><span class="tok-x">:</span></strong> <span class="tok-n">24</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%3d</span></strong><strong><span class="tok-s">x</span></strong><strong><span class="tok-s">%-3d</span></strong><strong><span class="tok-s"> grid=</span></strong><strong><span class="tok-s">%-5s</span></strong><strong><span class="tok-s"> title=</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> w</strong><strong><span class="tok-x">,</span></strong><strong> h</strong><strong><span class="tok-x">,</span></strong>
+<strong>           o</strong><strong><span class="tok-x">.</span></strong><strong>grid</strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">true</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">false</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> o</strong><strong><span class="tok-x">.</span></strong><strong>title</strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> o</strong><strong><span class="tok-x">.</span></strong><strong>title</strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">(none)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> wrapped so the caller need not write the braces </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">draw</span></strong><span class="tok-x">(</span><strong><span class="tok-x">...</span></strong><span class="tok-x">)</span><span class="tok-p"> </span><strong>draw_</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> draw_opts</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> __VA_ARGS__ </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (2) passing an array by value ───────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> row <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> cell<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> wrap an array in a struct and it becomes a value </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>total</strong><span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> row r<span class="tok-x">)</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the whole copy comes across </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> t <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> t <strong><span class="tok-x">+=</span></strong> r<span class="tok-x">.</span>cell<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    r<span class="tok-x">.</span>cell<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-n">999</span><span class="tok-x">;</span>                  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> only the copy changes </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> t<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>total_raw</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> cell<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">)</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> an array parameter decays to a pointer </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> t <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> t <strong><span class="tok-x">+=</span></strong> cell<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    cell<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-n">999</span><span class="tok-x">;</span>                    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the original changes </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> t<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">passing by name (order does not matter, and any may be left out)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">.</span></strong><strong>title</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">chart</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>height</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">20</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>width</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">40</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">.</span></strong><strong>grid</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">true</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                                     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> everything default </span></em><em><span class="tok-c">*/</span></em>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a compound literal has an address, and its lifetime runs to the end of this block </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> draw_opts *p = &amp;(<strong><span class="tok-t">struct</span></strong> draw_opts)<span class="tok-x">{</span> <span class="tok-x">.</span>width <strong><span class="tok-x">=</span></strong> <span class="tok-n">5</span><span class="tok-x">,</span> <span class="tok-x">.</span>title <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">temporary</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  reached through the temporary's address: width=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> title=</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> p</strong><strong><span class="tok-x">-></span></strong><strong>width</strong><strong><span class="tok-x">,</span></strong><strong> p</strong><strong><span class="tok-x">-></span></strong><strong>title</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">an array by value / by pointer</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> row r <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>cell <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-n">2</span><span class="tok-x">,</span> <span class="tok-n">3</span><span class="tok-x">,</span> <span class="tok-n">4</span><span class="tok-x">,</span> <span class="tok-n">5</span><span class="tok-x">,</span> <span class="tok-n">6</span><span class="tok-x">,</span> <span class="tok-n">7</span><span class="tok-x">,</span> <span class="tok-n">8</span> <span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the call and the reading of the original are written apart on purpose -</span></em>
+<em><span class="tok-c">       mix them in one expression and there is no order between them </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> t1 <strong><span class="tok-x">=</span></strong> <strong>total</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  by value  : sum </span></strong><strong><span class="tok-s">%2d</span></strong><strong><span class="tok-s">,  after the call cell[0] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> t1</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>cell</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> t2 <strong><span class="tok-x">=</span></strong> <strong>total_raw</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">.</span></strong><strong>cell</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  by pointer: sum </span></strong><strong><span class="tok-s">%2d</span></strong><strong><span class="tok-s">,  after the call cell[0] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> t2</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>cell</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> struct assignment is a whole copy too — array members included </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> row copy <strong><span class="tok-x">=</span></strong> r<span class="tok-x">;</span>
+    copy<span class="tok-x">.</span>cell<span class="tok-x">[</span><span class="tok-n">1</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">-</span></strong><span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  after changing the copy: original cell[1] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, copy cell[1] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           r</strong><strong><span class="tok-x">.</span></strong><strong>cell</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> copy</strong><strong><span class="tok-x">.</span></strong><strong>cell</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>passing by name (order does not matter, and any may be left out)
+   40x20  grid=false title=chart
+   80x24  grid=true  title=(none)
+   80x24  grid=false title=(none)
+  reached through the temporary's address: width=5 title=temporary
+
+an array by value / by pointer
+  by value  : sum 36,  after the call cell[0] = 1
+  by pointer: sum 36,  after the call cell[0] = 999
+  after changing the copy: original cell[1] = 2, copy cell[1] = -1
+</code></pre></div></div><p>From here comes the idiom that changes code most in practice. Consider a function with five or six arguments.</p><pre><code data-lang="c"><strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">40</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">20</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">false</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">true</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">chart</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> what is the third true? </span></em><em><span class="tok-c">*/</span></em></code></pre><p>C has neither other languages’ named arguments nor default values. But overlay <strong>designated initialisers with a compound literal</strong> and you effectively get the same thing.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> draw_opts <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> width<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> height<span class="tok-x">;</span> <strong><span class="tok-t">bool</span></strong> grid<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>title<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>draw_</strong><span class="tok-x">(</span><strong><span class="tok-t">struct</span></strong> draw_opts o<span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">draw</span></strong><span class="tok-x">(</span><strong><span class="tok-x">...</span></strong><span class="tok-x">)</span><span class="tok-p"> </span><strong>draw_</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> draw_opts</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">{</span></strong><strong> __VA_ARGS__ </strong><strong><span class="tok-x">}</span></strong><strong><span class="tok-x">)</span></strong>
+
+<strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">.</span></strong><strong>title</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">chart</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>height</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">20</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">.</span></strong><strong>width</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">40</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> order-free </span></em><em><span class="tok-c">*/</span></em>
+<strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">.</span></strong><strong>grid</strong><strong> </strong><strong><span class="tok-x">=</span></strong><strong> </strong><strong><span class="tok-n">true</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                                   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the rest are defaults </span></em><em><span class="tok-c">*/</span></em>
+<strong>draw</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                                               <em><span class="tok-c">/*</span></em><em><span class="tok-c"> all defaults </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Four things are gained.</p><ol><li><strong>Freedom from order.</strong> A designated initialiser fixes the slot by name, so the caller writes in whatever order suits.</li><li><strong>What is left out is 0.</strong> The standard’s promise that unwritten members are filled with 0 (null for pointers) becomes the “default value”. So the knack is to design the fields <strong>so that 0 makes sense as the default</strong> — the example reading <code>width == 0</code> as “the default 80” is that.</li><li><strong>The call site is self-explanatory.</strong> You need not ask what the <code>false, true, 3</code> above are.</li><li><strong>Adding a field later does not break existing calls.</strong> Change an argument list and every call site must be fixed, but adding one member to a struct has no effect on existing calls at all (that member becomes 0). In an API maintained for a long time this property is especially valuable.</li></ol><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Are there no traps in this idiom?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Beware of three.</p><p>First, <strong>the order of evaluation between initialiser items is not fixed.</strong> Mix in side effects, as in <code>draw(.width = i++, .height = i)</code>, and the result is unpredictable (chapter 20). Write only values in the arguments.</p><p>Second, if there is <strong>a field for which 0 is a valid value</strong>, “left out” cannot be told from “0 was specified”. Design such a field with its meaning inverted (<code>grid</code> rather than <code>no_grid</code>), or add a separate presence field.</p><p>Third, <strong>the cost of building and passing a large struct every time</strong>. Option structs are usually small enough not to matter, but when they grow, use the variant of receiving <code>const struct opts *</code> and passing <code>&amp;(struct opts){ … }</code> at the call site — the property above, that an address can be taken, works here.</p></p></div></div><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Named arguments as met in practice</p>This pattern is widespread. Various initialisation functions in the Linux kernel, the way standard and POSIX APIs take options as a struct (such as <code>struct sigaction</code>, chapter 65, or <code>struct timespec</code>), and the <code>..._desc</code> structs of graphics libraries (the <code>..._DESC</code> of several GPU APIs, say) are all the same idea. “When arguments grow numerous, bind them into a struct” is practically an idiom in C, and C99′s designated initialisers made it read well.</div><h3>44.4 Padding — the empty space between members</h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch44/layout.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The layout of a struct - padding, reordering, forced alignment </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">struct</span></strong> loose  <span class="tok-x">{</span> <strong><span class="tok-t">char</span></strong>  a<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> b<span class="tok-x">;</span> <strong><span class="tok-t">char</span></strong> c<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> something big between small ones </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> tight  <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong>   b<span class="tok-x">;</span> <strong><span class="tok-t">char</span></strong> a<span class="tok-x">;</span> <strong><span class="tok-t">char</span></strong> c<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the big one laid down first      </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-k">#pragma</span></strong><span class="tok-p"> pack(push, 1)                         </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> no padding from here on </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> packed <span class="tok-x">{</span> <strong><span class="tok-t">char</span></strong>  a<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> b<span class="tok-x">;</span> <strong><span class="tok-t">char</span></strong> c<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-k">#pragma</span></strong><span class="tok-p"> pack(pop)                             </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> back to the ordinary rules </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-t">struct</span></strong> cacheline <span class="tok-x">{</span> <strong>alignas</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">64</span></strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-t">int</span></strong> counter<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> forced to a wide alignment </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-t">struct</span></strong> nested <span class="tok-x">{</span> <strong><span class="tok-t">struct</span></strong> loose inner<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> tag<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>report</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>name<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> size<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> align<span class="tok-x">,</span>
+                   <strong><span class="tok-t">size_t</span></strong> oa<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> ob<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> oc<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%-8s</span></strong><strong><span class="tok-s"> size </span></strong><strong><span class="tok-s">%2zu</span></strong><strong><span class="tok-s">  align </span></strong><strong><span class="tok-s">%2zu</span></strong><strong><span class="tok-s">   offsets a=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> b=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> c=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           name</strong><strong><span class="tok-x">,</span></strong><strong> size</strong><strong><span class="tok-x">,</span></strong><strong> align</strong><strong><span class="tok-x">,</span></strong><strong> oa</strong><strong><span class="tok-x">,</span></strong><strong> ob</strong><strong><span class="tok-x">,</span></strong><strong> oc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>report</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">loose</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">,</span></strong><strong> c</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>report</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">tight</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> tight</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> tight</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> tight</strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> tight</strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> tight</strong><strong><span class="tok-x">,</span></strong><strong> c</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>report</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">packed</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> packed</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> packed</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> packed</strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> packed</strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> packed</strong><strong><span class="tok-x">,</span></strong><strong> c</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">cacheline size </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">  align </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> cacheline</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> cacheline</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">nested    size </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">  inner offset </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">  tag offset </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> nested</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> nested</strong><strong><span class="tok-x">,</span></strong><strong> inner</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>offsetof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> nested</strong><strong><span class="tok-x">,</span></strong><strong> tag</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the difference between the sum of the three members and the struct = the padding bytes </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">size_t</span></strong> members <strong><span class="tok-x">=</span></strong> <strong><span class="tok-k">sizeof</span></strong><span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">+</span></strong> <strong><span class="tok-k">sizeof</span></strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">+</span></strong> <strong><span class="tok-k">sizeof</span></strong><span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">loose: members sum </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, actual </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> -> padding </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           members</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> loose</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> members</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>loose    size 12  align  4   offsets a=0 b=4 c=8
+tight    size  8  align  4   offsets a=4 b=0 c=5
+packed   size  6  align  1   offsets a=0 b=1 c=5
+
+cacheline size 64  align 64
+nested    size 16  inner offset 0  tag offset 12
+
+loose: members sum 6, actual 12 -> padding 6 bytes
+</code></pre></div></div><p>The sizes of the three members <code>char</code>, <code>int</code>, <code>char</code> sum to 6, and yet the struct is 12 bytes. Six bytes went in as <strong>padding</strong>. The reason is chapter 6′s alignment — <code>int</code> must sit at an address that is a multiple of 4, so three bytes are left empty after the first <code>char</code> to push <code>b</code> to offset 4. And three bytes attach after the last <code>char</code> too (<strong>trailing padding</strong>): because when this struct is laid out as an array, the next element’s <code>int</code> must keep its alignment as well.</p><p>It comes down to three rules.</p><ol><li>Each member sits at <strong>an offset that is a multiple of its own alignment</strong>.</li><li>The whole struct’s alignment is <strong>the maximum of its members’ alignments</strong>.</li><li>The struct’s size is <strong>rounded up to a multiple</strong> of that alignment (trailing padding).</li></ol><p>So <strong>merely changing the order of members shrinks the size.</strong> The example’s <code>tight</code> lays the large one first and reduces 12 bytes to 8. In a program laying out millions of structs, this one line of reordering changes both memory and cache hit rate (chapter 11).</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Padding bytes contain 0”</strong></p><p>They do not. The value of padding is <strong>unspecified</strong>. Initialisation may put 0 there, or whatever previously used that place may remain. Three practical traps come from this.</p><ul><li><strong>Do not compare structs with <code>memcmp</code></strong> (chapter 60) — equal values may come out “different” because the padding differs. Compare member by member.</li><li><strong>Do not hash a struct whole</strong> — for the same reason, the same value gives different hashes.</li><li><strong>Do not send a struct as it is to a file or a network</strong> — the rubbish in the padding goes with it (and can be an information leak), and if the receiving side’s layout differs the interpretation goes wrong too.</li></ul><p>Whether struct assignment (<code>b = a;</code>) copies the padding as well is not promised by the standard either. Remember that <strong>only the members are meaningful</strong> and it is all explained.</p></div><h3>44.5 How to remove padding, how to force alignment</h3><p>There are certainly places where padding is inconvenient — when <strong>the byte layout is fixed from outside</strong>, as in a file format or a communication protocol. So implementations provide devices for turning padding off.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>packed and pragma pack — not standard</p><pre><code data-lang="c"><strong><span class="tok-k">#pragma</span></strong><span class="tok-p"> pack(push, 1)          </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> widely used, common to MSVC, GCC and Clang </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> header <span class="tok-x">{</span> <strong><span class="tok-t">char</span></strong> kind<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> length<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-k">#pragma</span></strong><span class="tok-p"> pack(pop)              </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> always put it back </span></em><em><span class="tok-c">*/</span></em>
+
+<strong><span class="tok-t">struct</span></strong> header2 <span class="tok-x">{</span> <strong><span class="tok-t">char</span></strong> kind<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> length<span class="tok-x">;</span> <span class="tok-x">}</span> <strong><span class="tok-k">__attribute__</span></strong><span class="tok-x">((</span>packed<span class="tok-x">))</span><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> GCC and Clang </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Neither is <strong>standard C</strong>. In the example <code>#pragma pack(1)</code> made a struct of 6 bytes with alignment 1. Fail to pair <code>push</code> with <code>pop</code> and the layout of structs in headers included afterwards changes too, giving the nasty bug of a layout that disagrees with a library — leaving pack open inside a header without closing it is the representative accident.</p></div><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Passing the address of a packed struct’s member</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> <strong><span class="tok-k">__attribute__</span></strong><span class="tok-x">((</span>packed<span class="tok-x">))</span> h <span class="tok-x">{</span> <strong><span class="tok-t">char</span></strong> k<span class="tok-x">;</span> <strong><span class="tok-t">int</span></strong> len<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+<strong><span class="tok-t">void</span></strong> <strong>take</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p<span class="tok-x">)</span><span class="tok-x">;</span>
+<strong>take</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">.</span></strong><strong>len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> an unaligned address — outside the contract </span></em><em><span class="tok-c">*/</span></em></code></pre><p>A packed struct’s member may sit at a misaligned place. Pass its address as an ordinary <code>int *</code> and the receiving side accesses it assuming alignment — on a tolerant machine (x86) merely slower, on a strict machine dead on the spot (chapter 6). GCC and Clang issue the warning <code>-Waddress-of-packed-member</code> here.</p><p>Reading the value (<code>int n = s.len;</code>) is safe, because the compiler gathers the bytes for you. It is <strong>leaking the address</strong> that is the problem.</p></div><p>There is a tool in the opposite direction, <strong>forcing alignment</strong>, and this one is a standard word of C23 (chapter 71).</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> cacheline <span class="tok-x">{</span> <strong>alignas</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">64</span></strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-t">int</span></strong> counter<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> on a 64-byte boundary </span></em><em><span class="tok-c">*/</span></em></code></pre><p>In the example this struct became size 64, alignment 64. Its uses are clear — putting each thread’s counter on a different cache line to avoid the <strong>false sharing</strong> seen in chapter 11, or meeting a hardware requirement such as DMA or SIMD. It is not free, though: the struct above uses 64 bytes to hold one <code>int</code>.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> So when handling a file format or a communication protocol, is a packed struct the right answer?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> There is a safer right answer: <strong>moving between the byte sequence and the struct by hand.</strong></p><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> reading: take the fields out of the buffer one at a time </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">uint32_t</span></strong> len<span class="tok-x">;</span>
+<strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>len</strong><strong><span class="tok-x">,</span></strong><strong> buf </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+len <strong><span class="tok-x">=</span></strong> <strong>le32toh</strong><strong><span class="tok-x">(</span></strong><strong>len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> state the endianness too (chapter 5) </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Laying a packed struct over a buffer (<code>struct h *p = (struct h *)buf;</code>) assumes three things at once — no padding, correct alignment, matching endianness. Get one of them wrong and it breaks silently, and besides, access through a swapped type runs into the aliasing rules (chapter 49). Field-by-field <code>memcpy</code> is longer but exposes all three assumptions in the code. What Part XII’s library does is exactly to gather this tedious work into one place.</p></p></div></div><h3>44.6 Passing an array by value — can it be done, and should it?</h3><p>The latter part of the example is that contrast. <code>total(struct row r)</code> received a copy and changed it, and the original was untouched (<code>cell[0] = 1</code>). <code>total_raw(int cell[8])</code> decayed into a pointer and changed the original (<code>cell[0] = 999</code>). The assignment <code>struct row copy = r;</code> likewise copies the array member whole.</p><p>So it comes to this. <strong>If you want to handle an array with value semantics in C, wrap it in a struct.</strong> It is the only way, and there are places where it is really used.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>where it is worthwhile</strong></th><th><strong>why</strong></th></tr><tr><td>small fixed-size vectors and matrices (<code>struct vec3</code>, <code>struct mat4</code>)</td><td>calculating with them like values is natural</td></tr><tr><td>fixed-size identifiers and keys (<code>struct uuid { unsigned char b[16]; }</code>)</td><td>copying is cheap and leaves no room for mistakes</td></tr><tr><td>when an array must be <strong>returned</strong></td><td>an array cannot be returned but a struct can</td></tr><tr><td>when you want to pass it immutably</td><td>being a copy, the callee cannot touch the original</td></tr></table></div><p class="float-caption">Table 44.1</p></figure><p>The price is clear too.</p><p><strong>Stack usage.</strong> The copy is usually placed in the called function’s stack frame. Pass a 16 KiB struct by value and that much more is piled on per call — measure it and the stack position before and after the call really does widen by the struct’s size. The stack is usually about 8 MiB (chapter 36), and can be far smaller in recursion or on a per-thread stack (chapter 68). Recursion passing large structs by value is the shortest road to stack overflow.</p><p><strong>The cost of copying.</strong> But saying “a copy always happens” would be inaccurate. The calling convention decides — a small struct (usually up to two words) crosses <strong>in registers</strong> with nothing worth calling a copy, and for a large struct it is common for the caller to build it in memory and pass its address hidden. Moreover, if the function is inlined the compiler may remove the copy itself. So the accurate sentence is: <strong>the meaning is always a copy, and the real cost is decided by size, calling convention and optimisation.</strong></p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Passing a struct by value is always slow”</strong></p><p>It depends on size. Something small like <code>struct point { int x, y; }</code> is if anything faster passed by value, and reads better too — pass a pointer and a dereference appears, and the compiler must suspect “someone may change the value through this pointer”, which reduces optimisation.</p><p>The rough practical rule: <strong>up to a couple of words by value, larger than that by <code>const</code> pointer.</strong> And this choice is a matter not only of performance but of contract — receive by value and “the original is not touched” is guaranteed by the syntax; receive by pointer and it is only promised with <code>const</code>.</p></div><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>to remember</strong></th><th><strong>the point</strong></th></tr><tr><td>access</td><td>dot if the left is a value, <code>-></code> if a pointer (= <code>(*p).</code>)</td></tr><tr><td>compound literal</td><td><code>(struct T){…}</code> — an lvalue whose lifetime is <strong>the block’s end</strong></td></tr><tr><td>returning an address</td><td>do not send a compound literal’s address out of the function</td></tr><tr><td>named arguments</td><td>an options struct + designated initialisers. omitted members are 0</td></tr><tr><td>designing defaults</td><td>fix the fields so that <strong>0 makes sense as the default</strong></td></tr><tr><td>padding</td><td>it arises from alignment. its value is unspecified</td></tr><tr><td>member order</td><td>lay the large ones first and the size shrinks</td></tr><tr><td><code>memcmp</code>, hashing, serialising</td><td>do not handle a struct whole</td></tr><tr><td><code>pack</code></td><td>not standard. pair <code>push</code>/<code>pop</code>, do not leak member addresses</td></tr><tr><td><code>alignas</code></td><td>standard. avoiding false sharing, hardware requirements</td></tr><tr><td>array by value</td><td>wrap it in a struct. watch the stack and the size together</td></tr></table></div><p class="float-caption">Table 44.2</p></figure></div><p>We have learned how to use structs. The next chapter is the device for seeing the same memory <strong>through a different eye</strong> — the world of unions and representation. The endianness demonstration booked in chapter 5 finally opens.</p>
+<div class="nav"><a href="ch43.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch45.html">Next →</a></div>
+</div></main></body></html>
