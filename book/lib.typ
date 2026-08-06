@@ -11,12 +11,14 @@
        stdin: "표준 입력으로 준 것", output: "실행 결과",
        platform: "플랫폼 노트", organizer: "이 장이 끝나면",
        prereq: "이 장이 기대는 것", questions: "이 장에서 답할 질문",
-       misc: "흔한 오해", tbl: "표", fig: "그림"),
+       misc: "흔한 오해", tbl: "표", fig: "그림",
+       real: "실제 사례", anti: "반례", math: "수학"),
   en: (q: "Q", a: "A", back: "Looking back", recap: "Recap",
        stdin: "Given on standard input", output: "Output",
        platform: "Platform note", organizer: "By the end of this chapter",
        prereq: "What this chapter builds on", questions: "The questions this chapter answers",
-       misc: "A common misconception", tbl: "Table", fig: "Figure"),
+       misc: "A common misconception", tbl: "Table", fig: "Figure",
+       real: "In practice", anti: "Counter-example", math: "The mathematics"),
 ).at(_lang)
 
 // ── 표·그림 번호와 캡션 (저자 지시 2026-08-06) ─────────
@@ -60,7 +62,7 @@
   #set par(first-line-indent: 0em)
   #if title != none [
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
-          size: 0.98em, fill: black)[#icon #title]
+          size: 0.98em, fill: black)[#if icon != none [#icon. #h(3pt)]#title]
     #v(4pt)
   ]
   #body
@@ -70,7 +72,9 @@
 // 넷은 하나의 시각 단위다: 굵은 왼쪽 세로선이 서두 전체를 묶고, 라벨은
 // 회색 대문자풍 굵은 글씨로 통일한다. 아이콘은 쓰지 않는다(대체 글꼴 사고
 // 방지). 안에서는 얇은 규칙선으로 칸을 가른다.
-#let _open-rule = 3pt + rgb("#111111")
+// 서두·문답·실제 사례가 공유하는 왼쪽 세로선 (저자 지시 2026-08-06)
+#let _side-rule = 2.2pt + rgb("#111111")
+#let _open-rule = _side-rule
 // 서두 라벨은 본문(명조)과 확실히 갈라 보이도록 고딕·크게·굵게 쓴다.
 // 밑선은 두지 않는다 — 고딕 굵은 글씨만으로 충분히 구별된다
 // (저자 지시 2026-08-06).
@@ -97,7 +101,7 @@
 // 3.1 문답 (즉문즉답) — 기본 리듬
 // 3.1 문답 — 문과 답은 *하나의 덩어리*다. 왼쪽 세로선 하나가 둘을 잇고,
 // 질문 줄은 굵은 고딕과 옅은 바탕으로 도드라지게 한다 (저자 지시 2026-08-06).
-#let _qa_rail = 2.5pt + rgb("#111111")
+#let _qa_rail = _side-rule
 #let _qa(label_q, label_a, q, a) = block(
   width: 100%, above: 1.25em, below: 1.25em, breakable: true,
   stroke: (left: _qa_rail), inset: (left: 0pt),
@@ -151,17 +155,18 @@
 ]
 
 // 3.4 실제 사례 블록
-#let realcase(title, body) = _device(title, body, (top: 0.5pt + black, bottom: 0.5pt + black), "◉")
+#let realcase(title, body) = _device(title, body, (left: _side-rule), _L.real)
 
 // 반례 블록 (RFC-0004 §3): 독자의 생각이 아니라 *코드*가 틀린 경우.
 // 오개념 블록(⚠)과 구별한다.
-#let antipattern(title, body) = _device(title, body, (left: (thickness: 3pt, paint: black, dash: "dotted")), "✗")
+#let antipattern(title, body) = _device(title, body,
+  (left: (thickness: 2.2pt, paint: black, dash: "dotted")), _L.anti)
 
 // 3.5 수학 기반 박스 (건너뛰어도 본문이 이어지게 쓴다)
-#let mathbox(title, body) = _device(title, body, (left: 1pt + black), "∑")
+#let mathbox(title, body) = _device(title, body, (left: 1pt + black), _L.math)
 
 // (선택) 복습 정리 — 허용되는 유일한 복습 형태 (R17)
-#let recap(body) = _device(_L.recap, body, 0.5pt + black, "☰")
+#let recap(body) = _device(_L.recap, body, 0.5pt + black, none)
 
 // 3.6 코드 시연: 소스와 "실제 실행 결과"를 함께 인쇄한다.
 // 출력은 scripts/verify-examples.sh 가 남긴 캡처 파일에서 읽는다 (수작업 전사 금지, R15).
@@ -249,7 +254,7 @@
 )[
   #set par(first-line-indent: 0em)
   #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
-        size: 0.98em, fill: black)[⊞ #_L.platform — #title]
+        size: 0.98em, fill: black)[#_L.platform. #h(3pt)#title]
   #v(2pt)
   #body
 ]
@@ -288,6 +293,7 @@
     _open-close
   } else {
     _open-block(_L.questions)[
+      #set par(leading: 0.85em, spacing: 0.85em)
       #for (i, m) in qs.enumerate() {
         block(width: 100%, inset: (left: 14pt))[
           #place(left, dx: -14pt, text(fill: rgb("#777777"), weight: "bold")[#(i + 1)])

@@ -1,7 +1,7 @@
 // Proven C Book — English edition. Build: scripts/build-book-en.sh
 #import "../book/lib.typ": *
 
-#let book-version = "v0.10.7"
+#let book-version = "v0.10.8"
 #let book-updated = "2026-08-06"
 #let book-status = "draft"
 #let book-repo = "https://github.com/rubidus-api/proven_c_book"
@@ -15,6 +15,7 @@
 #set par(justify: true, leading: 0.78em, first-line-indent: (amount: 1em, all: true))
 #show heading: set text(font: ("Noto Sans", "Noto Sans CJK KR"))
 // 절 제목(1.2 꼴)은 위아래로 숨을 준다 — 기본값은 본문에 너무 붙는다
+#show heading.where(level: 1): set block(below: 1.35em)
 #show heading.where(level: 2): set block(above: 1.9em, below: 1.05em)
 #show heading.where(level: 3): set block(above: 1.5em, below: 0.85em)
 // 코드는 영어권 독자에게 익숙한 라틴 고정폭 Noto Sans Mono 로 통일한다.
@@ -95,10 +96,9 @@
   #v(0.45cm)
 
   #block(width: 100%)[
-    *The text* — Creative Commons Attribution-NonCommercial-ShareAlike 4.0
-    International (CC BY-NC-SA 4.0). You may share and adapt it freely so long as
-    you credit the source; commercial use is not permitted, and adaptations must
-    carry the same licence.
+    *The text* (the writing and the figures) is under CC BY-NC-SA 4.0. You may
+    share and adapt it freely so long as you credit the source; commercial use is
+    not permitted, and adaptations must carry the same licence.
     #linebreak()
     #text(size: 10pt, fill: rgb("#555555"))[https://creativecommons.org/licenses/by-nc-sa/4.0/]
   ]
@@ -106,9 +106,20 @@
   #v(0.35cm)
 
   #block(width: 100%)[
-    *The example code* — the MIT licence, so that what you learn here can go into
-    your own programs without constraint. The proven library used in the examples
-    is under its own licence.
+    *The example code* is under the MIT licence. What you learn here can go into
+    your own programs without any constraint.
+  ]
+
+  #v(0.35cm)
+
+  #block(width: 100%)[
+    For questions about the content, error reports and correction requests, please
+    use the GitHub repository, so that they are recorded and visible to others;
+    for one-to-one contact, please use the email address. Thanks are due in advance
+    to anyone who points out a typo or a mistake, or asks for an explanation where
+    one is missing — that someone spends their time sharing and discussing my work
+    is always a happy thing. Contributions of code or prose, however, are received
+    in spirit only, to keep the copyright situation simple.
   ]
 
   #v(0.35cm)
