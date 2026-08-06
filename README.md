@@ -9,12 +9,12 @@
 > 생겼는지에서 출발해, C23을 기본값으로 삼고, 마지막 부에서
 > [proven](https://github.com/rubidus-api) C 라이브러리로 이어진다.
 
-- **현재 판**: v0.15.1 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.1/proven_c_book-v0.15.1-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.1/proven_c_book-v0.15.1-en.pdf)
+- **현재 판**: v0.16.0 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.16.0/proven_c_book-v0.16.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.16.0/proven_c_book-v0.16.0-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.1/proven_c_book-v0.15.1-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.1/proven_c_book-v0.15.1-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.15.1/proven_c_book-v0.15.1-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.15.1-ko.pdf) · [en PDF](dist/proven_c_book-v0.15.1-en.pdf)
-- 13부 87장 + 부록 A~E + 찾아보기 — 한국어판 553쪽, 영어판 583쪽
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.16.0/proven_c_book-v0.16.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.16.0/proven_c_book-v0.16.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.16.0/proven_c_book-v0.16.0-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.16.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.16.0-en.pdf)
+- 13부 92장 + 부록 A~E + 찾아보기 — 한국어판 603쪽, 영어판 633쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 어떤 책인가
@@ -44,7 +44,7 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
 | 7부 | **기억** | 널 — 삼형제의 정식 취급 / 포인터의 규칙 — 정렬과 프로버넌스 / 다차원 배열 / 수명과 저장 기간 |
 | 8~9부 | 자료의 모양과 깊은 구석 | 공용체와 표현 / 실수 — 근사의 수학 / **정의되지 않은 동작** |
 | 10부 | 구성 | 전처리기와 번역 단계 / 함수를 값으로 / 선언을 읽는 법 — 두 독법과 `typedef` |
-| 11부 | **표준 라이브러리 정독** | 스트림의 실제 / 신호 `<signal.h>` / 비지역 점프 `<setjmp.h>` / 넘침을 묻는 법 `<stdckdint.h>` / 할당자의 속 |
+| 11부 | **표준 라이브러리 정독** | 스트림의 실제 / 신호 `<signal.h>` / 비지역 점프 `<setjmp.h>` / 로케일 두 장 / 와이드 문자 두 장 / 실무의 유니코드 / 할당자의 속 |
 | 12부 | **proven — 검증된 기본기** | 50년째 출하되는 다섯 가지 버그 / 에러는 값이다 / 할당은 매개변수다 / 세 판으로 짜 보기 — 간이 JSON |
 | 13부 | 닫으며 | 실전의 C / 임베디드의 도구 상자 / 모던 C 총정리 |
 
@@ -53,7 +53,7 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
 
 ## 이 책이 다른 점
 
-- **인쇄된 실행 결과는 전부 실제 출력이다.** 예제 120개를 매 빌드마다
+- **인쇄된 실행 결과는 전부 실제 출력이다.** 예제 131개를 매 빌드마다
   컴파일·실행해 그 출력을 지면에 싣는다(GCC 기준, Clang으로 교차 검증).
   사람이 옮겨 적은 출력은 한 줄도 없다.
 - **주장을 재려고 코드를 돌린다.** "`-O2`에서는 `longjmp` 뒤에 비 `volatile`
@@ -92,7 +92,7 @@ CC=clang scripts/verify-examples.sh     # 다른 컴파일러로 교차 검증
 ```
 dist/        배포물 — PDF(ko·en)와 zip 묶음
 docs/        GitHub Pages 가 서비스하는 HTML 판 (ko/, en/)
-examples/    본문에 실리는 예제 120개 — 전부 검증된 것
+examples/    본문에 실리는 예제 131개 — 전부 검증된 것
 examples-en/ 같은 예제의 영어판 (주석·문자열·출력이 영어)
 scripts/     예제 검증 스크립트
 vendor/      proven 라이브러리 스냅샷 (예제 링크용)
