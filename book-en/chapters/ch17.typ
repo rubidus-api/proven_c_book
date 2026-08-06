@@ -387,7 +387,7 @@ boards with neither screen nor keyboard. The order of attack is roughly this.
   dump in a debugger afterwards and trace the crash site back to source lines.
 + *Narrow by bisection.* Lower the optimisation level (`-O2` → `-O1` → `-O0`) to
   see where behaviour diverges, and halve the version-control history to find
-  when the bug entered (chapter 81's `git bisect`).
+  when the bug entered (chapter 82's `git bisect`).
 + *Make a minimal reproduction.* Reducing the problem to the smallest program
   that reproduces it often exposes the cause by itself, and turns it into
   something you can ask others about.
@@ -503,7 +503,7 @@ that relay (chapter 17). The preparation is done.
 The next chapter is this part's finish and a map: which C compilers, other than
 the gcc and clang we just installed, are in active service in the world
 (chapter 18). What embedded developers carry beside make and git is a wide
-enough subject that it waits until the end of the book (chapter 82).
+enough subject that it waits until the end of the book (chapter 83).
 
 From the part after that, the real study of the language begins — not a list of
 new syntax, but the goal of Part IV: *reading one piece of chapter 15's hello

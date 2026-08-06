@@ -240,7 +240,7 @@ that *a destroyed object is not used again* stands as it is.
 
 == Attaching it to your own project — a minimal Makefile
 
-To avoid typing the two lines above every time, use chapter 81's `make`. Supposing the
+To avoid typing the two lines above every time, use chapter 82's `make`. Supposing the
 library has been put whole into `vendor/proven`, this much suffices.
 
 ```make

@@ -51,27 +51,52 @@
   }
 }
 
+// ── HTML 마크업을 직접 낸다 ──────────────────────────
+// Typst 의 HTML 내보내기를 사후에 훑어 클래스를 붙이던 방식은, 조판 쪽 구조를
+// 조금만 바꿔도 서식이 통째로 사라졌다(72장 사고, 2026-08-06). 그래서 장치는
+// HTML 을 스스로 낸다 — 클래스가 원고에서 결정되므로 깨질 자리가 없다.
+#let _html-box(cls, label, body) = html.elem("div", attrs: (class: "dev " + cls), {
+  if label != none {
+    html.elem("p", attrs: (class: "dev-label"), label)
+  }
+  body
+})
+
 // 인쇄를 위해 채움(fill)을 쓰지 않는다 — 선의 굵기와 모양으로만 구분한다.
-#let _device(title, body, rule, icon) = block(
-  width: 100%,
-  inset: (x: 10pt, y: 8pt),
-  above: 1.05em, below: 1.05em,
-  stroke: rule,
-  breakable: true,
-)[
-  // 상자 안의 글도 본문이다 — 첫 줄 들여쓰기를 본문과 같게 지킨다
-  // (저자 지시 2026-08-06). 표제 줄에 붙는 첫 문단만 들여쓰지 않는다.
-  #set par(first-line-indent: 0em)
-  #if title != none [
-    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
-          size: 0.98em, fill: black)[#if icon != none [#icon. #h(3pt)]#title]
-    #v(4pt)
-  ]
-  #block(width: 100%)[
+#let _indent-body(body) = if _html { body } else {
+  block(width: 100%)[
     #set par(first-line-indent: (amount: 1em, all: true))
     #body
   ]
-]
+}
+
+#let _device(title, body, rule, icon) = if _html {
+  _html-box(
+    if icon == _L.real { "realcase" } else if icon == _L.anti { "antipattern" }
+    else if icon == _L.math { "mathbox" } else if title == _L.recap { "recap" }
+    else { "device" },
+    if title != none {
+      if icon != none { icon + ". " + title } else { title }
+    } else { none },
+    body,
+  )
+} else {
+  block(
+    width: 100%,
+    inset: (x: 10pt, y: 8pt),
+    above: 1.05em, below: 1.05em,
+    stroke: rule,
+    breakable: true,
+  )[
+    #set par(first-line-indent: 0em)
+    #if title != none [
+      #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
+            size: 0.98em, fill: black)[#if icon != none [#icon. #h(3pt)]#title]
+      #v(4pt)
+    ]
+    #_indent-body(body)
+  ]
+}
 
 // ── 장 서두 4종 (RFC-0008 §2) ────────────────────────
 // 넷은 하나의 시각 단위다: 굵은 왼쪽 세로선이 서두 전체를 묶고, 라벨은
@@ -89,50 +114,92 @@
     weight: "bold", size: 1.15em, fill: black, tracking: 0.01em, t,
   )
 ]
-#let _open-block(label, body, first: false) = block(
-  width: 100%,
-  inset: (left: 12pt, right: 2pt, top: if first { 7pt } else { 8pt }, bottom: 8pt),
-  stroke: (left: _open-rule, top: if first { none } else { 0.4pt + rgb("#c8c8c8") }),
-  above: if first { 1.1em } else { 0pt },
-  below: 0pt,
-  breakable: false,
-)[
-  #set par(first-line-indent: (amount: 1em, all: true),
-           leading: 0.85em, spacing: 0.55em)
-  #set block(spacing: 0.55em)
-  #_open-label(label)
-  #body
-]
+#let label-class(label) = {
+  if label == _L.prereq { "prereq" } else if label == _L.back { "deepqa" } else if label == _L.organizer { "organizer" } else if label == _L.questions { "questions" } else { "open-other" }
+}
+
+#let _open-block(label, body, first: false) = if _html {
+  // 본문은 언제나 한 겹으로 감싼다 — 맨 글로 두면 여백 규칙이 걸리지 않아
+  // 칸마다 위쪽 간격이 달라진다(「이 장이 끝나면」 사고, 2026-08-06).
+  html.elem("div", attrs: (class: "dev open " + label-class(label)), {
+    html.elem("p", attrs: (class: "dev-label"), label)
+    html.elem("div", attrs: (class: "open-body"), body)
+  })
+} else {
+  block(
+    width: 100%,
+    inset: (left: 12pt, right: 2pt, top: if first { 7pt } else { 8pt }, bottom: 8pt),
+    stroke: (left: _open-rule, top: if first { none } else { 0.4pt + rgb("#c8c8c8") }),
+    above: if first { 1.1em } else { 0pt },
+    below: 0pt,
+    breakable: false,
+  )[
+    #set par(first-line-indent: (amount: 1em, all: true),
+             leading: 0.85em, spacing: 0.55em)
+    #set block(spacing: 0.55em)
+    #_open-label(label)
+    #body
+  ]
+}
 
 // 3.1 문답 (즉문즉답) — 기본 리듬
 // 3.1 문답 — 문과 답은 *하나의 덩어리*다. 왼쪽 세로선 하나가 둘을 잇고,
 // 질문 줄은 굵은 고딕과 옅은 바탕으로 도드라지게 한다 (저자 지시 2026-08-06).
 #let _qa_rail = _side-rule
-#let _qa(label_q, label_a, q, a) = block(
-  width: 100%, above: 1.25em, below: 1.25em, breakable: true,
-  stroke: (left: _qa_rail), inset: (left: 0pt),
-)[
-  #set par(first-line-indent: (amount: 1em, all: false))
-  // 문과 답은 하나의 덩어리다 — 사이에 빈칸을 두지 않고, 왼쪽 굵은 선
-  // 하나가 둘을 통째로 잇는다 (저자 지시 2026-08-06).
-  #block(width: 100%, inset: (x: 9pt, top: 6pt, bottom: 6pt),
-         above: 0pt, below: 0pt,
-         stroke: (bottom: 0.5pt + rgb("#999999")))[
-    #metadata(q)<qa-q>
-    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 1em)[
-      #label_q. #h(2pt) #q]
+#let _qa(label_q, label_a, q, a) = if _html {
+  html.elem("div", attrs: (class: "qa-box"), {
+    html.elem("div", attrs: (class: "dev qa-q"), {
+      [#metadata(q)<qa-q>]
+      html.elem("p", {
+        html.elem("span", attrs: (class: "dev-label"), label_q + ".")
+        [ ]
+        q
+      })
+    })
+    html.elem("div", attrs: (class: "dev qa-a"), {
+      html.elem("p", {
+        html.elem("span", attrs: (class: "dev-label"), label_a + ".")
+        [ ]
+        a
+      })
+    })
+  })
+} else {
+  block(
+    width: 100%, above: 1.25em, below: 1.25em, breakable: true,
+    stroke: (left: _qa_rail), inset: (left: 0pt),
+  )[
+    #set par(first-line-indent: (amount: 1em, all: false))
+    #block(width: 100%, inset: (x: 9pt, top: 6pt, bottom: 6pt),
+           above: 0pt, below: 0pt,
+           stroke: (bottom: 0.5pt + rgb("#999999")))[
+      #metadata(q)<qa-q>
+      #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 1em)[
+        #label_q. #h(2pt) #q]
+    ]
+    #block(width: 100%, inset: (x: 9pt, top: 7pt, bottom: 2pt), above: 0pt)[
+      #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
+            size: 0.98em, fill: rgb("#444444"))[#label_a.]
+      #h(3pt) #a
+    ]
   ]
-  #block(width: 100%, inset: (x: 9pt, top: 7pt, bottom: 2pt), above: 0pt)[
-    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
-          size: 0.98em, fill: rgb("#444444"))[#label_a.]
-    #h(3pt) #a
-  ]
-]
+}
 #let qa(q, a) = _qa(_L.q, _L.a, q, a)
 
 // 3.2 심화 문답 (장 서두 회고 전용)
 // ② 인출 문답 — 선행 개념을 표시하는 데 그치지 않고 실제로 꺼내 보게 한다
-#let deepqa(q, a) = _open-block(_L.back)[
+#let deepqa(q, a) = _open-block(_L.back, if _html {
+  // HTML: 질문 문단 + 답 칸. 표지 "답." 앞에는 들여쓰기가 붙지 않는다.
+  {
+    html.elem("p", q)
+    html.elem("div", attrs: (class: "qa-a"),
+      html.elem("p", {
+        html.elem("span", attrs: (class: "dev-label"), _L.a + ".")
+        [ ]
+        a
+      }))
+  }
+} else [
   #block(width: 100%)[#q]
   #block(width: 100%, inset: (left: 9pt),
     stroke: (left: 0.6pt + black))[
@@ -140,29 +207,36 @@
     #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
           size: 0.98em, fill: rgb("#3a3a3a"))[#_L.a.] #h(3pt) #a
   ]
-]
+])
 
 // 3.3 오개념 블록: 그럴듯한 생각 → 왜 그럴듯한가 → 실제로는 → 확인
 // 3.3 오개념 — "그럴듯한 생각"이 한눈에 들어와야 교정이 일어난다.
 // 제목(오개념 문장)을 인용부호와 함께 크게·굵게 세우고, 굵은 테두리로 감싼다.
-#let misconception(title, body) = block(
-  width: 100%, above: 1.25em, below: 1.25em, breakable: true,
-  stroke: 0.5pt + rgb("#111111"),
-  inset: 0pt,
-)[
-  #set par(first-line-indent: 0em)
-  #block(width: 100%, inset: (x: 11pt, y: 8pt), below: 0pt,
-         stroke: (bottom: 0.5pt + rgb("#111111")))[
-    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
-          size: 1em, fill: black)[#_L.misc.]
-    #h(4pt)
-    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 1.0em)[#title]
+#let misconception(title, body) = if _html {
+  html.elem("div", attrs: (class: "dev misconception"), {
+    html.elem("p", attrs: (class: "dev-label"), {
+      _L.misc + ". "
+      html.elem("strong", title)
+    })
+    body
+  })
+} else {
+  block(
+    width: 100%, above: 1.25em, below: 1.25em, breakable: true,
+    stroke: 0.5pt + rgb("#111111"),
+    inset: 0pt,
+  )[
+    #set par(first-line-indent: 0em)
+    #block(width: 100%, inset: (x: 11pt, y: 8pt), below: 0pt,
+           stroke: (bottom: 0.5pt + rgb("#111111")))[
+      #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
+            size: 1em, fill: black)[#_L.misc.]
+      #h(4pt)
+      #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold", size: 1.0em)[#title]
+    ]
+    #block(width: 100%, inset: (x: 11pt, y: 9pt), above: 0pt)[#_indent-body(body)]
   ]
-  #block(width: 100%, inset: (x: 11pt, y: 9pt), above: 0pt)[
-    #set par(first-line-indent: (amount: 1em, all: true))
-    #body
-  ]
-]
+}
 
 // 3.4 실제 사례 블록
 #let realcase(title, body) = _device(title, body, (left: _side-rule), _L.real)
@@ -192,40 +266,46 @@
 
 #let demo(path, show-output: true, stdin: false, highlight: none) = {
   // 시연 상자는 1×2 다 — 표제 줄(파일 경로 또는 "실행 결과")과 내용을
-  // 가로선으로 가른다 (저자 지시 2026-08-06).
-  let cell(head, body, rail: false) = block(
-    width: 100%, breakable: true,
-    stroke: 0.5pt + black,   // 소스·입력·출력 모두 같은 가는 실선
-    inset: 0pt,
-  )[
-    #set par(first-line-indent: 0em)
-    #block(width: 100%, inset: (x: 8pt, y: 6pt), above: 0pt, below: 0pt,
-           stroke: (bottom: 0.5pt + black))[#head]
-    #block(width: 100%, inset: (x: 8pt, y: 7pt), above: 0pt, below: 0pt)[#body]
-  ]
+  // 가로선으로 가른다 (저자 지시 2026-08-06). HTML 도 같은 모양으로 낸다.
+  let src = read("/" + path)
+  let inp = if stdin { read("/" + path.replace(".c", ".in")) } else { none }
+  let out = if show-output { read(_out-dir(path) + _rel(path) + ".out") } else { none }
 
-  block(breakable: true, width: 100%)[
-    #cell(
-      text(size: 0.96em, weight: "bold", raw(path)),
-      raw(read("/" + path), lang: "c", block: true),
-    )
-    #if stdin [
-      #cell(
-        text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em,
-             weight: "bold")[#_L.stdin],
-        raw(read("/" + path.replace(".c", ".in")), block: true),
-        rail: true,
-      )
+  if _html {
+    let cell(cls, head, body, lang: none) = html.elem(
+      "div", attrs: (class: "demo " + cls), {
+        html.elem("p", attrs: (class: "demo-head"), head)
+        html.elem("div", attrs: (class: "demo-body"),
+          if lang == none { raw(body, block: true) }
+          else { raw(body, lang: lang, block: true) })
+      })
+    cell("demo-src", raw(path), src, lang: "c")
+    if inp != none { cell("demo-in", _L.stdin, inp) }
+    if out != none { cell("demo-out", _L.output, out) }
+  } else {
+    let cell(head, body) = block(
+      width: 100%, breakable: true,
+      stroke: 0.5pt + black,   // 소스·입력·출력 모두 같은 가는 실선
+      inset: 0pt,
+    )[
+      #set par(first-line-indent: 0em)
+      #block(width: 100%, inset: (x: 8pt, y: 6pt), above: 0pt, below: 0pt,
+             stroke: (bottom: 0.5pt + black))[#head]
+      #block(width: 100%, inset: (x: 8pt, y: 7pt), above: 0pt, below: 0pt)[#body]
     ]
-    #if show-output [
-      #cell(
-        text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em,
-             weight: "bold")[#_L.output],
-        raw(read(_out-dir(path) + _rel(path) + ".out"), block: true),
-        rail: true,
-      )
+    block(breakable: true, width: 100%)[
+      #cell(text(size: 0.96em, weight: "bold", raw(path)),
+            raw(src, lang: "c", block: true))
+      #if inp != none {
+        cell(text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em,
+                  weight: "bold")[#_L.stdin], raw(inp, block: true))
+      }
+      #if out != none {
+        cell(text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em,
+                  weight: "bold")[#_L.output], raw(out, block: true))
+      }
     ]
-  ]
+  }
 }
 
 // 메모리 사물함 도해: 주소 라벨 + 내용 셀 (+ 강조 칸 인덱스)
@@ -273,21 +353,22 @@
 
 // 플랫폼 의존 격리 절: 특정 OS/도구에 묶인 내용은 반드시 이 상자 안에 둔다.
 // 본문 일반론은 이 상자를 건너뛰어도 성립해야 한다.
-#let platform(title, body) = block(
-  width: 100%, inset: (x: 10pt, y: 7pt),
-  stroke: (left: (thickness: 3pt, paint: black, dash: "densely-dotted"),
-           rest: 0.5pt + black),
-  breakable: true,
-)[
-  #set par(first-line-indent: 0em)
-  #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
-        size: 0.98em, fill: black)[#_L.platform. #h(3pt)#title]
-  #v(2pt)
-  #block(width: 100%)[
-    #set par(first-line-indent: (amount: 1em, all: true))
-    #body
+#let platform(title, body) = if _html {
+  _html-box("platform", _L.platform + ". " + title, body)
+} else {
+  block(
+    width: 100%, inset: (x: 10pt, y: 7pt),
+    stroke: (left: (thickness: 3pt, paint: black, dash: "densely-dotted"),
+             rest: 0.5pt + black),
+    breakable: true,
+  )[
+    #set par(first-line-indent: 0em)
+    #text(font: ("Noto Sans CJK KR", "Noto Sans"), weight: "bold",
+          size: 0.98em, fill: black)[#_L.platform. #h(3pt)#title]
+    #v(2pt)
+    #_indent-body(body)
   ]
-]
+}
 
 // ③ 이 장이 끝나면
 #let organizer(body) = _open-block(_L.organizer, body)
@@ -323,7 +404,12 @@
     // 질문이 없으면 서두를 여기서 닫는다
     _open-close
   } else {
-    _open-block(_L.questions)[
+    _open-block(_L.questions, if _html {
+      // HTML 에서도 번호가 보이도록 진짜 목록으로 낸다 (저자 지시 2026-08-06)
+      html.elem("ol", attrs: (class: "qlist"), {
+        for m in qs { html.elem("li", m.value) }
+      })
+    } else [
       #set par(first-line-indent: 0em, leading: 0.85em, spacing: 0.85em)
       #for (i, m) in qs.enumerate() {
         block(width: 100%, inset: (left: 14pt))[
@@ -331,7 +417,7 @@
           #m.value
         ]
       }
-    ]
+    ])
     _open-close
   }
 }

@@ -1,6 +1,6 @@
 {
   "book-en/main.typ": {
-    "ko": "ce71f67c69c6f801"
+    "ko": "a623bc6dc5860e6c"
   },
   "book/appendix/a1-operators.typ": {
     "ko": "481eb282f59184d1"
@@ -12,7 +12,7 @@
     "ko": "495a08635468403d"
   },
   "book/appendix/a4-reading.typ": {
-    "ko": "71e0cb3167ab980e"
+    "ko": "f0995d32bc6abf87"
   },
   "book/appendix/a5-bibliography.typ": {
     "ko": "5e4330e6212aa1ea"
@@ -39,7 +39,7 @@
     "ko": "332649b1a66bbd6f"
   },
   "book/chapters/ch05.typ": {
-    "ko": "71d03cd78e643580"
+    "ko": "57d0e345b1666b50"
   },
   "book/chapters/ch06.typ": {
     "ko": "4a8947ae64134efd"
@@ -57,7 +57,7 @@
     "ko": "0a75cb7f98569e96"
   },
   "book/chapters/ch11.typ": {
-    "ko": "f56abfb86eb9259c"
+    "ko": "ae402d39db242b04"
   },
   "book/chapters/ch12.typ": {
     "ko": "c2a664512b0b95e1"
@@ -75,10 +75,10 @@
     "ko": "06b85711b9198647"
   },
   "book/chapters/ch17.typ": {
-    "ko": "a540dd073b5ab4a6"
+    "ko": "cc8af6db03bc20ce"
   },
   "book/chapters/ch18.typ": {
-    "ko": "1bf6eb56147fa2f1"
+    "ko": "52e1e3990cdc64c4"
   },
   "book/chapters/ch19.typ": {
     "ko": "59c23fa1df24b1c6"
@@ -123,7 +123,7 @@
     "ko": "1d8ccd85174d4cce"
   },
   "book/chapters/ch34.typ": {
-    "ko": "f50ed7bef0709ba8"
+    "ko": "575d0b77a64b3860"
   },
   "book/chapters/ch35.typ": {
     "ko": "90fc8b26ccc3e406"
@@ -135,10 +135,10 @@
     "ko": "c777c251faa23652"
   },
   "book/chapters/ch38.typ": {
-    "ko": "e4ae7d793d4ac31a"
+    "ko": "4c270b0aa1235745"
   },
   "book/chapters/ch39.typ": {
-    "ko": "76297f4f8c3ce63b"
+    "ko": "5caf1ab5da19e617"
   },
   "book/chapters/ch40.typ": {
     "ko": "fca07efd30e3daf7"
@@ -162,7 +162,7 @@
     "ko": "7cdb6498fea6d65f"
   },
   "book/chapters/ch48.typ": {
-    "ko": "8effd85b09cad3a8"
+    "ko": "8fb2035c774501cf"
   },
   "book/chapters/ch49.typ": {
     "ko": "b7c35ffce9584459"
@@ -177,7 +177,7 @@
     "ko": "26f911dbc83406c9"
   },
   "book/chapters/ch53.typ": {
-    "ko": "98f60141860f38cf"
+    "ko": "3abb05e57c75192a"
   },
   "book/chapters/ch54.typ": {
     "ko": "c5136d1dd488b1b0"
@@ -234,7 +234,7 @@
     "ko": "704512a889389cfc"
   },
   "book/chapters/ch72.typ": {
-    "ko": "a24c5093df18d784"
+    "ko": "75d1a1a6e19846f1"
   },
   "book/chapters/ch73.typ": {
     "ko": "799aa9ccdedf1d79"
@@ -260,14 +260,14 @@
   "book/chapters/ch80.typ": {
     "ko": "b96f7e1e22f2e39e"
   },
-  "book/chapters/ch81.typ": {
-    "ko": "0f27d8d51b9387b8"
-  },
   "book/chapters/ch82.typ": {
-    "ko": "3a72d600cf23182b"
+    "ko": "a525308dd6ff098e"
   },
   "book/chapters/ch83.typ": {
-    "ko": "e9d72852da244401"
+    "ko": "a5de0f997b18b2fb"
+  },
+  "book/chapters/ch84.typ": {
+    "ko": "75754766d9ed95d2"
   },
   "book/front/preface.typ": {
     "ko": "762f8fb8cab49ddd"
@@ -276,7 +276,7 @@
     "ko": "d956755948511fb3"
   },
   "book/main.typ": {
-    "ko": "240d0cf299fc0bcf"
+    "ko": "a2b74afb88c47a86"
   },
   "book/parts/part02.typ": {
     "ko": "fe80a25ed1550b5b"

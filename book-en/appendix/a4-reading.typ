@@ -3,18 +3,20 @@
 = Appendix D — Further reading and the standard document
 
 What to read after this book. Before answering, one circumstance of this language must
-be pointed out. *C is a language unusually empty in the shelf right after the
-introductory books.*
+be pointed out. *In C the shelf right after the introductory books is thin — and what
+stands on it is mostly old.*
 
-On the C++ side things are different. Large applications, game engines among them, are
-written in C++ in many places, so above the introductory books intermediate books,
-design books and collections of idioms have piled up layer by layer. C, by contrast, is
-still used in important places (operating systems, firmware, infrastructure), but the
-people working in those places are mostly already skilled. So the market has been left
-with "C for the first time" and "the standard document and source code", and books
-joining the two have been rare. That this book took the trouble to begin from the
-computer itself and come as far as contracts and library design is because it was
-conscious of that empty shelf.
+On the C++ side things are different. Large applications are written in C++ in many
+places, so above the introductory books intermediate books, design books and
+collections of idioms have piled up layer by layer. In C, the books that have long held
+that shelf are mostly classics of the 1990s, written before the changes that came with
+C99 and after. And much of what actually fills the gap is not "intermediate C" at all
+but *systems programming* — Unix system calls, operating systems, computer
+architecture. That is generally what a reader picks up next, so the path onward does
+exist; it simply has to be found rather than followed.
+
+That this book took the trouble to begin from the computer itself and come as far as
+contracts and library design is because it was conscious of that circumstance.
 
 Happily, over the last few years books filling this shelf have been appearing. The
 changes since C11 and the settling of C23 gave a reason to write new books. Below are

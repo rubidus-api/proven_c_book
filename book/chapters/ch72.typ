@@ -230,7 +230,7 @@ $ cc -std=c23 -Wall -Wextra -Werror -Ivendor/proven/include \
 
 == 내 프로젝트에 붙이기 — 최소 Makefile
 
-앞의 두 줄을 매번 손으로 치지 않으려면 81장의 `make`를 쓴다. 라이브러리를
+앞의 두 줄을 매번 손으로 치지 않으려면 82장의 `make`를 쓴다. 라이브러리를
 `vendor/proven`에 통째로 넣어 두었다고 할 때, 이 정도면 충분하다.
 
 ```make

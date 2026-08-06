@@ -266,7 +266,7 @@ Why leave it so loose — because machines really were different.
   data live in entirely separate address spaces. Function pointers have a
   different width from data pointers, and reading a constant out of flash needs
   separate instructions and a separate kind of pointer (AVR's `__flash`, the
-  `PROGMEM` idiom). Chapter 82's embedded story stands on this ground.
+  `PROGMEM` idiom). Chapter 83's embedded story stands on this ground.
 
   *IBM AS/400 (OS/400).* Pointers were 128 bits with a tag inside them, and the
   hardware refused forged ones. Code that converts an address to an integer and

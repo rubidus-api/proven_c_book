@@ -90,7 +90,7 @@ implementation's kindness, not the language's guarantee.
 
 *C++ differs.* In C++ a string literal's type is `const char[N]`, and the first line
 above is *a compile error*. This item belongs in the list of "differences between the
-two languages" seen in chapter 81.
+two languages" seen in chapter 82.
 
 #qa[
   Why did C not attach `const`?
@@ -104,7 +104,7 @@ two languages" seen in chapter 81.
   *the standard is an institution that must protect existing code*, so when "the right
   type" and "code already written" collide it leans towards the latter. C++, first
   standardised in 1998, carried no such burden and could attach `const` from the start
-  (chapter 81's "siblings, not parent and child" is confirmed here too).
+  (chapter 82's "siblings, not parent and child" is confirmed here too).
 
   So discipline stands in for the language. *A pointer at a literal is always declared
   `const char *`.* Then what the type cannot do has been written in by a human, and from

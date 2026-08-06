@@ -137,7 +137,7 @@ practice is not the compiler but *the other tools that handle the file*.
 
   So today's practice is one line — *end a text file with a new-line.* An editor
   setting (add a final new-line automatically), `.editorconfig`'s
-  `insert_final_newline`, and the formatting tools seen in chapter 81 do that work for
+  `insert_final_newline`, and the formatting tools seen in chapter 82 do that work for
   you. The C standard's clause is, in effect, the oldest ground for that practice.
 ]
 
@@ -280,7 +280,7 @@ The last parts remain. Every program so far has been a single file — now it gr
 into several files (chapter 50), we face the layer of preprocessing and
 translation (chapter 51), we learn the terrain of the standard library
 (chapter 55), we treat proven head on (Part XII), and we close the book with the
-practices of modern C (chapter 83).
+practices of modern C (chapter 84).
 
 The next part is the story of *composing* a program. Its first chapter is the
 place we have used only as a six-line convention until now — `main` itself. We see
