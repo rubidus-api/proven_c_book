@@ -123,12 +123,15 @@ figure.tbl { text-align:center; }
   text-indent:0; border-bottom:1px solid var(--fg);
   font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
-.dev.open > p, .dev.open > div { margin:.3rem 0; padding:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
 /* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
 .dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
 .dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
 .dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
-.dev.open > p:last-child, .dev.open > div:last-child { margin-bottom:0; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
 .dev.open .qa-a { border:none; border-left:2px solid var(--muted);
   padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
@@ -363,8 +366,8 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 이웃한 두 블록의 주소 간격: 32 바이트 (1을 요청했는데도)
 
 300000 회 반복
-  매번 malloc + free :  0.0036 초  (회당  12.0 ns)
-  한 번 빌려 재사용   :  0.0006 초  (회당   2.1 ns)
+  매번 malloc + free :  0.0035 초  (회당  11.6 ns)
+  한 번 빌려 재사용   :  0.0006 초  (회당   2.0 ns)
   스택 배열           :  0.0007 초  (회당   2.2 ns)
 
 (합계 114739248 — 계산이 지워지지 않게 쓰는 값)

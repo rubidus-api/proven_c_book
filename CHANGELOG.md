@@ -6,6 +6,12 @@ This project follows Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.10.23] - 2026-08-06
+
+### Fixed
+- 앞 판에서 함께 들어갔어야 할 서두 본문 여백 규칙(`.open-body`)이 빠져 있었다.
+  이제 네 칸의 위·아래 여백이 실제로 같다.
+
 ## [v0.10.22] - 2026-08-06
 
 ### Fixed

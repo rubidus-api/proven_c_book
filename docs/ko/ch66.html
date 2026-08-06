@@ -123,12 +123,15 @@ figure.tbl { text-align:center; }
   text-indent:0; border-bottom:1px solid var(--fg);
   font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
-.dev.open > p, .dev.open > div { margin:.3rem 0; padding:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
 /* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
 .dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
 .dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
 .dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
-.dev.open > p:last-child, .dev.open > div:last-child { margin-bottom:0; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
 .dev.open .qa-a { border:none; border-left:2px solid var(--muted);
   padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
@@ -298,7 +301,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>기대한 값 : 800000
-보호 없음 : 281790  &lt;- 잃어버렸다
+보호 없음 : 288806  &lt;- 잃어버렸다
 원자적    : 800000
 
 atomic_long 은 잠금 없이 되는가? 예
