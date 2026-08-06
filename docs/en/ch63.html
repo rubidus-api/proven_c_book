@@ -86,14 +86,18 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
   font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
   color:var(--muted); }
 /* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
-.demo-src, .demo-out { border:1px solid var(--fg); padding:.55rem .8rem;
+/* 시연 상자는 1×2 다 — 표제 줄(파일 경로 또는 "실행 결과")과 내용을
+   가로선으로 가른다. PDF 와 같은 모양 (저자 지시 2026-08-06). */
+.demo-src, .demo-out { border:1px solid var(--fg); padding:0;
   margin:1.1rem 0; }
-.demo-src > p:first-child { margin:0 0 .35rem; font-family:"D2Coding",monospace;
-  font-size:.88rem; color:var(--muted); }
-.demo-out > p:first-child { margin:0 0 .35rem;
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-  font-size:.92rem; }
-.demo-src pre, .demo-out pre { border:none; margin:0; padding:0; }
+.demo-src > p:first-child, .demo-out > p:first-child {
+  margin:0; padding:.45rem .8rem; border-bottom:1px solid var(--fg);
+  font-weight:700; font-size:.92rem; color:var(--fg); }
+.demo-src > p:first-child { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-src > p:first-child code { font-weight:700; }
+.demo-out > p:first-child { font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo-src pre, .demo-out pre { border:none; border-radius:0; margin:0;
+  padding:.55rem .8rem; }
 .dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
        border-left:3px solid var(--box-rule); border-radius:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */

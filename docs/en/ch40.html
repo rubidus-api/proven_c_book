@@ -86,14 +86,18 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
   font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
   color:var(--muted); }
 /* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
-.demo-src, .demo-out { border:1px solid var(--fg); padding:.55rem .8rem;
+/* 시연 상자는 1×2 다 — 표제 줄(파일 경로 또는 "실행 결과")과 내용을
+   가로선으로 가른다. PDF 와 같은 모양 (저자 지시 2026-08-06). */
+.demo-src, .demo-out { border:1px solid var(--fg); padding:0;
   margin:1.1rem 0; }
-.demo-src > p:first-child { margin:0 0 .35rem; font-family:"D2Coding",monospace;
-  font-size:.88rem; color:var(--muted); }
-.demo-out > p:first-child { margin:0 0 .35rem;
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-  font-size:.92rem; }
-.demo-src pre, .demo-out pre { border:none; margin:0; padding:0; }
+.demo-src > p:first-child, .demo-out > p:first-child {
+  margin:0; padding:.45rem .8rem; border-bottom:1px solid var(--fg);
+  font-weight:700; font-size:.92rem; color:var(--fg); }
+.demo-src > p:first-child { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-src > p:first-child code { font-weight:700; }
+.demo-out > p:first-child { font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo-src pre, .demo-out pre { border:none; border-radius:0; margin:0;
+  padding:.55rem .8rem; }
 .dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
        border-left:3px solid var(--box-rule); border-radius:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
@@ -306,19 +310,19 @@ fresh_count: 1 1 1
     <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>heap2</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
-</code></pre></div><div class="demo-out"><div class="demo-out">Output</div><pre><code>code (the function main)   : 0x55c361a401f1
-read-only string           : 0x55c361a41008
-global (with a value, data): 0x55c361a43028
-global (without one, bss)  : 0x55c361a43030
-static inside a function   : 0x55c361a43034
-heap (malloc 1)            : 0x55c37cf072a0
-heap (malloc 2)            : 0x55c37cf072f0
-stack (a local variable)   : 0x7fffb26ede1c
+</code></pre></div><div class="demo-out"><div class="demo-out">Output</div><pre><code>code (the function main)   : 0x5590abd981f1
+read-only string           : 0x5590abd99008
+global (with a value, data): 0x5590abd9b028
+global (without one, bss)  : 0x5590abd9b030
+static inside a function   : 0x5590abd9b034
+heap (malloc 1)            : 0x5590c15412a0
+heap (malloc 2)            : 0x5590c15412f0
+stack (a local variable)   : 0x7ffe05401f7c
 
 gap between the two heap blocks : +80 bytes
-distance from stack to heap     : about 42.2 TiB (a 64-bit address space is this wide)
+distance from stack to heap     : about 42.4 TiB (a 64-bit address space is this wide)
 
-  local variable one frame deeper : 0x7fffb26eddcf
+  local variable one frame deeper : 0x7ffe05401f2f
   difference from the outer frame : -76 bytes
   => the stack grows toward lower addresses
 </code></pre></div></div><p>The way to read it is <strong>the order, not the values</strong>. From low addresses they line up like this.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>region</strong></th><th><strong>what lives there</strong></th><th><strong>lifetime</strong></th></tr><tr><td>code</td><td>the machine instructions of functions</td><td>the whole program (read-only)</td></tr><tr><td>read-only data</td><td>string literals, <code>const</code> data</td><td>the whole program (writing collapses)</td></tr><tr><td><code>data</code></td><td>globals and <code>static</code>s with an initial value</td><td>the whole program</td></tr><tr><td><code>bss</code></td><td>globals and <code>static</code>s with no (= zero) initial value</td><td>the whole program</td></tr><tr><td>heap</td><td>what <code>malloc</code> gave (chapter 42)</td><td>until freed</td></tr><tr><td>stack</td><td>local variables, parameters, return addresses</td><td>until the function ends</td></tr></table></div><p class="float-caption">Table 40.5</p></figure><p>The example confirmed three things. <strong><code>data</code> and <code>bss</code> sit side by side</strong>, <strong>the heap grows upward above them</strong>, and <strong>the stack grows downward from a far distant high address</strong> (the example’s last three lines stack one more frame and measure that direction).</p><div><div class="qa-box"><div class="dev qa-q"><p class="dev-label">Q</p><p>. What is that strange name <code>bss</code>? And why is it separated from <code>data</code>?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> The name is an abbreviation of a 1950s assembler instruction, <code>Block Started by Symbol</code> — the meaning was forgotten and only the name crossed half a century.</p><p>The reason for separating them is practical. Consider a large global whose <strong>initial value is 0</strong>, such as <code>int table[1000000];</code>. Put it in <code>data</code> and a million zeros go inside the executable, making the file 4 MB bigger. Put it in <code>bss</code> and only <strong>one number saying “fill this much with zeros”</strong> is written in the file, with the actual filling happening when the program starts. So variables in <code>bss</code> get C’s promise that “an uninitialised one is 0” for free — that zero was filled in by the operating system (or, in embedded work, the startup code).</p></div></div></div><div><p>Platform note. How large is the stack — Linux and Windows</p><div><p><strong>The C standard has neither the word “stack” nor any promise about its size.</strong> It fixes only automatic storage duration and leaves where and how to place it to the implementation. So the size is decided by <strong>the operating system and the tools</strong>.</p><ul><li><strong>Linux</strong> — the main thread’s default limit is usually <strong>8 MiB</strong> (check and change it with <code>ulimit -s</code>; this book’s verification machine was 8388608 bytes too). It can be raised if needed, and the stack made for each thread is set separately with <code>pthread_attr_setstacksize</code>.</li><li><strong>Windows</strong> — the default is <strong>1 MiB</strong>. Moreover only the first 4 KiB of it is actually committed, growing as it is used. Change it with the linker option <code>/STACK:reserve[,commit]</code> when building the executable, and for a thread specify it as an argument to <code>CreateThread</code>.</li></ul><p>There is a place where the difference shows in practice. Code that ran fine on Linux dying of stack overflow on Windows — <strong>the same code, a container eight times narrower</strong>. A large local array (<code>char buf[2*1024*1024];</code>) or deep recursion are the candidates. The fuller map, and the circumstances of embedded work, are treated in chapter 69.</p></div></div><h3>40.4 The stack — the ledger of calls</h3><p>The place where automatic variables live has a name — the <strong>stack</strong>. Each time a function is called, a bundle of slots for that call (a stack frame) is laid on top, and when the function ends it is lifted off whole. A frame contains, along with local variables and parameters, <strong>the address to return to</strong> (the return address) — the identity of the “return ledger” whose name was brushed past in chapter 39.</p><p>With the picture in place two things are explained at once. First, why chapter 32′s recursion piles up in layers — because one frame is laid on per call. And recurse too deeply and the stack space runs out and the program collapses (<strong>stack overflow</strong> — the representative symptom of infinite recursion). Second, why chapter 39′s boundary-violation attack is so dangerous — overflow an array on the stack and you can overwrite <strong>the return address of that same frame</strong>, whereupon the function, on finishing, “returns” to a place the attacker chose. One array’s boundary is connected to control of the program.</p><div><div class="dev misconception"><p class="dev-label">A common misconception</p><p>. “The address of a variable inside a function can still be used after the function ends”</p></div><div>The commonest accident right after learning pointers, and the frightening part is that <strong>it appears to work for a while</strong>. When a function ends the frame is lifted, but the bits in that place are not immediately erased, so following a dead variable’s address still reads the old value for a time. Then, the moment another function uses that place as its frame, the value flips — becoming a bug that goes off later, somewhere unrelated. Such an address is called a <strong>dangling pointer</strong>, and the rule is one: <strong>the address of a local variable must not outlive its function.</strong> To send a function’s result out to live longer, there are three ways: use static lifetime, use the next chapter’s dynamic memory, or fill a container the caller provided (chapter 34′s <code>&amp;</code> idiom). Chapter 17′s ASan is also the representative tool for catching this accident at run time.</div></div><div><div class="qa-box"><div class="dev qa-q"><p class="dev-label">Q</p><p>. Are global variables — declared outside functions — of static lifetime too?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>. They are. A variable outside functions has static storage duration and lives for the whole program. Separately from lifetime, though, a question of <strong>visibility</strong> attaches — whether to make it visible in several files or keep it to this one is the subject of chapter 50 (linkage). And the practical advice is an old one: <strong>keep mutable global state to a minimum.</strong> A value that can change anywhere is hard to trace, and in chapter 12′s multicore world it is a source of accidents. A <code>static</code> inside a function has the same property in miniature (the demonstration’s <code>issued</code>), so convenient though it is, the practice is not to overuse it.</p></div></div></div><p>Two places on the map of memory — the stack (automatic) and the static region — are learned. The remaining place is this part’s last: memory whose size is settled at run time and which stays alive as long as you wish — chapter 41′s dynamic memory.</p>
