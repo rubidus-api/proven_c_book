@@ -323,6 +323,28 @@
   }
 }
 
+// ── 이름표–값 목록 (판권의 지은이·연락·저장소 …) ─────
+// ★ grid 는 조판 전용이라 HTML 에서 통째로 사라진다(memrow 와 같은 함정).
+//   여기서는 HTML 이면 <dl> 로 낸다.
+#let metalist(..pairs) = {
+  let items = pairs.pos()
+  if _html {
+    html.elem("dl", attrs: (class: "metalist"), {
+      for (k, v) in items {
+        html.elem("dt", k)
+        html.elem("dd", v)
+      }
+    })
+  } else {
+    grid(
+      columns: (auto, 1fr),
+      row-gutter: 0.62em,
+      column-gutter: 0.9em,
+      ..items.map(((k, v)) => (text(fill: rgb("#555555"))[#k], v)).flatten(),
+    )
+  }
+}
+
 // ── 색인 ─────────────────────────────────────────────
 // #idx("용어") 를 본문에 두면 그 자리의 쪽 번호가 색인에 실린다.
 // 화면에는 아무것도 그리지 않는다(metadata).

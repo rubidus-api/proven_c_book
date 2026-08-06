@@ -1,23 +1,37 @@
 = Preface
 
-This book is an introduction to proven, a C library I wrote, and it is also a
-piece of promotion for it.
+This book is an introduction to proven, a C library I wrote, and it is also an
+introduction to the C language. There is a reason for that awkward double
+stance.
 
-But before you can recommend a tool, you have to show why it is needed. The
-problems proven addresses live in the subtle corners of C — the limits of
-representation, the rules of conversion, the lifetime of storage, the areas the
-standard declines to promise anything about. To someone who has not seen those
-corners, proven looks like an unnecessary contraption. So I decided to explain
-the problems first, and the library afterwards. That is why most of this book
-is written in plain standard C, and why proven does not appear until Part XII.
-Having read the earlier chapters, you may well decide you do not need proven.
-That is a fine outcome too.
+Before you can recommend a tool, you have to show why it is needed. The problems
+proven addresses live in the subtle corners of C — the limits of representation,
+the rules of conversion, the lifetime of storage, the areas the standard
+declines to promise anything about. To those who have not seen those corners,
+proven looks like an unnecessary contraption. To those who know them well, on
+the other hand, their own ways of handling them already exist, and there is
+little reason to reach for proven.
 
-The upshot is that this book *is also an introduction to the C language.* It was
+So I decided to explain the problems first and the library afterwards. It was
 written with a first-time reader in mind, so it begins with how a computer is
 built and goes on through types and flow, pointers and arrays, the lifetime of
-storage and the standard library. Even if proven turns out not to be what the
-reader needs, the earlier parts should be of use in themselves.
+storage and the standard library. Even if proven turns out not to be what you
+need, the earlier parts should be of use in themselves. Having read them you may
+well decide you do not need proven — and that is a fine outcome too. It will
+have helped you solve problems in C either way.
+
+C has a long history, and in it are all sorts of scars and contortions and
+serious deliberations, each an attempt to get past the real limits and
+difficulties of its time. Tracing those marks has been an interesting and
+enjoyable thing to do, so adding my own effort and my own marks to them was the
+natural next step. That proven exists, and that this book exists, comes less
+from necessity than from the affection of someone who likes C; I will not
+pretend otherwise. That the affection has spilled into rather more explanation
+and rather more pages than strictly needed — for that I apologise to the reader
+in advance.
+
+My thanks go in advance to everyone who reads this. That someone spends their
+time sharing and discussing my work is always a happy thing.
 
 == What this book gives, and what it does not
 
@@ -75,27 +89,3 @@ does not appear in this book*.
 
 Errors will remain nonetheless. Those are mine, not the tool's. If you find
 one, please tell me.
-
-== Copyright and contact
-
-The text (the prose and figures of this book) is licensed under
-*CC BY-NC-SA 4.0*. You may share and adapt it freely with attribution, but not
-for commercial purposes, and adaptations must carry the same license.
-
-The example code is licensed under the *MIT license*. Anything you learn to
-write here, you may take into your own programs without restriction.
-
-Contact is by email. Error reports and correction requests are better made
-through the GitHub repository — they leave a record, and other readers can see
-them.
-
-What I accept is *error reports only.* Incorrect statements, examples that do
-not match, typos, stale information — tell me and I will gratefully fix them.
-Manuscript contributions, on the other hand — a new chapter or section written
-and sent in — I do not accept. The structure and voice of this book are better
-kept under one person's judgement, and I would rather keep the copyright
-situation simple.
-
-#v(0.2cm)
-#link("mailto:rubidus@gmail.com")[rubidus\@gmail.com] \
-#link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]

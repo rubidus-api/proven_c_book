@@ -1,7 +1,7 @@
 // Proven C Book — English edition. Build: scripts/build-book-en.sh
 #import "../book/lib.typ": *
 
-#let book-version = "v0.10.8"
+#let book-version = "v0.10.9"
 #let book-updated = "2026-08-06"
 #let book-status = "draft"
 #let book-repo = "https://github.com/rubidus-api/proven_c_book"
@@ -61,84 +61,6 @@
       Written for readers who are just starting out with C.
     ]
   ])
-]
-
-// ── 판권 — 한국어판과 같은 내용을 영어로 (book/main.typ 의 대응면) ──────
-#page(numbering: none)[
-  #v(1fr)
-  #set text(size: 10pt)
-  #set par(justify: false, first-line-indent: 0em, leading: 0.85em, spacing: 0.95em)
-  #show link: it => text(fill: black, it)
-
-  #block(width: 100%)[
-    #text(size: 11pt, weight: "bold", font: ("Noto Sans", "Noto Sans CJK KR"))[
-      Proven C Book
-    ]
-    #linebreak()
-    #text(size: 10pt)[An Introduction to Modern C with the Proven C Library]
-  ]
-
-  #v(0.45cm)
-
-  #grid(
-    columns: (5.6em, 1fr),
-    row-gutter: 0.62em,
-    column-gutter: 0.8em,
-    text(fill: rgb("#555555"))[author], [rubidus],
-    text(fill: rgb("#555555"))[contact], link("mailto:rubidus@gmail.com")[rubidus\@gmail.com],
-    text(fill: rgb("#555555"))[repository], link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book],
-    text(fill: rgb("#555555"))[edition], [#book-version — #book-status],
-    text(fill: rgb("#555555"))[last updated], [#book-updated],
-  )
-
-  #v(0.5cm)
-  #line(length: 100%, stroke: 0.5pt + rgb("#999999"))
-  #v(0.45cm)
-
-  #block(width: 100%)[
-    *The text* (the writing and the figures) is under CC BY-NC-SA 4.0. You may
-    share and adapt it freely so long as you credit the source; commercial use is
-    not permitted, and adaptations must carry the same licence.
-    #linebreak()
-    #text(size: 10pt, fill: rgb("#555555"))[https://creativecommons.org/licenses/by-nc-sa/4.0/]
-  ]
-
-  #v(0.35cm)
-
-  #block(width: 100%)[
-    *The example code* is under the MIT licence. What you learn here can go into
-    your own programs without any constraint.
-  ]
-
-  #v(0.35cm)
-
-  #block(width: 100%)[
-    For questions about the content, error reports and correction requests, please
-    use the GitHub repository, so that they are recorded and visible to others;
-    for one-to-one contact, please use the email address. Thanks are due in advance
-    to anyone who points out a typo or a mistake, or asks for an explanation where
-    one is missing — that someone spends their time sharing and discussing my work
-    is always a happy thing. Contributions of code or prose, however, are received
-    in spirit only, to keep the copyright situation simple.
-  ]
-
-  #v(0.35cm)
-
-  #block(width: 100%)[
-    Every demonstration in this book prints output really obtained by compiling and
-    running the code. The typesetting is done with Typst.
-  ]
-
-  #v(0.5cm)
-  #line(length: 100%, stroke: 0.5pt + rgb("#999999"))
-  #v(0.45cm)
-
-  #block(width: 100%)[
-    *This book keeps being corrected.* What you are reading is the edition numbered
-    above; corrections and additions follow it. *The newest edition and the record of
-    what changed are on the author's GitHub* — if you hold an old copy, look there
-    first. Reports of errors and suggestions are received in the same place.
-  ]
 ]
 
 #let parts = (
@@ -206,6 +128,42 @@
 
 #set heading(numbering: none)
 #include "front/preface.typ"
+
+// Copyright and contact live with the preface (author's instruction, 2026-08-06).
+#[
+  #set par(justify: false, first-line-indent: 0em, leading: 0.85em, spacing: 0.95em)
+  #show link: it => text(fill: black, it)
+
+  == Copyright and contact
+
+  #metalist(
+    ([author], [rubidus]),
+    ([contact], link("mailto:rubidus@gmail.com")[rubidus\@gmail.com]),
+    ([repository], link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]),
+    ([edition], [#book-version — #book-status]),
+    ([last updated], [#book-updated]),
+  )
+
+  #v(0.45cm)
+
+  *The text* — Creative Commons Attribution-NonCommercial-ShareAlike 4.0
+  International (CC BY-NC-SA 4.0). You may share and adapt it freely so long as
+  you credit the source; commercial use is not permitted, and adaptations must
+  carry the same licence.
+  #linebreak()
+  #text(size: 10pt, fill: rgb("#555555"))[https://creativecommons.org/licenses/by-nc-sa/4.0/]
+
+  *The example code* — the MIT licence. Take it and use it freely. The proven
+  library used in the examples is under its own licence (MIT at present).
+
+  Every demonstration in this book prints output really obtained by compiling
+  and running the code. The typesetting is done with Typst.
+
+  This book keeps being corrected. What you are reading is the edition numbered
+  above; corrections and additions follow it. The newest edition and the record
+  of changes are on the author's GitHub. If you are holding an older copy, look
+  there first. Error reports and suggestions are received in the same place.
+]
 
 = A note on this translation
 

@@ -2,7 +2,7 @@
 #import "lib.typ": *
 
 // 이 책의 판 번호. 갱신할 때마다 여기만 고친다 (VERSION.md 와 함께).
-#let book-version = "v0.10.8"
+#let book-version = "v0.10.9"
 #let book-date = "2026년 8월"
 #let book-updated = "2026-08-06"          // 최종 수정일
 #let book-status = "초안(draft)"           // 판의 성격
@@ -62,84 +62,6 @@
       입문서를 막 뗀 중급자까지입니다.
     ]
   ])
-]
-
-// ── 판권 ──────────────────────────────────────────────
-#page(numbering: none)[
-  #v(1fr)
-  #set text(size: 10pt)
-  // 판권면은 짧은 단락이 여럿이라 행간을 조금 넉넉히 준다
-  #set par(justify: false, first-line-indent: 0em, leading: 0.85em, spacing: 0.95em)
-  #show link: it => text(fill: black, it)
-
-  #block(width: 100%)[
-    #text(size: 11pt, weight: "bold", font: ("Noto Sans CJK KR",))[
-      Proven C Book
-    ]
-    #linebreak()
-    #text(size: 10pt)[프로븐 C 라이브러리와 함께하는 현대적 C 입문]
-  ]
-
-  #v(0.45cm)
-
-  #grid(
-    columns: (4.6em, 1fr),
-    row-gutter: 0.62em,
-    column-gutter: 0.8em,
-    text(fill: rgb("#555555"))[지은이], [rubidus],
-    text(fill: rgb("#555555"))[연락], link("mailto:rubidus@gmail.com")[rubidus\@gmail.com],
-    text(fill: rgb("#555555"))[저장소], link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book],
-    text(fill: rgb("#555555"))[판], [#book-version · #book-date — #book-status],
-    text(fill: rgb("#555555"))[최종 수정], [#book-updated],
-  )
-
-  #v(0.5cm)
-  #line(length: 100%, stroke: 0.5pt + rgb("#999999"))
-  #v(0.45cm)
-
-  #block(width: 100%)[
-    *본문*(이 책의 글과 그림)은 CC BY-NC-SA 4.0을 따른다. 출처를 밝히면
-    자유롭게 공유하고 고칠 수 있으나, 영리 목적으로는 이용할 수 없고, 고친
-    결과물에도 같은 라이선스를 적용해야 한다.
-    #linebreak()
-    #text(size: 10pt, fill: rgb("#555555"))[https://creativecommons.org/licenses/by-nc-sa/4.0/]
-  ]
-
-  #v(0.35cm)
-
-  #block(width: 100%)[
-    *예제 코드*는 MIT 라이선스를 따른다. 이 책에서 배운 코드는 아무 제약 없이
-    자기 프로그램에 가져다 쓸 수 있다.
-  ]
-
-  #v(0.35cm)
-
-  #block(width: 100%)[
-    내용에 대한 질문, 오류 신고와 수정 요청은 기록 및 공유를 위해 GitHub
-    저장소를 이용해 주기를 바라며, 일대일 연락은 이메일 주소로 하기를 바란다.
-    오타 또는 잘못된 내용에 대한 지적과 설명이 더 필요한 부분에 대한 요청에
-    대해서, 미리 감사의 뜻을 표하고자 한다. 누군가가 시간을 들여 내 저작물을
-    같이 공유하고 의견을 나눠준다는 것은 언제나 기쁜 일이다. 다만 저작권
-    문제를 피하고 단순화하기 위하여 코드 또는 문서 기여는 그 마음만 받고자
-    한다.
-  ]
-
-  #v(0.35cm)
-
-  #block(width: 100%)[
-    이 책의 모든 코드 시연은 실제로 컴파일·실행해 얻은 출력을 그대로 인쇄한
-    것이다. 조판은 Typst로 했다.
-  ]
-
-  #v(0.5cm)
-  #line(length: 100%, stroke: 0.5pt + rgb("#999999"))
-  #v(0.45cm)
-
-  #block(width: 100%)[
-    *이 책은 계속 고쳐진다.* 지금 읽는 것은 위 번호의 판이고, 그 뒤로도 오류
-    수정과 내용 보강이 이어진다. *가장 새로운 판과 그동안의 변경 내역은 저자의
-    GitHub에 있다* — 오래된 사본을 들고 있다면 그쪽을 먼저 확인하는 편이 좋다.
-  ]
 ]
 
 // ── 본문 구성 ────────────────────────────────────────
@@ -209,6 +131,44 @@
 
 #set heading(numbering: none)
 #include "front/preface.typ"
+
+// 저작권·연락은 머리말과 한 자리에 둔다 (저자 지시 2026-08-06).
+// 판 번호는 여기서만 쓰므로 book-version 을 그대로 인용한다.
+#[
+  #set par(justify: false, first-line-indent: 0em, leading: 0.85em, spacing: 0.95em)
+  #show link: it => text(fill: black, it)
+
+  == 저작권과 연락처
+
+  #metalist(
+    ([지은이], [rubidus]),
+    ([연락], link("mailto:rubidus@gmail.com")[rubidus\@gmail.com]),
+    ([저장소], link("https://github.com/rubidus-api/proven_c_book")[github.com/rubidus-api/proven_c_book]),
+    ([판], [#book-version — #book-status]),
+    ([최종 수정], [#book-updated]),
+  )
+
+  #v(0.45cm)
+
+  *본문* — 크리에이티브 커먼즈 저작자표시-비영리-동일조건변경허락 4.0 국제
+  라이선스(CC BY-NC-SA 4.0). 출처를 밝히면 자유롭게 공유하고 고칠 수 있으나,
+  영리 목적 이용은 허용되지 않으며, 고친 결과물에는 같은 라이선스를 적용해야
+  합니다.
+  #linebreak()
+  #text(size: 10pt, fill: rgb("#555555"))[https://creativecommons.org/licenses/by-nc-sa/4.0/]
+
+  *예제 코드* — MIT 라이선스. 자유롭게 가져다 쓰실 수 있습니다. 예제에서
+  사용한 proven 라이브러리는 그 자체의 라이선스(현재는 MIT 라이선스)를
+  따릅니다.
+
+  이 책의 모든 코드 시연은 실제로 컴파일·실행해 얻은 출력을 그대로 인쇄한
+  것입니다. 조판은 Typst로 했습니다.
+
+  이 책은 계속 고쳐집니다. 지금 읽고 계신 것은 위 번호의 판이고, 그 뒤로도
+  오류 수정과 내용 보강이 이어집니다. 가장 새로운 판과 그동안의 변경 내역은
+  저자의 GitHub에 있습니다. 오래된 사본을 들고 계시다면 그쪽을 먼저 확인하시는
+  편이 좋습니다. 오류 신고와 수정 제안도 같은 자리에서 받습니다.
+]
 #set heading(numbering: "1.1")
 #counter(heading).update(0)
 #pagebreak(weak: true)
