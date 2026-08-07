@@ -246,6 +246,42 @@ def fig_viz(L):
 
 
 
+# ── F8. 구조체의 패딩 (43·44장) ───────────────────────────────
+def fig_padding(L):
+    w, h = 760, 250
+    cell = 46
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+
+    def row(y, name, layout, size_note):
+        x0 = 120
+        out.append(text(x0 - 12, y + 30, name, size=12, weight="bold", anchor="end"))
+        for i, kind in enumerate(layout):
+            x = x0 + i * cell
+            out.append(box(x, y, cell, 44, sw=1.6))
+            if kind == ".":
+                # 빗금은 패턴 대신 선으로 긋는다 — 어떤 뷰어에서도 그대로 나온다
+                for k in range(1, 5):
+                    dy = k * 44 / 5
+                    out.append(f'<line x1="{x + 3}" y1="{y + dy + 8}" '
+                               f'x2="{x + cell - 3}" y2="{y + dy - 8}" '
+                               f'stroke="#111" stroke-width="0.9" opacity="0.55"/>')
+            else:
+                out.append(text(x + cell / 2, y + 28, kind, size=13, weight="bold"))
+            out.append(text(x + cell / 2, y - 6, str(i), size=10, fill="#666"))
+        out.append(text(x0 + len(layout) * cell + 14, y + 28, size_note,
+                        size=12, anchor="start"))
+
+    row(64, L["loose"], ["a", ".", ".", ".", "b", "b", "b", "b", "c", ".", ".", "."],
+        L["loose_size"])
+    row(160, L["tight"], ["b", "b", "b", "b", "a", "c", ".", "."], L["tight_size"])
+
+    out.append(text(w / 2, 236, L["note"], size=11.5))
+    out.append(TAIL)
+    return "".join(out)
+
+
+
 FIGS = {
     "regions": (fig_regions, {
         "ko": dict(title="한 프로그램의 기억 지도", names=["코드", "정적 구역", "힙 (창고)", "스택 (작업대)"],
@@ -299,6 +335,16 @@ FIGS = {
                    v2="int *p", v2v="→", v3="char *buf", v3v="→",
                    block="one block of eight slots", arrow="points at",
                    note="values are boxes and pointers are arrows — chapter 34's \u201cpoints at\u201d, drawn."),
+    }),
+    "padding": (fig_padding, {
+        "ko": dict(title="같은 멤버, 순서만 바꾸면 크기가 준다",
+                   loose="loose", tight="tight",
+                   loose_size="12바이트", tight_size="8바이트",
+                   note="빗금이 패딩이다. int 는 4의 배수 자리에 놓여야 하고, 끝에도 다음 원소를 위한 자리가 붙는다."),
+        "en": dict(title="the same members reordered take less room",
+                   loose="loose", tight="tight",
+                   loose_size="12 bytes", tight_size="8 bytes",
+                   note="the hatched cells are padding: an int must sit at a multiple of four, and the tail keeps the next element aligned."),
     }),
     "pointer-parts": (fig_pointer_parts, {
         "ko": dict(title="포인터 값에 붙어 다니는 것", value="포인터 값", value_sub="복사·비교할 수 있다",
