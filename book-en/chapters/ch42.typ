@@ -1,296 +1,308 @@
 #import "../../book/lib.typ": *
 
-= Dynamic memory
+= Lifetime and storage duration
 
 #prereq(
-  ([chapter 41, Lifetime and storage duration], [the limits of automatic lifetime]),
-  ([chapter 2, The regions of memory], [the warehouse (the heap)]),
+  ([chapter 24, Declaring and defining functions], [while a function runs]),
+  ([chapter 2, The regions of memory], [the stack and the static region]),
 )
 
 #deepqa[
-  Chapter 41 taught automatic lifetime (dies with the function) and static
-  lifetime (lives for the whole program). Then memory that is "sized according to
-  input and must live only as long as needed" — in which of the two does it go?
+  Chapter 24 taught scope — the range in which a name is *visible*. But
+  chapter 41 used the phrase "the return ledger of a function call". Are a name
+  ceasing to be visible and that memory *vanishing* the same thing?
 ][
-  Neither fits. We need memory whose size is settled at run time and whose
-  lifetime is decided by the program's logic — so there is a third place:
-#idx("heap")  *allocated storage duration*, the warehouse commonly called the
-  *heap*. The rule of this place differs decisively from the other two — *the
-  programmer directly orders its birth and its death.*
+  They are different, and that distinction is this chapter's skeleton. *Scope* is
+  a translation-time notion (where that name may be used) and *lifetime* is a
+  run-time notion (from when to when that memory is valid). Usually they travel
+  together, but the moment they diverge is an accident — the name has gone and
+  the address remains (see the misconception box below).
 ]
 
 #organizer[
-  Part VII's last place — memory whose size is settled at run time and which is
-#idx("dynamic allocation")  kept alive as long as you wish. `malloc` and `free`,
-  the notion of ownership, and this world's three representative accidents (leak,
-  double free, use after free). The map of memory is completed here.
+  We draw the map of memory — where a variable lives, when it is born and when it
+#idx("stack")  dies. Automatic and static lifetime, the ledger called the stack,
+  and the accident to be most careful of in this part (keeping the address of
+  something that has vanished).
 ]
 
 #chapter-questions()
 
-== Borrowing, and giving back
+== The standard's four axes — storage duration, scope, linkage, storage class
 
-The syntax is two functions. `malloc(number of bytes)` borrows that many
-contiguous slots from the warehouse and returns their starting address, and
-`free(address)` gives back what was borrowed.
+Let us set the terms out formally here. The C standard defines *four mutually
+independent properties* for names and objects, and lumping them together
+guarantees confusion later (especially over static's two faces).
 
-#demo("examples-en/ch42/dyn.c")
+#idx("storage duration")#idx("scope")#idx("linkage")
+#dtable(
+  columns: 3,
+  [*standard term*], [*what it fixes*], [*a notion of when*],
+  [*storage duration*], [*from when to when* the object exists], [run time],
+  [*scope*], [*where* that name may be used], [translation time],
+  [*linkage*], [whether it is *the same thing* as that name elsewhere], [translation and link time],
+  [*storage-class specifier*], [*how* the three above are written], [syntax],
+)
 
-Three practices are stamped into the demonstration.
+The last line matters. `static`, `extern`, `auto`, `register`, `typedef`, and
+C11's `_Thread_local` (C23's `thread_local`) are words occupying *one slot*
+syntactically, and which of them you write fixes the three properties above.
+There is only one such slot per declaration, so `static extern int x;` is a
+syntax error.
 
-*Compute the size as `sizeof *pointer`.* `count * sizeof *scores` is "the size of
-one element × the count", asking for the size through *the target* rather than a
-type name — so the line needs no fixing later if the type changes.
+=== Storage duration — four
 
-*Borrowing can fail.* `malloc` returns a null pointer when the warehouse is short
-— so *check before writing* (chapter 35's rule becomes practice here). Write
-without checking and it is a null dereference and collapse.
+#dtable(
+  columns: 3,
+  [*storage duration*], [*born when, dies when*], [*how it is made*],
+  [automatic], [on entering a block ~ on leaving it], [an ordinary declaration inside a block],
+  [static], [before the program starts ~ when it ends], [a file-scope declaration, or `static`],
+  [thread], [when that thread starts ~ when it ends], [`thread_local` (C11)],
+  [allocated], [`malloc` ~ `free`], [chapter 44],
+)
 
-*Give back what you borrowed.* Forget `free` and those slots stay tied up until
-the program ends — a *memory leak*. It does not show in a short program, but in a
-long-running server it seeps away little by little and eventually eats the
-machine.
+The standard's word is not *dynamic* but *allocated storage duration*. What is
+commonly called "dynamic allocation" is this, and this book follows the common
+usage while recording the standard term here.
 
-#misconception[
-  "Memory from `calloc` comes with its pointers initialised to null"
-][
-  What `calloc` promises is one thing: *every bit is set to zero.* That is not
-  the same as "a null pointer" or "0.0" — chapter 35's distinction between
-  spelling and representation catches you here too.
+=== Scope — four
 
-  #dtable(
-    columns: 2,
-    [*What `calloc` promises*], [*What it does not*],
-    [Every bit of the memory is zero], [That those bits mean a null pointer],
-    [The same bits as an integer 0], [That they mean the floating value 0.0 (with IEEE 754 they happen to)],
-  )
+The range in which a name is visible. The C standard divides it into four.
 
-  On today's mainstream machines all three coincide, so no accident follows.
-  Still, *code that allocates an array of pointers with `calloc` and says "they
-  are all null, so a check is enough" is standing on that coincidence* — better
-  to know it. Where portability matters, fill them with `nullptr` in a loop
-  after allocating, or mark "empty" by something other than zero in the first
-  place.
-]
+#dtable(
+  columns: 3,
+  [*scope*], [*visible how far*], [*example*],
+  [block], [from the declaration to the end of that block], [a local variable inside a function],
+  [file], [from the declaration to the end of that translation unit], [a declaration outside functions],
+  [function], [the whole of that function], [*label names only* (the targets of `goto`)],
+  [function prototype], [inside the prototype's parentheses], [parameter names written in a prototype],
+)
 
-== The alignment of the address returned — because it does not know what will go in
+The third will look unfamiliar: it is the special case that a label is visible
+throughout the function wherever inside it it is written. The fourth fixes how
+far a name written only in a prototype, as in `void f(int count);`, lives — it
+disappears outside the parentheses, so a prototype's parameter names are
+effectively *comments*.
 
-#demo("examples-en/ch42/alloc_cost.c")
-
-The question the first part of the example answers is this. You borrowed a mere
-one byte with `malloc(1)` — may that address sit just anywhere?
-
-It may not. Because `malloc` hands out the place *without knowing what will go
-in*. A `double` may be placed there, or a pointer, or a large struct. So the
-standard promises this — *an address returned by the `malloc` family satisfies
-the alignment suitable for any basic type.* The name given to that "strictest
-basic alignment" is `max_align_t`, and on this machine it is 16 bytes (chapter
-6's alignment rule made flesh).
-
-Two things follow.
-
-*First, borrowing small does not mean the place is small.* In the example eight
-one-byte borrowings gave neighbouring blocks 32 bytes apart. It is because of the
-space left over to satisfy alignment and the management information (size,
-status) the allocator attaches to each block. It means *a program that borrows
-countless small pieces uses far more memory than it asked for*, and that is why
-the arena and pool approaches we see later were born (chapter 80).
-
-*Second, stricter alignment must be requested separately.* SIMD instructions or
-hardware DMA sometimes require 64-byte or 4096-byte alignment, and for that there
-is C11's `aligned_alloc(alignment, size)`. Two rules must be kept — the alignment
-must be a power of two, and in C11 *the size had to be a multiple of the
-alignment* (C23 lifted that restriction). What it returns is still given back
-with `free`.
-
-#platform[
-  The name of aligned allocation differs by platform
-][
-  The standard's `aligned_alloc` came in relatively recently (C11), and before
-  that each platform used a different function — POSIX's `posix_memalign`,
-  Windows's `_aligned_malloc` (and its partner `_aligned_free`; on Windows this
-  must not be given back with `free`). When you meet these names in old code, read
-  them as "an allocation with a stated alignment."
-]
-
-== The price of two cheap-looking lines — why allocation is expensive
-
-The latter part of the example repeats the same work three ways, 300,000 times,
-and measures the time. Borrowing and giving back every time is noticeably slower
-than reuse or the stack — a little over ten nanoseconds per round on this
-machine. The value itself differs by machine and allocator, but the fact of a
-*two-orders-of-magnitude difference* is the same everywhere.
-
-Why is it expensive? `malloc` looks like the one line "give me slots" but is in
-fact one round trip to *the warehouse management office*.
-
-+ *Find a free piece of the right size.* The allocator manages returned pieces in
-  lists by size and picks a suitable one when a request comes. Searching the
-  list, cutting a large piece when needed, putting the remainder back in the list
-  — all of it is data-structure manipulation.
-+ *Write management information.* The size and status must be written per block
-  so that `free` can later know "how many bytes this was." So allocation involves
-  *writing*.
-+ *Ask the operating system when short.* When the warehouse is empty it obtains
-  more address space with a system call (`brk` or `mmap`). That means going into
-  the kernel and back, which is far more expensive. Fortunately it does not happen
-  often — the allocator takes plenty and cuts it up.
-+ *With several threads, locks appear.* The warehouse ledger is a shared resource,
-  so contention between threads slows it (chapter 76's story of races). That is
-  why modern allocators keep a small cache per thread.
-+ *The cache is cold.* A freshly obtained address is usually not in the cache, so
-  the first access is slow (chapter 11's ladder). Conversely a reused buffer is
-  already up in the cache — half the reason the reuse side is fast in the example
-  is here.
-
-So a practical rule follows. *Do not allocate inside a hot loop.* Borrow once in
-advance and reuse, put what has a known size on the stack, or borrow many at once
-and cut them up. The last is the arena, and chapter 80 and Part XII are that
-story.
-
-#misconception[
-  "`free` gives memory back to the operating system"
-][
-  Mostly it does not. `free` is *writing in the allocator's ledger that "this
-  piece may be used again"*, not returning it to the operating system. So it is
-  normal for a program's memory usage in the task manager to stay the same after
-  releasing a large piece of data — the allocator is holding it for the next
-  request (large blocks are sometimes returned).
-
-  This fact explains two things. First, the common misunderstanding of "I freed
-  the memory, so why does it not go down?" Second, the phenomenon of a
-  long-running server holding memory *even with no leak* — pieces scattered so
-  that a large lump cannot be formed: *fragmentation*. Chapter 80 faces it head
-  on.
-]
-
-== Borrowing in one dimension, using it as two
-
-Chapter 37 showed real multidimensional arrays such as `int m[3][4]`. But when
-the size is settled at run time that syntax cannot be used, and so the commonest
-shape in practice is *to borrow one run and read it along two axes*.
-
-The heart of it is one line of arithmetic. Borrow `rows × cols` slots at once and
-find slot `(i, j)` as `i * cols + j`. That is exactly the layout of a real
-two-dimensional array (row-major, chapter 37) — so the performance is the same
-and the cache behaves the same way (chapter 11).
-
-#demo("examples-en/ch42/flat2d.c")
-
-Three things need care here.
-
-*First, do not scatter the subscript arithmetic by hand.* Write
-`p[i * cols + j]` all over the code and the moment one place forgets `cols` it
-quietly reads a different slot. Shut it inside one macro, as the example does,
-and there is one place to fix. When writing the macro, keep chapter 54's rules —
-*wrap every argument in parentheses*, and raise the product to `size_t` to avoid
-overflow.
+*The inner hides the outer.* When the same name overlaps, the inner block's wins.
 
 ```c
-#define AT(p, cols, i, j)  ((p)[(size_t)(i) * (size_t)(cols) + (size_t)(j)])
+int n = 1;                  /* file scope */
+void f(void) {
+    int n = 2;              /* block scope — hides the outer n */
+    { int n = 3; use(n); }  /* here it is 3 */
+    use(n);                 /* here it is 2 */
+}
 ```
 
-*Second, the size computation itself can overflow.* `rows * cols * sizeof(int)`
-is a product of three numbers, easy to overflow, and an overflow means *borrowing
-a small vessel and using it as a large array* — the worst kind of accident. The
-example checks with `ckd_mul` (chapters 49 and 77) first and does not even attempt
-the allocation if it overflows.
+=== Linkage — three
 
-*Third, nail down the order of rows and columns in the documentation.*
-`AT(g, cols, 1, 2)` and `AT(g, cols, 2, 1)` are different slots. Half the mistakes
-come from here, so name the parameters `rows` and `cols` plainly and write the
-order down.
+It fixes whether the same name appearing in several places *refers to one and the
+same object*. It is the groundwork of chapter 52 (several files).
+
+#dtable(
+  columns: 3,
+  [*linkage*], [*meaning*], [*how it comes about*],
+  [external], [the same thing *across* translation units], [the default at file scope, `extern`],
+  [internal], [the same thing *only within this translation unit*], [`static` at file scope],
+  [none], [separate for each declaration], [ordinary variables in a block, parameters, `typedef` names],
+)
+
+#antipattern[
+  Reading static's two faces as the same thing
+][
+  The same word does entirely different jobs depending on *where it is written*.
+  Seen through the standard's terms there is no room for confusion.
+
+  ```c
+  static int counter;        /* file scope: makes the linkage *internal* (the duration was static anyway) */
+
+  void f(void) {
+      static int calls;      /* block scope: makes the storage duration *static* (there is no linkage) */
+  }
+  ```
+
+  The first `static` *does not change the lifetime* — a file-scope variable has
+  static storage duration regardless. What it changes is the *linkage*, and it
+  means "this name cannot be used outside this file." The second `static` *has
+  nothing to do with linkage* — a local name has none to begin with. What it
+  changes is the *storage duration*.
+
+  Memorise it in one sentence: *`static` at file scope hides; `static` at block
+  scope keeps alive.*
+]
+
+=== The remaining storage-class specifiers
+
+- *`extern`* — a declaration saying "this name is defined somewhere else." Being
+  an announcement rather than a definition, it takes no memory (chapter 16's
+  linker joins the real thing).
+- *`auto`* — the old word stating automatic storage duration. Being the default
+  anyway, nobody wrote it, and *C23 recycled the slot for type inference* — write
+  `auto x = 1 + 2;` and the type comes from the initialiser.
+- *`register`* — the old request "in a register if possible" (chapter 10). It has
+  no effect on today's optimisation, but one rule survives: *the address of a
+  `register` variable cannot be taken* (`&x` becomes an error).
+- *`typedef`* — syntactically it goes in this slot but does something entirely
+  different. Instead of a variable it makes a *type name* (treated in
+  chapter 58).
+- *`thread_local`* — makes an object that is separate per thread (chapter 76). It
+  is the one exception that may be written together with static storage duration
+  (`static thread_local`).
 
 #qa[
-  Could an array of pointers (`int **`) not be used, keeping the `m[i][j]` syntax?
+  And what is the difference between a "declaration" and a "definition"?
 ][
-  It can, and it is a common method — allocate each row separately and hold their
-  addresses in an array. The price is high, though.
+  A *definition* is a declaration that makes the real thing. For a variable it
+  takes memory; for a function it writes the body. A mere *declaration* is only an
+  announcement that "a name of this type exists somewhere."
 
-  *The memory is scattered.* With rows far apart, chapter 11's locality breaks and
-  the cache hit rate falls. *There are many allocations.* One `malloc` per row,
-  that many failure paths, and freeing must run in reverse just as many times.
-  *There is one more indirection.* `m[i][j]` follows an address twice.
+  ```c
+  extern int total;      /* declaration — takes no memory */
+  int total = 0;         /* definition — the real thing appears here */
+  ```
 
-  And decisively, *`int[3][4]` and `int **` are different types.* Pass the name of
-  a real two-dimensional array to a function taking `int **` and it is a compile
-  error; force it through with a cast and it is outside the contract — because,
-  as chapter 37 showed, `int m[3][4]` decays to `int (*)[4]`, not to `int **`.
-  This misunderstanding is the most frequent accident with multidimensional
-  arrays.
-
-  In short — *a real two-dimensional array when the size is fixed; a
-  one-dimensional allocation plus a subscript macro (or a VLA parameter,
-  chapter 37) when it is settled at run time*; and `int **` when the rows have
-  genuinely different lengths (a ragged array).
+  The rule is one: *a definition once in the whole program, declarations as often
+  as needed.* Break it and you get the linker errors seen in chapter 16
+  (`undefined reference` when there is no definition, `multiple definition` when
+  there are two or more). The practice of putting declarations in a header and the
+  definition in one source file comes from here (chapter 52).
 ]
 
-== Ownership — who is responsible for giving it back
+== Two lifetimes
 
-The address `malloc` gave can be copied into several variables and can travel
-between functions. And yet `free` must be called *exactly once* — from which
-comes a core discipline of C programming: fixing one subject that at any moment
-holds the responsibility for releasing that memory, the notion of *ownership*. C
-has no syntax that enforces ownership — so ownership is expressed *in comments,
-names and conventions* ("this function transfers ownership of the returned
-pointer", and so on). That modern languages lifted ownership into the type system
-(Rust's ownership, C++'s smart pointers) is the result of making the machine
-enforce this discipline — the concern of the neighbouring languages seen in
-chapter 1 arose exactly here.
+#idx("storage duration")A local variable in C has, by default, *automatic
+storage duration* — born on entering a block, dead on leaving. That parameters
+and local variables are born anew on each function call was the ground on which
+chapter 33's recursion stood.
 
-#realcase[
-  The three representative accidents — leak, double free, use after free
+Attach `static` and it becomes *static storage duration* — born once before the
+program starts and living until it ends (initialised exactly once too). The
+demonstration contrasts the two.
+
+#demo("examples-en/ch42/life.c")
+
+`next_ticket`'s `issued` keeps its value between calls and grows 1, 2, 3, while
+`fresh_count`'s `n` is born anew on each call and is always 1. Both are
+"variables inside a function" and yet their lifetimes differ. (Note in addition
+that the demonstration split the calls into separate statements — exactly
+chapter 33's rule that piling side-effecting calls into one expression leaves the
+evaluation order unspecified.)
+
+== The map of memory — the regions with our own eyes
+
+At this point let us see in one picture how a program's memory is actually laid
+out. Below are addresses printed directly on this book's verification machine.
+
+#demo("examples-en/ch42/regions.c")
+
+The way to read it is *the order, not the values*. From low addresses they line
+up like this.
+
+#dtable(
+  columns: 3,
+  [*region*], [*what lives there*], [*lifetime*],
+  [code], [the machine instructions of functions], [the whole program (read-only)],
+  [read-only data], [string literals, `const` data], [the whole program (writing collapses)],
+  [`data`], [globals and `static`s with an initial value], [the whole program],
+  [`bss`], [globals and `static`s with no (= zero) initial value], [the whole program],
+  [heap], [what `malloc` gave (chapter 44)], [until freed],
+  [stack], [local variables, parameters, return addresses], [until the function ends],
+)
+
+The example confirmed three things. *`data` and `bss` sit side by side*, *the
+heap grows upward above them*, and *the stack grows downward from a far distant
+high address* (the example's last three lines stack one more frame and measure
+that direction).
+
+#qa[
+  What is that strange name `bss`? And why is it separated from `data`?
 ][
-  Accidents with dynamic memory come with three faces. A *leak* is forgetting to
-  give back — a slowly fatal disease. A *double free* is calling `free` twice on
-  the same address, which wrecks the warehouse ledger so that every allocation
-  after it is contaminated. The most dangerous is *use after free* — continuing to
-  use the address of a slot that was given back. It is chapter 41's dangling
-  pointer reproduced in the heap, and since the warehouse soon hands that slot to
-  another request, *an attacker can put their own data in that place*. In the
-  lists of severe vulnerabilities of browsers and kernels, use-after-free is a top
-  fixture even today, which is why systems programming as a whole has moved in the
-  direction of "let the language enforce ownership." The defence in C is
-  discipline plus tools — the practice of assigning `nullptr` to a pointer right
-  after `free`, and chapter 17's sanitizers.
+  The name is an abbreviation of a 1950s assembler instruction, `Block Started by Symbol` — the meaning was forgotten and only the name crossed half a century.
 
-  Neither is a cure-all, though. Assigning `nullptr` stops reuse and double free
-  *through that one variable* only; any other alias holding the same address is
-  left as it was — take it as a local defence for when there are no aliases.
-  ASan catches use-after-free and double free very well, but detecting leaks
-  needs LeakSanitizer to be on with it, and that depends on the platform and the
-  settings (on a default build for Linux x86-64 the two usually come together).
+  The reason for separating them is practical. Consider a large global whose
+  *initial value is 0*, such as `int table[1000000];`. Put it in `data` and a
+  million zeros go inside the executable, making the file 4 MB bigger. Put it in
+  `bss` and only *one number saying "fill this much with zeros"* is written in the
+  file, with the actual filling happening when the program starts. So variables in
+  `bss` get C's promise that "an uninitialised one is 0" for free — that zero was
+  filled in by the operating system (or, in embedded work, the startup code).
+]
+
+#platform[
+  How large is the stack — Linux and Windows
+][
+  *The C standard has neither the word "stack" nor any promise about its size.* It
+  fixes only automatic storage duration and leaves where and how to place it to
+  the implementation. So the size is decided by *the operating system and the
+  tools*.
+
+  - *Linux* — the main thread's default limit is usually *8 MiB* (check and change
+    it with `ulimit -s`; this book's verification machine was 8388608 bytes too).
+    It can be raised if needed, and the stack made for each thread is set
+    separately with `pthread_attr_setstacksize`.
+  - *Windows* — the default is *1 MiB*. Moreover only the first 4 KiB of it is
+    actually committed, growing as it is used. Change it with the linker option
+    `/STACK:reserve[,commit]` when building the executable, and for a thread
+    specify it as an argument to `CreateThread`.
+
+  There is a place where the difference shows in practice. Code that ran fine on
+  Linux dying of stack overflow on Windows — *the same code, a container eight
+  times narrower*. A large local array (`char buf[2*1024*1024];`) or deep
+  recursion are the candidates. The fuller map, and the circumstances of embedded
+  work, are treated in chapter 80.
+]
+
+== The stack — the ledger of calls
+
+The place where automatic variables live has a name — the *stack*. Each time a
+function is called, a bundle of slots for that call (a stack frame) is laid on
+top, and when the function ends it is lifted off whole. A frame contains, along
+with local variables and parameters, *the address to return to* (the return
+address) — the identity of the "return ledger" whose name was brushed past in
+chapter 41.
+
+With the picture in place two things are explained at once. First, why
+chapter 33's recursion piles up in layers — because one frame is laid on per
+call. And recurse too deeply and the stack space runs out and the program
+collapses (*stack overflow* — the representative symptom of infinite recursion).
+Second, why chapter 41's boundary-violation attack is so dangerous — overflow an
+array on the stack and you can overwrite *the return address of that same frame*,
+whereupon the function, on finishing, "returns" to a place the attacker chose.
+One array's boundary is connected to control of the program.
+
+#misconception[
+  "The address of a variable inside a function can still be used after the
+  function ends"
+][
+  The commonest accident right after learning pointers, and the frightening part
+  is that *it appears to work for a while*. When a function ends the frame is
+  lifted, but the bits in that place are not immediately erased, so following a
+  dead variable's address still reads the old value for a time. Then, the moment
+  another function uses that place as its frame, the value flips — becoming a bug
+  that goes off later, somewhere unrelated. Such an address is called a *dangling
+  pointer*, and the rule is one: *the address of a local variable must not
+  outlive its function.* To send a function's result out to live longer, there are
+  three ways: use static lifetime, use the next chapter's dynamic memory, or fill
+  a container the caller provided (chapter 35's `&` idiom). Chapter 17's ASan is
+  also the representative tool for catching this accident at run time.
 ]
 
 #qa[
-  Is it then best to avoid dynamic memory as far as possible?
+  Are global variables — declared outside functions — of static lifetime too?
 ][
-  That really is the first strategy, and the reason this book has come this far
-  without `malloc` — data of known size is fastest and safest kept in automatic
-  variables (the stack), where there is nothing to release and the three accidents
-  are sealed off at the source. In embedded and safety-critical fields, conventions
-  banning dynamic allocation outright are common. But data whose size is settled at
-  run time (a list the user gave, the contents of a file) needs the warehouse in
-  the end — and then the practical answer is to make ownership clear, check with
-  tools, and use well-made components (of the family that manages allocation and
-  boundaries together, like chapter 40's proven).
+  They are. A variable outside functions has static storage duration and lives for
+  the whole program. Separately from lifetime, though, a question of *visibility*
+  attaches — whether to make it visible in several files or keep it to this one is
+  the subject of chapter 52 (linkage). And the practical advice is an old one:
+  *keep mutable global state to a minimum.* A value that can change anywhere is
+  hard to trace, and in chapter 12's multicore world it is a source of accidents.
+  A `static` inside a function has the same property in miniature (the
+  demonstration's `issued`), so convenient though it is, the practice is not to
+  overuse it.
 ]
 
-== Closing Part VII
-
-The map of memory is complete — on the ladder of registers and caches
-(chapter 11) sit C's three storage durations (automatic, static, dynamic), and
-pointers travel over them. We got the concept in chapter 34, the rules in
-chapters 35–36, contiguous memory and strings in chapters 37–39, a safe component
-in chapter 40, and lifetime and the warehouse in chapters 41–42. We have gone
-once round the place where C's power and its danger live together.
-
-We have seen dynamic memory's syntax, discipline and price. How an allocator
-actually manages the warehouse, what alternative allocators and alternative
-standard libraries are widely used today, and what map a program's memory is laid
-out on in an operating system and in an embedded chip are treated in two chapters
-at the end of Part XI (chapters 79 and 80).
-
-The next part is short but long deferred — the structs and unions put off in
-Part V with "declarations that make types come after we have a memory model."
-That condition is now met.
+Two places on the map of memory — the stack (automatic) and the static region —
+are learned. The remaining place is this part's last: memory whose size is
+settled at run time and which stays alive as long as you wish — chapter 43's
+dynamic memory.

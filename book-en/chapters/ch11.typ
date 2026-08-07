@@ -158,7 +158,7 @@ large part by "on which rung of the ladder the thing you need is found."
   the difference runs from several-fold to tens of times. The gap produced by the
   order of two lines of code cannot be explained without knowing that memory is a
   ladder — and you will see such a measurement as an example in this book
-  (chapter 31).
+  (chapter 32).
 ]
 
 #qa[
@@ -230,7 +230,7 @@ again. That one device makes several things possible.
   and a page is really copied only when someone tries to write to it.
 - *Lazy allocation.* When `malloc` hands over a large block, physical memory is
   not attached yet; the first touch raises a page fault and attaches it then
-  (we meet this again in chapter 42).
+  (we meet this again in chapter 43).
 
 === Protection — why a null dereference usually dies at once
 
@@ -246,12 +246,12 @@ Each page carries permission bits: read, write, execute. Three things follow.
   practice of "leaving address zero empty".
 
 #qa[
-  Then is the wide gap in chapter 41's "map of addresses" not a waste?
+  Then is the wide gap in chapter 42's "map of addresses" not a waste?
 ][
   No — because *virtual* address space is close to free. A region with no
   mapping in the page table uses not one byte of physical memory. That is why
   today's programs place the stack and the heap far apart and let them grow
-  freely. When chapter 41's demonstration shows terabytes between stack and heap,
+  freely. When chapter 42's demonstration shows terabytes between stack and heap,
   it does not mean that much memory is in use: it means *that many numbers have
   been left between them*.
 ]
@@ -269,11 +269,11 @@ Each page carries permission bits: read, write, execute. Three things follow.
 
 #platform("The world without any of this")[
   Virtual memory is a story about *having an operating system and an MMU*. The
-  small microcontrollers of chapter 93 have no MMU. An address is a physical
+  small microcontrollers of chapter 94 have no MMU. An address is a physical
   address, one program owns the whole machine, and a null dereference does not
   die but quietly damages whatever sits at address zero. That the same C code
   travels between these two worlds is this language's difficulty and its use
-  (we meet it again in chapter 90).
+  (we meet it again in chapter 91).
 ]
 
 What a C programmer should take from this layer is three sentences. *Numbers are

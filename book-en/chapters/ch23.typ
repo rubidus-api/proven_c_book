@@ -16,7 +16,7 @@
   attach a human-readable name to them." The numbers (addresses) are managed by
   the compiler and we call by name — a name is a human's nickname for an
   address. This chapter teaches how to make that name; meeting the real address
-  behind the nickname again is Part VII (chapter 34).
+  behind the nickname again is Part VII (chapter 35).
 ]
 
 #organizer[
@@ -58,7 +58,7 @@ year later.
 first value in when you declare.* The slot of a variable declared without
 initialisation holds whatever rubbish bits happened to be left there
 (chapter 5 — a slot is always full of something), and reading that is a
-representative path to an accident. Formal treatment is in chapter 40, but the
+representative path to an accident. Formal treatment is in chapter 41, but the
 habit starts now.
 
 == Assignment — the side effect that changes state
@@ -88,7 +88,7 @@ variable's *state*.
   (the old value) and the `x` on the left is *the place to put it* (the slot) —
   this distinction, the same name read as a value or as a location depending on
   its position, is a fundamental of reading C. Incidentally, the real comparison
-  asking "are they equal?" is handled by a different symbol (`==`, chapter 29) —
+  asking "are they equal?" is handled by a different symbol (`==`, chapter 30) —
   the symbols were separated precisely because of this confusion.
 ]
 
@@ -116,7 +116,7 @@ change." This book's examples follow that instinct.
   least this much" and leaves the concrete size to the platform — in today's
   mainstream environments 32 bits is the de facto standard. Chapter 7's 8-bit and
   16-bit containers, and the types for "when you want the size pinned down
-  exactly" (`int32_t` and the like), are organised in chapter 26 when the whole
+  exactly" (`int32_t` and the like), are organised in chapter 27 when the whole
   family of integer types is introduced. In this part `int` alone is enough — by
   the spiral principle, the family reunion happens when it is needed.
 ]

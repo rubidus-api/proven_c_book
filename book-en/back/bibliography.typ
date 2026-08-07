@@ -14,10 +14,10 @@ as cases in the body. How to obtain the standard document is in appendix D.
   9899:1990 (C89/C90) — for checking back through the editions. Drafts N2176, N1570,
   N1256.
 - IEEE 754 — the standard for floating-point arithmetic (the ground of chapters 8 and
-  47).
+  48).
 - The Unicode Standard — character sets, encodings and normalisation (chapter 9).
 - POSIX (IEEE Std 1003.1) — the system interfaces outside standard C (the background of
-  chapter 89).
+  chapter 90).
 
 == The language's history
 
@@ -31,20 +31,20 @@ as cases in the body. How to obtain the standard document is in appendix D.
 == The incidents this book cites
 
 - The Ariane 5 flight 501 accident report (1996) — the failure a conversion error
-  called down (chapter 28).
+  called down (chapter 29).
 - Apple's "goto fail" TLS validation defect (CVE-2014-1266) — a branch without braces
-  (chapter 30).
-- The Morris internet worm (1988) — a buffer overflow through `gets` (chapters 39 and
-  61, and the incident mentioned in appendix D's van der Linden entry).
+  (chapter 31).
+- The Morris internet worm (1988) — a buffer overflow through `gets` (chapters 40 and
+  62, and the incident mentioned in appendix D's van der Linden entry).
 - The mass discovery of format string vulnerabilities (1999–2000) — wu-ftpd and others
-  (chapters 58 and 61).
+  (chapters 59 and 62).
 - Denial of service using hash collisions (many web frameworks, 2011) and the
   algorithmic complexity attack paper (2003) — cases of a data structure's worst case
-  becoming a security problem (chapters 81 and 88).
+  becoming a security problem (chapters 82 and 89).
 - The Debian OpenSSL random number defect (CVE-2008-0166) — predictable keys
-  (chapter 89).
+  (chapter 90).
 - The Linux kernel's adoption of `-fno-strict-aliasing` and removal of VLAs (2018) —
-  compromises of reality (chapters 13, 17 and 37).
+  compromises of reality (chapters 13, 17 and 38).
 
 == Tools and libraries
 

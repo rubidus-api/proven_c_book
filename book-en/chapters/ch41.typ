@@ -1,308 +1,169 @@
 #import "../../book/lib.typ": *
 
-= Lifetime and storage duration
+= Safe input — blocking overflow, handling failure
 
 #prereq(
-  ([chapter 24, Declaring and defining functions], [while a function runs]),
-  ([chapter 2, The regions of memory], [the stack and the static region]),
+  ([chapter 25, Input], [the danger of input]),
+  ([chapter 40, Strings], [a string only marks its end]),
 )
 
 #deepqa[
-  Chapter 24 taught scope — the range in which a name is *visible*. But
-  chapter 40 used the phrase "the return ledger of a function call". Are a name
-  ceasing to be visible and that memory *vanishing* the same thing?
+  Chapter 40's `gets` was expelled for not taking the container's size, and
+  chapter 25's `fgets` is safe because it takes one. Then does "taking the size"
+  alone solve the whole safety problem of input?
 ][
-  They are different, and that distinction is this chapter's skeleton. *Scope* is
-  a translation-time notion (where that name may be used) and *lifetime* is a
-  run-time notion (from when to when that memory is valid). Usually they travel
-  together, but the moment they diverge is an accident — the name has gone and
-  the address remains (see the misconception box below).
+  Only half of it. Passing the size blocks *overflow*, but input has a second
+  problem — *the content cannot be trusted* (chapter 25). You expect a number and
+  letters arrive; you expect a short line and a long one arrives; and a malicious
+  counterpart deliberately crafts input aimed at the boundary (chapter 22's
+  format-string attack was a taste).
+
+  Safe input is the sum of [blocking overflow + *handling failure explicitly*].
+  Chapters 25 and 40 built the first half, so this chapter builds the second.
 ]
 
 #organizer[
-  We draw the map of memory — where a variable lives, when it is born and when it
-#idx("stack")  dies. Automatic and static lifetime, the ledger called the stack,
-  and the accident to be most careful of in this part (keeping the address of
-  something that has vanished).
+  Chapter 25 foreshadowed "why safe input is difficult", and chapters 35 and 40
+  taught the roots of that danger (the boundary, NUL termination). This chapter
+#idx("parsing input")  finishes the dissection of the accident and gathers *how to handle a failed parse*
+  into five disciplines. They can be built in standard C alone, and the libraries
+  met later stand on them.
 ]
 
 #chapter-questions()
 
-== The standard's four axes — storage duration, scope, linkage, storage class
+== Dissecting the accident — the epidemic called the boundary violation
 
-Let us set the terms out formally here. The C standard defines *four mutually
-independent properties* for names and objects, and lumping them together
-guarantees confusion later (especially over static's two faces).
+Combine chapter 38's boundary rule with chapter 40's NUL termination and the most
+expensive accident pattern in C's history assembles itself. Input longer than the
+container overwrites neighbouring memory (a boundary violation) — and if what was
+overwritten happens to be *the return ledger of a function call* (whose identity
+we see in the next chapter), an attacker seizes the program's flow of execution
+with input alone. That is the substance of the buffer overflow attack, an epidemic
+running unbroken from the Morris worm (1988, chapter 40) to today's security
+advisories. The statistics are lopsided too — in the major security bodies' lists
+of "most dangerous software weaknesses", the boundary-violation family has been a
+fixture at the top for decades.
 
-#idx("storage duration")#idx("scope")#idx("linkage")
-#dtable(
-  columns: 3,
-  [*standard term*], [*what it fixes*], [*a notion of when*],
-  [*storage duration*], [*from when to when* the object exists], [run time],
-  [*scope*], [*where* that name may be used], [translation time],
-  [*linkage*], [whether it is *the same thing* as that name elsewhere], [translation and link time],
-  [*storage-class specifier*], [*how* the three above are written], [syntax],
-)
+Because C decided *not* to check bounds at run time (chapter 38), the defence has
+to be built in layers — functions that take a size (`fgets`), warnings and
+sanitizers (chapter 17), and *the discipline of the parsing code itself.* That
+last layer is this chapter's subject.
 
-The last line matters. `static`, `extern`, `auto`, `register`, `typedef`, and
-C11's `_Thread_local` (C23's `thread_local`) are words occupying *one slot*
-syntactically, and which of them you write fixes the three properties above.
-There is only one such slot per declaration, so `static extern int x;` is a
-syntax error.
+== How do the standard tools report failure
 
-=== Storage duration — four
-
-#dtable(
-  columns: 3,
-  [*storage duration*], [*born when, dies when*], [*how it is made*],
-  [automatic], [on entering a block ~ on leaving it], [an ordinary declaration inside a block],
-  [static], [before the program starts ~ when it ends], [a file-scope declaration, or `static`],
-  [thread], [when that thread starts ~ when it ends], [`thread_local` (C11)],
-  [allocated], [`malloc` ~ `free`], [chapter 43],
-)
-
-The standard's word is not *dynamic* but *allocated storage duration*. What is
-commonly called "dynamic allocation" is this, and this book follows the common
-usage while recording the standard term here.
-
-=== Scope — four
-
-The range in which a name is visible. The C standard divides it into four.
+First, gather how the tools already in hand announce a failure. That they are all
+different is itself this chapter's starting point.
 
 #dtable(
   columns: 3,
-  [*scope*], [*visible how far*], [*example*],
-  [block], [from the declaration to the end of that block], [a local variable inside a function],
-  [file], [from the declaration to the end of that translation unit], [a declaration outside functions],
-  [function], [the whole of that function], [*label names only* (the targets of `goto`)],
-  [function prototype], [inside the prototype's parentheses], [parameter names written in a prototype],
+  [*Function*], [*How you know it succeeded*], [*Where it catches you*],
+  [`fgets`], [It returns a non-null pointer], [*Whether the line was cut* must be checked separately — by looking for `\n` at the end],
+  [`scanf`, `sscanf`], [It returns *how many conversions succeeded*], [You do not know where it stopped. Code that ignores the count is common],
+  [The `strtol` family], [You look at `endptr` and `errno` together], [Three things must be read together — the return value, `endptr` and `errno`],
+  [`atoi`], [There is no way to know], [Failure is indistinguishable from "read a zero". Not used],
 )
 
-The third will look unfamiliar: it is the special case that a label is visible
-throughout the function wherever inside it it is written. The fourth fixes how
-far a name written only in a prototype, as in `void f(int count);`, lives — it
-disappears outside the parentheses, so a prototype's parameter names are
-effectively *comments*.
+The `strtol` family has the soundest contract of these, but using it correctly
+means checking *three things at once* — which is why practice does not call it
+directly but *wraps* it. That wrapping is this chapter's five disciplines.
 
-*The inner hides the outer.* When the same name overlaps, the inner block's wins.
+== Five disciplines for handling a failed parse
+
+#demo("examples/ch41/parse.c")
+
+The listing's `parse_int` puts all five into one function. One at a time.
+
+=== 1. Return failure as a value
+
+Return "did it succeed" and "what is the value" *kept apart*. Return only a value,
+as `atoi` does, and there is no room to express failure; report a count, as `scanf`
+does, and *what* failed is not preserved.
 
 ```c
-int n = 1;                  /* file scope */
-void f(void) {
-    int n = 2;              /* block scope — hides the outer n */
-    { int n = 3; use(n); }  /* here it is 3 */
-    use(n);                 /* here it is 2 */
-}
+struct parse_i64 { bool ok; long long value; const char *rest; const char *why; };
 ```
 
-=== Linkage — three
+Returning a struct by value may look costly, but a struct this size usually rides
+in a couple of registers (chapter 45). *Writing failure into the type* is worth far
+more than that.
 
-It fixes whether the same name appearing in several places *refers to one and the
-same object*. It is the groundwork of chapter 51 (several files).
+=== 2. Let the compiler speak when a check is forgotten
 
-#dtable(
-  columns: 3,
-  [*linkage*], [*meaning*], [*how it comes about*],
-  [external], [the same thing *across* translation units], [the default at file scope, `extern`],
-  [internal], [the same thing *only within this translation unit*], [`static` at file scope],
-  [none], [separate for each declaration], [ordinary variables in a block, parameters, `typedef` names],
-)
+Attach C23's `[[nodiscard]]` and *code that throws the return value away gets a
+warning.*
 
-#antipattern[
-  Reading static's two faces as the same thing
-][
-  The same word does entirely different jobs depending on *where it is written*.
-  Seen through the standard's terms there is no room for confusion.
+```c
+[[nodiscard]] static struct parse_i64 parse_int(const char *text);
+```
 
-  ```c
-  static int counter;        /* file scope: makes the linkage *internal* (the duration was static anyway) */
+This moves "you must check" out of the documentation and into *the compiler's job.*
+A rule a person has to remember is eventually forgotten, and the place it is
+forgotten is exactly the place the accident happens.
 
-  void f(void) {
-      static int calls;      /* block scope: makes the storage duration *static* (there is no linkage) */
-  }
-  ```
+=== 3. Say how far it read
 
-  The first `static` *does not change the lifetime* — a file-scope variable has
-  static storage duration regardless. What it changes is the *linkage*, and it
-  means "this name cannot be used outside this file." The second `static` *has
-  nothing to do with linkage* — a local name has none to begin with. What it
-  changes is the *storage duration*.
+`strtol`'s `endptr` is the good precedent. Return *where parsing stopped* as well
+and two things become possible — carrying on (the listing's `10,20,30` sum), and
+pointing a person at where it went wrong ("it stopped at the third character").
 
-  Memorise it in one sentence: *`static` at file scope hides; `static` at block
-  scope keeps alive.*
-]
+=== 4. Do not count truncation as success
 
-=== The remaining storage-class specifiers
+This is the most frequently broken discipline. Return "it did not fit, so I cut it
+to size" as a success and what follows is looking up a file under a truncated name
+and connecting to a truncated address.
 
-- *`extern`* — a declaration saying "this name is defined somewhere else." Being
-  an announcement rather than a definition, it takes no memory (chapter 16's
-  linker joins the real thing).
-- *`auto`* — the old word stating automatic storage duration. Being the default
-  anyway, nobody wrote it, and *C23 recycled the slot for type inference* — write
-  `auto x = 1 + 2;` and the type comes from the initialiser.
-- *`register`* — the old request "in a register if possible" (chapter 10). It has
-  no effect on today's optimisation, but one rule survives: *the address of a
-  `register` variable cannot be taken* (`&x` becomes an error).
-- *`typedef`* — syntactically it goes in this slot but does something entirely
-  different. Instead of a variable it makes a *type name* (treated in
-  chapter 57).
-- *`thread_local`* — makes an object that is separate per thread (chapter 75). It
-  is the one exception that may be written together with static storage duration
-  (`static thread_local`).
+The listing's `copy_line` *does nothing and returns failure* when the text will not
+fit. That is the lesson of the long-standing problem of `strncpy` not reporting
+truncation (chapter 62).
 
-#qa[
-  And what is the difference between a "declaration" and a "definition"?
-][
-  A *definition* is a declaration that makes the real thing. For a variable it
-  takes memory; for a function it writes the body. A mere *declaration* is only an
-  announcement that "a name of this type exists somewhere."
+=== 5. On failure, touch no output
 
-  ```c
-  extern int total;      /* declaration — takes no memory */
-  int total = 0;         /* definition — the real thing appears here */
-  ```
-
-  The rule is one: *a definition once in the whole program, declarations as often
-  as needed.* Break it and you get the linker errors seen in chapter 16
-  (`undefined reference` when there is no definition, `multiple definition` when
-  there are two or more). The practice of putting declarations in a header and the
-  definition in one source file comes from here (chapter 51).
-]
-
-== Two lifetimes
-
-#idx("storage duration")A local variable in C has, by default, *automatic
-storage duration* — born on entering a block, dead on leaving. That parameters
-and local variables are born anew on each function call was the ground on which
-chapter 32's recursion stood.
-
-Attach `static` and it becomes *static storage duration* — born once before the
-program starts and living until it ends (initialised exactly once too). The
-demonstration contrasts the two.
-
-#demo("examples-en/ch41/life.c")
-
-`next_ticket`'s `issued` keeps its value between calls and grows 1, 2, 3, while
-`fresh_count`'s `n` is born anew on each call and is always 1. Both are
-"variables inside a function" and yet their lifetimes differ. (Note in addition
-that the demonstration split the calls into separate statements — exactly
-chapter 32's rule that piling side-effecting calls into one expression leaves the
-evaluation order unspecified.)
-
-== The map of memory — the regions with our own eyes
-
-At this point let us see in one picture how a program's memory is actually laid
-out. Below are addresses printed directly on this book's verification machine.
-
-#demo("examples-en/ch41/regions.c")
-
-The way to read it is *the order, not the values*. From low addresses they line
-up like this.
-
-#dtable(
-  columns: 3,
-  [*region*], [*what lives there*], [*lifetime*],
-  [code], [the machine instructions of functions], [the whole program (read-only)],
-  [read-only data], [string literals, `const` data], [the whole program (writing collapses)],
-  [`data`], [globals and `static`s with an initial value], [the whole program],
-  [`bss`], [globals and `static`s with no (= zero) initial value], [the whole program],
-  [heap], [what `malloc` gave (chapter 43)], [until freed],
-  [stack], [local variables, parameters, return addresses], [until the function ends],
-)
-
-The example confirmed three things. *`data` and `bss` sit side by side*, *the
-heap grows upward above them*, and *the stack grows downward from a far distant
-high address* (the example's last three lines stack one more frame and measure
-that direction).
-
-#qa[
-  What is that strange name `bss`? And why is it separated from `data`?
-][
-  The name is an abbreviation of a 1950s assembler instruction, `Block Started by Symbol` — the meaning was forgotten and only the name crossed half a century.
-
-  The reason for separating them is practical. Consider a large global whose
-  *initial value is 0*, such as `int table[1000000];`. Put it in `data` and a
-  million zeros go inside the executable, making the file 4 MB bigger. Put it in
-  `bss` and only *one number saying "fill this much with zeros"* is written in the
-  file, with the actual filling happening when the program starts. So variables in
-  `bss` get C's promise that "an uninitialised one is 0" for free — that zero was
-  filled in by the operating system (or, in embedded work, the startup code).
-]
-
-#platform[
-  How large is the stack — Linux and Windows
-][
-  *The C standard has neither the word "stack" nor any promise about its size.* It
-  fixes only automatic storage duration and leaves where and how to place it to
-  the implementation. So the size is decided by *the operating system and the
-  tools*.
-
-  - *Linux* — the main thread's default limit is usually *8 MiB* (check and change
-    it with `ulimit -s`; this book's verification machine was 8388608 bytes too).
-    It can be raised if needed, and the stack made for each thread is set
-    separately with `pthread_attr_setstacksize`.
-  - *Windows* — the default is *1 MiB*. Moreover only the first 4 KiB of it is
-    actually committed, growing as it is used. Change it with the linker option
-    `/STACK:reserve[,commit]` when building the executable, and for a thread
-    specify it as an argument to `CreateThread`.
-
-  There is a place where the difference shows in practice. Code that ran fine on
-  Linux dying of stack overflow on Windows — *the same code, a container eight
-  times narrower*. A large local array (`char buf[2*1024*1024];`) or deep
-  recursion are the candidates. The fuller map, and the circumstances of embedded
-  work, are treated in chapter 79.
-]
-
-== The stack — the ledger of calls
-
-The place where automatic variables live has a name — the *stack*. Each time a
-function is called, a bundle of slots for that call (a stack frame) is laid on
-top, and when the function ends it is lifted off whole. A frame contains, along
-with local variables and parameters, *the address to return to* (the return
-address) — the identity of the "return ledger" whose name was brushed past in
-chapter 40.
-
-With the picture in place two things are explained at once. First, why
-chapter 32's recursion piles up in layers — because one frame is laid on per
-call. And recurse too deeply and the stack space runs out and the program
-collapses (*stack overflow* — the representative symptom of infinite recursion).
-Second, why chapter 40's boundary-violation attack is so dangerous — overflow an
-array on the stack and you can overwrite *the return address of that same frame*,
-whereupon the function, on finishing, "returns" to a place the attacker chose.
-One array's boundary is connected to control of the program.
+If a half-filled value is left in the result on failure, code will end up using it.
+Make *change nothing on failure* the contract and write it in the documentation —
+the last part of the listing checks exactly that.
 
 #misconception[
-  "The address of a variable inside a function can still be used after the
-  function ends"
+  "Checking `scanf`'s return value is enough to be safe"
 ][
-  The commonest accident right after learning pointers, and the frightening part
-  is that *it appears to work for a while*. When a function ends the frame is
-  lifted, but the bits in that place are not immediately erased, so following a
-  dead variable's address still reads the old value for a time. Then, the moment
-  another function uses that place as its frame, the value flips — becoming a bug
-  that goes off later, somewhere unrelated. Such an address is called a *dangling
-  pointer*, and the rule is one: *the address of a local variable must not
-  outlive its function.* To send a function's result out to live longer, there are
-  three ways: use static lifetime, use the next chapter's dynamic memory, or fill
-  a container the caller provided (chapter 34's `&` idiom). Chapter 17's ASan is
-  also the representative tool for catching this accident at run time.
+  Half right. Checking the count tells you *how many conversions succeeded*, and
+  nothing more; it does not substitute for disciplines 3, 4 and 5 above.
+
+  - You cannot tell *where it stopped* — there is no good way to re-read the rest.
+  - Give `%s` *no width* and it writes without knowing the container's size
+    (overflow). Always write the width, as in `%9s`.
+  - On failure the contract for *which arguments were already filled* is vague.
+
+  So the practice in the field is "read a line (`fgets`) and parse that line
+  yourself". This chapter's five disciplines are the skeleton of that "yourself".
 ]
+
+== Casting the discipline into a component
+
+Build the same discipline by hand in every function and something is eventually
+left out. So practice's next step is *to cast the discipline into a component* —
+one where failure surfaces as a value, bounds are always checked, and the compiler
+speaks up when a check is forgotten.
 
 #qa[
-  Are global variables — declared outside functions — of static lifetime too?
+  Does that mean the standard library is not enough?
 ][
-  They are. A variable outside functions has static storage duration and lives for
-  the whole program. Separately from lifetime, though, a question of *visibility*
-  attaches — whether to make it visible in several files or keep it to this one is
-  the subject of chapter 51 (linkage). And the practical advice is an old one:
-  *keep mutable global state to a minimum.* A value that can change anywhere is
-  hard to trace, and in chapter 12's multicore world it is a source of accidents.
-  A `static` inside a function has the same property in miniature (the
-  demonstration's `issued`), so convenient though it is, the practice is not to
-  overuse it.
+  Less that it is not enough than that *you have to rebuild it every time.* The
+  standard library carries the practice of the 1970s and 80s intact (chapters 62
+  and 63), and it gives none of the five disciplines above as a default. So every
+  real codebase, without exception, lays *its own thin layer* on top — a layer that
+  puts a safe shell around strings, parsing and number conversion.
+
+  Make that layer a library and a whole team stands on the same discipline. This
+  book has one such example ready — `proven`, written by the author, and *Part XII*
+  covers its design and use. Chapter 84, "Errors are values", takes up disciplines
+  1 and 2 at the library level; chapter 87, "Strings and text", takes up 3 and 4.
+
+  What matters is not which library you use but *whether the discipline is carved
+  into the component.* Choose another with the same idea, or build your own.
 ]
 
-Two places on the map of memory — the stack (automatic) and the static region —
-are learned. The remaining place is this part's last: memory whose size is
-settled at run time and which stays alive as long as you wish — chapter 42's
-dynamic memory.
+We have safe input. But a phrase went past in this chapter without explanation —
+"the return ledger of a function call". Where in memory does what live, and when
+is it born and when does it die? The next chapter is that map — lifetime and
+storage duration.

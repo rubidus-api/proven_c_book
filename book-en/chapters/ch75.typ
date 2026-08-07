@@ -1,214 +1,543 @@
 #import "../../book/lib.typ": *
 
-= What the new standards added, and the `*_s` controversy
+= Non-local jumps — `<setjmp.h>`
 
 #prereq(
-  ([chapter 59, The whole map of the standard library], [the whole map of the standard library]),
-  ([chapter 61, The traps of reading and writing], [bounds and truncation]),
+  ([chapter 74, Signals], [the thing that cuts into the flow]),
+  ([chapter 40, The stack and calls], [how call frames are stacked and cleared]),
+  ([chapter 49, How to report failure], [returning failure as a value]),
 )
 
 #deepqa[
-  Chapter 59 said the speed at which headers grow is the same as the language's
-  speed of change, and chapter 61 said `gets`'s funeral took twenty years. Then
-  where are the "safe functions" the standard brought in to fill that place?
+  Chapter 40 said that calling a function stacks a frame, and that `return`
+  clears that frame and goes back *one step at a time*. Then how, in C, does one
+  return from ten levels deep to the top *in a single move*?
 ][
-  Mostly *nowhere*. C11 brought in dozens of functions such as `gets_s` and
-  `strcpy_s` as annex K, but it was *optional* and the major implementations
-  refused to adopt it. What was confirmed on the machine that made this book is the
-  same — the "annex K: not present in this implementation" the example printed. The
-  latter part of this chapter is that story.
+  The two words of `<setjmp.h>` do exactly that. `setjmp` records "here, now",
+  and `longjmp` revives that record and *rewinds the stack whole*. Ten levels or
+  a hundred, it comes back at once.
+
+  What is rewound, though, is only *the stack pointer and a few registers*. No
+  one closes the files opened in between, frees the memory taken, or releases the
+  locks held — half of this chapter is about that price.
 ]
 
 #organizer[
-  The last chapter of this part. We skim the headers C99, C11 and C23 added to the
-  standard library, and then see the whole story of this language's most famous
-  failed attempt — annex K, which tried to bring "safe functions" into the
-  standard. Why `gets_s` and `strcpy_s` are not widely used, and what is different
-  about Microsoft's functions of the same names.
+#idx("non-local jump")  A close reading of one header, `<setjmp.h>`. Why it exists (the makeshift of a
+  language without exceptions), the exact shape and return values of the two
+  words, the eight slots of `jmp_buf` and which registers come back, the
+  `volatile` rule that follows from them (measured on a real build), how real
+  software such as libjpeg and PostgreSQL copes with the memory left behind by a
+  jump, and today's alternatives.
 ]
 
 #chapter-questions()
 
-== What C99 added
+== Why it exists — the makeshift of a language without exceptions
 
-#dtable(
-  columns: 3,
-  [*header*], [*what*], [*its position today*],
-  [`<stdint.h>`], [fixed-width integers (`int32_t` and so on)], [effectively compulsory. chapter 26],
-  [`<inttypes.h>`], [the format macros for those types], [the `PRId32` family. appendix B],
-  [`<stdbool.h>`], [`bool`, `true`, `false`], [unnecessary, having become keywords in C23],
-  [`<complex.h>`], [complex numbers], [optional. support is uneven],
-  [`<fenv.h>`], [the floating-point environment], [chapter 70],
-  [`<tgmath.h>`], [type-generic mathematics], [chapter 70],
-)
+When trouble arises deep down, a language with exceptions escapes to the upper
+floors with one `throw`. C has none. So an error must be *carried up one layer at
+a time as a return value*, and every function in between must take that value and
+pass it on (chapter 49).
 
-`<stdint.h>` is this list's winner. A standard way to express "exactly 32 bits"
-finally arose, and the practice of every project keeping its own `typedef` until
-then was tidied away.
+`setjmp`/`longjmp` is the device that skips that chain. It was already in Unix V7
+in the 1970s, and its reason for being was the same as now — *getting out of deep
+recursion in one move.*
+
+The standard's footnote states the purpose narrowly: these functions "are useful
+for dealing with unusual conditions encountered in a low-level function of a
+program." That is, the original place of the device is *an escape hatch for
+exceptional situations, not a substitute for exceptions.*
 
 #qa[
-  If annex K's `*_s` functions failed, what fills their place now?
+  Is this then C's exception handling?
 ][
-  Not one thing but three, sharing it out. *Compiler diagnostics* (warnings and
-  hardened builds such as `_FORTIFY_SOURCE`), *sanitizers* (chapter 17), and
-  *API designs that carry the length along*. The last is the direction this book
-  has pushed, and chapters 84 and 86 are its implementation.
+  No. Three differences are decisive.
 
-  The lesson is that safety does not arrive by appending `_s` to a function name.
-  What actually worked was making failure impossible to ignore, putting the bounds
-  inside the type, and making the checks something a tool can perform. That is how
-  chapter 81 arranges the five bugs.
+  *First, nothing is cleaned up.* A C++ exception rewinds the stack calling
+  destructors (stack unwinding). `longjmp` simply jumps — open files, taken
+  memory, locked mutexes all stay as they were.
+
+  *Second, there is no type.* The only thing thrown is one `int`. To carry what
+  went wrong, that value must serve as an index into something written elsewhere.
+
+  *Third, the region is limited.* The function that called `setjmp` must *still be
+  alive*. There is no jumping into the place of a function that has already
+  returned — doing so is undefined behaviour.
+
+  So the conclusion of this chapter, stated in advance: *new code mostly does not
+  use it. But you must be able to read it* — because widely used libraries are
+  built on it.
 ]
 
-== What C11 added
+== The two words — the exact shape
+
+#dtable(
+  columns: 2,
+  keycol: false,
+  [*Declaration*], [*What it does*],
+  [`int setjmp(jmp_buf env);`], [Saves the present calling environment in `env`. *It is a macro*],
+  [`[[noreturn]] void longjmp(jmp_buf env, int val);`], [Goes back to the place saved in `env`. Does not return],
+)
+
+=== `setjmp` — the macro that seems to return twice
+
+`setjmp` is a *macro*, not a function (the standard allows a function to be
+provided as well, but suppressing the macro and calling the function directly is
+undefined behaviour).
+
+The rule for its return value is simple, and it is nearly the whole header.
+
+#dtable(
+  columns: 2,
+  [*How it was reached*], [*What `setjmp` returns*],
+  [Called directly (the moment the place is saved)], [0],
+  [Returned to by `longjmp(env, val)`], [`val` — except that 0 becomes 1],
+)
+
+That is why `longjmp(env, 0)` cannot produce 0. Zero already means *"saving right
+now"*, so the standard turns it into 1.
+
+#demo("examples-en/ch75/jmp_basic.c")
+
+The demonstration follows that flow exactly. The first time it yields 0 and goes
+down into `deep`; at depth 3 the `longjmp(env, 42)` brings us *straight back to
+`main`'s `setjmp`* and 42 appears. The intervening `deep(2)` and `deep(1)` never
+get to print their "leaving normally" line — those frames simply vanished.
+
+The last test is `longjmp(env, 0)`. We gave 0, and 1 came back.
+
+=== Where `setjmp` may appear — four contexts only
+
+The standard (§7.13.1.1) restricts the context *by enumeration*. Using it outside
+these four is undefined behaviour.
+
+#dtable(
+  columns: 2,
+  keycol: false,
+  [*Permitted context*], [*Example*],
+  [The *entire* controlling expression of `if`, `switch`, `while`, …], [`if (setjmp(env)) { ... }`],
+  [One operand of a comparison with an integer constant expression (the whole being a controlling expression)], [`if (setjmp(env) == 0)`],
+  [The operand of a single `!` (likewise)], [`if (!setjmp(env))`],
+  [An entire expression statement (a cast to `void` is allowed)], [`setjmp(env);`],
+)
+
+So `int rc = setjmp(env);` is *not one of the standard's contexts.* It does work
+on many implementations and this book's demonstration writes it that way, but
+where portability matters, `switch (setjmp(env))` or `if (setjmp(env) == 0)` is
+the safer form.
+
+#qa[
+  Why does such an odd restriction exist?
+][
+  Because `setjmp` is a thing *called once and returned from twice*. To a
+  compiler this is not an ordinary call — if its return value sat in the middle of
+  a complicated expression, there would be no way to decide how to revive the
+  half-computed state (temporaries spread across registers).
+
+  So the standard narrowed the context down to *places where no temporary can be
+  alive*: one controlling expression, one comparison against a constant, and an
+  expression statement that discards the value. The restriction looks strange, but
+  it comes from implementability.
+]
+
+=== `longjmp` — three things to check before jumping
+
+`longjmp(env, val)` does not return (C23 marks it `[[noreturn]]`). Three
+conditions must hold before jumping, and breaking any one is undefined behaviour.
+
+#dtable(
+  columns: 2,
+  [*Condition*], [*If broken*],
+  [There really was a `setjmp` on that `env`], [Jumping to a place never saved],
+  [The function that called `setjmp` is *still alive*], [Jumping into a vanished frame — usually instant death],
+  [It is the same thread], [Jumping into another thread's stack],
+)
+
+The second is the accident that happens most often. Thinking "I will make an error
+handler and call it from anywhere", one calls `longjmp` after the function that
+called `setjmp` has already returned — and by then another function's frame has
+moved into that place.
+
+== What `jmp_buf` really is
+
+`jmp_buf` is *an array type*. The standard nails that down for a practical reason
+— being an array, passing it to a function decays it to the address of its first
+element (chapter 38), so `setjmp(env)` can *modify the original* without writing
+`&env`.
+
+What is inside? The standard says only "information sufficient for `longjmp` to
+restore the calling environment". In practice it is roughly these.
+
+#dtable(
+  columns: 2,
+  [*What is saved*], [*Why*],
+  [The stack pointer], [The place to rewind to must be known],
+  [The program counter (return address)], [Where to go back to],
+  [Callee-saved registers], [The values the calling convention promised to preserve],
+  [(Sometimes) the signal mask], [POSIX's `sigsetjmp`, optionally],
+)
+
+The size the demonstration printed (200 bytes on this implementation) is the sum
+of those contents. But *looking inside or editing it by hand is outside the
+contract* — treat it as opaque data.
+
+The standard is also explicit about what is *not* saved: *the state of the
+floating-point environment, of open files, or of any other component of the
+abstract machine.* That one sentence produces every pitfall in the next section.
+
+=== Looking inside the eight slots
+
+On this implementation (glibc, x86-64) the 200 bytes of a `jmp_buf` divide thus.
+
+#dtable(
+  columns: 2,
+  [*Part*], [*Size*],
+  [Eight register slots (`long [8]`)], [64 bytes],
+  [Whether the signal mask was saved (`int` + padding)], [8 bytes],
+  [Room for the signal mask], [128 bytes],
+)
+
+Print the eight slots and their order appears — RBX, RBP, R12, R13, R14, R15, the
+stack pointer, the return address. That is exactly the list the x86-64 SysV
+calling convention marks *callee-saved* (chapter 40's calling convention).
+
+Two things stand out.
+
+*First, three of the slots hold scrambled values.* Print the slots for RBP, the
+stack pointer and the return address and they do not look like stack addresses.
+glibc stores them mixed with a per-thread guard value — a device against
+overwriting a `jmp_buf` to jump to an address of the attacker's choosing. It
+confirms the rule that the inside of a `jmp_buf` is not to be edited by hand.
+
+*Second, registers not on that list are not saved.* RAX, RCX, RDX, RSI, RDI and
+R8--R11 are the ones the convention marks "the caller's business" (caller-saved),
+so `setjmp` does not keep them.
+
+=== And that is the `volatile` rule
+
+Read those two facts from a local variable's point of view and the next section's
+rule follows by itself. A compiler puts a local in one of three places.
 
 #dtable(
   columns: 3,
-  [*header*], [*what*], [*its position today*],
-  [`<stdatomic.h>`], [atomic operations and memory orders], [the foundation of concurrency. chapter 12's story],
-  [`<threads.h>`], [threads, mutexes, condition variables], [★ adoption is slow — pthreads are usually used],
-  [`<stdalign.h>`], [`alignas`, `alignof`], [keywords in C23],
-  [`<stdnoreturn.h>`], [`noreturn`], [to be retired in C23, in favour of `[[noreturn]]`],
-  [`<uchar.h>`], [`char16_t`, `char32_t`], [chapter 64],
+  [*Where the variable was*], [After `longjmp`], [*Why*],
+  [In memory on the stack], [The changed value, intact], [`longjmp` restores only the stack *pointer*. It does not touch the contents],
+  [In a callee-saved register], [The old value from `setjmp`], [That slot is restored wholesale from the `jmp_buf`],
+  [In a caller-saved register], [Anything at all], [It is neither saved nor restored],
 )
 
-`<threads.h>`'s circumstance is interesting. Though it is in the standard, glibc
-long did not provide it, so portable code still uses POSIX threads. It is a case
-showing that *entering the standard and becoming usable are different things*.
+Turn optimisation off and the compiler mostly puts locals on the stack, so only
+the first row happens — which is why nothing *appears* wrong at `-O0`. Turn it on
+and heavily used variables move into registers, and the second and third rows
+appear.
 
-== What C23 added
+It is also why the standard writes *"indeterminate representation"* rather than
+"becomes the old value". The result depends on where the variable was, so the
+standard promises none of them.
 
-#demo("examples-en/ch75/newheaders.c")
+== What happens to values on return — the `volatile` rule
 
-`<stdckdint.h>` is this edition's practical winner. It reports the wrap-round of
-the size calculations seen in chapter 62 *as a value* — `ckd_add`, `ckd_sub` and
-`ckd_mul` return true on overflow, and the result may be treated as "unusable"
-rather than as the wrapped value.
+The most practical rule in this chapter. The standard (§7.13.2.1) settles it thus.
 
-`<stdbit.h>` is new too. Bit manipulations such as counting leading zeros, counting
-set bits and rounding up to a power of two have become standard functions — until
-then a place that leaned on compiler builtins (`__builtin_clz` and the like).
+*All objects have the values they had at the time `longjmp` was called, with one
+exception — objects of automatic storage duration local to the function
+containing the `setjmp`, that are not `volatile` and have been changed since the
+`setjmp`, have indeterminate representations.*
 
-Besides these, C23 promoted `bool`, `true`, `false`, `static_assert` and
-`thread_local` to keywords, brought in `nullptr` (chapter 35), and effectively
-retired compatibility headers such as `<stdbool.h>` and `<stdnoreturn.h>`.
+#demo("examples-en/ch75/jmp_volatile.c")
 
-== Annex K — the failed attempt at "safe functions"
+Three variables split exactly along that rule.
 
-Now the main business of this chapter.
+#dtable(
+  columns: 3,
+  [*Variable*], [*Storage and qualifier*], [After `longjmp`],
+  [`plain`], [automatic, non-`volatile`, changed in between], [*No guarantee*],
+  [`guarded`], [automatic, `volatile`], [Guaranteed],
+  [`statik`], [static], [Guaranteed],
+)
 
-In the early 2000s Microsoft put functions such as `strcpy_s` and `sprintf_s` into
-its compiler and began raising warnings on use of the existing functions. The
-proposal to make that design a standard entered C11 as *annex K*
-(bounds-checking interfaces).
-
-The core ideas were three.
-
-+ The destination size is *compulsorily* taken as an argument.
-+ When a problem arises it does not truncate and carry on but *returns an error*
-  (`errno_t`).
-+ When a contract violation is detected, the program's chosen *constraint handler*
-  is called.
-
-```c
-#define __STDC_WANT_LIB_EXT1__ 1
-#include <string.h>
-
-char dst[8];
-errno_t e = strcpy_s(dst, sizeof dst, src);   /* an error if it overflows */
-```
-
-The direction resembles what we organised in chapter 59 as "what is needed". Yet
-the result was a failure.
-
-#realcase[
-  Why annex K was not adopted
-][
-  In 2015, C standards committee document N1967, "Field Experience With Annex K",
-  surveyed the actual state. Its summary was cold — *it was not widely implemented,
-  it behaved differently where it was implemented, and there was no evidence that
-  it made real code safer*.
-
-  Concretely these were the circumstances.
-
-  - *Microsoft's functions and the standard's functions are not the same.* The
-    names are the same while arguments and behaviour go out of step in places, so
-    code fitted to one side broke on the other.
-  - *Major implementations, glibc among them, did not adopt it.* That is still so
-    today — the reason the earlier example printed "not present in this
-    implementation".
-  - *The global state called the constraint handler* caused conflicts between
-    libraries.
-  - It merely changed existing code mechanically, while the real defects remained
-    *where the size is calculated wrongly*.
-
-  The committee went as far as discussing removing annex K, and in the end it was
-  settled to be kept but effectively not recommended. It is a representative case
-  showing how the expectation that "putting it in the standard makes things safe"
-  goes wrong in reality.
-]
+*This rule really does bite.* Build with optimisation off and all three show 2;
+build the same code with `-O2` and `plain` *comes back as 1* — the compiler had
+kept that variable in a register, and `longjmp` restored the registers to their
+values at `setjmp`. This book ran both builds and confirmed the difference, and
+the example reports which build it is by looking at `__OPTIMIZE__`.
 
 #misconception[
-  "Using functions with `_s` attached is safe"
+  "`volatile` is for hardware registers and nothing else"
 ][
-  Three things must be checked. First, *is that function there* — the standard's
-  annex K is optional and is absent on most of the Unix family. Second, *which
-  edition is it* — the standard's and Microsoft's may differ. Third, *what becomes
-  safe* — it means the size is taken as an argument, not that the size you passed
-  is right. The mistake of passing `strlen` instead of `sizeof` is just as much an
-  accident in an `_s` function.
-
-  The realistic choice in portable code is still this — within the standard,
-  `snprintf` and explicit bounds checking; where the platform permits, the
-  `strlcpy` family; and for the repeated danger zones, components with checking
-  built in (Part XII).
-]
-
-#platform[
-  The `_s` functions met on Windows
-][
-  MSVC has long provided `strcpy_s`, `sprintf_s`, `fopen_s` and so on, and raises
-  the `C4996` warning when the existing functions are used. Defining
-  `_CRT_SECURE_NO_WARNINGS` to turn the warning off is the practice.
-
-  The point to beware of is that *these functions are not entirely the same as the
-  standard's annex K*. For example the behaviour on argument-validation failure and
-  the rules for return values may differ. So unless the code is Windows-only one
-  does not lean on the `_s` family, and cross-platform projects mostly choose to
-  keep a wrapper of their own.
-]
-
-== What this part leaves behind
-
-We have walked the standard library across ten chapters. Memorising function names
-was not the aim, so what remains to be kept is a few attitudes.
-
-+ *Read the contract first.* Does it take a size, how does it report failure, who
-  owns the pointer it returned.
-+ *Do not throw away return values.* Especially `fclose`, `snprintf` and the
-  `scanf` family.
-+ *Suspect global state.* `errno`, the locale, static buffers, the rounding mode.
-+ *Being in the standard does not make it safe.* `gets` survived twenty-two years.
-+ *Weigh platform extensions between the gain and portability.*
-
-#recap[
-  A table of the editions.
+  This is `volatile`'s second legitimate use (the first was chapter 74's
+  `volatile sig_atomic_t`). Set the three side by side and the purpose is clear.
 
   #dtable(
-    columns: 3,
-    [*edition*], [*representative addition*], [*is it actually used*],
-    [C99], [`<stdint.h>`, `<inttypes.h>`], [yes — effectively compulsory],
-    [C99], [`<complex.h>`], [rarely],
-    [C11], [`<stdatomic.h>`], [yes — the foundation of concurrency],
-    [C11], [`<threads.h>`], [rarely — pthreads prevail],
-    [C11], [annex K (`*_s`)], [no — this chapter's story],
-    [C23], [`<stdckdint.h>`], [yes — the right answer for size calculations],
-    [C23], [`<stdbit.h>`], [growing],
-    [C23], [keyword promotion (`bool`, `nullptr` and so on)], [yes],
+    columns: 2,
+    [*Place*], [*What it prevents*],
+    [MMIO and hardware registers], [Optimisations that erase or merge reads and writes],
+    [Flags exchanged with a signal handler], [Optimisations that skip the read in a loop],
+    [Locals that cross a `longjmp`], [Optimisations that keep the value only in a register],
+  )
+
+  All three prevent "the compiler bypassing memory". Conversely, *`volatile` is
+  useless for synchronization between threads* — that place belongs to
+  `<stdatomic.h>` (chapter 77). Miss this distinction and `volatile` becomes a
+  misunderstood charm against all evils.
+]
+
+== Nobody cleans up the resources
+
+`longjmp` only rolls back the stack pointer. Whatever was taken in between stays
+taken.
+
+#antipattern("Code that leaves resources where it jumped over")[
+  ```c
+  void work(void) {
+      FILE *f = fopen("data", "r");     /* opened */
+      char *buf = malloc(1024);          /* taken */
+      parse(f, buf);                     /* if a longjmp happens here… */
+      free(buf);                         /* does not run — a leak */
+      fclose(f);                         /* does not run — the file leaks too */
+  }
+  ```
+  If a `longjmp` happens inside `parse`, `work`'s frame simply vanishes. Neither
+  `free` nor `fclose` runs. In a long-running program this pattern shows up as a
+  small leak per request.
+]
+
+So code that uses this device keeps one discipline without exception — *gather
+the places that take and release resources inside the function that called
+`setjmp`.* Having jumped back, that function can clean up itself.
+
+=== The quieter accident — a pointer reverts to its old value
+
+The previous counter-example was a `free` *that never ran*. There is a quieter
+one. The cleanup code runs perfectly well, but *the pointer saying what to free*
+falls foul of the previous section's rule and reverts to its old value.
+
+#demo("examples-en/ch75/jmp_leak.c")
+
+At `-O0` both survive, but build the same code at `-O1` or above and the
+non-`volatile` one reverts to the null it held at `setjmp` (we checked). Then
+`free(risky)` frees null, does nothing, and 64 bytes leak for good — clear the
+static copy and ASan reports it as "Direct leak of 64 byte(s)".
+
+*There is cleanup code, and it still leaks.* Reading the code will not show it,
+and it appears only in the optimised build that ships. Of the accidents in this
+pattern it is the hardest to diagnose.
+
+There is an opposite direction too. If the old value is not null but *an address
+already freed*, it is a double free.
+
+#antipattern("Code that reverts to an old address and frees it twice")[
+  ```c
+  char *p = malloc(64);
+  if (setjmp(env) == 0) {
+      free(p);            /* freed once */
+      p = malloc(128);    /* and taken afresh */
+      work(p);            /* a longjmp happens here */
+  }
+  free(p);                /* if p reverted, this frees what was already freed */
+  ```
+  Chapter 43's double free, reproduced exactly. The allocator's ledger is wrecked,
+  so every allocation after it is contaminated.
+]
+
+The discipline is one line — *do not keep a pointer that must survive a `longjmp`
+in an automatic local.* Give it `volatile`, or put it in a static variable or a
+context struct. The `load_image` of the next demonstration does exactly that.
+
+#demo("examples-en/ch75/jmp_error.c")
+
+The demonstration's `load_image` is that structure. The `malloc` happens *before*
+the `setjmp`, and the `free` sits once, in a place both the success and the
+failure path pass through. The deep `parse_header` and `parse_size` take no
+resources and only jump.
+
+== What is actually built on this
+
+The device is not recommended for new code, but *what is already built* is
+plentiful.
+
+#dtable(
+  columns: 3,
+  [*What*], [*How it uses it*], [*Why it did so*],
+  [libjpeg], [A `jmp_buf` inside `struct jpeg_error_mgr`; on error it jumps from `error_exit`], [Decoding is deep recursion, so a return-value chain would be far too long],
+  [libpng], [The same pattern through the `png_jmpbuf(png_ptr)` macro], [The same reason — imitating exceptions in a C API],
+  [The Lua interpreter], [`LUAI_THROW`/`LUAI_TRY` are implemented with `longjmp` in a C build], [A script's `error()` must be carried into the host language],
+  [Some coroutine implementations], [Save the context with `setjmp` and swap stacks], [The only road to imitating context switching with the standard alone],
+  [Test frameworks], [On a failed assertion, abandon that test and move to the next], [One test's failure must not stop the whole run],
+)
+
+#realcase("libjpeg's error manager — how it came to look like this")[
+  Code using libjpeg almost always begins like this.
+
+  ```c
+  struct my_error_mgr { struct jpeg_error_mgr pub; jmp_buf setjmp_buffer; };
+
+  static void my_error_exit(j_common_ptr cinfo) {
+      struct my_error_mgr *err = (struct my_error_mgr *)cinfo->err;
+      longjmp(err->setjmp_buffer, 1);
+  }
+  ```
+
+  The library's default behaviour was *to `exit` on error*. That amounts to a
+  library killing the application — one broken image and the whole editor
+  terminates. So libjpeg left open a hook for "the function to call on error", and
+  from inside that hook the only way back was `longjmp`.
+
+  What this case shows is the order of the design. *A deep call chain + a C API +
+  a library that must not kill the process* — when those three coincide, there was
+  hardly any choice besides `setjmp`/`longjmp`. Designed afresh today one would
+  take chapter 49's "failure as a value", but within the constraints of the 1990s
+  it was a reasonable decision.
+]
+
+=== How do they cope with memory — the answer is always the same
+
+Read the previous table again, this time asking only "who frees the memory taken
+before the jump?"
+
+#dtable(
+  columns: 3,
+  [*What*], [*Who frees it*], [*The device*],
+  [libjpeg], [One call to `jpeg_destroy_*`], [The library ties every allocation into pools of its own memory manager],
+  [libpng], [One `png_destroy_read_struct`], [The same way],
+  [Lua], [The garbage collector], [Every allocation is registered in the interpreter's state],
+  [PostgreSQL], [Resetting a memory context where the error is caught], [An arena per query and per transaction],
+  [Test frameworks], [Wholesale, when a test ends], [An arena per test, or separate processes altogether],
+)
+
+*The common thread is visible — they are all arenas.* The flaw that `longjmp`
+cleans up nothing was worked around by a structure in which *no individual `free`
+is needed*: tie everything taken into one bundle, and at the place you jump back
+to, throw away that one bundle.
+
+So one more conclusion attaches. *Use `setjmp` without an arena and a leak is a
+matter of time.* Part XII's arena is also the precondition that makes this
+pattern legitimate.
+
+#realcase("PostgreSQL's `PG_TRY`/`PG_CATCH`")[
+  PostgreSQL builds something very like exceptions out of this device.
+  `PG_TRY` and `PG_CATCH` are macros, and inside them are `sigsetjmp` and a global
+  exception stack. Reporting an error deep down jumps to the nearest `PG_CATCH`.
+
+  But a single query takes thousands of pieces of memory. How is that coped with?
+  *Memory contexts.* Every allocation belongs to some context, and resetting that
+  context where the error is caught makes thousands of pieces vanish at once. An
+  arena used as if it were a language feature.
+
+  And the previous section's rule is written into that source as a convention —
+  *a local variable modified inside a `PG_TRY` block and used in the `PG_CATCH`
+  must be declared `volatile`.* It is precisely the list of what a large C program
+  needs in order to use this device safely: one arena, one `volatile` convention,
+  and macros around the jump so that people never write `longjmp` themselves.
+]
+
+#qa[
+  What happens to `alloca` and variable-length arrays?
+][
+  Those alone are cleaned up automatically. They were taken from the stack, so
+  when the stack pointer rewinds they go with it — the VLAs of the skipped frames
+  do not leak.
+
+  The standard does nail down one thing, though. *A `longjmp` that would leave the
+  scope of an identifier with a variably modified type is undefined behaviour* —
+  the implementation loses its chance to tidy that place. So the rule becomes "do
+  not jump across a block in which a VLA is alive."
+
+  From the memory point of view it comes to this — *what was taken from the stack
+  is cleaned up for free; what was taken from the heap is cleaned up by nobody.*
+  That one line is why all the libraries above went to arenas.
+]
+
+== POSIX's `sigsetjmp`/`siglongjmp`
+
+Unix-like systems have one more pair.
+
+```c
+int  sigsetjmp(sigjmp_buf env, int savemask);
+[[noreturn]] void siglongjmp(sigjmp_buf env, int val);
+```
+
+The difference is whether the *signal mask* (chapter 74) is saved along with the
+rest. If `savemask` is non-zero the current mask is saved too, and `siglongjmp`
+restores it.
+
+Why is that needed? Consider code that escapes from a signal handler with
+`longjmp`. While the handler runs that signal is blocked, and jumping out with the
+standard `longjmp` may *leave it blocked* — after which that signal never arrives
+again. `sigsetjmp` closes that hole.
+
+#misconception[
+  "Escaping from a signal handler with `longjmp` is fine"
+][
+  A widely used but dangerous pattern. Two things compound.
+
+  *First, the mask problem* — exactly as above. On Unix the `sigsetjmp` pair must
+  be used.
+
+  *Second, and more fundamentally, you do not know where it was cut.* A signal
+  arrives in the middle of `malloc` or `printf` too (chapter 74). Jump out from
+  there and that data structure stays half-rewritten. Call `malloc` again after
+  jumping out and it collapses then.
+
+  So the places where the pattern is even defensible are narrow — *finish
+  immediately after jumping* (`_Exit`), or take a path that uses the standard
+  library no further. In a long-running program the pattern of "set a timeout with
+  a signal and escape with `longjmp`" runs well on the surface and collapses
+  rarely.
+]
+
+== Its place today — when to use it, what to use instead
+
+#dtable(
+  columns: 2,
+  [*What you want to do*], [*The recommended way*],
+  [Carry a deep failure upward], [Return it as a value (chapter 49). Tedious for the middle layers, but safer],
+  [Tidy several failure paths inside one function], [Gather them with a single `goto cleanup` — the Linux kernel's practice],
+  [Not forget to release resources], [By *structure*, not by attributes — take and release in the same function],
+  [A deep escape in a parser or interpreter], [One of the few legitimate places for `setjmp`, if the resource discipline is kept],
+  [Escape across threads], [Impossible — `longjmp` works only within one thread],
+)
+
+The `goto cleanup` pattern is worth writing out again, because most of what people
+reach for `setjmp` to do is in fact covered by it.
+
+```c
+int work(void) {
+    int rc = -1;
+    FILE *f = fopen("data", "r");
+    if (!f) goto out;
+    char *buf = malloc(1024);
+    if (!buf) goto close;
+    if (parse(f, buf) != 0) goto free_buf;
+    rc = 0;
+free_buf: free(buf);
+close:    fclose(f);
+out:      return rc;
+}
+```
+
+*Within one function* this is better. The flow is visible, the order of cleanup is
+written in the code, and the compiler checks it. `setjmp` is needed only when
+*several functions must be skipped over*.
+
+#recap[
+  #dtable(
+    columns: 2,
+    [*What to remember*], [*The point*],
+    [What it is], [An escape hatch that rewinds the stack whole — not an exception],
+    [`setjmp`], [A macro. 0 when called directly, `val` when jumped to (0 becomes 1)],
+    [Context restriction], [Controlling expression, comparison with a constant, `!`, expression statement — four only],
+    [`longjmp`'s premises], [The saving function is still alive, and it is the same thread],
+    [`jmp_buf`], [An array type. Eight callee-saved slots plus room for a signal mask],
+    [Registers], [Only callee-saved ones are restored → stack locals live, register locals revert],
+    [Pointers], [`free` through a reverted pointer means a leak or a double free — measured],
+    [The `volatile` rule], [Automatic, non-`volatile`, changed in between → no guarantee (measured)],
+    [Resources], [Nobody cleans up — keep taking and releasing in one function],
+    [Today's choice], [Mostly return values and `goto cleanup`. Legitimate only in deep parsers],
   )
 ]
 
-The bottom three lines of that table — `<stdatomic.h>`, `<stdckdint.h>` and
-keyword promotion — have only shown their faces. The three remaining chapters of
-this part treat those three in detail, one each. We begin with the foundation of
-concurrency.
+We have seen the two devices that cut a flow and jump — the signal that comes from
+outside, and the non-local jump that leaps from within. The next chapter is what
+recent standards added, and the long argument over "safe" functions.

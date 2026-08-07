@@ -451,6 +451,58 @@ def fig_serialize(L):
 
 
 
+# ── F14. 타입의 분류 나무 (26장) ──────────────────────────────
+def fig_type_tree(L):
+    W, H = 760, 430
+    o = [HEAD.format(w=W, h=H, f=FONT), DEFS]
+    o.append(text(W/2, 22, L["title"], 14, "bold"))
+
+    # 최상단: 타입
+    o.append(box(320, 36, 120, 30)); o.append(text(380, 56, L["type"], 13, "bold"))
+    # 두 갈래: 객체 타입 / 함수 타입
+    o.append(box(150, 92, 160, 30)); o.append(text(230, 112, L["object"], 12))
+    o.append(box(470, 92, 160, 30)); o.append(text(550, 112, L["function"], 12))
+    o.append(arrow(370, 66, 250, 90)); o.append(arrow(390, 66, 530, 90))
+
+    # 객체 타입 아래 두 줄: 산술 / 그 밖(포인터·배열·구조체·공용체·void)
+    o.append(box(60, 152, 175, 28)); o.append(text(147, 171, L["arith"], 12, "bold"))
+    o.append(box(255, 152, 260, 28)); o.append(text(385, 171, L["other"], 12))
+    o.append(arrow(210, 122, 160, 150)); o.append(arrow(250, 122, 340, 150))
+
+    # 산술 = 정수 + 부동소수점
+    o.append(box(30, 208, 120, 26)); o.append(text(90, 226, L["integer"], 11))
+    o.append(box(160, 208, 120, 26)); o.append(text(220, 226, L["floating"], 11))
+    o.append(arrow(130, 180, 95, 206)); o.append(arrow(165, 180, 215, 206))
+
+    # 정수 = char + 부호 있는/없는 + 열거
+    for i, key in enumerate(("chars", "signed", "unsigned", "enums")):
+        o.append(box(20, 258 + i*30, 150, 24))
+        o.append(text(95, 275 + i*30, L[key], 10))
+    o.append(arrow(90, 234, 90, 256))
+
+    # 겹치는 이름들 — 점선 상자로 '이 묶음도 이름이 있다'
+    o.append(box(300, 208, 215, 26, dash="4 3"))
+    o.append(text(407, 226, L["real"], 11))
+    o.append(box(300, 248, 215, 26, dash="4 3"))
+    o.append(text(407, 266, L["scalar"], 11))
+    o.append(box(300, 288, 215, 26, dash="4 3"))
+    o.append(text(407, 306, L["aggregate"], 11))
+    o.append(box(300, 328, 215, 26, dash="4 3"))
+    o.append(text(407, 346, L["basic"], 11))
+
+    # 파생 타입 묶음
+    o.append(box(545, 152, 195, 28)); o.append(text(642, 171, L["derived"], 12))
+    o.append(arrow(560, 122, 620, 150))
+    for i, key in enumerate(("d1", "d2", "d3")):
+        o.append(box(555, 196 + i*30, 175, 24))
+        o.append(text(642, 213 + i*30, L[key], 10))
+    o.append(arrow(642, 180, 642, 194))
+
+    o.append(text(W/2, H-14, L["note"], 10.5))
+    o.append(TAIL)
+    return "".join(o)
+
+
 FIGS = {
     "regions": (fig_regions, {
         "ko": dict(title="한 프로그램의 기억 지도", names=["코드", "정적 구역", "힙 (창고)", "스택 (작업대)"],
@@ -582,6 +634,38 @@ FIGS = {
                    whole_note="12 bytes — the hatching goes out too",
                    fields_note="7 bytes — the order we chose",
                    note="above, padding goes out and the layout depends on compiler and platform; below reads the same on any machine."),
+    }),
+    "type-tree": (fig_type_tree, {
+        "ko": dict(title="표준이 가른 타입의 갈래 (§6.2.5)", type="타입",
+                   object="객체 타입", function="함수 타입",
+                   arith="산술 타입", other="포인터·배열·구조체·공용체·void",
+                   integer="정수 타입", floating="부동소수점 타입",
+                   chars="char / signed char / unsigned char",
+                   signed="부호 있는 정수 타입 (short·int·long…)",
+                   unsigned="부호 없는 정수 타입 (bool 포함)",
+                   enums="열거 타입",
+                   real="실수 타입 = 정수 + 실수 부동소수점",
+                   scalar="스칼라 = 산술 + 포인터 + nullptr_t",
+                   aggregate="집합체 = 배열 + 구조체 (공용체 제외)",
+                   basic="기본 타입 = char + 정수 + 부동소수점",
+                   derived="파생 타입", d1="배열 · 구조체 · 공용체",
+                   d2="함수 · 포인터", d3="원자적(_Atomic)",
+                   note="점선 상자는 '겹쳐 부르는 이름'이다 — 나무의 가지가 아니라 여러 가지를 묶은 낱말."),
+        "en": dict(title="how the standard divides types (§6.2.5)", type="type",
+                   object="object type", function="function type",
+                   arith="arithmetic type", other="pointer, array, struct, union, void",
+                   integer="integer types", floating="floating types",
+                   chars="char / signed char / unsigned char",
+                   signed="signed integer types (short, int, long…)",
+                   unsigned="unsigned integer types (bool included)",
+                   enums="enumerated types",
+                   real="real types = integer + real floating",
+                   scalar="scalar = arithmetic + pointer + nullptr_t",
+                   aggregate="aggregate = array + struct (not union)",
+                   basic="basic types = char + integer + floating",
+                   derived="derived types", d1="array, struct, union",
+                   d2="function, pointer", d3="atomic (_Atomic)",
+                   note="a dashed box is a collective name — not a branch of the tree but a word gathering several."),
     }),
     "pointer-parts": (fig_pointer_parts, {
         "ko": dict(title="포인터 값에 붙어 다니는 것", value="포인터 값", value_sub="복사·비교할 수 있다",

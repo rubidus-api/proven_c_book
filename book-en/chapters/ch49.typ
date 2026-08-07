@@ -1,295 +1,152 @@
 #import "../../book/lib.typ": *
 
-= Undefined behaviour
+= Errors and contracts
 
 #prereq(
-  ([chapter 13, Compiler optimisation], [the abstract machine and observable behaviour]),
-  ([chapter 48, Errors and contracts], [what it means to break a contract]),
+  ([chapter 33, The meaning of a function], [how a function reports failure]),
+  ([chapter 41, Safe input], [five disciplines for handling failure]),
 )
 
 #deepqa[
-  Chapter 13 said that violating strict aliasing is "the act of telling the
-  compiler something untrue as if it were true." Then what has the standard
-  permitted the implementation by leaving some behaviour "undefined"?
+  At the end of chapter 33 the `fact` function was said to stand on an "implicit
+  promise" (n at least 0; overflow at 13 or above). But that promise was written
+  nowhere in the code — does it then exist?
 ][
-  It decided *to demand nothing at all.* The standard's sentence is cold — for
-  undefined behaviour the standard "imposes no requirements". That is, such a
-  program has no correct execution result whatever. The common misunderstanding is
-  "dangerous behaviour, but it mostly works as expected", whereas in the eye of the
-  contract the whole program *loses its meaning*. That difference is this chapter
-  entire.
+  It exists, but *in an unkept state* — and that is the heart of the problem. Every
+  function has an implicit contract: for what inputs it works properly
+  (preconditions), and what it guarantees on success (postconditions). If that
+  contract is in neither documentation nor code, a violation passes silently and
+  goes off later somewhere unrelated. This chapter is the story of ways to *make
+  the contract visible*.
 ]
 
 #organizer[
-  We face head on the world this book has kept deferring under the name "outside
-  the contract". What UB exactly is and why it exists, why it is not "a little
-  dangerous" but "anything at all is possible" — and how to avoid and catch it in
-  practice. The contract narrative begun in Part II is completed here.
+#idx("contract")  The seed of the contract planted in chapter 33 grows — what a
+  function demands and what it promises (preconditions and postconditions), how
+  failure is reported (C's way: errors are values), and the devices that force
+  that value to be checked. The five disciplines set out in chapter 41 are
+  organised here into principles.
 ]
 
 #chapter-questions()
 
-== Three grey zones — UB, unspecified, implementation-defined
+== Errors are values — C's way
 
-#idx("implementation-defined")#idx("unspecified")#idx("undefined behaviour (UB)")Let
-us first separate three confusable words. Organised through the cases this book
-has met so far:
+Many modern languages have a separate channel for failure (exceptions); C has
+none. In C failure is *reported through the return value* — the function's result
+itself carries "did it succeed?" out with it. There are three conventions.
 
-#dtable(
-  columns: 3,
-  [*kind*], [*the standard's attitude*], [*examples met in this book*],
-  [implementation-defined], [the implementation decides and *documents it*], [the size of `int` (chapter 26), the signedness of `char`],
-  [unspecified], [one of a fixed set of choices, with no duty to document], [the order of evaluating subexpressions in one expression (chapter 32)],
-  [undefined behaviour (UB)], [it imposes no requirements at all], [signed overflow (chapter 7), boundary violation (chapter 37), null dereference (chapter 35)],
-)
+- *A success/failure boolean* plus receiving the result through a pointer
+  (chapter 35's `&` idiom).
+- *A special value* marking failure — `malloc`'s null (chapter 43), `fgets`'s
+  null, a negative return, and so on.
+- *An error code* returned with 0 meaning success — the tradition of the system
+  call family.
 
-The first two are worlds where "there are several answers but there is an answer."
-Only UB is a world where there is no answer at all.
+We see the first in a demonstration. It is the fact learned in chapter 28, that
+division by zero is outside the contract, governed by a function's contract.
 
-*The words again, nailed down.* The three names in the table above —
-implementation-defined, unspecified, undefined behavior — are *the standard's own
-terms, written in the document itself*. The phrase "grey area", used in this
-chapter's title and body, is, as chapter 12 said, *a name this book adopted for
-convenience*; it is not in the standard. When talking to anyone else, translate it
-into the exact word — not "that's a grey area" but "that's unspecified" or
-"that's UB".
+#demo("examples-en/ch49/errval.c")
 
-== Why it exists
-
-There are two reasons for leaving an outside-the-contract region. First, *because
-machines differ* — chapter 7's shift of at least the width is the representative
-case. x86 and older ARM respond differently, and had the standard chosen one side
-the other machine would have to insert correction code every time. Instead of
-taking sides it said "do not write that code." Second, *to obtain premises for
-optimisation* — as chapter 7 showed, the premise that "signed integers do not
-overflow" is what lets the compiler analyse and reorder loops (chapter 13). These
-clauses are the price of C remaining the language of speed for half a century.
-
-== The real face of "anything at all"
-
-UB's result is not only a collapse. The pattern seen in chapter 13 is more
-frightening — *the compiler reads UB as "a thing that cannot happen" and deletes
-code.* A null check disappears entirely (if the pointer was already dereferenced,
-it infers "it cannot be null"), an overflow check disappears (since signed
-overflow is premised not to happen), a loop becomes infinite or vanishes
-altogether. So UB's representative symptom is not "dying on the spot" but *a bug
-that appears somewhere unrelated, disappears when the optimisation level changes,
-and is hard to reproduce.*
-
-#realcase[
-  The vanished null check — Linux kernel CVE-2009-1897
-][
-  There was an incident in which this pattern really went off in the kernel. The
-  code went roughly like this — the pointer `tun` was dereferenced first to take a
-  value out, and below that a null check `if (!tun) return ...;`. The order was a
-  mistake, but to a human eye it looks like "the check is still there, so a null
-  will be caught." The compiler's inference was different: *it was already
-  dereferenced → had it been null that would have been UB at that moment → UB is
-  premised not to happen → therefore tun is not null → the null check below is dead
-  code.* The check was removed entirely by optimisation and, combined with an
-  environment in which the null page could be mapped, became a
-  privilege-escalation vulnerability. The compiler worked by the rules; what
-  collapsed was the contract.
-]
-
-== Before the computation even begins — the UB of a file's shape
-
-Undefined behaviour usually brings to mind an accident *during execution*, such as
-an overflow or a null dereference. Yet read the standard's list (annex J.2) from the
-top and something surprising appears — *the second entry is about the last character
-of a file*.
-
-#dtable(
-  columns: 2,
-  [*what the standard requires*], [*break it and*],
-  [a non-empty source file must end in a new-line character], [undefined behaviour],
-  [that new-line must not be one preceded by a backslash], [undefined behaviour],
-  [the file must not end in a partial preprocessing token or comment], [undefined behaviour],
-)
-
-That is, *a file whose last line has no new-line at the end* is outside the contract
-however perfect its grammar. This provision has been there since C89 and remains in
-C23 (ISO/IEC 9899:2024) — it is the second entry of annex J.2. C++, for reference,
-dropped the clause in 2011 (deciding that a missing new-line counts as one appended).
-It is a rare place where the two languages parted.
-
-Why should such a thing be UB? Recall the *translation phases* seen in chapter 54 and
-the answer appears. The preprocessor works by lines, and one directive is complete
-only when a new-line ends it. If the file ends with no new-line, the last line is left
-*unfinished*, and what happens next differs by implementation. The third row's
-"partial token" is the same circumstance — if the file ends with an unclosed string
-literal or a comment with no `*/`, the preprocessor has no ground on which to judge
-whether to keep reading into the next file.
-
-Today's compilers mostly append a new-line quietly (older GCC gave
-`warning: no newline at end of file`). So the place this clause makes trouble in
-practice is not the compiler but *the other tools that handle the file*.
-
-#realcase[
-  The practical noise one new-line makes — git and the Unix tools
-][
-  POSIX defines a *line* as "a string ending in a new-line". So a file missing the
-  final new-line becomes, in the eyes of the tools, "a file whose last line is
-  unfinished", and the following happens.
-
-  - *A mark is left in git's diff* — that famous `\ No newline at end of file` line.
-    If somebody later adds the new-line, a line whose content did not change is *caught
-    as a changed line*, making the diff dirty and making conflicts likely at that place
-    when branches are merged. The red mark on the last line in GitHub's web view is the
-    same thing.
-  - *Joining files runs lines together* — with `cat a.txt b.txt`, `a`'s last line and
-    `b`'s first line become one line. It is especially tiresome in builds that make
-    source or configuration by joining fragments.
-  - *Tools that count lines miss one* — `wc -l` counts new-lines, so an unfinished last
-    line is not counted.
-
-  So today's practice is one line — *end a text file with a new-line.* An editor
-  setting (add a final new-line automatically), `.editorconfig`'s
-  `insert_final_newline`, and the formatting tools seen in chapter 92 do that work for
-  you. The C standard's clause is, in effect, the oldest ground for that practice.
-]
-
-== Other curious pieces of UB
-
-As of C23, annex J.2 lists *218 kinds* of undefined behaviour. Most are things one will
-never meet in a lifetime, but among them are several entries that make one ask "even
-this?". We pick out those that happen in *the world of characters and names*, unrelated
-to computation at run time.
-
-#dtable(
-  columns: 3,
-  [*this code*], [*what is wrong*], [*the standard's place*],
-  [a file ending with no new-line], [the one seen in the previous section], [5.1.1.2],
-  [a `/*` comment left unclosed at end of file], [ending in a partial comment is the same entry], [5.1.1.2],
-  [a string with its quote unclosed at end of file], [a partial preprocessing token], [5.1.1.2],
-  [`#include "dir\file.h"`], [a `\` inside a header name is UB — writing a Windows path as it stands hits this], [6.4.7],
-  [`#include <a//b.h>`], [`//`, `/*`, `'` and `"` likewise are UB], [6.4.7],
-  [`#define defined(x) …`], [using `defined` as a macro name], [6.10.9],
-  [using `assert` after `#undef assert`], [erasing a standard library macro and then using it], [7.1.3],
-  [`int _Value;`, `int __x;`], [trespassing on the reserved name space (chapter 78)], [7.1.3],
-  [`memcpy(p, q, 0)` with `p` null], [even at size 0 a null pointer is outside the contract (see below)], [7.26.2],
-  [`printf("%s", NULL)`], [passing null as a string], [7.23.6.1],
-  [`short a[10]; short *p = &a[15];`], [*merely making* an out-of-range pointer is UB, without dereferencing], [6.5.7],
-  [`if (p > q)` on unrelated objects], [comparing with a relational operator (chapter 36)], [6.5.9],
-  [`towctrans` under another locale], [UB if `LC_CTYPE` differs from when `wctrans` was called], [7.31.3.2],
-)
-
-The first three are the other faces of the "file shape" entry seen in the previous
-section. A file ending with an unclosed comment or string falls under the same clause —
-it looks as though it would fail to compile anyway, but in the standard's eyes it is a
-place where *not even a diagnosis is required*.
-
-The two rows in the middle are especially practical. Writing `#include "utils\str.h"`
-on Windows is *undefined behaviour as far as the standard goes* — in reality MSVC
-handles it for you, but it becomes a problem the moment you port. What the standard
-guarantees is `/` alone, and happily the Windows compilers accept `/` too. Hence the
-advice always to use `/` in header paths.
-
-The `short *p = &a[15];` row surprises people too. *Without reading or writing
-anything*, merely making the pointer is outside the contract (only up to one past the
-array's end is permitted). It is why "I only compute the address and never use it" does
-not hold, and the ground on which chapter 36 drew a boundary round pointer arithmetic.
-
-The last row shows this list's character well. One wide-character conversion function
-carries the condition that "the locale must be the same as when `wctrans` was called",
-and breaking it is UB. Most of the 218 are of this grain — very narrow, very specific,
-and never met in a lifetime.
-
-#realcase[
-  UB sometimes shrinks — the story of `memcpy(NULL, NULL, 0)`
-][
-  The ninth row of the table was long a matter of dispute. "The size is 0 so nothing
-  will happen — what does it matter whether the pointer is null?" one thinks, but the
-  standard required `memcpy`'s two pointers to be *valid* regardless of the size. So
-  code handling an empty array slipped outside the contract through no fault of its own.
-
-  ```c
-  void copy(int *dst, const int *src, size_t n) {
-      memcpy(dst, src, n * sizeof *dst);   /* UB if n == 0 and both are null */
-  }
-  ```
-
-  There was real damage too. The compiler gains the premise that `memcpy`'s arguments
-  are not null, and so can *erase a null check that follows* — the pattern seen in
-  chapter 13 and in this chapter. Sanitizers (chapter 17) catch it as well.
-
-  Yet this clause has been settled to *go away*. The committee accepted proposal N3322,
-  so in the next edition (C2y) giving null pointers to zero-length operations becomes
-  defined behaviour — `memcpy(NULL, NULL, 0)`, `memcmp(NULL, NULL, 0)`,
-  `(int *)NULL + 0` and `(int *)NULL - (int *)NULL` all become legal. The committee even
-  recommended that implementers apply the change retroactively to older standards.
-
-  This story leaves two lessons. First, *the UB list is not a fixed scripture* — clauses
-  that are useless for optimisation and merely torment people do get tidied away over
-  time. Second, even so, *whether the compiler you are using now reflects that change is
-  another matter.* For the time being, code that checks `n == 0` first is still right.
-]
+Three things to read. *The contract is written in comments* — what is demanded
+stands beside the code. *On failure the output argument is not touched* —
+"nothing is changed on failure" is part of the contract too. And
+*`[[nodiscard]]`* — the C23 notation by which the compiler warns if a call
+discards this return value. It is a brake on the freedom of chapter 21's "it is
+legal to discard a return value", saying "this one value must not be discarded."
+That is exactly why chapter 41's parsing function wears this notation.
 
 #misconception[
-  "These are theoretical quibbles; nothing actually happens"
+  "Error handling is an incidental chore that makes code untidy"
 ][
-  In most places nothing really does happen. But that is precisely this chapter's
-  theme — *nothing happening is not a guarantee.* A file with no new-line is quiet at
-  the compiler and makes noise down the tool chain, and `memcpy(NULL, NULL, 0)` is fine
-  until the day the optimisation level is raised and the null check vanishes.
-
-  The practical attitude is this. *Keep the clauses that can be kept for free.* Put a
-  new-line at the end of a file, use `/` in header paths, do not begin a name with two
-  underscores — the cost of these is zero, and in exchange you gain one thing: "in this
-  place I need not suspect anything."
+  A common impression for a beginner, and C's error handling really is
+  conspicuously verbose — an `if` attaches to every call. But invert the
+  perspective and it is exactly the opposite: *the error path is half of the
+  program.* That a file may be missing, memory may run short, input may be
+  nonsense, is not an exceptional situation but ordinary reality. The evidence is
+  that the overwhelmingly common cause in real accident analyses is "the return
+  value was not checked" — code written only for the success path is code half
+  written. How to reduce the verbosity (gathering into a common cleanup point,
+  using a type that wraps failure) is a matter of technique; the principle of
+  *checking* is not a matter of compromise.
 ]
 
-== How to avoid it — discipline, tools, and components
+== The contract in code — assert and defence
 
-Defence in practice is three layers.
+#idx("assert")There is a tool for writing a precondition as *code* rather than
+documentation — `assert(condition)` of `<assert.h>`. If the condition is false it
+stops the program at once and reports the location. Distinguishing its use
+exactly is important:
 
-*Discipline* — the rules this book has passed through are the list: initialise
-before use (chapter 23), keep boundaries (chapter 37), check for null
-(chapter 35), change one variable only once in one statement (chapter 32), do not
-take shortcuts outside the contract (pointer casts, assumptions about
-representation) (chapters 11 and 36).
+- *`assert` catches the programmer's mistakes* — an internal invariant meaning "if
+  we have reached here, this condition must be true" (the same word as
+  chapter 32's invariant). Practice is for it to be switched off in release builds
+  (`NDEBUG`).
+- *What came from outside is not for assert but for checking* — user input, file
+  contents and network data are things for which "being wrong is normal", so they
+  must always be checked at run time and handled with error values. Validating
+  input with assert becomes the accident of the check disappearing entirely in the
+  release build.
 
-*Tools* — the nets equipped in chapter 17. Compiler warnings catch at compile
-time; UBSan and ASan catch at run time. The *checked arithmetic* brought in by
-C23 is a tool of this layer too — functions that report overflow as a value
-instead of making it UB:
+This distinction is the contract's two faces — the inside (invariants I must
+keep) with assert, the outside (promises the other party may not keep) with checks
+and error values.
 
-#demo("examples-en/ch49/checked.c")
+== const — the cheapest contract
 
-`ckd_add` returns "did it overflow?" as its return value — the standard's answer
-to the trap learned in chapter 7 ("signed overflow is outside the contract"),
-governed by the discipline learned in chapter 48 ("errors are values").
+There is one more tool for writing a contract in code. It is `const`, introduced
+in chapter 23 as "documentation saying I will not change this" and used in
+#idx("const")chapter 44 as the mark "this function does not touch the original."
+Seen again from this chapter's perspective, const is *the contract clause that
+can be written most cheaply* — adding one word in one place in a function
+signature promises the caller "your data is safe" and hands the compiler the job
+of watching over that promise.
 
-*Components* — using an API in which violating the contract is difficult to begin
-with (chapter 40's proven is that layer). Chapter 17's metaphor — tools are nets,
-good components are footholds — is completed here.
+Its effect spans three layers.
+
+*① For people — the burden of reading falls.* The moment you see the signature
+`void render(const struct scene *s)`, it is settled that this function does not
+change scene. Not having to read the function's body — in a large codebase there
+is scarcely a more valuable saving. It is the substance of chapter 23's "the more
+of a piece of code that does not vary, the easier it is to read."
+
+*② For the compiler — it becomes grounds for optimisation.* Chapter 13 showed the
+editor holding a value in a register, and the key to that judgement was "can this
+value change in the meantime?". const is a signal helping that judgement — though
+it must be stated exactly: *const is not itself a magic optimisation switch.*
+Data arriving through a pointer may still be changed by another route (aliasing),
+so const alone does not let the compiler be certain of everything. The definite
+gain is on the side of *objects actually declared const* (global constants,
+`static const` tables) — the compiler may plant the value directly in the code
+(constant propagation) or place it in a read-only region, making it unmodifiable
+outright (chapter 40's string literals lived in that place).
+
+*③ For the layers of memory — sharing becomes safe.* Data that does not change
+*has no reason to be copied.* Many places may read the same thing together, and
+from chapter 11's cache perspective several cores may share and read the same
+cache line without any contention — because the false sharing of chapter 12 is an
+accident that requires *writing*. That is why the practice of passing large data
+as a `const` pointer instead of by value (chapter 44) is both safe and fast.
+
+So modern practice is simple — *make const the default and release only what must
+change.* Widening a contract costs; narrowing it takes one word.
 
 #qa[
-  Must all the UB be memorised? I hear the standard has hundreds of them.
+  How do chapter 41's five disciplines connect to this principle?
 ][
-  Memorising is not the goal — the list is vast and continually refined. What works
-  in practice is *an instinct*: the habit of asking "are my grounds for saying this
-  code is correct in the contract, or is it that it ran on my computer?" And
-  backing that instinct with tools — turning warnings on, running tests under
-  sanitizers, cross-checking with two compilers (chapter 17). The reason this book
-  has repeated "is it correct on the abstract machine" since Part II is precisely
-  to plant that instinct.
+  Three of them follow this chapter's principles exactly. First, *failure appears
+  in the type* — a bundle that keeps success and value apart is returned, so
+  writing code that "takes the value out without asking whether it succeeded"
+  becomes awkward instead. Second, *it forces the check with `[[nodiscard]]`* —
+  discard it and the compiler warns. Third, *it takes boundaries and sizes as part
+  of the contract* — blocking, at the API level, the root of the boundary
+  violations seen in chapters 37–40. In summary: a design that writes the contract
+  not in documentation but in *types and signatures*, implementing inside C the
+  same direction as the concerns of Rust and Zig seen in chapter 1. Part XII pushes
+  that design all the way through in a single library.
 ]
 
-== Closing Part IX
-
-The part of precision is over — how to handle approximation (chapter 47), how to
-handle failure (chapter 48), and how to know the world outside the contract
-(chapter 49). The three chapters share one theme: *C is a language that entrusts
-much to the programmer, and the person who knows what has been entrusted writes
-safe code.*
-
-The last parts remain. Every program so far has been a single file — now it grows
-into several files (chapter 51), we face the layer of preprocessing and
-translation (chapter 54), we learn the terrain of the standard library
-(chapter 58), we treat proven head on (Part XII), and we close the book with the
-practices of modern C (chapter 94).
-
-The next part is the story of *composing* a program. Its first chapter is the
-place we have used only as a six-line convention until now — `main` itself. We see
-its three forms, and where the value it returns goes.
+We can handle contracts and errors. But there remains a world this book has kept
+deferring under the names "outside the contract" and "undefined behaviour". The
+next chapter faces that world head on — the most misunderstood and most expensive
+subject in C.

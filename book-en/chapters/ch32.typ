@@ -1,272 +1,142 @@
 #import "../../book/lib.typ": *
 
-= The meaning of a function — copying values and side effects
+= Repetition — loops and invariants
 
 #prereq(
-  ([chapter 24, Declaring and defining functions], [declaring and defining a function]),
-  ([chapter 20, Expressions], [how a value is handed over]),
+  ([chapter 31, Deciding], [flow that forks on a condition]),
 )
 
 #deepqa[
-  Chapter 24 said a parameter is "a variable declaration that receives the
-  material." Then if that parameter is *changed* inside the function — does the
-  variable passed in as material change too?
+  Chapter 4 said "even simple steps, taken billions of times a second, can build
+  anything however complicated." But our programs up to chapter 31 flow from top
+  to bottom once and end — where do the billions of steps come from?
 ][
-  It does not — and this is the single rule that fixes the meaning of a C
-  function: *values cross over by being copied.* A parameter is a separate
-  variable that received a copy of the material's value, and nothing done inside
-  the function touches the original. A demonstration is quicker than words — here
-  it is.
+  From a device that *executes the same statements again*. Going *back* to a
+  block while a condition is true — the loop. If branching was the device that
+  splits flow, the loop is the device that winds it up, and the moment we have
+  both, C becomes a language that can write down everything computable
+  (theoretically so as well — all chapter 4's model of computation demands is
+  "sequence, branch, repetition").
 ]
 
 #organizer[
-  Part VI's finish. *How* values cross over in a function call (copying),
-#idx("side effect")  the formal rules of side effects and evaluation order
-  (collecting chapter 20's seed), recursion as a new kind of repetition, and the
-  conditional operator `?:`. The seed planted at the end — the perspective of the
-  contract — blooms in Part IX.
+  We take a program's real power — repetition — into our hands. The three
+  siblings of the loop (`while`, `for`, `do-while`), new operators (`++`, `+=`),
+#idx("Duff's device")  and the frame of thought for reading and writing loops
+  correctly (the invariant). And we finally meet the reunion booked in
+  chapter 12 — Duff's device.
 ]
 
 #chapter-questions()
 
-== Copying values — the original is safe
+== The three siblings of the loop
 
-#demo("examples-en/ch32/copy.c")
-
-Inside `try_change` the `x` was changed to 999, but the `n` outside is still 1.
-That is the exact meaning of the call `try_change(n)` — n's *value* 1 was copied
-and became the first value of a *different variable* called x, and thereafter the
-two are strangers. Add this copying rule to chapter 24's partition of scope and a
-function becomes a complete isolation room: material comes in as a value, the
-result goes out as `return`'s value, and there is no other channel.
-
-#misconception[
-  "You pass a variable to a function"
-][
-  Natural in everyday speech, but false in C's semantics — and the moment you
-  imagine it that way, the demonstration above becomes a riddle. What crosses
-  over is not the variable but *the variable's value* (a copy). A natural
-  objection arises: "then is it simply impossible for a function to change a
-  variable outside?" — there is a proper method that makes it possible: copying
-  and passing, as a value, *the variable's address* instead of the variable. A
-  function that received an address goes to that address and touches the
-  original. In chapter 25 the `&` of `sscanf(line, "%d", &n)` was doing exactly
-  this — the copy-by-value rule intact (an address is a value too — chapter 5!),
-  with the effect of "modifying the original." The syntax of that proper method
-  is chapter 34's pointers.
-]
-
-== "Call by value" and "call by reference" — pinning the terms down
-
-There is a subject to which every primer devotes considerable space: *call by
-value* and *call by reference*. The conclusion first.
-
-*C has no call by reference. Argument passing in C is always a copy of a value.*
-
-Passing a pointer is no exception. What `f(&n)` does is not "pass n" but *copy
-and pass the value that is n's address*. The parameter inside the function is a
-separate variable holding that address, and assigning a different address to that
-variable has no effect whatever on the caller's side. It is only when the address
-is *followed* (dereferenced) and written through that the caller's object
-changes. What changes is not the argument but *what the argument pointed at*.
-
-#misconception[
-  "Passing a pointer is call by reference"
-][
-  Many textbooks use this phrasing, and it is not accurate. *Call by reference* is
-  the term used when a language has the feature of "binding the caller's variable
-  itself to the parameter" — C++'s references (`void f(int &x)`) or Pascal's `var`
-  parameters. In such a language, writing merely `x = 5` inside the function
-  changes the caller's variable.
-
-  C has no such syntax. With `void f(int *p)` you must *write the dereference*,
-  `*p = 5`, and that star is precisely the evidence that "this is a value (an
-  address) and I am now following it." So the accurate phrasing is *"passing a
-  pointer by value to achieve the effect of a reference"*, not "call by
-  reference." Even in English this distinction is a long-running argument, but in
-  the standard's terms there is nothing to argue about — the C standard has no
-  concept of a reference at all.
-]
-
-Get the terms right and there is genuinely less to be confused about. Three
-frequent questions unravel with the same single rule.
-
-- *Is an array not copied when passed?* — the array's name decays into the
-  address of its first element (chapter 37) and *that address is copied* across.
-  Not an exception to the rule but an application of it.
-- *Is a struct copied whole when passed?* — yes (chapter 43). Which is why the
-  practice of passing a pointer arose for large ones.
-- *How do I let a function change the caller's pointer itself?* — pass the
-  pointer's address (`int **`). An answer that follows naturally once you know the
-  copy-by-value rule.
-
-== Side effects and evaluation order — collecting the seed
-
-Chapter 20 planted only the seed that "the order in time inside one statement may
-differ." Now that all the material is gathered, let us set it out formally.
-
-A *side effect* is anything an expression's evaluation does to change the state
-of the world *besides* producing a value — and we already know three: output
-(chapter 22), assignment and `+=`/`++` (chapters 20 and 31), and input
-(chapter 25). A function call *carries* side effects if its body does such
-things.
-
-The *rules of evaluation order* summarise into two sentences. First, within one
-statement (strictly, one full expression) the order of evaluating subexpressions
-is mostly *unspecified* — if two function calls are in one expression, which is
-called first is not in the contract (chapter 20's tiger and lion). Second, *at
-the moment the end of a statement (the semicolon) is reached, all side effects
-that statement caused are guaranteed complete* — this guarantee point is called,
-#idx("sequence point")in the traditional term, a *sequence point*. There are a
-few places besides the semicolon, chief among them the `&&` and `||` met in
-chapter 29 (right side after the left's evaluation completes) and the boundary of
-a function call (body entered after the materials are evaluated). Modern
-standards (C11 onwards) refined the same concept more precisely as the relation
-"sequenced before", but the classic term is still current.
-
-From these rules come a practical rule and a trap. The rule is exactly
-chapter 20's — *split statements when the order of side effects matters.* The
-trap is new, because we have learned `++`. Code that *changes the same variable
-twice in one expression, or changes it while separately reading it*:
+*`while`* — the most primitive form. "While the condition is true, repeat the
+block":
 
 ```c
-i = i++ + 1;      /* the same i changed in two places — outside the contract */
-printf("%d %d\n", i, i++);   /* changed while separately read — outside the contract */
+while (condition) {
+    statements to repeat
+}
 ```
 
-Such expressions go beyond unspecified (one of several orders happens) to
-outright *undefined behaviour* — the standard guarantees nothing about the result
-(chapter 49). There is no rule to memorise, only a pattern to remember: *change
-one variable only once in one statement.* That chapter 17's UBSan and the
-compiler warnings catch this pattern well is a reassuring backstop.
+It checks the condition *first*, so if it is false from the start the loop never
+turns.
 
-#qa[
-  If copying is the rule, is a large struct copied whole every time it is passed
-  — the cost would not be trivial.
+*`for`* — the form that gathers the loop's housekeeping (start, condition,
+update) onto one line. Seen in a demonstration — the sum from 1 to 100:
+
+#demo("examples-en/ch32/sum.c")
+
+Read `for (int i = 1; i <= 100; i += 1)` in three slots — *start* (`int i = 1`:
+make the loop variable), *condition* (`i <= 100`: checked before each turn), and
+*update* (`i += 1`: executed at the end of each turn). The new operator `+=` is
+an abbreviation of chapter 23's assignment, the same as `i = i + 1`, and the
+still shorter `i++` (the increment operator) does the same job — idiomatically
+you will see the `for (...; i++)` shape most often. (`++` has a prefix form and a
+postfix form, and subtle circumstances inside expressions — treated together with
+the next chapter's story of sequence points.)
+
+*`do-while`* — the form that executes the block *first* and checks the condition
+afterwards (`do { ... } while (condition);`). It is used for "work that must
+happen at least once" (showing a menu first and then asking whether to repeat),
+and is the least frequently seen of the three.
+
+#mathbox[
+  The loop invariant — the eye that proves a repetition
 ][
-  Yes, semantically it is a copy — and that cost is the reason for the practice of
-  passing pointers (treated with structs in chapter 43). But there are two
-  provisos. First, *copying a small value is effectively free* — as chapter 11
-  taught, arguments usually cross in registers, so passing a few integers involves
-  not even a trip to memory. Second, chapter 13's editor intervenes — if the
-  observable result is the same it may omit the actual copy. *The meaning is a
-  copy; the implementation is the compiler's discretion* — this distinction is the
-  perspective to fix before worrying about performance.
+  There is a tool for reading a loop "correctly" — the *invariant*: a proposition
+  that always holds at the same point of every turn. For the demonstration's
+  loop, on every entry to the body
+
+  $ "sum" = 1 + 2 + dots.c + (i - 1) $
+
+  holds (on the first turn, the empty sum = 0). The body does `sum += i` and the
+  equation's right side grows to $dots.c + i$; the update raises $i$ and it takes
+  the same shape again — the invariant is *maintained*. At the moment the loop
+  ends $i = 101$, so substituting into the invariant gives sum = 1 + ... + 100.
+  That is, [invariant + termination condition = a proof of the loop's
+  correctness]. Even if you do not write it out every time, the habit of asking
+  "what fact does not change in this loop?" becomes the eye that catches most
+  loop bugs — turning one too few or one too many, the off-by-one. It is also the
+  first exercise in the perspective of code as contract (chapter 49).
 ]
 
-== Recursion — a function that calls itself
+#qa[
+  What if the condition never becomes false?
+][
+  An infinite loop — the program turns there forever. Usually it is the result of
+  a bug in which the update was forgotten, but a deliberate infinite loop
+  (`while (true)`) is a respectable idiom too — it is the skeleton of programs for
+  which "not ending is normal", such as servers, and you leave it from inside on
+  a condition with `break` (leave the loop — the same word as switch's break).
+  What is dangerous is not the infinite loop itself but the *unintended* one.
+]
 
-If a function can call a function — can it call itself? It can.
-#idx("recursion")That is *recursion*.
+== The reunion — Duff's device
 
-#demo("examples-en/ch32/fact.c")
+Time to meet the legend booked in chapter 12. We now know both switch's
+fall-through (chapter 31) and the loop (this chapter).
 
-`fact(5)` is `5 * fact(4)`, inside which is `4 * fact(3)`… reach the floor
-(`n <= 1`) and it returns 1, and the layered calls come back in turn carrying
-values. The reason this is possible is this chapter's rule itself — the parameter
-`n` is *copied anew* for each call, so the five layers of fact are five isolation
-rooms each with its own n (5, 4, 3, 2, 1). Without the isolation made by value
-copying and scope, recursion does not stand.
+In 1983 Tom Duff of Lucasfilm was struggling with a loop copying data to a device
+that was too slow. To reduce the housekeeping cost of each turn (checking the
+condition, updating) he processed eight at a time (unrolling) — and solved the
+handling of the remainder, when the count was not a multiple of eight, in a way
+nobody had imagined:
 
-Recursion is the natural expression for work that splits into "the same problem,
-smaller" (searching tree structures is the representative — chapter 43 onwards),
-and every recursion can also be written as a loop (recall the loop version of
-factorial in chapter 31). Which is better is decided by the shape of the problem
-— and recursion brings with it the physical problem of space for the "layered
-calls", whose identity (the stack) is met in chapter 41.
-
-== The last operator, and the seed of the contract
-
-The last item on this part's allotment — the *conditional operator* `?:`.
-`condition ? value1 : value2` is an *expression* that becomes value1 if the
-condition is true and value2 if false. It writes "choose and hold" on one line,
-as in `int big = a > b ? a : b;` — useful where an if, being a statement, cannot
-go (initialisation and the like). Overused it becomes hard to read, so this book
-takes "one layer at most" as its practice.
-
-Three properties are enough to know.
-
-*First, the branch not chosen is not evaluated.* The same guarantee as
-chapter 29's short-circuiting — which is why `p != nullptr ? p->x : 0` is safe.
-
-*Second, the result has a single settled type.* This is where beginners most
-often stumble. If the two sides differ in type, the usual arithmetic conversions
-(chapter 28) apply and give *one common type*, and that type is settled at
-compile time regardless of the condition's value.
-
-#demo("examples-en/ch32/ternary.c")
-
-In `1 ? i : d` the condition is true so `i` (int) was chosen, and yet the
-result's size is 8 bytes and its value is `7.0`. `int` met `double` and was
-unified into `double`. Mix signs and the same rule appears more fiercely — the
-last line, in which `-1` becomes `4294967295`, is the evidence, and gcc really
-does point at this place like so.
-
-```text
-error: operand of ‘?:’ changes signedness from ‘int’ to ‘unsigned int’
-       due to unsignedness of other operand [-Werror=sign-compare]
+```c
+switch (count % 8) {
+case 0: do { *to = *from++;
+case 7:      *to = *from++;
+case 6:      *to = *from++;
+case 5:      *to = *from++;
+case 4:      *to = *from++;
+case 3:      *to = *from++;
+case 2:      *to = *from++;
+case 1:      *to = *from++;
+        } while ((count -= 8) > 0);
+}
 ```
 
-*Third, therefore it cannot be used to "return different types by condition."*
-Code like `cond ? 3 : "three"` does not compile at all, and combinations that do
-compile, like `cond ? 1 : 2.0`, do so *after both sides are converted to the same
-type*. The principle that an expression's value has one static type (chapter 23)
-is kept here too. If you need a choice that splits types, there are only two ways
-— make a type holding "one of several types" with chapter 45's tagged union, or
-choose the branch at compile time with chapter 55's `_Generic`.
+(The `*to` and `*from++` parts are chapter 35's pointer syntax, so for now look
+only at the outward shape — the point is the structure.) How to read it: the
+switch jumps *into the middle of a loop*. Remember chapter 31's fact that a
+`case` is only a label — a label stamped *inside* the body of a `do-while` is not
+a grammatical violation. The first entry jumps to the point that processes just
+the remainder, and thereafter the do-while turns the whole eight-line body.
+Remainder handling and unrolling became one body.
 
-There is one more convenience rule on the pointer side. If one side is a null
-pointer constant the result takes the other side's pointer type — the example's
-last line is that case.
+Duff himself left the remark that on discovering it he felt "a mixture of pride
+and revulsion", and the code stands as a monument, on the boundary of legality
+and grotesquerie, to the flexibility (or perhaps the looseness) of C's grammar.
+And today's lesson is exactly as chapter 12 foretold — *this acrobatics is no
+longer a human's job.* A modern compiler unrolls an ordinarily written loop by
+itself (chapter 13's editor). Admire Duff's device as a masterpiece in the
+museum, and write our own loops plainly and readably like the demonstration's
+`for` — that is modern C.
 
-== Operators at a glance — what we have met so far
-
-Closing Part VI, let us gather the operators in one place. This book has taken
-them out little by little where needed (starting from chapter 20's minimal set),
-so this is the first sight of the whole map. Precedence and associativity are in
-appendix A.
-
-#dtable(
-  columns: 3,
-  [*kind*], [*operators*], [*one-line note*],
-  [arithmetic], [`+ - * / %`], [`%` only on integers. division truncates toward zero (chapter 27)],
-  [increment], [`++ --`], [prefix after changing, postfix the value before (chapter 31)],
-  [comparison], [`< <= > >= == !=`], [result is `bool`. do not mix `==` with `=` (chapter 29)],
-  [logical], [`&& || !`], [carry the short-circuit guarantee (chapter 29)],
-  [bitwise], [`& | ^ ~`], [use on unsigned types (chapter 27)],
-  [shift], [`<< >>`], [shifting at least the width is outside the contract (chapter 7)],
-  [assignment], [`=` and compound `+= -= *= /= %= &= |= ^= <<= >>=`], [compound assignment evaluates the left side only once],
-  [conditional], [`?: `], [a fork in an expression's place. the type is unified (this chapter)],
-  [memory], [`& * [] . ->`], [address, dereference, subscript, member (chapters 30, 34 and 43)],
-  [size and alignment], [`sizeof alignof`], [they ask a type, not a value. mostly not evaluated],
-  [conversion], [`(type)`], [explicit conversion. only when needed (chapters 24 and 28)],
-  [comma], [`,`], [evaluates the left and discards it; the right becomes the value],
-)
-
-Two items from the table deserve separate mention.
-
-*Compound assignment* is not a mere abbreviation. `a[f(i)] += 1` differs from
-`a[f(i)] = a[f(i)] + 1` in evaluating the left side *only once* — meaning `f` is
-not called twice.
-
-*The comma operator* evaluates the left, discards it, and takes the right as the
-result. Moving two things together in the head of a for, as in
-`for (i = 0, j = n; i < j; i++, j--)`, is nearly its only legitimate use;
-elsewhere it harms readability. Worth remembering too that it *looks the same* as
-the argument separator of a function call — the comma in `f(a, b)` is not an
-operator but part of the grammar.
-
-Finally, one seed for what follows. `fact` in fact stands on an *implicit
-promise* — "n must be zero or more (a negative never reaches the floor), and at
-13 or above the int container overflows (chapter 26)." The conditions a function
-places on its material (preconditions) and what it promises about the result
-(postconditions) — begin to look at functions through this lens and each one
-appears as a little *contract*. That perspective is the root of error handling
-(chapter 48) and of proven's design philosophy (chapter 40), and it is faced head
-on in Part IX.
-
-With the meaning of functions in hand, one chapter remains to close this part.
-The vocabulary just built — side effects and evaluation order — is now applied to
-the operator used most often of all. The next chapter is *assignment*: an
-operator used daily and understood shallowly, and the place where C's most famous
-contract violations gather.
+With repetition the tools of flow are complete — sequence (chapter 19), branch
+(chapter 31), repetition (chapter 32). The next chapter closes Part VI by digging
+into the *meaning* of that device the function — how values cross over, what
+exactly a side effect is, and the formal answer to the seed planted in
+chapter 20 (the order of evaluation).

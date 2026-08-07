@@ -1,242 +1,272 @@
 #import "../../book/lib.typ": *
 
-= Assignment and side effects
+= The meaning of a function — copying values and side effects
 
 #prereq(
-  ([chapter 23, Declaring a variable], [putting a value under a name]),
-  ([chapter 32, The meaning of a function], [side effects and evaluation order]),
-  ([chapter 28, Implicit conversions], [when values of different types meet]),
+  ([chapter 24, Declaring and defining functions], [declaring and defining a function]),
+  ([chapter 20, Expressions], [how a value is handed over]),
 )
 
 #deepqa[
-  Chapter 32 said that calls with side effects should be given their own
-  statements. But assignment is itself a side effect — `x = 1;` changes the object
-  x. Why, then, have we used assignment so freely all along?
+  Chapter 24 said a parameter is "a variable declaration that receives the
+  material." Then if that parameter is *changed* inside the function — does the
+  variable passed in as material change too?
 ][
-  Because each statement had *one* side effect. `x = 1;` changes one object, and
-  there is a sequence point at the end of the statement, so by the time the next
-  statement begins it is over. The danger starts when *two or more side effects*
-  are packed into one expression — as in `a[i] = i++`. This chapter draws that
-  line exactly.
+  It does not — and this is the single rule that fixes the meaning of a C
+  function: *values cross over by being copied.* A parameter is a separate
+  variable that received a copy of the material's value, and nothing done inside
+  the function touches the original. A demonstration is quicker than words — here
+  it is.
 ]
 
 #organizer[
-#idx("assignment")  The last chapter of this part is the operator used most often
-  and understood most shallowly: *assignment*. That it is an expression, that the
-  left side is evaluated too, that compound assignment evaluates the left side
-  only once, and where the contract ends. The vocabulary built here carries into
-  chapter 46's gathering of the operators and chapter 49's undefined behaviour.
+  Part VI's finish. *How* values cross over in a function call (copying),
+#idx("side effect")  the formal rules of side effects and evaluation order
+  (collecting chapter 20's seed), recursion as a new kind of repetition, and the
+  conditional operator `?:`. The seed planted at the end — the perspective of the
+  contract — blooms in Part IX.
 ]
 
 #chapter-questions()
 
-== Assignment is an expression, not a statement
+== Copying values — the original is safe
 
-`x = 1` looks like a command, but it is an *expression* — it yields a value. That
-value is "the assigned value, converted to the type of the left side", and so it
-can be placed inside another expression.
+#demo("examples-en/ch33/copy.c")
 
-#demo("examples-en/ch33/assign.c")
-
-The first two lines of the output confirm it. In `x = (y = 7) + 1` the expression
-`(y = 7)` has the value 7, and adding 1 makes x 8. `p = q = r = 5` makes all three
-5 by the same principle — assignment is *right-associative*, so it groups as
-`p = (q = (r = 5))` and the value of the inner assignment is handed outward.
-
-One thing should be nailed down. *The result of an assignment is not an lvalue.*
-`(a = b) = c` does not compile. This differs from C++, and it is enough to
-remember that "assignment yields a value, but not a place".
+Inside `try_change` the `x` was changed to 999, but the `n` outside is still 1.
+That is the exact meaning of the call `try_change(n)` — n's *value* 1 was copied
+and became the first value of a *different variable* called x, and thereafter the
+two are strangers. Add this copying rule to chapter 24's partition of scope and a
+function becomes a complete isolation room: material comes in as a value, the
+result goes out as `return`'s value, and there is no other channel.
 
 #misconception[
-  "`if (x = 0)` tests whether x is 0"
+  "You pass a variable to a function"
 ][
-  This is the oldest typo accident in C. `x = 0` is an *expression* whose value is
-  0, so the `if` always sees false. Far from being tested, x is *changed* to 0.
-  Comparison is `==`.
-
-  There are three defences. First, turn compiler warnings on — gcc's
-  `-Wparentheses` points at an assignment in a condition (if it was intended,
-  write `if ((x = f()))` with an extra pair of parentheses to say "on purpose").
-  Second, there is the old practice of putting the constant on the left
-  (`if (0 == x)`, the so-called Yoda condition), but it reads badly and this book
-  does not recommend it. Third, and most reliable, is *the habit of not assigning
-  in a condition*.
+  Natural in everyday speech, but false in C's semantics — and the moment you
+  imagine it that way, the demonstration above becomes a riddle. What crosses
+  over is not the variable but *the variable's value* (a copy). A natural
+  objection arises: "then is it simply impossible for a function to change a
+  variable outside?" — there is a proper method that makes it possible: copying
+  and passing, as a value, *the variable's address* instead of the variable. A
+  function that received an address goes to that address and touches the
+  original. In chapter 25 the `&` of `sscanf(line, "%d", &n)` was doing exactly
+  this — the copy-by-value rule intact (an address is a value too — chapter 5!),
+  with the effect of "modifying the original." The syntax of that proper method
+  is chapter 35's pointers.
 ]
 
-== Assignment does two things
+== "Call by value" and "call by reference" — pinning the terms down
 
-Split what `E1 = E2` does and it comes to this.
+There is a subject to which every primer devotes considerable space: *call by
+value* and *call by reference*. The conclusion first.
 
-+ *It computes a value* — `E2` is evaluated and converted to the type of `E1`.
-+ *It changes an object* — that value is written into the place `E1` denotes.
-  This is the *side effect*.
+*C has no call by reference. Argument passing in C is always a copy of a value.*
 
-Keeping the two apart is the key to this chapter. The *value* of the expression
-can be used at once, but *when the side effect actually happens* is another
-question. The standard says only that the side effect must be complete by the
-next sequence point; when within that span it happens is not settled.
+Passing a pointer is no exception. What `f(&n)` does is not "pass n" but *copy
+and pass the value that is n's address*. The parameter inside the function is a
+separate variable holding that address, and assigning a different address to that
+variable has no effect whatever on the caller's side. It is only when the address
+is *followed* (dereferenced) and written through that the caller's object
+changes. What changes is not the argument but *what the argument pointed at*.
+
+#misconception[
+  "Passing a pointer is call by reference"
+][
+  Many textbooks use this phrasing, and it is not accurate. *Call by reference* is
+  the term used when a language has the feature of "binding the caller's variable
+  itself to the parameter" — C++'s references (`void f(int &x)`) or Pascal's `var`
+  parameters. In such a language, writing merely `x = 5` inside the function
+  changes the caller's variable.
+
+  C has no such syntax. With `void f(int *p)` you must *write the dereference*,
+  `*p = 5`, and that star is precisely the evidence that "this is a value (an
+  address) and I am now following it." So the accurate phrasing is *"passing a
+  pointer by value to achieve the effect of a reference"*, not "call by
+  reference." Even in English this distinction is a long-running argument, but in
+  the standard's terms there is nothing to argue about — the C standard has no
+  concept of a reference at all.
+]
+
+Get the terms right and there is genuinely less to be confused about. Three
+frequent questions unravel with the same single rule.
+
+- *Is an array not copied when passed?* — the array's name decays into the
+  address of its first element (chapter 38) and *that address is copied* across.
+  Not an exception to the rule but an application of it.
+- *Is a struct copied whole when passed?* — yes (chapter 44). Which is why the
+  practice of passing a pointer arose for large ones.
+- *How do I let a function change the caller's pointer itself?* — pass the
+  pointer's address (`int **`). An answer that follows naturally once you know the
+  copy-by-value rule.
+
+== Side effects and evaluation order — collecting the seed
+
+Chapter 20 planted only the seed that "the order in time inside one statement may
+differ." Now that all the material is gathered, let us set it out formally.
+
+A *side effect* is anything an expression's evaluation does to change the state
+of the world *besides* producing a value — and we already know three: output
+(chapter 22), assignment and `+=`/`++` (chapters 20 and 32), and input
+(chapter 25). A function call *carries* side effects if its body does such
+things.
+
+The *rules of evaluation order* summarise into two sentences. First, within one
+statement (strictly, one full expression) the order of evaluating subexpressions
+is mostly *unspecified* — if two function calls are in one expression, which is
+called first is not in the contract (chapter 20's tiger and lion). Second, *at
+the moment the end of a statement (the semicolon) is reached, all side effects
+that statement caused are guaranteed complete* — this guarantee point is called,
+#idx("sequence point")in the traditional term, a *sequence point*. There are a
+few places besides the semicolon, chief among them the `&&` and `||` met in
+chapter 30 (right side after the left's evaluation completes) and the boundary of
+a function call (body entered after the materials are evaluated). Modern
+standards (C11 onwards) refined the same concept more precisely as the relation
+"sequenced before", but the classic term is still current.
+
+From these rules come a practical rule and a trap. The rule is exactly
+chapter 20's — *split statements when the order of side effects matters.* The
+trap is new, because we have learned `++`. Code that *changes the same variable
+twice in one expression, or changes it while separately reading it*:
+
+```c
+i = i++ + 1;      /* the same i changed in two places — outside the contract */
+printf("%d %d\n", i, i++);   /* changed while separately read — outside the contract */
+```
+
+Such expressions go beyond unspecified (one of several orders happens) to
+outright *undefined behaviour* — the standard guarantees nothing about the result
+(chapter 50). There is no rule to memorise, only a pattern to remember: *change
+one variable only once in one statement.* That chapter 17's UBSan and the
+compiler warnings catch this pattern well is a reassuring backstop.
 
 #qa[
-  Why is `x = x + 1` safe, then? Does it not read x and change x as well?
+  If copying is the rule, is a large struct copied whole every time it is passed
+  — the cost would not be trivial.
 ][
-  Because the reading and the changing are one each. Written exactly, the rule is:
-  *within one sequence point, modifying the same object twice, or modifying it
-  and reading its value for a purpose other than determining the new value, is
-  outside the contract.*
-
-  In `x = x + 1`, x is read *in order to determine the new value*, which is
-  allowed. In `a[i] = i++`, by contrast, the `i` on the left is read not to
-  determine i's new value but *to determine where to write* — and that is outside
-  the contract.
+  Yes, semantically it is a copy — and that cost is the reason for the practice of
+  passing pointers (treated with structs in chapter 44). But there are two
+  provisos. First, *copying a small value is effectively free* — as chapter 11
+  taught, arguments usually cross in registers, so passing a few integers involves
+  not even a trip to memory. Second, chapter 13's editor intervenes — if the
+  observable result is the same it may omit the actual copy. *The meaning is a
+  copy; the implementation is the compiler's discretion* — this distinction is the
+  perspective to fix before worrying about performance.
 ]
 
-== The left side is evaluated too
+== Recursion — a function that calls itself
 
-This is what beginners miss most often. The left of `=` is not a "value" but *a
-computation that decides where to write*, and that computation runs.
+If a function can call a function — can it call itself? It can.
+#idx("recursion")That is *recursion*.
 
-The second block of the example confirms it. Running
-`a[where()] = what();` calls *both* `where()` and `what()`. The left computes "how
-to find that place", the right computes "what to write".
+#demo("examples-en/ch33/fact.c")
 
-Which of the two is computed first? *The standard does not settle it
-(unspecified).* A compiler may compute the right first or the left first. If both
-computations have side effects, the result can differ with that order — the trap
-of the next section.
+`fact(5)` is `5 * fact(4)`, inside which is `4 * fact(3)`… reach the floor
+(`n <= 1`) and it returns 1, and the layered calls come back in turn carrying
+values. The reason this is possible is this chapter's rule itself — the parameter
+`n` is *copied anew* for each call, so the five layers of fact are five isolation
+rooms each with its own n (5, 4, 3, 2, 1). Without the isolation made by value
+copying and scope, recursion does not stand.
 
-#platform("compilers really do differ")[
-  The same code being evaluated in different orders by gcc and clang does happen.
-  Change the optimisation level and it can differ within one compiler. This is a
-  prime example of a place where "on my machine it comes out this way" is not
-  evidence — *unspecified* means both roads are correct, not that one was chosen
-  and will be kept.
-]
+Recursion is the natural expression for work that splits into "the same problem,
+smaller" (searching tree structures is the representative — chapter 44 onwards),
+and every recursion can also be written as a loop (recall the loop version of
+factorial in chapter 32). Which is better is decided by the shape of the problem
+— and recursion brings with it the physical problem of space for the "layered
+calls", whose identity (the stack) is met in chapter 42.
 
-== Compound assignment — the left side is evaluated once
+== The last operator, and the seed of the contract
 
-`E1 op= E2` is *not the same as* `E1 = E1 op E2`. The standard says the only
-difference is that `E1` is evaluated once — and that one line of difference
-matters in practice.
+The last item on this part's allotment — the *conditional operator* `?:`.
+`condition ? value1 : value2` is an *expression* that becomes value1 if the
+condition is true and value2 if false. It writes "choose and hold" on one line,
+as in `int big = a > b ? a : b;` — useful where an if, being a statement, cannot
+go (initialisation and the like). Overused it becomes hard to read, so this book
+takes "one layer at most" as its practice.
 
-Look at the third block of the example. In `a[where()] += 1;`, `where()` is called
-*once*. Spelled out as `a[where()] = a[where()] + 1;` it would have been called
-twice, reading one slot and writing another.
+Three properties are enough to know.
+
+*First, the branch not chosen is not evaluated.* The same guarantee as
+chapter 30's short-circuiting — which is why `p != nullptr ? p->x : 0` is safe.
+
+*Second, the result has a single settled type.* This is where beginners most
+often stumble. If the two sides differ in type, the usual arithmetic conversions
+(chapter 29) apply and give *one common type*, and that type is settled at
+compile time regardless of the condition's value.
+
+#demo("examples-en/ch33/ternary.c")
+
+In `1 ? i : d` the condition is true so `i` (int) was chosen, and yet the
+result's size is 8 bytes and its value is `7.0`. `int` met `double` and was
+unified into `double`. Mix signs and the same rule appears more fiercely — the
+last line, in which `-1` becomes `4294967295`, is the evidence, and gcc really
+does point at this place like so.
+
+```text
+error: operand of ‘?:’ changes signedness from ‘int’ to ‘unsigned int’
+       due to unsignedness of other operand [-Werror=sign-compare]
+```
+
+*Third, therefore it cannot be used to "return different types by condition."*
+Code like `cond ? 3 : "three"` does not compile at all, and combinations that do
+compile, like `cond ? 1 : 2.0`, do so *after both sides are converted to the same
+type*. The principle that an expression's value has one static type (chapter 23)
+is kept here too. If you need a choice that splits types, there are only two ways
+— make a type holding "one of several types" with chapter 46's tagged union, or
+choose the branch at compile time with chapter 56's `_Generic`.
+
+There is one more convenience rule on the pointer side. If one side is a null
+pointer constant the result takes the other side's pointer type — the example's
+last line is that case.
+
+== Operators at a glance — what we have met so far
+
+Closing Part VI, let us gather the operators in one place. This book has taken
+them out little by little where needed (starting from chapter 20's minimal set),
+so this is the first sight of the whole map. Precedence and associativity are in
+appendix A.
 
 #dtable(
   columns: 3,
-  [*shape*], [*left-side evaluations*], [*note*],
-  [`a[f()] = a[f()] + 1`], [2], [with a side effect in `f`, it reads one slot and writes another],
-  [`a[f()] += 1`], [1], [the recommended shape],
-  [`*p++ += 1`], [1], [still hard to read — better split up],
+  [*kind*], [*operators*], [*one-line note*],
+  [arithmetic], [`+ - * / %`], [`%` only on integers. division truncates toward zero (chapter 28)],
+  [increment], [`++ --`], [prefix after changing, postfix the value before (chapter 32)],
+  [comparison], [`< <= > >= == !=`], [result is `bool`. do not mix `==` with `=` (chapter 30)],
+  [logical], [`&& || !`], [carry the short-circuit guarantee (chapter 30)],
+  [bitwise], [`& | ^ ~`], [use on unsigned types (chapter 28)],
+  [shift], [`<< >>`], [shifting at least the width is outside the contract (chapter 7)],
+  [assignment], [`=` and compound `+= -= *= /= %= &= |= ^= <<= >>=`], [compound assignment evaluates the left side only once],
+  [conditional], [`?: `], [a fork in an expression's place. the type is unified (this chapter)],
+  [memory], [`& * [] . ->`], [address, dereference, subscript, member (chapters 31, 35 and 44)],
+  [size and alignment], [`sizeof alignof`], [they ask a type, not a value. mostly not evaluated],
+  [conversion], [`(type)`], [explicit conversion. only when needed (chapters 24 and 29)],
+  [comma], [`,`], [evaluates the left and discards it; the right becomes the value],
 )
 
-There are ten compound assignments — `+= -= *= /= %= <<= >>= &= ^= |=`. Do not
-forget that the grey zones of each operation come along unchanged: `x /= 0` is
-still outside the contract, and so is `x <<= 40` (chapter 27).
+Two items from the table deserve separate mention.
 
-#qa[
-  Are `x += 1`, `x++` and `++x` not the same thing in the end?
-][
-  The *effect on the object* is the same. What differs is the *value of the
-  expression* — `++x` and `x += 1` yield the value after the change, `x++` the
-  value before it. In a statement that discards the value (`x++;`) all three are
-  identical, so in practice it is a matter of taste.
+*Compound assignment* is not a mere abbreviation. `a[f(i)] += 1` differs from
+`a[f(i)] = a[f(i)] + 1` in evaluating the left side *only once* — meaning `f` is
+not called twice.
 
-  One practical difference exists. `x += n` can add any value, and on a pointer it
-  moves by elements (chapter 37). And a habit inherited from C++ — "use `++x` when
-  the value is not used" — is widespread, though in C there is no performance
-  difference.
-]
+*The comma operator* evaluates the left, discards it, and takes the right as the
+result. Moving two things together in the head of a for, as in
+`for (i = 0, j = n; i < j; i++, j--)`, is nearly its only legitimate use;
+elsewhere it harms readability. Worth remembering too that it *looks the same* as
+the argument separator of a function call — the comma in `f(a, b)` is not an
+operator but part of the grammar.
 
-== Where the contract ends
+Finally, one seed for what follows. `fact` in fact stands on an *implicit
+promise* — "n must be zero or more (a negative never reaches the floor), and at
+13 or above the int container overflows (chapter 27)." The conditions a function
+places on its material (preconditions) and what it promises about the result
+(postconditions) — begin to look at functions through this lens and each one
+appears as a little *contract*. That perspective is the root of error handling
+(chapter 49) and of proven's design philosophy (chapter 41), and it is faced head
+on in Part IX.
 
-Now the famous expressions can be judged. The code below *carries no output* —
-printing the result of an expression outside the contract would leave the false
-knowledge "on this compiler it comes out like this" (chapter 49's principle).
-
-```c
-int i = 0, a[4] = {0};
-
-i = i++;              /* outside the contract — i is modified twice */
-a[i] = i++;           /* outside — modified, and read to decide the place */
-i = ++i + i++;        /* outside — modified twice */
-a[i++] = i;           /* outside — the same reason */
-printf("%d %d", i++, i++);  /* outside — no sequence point between arguments */
-```
-
-These, by contrast, are fine.
-
-```c
-i = i + 1;            /* the read is to determine the new value */
-a[i] = i;             /* one object changed, a[i]; i is only read */
-i++, i++;             /* the comma *operator* has a sequence point */
-x = (i++) && (i++);   /* so does && */
-f(i++);               /* one argument cannot overlap */
-```
-
-#antipattern("gathering side effects into one expression")[
-  ```c
-  a[i] = ++i + i++;        /* outside the contract. Asking "what value" is the wrong question */
-  ```
-  Meeting such code, read it not as "what is the result" but as *"this code has no
-  meaning"*. Outside the contract does not mean the value is strange; it means the
-  compiler may generate anything at all and owes you no diagnostic (chapter 49).
-
-  The safe shape splits the statements.
-  ```c
-  int t = i + 1;            /* whatever was intended, settle the value first */
-  i = t + 1;                /* then change the object */
-  a[i] = t;
-  ```
-]
-
-#realcase("compilers know about this place")[
-  gcc and clang catch the common cases with `-Wsequence-point` and
-  `-Wunsequenced`. Obvious ones such as `i = i++;` are usually caught, but cases
-  that pass through a function call or reach the same object through a pointer are
-  missed — the problem is hard to decide statically. So tools are an aid; knowing
-  the rule comes first.
-]
-
-== The conversion hidden in an assignment
-
-An assignment puts the right-hand value in *converted to the left-hand type*.
-Chapter 28's conversion rules apply here quietly, and quietly is the danger.
-
-The fourth block of the example shows it. In `c = (char)321` the value is cut to
-65, and the value of the assignment expression is that 65 — *not what was put in
-but what went in*. That `(int)d` is 3 after `d = 3.9` is the same story
-(truncation toward zero, chapter 27).
-
-#dtable(
-  columns: 3,
-  [*assignment*], [*what happens*], [*verdict*],
-  [`char c = 300;`], [narrowed in the way the implementation settles], [*implementation-defined* — the value does not fit],
-  [`int n = 3.9;`], [truncated toward zero to 3], [fine, but confirm the intent],
-  [`unsigned u = -1;`], [wraps to the maximum], [fine (unsigned is modular)],
-  [`int n = 3e30;`], [a real that does not fit an `int` → *outside the contract*], [UB],
-  [`float f = 0.1;`], [narrowed from double to single], [fine; precision is lost (chapter 47)],
-)
-
-Turning on `-Wconversion` makes the compiler point at such places. It is a noisy
-option, hard to switch on across a whole project, but *keeping it on for new code*
-is a good habit.
-
-#recap[
-  #dtable(
-    columns: 2,
-    [*to remember*], [*the point*],
-    [assignment is an expression], [it yields a value — but not an lvalue],
-    [right-associative], [`a = b = c` is `a = (b = c)`],
-    [the left side is evaluated], [in `a[f()] = g()`, `f` is certainly called],
-    [order of the two sides], [*unspecified* — the compiler decides],
-    [compound assignment], [evaluates the left side *once*],
-    [where the contract ends], [modifying the same object twice within one sequence point, or modifying it and reading it for another purpose],
-    [the hidden conversion], [the right side goes in converted to the left type],
-  )
-]
-
-Part VI is over — we forged values (chapters 26–28), governed flow
-(chapters 29–31), and gained the meaning of functions and of assignment
-(chapters 32–33). The next part is this book's second mountain, *memory*: back to
-chapter 5's locker corridor, this time walking it in C's syntax.
+With the meaning of functions in hand, one chapter remains to close this part.
+The vocabulary just built — side effects and evaluation order — is now applied to
+the operator used most often of all. The next chapter is *assignment*: an
+operator used daily and understood shallowly, and the place where C's most famous
+contract violations gather.

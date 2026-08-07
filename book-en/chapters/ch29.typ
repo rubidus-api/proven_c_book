@@ -1,126 +1,142 @@
 #import "../../book/lib.typ": *
 
-= Booleans and comparison
+= Implicit conversions — promotion and the usual arithmetic conversions
 
 #prereq(
-  ([chapter 20, Expressions], [the value of an expression]),
-  ([chapter 28, Implicit conversions], [the promotion rules]),
+  ([chapter 27, Integers], [integer types differ in width]),
+  ([chapter 28, Integer operations], [an operation happens between one type]),
 )
 
 #deepqa[
-  Chapter 23 announced that `=` (putting) and `==` (comparing) use separate
-  symbols. Then what is the *result* of a comparison like `3 < 5` — an
-  expression becomes a value (chapter 20), so if a comparison is an expression,
-  what value does it become?
+  Chapter 7 taught sign extension (widening 8 bits to 16), and the end of
+  chapter 28 brushed past "the value in a smaller container is automatically
+  widened before the calculation." Then is the result type of `char + char`
+  char?
 ][
-  True or false — it becomes a value holding only those two. In C23 that type is
-  named `bool` and its values `true` and `false`. That a comparison is not a
-  "question" but *an expression computing a bool value* — that perspective is
-  this chapter's centre, and in the next chapter branching consumes that value.
+  No — it is int. And that fact is this chapter's starting point. C's arithmetic
+  *does not happen on small integer types*. Everything is widened to int (or
+  something larger) before the calculation, and the result is that wider type.
+  Why that is, and how far it goes, is this chapter.
 ]
 
 #organizer[
-#idx("boolean")  The world of true and false as values — C23's `bool`, the
-  comparison operators, and the logical operators with their special property
-#idx("condition")  (short-circuit evaluation). The "condition" the next
-  chapter's branching will ask about is made here.
+  When C makes values of different types meet, it converts them *silently*. This
+#idx("integer promotion")  chapter gathers those invisible conversions in one
+  place — integer promotion, the usual arithmetic conversions, and the default
+  promotions of variadic arguments. Scattered, each is a riddle; gathered, they
+  are one system of rules.
 ]
 
 #chapter-questions()
 
-== bool — a type with two values
+The words this chapter leans on throughout --- *arithmetic type*, *integer type*,
+*what integer promotion acts on* --- are as defined in chapter 26. If they blur,
+open that map again.
 
-`bool` is a type whose value set is just {`false`, `true`}. It is the smallest
-container beside chapter 26's family of integers. One line of history unravels
-its odd corners — early C had *no* boolean type, and the practice of counting 0
-as false and every nonzero value as true stood in its place. C99 brought one in
-through the back door (via the `<stdbool.h>` box), and *only with C23* did
-`bool`, `true` and `false` become proper keywords usable without the box. A
-formal adoption half a century late — and as a trace of that practice, printing
-a `bool` with `%d` gives 1 and 0 (confirmed in the demonstration).
+== Rule 1 — integer promotion
 
-== Comparison — expressions that make bools
+*Integer promotion*: when a value of an integer type smaller than int — `char`,
+`short`, `bool`, a bit-field — takes part in an arithmetic operation, it is
+*widened to int* before the calculation (to int if int can hold all its values,
+otherwise to unsigned int).
 
-There are six comparison operators — `==` (equal), `!=` (not equal), `<`, `<=`,
-`>`, `>=`. All take two values as material and put out a bool.
+#demo("examples-en/ch29/conv.c")
 
-#demo("examples-en/ch29/cmp.c")
+The first line is the check — two `signed char` values of 100 were added and the
+result is 200. The reason a value that does not fit in a char did not overflow is
+that the addition happened not in char's world but in int's.
 
-The first line is the check — the value of the expression `10 > 3` (true) was
-held in a variable and printed as 1 with `%d`. The instinct that judgement is not
-the property of branching alone but *something that can be stored and passed as a
-value* — the more complex conditions get, the more this instinct keeps code clean
-(the practice of naming a judgement, as in `bool is_leap = ...`).
+The reason lies in the machine (chapter 11). A CPU's arithmetic circuits and
+registers are built to handle integers around the word size, so having separate
+arithmetic just for small types would be inefficient. C took that reality into
+the language as a rule — small types are *units of storage*, not units of
+calculation.
+
+== Rule 2 — the usual arithmetic conversions
+
+#idx("usual arithmetic conversions")If the two operands still differ in type
+after promotion, the *usual arithmetic conversions* settle on one common type.
+The order to remember in practice:
+
+- If one side is floating, go to the floating side (`long double` > `double` >
+  `float`).
+- If both are integers — go to the wider one. At equal width, *the unsigned side
+  wins*.
+
+Spelled out in the standard's own order, the integer rules are four steps.
+
+#figure-svg("conversions", caption: [Follow the four in order. Most accidents happen at step 3.])
+
+That last line is the source of the trap. The second part of the demonstration
+is it in the flesh — read `-1` through unsigned eyes and it becomes an enormous
+positive number over four billion (exactly chapter 7's modular world). So a
+comparison like `-1 < 1u` comes out *false*, against intuition. That is why
+mixing signed values into array indices or size calculations (the result of
+`sizeof` is the unsigned `size_t`!) causes silent accidents.
+
+Fortunately the compiler guards this trap well — the warnings switched on in
+chapter 17 point at sign-mixed comparisons (one example in this book was caught
+by that warning and rewritten). Reduced to a rule: *do not mix signed and
+unsigned in one comparison.* Use the `size_t` family consistently for sizes and
+indices, or state the intent with an explicit cast.
+
+== Rule 3 — default promotions for variadic arguments
+
+The third conversion happens in functions whose argument count is not fixed —
+*variadic functions* such as `printf`. Arguments passed into a position where the
+prototype states no type undergo *default argument promotions*: `float` becomes
+*`double`*, and small integer types become *int*.
+
+The demonstration's last line is the check — a `float` value printed with `%f`
+comes out fine. The format `%f` in fact expects a double, and the float argument
+arrived as a double after promotion (which is why printf has no float-specific
+format at all). The "contract between format and materials" learned in
+chapter 22 has this promotion rule as a hidden clause — the full contract, and
+how to write variadic functions yourself, is faced head on in chapter 56.
+
+#realcase[
+  The conversion that destroyed a rocket — Ariane 5, 1996
+][
+  There is an event that shows how heavy implicit and explicit conversions can
+  be. In 1996 the European Space Agency's Ariane 5 rocket exploded 37 seconds
+  after its first launch. The heart of the investigation's finding was one line
+  of conversion — the inertial navigation unit computed horizontal velocity as a
+  64-bit floating-point number, and there was code moving that value into a
+  *16-bit signed integer*. On the predecessor Ariane 4 that velocity never
+  exceeded the 16-bit range and it was safe, but on the faster Ariane 5 the value
+  overflowed its container. The failure of the narrowing conversion (chapter 7's
+  truncation) raised an exception, and with that exception unhandled the
+  navigation computer stopped, whereupon the rocket lost attitude and
+  self-destructed. The loss ran to hundreds of millions of dollars. Reused code
+  meeting *a new range of values* broke the contract — the most expensive
+  confirmation of this chapter's sentence, that a conversion changes the value.
+]
 
 #misconception[
-  "Writing `x = 3` instead of `x == 3` will behave about the same anyway"
+  "A cast does not change the value, only the interpretation"
 ][
-  Here chapter 23's warning is collected head on — they are entirely different
-  expressions, and the worst of it is that *both are legal*. `x = 3` is a putting
-  expression, so it changes x to 3, and that expression's value 3 is read as
-  "nonzero, therefore true" — slipped into a condition by mistake it becomes a
-  double accident that is *always true and wrecks the variable as well*. So many
-  accidents piled up on this trap historically that compiler warnings (`-Wall`)
-  point specially at an `=` in a condition — the representative case for why
-  chapter 17 said to keep warnings on.
+  For pointer casts (chapter 37) that is broadly true, but *a cast between
+  arithmetic types changes the value itself*. `(int)3.9` becomes 3 (the
+  fractional part discarded), `(char)300` does not fit the container and is
+  truncated (chapter 7's narrowing), and `(unsigned)-1` becomes an enormous
+  positive number. C's cast means not "read these bits as that type" but
+  "*convert* this value into a value of that type" — if you want to leave the
+  bits alone and change only the eye, chapter 46's union or `memcpy` is that
+  channel. Not writing the two demands with the same syntax is one of C's few
+  kindnesses.
 ]
-
-== Logical operators — weaving judgements together
-
-Three operators weave judgements: AND `&&` (both true), OR `||` (at least one
-true), NOT `!` (invert). The demonstration's second line is an example of `&&` —
-`3 < 5 && 2 + 2 == 4`, both judgements true, so 1.
-
-And these operators have a property of particular importance in C —
-*short-circuit evaluation*. If `&&`'s left side is false it puts out false
-*without evaluating the right side at all* (`||` skips the right side if the left
-is true). The demonstration's third line is the proof — the `printf` on the right
-is an expression with a side effect (output), and because the left was 0 (false)
-*the call itself never happened*.
-
-This is not an optimisation but a *guarantee* — and a precious exception to
-chapter 20's "the order of evaluation is mostly unspecified": `&&` and `||`
-evaluate the left first and fix even whether the right is evaluated as part of
-the contract. So C programmers use this guarantee as a *gatekeeper* — writing
-"divide only if it is not zero" as `b != 0 && a / b > 10`, with the left-hand
-judgement standing in front of the right-hand danger (chapter 27's division by
-zero), is idiom.
-
-Let us record the rule's name exactly — *short-circuit evaluation*. In the
-standard's terms there is a *sequence point* (chapter 32) after the evaluation of
-`&&`'s and `||`'s left operand, and the right is evaluated only when needed. So
-these two are among the few operators in C that guarantee both the order and the
-fact of evaluation (the conditional operator `?:` has the same property — the
-branch not chosen is not evaluated).
-
-The idioms of practice have hardened into three shapes.
-
-- *Gatekeeper* — `if (p != nullptr && p->count > 0)`. If the left is false the
-  dereference on the right never happens at all (this one line blocks chapter
-  35's null dereference).
-- *Filling a default* — `ok = load(&cfg) || load_default(&cfg);` If the left
-  succeeds the right is not even attempted.
-- *Deferring an expensive check* — `if (cheap_check(x) && expensive_check(x))`.
-  Swap the order and the result is the same while only the cost grows.
-
-The trap is the inverted face of this. *Put a side effect on the right and it may
-not be executed.* In `if (init() && start())`, if `init()` returns false then
-`start()` is never called — good code if intended, a hard-to-find bug if written
-without thinking. And the bitwise operators `&` and `|` do *not* have this
-guarantee — both sides are evaluated.
 
 #qa[
-  How do `&` (chapter 27) and `&&` really differ — both are called AND.
+  Must all these rules be memorised?
 ][
-  They live on different layers. `&` is an arithmetic operator doing AND *bit by
-  bit* — `5 & 3` puts the bits together and gets 1. `&&` is AND of *whole
-  judgements* — it looks only at whether a value is zero or not, and it has the
-  short-circuit guarantee. Swapping them by mistake is the more dangerous for
-  often giving the same answer by accident — `2 && 4` is 1 (neither is zero) but
-  `2 & 4` is 0 (no bits overlap). `&&` for judgement, `&` for bits — the rule is
-  not to mix their places.
+  Three lines are enough — *small integers are promoted to int; when mixed, the
+  wider and the unsigned side wins; in variadic arguments float becomes double.*
+  Leave the rest of the detail to the appendix's tables, and in practice two
+  habits stand in for memorising rules: keeping warnings on (chapter 17), and
+  *stating a deliberate conversion with a cast*. The danger of implicit
+  conversion lies not in the complexity of the rules but in their being
+  *invisible*, so making them visible is the best defence.
 ]
 
-We can now make conditions. In the next chapter the program at last *forks* —
-taking different roads according to a condition's value. The homework of
-"checking input", deferred in chapter 25, can be done then too.
+We have the map of conversions. From the next chapter come the tools of flow —
+beginning with the booleans and comparisons that turn judgement into a value.

@@ -87,7 +87,7 @@ value but the *type*.
 
 For now, *that a suffix changes the type* is all you need. The type names above, and
 the exact rule for which type the compiler picks when there is no suffix, come in
-*chapter 26 once integers have been met properly*, in "The type of an integer
+*chapter 27 once integers have been met properly*, in "The type of an integer
 constant". One thing in advance --- writing the same value in decimal or in
 hexadecimal can give it a different type.
 
@@ -125,7 +125,7 @@ constant.
 
 === Character constants (§6.4.4.4)
 
-The type names read fully only after chapter 9's character sets and chapter 26's
+The type names read fully only after chapter 9's character sets and chapter 27's
 integers --- for now just see that *the prefix settles the type*.
 
 #dtable(
@@ -189,7 +189,7 @@ The escapes are exactly these (§6.4.4.4).
 The decimal form must have *either a decimal point or an exponent part.* So `1.`,
 `.5` and `1e3` are all valid, while `1` is an integer constant.
 
-Floating constants take suffixes too (what the types are comes in chapters 8 and 47).
+Floating constants take suffixes too (what the types are comes in chapters 8 and 48).
 
 #dtable(
   columns: 3,
@@ -219,7 +219,7 @@ There are also *hexadecimal floating constants* (C99) --- `0x1p-3` is exactly 0.
 
 Worth noting too that the suffix changes the value. Measured, `(double)0.1f == 0.1` is
 *false* --- `0.1f` is the nearest value on the `float` grid and `0.1` the nearest on the
-`double` grid, and those are different numbers (chapters 8 and 47).
+`double` grid, and those are different numbers (chapters 8 and 48).
 
 === String literals (§6.4.5)
 
@@ -262,16 +262,16 @@ Four properties go together.
 #dtable(
   columns: 3,
   [*Notation*], [*What it really is*], [*More*],
-  [`RED` (an enumeration constant)], [*an integer constant*, of type `int`], [chapter 52 — it lives in the ordinary-identifier yard],
-  [`nullptr`], [a *keyword* of type `nullptr_t` (*C23*)], [chapter 35],
-  [`true` `false`], [*keywords* yielding `bool` values (*C23*)], [chapter 29],
-  [`(int[]){1,2,3}` a compound literal], [not a constant but an *object* — you can take its address], [chapter 44],
-  [`#define N 100`], [not a constant but *token replacement*], [chapter 54],
+  [`RED` (an enumeration constant)], [*an integer constant*, of type `int`], [chapter 53 — it lives in the ordinary-identifier yard],
+  [`nullptr`], [a *keyword* of type `nullptr_t` (*C23*)], [chapter 36],
+  [`true` `false`], [*keywords* yielding `bool` values (*C23*)], [chapter 30],
+  [`(int[]){1,2,3}` a compound literal], [not a constant but an *object* — you can take its address], [chapter 45],
+  [`#define N 100`], [not a constant but *token replacement*], [chapter 55],
   [`constexpr int n = 10;`], [*C23*'s real constant — usable in a constant expression], [chapter 23],
 )
 
 The last two rows pay off in practice. A macro has neither type nor scope
-(chapter 54), and a `const int` is *not a constant expression* in C --- the place
+(chapter 55), and a `const int` is *not a constant expression* in C --- the place
 where C and C++ part. But "cannot be used" is less accurate than *where* it cannot be,
 so here it is, measured.
 
@@ -299,7 +299,7 @@ expression of all.
 This chapter has only four operators — plus `+`, minus `-`, times `*`, and
 parentheses `( )`. Following this book's spiral principle, the remaining
 operators join in the chapters where they become necessary (comparison in
-chapter 29, division in chapter 27 — why division was put off, in a moment).
+chapter 30, division in chapter 28 — why division was put off, in a moment).
 
 Here is the demonstration. The `%d` in the example below is a mark meaning
 "print an integer value here in decimal"; its formal explanation is in
@@ -331,7 +331,7 @@ full table is in the appendix as reference material; the text goes with
   its partner operator `%` (remainder). Including the exact rule of that
   discarding (which way it goes for negative numbers), it is a subject worth
   treating properly on top of chapter 7's world of integers, so it has been given
-  a place in chapter 27. Better to treat it squarely, all at once, than to
+  a place in chapter 28. Better to treat it squarely, all at once, than to
   introduce it half-heartedly now and create the misconception "I thought 7/2
   was 3.5."
 ]
@@ -360,7 +360,7 @@ Be reassured on one point, though — the order *between statements* is guarante
 absolutely. Chapter 19's "one statement at a time, top to bottom" is a contract.
 What can waver is only the inside of a single statement, and the exact rules
 there (side effects, the notion of sequence points) are faced head on in
-chapter 32, once more material is in place. For now one practical rule suffices:
+chapter 33, once more material is in place. For now one practical rule suffices:
 *do not cram order-sensitive work into one statement; split the statements.*
 
 To summarise — a notation writing a value in source is a literal, that which is

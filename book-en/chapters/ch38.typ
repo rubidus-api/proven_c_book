@@ -1,376 +1,424 @@
 #import "../../book/lib.typ": *
 
-= Multidimensional arrays
+= Arrays
 
 #prereq(
-  ([chapter 37, Arrays], [decay and the contract of pointer arithmetic]),
-  ([chapter 36, The rules of pointers], [alignment and provenance]),
-  ([chapter 11, Memory divides], [cache lines and locality]),
+  ([chapter 35, Objects, addresses, pointers], [addresses and pointers]),
+  ([chapter 11, Memory divides], [memory is a run of adjacent slots]),
 )
 
 #deepqa[
-  Chapter 37 said `a[i]` is sugar for `*(a + i)`, and that adding an integer to a
-  pointer moves it by *the size of the type pointed at*. Then in
-  `int a[3][4]`, how many bytes does `a + 1` move?
+  Chapter 11 said a cache line carries "sixty-four neighbouring slots as one
+  box", and that this is why code scanning an array in order is fast. Then what
+  exactly is an "array" through the eye of memory?
 ][
-  *Sixteen* — not one `int` (four) but one row of four ints. The key is what the
-  elements of `a` are. `int a[3][4]` is "three arrays of four ints", so one
-  element of `a` is *a whole row* (`int[4]`). Nothing in chapter 37's rule
-  changed — "move by one element" applied exactly as before; it is just that the
-  element is itself an array.
-
-  This chapter is everything that grows out of that one sentence.
+  Slots of the same type lined up *adjacent without gaps* — that is all. `int a[5]` is five ints laid side by side at consecutive addresses, so knowing only
+  the first slot's address and the type lets every other position be calculated
+  (element $i$ = start address + $i times$ slot size). This property of
+  "calculable neighbours" is the root of both the array's power (immediate
+  access, cache friendliness) and its danger (miscalculating the boundary).
 ]
 
 #organizer[
-#idx("multidimensional array")  Multidimensional arrays — arrays of arrays. How they lie in memory
-  (row-major), how a subscript unfolds, why it is not `int **`, how far you may
-  go in viewing one address through different types, and the patterns of practice
-  (leading dimension, row pointers, strides) along with what traversal order does
-  in matrix work.
+  Contiguous memory — the array. Declaration and traversal, the real relationship
+#idx("buffer overrun")  between arrays and pointers (the notorious "decay"), and
+  the life-or-death rule of the boundary. Chapter 25's `char line[100]` credit is
+  settled here.
 ]
 
 #chapter-questions()
 
-== An array of arrays — the substance first
+== Declaration, access, traversal
 
-There is only one way to read `int a[3][4]`: *three arrays of four ints.* "Three
-rows by four columns" is the human reading; what the type says is "an array whose
-element is `int[4]`".
+#demo("examples-en/ch38/arr.c")
 
-#demo("examples-en/ch38/md_layout.c")
+`int a[5] = {3, 1, 4, 1, 5};` — type, name, slot count, and brace
+initialisation. Access is `a[i]` and *numbering starts at 0* (the first element
+is `a[0]`, the last `a[4]`). Why count from 0 was already answered by the opening
+exchange — `a[i]` really means "the place $i$ slots *away* from the start", so the
+first element is zero away.
 
-The first block of the demonstration is the check. `sizeof a` is 48 (the whole),
-`sizeof a[0]` is 16 (one row), `sizeof a[0][0]` is 4 (one element). The elements
-of `a` are rows; the elements of a row are ints.
+== Arrays and pointers — the truth about decay
 
-*Memory is one run.* In the second block the offsets from `a[0][0]` to `a[2][3]`
-run 0, 4, 8 … 44 with no gaps. The standard pins this layout down — *the last
-subscript varies fastest* (row-major). A multidimensional array does not fold
-memory into a grid; it is *one line* with the rows laid end to end.
+The latter part of the demonstration is this chapter's heart. Let us set out
+exactly the relationship that has caused the most confusion in C — arrays and
+pointers.
 
-#qa[
-  Are there languages that lay them out column-major?
+*The rule: in most contexts an array's name decays into "the address of its first
+element."* Put side by side what survives the decay and what is lost:
+
+#figure-svg("decay", caption: [The address is the same and the type is not — so how many elements there are disappears.])
+ That is why `int *p = a;` is legal — `a` was read as the pointer value
+`&a[0]`. And the notation `a[i]` is itself sugar for `*(a + i)` — add an integer
+to a pointer and you get the address "$i$ slots along, by that type's size"
+(pointer arithmetic — chapter 37's rules apply here), and dereferencing that is
+indexed access. The demonstration's `a[2] == *(a + 2)` is the check.
+
+#misconception[
+  "An array is a pointer"
 ][
-  Yes. Fortran is the classic one, along with MATLAB, R, Julia, and OpenGL's
-  matrix convention. Neither is correct in the abstract — it is a *convention*,
-  and C chose row-major.
-
-  Where the difference bites is clear: calling numeric libraries written in
-  Fortran (BLAS, LAPACK) from C. The same memory is read in a different order,
-  so passing it straight across is passing *the transpose*. That is why such APIs
-  almost always carry an argument saying "read this matrix transposed"
-  (`CblasRowMajor` / `CblasColMajor`, or a `trans` flag).
+  This famous sentence is false — an illusion created by how often decay happens.
+  An array is *memory itself*, five slots of it; a pointer is *a different
+  variable* holding one address. The demonstration's last line is the decisive
+  evidence: `sizeof a` is 20 (the total size of five ints) and `sizeof p` is 8
+  (the size of one address, chapter 35). The representative context in which decay
+  does *not* happen is exactly `sizeof`, which is why the difference is visible —
+  and it is thanks to this that chapter 25's `fgets(line, sizeof line, stdin)`
+  measured the container correctly. One consequence matters: "pass" an array to a
+  function and only the decayed *address* is copied (chapter 33), so the function
+  side cannot learn the size with `sizeof` — which is why C functions
+  conventionally take an array *and its length as a separate argument*. The
+  concern of chapter 9's representations that "keep the length beside the data"
+  reappears here at C's function boundary.
 ]
 
-== How a subscript unfolds
+== Adding to a pointer is not ordinary addition
 
-`a[i][j]` is not magic. It is chapter 37's two rules applied twice.
+We have just said that `a[i]` is `*(a + i)`. Then what value, exactly, is
+`a + 2`? If it were "2 added to an address" it would be two bytes along; in fact
+it is *two `int` slots along*, that is eight bytes. Pointer arithmetic moves by
+*multiplying by the size of the type pointed at*.
 
-$ a[i][j] arrow.r.double *(a + i)[j] arrow.r.double *(*(a + i) + j) $
+#figure-svg("ptrmath", caption: [The distance `+1` jumps is the size of the type pointed at.])
 
-Followed one step at a time, with the types:
+Set down exactly, the rule is this.
 
 #dtable(
   columns: 3,
-  [*expression*], [*type*], [*size of one step*],
-  [`a`], [`int[3][4]` → decays to `int (*)[4]`], [—],
-  [`a + i`], [`int (*)[4]`], [`sizeof(int[4])` = 16 bytes],
-  [`*(a + i)`], [`int[4]` → decays to `int *`], [—],
-  [`*(a + i) + j`], [`int *`], [`sizeof(int)` = 4 bytes],
-  [`*(*(a + i) + j)`], [`int` (an lvalue)], [—],
+  [*expression*], [*meaning*], [*result type*],
+  [`p + n`, `n + p`], [forward by `n` times the size of what `p` points at], [the same pointer type as `p`],
+  [`p - n`], [backward by the same], [the same],
+  [`p - q`], [*how many elements* fit between the two addresses], [`ptrdiff_t` (a signed integer)],
+  [`p++`, `++p`, `p += n`], [moved by the same rule, then assigned], [the same],
 )
 
-The third block of the demonstration shows that table as actual numbers: `a + 2`
-lands at offset +32 (= 2 × 16), `*(a+2) + 1` at +36 (= 32 + 1 × 4). Out comes the
-value of `a[2][1]`.
-
-*There is no new rule here.* Chapter 37 said "pointer plus integer moves by the
-element size"; this time the element happened to be `int[4]`. Half of what makes
-multidimensional arrays feel hard is missing that.
-
-#figure-svg("mdarray", caption: [The two jumps that reach `a[2][1]` — one row-sized, one element-sized.])
+So adding an integer to a pointer is not "adding a number to a number that is an
+address" but *counting in slots*. Only on a `char *` is 1 one byte; on an
+`int *` it is four, on a `struct point *` it is one whole struct.
 
 #qa[
-  Then why are `a[i][j]` and `a[j][i]` different places? Both are just additions.
+  Why was it settled this way — would plain byte arithmetic not be simpler?
 ][
-  Additions, but *multiplied by different factors.* Written out in bytes the
-  offset is `i × 16 + j × 4`. The factor on `i` (the size of a row) and the factor
-  on `j` (the size of an element) differ, so swapping them lands elsewhere —
-  `a[1][2]` is +24 and `a[2][1]` is +36.
+  Three reasons overlap.
 
-  In general, for `T a[d_1][d_2]...[d_n]` the offset of `a[i_1]...[i_n]` is
-  $ (((i_1 times d_2 + i_2) times d_3 + i_3) dots times d_n + i_n) times "sizeof"(T) $
-  Every inner dimension enters as a factor, so *only the outermost dimension is
-  never used in the computation* — which is why the first dimension may be
-  omitted in a parameter (next section).
+  *First, it gives arrays away for free.* `a[i]` can be defined as `*(a + i)`
+  only because the addition counts elements. Had it counted bytes, every array
+  access would have had to read `*(a + i * sizeof *a)`, and changing an element
+  type would have meant editing every access. That one rule is how C has arrays
+  without any special machinery for them.
+
+  *Second, the type already knows the size.* Recall chapter 5's refrain — memory
+  has no boundaries, and how many bytes count as one lump is decided by the
+  *reading side*. A pointer's type is exactly that decision. Letting the value
+  that already carries the decision carry the movement too is natural.
+
+  *Third, the machine moves that way.* Most CPUs have an addressing mode that
+  computes "base + index × size" in one step. Element-wise arithmetic maps
+  straight onto it — another instance of chapter 4's "C did not hide the
+  machine".
 ]
 
-== Parameters — why it is not `int **`
+#demo("examples-en/ch38/ptrmath.c")
 
-Chapter 37 said an array parameter decays to a pointer but *only the outermost
-dimension is stripped*. Here is what that means in more than one dimension.
+The first block of output shows the whole rule. The same `+ 1` moves a different
+distance for each type, and the distance is exactly `sizeof`. So `(char *)p + 1`
+and `p + 1` point at different places — which is where the idiom of casting to a
+character pointer to move by bytes comes from (chapter 85's views do this).
 
-```c
-void f(int m[3][4]);   /* the three are one and the same declaration */
-void f(int m[][4]);
-void f(int (*m)[4]);
-```
+The second block is *subtraction*. `&a[4] - &a[1]` is 3, not 12 — pointer
+subtraction gives a count of *elements*, not of bytes. And that is why the result
+has type `ptrdiff_t`: subtracting a later pointer from an earlier one can be
+negative, so the type must be signed.
 
-The outer `3` goes and the `4` stays. The offset formula above is the reason —
-what the computation needs is the *inner* dimensions; the outer one is unused. So
-inner dimensions must be written (`int m[][]` does not compile) and the outer may
-be written but is not checked.
+=== How far it may go — the contract of the arithmetic
 
-#demo("examples-en/ch38/md_param.c")
-
-#misconception[
-  "A 2-D array can be received as `int **`"
-][
-  The most common and most expensive misconception. `int a[3][4]` decays to
-  `int (*)[4]`, not to `int **`. The two have *entirely different layouts.*
-
-  `int (*)[4]` points at the first row of a place where twelve ints lie in a row.
-  One address computes every slot. `int **` points at a place where *pointers to
-  int* lie in a row — finding a slot means following an address *twice*, and that
-  array of pointers has to actually exist.
-
-  So passing a real 2-D array to a function taking `int **` is rejected by the
-  compiler. Force it through with a cast and you get ints *mistaken for
-  addresses* and followed — a collapse with no diagnostic. The third block of the
-  demonstration puts the two layouts, with their sizes and indirection counts,
-  side by side.
-]
-
-*The VLA parameter* earns its keep here (chapter 37). Even when the width is
-settled at run time, the `a[i][j]` notation still works.
-
-```c
-void sum(size_t rows, size_t cols, const int a[rows][cols]);
-```
-
-Taking the sizes first is the rule — the names used as dimensions must already be
-declared. This is the most readable form in modern numeric code, and the default
-this book recommends.
-
-== One address, different eyes — the contract of flattening
-
-The last block of the demonstration is where this section starts. `a`, `a[0]`,
-`&a[0][0]` and `&a` are *all the same address*. But their types differ, so *one
-step means a different distance* — 16, 4, 4 and 48 bytes respectively. Holding
-the same number does not mean being able to do the same things with it (chapter
-34's "an address is not simply an integer" made flesh).
-
-Which raises the natural question.
-
-#qa[
-  May I take `int *p = &a[0][0];` and sweep it flat as `p[7]`? It is the same
-  memory and the offset works out.
-][
-  It *works* on essentially every compiler, but by the letter of the standard it
-  is outside the contract. The reason has to be separated carefully — two rules
-  are entangled here and only one of them bites.
-
-  *Strict aliasing (§6.5) is not the problem.* That rule says not to read an
-  object through an lvalue whose type does not match the object's effective type,
-  and the thing being read here, `a[i][j]`, has effective type `int` either way.
-  Reading it through an `int` lvalue breaks nothing.
-
-  *What bites is the range of the pointer arithmetic* (§6.5.6, and chapter 36's
-  provenance). `&a[0][0]` points at the first element of *`a[0]`, an array of
-  four*. Where that pointer may go is inside `a[0]` and one past its end. `p + 4`
-  is that one-past position — it may be formed but *not dereferenced* — and
-  `p + 5` is outside the contract from the moment it is formed. That `a[1][0]`
-  happens to sit at that address is beside the point: the rule is about
-  *provenance*, not about addresses.
-]
-
-The grey zone is old, and the committee knows what practice does. The rule stands
-because optimisers lean on the promise — "this pointer only moves inside that
-row" has to be believable before a loop can be rewritten (the same logic as
-chapter 37's real case).
-
-#realcase("The other direction is sound — allocate flat, view as 2-D")[
-  The practical answer is to reverse the direction. Instead of *sweeping a
-  declared 2-D array flat*, *view flat memory as two-dimensional*.
-
-  ```c
-  double *m = malloc(rows * cols * sizeof *m);
-  double (*view)[cols] = (double (*)[cols])m;   /* a 2-D view */
-  view[i][j] = ...;
-  ```
-
-  This direction is sound for a reason. Memory from `malloc` has *no declared
-  type*, and the standard settles the effective type of such an object as "the
-  type of the lvalue used to store into it" (§6.5). Writing through a 2-D shape
-  makes that shape the effective type. And the range for the arithmetic is *the
-  whole allocated block*, so no sweep leaves its provenance.
-
-  Hence the working rule: *if you want to handle it flat, allocate it flat.* If
-  you really must pass a declared 2-D array around flat, handle it row by row or
-  move it with `memcpy`.
-]
-
-== The patterns of practice
-
-There are four ways multidimensional data is handled. Here they are with where
-each is actually used.
+Chapter 37's provenance applies to pointer arithmetic as it stands. Reduced to
+practical sentences:
 
 #dtable(
-  columns: 4,
-  [*Pattern*], [*Shape*], [*Layout*], [*Where it is seen*],
-  [Fixed-width 2-D], [`int a[R][C]`, `int (*)[C]`], [One run], [Frame buffers, game boards, embedded tables],
-  [VLA parameter], [`a[rows][cols]`], [One run], [Numeric code; the default since C99],
-  [Flat + leading dimension], [`a[i * lda + j]`], [One run], [BLAS, LAPACK, submatrices],
-  [Array of row pointers], [`int *rows[R]`, `int **`], [Rows apart], [`argv`, image libraries, jagged rows],
+  columns: 2,
+  [*what is done*], [*verdict*],
+  [moving a pointer within the array it points into], [fine],
+  [forming a pointer to the position *one past the last element*], [fine — but *dereferencing it is forbidden*],
+  [*forming* an address further out than that], [outside the contract — even if it is only computed and never followed],
+  [`+ 1` on a single object that is not an array], [fine — it is treated as an array of length one],
+  [subtracting pointers into different arrays], [outside the contract],
+  [ordering pointers into different arrays with `<`], [outside the contract (equality with `==` is allowed)],
+  [adding an integer to a `void *`], [not in the standard — a gcc/clang extension (one byte per unit)],
 )
 
-=== Flat plus a leading dimension — the lingua franca of numeric libraries
+"Outside the contract even when only formed" sounds strange, but it changes how
+loop conditions are written. `p <= a + n` is safe because it goes no further than
+one past the end; `p < a + n + 1` computes an address one further out and is
+outside the contract. Sweeping backwards as
+`for (p = a + n - 1; p >= a - 1; p--)` is dangerous for the same reason — `a - 1`
+is an address before the array, and it is outside the contract the moment it is
+computed.
 
-#demo("examples-en/ch38/md_flat.c")
+#antipattern("a backward loop that steps in front of the array")[
+  ```c
+  for (int *p = a + n - 1; p >= a - 1; p--)   /* forms a - 1 — outside the contract */
+      ...
+  ```
+  The safe shapes use an index, or keep the end condition inside the array.
+  ```c
+  for (size_t i = n; i-- > 0; )    /* stops when i is 0 — no address is formed */
+      use(a[i]);
+  ```
+]
 
-This is the most widely used pattern in numerical computing. Its heart is
-*separating the column count from the row stride*.
+#realcase("optimisers really use this rule")[
+  "Outside the contract even when only formed" looks excessive until you see what
+  compilers do with the promise. If `p` is guaranteed to point within the array
+  `a`, then `p >= a` is always true and the test may be deleted — exactly the
+  logic of optimisation from chapter 13. Bounds checks written this way have
+  disappeared from release builds more than once, in bugs reported in earnest.
+]
 
-- The *column count* (`cols`) is how many columns this matrix actually uses.
-- The *leading dimension* (`lda` in BLAS) is the distance from one row to the
-  next.
+== An array parameter is not an array
 
-The power comes from those two not having to be equal. Keep `lda` as it is and
-move only the starting point, and *a submatrix appears with no copying*. In the
-demonstration `sub` points at the original's (1,1) with the stride still 5 — so
-writing through `sub` changes the original. It is a view.
+There is one more rule in the position of a function parameter. *Declare it as an
+array and the compiler turns it into a pointer.* So the following three are
+completely identical declarations to the compiler.
 
-This design is also why the BLAS and LAPACK APIs have survived nearly half a
-century. One matrix-multiply function can take submatrices, transposes and padded
-buffers because the shape of the data was reduced to two numbers: *a starting
-address and a stride*.
+```c
+void f(int *a);
+void f(int a[]);
+void f(int a[10]);   /* the 10 is documentation only; it is not checked */
+```
+
+For a multi-dimensional array only *the outermost (leftmost) dimension* is
+stripped. The inner dimensions remain part of the type.
+
+```c
+void g(int m[3][4]);   /*  the real type is  int (*m)[4]  */
+void h(int c[2][3][4]);/*  the real type is  int (*c)[3][4] */
+```
+
+There are three places where this fact becomes visible.
+
+#demo("examples-en/ch38/param.c")
+
+*① The value of `sizeof` differs.* On the caller's side `arr` is a real array, so
+40 bytes (ten `int`s), but inside the function it is 8 — the size of one pointer.
+So the idiom `sizeof a / sizeof a[0]` for counting elements *does not work inside
+a function.* The count must be received separately.
+
+gcc really does point at this mistake. Here is the diagnostic received when the
+example was first written.
+
+```text
+error: ‘sizeof’ on array function parameter ‘a’ will return size of ‘int *’
+       [-Werror=sizeof-array-argument]
+note: declared here
+```
+
+*② It can be assigned to.* An array's name cannot appear on the left of an
+assignment, but a parameter is just a pointer variable, so `a = a + 1` works. The
+example's `second_of` does that — it moves the parameter along and reads `a[0]`,
+yielding the original's second element — and the caller's `arr` was not affected
+at all (exactly chapter 33's copy-by-value rule).
+
+*③ In two dimensions only half remains.* `sizeof p` is 8 (a pointer) while
+`sizeof p[0]` is 16 — that is, the size of "one row" survives. It is because the
+inner dimension remains in the type, and that is what makes an access like
+`m[1][2]` compute correctly. Put the other way round, *the size of the inner
+dimension must be written* — `int m[][]` does not compile.
+
+#misconception[
+  "I wrote `int a[10]` for the parameter, so passing fewer than 10 will be
+  caught"
+][
+  It will not. That `10` is closer to a comment with no meaning at all to the
+  compiler — the type simply becomes `int *`. If you really want to make the array
+  size a contract there are two roads. One is to *take the size as a separate
+  parameter* (the commonest and surest method), the other is the `[static 10]`
+  notation of the next section. The latter pins a minimum count down as a promise
+  so that the compiler can warn.
+]
+
+== Arrays whose size is settled at run time — VLAs
+
+Every array so far had its size settled at compile time. C99 added one more —
+the *variable length array* (VLA). A variable, not a constant, may be written in
+the size slot.
+
+#demo("examples-en/ch38/vla.c")
+
+There are two uses. The first is *the VLA as a local variable* (`int local[n];`),
+where an array whose size is settled at run time is taken on the stack. That is
+also the only time `sizeof` is computed at run time — the example's `sizeof local`
+returning 16 is the evidence. The second is *the VLA as a parameter*
+(`const int a[n]`, `const int m[n][n]`), and this side is far more useful. Its
+value is greatest in two dimensions and above — you can write `m[i][j]` directly
+instead of computing `m[i * n + j]` by hand.
+
+Local VLAs, however, have hardened into something *not recommended* in practice.
+
+- *Fail to control the size and the stack overflows.* Use a number that came from
+  input directly as a size and an attacker can bring down the stack, and there is
+  no way to check for that collapse.
+- *There is no way to report failure.* `malloc` at least returns null
+  (chapter 43); a VLA simply collapses when there is no room.
+- *Its standing in the standard wavered too.* Mandatory in C99, it became an
+  *optional* feature in C11 (if `__STDC_NO_VLA__` is defined, the implementation
+  lacks it). MSVC does not support it.
+- The Linux kernel removed VLAs from its entire codebase in 2018 — predictability
+  of stack usage and performance were the reasons.
+
+In summary: *the VLA notation in a parameter is usable; avoid local VLAs.* If you
+need an array whose size is settled at run time, chapter 43's dynamic allocation
+is the proper method.
+
+== `[static N]` in a parameter — "at least this many will arrive"
+
+There is one more peculiar syntax used only in array parameters.
+
+```c
+int sum3(const int a[static 3]);   /* a points at three or more elements */
+```
+
+Here `static` has nothing to do with storage duration (chapter 42). It means the
+contract *"the pointer passed in this argument points at an array of at least N
+elements."* Two things are gained — the compiler may optimise on that premise
+(prefetching and the like), and it can point out with a warning code that passes
+null or a shorter array.
+
+Two things to remember.
+
+- *The only place it may be written is an array declarator in a function
+  parameter.* It cannot go on a local variable or a struct member declaration.
+  And for a multi-dimensional array it attaches only to the outermost dimension.
+- *Break the contract and you are outside it.* `sum3(nullptr)` or passing a
+  two-element array is undefined behaviour — meaning it is a *promise*, not a
+  check.
+
+=== `[static 1]` — writing "not null" into the declaration
+
+The form you meet most often has size 1.
+
+```c
+void use(int a[static 1]);   /* a points at one valid object */
+```
+
+Saying "an array with *at least one* element" is the same as saying *not a
+null pointer, and the object it points at is valid*. Instead of a comment
+reading "do not pass null", the promise sits in the declaration itself. That
+is why this spelling is used as the idiom for expressing non-nullness in a
+form a machine can read.
+
+Tools really do read it. Here is what GCC 15 did while this book was being
+written.
+
+```c
+static int sum1(int a[static 1]) { return a[0]; }
+...
+(void)sum1(NULL);
+```
+
+```text
+warning: argument 1 null where non-null expected [-Wnonnull]
+note: in a call to function ‘sum1’ declared ‘nonnull’
+```
+
+"Declared `nonnull`" is the phrase that matters — the compiler translates
+`[static 1]` into a no-null property. With a size above 1 it looks at the
+length as well. Passing a two-element array to a `const int a[static 3]`
+parameter gets this:
+
+```text
+warning: ‘sum3’ reading 12 bytes from a region of size 8 [-Wstringop-overread]
+```
+
+Still, it is *a promise, not a check*. No run-time test is inserted, and the
+compiler can only complain where it can see the problem — a literal null, an
+array of known size. Once the pointer has flowed through a few functions it
+usually says nothing at all. A call that breaks the promise is simply
+undefined behaviour.
+
+=== A qualifier inside the same brackets qualifies the *pointer*
+
+The other thing that may go inside those brackets is a qualifier.
+
+```c
+void f(int a[const 4]);      /* == void f(int *const a); */
+void g(int a[restrict 4]);   /* == void g(int *restrict a); */
+```
+
+Here `const` attaches to the *pointer itself*, not to the elements it points
+at. It means `a` cannot be made to point elsewhere inside the function; it
+does not mean `a[0]` is read-only. To protect the elements, the `const` goes
+*outside* the brackets, as in `const int a[4]`.
+
+#misconception[
+  "`int a[const 4]` means the contents of the array cannot be changed"
+][
+  It does not. An array parameter has already decayed to a pointer (previous
+  section), and the qualifier inside the brackets attaches to *that decayed
+  pointer*. `int a[const 4]` is `int *const a`, so `a[0] = 1;` is fine and
+  `a = other;` is not. To protect the contents write `const int a[4]`; for
+  both, `const int a[const 4]`.
+
+  That is exactly why the syntax exists — with array notation there is no
+  other way to qualify the pointer. It becomes genuinely necessary when you
+  want `restrict` on an array parameter.
+]
+
+The two can be combined. The grammar allows both `[static` qualifiers `N]`
+and `[`qualifiers `static N]`, so `int a[const static 1]` and
+`int a[static const 1]` are both valid — "points at one valid object, and the
+pointer itself will not move."
 
 #qa[
-  Is the submatrix the only gain from keeping a separate stride?
+  Should every pointer parameter then be written `[static 1]`?
 ][
-  Three more.
+  For a function that does *not* accept null, there is a real case for it:
+  the intent stays in the declaration, tools read it, and the optimiser may
+  drop null checks.
 
-  *Alignment becomes possible.* SIMD instructions want each row to start on a
-  16-, 32- or 64-byte boundary. When the column count is awkward, padding is put
-  at the end of each row and `lda` is grown to match — the logical shape stays,
-  only the physical stride changes.
-
-  *Transposition becomes free.* Only the reading order changes (the last block of
-  the demonstration), so no transposed copy need be built. That is exactly what
-  BLAS's `trans` flag does.
-
-  *Generalised, it becomes strides.* Keep a stride *per axis* rather than just for
-  rows, and transposition, sub-views and reversed views all become stride
-  manipulation. NumPy's `strides` and OpenCV's `Mat::step` are that general form,
-  and in C's neighbour C++ the same idea has been fixed into a type as
-  `std::mdspan`.
+  Two things weigh against it. First, never write it on a function that takes
+  null as a legitimate input — `free`, or anything with an "absent is fine"
+  argument. Second, it costs reading effort if your team does not know the
+  syntax; it appears almost nowhere in the standard library's own
+  declarations. Using it selectively in internal APIs, where null means a
+  bug, is the practical compromise.
 ]
 
-=== An array of row pointers — binding scattered rows into one
+== The boundary — the life-or-death rule
 
-`int *rows[R]` is a wholly different layout. The rows may sit anywhere in memory,
-and they may have different lengths.
+An array's safety rule is one and admits no compromise — *valid numbers run from
+0 to the slot count minus one.* Reading or writing `a[5]` (in a five-slot array)
+is outside the contract, and that slot is *someone else's memory* — perhaps a
+neighbouring variable, perhaps the ledger of a function call seen in chapter 41.
+Read it and you get rubbish; write it and someone else's data is quietly broken —
+the buffer overrun is the single cause of more accidents and security
+vulnerabilities than anything else in C's history (the next two chapters are those
+true stories).
 
-The latter part of the demonstration shows both properties. *Swapping rows
-becomes swapping pointers*, so order can change without moving data (which earns
-its keep in sorting and pivoting), and *jagged rows* can be held at all.
+There is exactly one place the standard specially permits at the boundary — as
+foreshadowed in chapter 37, *making the address* of the slot one past the end
+(`a + 5`) is legal (as long as you do not follow it). The traversal idiom stands
+on that:
 
-Three representative cases:
+```c
+for (int *it = a; it != a + 5; it += 1) { /* use *it */ }
+```
 
-- `int main(int argc, char *argv[])` — an array of strings of differing lengths.
-  Chapter 27's `argv` is exactly this pattern.
-- *Image libraries* — libjpeg's `JSAMPARRAY` is an array of row pointers, because
-  an API that processes an image one scanline at a time must be able to swap the
-  buffer for each line.
-- *Ragged data* — text whose sentences differ in length, graphs whose nodes have
-  different numbers of children.
-
-The price is plain: one more indirection, broken locality when rows scatter
-(chapter 11), and as many allocations and frees as there are rows.
-
-== Traversal order and the cache — why the same computation differs several-fold
-
-The same data, read the same number of times, differs in speed by the order. This
-is the most practical piece of knowledge about multidimensional arrays.
-
-#demo("examples-en/ch38/md_stride.c")
-
-The demonstration does not measure time (that differs per machine). It counts
-*access strides* instead. Reading a 64×64 `double` matrix 4096 times in two
-orders touches the same 512 cache lines. What differs is *continuity* —
-row-major settles 3584 accesses inside the line already loaded, and the column
-order manages none at all.
-
-The reason is chapter 11's ladder exactly. A cache carries memory in *lines*
-(usually 64 bytes), not bytes. For `double` that is eight per line.
-
-- *Row-major (`for i { for j { a[i][j] } }`)* — the inner step is 8 bytes. Eight
-  uses come out of one loaded line before moving on. And because the addresses
-  rise regularly, the *hardware prefetcher* fetches the next line ahead of time.
-- *Column order (`for j { for i { a[i][j] } }`)* — the inner step is the size of a
-  row (512 bytes here). Every access touches a different line, and the other
-  seven values in each loaded line are evicted unused.
-
-Once the matrix outgrows the cache the gap widens visibly. Figures of *several
-times to more than tenfold* are commonly quoted; the exact number depends on
-machine and size, so this book pins down no figure. What to remember is the
-principle: *make the inner loop sweep memory continuously.*
-
-#realcase("In matrix multiply, changing the loop order alone")[
-  The classic case is `C = A × B`. Written as the textbook does, the inner loop is
-  `k`, and inside it `B[k][j]` is read *down a column* — the worst possible order.
-
-  ```c
-  for (i) for (j) for (k) C[i][j] += A[i][k] * B[k][j];   /* ijk */
-  for (i) for (k) for (j) C[i][j] += A[i][k] * B[k][j];   /* ikj */
-  ```
-
-  The second (`ikj`) does exactly the same arithmetic, but in its inner loop both
-  `B[k][j]` and `C[i][j]` run along rows. That alone makes large matrices several
-  times faster.
-
-  Production numeric libraries go a step further — they cut the matrices into
-  *tiles* that fit in cache, so that a loaded piece is used as many times as
-  possible before it goes. A good part of why BLAS implementations beat a plain
-  triple loop by more than tenfold lies in that tiling and in SIMD. Not the
-  algorithm but *the order in which memory is handled* decided the performance.
+#qa[
+  Does the compiler not catch a boundary violation?
+][
+  Only some. Obvious violations with constants, like `a[7]`, are caught well by
+  today's compiler warnings, but when the number is the result of a calculation it
+  cannot be known at compile time — because doing boundary checks constantly at
+  run time is something C *chose not to do* for performance (the price of that
+  choice and the ways of making up for it are the remaining subjects of this
+  part). The run-time net is chapter 17's ASan — run code that violates a boundary
+  in an ASan build and it is caught at the moment of violation, with file and line
+  number. And there is the road of using components with boundary checking built
+  in from the start — chapter 41's proven is that road.
 ]
 
-#platform("Background — the notion of an iterator")[
-  Put in other languages' vocabulary, all of this is the *iterator*. "How shall
-  this structure be swept?" separated from the structure itself and made into a
-  value. C has no such name, but it has the thing — *a pointer is an iterator*.
-
-  ```c
-  for (int *p = a[0]; p != a[0] + 12; ++p) ...   /* start, end, advance */
-  ```
-
-  The idea that a sweep needs only a start, an end and a way to advance is the
-  same. C++'s `begin()`/`end()`, Python's `__iter__` and Java's `Iterator` are
-  those three given names and a specification.
-
-  In more than one dimension the notion is especially useful. The *leading
-  dimension* and *strides* above are precisely "the way to advance" written down
-  per axis, and NumPy's `nditer` or C++'s `mdspan` make that rule a value to be
-  passed around. In C there is no such value, so you carry the two numbers
-  `(start address, stride)` by hand — the same pattern, only without the name.
-]
-
-#recap[
-  #dtable(
-    columns: 2,
-    [*What to keep*], [*The point*],
-    [Substance], [`int a[3][4]` is "three `int[4]`" — the element is a row],
-    [Layout], [Row-major. The last subscript varies fastest],
-    [Subscript], [`a[i][j]` = `*(*(a+i)+j)`; offset = `i×row + j×element`],
-    [Parameters], [Only the outer dimension is stripped — `int (*)[4]`, not `int **`],
-    [Flattening], [Sweeping a declared 2-D array flat is a grey zone (provenance)],
-    [The other way], [Allocating flat and putting a 2-D view on it is the sound direction],
-    [Leading dimension], [Start plus stride — submatrix, transpose and alignment for free],
-    [Traversal], [Make the inner loop sweep memory continuously],
-  )
-]
-
-We have seen what happens when arrays are stacked. The next chapter takes the
-array that is used most and hurts most — the array of characters, the string.
+We can handle contiguous memory. The next chapter *stacks* this rule — the case
+where the element is itself an array, that is, multidimensional arrays. What we
+learned here, "one step is one element", applies unchanged; the element is just a
+whole row.

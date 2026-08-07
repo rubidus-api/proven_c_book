@@ -119,7 +119,7 @@ The C standard divides tokens into six kinds.
   [keyword], [`int` `if` `return` `sizeof` `struct`], [cannot be used as a name],
   [identifier], [`x` `main` `buffer_len`], [a name. the first character is not a digit],
   [constant], [`42` `0x1f` `3.14` `'a'`], [character constants belong here too],
-  [string literal], [`"hello"`], [an array, not a constant (chapter 39)],
+  [string literal], [`"hello"`], [an array, not a constant (chapter 40)],
   [punctuator], [`+` `;` `{` `->` `<<=`], [operators, brackets, semicolons],
   [header name], [`<stdio.h>`], [used only in the preprocessing stage],
 )
@@ -138,7 +138,7 @@ C compiler solves this by passing information between the parser and the name
 table (the symbol table). One root of C's reputation for hard-to-read
 declaration syntax is here.
 
-The *translation phases* covered in chapter 54 are the front half of this
+The *translation phases* covered in chapter 55 are the front half of this
 picture pinned down in the standard's language — what remains after
 preprocessing is the token stream above, and the compiler starts work from
 there.
@@ -176,7 +176,7 @@ linking stage.*
   announcement); actually finding and joining the body is the linker's job. When
   a different worker raises the error, the kind of error differs too — the habit
   of first asking "which of the four runners fell over?" is half of problem
-  solving (formally, chapter 51).
+  solving (formally, chapter 52).
 ]
 
 #misconception[
@@ -188,7 +188,7 @@ linking stage.*
   (assembling), joining pieces (linking). This distinction is the root of
   practical instinct: you learn to read which stage an error came from, the
   build style of large projects — making object files separately and relinking
-  only (chapter 51) — becomes natural, and you understand why the language rule
+  only (chapter 52) — becomes natural, and you understand why the language rule
   of "declaration versus definition" (chapter 24) exists at all: because the
   compiler works from announcements and the linker joins the real things.
 ]
@@ -201,7 +201,7 @@ linking stage.*
   learning and diagnosis. In large projects, though, it becomes standard practice
   to run only up to the third runner per file (each into a `.o`) and redo just
   the final link — there is no reason to retranslate everything because one file
-  changed. That world opens in chapter 51.
+  changed. That world opens in chapter 52.
 ]
 
 We now have a map from source to execution. What remains is to equip the tools

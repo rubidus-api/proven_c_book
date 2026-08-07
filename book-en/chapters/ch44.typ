@@ -1,530 +1,321 @@
 #import "../../book/lib.typ": *
 
-= Using structs — temporary values, named arguments, layout
+= Structs
 
 #prereq(
-  ([chapter 43, Structs], [defining a struct]),
-  ([chapter 37, Arrays], [arrays and passing by value]),
+  ([chapter 23, Declaring variables], [declaring a variable]),
+  ([chapter 38, Arrays], [several values under one name]),
 )
 
 #deepqa[
-  Chapter 43 said a struct is a value, so assigning copies it whole and passing it
-  to a function sends a copy. But chapter 37 said that passing an array to a
-  function makes it decay into a pointer so that *the original is touched*. Do the
-  two not collide — which is it when a struct contains an array?
+  Chapter 23 said "a type is a set of values plus an agreement about operations",
+  and every type used so far has been one that already existed (int, double, char,
+  pointers). Then what does it mean for a programmer to *make a new type*?
 ][
-  The struct wins. An array decaying into a pointer is the rule for *when the
-  array itself is written as an argument*; an array that has gone in as a struct
-  member is part of the value that is the struct and is therefore copied. So the
-  only way in C to pass an array truly *like a value* is "wrapping it in a
-  struct." This chapter's second example shows that contrast by measurement — the
-  side passed by value leaves the original untouched, and the side that decayed
-  into a pointer changes it.
+  It is settling a new shape of memory and giving it a name. Declare "I shall call
+  a lump of two integers side by side a point", and from that moment point is a
+  fully-fledged type from which variables can be made, which can be passed to
+  functions and laid out as an array. If chapter 38's array was *a repetition of
+  the same type*, a struct is *a bundle of different types* — and the moment that
+  bundle gets a name, the program's vocabulary grows.
 ]
 
 #organizer[
-  If chapter 43 was the syntax of the struct, this chapter is *how to use it*.
-#idx("compound literal")  The notation for referring to a struct inside a
-  struct, the temporary struct made and handed over on the spot (the compound
-  literal), the idiom of "order-free named arguments" built from it, and the
-#idx("padding")  padding that gets in between members and how to remove it or
-  force it. Finally we measure the only road for passing an array by value, and
-  its price.
+  We keep the promise put off in Part V with "declarations that make types come
+#idx("struct")  after we have a memory model." The type that binds several
+  values into one — the struct. Declaration and initialisation, the two access
+  notations (`.` and `->`), and how a struct travels as a value.
 ]
 
 #chapter-questions()
 
-== Nesting and access — reading dots and arrows mixed
+(In chapter 26's map a struct was both an *aggregate type* and a *derived type*.
+This chapter is the inside of that cell.)
 
-A struct's member may itself be a struct. The notation is simply layered.
+== Declaration, initialisation, access
 
-```c
-struct point { int x, y; };
-struct rect  { struct point origin; struct point size; };
-struct scene { struct rect *frame; const char *name; };
+#demo("examples-en/ch44/point.c")
 
-struct rect  r  = { .origin = { .x = 1, .y = 2 }, .size = { .x = 30, .y = 40 } };
-struct scene s  = { .frame = &r, .name = "main" };
+*Declaration* is `struct point { int x; int y; };` — each item inside the braces
+is called a *member*. The declaration itself takes no memory. It is only a
+definition saying "a type of this shape exists"; a variable appears when you
+write `struct point a;`.
 
-r.origin.x        /* value inside value        : dot + dot */
-s.frame->size.y   /* pointer inside value      : dot + arrow + dot */
-(&r)->origin.y    /* the arrow is only an abbreviation of (*p). */
-```
+For *initialisation* we recommend, as in the demonstration, writing the member
+names — the *designated initializer* (C99): `{ .x = 3, .y = 4 }`. It reads better
+than the order-dependent `{3, 4}` and stays safe if members are added or
+reordered. Members not written are filled with 0.
 
-There is only one rule. *If the left is a value, a dot; if a pointer, an arrow.*
-`p->x` is an abbreviation of `(*p).x` (chapter 43), and the abbreviation exists
-because handling structs through pointers is overwhelmingly common. Indeed, code
-written as `(*p).x` is usually old code or a place explaining operator
-precedence.
+*Access* has two notations — a dot for a value (`a.x`), an arrow for a pointer
+(`p->x`). The arrow is in fact an abbreviation of `(*p).x` (chapter 35's
+dereference plus dot). Handling structs through pointers is overwhelmingly common,
+which is why it got its own notation.
 
-#qa[
-  Where do you break a long chain like `s.frame->size.y` when reading it?
-][
-  Left to right, one step down at a time. `s` (the scene) → `.frame` (the pointer
-  inside it) → `->size` (the size of the rectangle pointed at) → `.y` (that
-  point's y). Each arrow is a mark that *one dereference happens*, so it also
-  means there are as many pointers needing a null check as there are arrows. If
-  `s.frame` is null this notation collapses on the spot — a long chain, as easy as
-  it is to read, also hides the checks.
-]
+*Compound literal* — the demonstration's
+`(struct point){ .x = ..., .y = ... }` is the notation for "making one unnamed
+struct value on the spot" (C99). It is useful for handing a struct over
+immediately as a return value or an argument.
 
-== The temporary struct — the compound literal
+== The first surprise of `sizeof` — not the sum of the members
 
-The notation for making one struct value *on the spot*, without making a named
-variable, is the compound literal (C99).
+Make a struct, ask for its size, and the guess is usually wrong.
 
-```c
-draw_((struct draw_opts){ .width = 40, .title = "chart" });   /* straight as an argument */
-return (struct point){ .x = a.x + dx, .y = a.y + dy };        /* as a return value */
-```
+#demo("examples-en/ch44/sizeof_first.c")
 
-Take away three properties.
+`char` + `int` + `char` looks like six bytes; it is twelve. The extra six are
+*padding* — empty space between the members and at the end.
 
-*First, it is an lvalue.* It merely has no name; it is a real object, so its
-address can be taken and its members assigned to. The example's
-`&(struct draw_opts){ … }` is the check. It is easy to think "being a temporary
-(an rvalue) its address cannot be taken", but C's compound literal is not like
-that — a difference from C++'s temporary objects.
+#figure-svg("padding", caption: [The hatched cells are padding. Each member sits at a multiple of its alignment, and space is added at the end too.])
 
-*Second, its lifetime is the end of the block, not of the statement.* A compound
-literal written inside a block lives until that block ends (automatic storage
-duration). So within the same block it is safe to carry its address about.
+The reason is chapter 6's alignment. An `int` must sit at an address that is a
+multiple of four, so three bytes go empty after the first `char`, and three more
+after the last one — because when this struct is laid out as an array, *the next
+element's `int`* must be aligned too.
 
-*Third, therefore, sending its address out of the function is a dangling
-pointer.*
+There are only three rules.
 
-#antipattern[
-  Returning the address of a compound literal
-][
-  ```c
-  struct point *make(int x, int y)
-  {
-      return &(struct point){ .x = x, .y = y };   /* it vanishes when the function ends */
-  }
-  ```
-  Exactly the same accident as returning the address of a local variable in
-  chapter 36. To return a value, return it *by value*
-  (`struct point make(...)`), fill a place the caller provided, or use dynamic
-  allocation (chapter 42). A compound literal written at file scope has static
-  storage duration and does not have this problem, but in that place it is usually
-  better to give it a name.
-]
++ Each member sits at an *offset that is a multiple of its own alignment*.
++ The struct's alignment is the *maximum of its members' alignments*.
++ The struct's size is *rounded up* to a multiple of that alignment (tail padding).
 
-== Named arguments — passing one struct
+So *changing only the order can shrink it.* The demonstration's `tight` puts the
+big one first and turns twelve bytes into eight. With a million elements that is
+11 MiB against 7 MiB — and not only memory: the number of elements that fit in
+cache changes with it (chapter 11).
 
-#demo("examples-en/ch44/opts.c")
-
-From here comes the idiom that changes code most in practice. Consider a function
-with five or six arguments.
-
-```c
-draw(40, 20, false, true, 3, "chart");    /* what is the third true? */
-```
-
-C has neither other languages' named arguments nor default values. But overlay
-*designated initialisers with a compound literal* and you effectively get the
-same thing.
-
-```c
-struct draw_opts { int width; int height; bool grid; const char *title; };
-static void draw_(struct draw_opts o);
-#define draw(...) draw_((struct draw_opts){ __VA_ARGS__ })
-
-draw(.title = "chart", .height = 20, .width = 40);   /* order-free */
-draw(.grid = true);                                   /* the rest are defaults */
-draw();                                               /* all defaults */
-```
-
-Four things are gained.
-
-+ *Freedom from order.* A designated initialiser fixes the slot by name, so the
-  caller writes in whatever order suits.
-+ *What is left out is 0.* The standard's promise that unwritten members are
-  filled with 0 (null for pointers) becomes the "default value". So the knack is
-  to design the fields *so that 0 makes sense as the default* — the example
-  reading `width == 0` as "the default 80" is that.
-+ *The call site is self-explanatory.* You need not ask what the `false, true, 3`
-  above are.
-+ *Adding a field later does not break existing calls.* Change an argument list
-  and every call site must be fixed, but adding one member to a struct has no
-  effect on existing calls at all (that member becomes 0). In an API maintained
-  for a long time this property is especially valuable.
+The tool for seeing the layout is `offsetof` from `<stddef.h>`; the demonstration
+uses it to print where each member starts. "If it differs from what you thought,
+ask" is the knack here.
 
 #qa[
-  Are there no traps in this idiom?
+  Should the biggest member always come first, then?
 ][
-  Beware of three.
+  It makes a fine default but a poor rule. *A readable order* often matters more
+  (keeping related members together), and where only one struct is ever made, a
+  few bytes are nothing.
 
-  First, *the order of evaluation between initialiser items is not fixed.* Mix in
-  side effects, as in `draw(.width = i++, .height = i)`, and the result is
-  unpredictable (chapter 20). Write only values in the arguments.
+  The places to think about order are clear — *when very many of the same struct
+  are laid out* (arrays, pools, nodes), and *where memory is tight* (embedded).
+  Elsewhere it is enough to print the size once and not be surprised.
 
-  Second, if there is *a field for which 0 is a valid value*, "left out" cannot be
-  told from "0 was specified". Design such a field with its meaning inverted
-  (`grid` rather than `no_grid`), or add a separate presence field.
-
-  Third, *the cost of building and passing a large struct every time*. Option
-  structs are usually small enough not to matter, but when they grow, use the
-  variant of receiving `const struct opts *` and passing
-  `&(struct opts){ … }` at the call site — the property above, that an address can
-  be taken, works here.
+  The devices for removing padding (`#pragma pack`, `packed`) and for raising
+  alignment (`alignas`) are in chapter 45. What to know first is that *they are
+  either non-standard or have a price.*
 ]
 
-#realcase[
-  Named arguments as met in practice
-][
-  This pattern is widespread. Various initialisation functions in the Linux
-  kernel, the way standard and POSIX APIs take options as a struct (such as
-  `struct sigaction`, chapter 72, or `struct timespec`), and the `..._desc`
-  structs of graphics libraries (the `..._DESC` of several GPU APIs, say) are all
-  the same idea. "When arguments grow numerous, bind them into a struct" is
-  practically an idiom in C, and C99's designated initialisers made it read well.
-]
+== Zeroing the whole thing — `{ 0 }` and `{ }`
 
-== Padding — the empty space between members
-
-#demo("examples-en/ch44/layout.c")
-
-Chapter 43 gave the three rules of padding — each member at a multiple of its own
-alignment, the struct's alignment the maximum of its members', the size rounded up
-to that. This chapter's example confirms them again: `char`, `int` and `char` sum
-to six while the struct is twelve bytes, and `tight`, with the big one first, is
-eight.
-
-From here we go to the next question — *what does the existence of padding forbid
-in practice.*
-
-#misconception[
-  "Padding bytes contain 0"
-][
-  They do not. The value of padding is *unspecified*. Initialisation may put 0
-  there, or whatever previously used that place may remain. Three practical traps
-  come from this.
-
-  - *Do not compare structs with `memcmp`* (chapter 62) — equal values may come
-    out "different" because the padding differs. Compare member by member.
-  - *Do not hash a struct whole* — for the same reason, the same value gives
-    different hashes.
-  - *Do not send a struct as it is to a file or a network* — the rubbish in the
-    padding goes with it (and can be an information leak), and if the receiving
-    side's layout differs the interpretation goes wrong too.
-
-  Whether struct assignment (`b = a;`) copies the padding as well is not promised
-  by the standard either. Remember that *only the members are meaningful* and it
-  is all explained.
-]
-
-== Why a struct must not be stored or sent whole
-
-There is a line that looks like the shortest possible.
+The previous section passed over "members you leave out are filled with zero"
+in a single clause. That clause is the foundation of an idiom used every day,
+so it is worth a section of its own.
 
 ```c
-fwrite(&record, sizeof record, 1, f);        /* the whole struct into a file */
-send(sock, &record, sizeof record, 0);       /* the whole struct onto a socket */
+struct config c = {0};   /* the old idiom */
+struct config c = {};    /* C23 onwards — the empty initializer */
 ```
 
-One line does it — and *this is one of the lines that causes the most accidents in
-this book.* There are four reasons, and they are independent of each other.
+#demo("examples-en/ch44/zeroinit.c")
+
+=== What is actually guaranteed
+
+The standard (C23 §6.7.11) gives this a name: *default initialization*.
+Anything not initialised explicitly is filled in as follows.
 
 #dtable(
   columns: 2,
-  [*What is wrong*], [*The result*],
-  [The value of the padding is not specified], [Rubbish you never wrote goes out with it — sometimes an information leak],
-  [The layout differs per compiler, option and platform], [Two programs built from the same source exchange different bytes],
-  [Byte order (endianness) differs], [`0x01020304` becomes `0x04030201` at the other end (chapter 45)],
-  [Type sizes differ], [`long`, `size_t`, pointers and enums differ between 32- and 64-bit],
+  [*Type of the member*], [*What it is filled with*],
+  [Pointer], [*A null pointer*],
+  [Arithmetic type (integer, floating)], [(positive or unsigned) zero],
+  [Decimal floating type], [Positive zero; the quantum exponent is implementation-defined],
+  [Aggregate (struct, array, union)], [The same rules again, *recursively*],
 )
 
-#demo("examples-en/ch44/serialize.c")
-
-The first part of the demonstration shows the first reason with your own eyes. The
-place the struct will occupy is dirtied with `0xAA` and only the members are
-filled in; printing the whole thing shows `AA` still sitting between them —
-*because the members were touched and the padding was not.*
-
-#figure-svg("serialize", caption: [Above, twelve bytes with the padding going out; below, seven bytes in the order we chose.])
-
-=== So how is it done — field by field
-
-There is one prescription. *Decide the byte order yourself and write fixed-width
-types one at a time.*
-
-The demonstration's `encode` is that shape. Four knacks belong to it.
-
-+ *Use fixed-width types* — `uint8_t`, `uint16_t`, `uint32_t` (chapter 72). The
-  size of an `int` or a `long` depends on the platform.
-+ *Write the byte order into the code.* The demonstration writes big endian
-  (network byte order). Written with shifts and masks, *the same bytes come out
-  regardless of the endianness of the machine running it.*
-+ *Write the length first.* Strings and arrays go as "length then bytes"; the
-  reader has to know how much to read.
-+ *The reading side validates.* The demonstration's `decode` looks at the length
-  first — not touching short input is the first line of defence.
-
-What this buys is plain. The byte count drops from twelve to seven (no padding),
-any machine reads the same values, and the format is written in the code where it
-can be read later.
-
-#realcase[
-  Padding that leaked — an old headache in kernels
-][
-  An operating system kernel often hands structs to user programs (the results of
-  system calls, socket information, and so on). If the kernel *fills only the
-  members and copies the whole thing*, whatever was left in the padding — a
-  fragment of kernel memory — crosses over with it.
-
-  This is the class of vulnerability called a *kernel information leak*, and fixes
-  of exactly this kind appeared in Linux and the BSDs over many years. The amount
-  leaked is a few bytes, but if an address is among them it is a thread that
-  unravels address randomisation (ASLR).
-
-  So kernel code acquired a discipline — *a struct that will cross to user space
-  is first zeroed whole* (`memset`). Put in this book's terms: the representation
-  layer is settled explicitly. Chapter 43's `{ 0 }` initialiser does the same job
-  more safely.
-
-  The lesson carries straight into applications — *where a struct goes out, you
-  must know byte by byte what goes out.*
-]
-
-#antipattern[
-  Storing a struct in a file as it stands
-][
-  ```c
-  struct config c = { .port = 8080, .timeout = 30 };
-  fwrite(&c, sizeof c, 1, f);            /* save */
-  ...
-  fread(&c, sizeof c, 1, f);             /* read in the next version */
-  ```
-  Three things go wrong. *Rebuild the program with another compiler* and the
-  layout changes, so old files cannot be read. *Read a file written on 32-bit from
-  64-bit* and the sizes disagree. And *the moment one member is added to the
-  struct*, every old file becomes unreadable.
-
-  The last hurts most — there is no room to evolve the format. Field-by-field
-  serialisation answers it: write a *version number* first, and let the reader
-  branch on it.
-]
+That answers this section's central question: *pointer members are
+initialised to null* — recursively, including pointers inside nested structs.
+In the demonstration both `path` and `in.note` come out null.
 
 #qa[
-  Would a text format not solve it from the start?
+  Is "filled with zero" not the same thing as "made null" for a pointer?
 ][
-  In many cases that is the right answer. Text formats such as JSON, INI and CSV
-  have no endianness, no padding and no type-size problem, and a person can read
-  and fix them by eye. That is also why chapter 86 writes a small JSON reader
-  three ways.
+  On the overwhelming majority of implementations the result is the same, but
+  *the promise is a different promise.*
 
-  Where a binary format is needed is clear — *when the volume is large* (text
-  costs several times as much), *when speed matters* (parsing cost), or *when the
-  format is already fixed* (a protocol, a file format). Even then the rule is the
-  same: settle the byte layout yourself and write it down.
+  What the standard guarantees is "becomes a null pointer value", not
+  "becomes all-bits-zero" (chapter 36, on what null really is). Implementations
+  where the representation of null is not all-bits-zero have existed, and the
+  standard still leaves room for them. So `{0}` and `{}` give you null
+  everywhere, while `memset(&c, 0, sizeof c)` only ever gives you all-bits-zero.
+  On an implementation where those two promises come apart, the latter is not
+  null.
 
-  One more road, in passing: rather than designing a binary format, use one that
-  exists — Protocol Buffers, CBOR, FlatBuffers. This book only names them.
-  Whichever you choose, avoid "write it whole".
+  Chapter 36's demonstration empties this very struct both ways and prints the
+  bytes side by side — on this machine the results agree, and the promises do
+  not. The same goes for floating point: `{0}` promises the value 0.0, `memset`
+  promises a bit pattern. The working rule is simple — *use an initializer to
+  empty a struct, and keep `memset` for other purposes* (such as the padding
+  question below).
 ]
 
-== How to remove padding, how to force alignment
+=== The fine difference between `{0}` and `{}` — padding
 
-There are certainly places where padding is inconvenient — when *the byte layout
-is fixed from outside*, as in a file format or a communication protocol. So
-implementations provide devices for turning padding off.
+They are nearly the same, and they part company in one place. For an
+aggregate subject to default initialization, C23 states that *any padding is
+initialized to zero bits*. With `{}` the *whole object* is subject to default
+initialization, so the gaps between members are zero too. With `{0}` the
+first member is initialised explicitly, so what gets default initialization
+is *the remaining members* — the struct's own padding bytes are not covered,
+and their values are unspecified.
 
-#platform[
-  packed and pragma pack — not standard
-][
-  ```c
-  #pragma pack(push, 1)          /* widely used, common to MSVC, GCC and Clang */
-  struct header { char kind; int length; };
-  #pragma pack(pop)              /* always put it back */
+In the demonstration all 48 bytes come out zero, but that is this
+implementation's behaviour, not a promise.
 
-  struct header2 { char kind; int length; } __attribute__((packed));  /* GCC and Clang */
-  ```
-  Neither is *standard C*. In the example `#pragma pack(1)` made a struct of 6
-  bytes with alignment 1. Fail to pair `push` with `pop` and the layout of structs
-  in headers included afterwards changes too, giving the nasty bug of a layout that
-  disagrees with a library — leaving pack open inside a header without closing it
-  is the representative accident.
-]
+The distinction is usually irrelevant, and then suddenly matters when you
+compare whole structs with `memcmp` or write them out byte-wise to a file or
+a socket. The rule for those cases:
 
-#antipattern[
-  Passing the address of a packed struct's member
-][
-  ```c
-  struct __attribute__((packed)) h { char k; int len; };
-  void take(int *p);
-  take(&s.len);          /* an unaligned address — outside the contract */
-  ```
-  A packed struct's member may sit at a misaligned place. Pass its address as an
-  ordinary `int *` and the receiving side accesses it assuming alignment — on a
-  tolerant machine (x86) merely slower, on a strict machine dead on the spot
-  (chapter 6). GCC and Clang issue the warning
-  `-Waddress-of-packed-member` here.
-
-  Reading the value (`int n = s.len;`) is safe, because the compiler gathers the
-  bytes for you. It is *leaking the address* that is the problem.
-]
-
-There is a tool in the opposite direction, *forcing alignment*, and this one is a
-standard word of C23 (chapter 78).
-
-```c
-struct cacheline { alignas(64) int counter; };   /* on a 64-byte boundary */
-```
-
-In the example this struct became size 64, alignment 64. Its uses are clear —
-putting each thread's counter on a different cache line to avoid the *false
-sharing* seen in chapter 11, or meeting a hardware requirement such as DMA or
-SIMD. It is not free, though: the struct above uses 64 bytes to hold one `int`.
-
-#qa[
-  So when handling a file format or a communication protocol, is a packed struct
-  the right answer?
-][
-  There is a safer right answer: *moving between the byte sequence and the struct
-  by hand.*
-
-  ```c
-  /* reading: take the fields out of the buffer one at a time */
-  uint32_t len;
-  memcpy(&len, buf + 1, sizeof len);
-  len = le32toh(len);            /* state the endianness too (chapter 5) */
-  ```
-
-  Laying a packed struct over a buffer (`struct h *p = (struct h *)buf;`) assumes
-  three things at once — no padding, correct alignment, matching endianness. Get
-  one of them wrong and it breaks silently, and besides, access through a swapped
-  type runs into the aliasing rules (chapter 49). Field-by-field `memcpy` is longer
-  but exposes all three assumptions in the code. What Part XII's library does is
-  exactly to gather this tedious work into one place.
-]
-
-== Members without names, and `container_of`
-
-Two small devices to collect. Both turn up often in real code, and both are hard
-to see the point of from the syntax alone.
-
-#demo("examples-en/ch44/container_of.c")
-
-=== Anonymous structs and unions (C11)
-
-A struct may contain an unnamed struct or union, and then *its members are used
-directly from outside.*
-
-```c
-struct tagged {
-    unsigned kind;
-    union { int i; double d; };   /* no name */
-};
-struct tagged t = { .kind = 1, .i = 42 };
-t.i = 43;                         /* not t.u.i */
-```
-
-A tagged union (chapter 45) reads better for it — the `u` in `t.u.i` never meant
-anything. The price is that *an unnamed union cannot be passed on its own.*
-
-=== `container_of` — from a member back to the whole
-
-Since `offsetof` says where a member begins, the arithmetic runs the other way too.
-
-```c
-#define CONTAINER_OF(ptr, type, member) \
-    ((type *)(void *)((char *)(ptr) - offsetof(type, member)))
-```
-
-*Subtract the member's offset from the member's address and you have the struct's
-address.* The Linux kernel's `container_of` is this one line, and intrusive data
-structures come from it — a list's link does not know which struct it is embedded
-in, yet the struct can be recovered from the link.
-
-The demonstration shows it. One `struct link` lets any struct hang from a list,
-and the list code need not know the type of the data. Part XII's intrusive list
-stands on this.
-
-#platform[
-  What this macro is standing on
-][
-  `container_of` is widely used but *not a form the standard guarantees.* The
-  arithmetic of casting to `char *` and subtracting has to be understood by the
-  compiler as happening "inside that struct object", and once provenance
-  (chapter 36) is taken into account a grey area remains.
-
-  In practice every major compiler supports the pattern — kernels do not run
-  without it. But *the member really must belong to that struct.* Pass the wrong
-  type and a wrong address comes out with no check at all. That is why versions
-  that check the type with C11's `_Generic` or GCC's `typeof` are common.
-]
-
-== Passing an array by value — can it be done, and should it?
-
-The latter part of the example is that contrast. `total(struct row r)` received a
-copy and changed it, and the original was untouched (`cell[0] = 1`).
-`total_raw(int cell[8])` decayed into a pointer and changed the original
-(`cell[0] = 999`). The assignment `struct row copy = r;` likewise copies the array
-member whole.
-
-So it comes to this. *If you want to handle an array with value semantics in C,
-wrap it in a struct.* It is the only way, and there are places where it is really
-used.
-
-#dtable(
-  columns: 2,
-  [*where it is worthwhile*], [*why*],
-  [small fixed-size vectors and matrices (`struct vec3`, `struct mat4`)], [calculating with them like values is natural],
-  [fixed-size identifiers and keys (`struct uuid { unsigned char b[16]; }`)], [copying is cheap and leaves no room for mistakes],
-  [when an array must be *returned*], [an array cannot be returned but a struct can],
-  [when you want to pass it immutably], [being a copy, the callee cannot touch the original],
-)
-
-The price is clear too.
-
-*Stack usage.* The copy is usually placed in the called function's stack frame.
-Pass a 16 KiB struct by value and that much more is piled on per call — measure
-it and the stack position before and after the call really does widen by the
-struct's size. The stack is usually about 8 MiB (chapter 36), and can be far
-smaller in recursion or on a per-thread stack (chapter 75). Recursion passing
-large structs by value is the shortest road to stack overflow.
-
-*The cost of copying.* But saying "a copy always happens" would be inaccurate.
-The calling convention decides — a small struct (usually up to two words) crosses
-*in registers* with nothing worth calling a copy, and for a large struct it is
-common for the caller to build it in memory and pass its address hidden. Moreover,
-if the function is inlined the compiler may remove the copy itself. So the
-accurate sentence is: *the meaning is always a copy, and the real cost is decided
-by size, calling convention and optimisation.*
+- You only need the values to be right → `{0}` or `{}`.
+- The padding must be zero too (comparison, serialisation) → `{}` in C23;
+  otherwise `memset` first and then assign the members you need.
 
 #misconception[
-  "Passing a struct by value is always slow"
+  "`{0}` only zeroes the first member"
 ][
-  It depends on size. Something small like `struct point { int x, y; }` is if
-  anything faster passed by value, and reads better too — pass a pointer and a
-  dereference appears, and the compiler must suspect "someone may change the value
-  through this pointer", which reduces optimisation.
+  It does not. `{0}` spells out one member, but *everything left out is
+  default-initialised* (§6.7.11). A struct with a hundred members is fully
+  zeroed and nulled by that one `{0}`.
 
-  The rough practical rule: *up to a couple of words by value, larger than that by
-  `const` pointer.* And this choice is a matter not only of performance but of
-  contract — receive by value and "the original is not touched" is guaranteed by
-  the syntax; receive by pointer and it is only promised with `const`.
+  The inverted misconception is just as common: "if I write only
+  `{ .retries = 3 }`, the rest is garbage." Also false. Designated or
+  positional, *if there is any initializer at all*, the members you leave out
+  are default-initialised — the third line of the demonstration is the check.
+  Garbage is what you get when there is no initializer whatsoever
+  (`struct config c;`).
 ]
 
-#recap[
-  #dtable(
-    columns: 2,
-    [*to remember*], [*the point*],
-    [access], [dot if the left is a value, `->` if a pointer (= `(*p).`)],
-    [compound literal], [`(struct T){…}` — an lvalue whose lifetime is *the block's end*],
-    [returning an address], [do not send a compound literal's address out of the function],
-    [named arguments], [an options struct + designated initialisers. omitted members are 0],
-    [designing defaults], [fix the fields so that *0 makes sense as the default*],
-    [padding], [it arises from alignment. its value is unspecified],
-    [member order], [lay the large ones first and the size shrinks],
-    [`memcmp`, hashing, serialising], [do not handle a struct whole],
-    [`pack`], [not standard. pair `push`/`pop`, do not leak member addresses],
-    [`alignas`], [standard. avoiding false sharing, hardware requirements],
-    [array by value], [wrap it in a struct. watch the stack and the size together],
-  )
+#platform("Can you use `{}`?")[
+  The empty initializer `{}` became standard in C23. GCC and Clang accepted
+  it as an extension before that, but such code was not portable. If you must
+  also support C17 and earlier, use `{0}` — bearing in mind that when the
+  first member is itself a struct or an array, some compilers warn and you
+  end up writing `{ {0} }`. Not having that annoyance is another point in
+  favour of `{}`.
 ]
 
-We have learned how to use structs. The next chapter is the device for seeing the
-same memory *through a different eye* — the world of unions and representation.
-The endianness demonstration booked in chapter 5 finally opens.
+== A struct is a value
+
+In C a struct is treated *like a value* — assign it and it is copied whole, pass
+it to a function and it crosses over copied, exactly by chapter 33's rule, and it
+can be returned whole with `return`. The demonstration's `moved(a, 10, -1)` is
+the check: a is unchanged and a new value b came out.
+
+This copying is a *shallow copy* that transcribes the members as they are. If all
+the members are numbers there is no problem, but if a member is a pointer the
+address is duplicated as it is, so original and copy point at the same place —
+this fact becomes a decisive trap later when handling data that points at itself.
+
+In practice, though, rather than passing large structs by value it is common to
+*pass a pointer* — to save the cost of copying (recall chapter 11's ladder of
+memory and it is clear that copying a large lump is not free). When only reading,
+the practice is to receive it as a const pointer, as in
+`const struct point *p` — chapter 23's `const` working as a contract mark saying
+"this function does not touch the original."
+
+#qa[
+  Writing `struct point` with `struct` every time is a nuisance — can it not be
+  shortened?
+][
+  Traditionally an alias has been made with `typedef` — `typedef struct point point_t;` and the like. But this is a point where taste and schools divide
+  (there is the counter-argument that an alias hides the information "this is a
+  struct"), so this book writes `struct` so the identity is visible on the page.
+  Either way, consistency is what matters.
+]
+
+#qa[
+  Can a struct hold itself as a member — it seems necessary for making something
+  like a list.
+][
+  It cannot hold itself *by value* (the size would be infinite). But it can hold
+  *a pointer to itself*, and that is precisely the seed of linked data structures:
+  `struct node { int value; struct node *next; };`. Let chapter 35's pointers and
+  chapter 43's dynamic memory meet in that one line and structures such as linked
+  lists and trees open up — a world of data structures beyond this book's scope,
+  but worth knowing that the key that opens the door is here.
+]
+
+=== Why assignment works but comparison does not
+
+A struct is a value, so `b = a;` copies the whole thing in one line. Yet `a == b`
+does not exist — it is a compile error. Why does assignment work and comparison
+not?
+
+*Because of padding.* Assignment can be defined as "move the members' values",
+but comparison has to answer "are they equal", and *the value of the padding is
+not specified.* Two structs holding the same values may hold different rubbish in
+their padding, and comparing bit by bit then says "different".
+
+#misconception[
+  "Then compare them with `memcmp`"
+][
+  The commonest substitute, and quietly wrong. `memcmp` compares
+  *representations* — it looks at the padding as well as the members.
+
+  Chapter 45's demonstration shows this in the flesh: two structs whose members
+  are all equal, and `memcmp` reports "different". The opposite accident exists
+  too — if the padding happens to match, it says "equal", but that is luck, not a
+  contract.
+
+  For the same reason *a struct must not be hashed whole* (equal values give
+  different hashes) and *must not be written whole to a file or a socket*
+  (chapter 45 goes into it).
+
+  There is one prescription — *write a function that compares member by member.*
+
+  ```c
+  bool point_eq(struct point a, struct point b)
+  { return a.x == b.x && a.y == b.y; }
+  ```
+]
+
+== Header and data in one block — the flexible array member
+
+A struct followed by data of no fixed length is a very common shape — messages,
+packets, nodes holding a string. C99 made the pattern official.
+
+#idx("flexible array member")A *flexible array member* is the *last* member of a struct: an array with its
+size left empty.
+
+#demo("examples-en/ch44/flexible.c")
+
+Three things are the contract.
+
+- *It must be last, and at least one other member must precede it.*
+- *It is not included in `sizeof`.* That `sizeof(struct msg)` and
+  `offsetof(struct msg, data)` printed the same value says exactly that.
+- *The size is decided when allocating.* `malloc(offsetof(…, data) + length)` is
+  the standard form.
+
+There is a reason for using `offsetof` rather than `sizeof`: `sizeof` includes the
+tail padding, so it is counted twice — not wrong, merely a little more than
+needed. And the length arithmetic *must be checked for overflow* (chapter 73) — a
+large length that wraps around means writing large data into a small vessel, which
+is precisely a heap overflow.
+
+#realcase[
+  From "the struct hack" to official syntax
+][
+  Before C99, people who wanted this wrote the last member as `char data[1]` and
+  balanced the arithmetic when allocating, as in
+  `malloc(sizeof(struct msg) + len - 1)`. This practice was known as *the struct
+  hack*.
+
+  It worked, but it was *outside the contract* — it touched the second element of
+  an array with only one. A compiler optimising on that fact could break it.
+
+  C99 removed the grey area by making `char data[]` official. Read `[1]` in old
+  code as a trace of that era, and write `[]` in new code.
+]
+
+We have both a way of binding values together and the shape those values take in
+memory. The next chapter is how to *use* them — the temporary struct made and
+handed over on the spot, order-free named arguments, the devices for dealing with
+padding, and *why a struct must not be stored or sent whole*.

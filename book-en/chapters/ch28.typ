@@ -1,138 +1,149 @@
 #import "../../book/lib.typ": *
 
-= Implicit conversions — promotion and the usual arithmetic conversions
+= Integer operations — division, bits
 
 #prereq(
-  ([chapter 26, Integers], [integer types differ in width]),
-  ([chapter 27, Integer operations], [an operation happens between one type]),
+  ([chapter 7, Representing integers], [bits and shifts]),
+  ([chapter 27, Integers], [the finiteness of integers]),
 )
 
 #deepqa[
-  Chapter 7 taught sign extension (widening 8 bits to 16), and the end of
-  chapter 27 brushed past "the value in a smaller container is automatically
-  widened before the calculation." Then is the result type of `char + char`
-  char?
+  Chapter 20 only announced that "7 / 2 is not 3.5." Answering for yourself with
+  chapter 7's knowledge — why *can* the result of dividing integer containers
+  not be 3.5?
 ][
-  No — it is int. And that fact is this chapter's starting point. C's arithmetic
-  *does not happen on small integer types*. Everything is widened to int (or
-  something larger) before the calculation, and the result is that wider type.
-  Why that is, and how far it goes, is this chapter.
+  Because there is nowhere to hold 3.5. The value set of an integer type has 3
+  and 4 and nothing in between — so division between integers must give an
+  integer, and the fractional part must be *discarded* one way or the other. The
+  question is "which way", and that rule is this chapter's first section.
 ]
 
 #organizer[
-  When C makes values of different types meet, it converts them *silently*. This
-#idx("integer promotion")  chapter gathers those invisible conversions in one
-  place — integer promotion, the usual arithmetic conversions, and the default
-  promotions of variadic arguments. Scattered, each is a riddle; gathered, they
-  are one system of rules.
+#idx("division")  We keep the promise deferred in chapter 20 — the truth about
+  integer division `/` and remainder `%`, including the rule for negative
+  numbers. And the bit operations learned as concepts in chapter 7 join as C
+  operators. The first step into conversions is taken here too.
 ]
 
 #chapter-questions()
 
-== Rule 1 — integer promotion
+== Division and remainder — the direction of discarding
 
-*Integer promotion*: when a value of an integer type smaller than int — `char`,
-`short`, `bool`, a bit-field — takes part in an arithmetic operation, it is
-*widened to int* before the calculation (to int if int can hold all its values,
-otherwise to unsigned int).
+The demonstration first.
 
-#demo("examples-en/ch28/conv.c")
+#demo("examples-en/ch28/divmod.c")
 
-The first line is the check — two `signed char` values of 100 were added and the
-result is 200. The reason a value that does not fit in a char did not overflow is
-that the addition happened not in char's world but in int's.
+For positive numbers it is as intuition says — `7 / 2` is 3, remainder 1. Where
+a rule is needed is negatives. C *truncates toward zero* — `-7 / 2` is $-3.5$
+discarded towards zero, giving $-3$, and the remainder is correspondingly $-1$.
+That is a different choice from "the quotient and remainder of mathematics"
+(where the remainder is always non-negative), so code using negative remainders
+causes accidents if it does not know the difference.
 
-The reason lies in the machine (chapter 11). A CPU's arithmetic circuits and
-registers are built to handle integers around the word size, so having separate
-arithmetic just for small types would be inefficient. C took that reality into
-the language as a rule — small types are *units of storage*, not units of
-calculation.
-
-== Rule 2 — the usual arithmetic conversions
-
-#idx("usual arithmetic conversions")If the two operands still differ in type
-after promotion, the *usual arithmetic conversions* settle on one common type.
-The order to remember in practice:
-
-- If one side is floating, go to the floating side (`long double` > `double` >
-  `float`).
-- If both are integers — go to the wider one. At equal width, *the unsigned side
-  wins*.
-
-Spelled out in the standard's own order, the integer rules are four steps.
-
-#figure-svg("conversions", caption: [Follow the four in order. Most accidents happen at step 3.])
-
-That last line is the source of the trap. The second part of the demonstration
-is it in the flesh — read `-1` through unsigned eyes and it becomes an enormous
-positive number over four billion (exactly chapter 7's modular world). So a
-comparison like `-1 < 1u` comes out *false*, against intuition. That is why
-mixing signed values into array indices or size calculations (the result of
-`sizeof` is the unsigned `size_t`!) causes silent accidents.
-
-Fortunately the compiler guards this trap well — the warnings switched on in
-chapter 17 point at sign-mixed comparisons (one example in this book was caught
-by that warning and rewritten). Reduced to a rule: *do not mix signed and
-unsigned in one comparison.* Use the `size_t` family consistently for sizes and
-indices, or state the intent with an explicit cast.
-
-== Rule 3 — default promotions for variadic arguments
-
-The third conversion happens in functions whose argument count is not fixed —
-*variadic functions* such as `printf`. Arguments passed into a position where the
-prototype states no type undergo *default argument promotions*: `float` becomes
-*`double`*, and small integer types become *int*.
-
-The demonstration's last line is the check — a `float` value printed with `%f`
-comes out fine. The format `%f` in fact expects a double, and the float argument
-arrived as a double after promotion (which is why printf has no float-specific
-format at all). The "contract between format and materials" learned in
-chapter 22 has this promotion rule as a hidden clause — the full contract, and
-how to write variadic functions yourself, is faced head on in chapter 55.
-
-#realcase[
-  The conversion that destroyed a rocket — Ariane 5, 1996
+#mathbox[
+  The division-remainder recovery invariant
 ][
-  There is an event that shows how heavy implicit and explicit conversions can
-  be. In 1996 the European Space Agency's Ariane 5 rocket exploded 37 seconds
-  after its first launch. The heart of the investigation's finding was one line
-  of conversion — the inertial navigation unit computed horizontal velocity as a
-  64-bit floating-point number, and there was code moving that value into a
-  *16-bit signed integer*. On the predecessor Ariane 4 that velocity never
-  exceeded the 16-bit range and it was safe, but on the faster Ariane 5 the value
-  overflowed its container. The failure of the narrowing conversion (chapter 7's
-  truncation) raised an exception, and with that exception unhandled the
-  navigation computer stopped, whereupon the rocket lost attitude and
-  self-destructed. The loss ran to hundreds of millions of dollars. Reused code
-  meeting *a new range of values* broke the contract — the most expensive
-  confirmation of this chapter's sentence, that a conversion changes the value.
-]
+  Whatever the direction, there is one equation C always keeps:
 
-#misconception[
-  "A cast does not change the value, only the interpretation"
-][
-  For pointer casts (chapter 36) that is broadly true, but *a cast between
-  arithmetic types changes the value itself*. `(int)3.9` becomes 3 (the
-  fractional part discarded), `(char)300` does not fit the container and is
-  truncated (chapter 7's narrowing), and `(unsigned)-1` becomes an enormous
-  positive number. C's cast means not "read these bits as that type" but
-  "*convert* this value into a value of that type" — if you want to leave the
-  bits alone and change only the eye, chapter 45's union or `memcpy` is that
-  channel. Not writing the two demands with the same syntax is one of C's few
-  kindnesses.
+  $ (a / b) times b + (a % b) = a $
+
+  Quotient and remainder are defined *as a pair* so as to satisfy this equation —
+  the demonstration's last line is a check of it. That truncating toward zero
+  makes the remainder's sign follow the dividend ($a$) is also a consequence of
+  this equation. A line of history in addition — up to C89 the direction of
+  discarding was allowed to differ by implementation, and C99 pinned it to
+  "toward zero." Chapter 7's "where machines diverge the standard leaves a
+  blank" is here another case of practice promoted to promise once the machines
+  converged.
 ]
 
 #qa[
-  Must all these rules be memorised?
+  What happens if you divide by zero?
 ][
-  Three lines are enough — *small integers are promoted to int; when mixed, the
-  wider and the unsigned side wins; in variadic arguments float becomes double.*
-  Leave the rest of the detail to the appendix's tables, and in practice two
-  habits stand in for memorising rules: keeping warnings on (chapter 17), and
-  *stating a deliberate conversion with a cast*. The danger of implicit
-  conversion lies not in the complexity of the rules but in their being
-  *invisible*, so making them visible is the best defence.
+  Outside the contract — undefined behaviour. It is one of the rare cases where
+  what is undefined in mathematics is undefined in C too, but the result is not
+  as well-behaved as in mathematics: on many machines the program collapses on
+  the spot, and under some optimisations stranger things happen (chapter 50).
+  Checking for zero before dividing is the programmer's job — and having learned
+  branching in chapter 31, we will be able to write that check in code.
 ]
 
-We have the map of conversions. From the next chapter come the tools of flow —
-beginning with the booleans and comparisons that turn judgement into a value.
+== Bit operations — chapter 7's world, in C's syntax
+
+The bit handling learned as concepts in chapter 7 joins as operators — AND `&`,
+OR `|`, XOR `^`, complement `~`, and the shifts `<<` and `>>`. The latter part
+of the demonstration is a taste: `5 & 3` is `101 & 011 = 001`, so 1; `5 | 3` is
+`111`, so 7; and `1 << 4` is $2^4 = 16$, exactly as chapter 7 promised.
+
+The basic pattern in practice is exactly the *shift plus mask* foreshadowed in
+chapter 7 — push to the position you want (`<<`, `>>`) and keep only the bits
+you need (`&`). But take two rules along with it. First, *do bit operations on
+unsigned types* — shifts of signed numbers carry the traps seen in chapter 7 (at
+least the width, left-shifting a negative = outside the contract), so playing on
+`unsigned` or `uint32_t` is the safe practice. Second, `&` (bitwise AND) and
+`&&` (logical AND, next chapter) are completely different operators — one
+character changes the entire value.
+
+== The contracts these operators make
+
+Here the operators met so far are gathered under the eye of *contract*: what each
+takes, and where the contract ends (the full table is in appendix A).
+
+#dtable(
+  columns: 3,
+  [*operator*], [*what it demands of its operands*], [*outside the contract / grey zone*],
+  [`/` `%`], [`%` takes *integers only*; `/` also takes reals], [a zero divisor is *outside the contract*. So are `INT_MIN / -1` and `INT_MIN % -1` (the quotient does not fit an int)],
+  [`+` `-` `*`], [arithmetic types], [signed integer overflow is *outside the contract* (chapter 27); the unsigned side wraps],
+  [`& | ^ ~`], [*integers only*], [on a signed type they reach the sign bit — use unsigned],
+  [`<<` `>>`], [*both operands integers*], [see the table below],
+)
+
+Shifts have three grey zones, so they get their own table. These three have not
+changed with the editions.
+
+#dtable(
+  columns: 3,
+  [*situation*], [*verdict*], [*explanation*],
+  [`x << n` or `x >> n` with `n < 0` or `n >= width`], [*outside the contract*], ["width" is the bit count of the promoted left operand. With a 32-bit `int`, `1 << 32` is already outside],
+  [`x` signed and *negative* in `x << n`], [*outside the contract*], [still so in C23],
+  [`x` signed and *positive* but the result does not fit], [*outside the contract*], [`1 << 31` on a 32-bit `int` — write `1u << 31`],
+  [`x` signed and *negative* in `x >> n`], [*implementation-defined*], [usually an arithmetic shift (the sign preserved), but that is not the standard's promise],
+)
+
+#misconception[
+  "C23 mandated two's complement, so the negative-shift problem is gone"
+][
+  Two's complement representation was indeed mandated (chapter 76). The shift
+  clause, however, was left alone — *left-shifting a signed negative value is
+  still outside the contract in C23*, and *right-shifting a negative value is
+  still implementation-defined*. That gcc and clang do an arithmetic shift is a
+  promise of those implementations, not of the standard.
+
+  So this book's rule stands whatever the edition — *shift on unsigned types*.
+  If a signed value must be shifted, move it to unsigned, shift, and move it
+  back; and always check `0 <= n < width`, where the width is
+  `sizeof(x) * CHAR_BIT`.
+]
+
+== Conversion — crossing between containers
+
+With a family of types (chapter 27) comes a new question — what happens when
+containers of different kinds are mixed in a calculation? C's answer is
+*implicit conversion*: the value in a smaller container is automatically widened
+#idx("sign extension")into a larger one before the calculation (chapter 7's sign
+extension is exactly what happens then), and when an integer meets a
+floating-point number the integer is promoted to floating point. Mostly this
+does what you meant, but automatic also means *invisible* — comparisons mixing
+signed with unsigned in particular are a classic trap (a negative number turns
+into an enormous positive one), and a representative place where compiler
+warnings (`-Wall`) protect you.
+
+When you want the conversion *stated*, use the cast notation — `(double)7 / 2`
+means "move 7 into a floating container and then divide", giving 3.5. The full
+rules (integer promotion, the usual arithmetic conversions) are left as reference
+material in the appendix; the text's rules are two: *state the intent of a mixed
+calculation with a cast, and avoid comparisons that mix signs.*
+
+We have the containers of integers (chapter 27) and their operations
+(chapter 28). From the next chapter it is *flow* — starting with the values that
+compare and decide, the booleans.

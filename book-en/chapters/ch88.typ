@@ -1,310 +1,322 @@
 #import "../../book/lib.typ": *
 
-= Containers and algorithms
+= Formatting and parsing — not writing the type twice
 
 #prereq(
-  ([chapter 43, Structs], [structs]),
-  ([chapter 42, Dynamic memory], [a growing array]),
-  ([chapter 84, The foundation], [views and bounds]),
+  ([chapter 56, Variadic functions], [variadic arguments and the format string]),
+  ([chapter 59, The terrain of the standard library], [the printf contract]),
 )
 
 #deepqa[
-  Chapter 36 taught that a C array's size is settled at compile time, and chapter 42
-  that it can be grown with `realloc`. Then where is it easiest to go wrong when
-  making a "growing array" yourself?
+  Chapter 56 said type information does not ride along into variadic arguments, and
+  chapter 59 said that is why the format string alone settles "how the stack is to be
+  read". Then what is needed to take the type from the argument?
 ][
-  In three places. First, *calculating the size to grow to* — the multiplication
-  wrap-round seen in chapter 84 happens here. Second, *the state on failure* — when
-  `realloc` fails the original pointer is still valid, and the common code that
-  assigns the return value straight into the original variable loses that original (a
-  leak). Third, *pointers after the growth* — a pointer that pointed at an element
-  becomes invalid after reallocation. Rather than getting these three right afresh
-  every time you make a container, it is better to use one made properly once.
+  Catch the type *at the call site* and send it along with the value. That is, do not
+  pass the argument as it is but wrap it into a `{type tag, value}` bundle. The
+  remaining problem is "how is the type tag attached automatically", and the answer is
+  C11's `_Generic` — the device that chooses different code at compile time according
+  to an expression's type. The run-time cost is zero, and unlike the implicit
+#idx("implicit conversion")  conversion rules learned in chapter 29, here the type is
+  *preserved*.
 ]
 
 #organizer[
-#idx("hash map")  The tools that hold many — the growing array, the intrusive list,
-  the ring buffer, the hash map. And as the answer to chapter 81's fifth bug
-  (unchecked callbacks) and the performance trap attached to that place, we see
-  sorting *guaranteed even in the worst case* and hashing that *withstands attack*.
-  Chapter 36's arrays and chapter 43's structs become practical components here.
+  The answer to chapter 82's third bug — the mismatch of format and argument. How the
+  typeless placeholder `{}` obtains type safety, what `_Generic` does beneath it, and
+  how failure appears as a value in the opposite direction, parsing. It is the
+  alternative to the `printf` and `scanf` taken apart in chapter 59.
 ]
 
 #chapter-questions()
 
-== The life cycle of the four containers
+== `{}` — the placeholder with no type
 
-First we see the four on one screen. How making, putting in, traversing and giving back
-differ between them is all in this example.
+The rules are only three.
 
-#demo("examples-en/ch88/tour.c")
+- `{}` — put the next argument here. The type is not written.
+- `{:...}` — after the colon write the format specification (width, alignment,
+  digits).
+- `{{` `}}` — the brace characters themselves.
 
-#dtable(
-  columns: 5,
-  [*container*], [*making*], [*allocation*], [*traversal*], [*giving back*],
-  [`array`], [`PROVEN_ARRAY_INIT(alloc, T, n)`], [grows], [by index], [`PROVEN_ARRAY_DESTROY`],
-  [`list`], [`proven_list_init(&l)`], [*none*], [`PROVEN_LIST_FOR_EACH`], [unnecessary],
-  [`ring`], [`PROVEN_RING_INIT(alloc, T, n)`], [once, fixed], [by popping], [`proven_ring_destroy`],
-  [`map`], [`PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)`], [grows (rehashing)], [by key lookup], [`proven_map_destroy`],
-)
+There being no `%d`, there is no place for a `%d` and a `double` to go out of step.
+The possibility of mismatch seen in chapter 59 is removed at the level of syntax.
 
-That only the list has no allocation stands out — because the node lives inside the
-data. So a list is the only container that *cannot fail for lack of memory*, and it is
-especially loved in embedded work (chapter 90).
+=== The whole grammar after the colon
 
-== The growing array
+The order of the specifiers is fixed, and every one may be omitted.
 
-`proven_array_t` is a byte buffer that knows the element size and alignment. Open it up
-and why the type is filled in by macros becomes clear.
-
-```c
-typedef struct {
-    proven_allocator_t alloc;       /* it remembers the allocator given at creation */
-    proven_byte_t     *data;        /* the byte buffer */
-    proven_size_t      len;         /* the number of elements held now */
-    proven_size_t      cap;         /* the number of elements it can hold */
-    proven_size_t      elem_size;   /* the size of one element */
-    proven_size_t      align;       /* the element's alignment requirement */
-} proven_array_t;
-```
-
-*That the array remembers the allocator* differs from strings. A string takes an
-allocator per operation (chapter 86), while an array takes one at creation and keeps it
-inside — making `push` pass an allocator every time it grows would make the code noisy.
-So the allocator is not given again at destruction either
-(`PROVEN_ARRAY_DESTROY(&arr)`).
-
-C having no generics, the type is filled in by macros.
-
-#demo("examples-en/ch88/arr.c")
-
-`PROVEN_ARRAY_INIT(alloc, int, 4)` means "an array to hold ints, initial capacity 4",
-and `PROVEN_ARRAY_PUSH` writes the type again to *check at compile time that it
-matches*. At the fifth element, which exceeded the capacity of 4, the array grew by
-itself — and that growth happens through the allocator (exactly chapter 85's rule; the
-array remembers the allocator it was given at creation).
-
-#antipattern[
-  Holding an element pointer and then pushing
-][
-  ```c
-  int *first = PROVEN_ARRAY_GET_MUT(&arr, int, 0);
-  (void)PROVEN_ARRAY_PUSH(&arr, int, 42);   /* the buffer may move here */
-  *first = 7;                               /* writes at the old address — use after free */
-  ```
-  When the array grows the contents move to a new buffer and a pointer to the old
-  address becomes invalid. It is the form in which the use after free learned in
-  chapter 42 appears on a container. The rule is one — *after changing a container,
-  obtain it again by index.* The habit of carrying an index rather than a pointer
-  becomes the defence here.
-]
-
-== The intrusive list — linking without allocation
-
-`proven_list_t` is an *intrusive* linked list — the node does not hold the data;
-rather a link field is planted inside the data struct. It amounts to putting one
-`proven_list_node_t link;` slot inside a `struct` made in chapter 43.
-
-```c
-typedef struct proven_list_node_t {
-    struct proven_list_node_t *next;
-    struct proven_list_node_t *prev;
-} proven_list_node_t;
-
-typedef struct {
-    proven_list_node_t head;      /* a sentinel pointing at itself */
-} proven_list_t;
-```
-
-That `head` is a *sentinel* is this implementation's knack. In an empty list
-`head.next` and `head.prev` point at head itself, and so not one "is it null" check
-appears in the insertion and deletion code — a pattern the Linux kernel long used.
-
-What is good about it? *There is nothing to allocate separately* in order to put
-something in the list — because the node is the data. A list can be used even in an
-environment with no heap (chapter 90), and hanging the same object on two lists at
-once is a matter of keeping two link fields. The price is that the data struct must
-know about the list.
-
-Getting back the other way is the problem, and one macro solves it.
-
-```c
-task_t *t = PROVEN_LIST_ENTRY(node, task_t, link);
-```
-
-It is the macro that *works the struct's starting address back* from the address of the
-`link` member — the `offsetof` seen in chapter 43 used here in the flesh. This one line
-returning from node to data is nearly the whole of the intrusive list.
-
-There are two traversal macros.
+#align(center, block(inset: (y: 4pt))[
+  `{:` `[fill][align]` `[sign]` `[#]` `[0]` `[width]` `[.precision]` `[type]` `}`
+])
 
 #dtable(
   columns: 3,
-  [*macro*], [*what it does*], [*when*],
-  [`PROVEN_LIST_FOR_EACH(it, &l)`], [traverses from the front], [when only reading],
-  [`PROVEN_LIST_FOR_EACH_SAFE(it, tmp, &l)`], [holds the next node in advance], [★ when removing while traversing],
+  [*place*], [*what may be written*], [*meaning*],
+  [fill], [any character], [the character filling the spare places. it comes *before* the alignment symbol],
+  [align], [`<` `>` `^`], [left, right, centre. the default is right for numbers, left otherwise],
+  [sign], [`+`], [attach a sign to positives too],
+  [alternative form], [`#`], [attach the `0x`, `0b`, `0` prefix],
+  [zero fill], [`0`], [put before the width to fill with zeros (it goes after the sign)],
+  [width], [a number], [the minimum number of characters. it does not cut if over],
+  [precision], [`.number`], [decimal places for reals],
+  [type], [`x X o b f e g`], [hexadecimal (lower, upper), octal, binary, fixed, exponential, shortest],
 )
 
-The star matters. Remove a node during traversal and its `next` becomes meaningless, so
-the loop loses its way. The `_SAFE` edition turns with *the next node already in hand*,
-so removing the present node is safe. It is why the example used it when detaching item
-20.
+They correspond to chapter 59's `printf` formats but differ in three ways. *The
+alignment symbol comes first* (`{:<10}` instead of `%-10s`), *the fill character can be
+chosen* (`{:*>8}`), and *there is no type letter* (`%d`'s `d` has gone — the type comes
+from the argument).
 
-It is worth knowing too that both macros require the iteration variables to be
-*declared in advance* (`proven_list_node_t *node, *tmp;`). The macro does not put a
-declaration in the `for`'s initialiser — a kernel practice carried on from the C89 days.
+#demo("examples-en/ch88/spec.c")
 
-== The ring buffer — a stream of fixed size
+The example shows this table in the flesh, a line at a time. A few points.
 
-`proven_ring_t` is a fixed-size circular buffer. It is used where a producer and a
-consumer come and go, for the most recent N of a log, and for streams such as audio
-and sensor samples where *what has passed may be thrown away*. The size being fixed,
-what to do when it is full is part of the contract — and here too the default is to
-report rather than quietly overwrite (the example's `err=2` is that confirmation).
+*① The fill is written before the alignment.* `{:*>8}` is "fill with asterisks, align
+right". Swap the order (`{:>*8}`) and it does not mean anything.
 
-There are only `push` and `pop`, and both *copy the element*. Putting in gives an
-address, and taking out gives the address of the place to receive it.
+*② The 0 of `{:08}` goes after the sign.* Zero-fill `-42` to a width of 8 and it is
+`-0000042`, not `000000-42` — the same rule as `%08d` seen in chapter 59.
+
+*③ The default notation for reals differs from `printf`'s.* Very large and very small
+numbers are printed by `printf("%f")` as `100000000000000000000.000000` or `0.000000`,
+while this library uses exponential notation, `1.000000e+20` and `5.000000e-07`. The
+side that *does not lose information* was taken as the default, and it is a difference
+to know before comparing two logs. If fixed notation is needed, force it with `{:f}`.
+
+*④ `{:g}` gives the shortest notation that round-trips.* That `3.14159` comes out as it
+stands is that result — the notation keeping the "read it back and it is the same value"
+property seen in chapter 8.
+
+=== Printing a type the library has never heard of
+
+What can go into `{}` is only the types in the `_Generic` list. Then how is my own
+struct printed — *give it one function that draws.*
 
 ```c
-int v = 42;
-proven_err_t e = proven_ring_push(&ring, &v);     /* copies the value in */
-int out;
-e = proven_ring_pop(&ring, &out);                 /* copies the value out */
+static proven_err_t render_frac(proven_fmt_sink_t out, const void *obj)
+{
+    const frac_t *f = obj;
+    /* ... make it ... */
+    return proven_fmt_put(out, view);      /* and send it out */
+}
+
+proven_arg_t a = proven_arg_custom(&half, render_frac);
+proven_println("{} and |{:>8}|", PROVEN_ARG(a), PROVEN_ARG(a));
 ```
 
-Thanks to this design no pointer into an element inside the ring leaks outward — holding
-a pointer in a circular buffer and having that place overwritten is a classic accident,
-and it was blocked by the interface.
+`proven_fmt_sink_t` is "a hole that receives bytes", and `proven_fmt_put` sends them
+out. As the example's output shows, *width and alignment apply to a user type too*.
 
-== The hash map, and data structures under attack
+There is one contract to know here. *The drawing function is called twice per `{}`* —
+once with a counting sink (because the width and alignment must be calculated) and once
+for real. So this function must be *deterministic* and must not mutate its target. If
+the two results disagree the library returns `INVALID_ARG` rather than print a misaligned
+field. It is the price paid for aligning without allocating.
 
-`proven_map_t` is an open-addressing hash map. Keys are integers or byte sequences,
-and string keys have two modes — *a borrowed key* (the caller keeps the bytes alive)
-and *an owned key* (the map copies and holds it). Chapter 85's owning-borrowing
-distinction appears here as it is too.
+#demo("examples-en/ch88/fmt.c")
 
-The kind of key is settled at creation.
+This example formats not to the screen but *into a string* — the `proven_println`
+seen in chapter 83 is the edition connecting this machinery to standard output. Three
+things can be pointed out.
+
+*First, formatting too can fail.* `example.org:8080` cannot go into an 8-byte vessel,
+so it was refused. Chapter 87's principle stands here too — rather than truncate, it
+returns a failure. The opposite default from `snprintf`.
+
+*Second, the format specification syntax is a little different.* The `>` of `{:>10}`
+is right alignment, `{:<10}` left alignment, `{:.3}` three decimal places. They
+correspond to chapter 59's `%10s`, `%-10s` and `%.3f`, differing in that *there is no
+type letter*.
+
+*Third, it rounds but keeps the number of digits.* `load=0.42` is what `{:.2}` made.
+
+=== Which formatting function to use
+
+Chapter 87's three kinds are here in formatting too. Organised in a table there is
+nothing to choose over.
 
 #dtable(
-  columns: 3,
-  [*creation macro*], [*key*], [*caution*],
-  [`PROVEN_MAP_INIT_INT(alloc, T, n)`], [an integer (`key.id`)], [the fastest],
-  [`PROVEN_MAP_INIT_U8_BORROWED(alloc, T, n)`], [a string (borrowed)], [★ the key bytes must outlive the map],
-  [`PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)`], [a string (copied)], [a copy cost on insertion. safe in exchange],
+  columns: 4,
+  [*function*], [*when short*], [*allocator*], [*where it is used*],
+  [`proven_println(fmt, …)`], [—], [not needed], [one line to the screen],
+  [`proven_print(fmt, …)`], [—], [not needed], [without a line break],
+  [`proven_eprint(fmt, …)`], [—], [not needed], [to standard error],
+  [`proven_u8str_append_fmt`], [refuses (the original stands)], [not needed], [a fixed buffer. the default],
+  [`proven_u8str_append_fmt_trunc`], [as much as fits], [not needed], [places that may be cut, such as a log line],
+  [`proven_u8str_append_fmt_grow`], [grows], [needed], [when the length is unknown],
+  [`proven_u8str_append_fmt_with_scratch`], [grows], [needed (+ scratch)], [when the temporary memory is to be given separately],
 )
 
-The key is passed as one union — `.id` for an integer, `.str` for a string.
+All of them return a `proven_fmt_result_t`, and this bundle has two more numbers beside
+`err`.
 
 ```c
-proven_map_key_t k = { .str = PROVEN_LIT("beta") };
-const int *v = proven_map_get(&map, k);      /* null if absent */
+typedef struct {
+    proven_err_t  err;
+    proven_size_t written;    /* the number of bytes actually written */
+    proven_size_t required;   /* the number of bytes needed to write it all */
+} proven_fmt_result_t;
 ```
 
-*Lookup answers with null.* The reason it returns a pointer rather than a bundle is
-that "absent" is not a failure but a normal answer (distinct from chapter 83's error
-branches). And that pointer *points inside the map*, so it becomes invalid the next time
-the map grows — the same rule as with arrays.
-
-There are three functions for putting in. `proven_map_set` (general),
-`proven_map_set_u8_owned` (copying a string key in), and
-`proven_map_set_with_scratch` (giving the temporary memory separately). The last is used
-when the temporary buffers of internal work such as rehashing are to be obtained from
-another allocator — a device for keeping dead memory from piling up when running a map
-on an arena.
-
-#demo("examples-en/ch88/wordcount.c")
-
-This one example contains all of this chapter's tools — it counts with a map, gathers
-into an array, sorts and prints. Chapter 86's views were used to cut the words, so
-string copying happens only once, when the map owns the key.
-
-#realcase[
-  HashDoS — when hash maps became a target of attack
-][
-  In 2011 several web frameworks collapsed at once through the same vulnerability. If
-  an attacker chose *keys that crowd into the same bucket* and sent thousands of them
-  as parameters in one request, insertion that had been $O(1)$ on average became
-  $O(n)$ and the whole degenerated to $O(n^2)$, so a few requests stopped a server. The
-  cause was that the hash function was public and collisions *could be calculated*.
-
-  Today's prescription is a *keyed hash* — draw a random secret per process and mix it
-  into the hash, and the attacker cannot precompute collisions. It is why proven's
-  `proven_map_create` uses SipHash-2-4 and a random seed by default for string keys,
-  and conversely why there is a separate `proven_map_create_trusted` using the faster
-  FNV-1a for cases where the keys all come from my own code. *The default is the safe
-  side, and the fast side states itself in the name* — the principle met repeatedly in
-  this part.
-]
+`required` is the same information as `snprintf`'s return value seen in chapter 59. The
+difference is *that it sits in a named slot* — with `snprintf` a human had to remember
+the convention "if the return value is at least the buffer size it was truncated", while
+here `err` already says that and `required` answers "so how much was needed". In the
+output of the example `spec.c`, `written=7 required=10` is that use — how much to enlarge
+the buffer by is known as it stands.
 
 #qa[
-  How much slower is a keyed hash? And where does the random secret come from if
-  there is no OS?
+  What exactly does `PROVEN_ARG` do?
 ][
-  SipHash is slower than FNV-1a, but by an amount proportional to the string length,
-  and the share hash computation takes in the whole of a map operation is mostly not
-  large. The random secret is drawn once from the operating system's source of
-  randomness — and in an environment with no OS (chapter 90) there is nowhere to draw
-  it from, so it falls back to FNV-1a. The library does not hide this fact but writes
-  it in the documentation, and the grounds are clear: *where there is no attacker
-  there is no need for an attacker model either.* There exists no outsider choosing
-  keys inside your firmware.
+  It chooses on the argument's type with `_Generic` and makes a small struct with a
+  tag fitting that type attached. Carried over in concept alone it has this shape.
+
+  ```c
+  #define PROVEN_ARG(x) _Generic((x),          \
+      int:          proven_arg_i32,            \
+      double:       proven_arg_f64,            \
+      const char *: proven_arg_cstr,           \
+      bool:         proven_arg_bool            \
+      /* ... */ )(x)
+  ```
+
+  `_Generic` chooses the branch *at compile time*, so there is no run-time cost of
+  determining the type. And passing a type not in the list is *a compile error* — the
+  exact opposite of chapter 59's `printf`, which accepted anything.
 ]
 
-== Sorting with a worst-case guarantee
-
-The two problems seen in chapter 81 — the unchecked comparator, and the algorithm
-that collapses in the worst case — are treated together here.
-
-#idx("introsort")`proven_array_sort` is *introsort*. It begins as a fast quicksort
-and, if the recursion becomes too deep, switches to heapsort. So the average is as
-fast as quicksort and $O(n log n)$ is *guaranteed* even in the worst case — the
-complexity attack seen in chapter 81 does not work. To carry the header's wording
-over as it is: "$O(n log n)$ is not an average but a guarantee."
-
-On the comparator side the language cannot help, so the contract is stated in the
-documentation and in examples. The example's `by_count_desc` is the model — descending
-by count, and *ties broken by the word*. It contrasts exactly with chapter 81's
-counterexample (the comparator that sees only the first letter).
+#antipattern[
+  Passing a value without `PROVEN_ARG`
+][
+  ```c
+  proven_println("count={}", count);        /* it does not compile */
+  ```
+  A raw value rather than a bundle was passed, so the types do not match and the build
+  fails. It can feel tiresome, but this is the point of the design — *forget to wrap
+  it and the program is not made.* Herein lies the difference from `printf`, which
+  compiles even when you forget and goes strange during execution.
+]
 
 #misconception[
-  "Ties may be handled however you like"
+  "The placeholder has no type, so it must be slow"
 ][
-  They may not. A comparator must form a *total order* — 0 if equal, consistently
-  greater and less, and the signs of `cmp(a,b)` and `cmp(b,a)` must be opposite. Break
-  this and the result is not merely jumbled; depending on the implementation it may
-  even *trespass outside the array* (because the partitioning algorithm judges its
-  boundaries from the comparison results). A comparator that returns anything at all
-  for ties is therefore a bug, not a taste.
+  The opposite. `printf` interprets the format string letter by letter *during
+  execution* and decides what to take out next. `{}` scans the format too, but each
+  argument's type is already settled by its tag, so there is no guessing. Above all,
+  there being no UB from type mismatch, no defensive code is needed either. The
+  difference in cost is mostly negligible, and this library's real-number formatting
+  has rather taken more care over accuracy — reproducing exactly the rounding rules of
+  `%f` seen in chapter 59 is the more awkward task.
 ]
 
-== Bytes into letters — hashes and encodings
+== The opposite direction — the scanner
 
-We note the remaining tools in the same box too.
+Parsing is formatting's mirror, but the character of failure differs. Formatting
+fails only when the vessel is too small, while parsing fails *whenever the input
+differs from expectation*. And as seen in chapter 59, `sscanf` tells only "how many
+succeeded" — it does not say where or why it stopped.
 
-- *Hashes by purpose* — for the map's internals (fast mixing), for integrity checking
-  (CRC-32), for cryptographic use (SHA-256), and the keyed hash seen above (SipHash).
-  The library distinguishes them because *the same word "hash" means entirely
-  different demands* — using SHA-256 where only speed is needed is waste, and using
-  FNV-1a where adversarial input comes is dangerous.
-- *hex and Base64* — two standards for moving bytes into text. The principle here is
-  the same. Wrong input (hex of odd length, wrong padding) is *not guessed at and
-  mended* but refused with `PROVEN_ERR_INVALID_ENCODING` (that norm from chapter 86).
+#idx("scanner")proven's scanner is an object with a cursor. It is placed over a view
+and reads onward one at a time. Each read gives its result as a bundle.
+
+```c
+typedef struct {
+    proven_u8str_view_t view;     /* the input being read (borrowed) */
+    proven_size_t       cursor;   /* how far it has read */
+} proven_scan_t;
+```
+
+That there are only two slots says two things. First, *the scanner does not own the
+input* — it is only a cursor laid over a view, so making it allocates nothing and there
+is no destroying. Second, *the cursor can be saved and restored by hand*. Copy the whole
+struct, and on failure put it back, so a parser that "looks a few characters ahead to
+judge" is not hard to write.
+
+```c
+proven_scan_t save = sc;         /* a mark to go back to */
+proven_result_i64_t n = proven_scan_i64(&sc);
+if (!proven_is_ok(n.err)) sc = save;   /* it failed, so let it never have happened */
+```
+
+There are six reading functions, and all of them push the cursor forward.
+
+#dtable(
+  columns: 3,
+  [*function*], [*what it reads*], [*what it returns*],
+  [`proven_scan_i64(&sc)`], [a signed integer], [`{err, val}`],
+  [`proven_scan_u64(&sc)`], [an unsigned integer], [`{err, val}`],
+  [`proven_scan_f64(&sc)`], [a real], [`{err, val}`],
+  [`proven_scan_str(&sc)`], [a word up to whitespace], [`{err, view}` — *a view into the original*],
+  [`proven_scan_skip_whitespace(&sc)`], [skips whitespace], [—],
+  [`proven_scan_skip_until(&sc, t)`], [skips until `t` appears], [`err` (the cursor stands if absent)],
+)
+
+That `proven_scan_str` *returns a view without copying* matters — chapter 87's "text
+handling without copying" holds in parsing too. In exchange that view is valid only
+while the original input is alive (chapter 85).
+
+#demo("examples-en/ch88/lines.c")
+
+That three inputs divided into three branches is the heart of it. `bob thirty` had
+its name read but stopped at the age, and the line of whitespace only failed from the
+name. With `sscanf` both would have been lumped together as "one item succeeded" or
+"0".
+
+Having a cursor has another advantage. *How far it has read* can be known, so the
+remaining part can be handled another way or the position can be carried in an error
+message. It is the answer to the problem chapter 25 named when parsing a line with
+`sscanf`: "you cannot know how many characters were consumed."
+
+#qa[
+  Does the scanner have a format string too?
+][
+  It does. It is written like this.
+
+  ```c
+  proven_scan_fmt_cursor(&sc, "{}:{}",
+                         PROVEN_SCAN_ARG(&host), PROVEN_SCAN_ARG(&port));
+  ```
+
+  It is symmetrical with formatting, and the arguments are
+  wrapped addresses of the places to hold the results. But there is one caution the
+  header states honestly — if it fails in the middle of the format, *the values filled
+  in up to that point have already been changed*. The failure atomicity learned in
+  chapter 84 is not guaranteed here, so if it is really needed the cursor and the
+  destinations must be saved beforehand and restored. Writing the contract in the
+  documentation rather than hiding it is this library's way.
+]
+
+#realcase[
+  What happens when a parser is lenient
+][
+  There is a problem that has come to light repeatedly in the handling of HTTP
+  requests. If a server and a proxy interpret the same request *slightly differently*,
+  an attacker can slip a second request in through that gap (request smuggling). The
+  cause was differences such as one side generously letting odd whitespace in a header
+  pass while the other refused strictly. The lesson is exactly the same as
+  chapter 87's story of encodings — *do not read ambiguous input as something mended;
+  refuse it.* A parser that returns failure as a value is also a parser equipped with
+  the means to express that refusal.
+]
 
 #recap[
-  Containers in summary.
+  Formatting and parsing in summary.
 
   #dtable(
-  columns: 4,
-    [*tool*], [*shape*], [*where it fits*], [*caution*],
-    [`array`], [a growing contiguous array], [an ordered list], [pointers invalid after growth],
-    [`list`], [an intrusive linked list], [joining without allocation], [the data holds the link],
-    [`ring`], [fixed-size circular], [streams, the most recent N], [the contract when full],
-    [`map`], [open-addressing hash], [finding by key], [choose whether the key is owned],
-    [`array_sort`], [introsort], [sorting anything], [the comparator must be a total order],
-    [four hashes], [by purpose], [map, integrity, cryptography, anti-attack], [do not mix the purposes],
+  columns: 3,
+    [*what it does*], [*API*], [*note*],
+    [one line to the screen], [`proven_println(fmt, ARG…)`], [returns an error but does not compel],
+    [format into a string], [`proven_u8str_append_fmt(&s, …)`], [refuses if short],
+    [permitting truncation], [`…_append_fmt_trunc`], [states the intent in the name],
+    [growing as it goes], [`…_append_fmt_grow(alloc, …)`], [needs an allocator],
+    [wrapping an argument], [`PROVEN_ARG(x)`], [`_Generic` — a type not listed is a compile error],
+    [starting a scanner], [`proven_scan_init(view)`], [an object with a cursor],
+    [reading one at a time], [`proven_scan_i64/f64/str`], [result and failure as a bundle],
+    [reading by format], [`proven_scan_fmt_cursor(…)`], [beware partial changes on mid-way failure],
 )
 ]
 
-That is as far as the world of pure computation — it all runs even with no operating
-system. In the next chapter we go outside. Files, streams, time, random numbers — the
-places that touch the OS.
+The vocabulary for holding, making and reading back strings is equipped. Next are the
+tools that *hold many* — growing arrays, lists, ring buffers, hash maps, and the
+algorithms with "a guarantee even in the worst case" foretold in chapter 82.

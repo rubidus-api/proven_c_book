@@ -1,124 +1,204 @@
 #import "../../book/lib.typ": *
 
-= The rules of pointers — alignment and provenance
+= Null — the three siblings, formally
 
 #prereq(
-  ([chapter 34, Objects, addresses, pointers], [what a pointer is]),
-  ([chapter 6, Special knowledge about addresses], [alignment and the low bits]),
-  ([chapter 14, And so C is an abstract language], [the contract of the abstract machine]),
+  ([chapter 6, Special knowledge about addresses], [what is special about address zero]),
+  ([chapter 35, Objects, addresses, pointers], [a pointer is a value that points at something]),
 )
 
 #deepqa[
-  Chapter 6 taught the alignment rule that "a four-byte load goes at a multiple
-  of four." But a pointer is merely a variable holding a number — why can it not
-  hold any number at all?
+  Chapter 6 showed the history that "a null pointer's internal representation
+  need not be 0" (the Prime 50, the CDC Cyber 180). Then does the comparison
+  `p == 0` in source code — break on such machines?
 ][
-  Holding it is often not blocked at all — the accident happens *when it is
-  followed*. Dereferencing through an `int*` means "read four bytes at that
-  address through int's eye" (chapter 34), and if that address breaks int's
-  alignment (a multiple of four) then chapter 6's consequences follow — slowness,
-  or on some machines a bus fault on the spot. In the standard's eye, *the cast
-  to a type with stricter alignment is already outside the contract*. A pointer's
-  type is both an eye and a contract.
+  It does not — that is the standard's promise. The integer constant 0 in the
+  source is read in a pointer context as a *null pointer constant*, and the
+  compiler translates it so that the comparison is against that machine's actual
+  null representation. The compiler upholds the separation between the symbol
+  (the 0 in the source) and the representation (the bits in the machine). What
+  does break is another kind of code — code that assumes *at the bit level* that
+  "the representation is 0." We see that trap shortly.
 ]
 
 #organizer[
-  Two deep rules that bind pointers — the constraint chapter 6's alignment places
-  on pointer casts (and the privilege belonging to `char*` alone), and a
-  practical feel for the provenance (the tag of origin) foreshadowed in
-  chapter 14. Short, but the most "contract-like" of this part's safety rules.
+  The three nulls whose faces we learned in chapter 6 — the null pointer,
+  `NULL`/`nullptr`, and the NUL character — get formal treatment in syntax and
+  practical rules. How to handle "empty" is the first chapter of the pointer
+  safety code.
 ]
 
 #chapter-questions()
 
-== Alignment and casts — the privilege of char\*
+== nullptr — the name of emptiness
 
-Pointer casts (looking through a changed type) are grammatically free but
-narrow by contract. Reduced to a practical sentence — *a cast to a type
-demanding stricter alignment is dangerous.* Changing a `char*` (alignment 1) into
-an `int*` (alignment 4) and following it is the typical violation. The opposite
-direction is safe — and here lies a privilege C intended: *a pointer to a character
-type (`char*`, `signed char*` and
-`unsigned char*`) may look at any object byte by byte.* With alignment 1 it can
-point anywhere, and the standard explicitly permits that "the representation of
-any object may be read through the eye of bytes" (chapter 13's strict aliasing
-has this exception carved into it too). The official channel for the perspective
-of chapter 5, "inside a slot it is only bits", is `unsigned char*`.
+A pointer variable must be made to point at something the moment it is declared,
+or, if there is no target yet, must state that it is *empty* (chapter 23's
+initialisation rule is even more vital for pointers — following a rubbish address
+being the worst accident). Two notations for emptiness are current — the
+traditional `NULL` macro and the keyword `nullptr` brought in by C23. This book
+uses `nullptr`: `NULL` historically had definitions that differed by
+implementation with subtle traps (variadic arguments and so on), while `nullptr`
+is a modern notation clear down to its type.
 
-The alignment requirement of each type can be asked with `alignof` (a C23
-keyword):
+#demo("examples-en/ch36/null.c")
 
-#demo("examples-en/ch36/align.c")
+The rule is exactly this demonstration — *check whether a pointer is empty before
+using it.* Dereferencing an empty pointer (`*p`) is outside the contract
+(undefined behaviour), and as chapter 6 taught, in a protected-mode environment
+the program usually collapses on the spot — and that dying loudly is the kinder
+outcome is also exactly chapter 6's story.
 
-=== The two privileges side by side
+#realcase[
+  The billion-dollar mistake — an apology from null's inventor
+][
+  The very value "empty" has a history of controversy. Tony Hoare, who first
+  introduced the null reference into an ALGOL-family language in 1965 (the same
+  Hoare of the quicksort family of algorithms, chapter 31), called it in a 2009
+  lecture *"my billion-dollar mistake"* — a self-indictment that "I could not
+  resist the temptation of it being easy to implement, and the cost of the
+  collapses and vulnerabilities null dereferences have caused over the following
+  forty years must exceed a billion dollars." That modern languages (Rust, Swift,
+  Kotlin) evolved to force a check on "may be empty" through the type system is a
+  direct descendant of that reflection. C has no such enforcement — checking is
+  the business of culture and discipline, which is why this book pins the check
+  down as idiom.
+]
 
-Here we tidy up the two passages announced in chapter 34. They do different work.
+== How far may 0 be used — the exact definition of a null pointer constant
+
+Chapter 6 said "the 0 in the source is a symbol". The standard fixes exactly
+what qualifies as that symbol. A *null pointer constant* is one of two things:
+
+- an *integer constant expression* with the value 0
+- such an expression cast to `void *`
+
+C23 added the keyword `nullptr` to those. So the five spellings below all mean
+the same thing.
 
 #dtable(
   columns: 3,
-  [], [*`void *`*], [*the `char *` family*],
-  [what it forgets], [it forgets the *type* pointed at], [it forgets nothing — it sees the representation as it is],
-  [dereference], [no (it does not know the size)], [yes — one byte at a time],
-  [arithmetic], [no (by the standard)], [yes — in bytes],
-  [aliasing], [not applicable], [*it may read the representation of any object* (the excepted passage)],
-  [round trip], [object pointer ↔ `void *` returns the original value], [reading bytes and recovering a pointer are different matters],
+  [*Spelling*], [*A null pointer constant?*], [*Note*],
+  [`0`], [Yes], [The oldest spelling],
+  [`0L`, `0u`, `'\0'`], [Yes], [Any integer constant expression with value 0],
+  [`(void *)0`], [Yes], [`NULL` is commonly defined this way],
+  [`NULL`], [Yes], [A macro the implementation defines as one of the above],
+  [`nullptr`], [Yes], [C23. Its type, `nullptr_t`, is unambiguous],
+  [`zero` in `const int zero = 0;`], [*No*], [A variable, not a constant expression — a compile error],
+  [An `int` variable that became 0 at run time], [*No*], [Putting an integer into a pointer is another matter],
 )
 
-This is why `memcpy` takes `void *` in its prototype and copies bytes inside —
-*it forgets the type on the way in and looks at bytes on the way through.* That
-the standard requires `void *` and the character-type pointers to share a
-representation is for exactly this combination (chapter 34's word-addressed
-machines).
+The last two rows are the point. What qualifies is not *being zero* but *being a
+constant expression*. So passing a variable whose value is zero, as in
+`int *p = zero;`, is not a null assignment but "an integer into a pointer" —
+something else entirely, and today's compilers reject it.
 
-#misconception[
-  "Since `char *` can pick an object apart, a pointer may be built out of the bytes"
+=== The bits it becomes are another matter
+
+The same spelling does not mean the same representation. Chapter 6's thread is
+picked up here.
+
+#demo("examples-en/ch36/nullrep.c")
+
+The demonstration puts the two layers side by side. All five spellings become
+the same value (`a == b && b == c`), and every comparison is true — *the
+spelling layer is what the standard promises.* The printed bytes, on the other
+hand, are merely *what this implementation chose*. Run the same program on
+chapter 6's Prime 50 or CDC Cyber 180 and the comparisons would still be true
+while the bytes would not be zero.
+
+#dtable(
+  columns: 3,
+  [*What you do*], [*Which layer*], [*Does it promise null?*],
+  [`p = nullptr;` / `p = 0;`], [Spelling], [★ Yes],
+  [`p == nullptr` / `!p`], [Spelling], [★ Yes],
+  [`struct s x = { 0 };`], [Value], [★ Yes — pointer members null, floating members 0.0],
+  [`memset(&x, 0, sizeof x)`], [Representation], [No],
+  [`calloc(n, size)`], [Representation], [No],
+  [`memcmp(&p, zeros, sizeof p)`], [Representation], [Not a way to ask whether it is null],
+)
+
+The third and fourth parts of the demonstration show those rows in the flesh. A
+struct made with `{ 0 }` has *the standard's* promise that its pointer members
+are null and its floating members 0.0, while `memset` and `calloc` merely happen
+to give the same result on this machine.
+
+#platform[
+  How C++ differs — the same 0, other rules
 ][
-  Two things are mixed up here. *Reading* is permitted — the representation of
-  any object may be read byte by byte through `unsigned char *`. But assembling
-  those bytes back into a pointer and *making it point at another object* is a
-  separate matter, because the provenance attached to that pointer belongs to the
-  original object — which is exactly the subject of the next section.
+  This is the famous place where C and C++ part. The root is one thing: *C++ has
+  no implicit conversion from `void *` to another pointer type.*
 
-  The practical conclusion is simple. To move a representation, move the *value*
-  with `memcpy`; if a pointer is needed, obtain it again from the original
-  object. An address assembled out of bytes mostly works on x86-64, but on a
-  machine where pointers carry permissions, such as CHERI, it is stopped on the
-  spot (chapter 34).
+  So C++'s `NULL` cannot be defined as `((void *)0)`; that would make
+  `int *p = NULL;` an error outright. Checked on this machine, C's `NULL` is
+  `((void *)0)` while g++'s is the compiler extension `__null`. Traditional C++
+  implementations simply defined it as `0` or `0L`.
+
+  Using `0` as null creates an accident peculiar to C++: *overloading.*
+
+  ```cpp
+  void f(int);
+  void f(char *);
+  f(NULL);      // if NULL is 0 -> f(int) is quietly chosen
+  ```
+
+  Run it and, with `NULL` defined as `0`, `f(int)` wins; with g++'s `__null` the
+  call is *ambiguous* and fails to compile. Either way it is not the `f(char *)`
+  that was meant.
+
+  #dtable(
+    columns: 3,
+    [*What*], [*C*], [*C++*],
+    [`(void *)0` into another pointer], [Fine], [Error — a cast is required],
+    [The definition of `NULL`], [Usually `((void *)0)`], [`0`, `0L` or `__null`],
+    [A `const int` variable holding 0], [Not null (not a constant expression)], [Null in C++03, *an error from C++11*],
+    [A dedicated keyword], [C23's `nullptr`], [C++11's `nullptr` (type `std::nullptr_t`)],
+  )
+
+  The third row's history is interesting. C++03 said "an integral constant
+  expression rvalue of integer type that evaluates to zero", so the `zero` of
+  `const int zero = 0;` was a null pointer constant; C++11 narrowed it to "an
+  integer literal with value zero, or a prvalue of type `std::nullptr_t`". This
+  book checked that the same code compiles under `-std=c++03` and fails under
+  `-std=c++11`.
+
+  The conclusion is the same in both languages — *use `nullptr`.* C++11 brought
+  it in first and C23 followed, and one word removes both the overloading
+  accident and the ambiguity of "is this a zero or a pointer?".
 ]
 
-== Provenance — the same number, a different origin
+== The trap — code that assumes the representation is 0
 
-Let us collect chapter 14's foreshadowing as practical instinct. In the naive
-picture a pointer is only a number, so if the number is right it should be
-followable however it was made — but the contract of modern C is not like that.
-*A pointer has an origin (provenance)*: an invisible tag saying which object it
-derived from. Reduced to three practical rules.
+Let us collect the foreshadowing of the opening exchange. These two pieces of
+code do not mean the same thing:
 
-- *Pointer arithmetic stays inside the object it was born in.* Taking a pointer
-  that started from one object's address and pushing it (chapter 37) onto another
-#idx("array")  object — even if the number really does coincide with that
-  object — is outside the contract.
-- *One past the end is permitted.* Pointing at the slot "after" the end of an
-  array (one-past-the-end) is legal (as long as you do not follow it). It is so
-  useful in a loop's ending condition that the standard carved out this place
-  specially (in action in chapter 37).
-- *To treat it as a number, use the official channel.* Converting a pointer to an
-  integer to store or compute with it (such as chapter 6's tagged pointers) has a
-  road provided by the contract: going through the dedicated type `uintptr_t`.
+```c
+int *arr[8];
+for (int i = 0; i < 8; i += 1) { arr[i] = nullptr; }  /* correct */
+/* memset(arr, 0, sizeof arr);     — fill the bits with 0: a different meaning! */
+```
+
+The first line says "hold a null pointer" (the world of symbols — whatever the
+representation, the compiler handles it). The commented memset says "fill every
+bit with 0" (the world of representation). On today's mainstream machines, where
+the null representation is all zeros, the results coincide by accident, but as
+chapter 6's history shows, that accident is not a contract. You will often see
+the memset style in practice (and on mainstream platforms it does work), but with
+*the eye of portability* it is a grey zone, and using it knowingly differs from
+using it unknowingly — this book's choice is the explicit `nullptr` assignment.
 
 #qa[
-  Is it not common for code that breaks these rules to "run fine on my computer"?
+  When does the NUL character (`'\0'`) get its formal treatment — one of the
+  three siblings is still outstanding.
 ][
-  It is common — and that is why these rules are dangerous. What collects the
-  price of a violation is not the machine but *the compiler's optimisation*
-  (chapter 13): it rearranges and caches on the premise that "a pointer does not
-  point outside its origin", so violating code *silently* behaves differently
-  when the optimisation level or the compiler version changes. That "it ran just
-  now" is not evidence of keeping the contract — that the criterion is
-  chapter 14's "is it correct on the abstract machine" — is this chapter's
-  conclusion, and chapter 49 shows the whole of this subject.
+  Three chapters later. The NUL character works not in the world of pointers but
+  in the world of *strings* (as the end marker), so chapter 40, which treats
+  strings properly, is its stage. While waiting, the distinction once more —
+  `nullptr` is "nowhere to point" (a pointer value), `'\0'` is "the text ends
+  here" (a character value, one byte in size). Strangers living in different
+  worlds.
 ]
 
-We have the rules of pointers too. Now we take these tools to contiguous memory —
-the array. The credit of `line[100]`, carried since chapter 25, is settled in the
-next chapter.
+We can handle emptiness. The next chapter takes the remaining rules that bind
+pointers — the constraint chapter 6's alignment places on pointer casts, and a
+practical feel for the provenance (the tag of origin) foreshadowed in chapter 14.

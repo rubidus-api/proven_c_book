@@ -1,303 +1,344 @@
 #import "../../book/lib.typ": *
 
-= Inside the allocator — the heap, alternative allocators, alternative standard libraries
+= A program's map of memory — operating systems and embedded
 
 #prereq(
-  ([chapter 42, Dynamic memory], [dynamic allocation]),
-  ([chapter 79, A program's map of memory], [a program's map of memory]),
+  ([chapter 42, Lifetime and storage duration], [storage duration]),
+  ([chapter 2, The regions of memory], [the regions of memory]),
 )
 
 #deepqa[
-  Chapter 42 said one `malloc` is "a trip to the warehouse office", and
-  chapter 79 showed where in the address space that warehouse lies. Then what
-  ledgers exactly does that office keep inside?
+  Chapter 42 said "in the C standard there is neither the word stack nor any
+  promise about its size", and that it settles only the automatic storage duration
+  and leaves the rest to the implementation. Then in a real program, who settles
+  that place?
 ][
-  It writes two things down — *which piece is free* and *how many bytes each piece
-  is*. The classic answer manages the former with lists by size (bins) and the
-  latter with a header attached to each block. How these two ledgers are designed
-  settles an allocator's performance and security entire. This chapter is the map of
-  that design.
+  Three layers settle it between them. *The compiler and linker* divide the regions
+  inside the executable file (which variable goes to which region), *the operating
+  system* reads that file and spreads it into an address space, preparing the
+  places for stack and heap, and *the startup code* does the remaining trimming.
+  With no operating system the startup code takes on the last two entirely — that is
+  the embedded world, and the latter half of this chapter is that story.
 ]
 
 #organizer[
-#idx("allocator")  We open the inside of the `malloc` chapter 42 passed over saying
-  only "it is expensive". How an allocator manages free pieces (bins, boundary
-  tags, coalescing), why there is a cache per strand, what fragmentation is and why
-#idx("fragmentation")  it does not recover. Then the alternatives that can be
-  swapped in for the standard `malloc` (jemalloc, tcmalloc, mimalloc, snmalloc) and
-  the alternative standard libraries (musl, picolibc and others), and the arenas and
-  pools that change the very shape of allocation. The end of this chapter is the
-  door to Part XII.
+#idx("stack size")  We redraw at a larger scale the map of memory sketched in
+  chapter 42. What is absent from the C standard and present only in the operating
+  system — the stack and its limit — is confirmed on Linux and on Windows, and we
+#idx("bss")  see what relation `data`, `bss` and the read-only region have to the
+  executable file. Then we go down into the world with no operating system and see
+  in detail how memory is laid out on Arm Cortex-M, AVR and PIC — and what the
+  startup code does.
 ]
 
 #chapter-questions()
 
-== Ledger ① — the header attached to each block
+== Regions in the executable file, regions in the address space
 
-`free(p)` does not take a size. And yet it must know how many bytes are being
-returned. The answer is simple — *the size is written just before the address that
-was returned.*
+Writing out again the order chapter 42's example showed, but this time separating
+*what is contained in the executable file* from *what arises when it runs*.
+
+#dtable(
+  columns: 4,
+  [*region*], [*is it in the file*], [*what lives there*], [*permissions*],
+  [`.text`], [yes], [machine instructions], [read, execute],
+  [`.rodata`], [yes], [string literals, `const` data], [read],
+  [`.data`], [yes (values too)], [globals and `static`s with a nonzero initial value], [read, write],
+  [`.bss`], [*only the size*], [globals and `static`s with a zero or no initial value], [read, write],
+  [heap], [no], [what `malloc` gave], [read, write],
+  [stack], [no], [local variables, return addresses], [read, write],
+)
+
+That *`.bss` has only its size in the file* is the heart of this table (chapter 42
+showed the origin of the name). Filling with zeros happens at run time — with an
+operating system the kernel gives pages already filled with zeros, and without one
+the startup code turns the loop itself.
+
+One practical misunderstanding is resolved here. If you declared a big global array
+and the executable's size did not grow, that is normal (`.bss`). Conversely, give
+that array even one nonzero initial value — `int t[1000000] = {1};`, say — and the
+whole array goes to `.data` and the file grows by 4 MB.
+
+== Linux's map
+
+On Linux, one program's address space is laid out roughly like this (on 64-bit).
 
 ```text
-        ┌────────────┬──────────────────────────┐
-        │ header     │ the place given to you   │
-        │ size·flags │ ← the address malloc gave│
-        └────────────┴──────────────────────────┘
+high address  ┌──────────────────────────┐
+              │ kernel region (no access)│
+              ├──────────────────────────┤
+              │ stack     ↓ (grows down)  │  default limit 8 MiB
+              │   ...  (a very wide gap)  │
+              │ mmap region ↓             │  shared libraries, big mallocs
+              │   ...                     │
+              │ heap      ↑ (grows up)    │  enlarged with brk
+              ├──────────────────────────┤
+              │ .bss / .data / .rodata    │
+              │ .text                     │
+low address   └──────────────────────────┘  around address 0 access is forbidden (chapter 6)
 ```
 
-This header explains two facts seen in chapter 42. *Even a request for 1 byte
-consumes far more* (the header plus alignment padding), and *making countless small
-pieces makes the management information as large as the data.*
+There are four things to take away.
 
-The classic design (the dlmalloc family) lays one more layer on top of this. It
-writes the size *at the end of the block too* — a *boundary tag*. Then from any
-block the size of "the block just before" can be known at once, so *coalescing* with
-a neighbouring free piece on release finishes in constant time. It is the most basic
-device for preventing pieces from scattering finely.
+*① The stack limit is 8 MiB by default.* It is seen and changed with `ulimit -s`
+(chapter 42). This limit is not a *reservation* but an upper bound, so in reality
+pages attach as much as is used.
 
-#misconception[
-  "A heap block's header is an internal matter, no need to care"
-][
-  It is worth caring about for two reasons.
+*② Overflow dies at once — the guard page.* Below the stack there is a page marked
+as forbidden. The moment the stack touches that place a signal (SIGSEGV) arises and
+the program stops. It is the device that prevents the worst accident, "quietly
+overwriting somebody else's place".
 
-  First, *security*. The header being right beside the user data, one buffer
-  overflow can overwrite a neighbouring block's header. Then the allocator's ledger
-  tells lies, and an attacker can make "the next `malloc` return the address I want".
-  The whole family of techniques called heap exploitation grows from this place. So
-  modern allocators put defences in — scrambling the free list's pointers with the
-  address (safe-linking), inserting marks that notice a double free, or putting the
-  header entirely away from the user data (mimalloc and snmalloc below go in that
-  direction).
+*③ Large allocations go not to the heap but through `mmap`.* The allocator cuts
+small requests out of the heap and, for large requests (glibc's default threshold
+is around 128 KiB), receives a whole new region from the kernel. So large blocks are
+sometimes really returned to the operating system on `free` — the exception to
+chapter 43's "`free` mostly does not return to the OS".
 
-  Second, *memory accounting*. The answer to "why do a million 100-byte pieces eat
-  160 MB rather than 100 MB" is this header and the alignment padding.
-]
-
-== Ledger ② — lists by size and caches per strand
-
-Keep the free pieces in one long list and every request must scan the whole list. So
-the lists are divided by size — these are *bins*. Taking glibc's allocator as an
-example, there are roughly these layers.
-
-#dtable(
-  columns: 3,
-  [*layer*], [*what*], [*why*],
-  [tcache], [a small cache kept separately per strand], [to take pieces out at once without locking],
-  [fastbin], [singly linked lists of small sizes], [quick reuse without coalescing],
-  [smallbin], [lists by exact size], [finding is constant time],
-  [largebin], [sorted lists by range], [to choose a fitting size],
-  [unsorted bin], [a temporary place for the just-freed], [to reuse as it is for the next request],
-  [top chunk], [the lump remaining at the very end of the heap], [when short, it is cut from here],
-)
-
-The heart of it is the *cache per strand* (tcache). If several strands touch the
-same ledger it becomes slow through locking (chapter 76), so each strand keeps a
-small drawer of its own and takes from there first. Only when the drawer is empty
-does it go to the shared ledger. It is the common design of today's fast allocators,
-differing only in name (tcache, thread cache, mimalloc's local heap) while the idea
-is the same.
-
-Two things seen in chapter 79 attach here. When the heap is short it is enlarged
-with `brk` (for small requests), and large requests are received separately through
-`mmap`. And releasing a large block may return it to the operating system, while
-small ones are mostly only marked in the ledger.
-
-== Fragmentation — memory grows though there is no leak
-
-#idx("fragmentation")*Fragmentation* has two faces.
-
-*Internal fragmentation* — the waste arising from giving a piece larger than the
-request. Request 24 bytes and be given a 32-byte slot and 8 bytes die. It is the
-fate of allocators that use size classes, and speed is gained in exchange.
-
-*External fragmentation* — the state in which the total free space is ample but
-there is no *contiguous* large lump, so a large request fails. If small pieces are
-lodged among the large ones, those large pieces cannot be joined.
-
-This is the identity of the phenomenon "there is no leak and yet memory keeps
-growing". It appears especially in long-running servers, and the cause is usually
-*allocating things of different lifetimes mixed together* — one long-lived small
-object lodged in the middle of a large empty region ties up that whole region.
-
-#dtable(
-  columns: 2,
-  [*how to mitigate it*], [*explanation*],
-  [gather things of similar lifetime], [an arena does exactly this (below)],
-  [things of the same size into a pool], [no pieces arise],
-  [take long-lived objects early], [taken at startup, they do not lodge in the middle],
-  [change the allocator], [there are ones with different purge and shrink policies (below)],
-  [periodic restarts], [an honest last resort — really used],
-)
-
-#realcase[
-  Why RSS does not go down
-][
-  There is a conversation that recurs in operations. "There seems to be a memory
-  leak — the request has ended and the process memory (RSS) does not go down." And
-  yet checking with tools shows no leak.
-
-  The reason is, as seen in chapter 42, that `free` is not a return to the operating
-  system, and two more things compound it. First, even to return it *the end side of
-  the heap must be empty* to shrink (if even one live block sits below the top chunk
-  it cannot shrink). Second, the allocator judges that being sparing with returns is
-  advantageous — another request will come soon.
-
-  Hence a rule of observation in the field. *When diagnosing a memory problem do not
-  look at RSS alone* — look together at the allocator's statistics (`malloc_info`,
-  say) and at the number and size distribution of live allocations. And if you really
-  want to give it back there is a road of asking explicitly (glibc's `malloc_trim`,
-  the purge settings of jemalloc and mimalloc).
-]
-
-== Swapping out the standard `malloc` — alternative allocators
-
-The allocator alone can be changed without mending the program. `malloc` and `free`
-are, after all, names, so linking another implementation (statically) or inserting
-it at run time (Linux's `LD_PRELOAD`) makes that one be used.
-
-#dtable(
-  columns: 3,
-  [*allocator*], [*where it came from*], [*character*],
-  [glibc malloc (ptmalloc)], [GNU], [the default. balanced. improved with tcache],
-  [jemalloc], [FreeBSD → Meta], [size classes and arenas. strong on suppressing fragmentation and on statistics],
-  [TCMalloc], [Google], [centred on per-strand caches. multi-strand throughput],
-  [mimalloc], [Microsoft], [relatively new (2019–). small and fast, with a safety-minded header layout],
-  [snmalloc], [MS Research], [a design that passes cross-strand frees as messages],
-  [scudo], [LLVM], [security-hardened. the default on Android],
-)
-
-How much difference does changing make — *it depends on the workload* is the honest
-answer. On a server with many strands and a flood of small allocations tens of per
-cent can change, while in a single-strand computational program there is almost no
-difference. So the rule is one: *measure, then change.* And before changing, trying
-chapter 42's first prescription — not allocating at all in the hot loop — is usually
-the greater gain.
+*④ Addresses change on every run — ASLR.* Run chapter 42's example twice and the
+addresses differ. It is a security device (address space layout randomisation) to
+keep an attacker from knowing addresses in advance. So code that *records an address
+value and uses it on the next run* does not hold.
 
 #platform[
-  How swapping is actually done
+  Each thread has its own stack
 ][
-  - *At run time* — `LD_PRELOAD=/usr/lib/libjemalloc.so ./program` (Linux). Neither
-    the code nor the build is touched.
-  - *At link time* — join it as `-ljemalloc` and that `malloc` is used.
-  - *Windows* — the above do not work. It is common to use the CRT's heap, or to
-    link the allocator as a library and call its API directly from your own code.
-  - *The road that works anywhere* — writing the code from the start so that it
-    *takes an allocator as an argument*. This chapter's last section and Part XII
-    are that way.
+  Make a strand (a thread) and one more stack arises with it. On Linux the default
+  size mostly follows the main thread's limit at 8 MiB, and it is settled with
+  `pthread_attr_setstacksize`. This fact leaves two things in practice — a design
+  making thousands of strands reserves that much *address space* (bearable on
+  64-bit but soon exhausted on 32-bit), and deep recursion inside a strand
+  overflows sooner than in the main thread.
 ]
 
-== Alternative standard libraries
+== Windows' map
 
-There is also the choice of swapping out one layer larger than the allocator — the
-standard library implementation itself. It is the flesh of chapter 58's "the
-standard is a list and the implementations are several".
+The big picture is similar but the numbers and names differ.
 
 #dtable(
   columns: 3,
-  [*implementation*], [*where it is used*], [*character*],
-  [glibc], [mainstream Linux distributions], [the most features. large and rich in extensions],
-  [musl], [containers, static linking, Alpine], [small and simple. advantageous for static linking],
-  [uClibc-ng], [small embedded Linux], [features chosen and cut down],
-  [picolibc], [bare metal, RTOS], [a small one split off from newlib and avr-libc],
-  [newlib(-nano)], [the default of embedded toolchains], [it comes with `arm-none-eabi-gcc`],
-  [Bionic], [Android], [security-minded (the scudo allocator)],
-  [UCRT], [Windows], [the runtime MSVC and MinGW use],
+  [], [*Linux*], [*Windows*],
+  [default stack], [8 MiB (a limit)], [*1 MiB* (reserved), the first commit is 4 KiB],
+  [specifying the stack size], [`ulimit -s`, `pthread_attr_setstacksize`], [the linker's `/STACK:reserve[,commit]`, a `CreateThread` argument],
+  [executable format], [ELF], [PE],
+  [large allocations], [`mmap`], [`VirtualAlloc` (called by the heap manager)],
+  [heap API], [`malloc` → `brk`/`mmap`], [`malloc` → `HeapAlloc` → `VirtualAlloc`],
+  [address randomisation], [ASLR], [ASLR (the same concept)],
 )
 
-The criteria for choosing are mostly three — *size* (embedded, containers), *the
-convenience of static linking* (musl's strength), and *the breadth of features*
-(glibc's strength). And what one runs into when moving is mostly not standard C but
-*extensions*: functions only glibc has, locale handling, subtle differences in
-threads and signals. Chapter 58's conclusion — "use only what is in the standard and
-it ports" — pays here.
-
-== Alternatives that change the shape — arenas, pools, and the allocator as an argument
-
-Until now the story has been *making the same `malloc` better*. There is another
-road. It is changing *the very shape* of allocation.
-
-*Arena (region, bump allocator).* Take a large lump once, and when a request comes
-merely push a pointer forward. Allocation is one addition and so nearly free, and
-release *is not done individually* — when the work is done the pointer is returned to
-the beginning and the whole is thrown away. There is no fragmentation, the time is
-constant, and release cannot be forgotten. In exchange, individual release is given
-up.
-
-This way fits perfectly "things of the same lifetime". One request of a web server,
-one function of a compiler, one frame of a game — for each unit of work with a clear
-beginning and end, keep one arena and reset it when it ends. It really is widely
-used (Apache's memory pools and PostgreSQL's memory contexts are the same idea).
-
-*Pool (slab).* An allocator that handles only pieces of the same size. Slots cut in
-advance are managed as a list, so allocation and release are one list operation each,
-and there is no internal fragmentation either. It fits data structures with tens of
-thousands of nodes, or the fixed-object management of embedded work seen in
-chapter 79.
-
-*Taking the allocator as an argument.* For the two above to have force, a library
-must *ask the caller* "where shall I get memory from". So modern C libraries make a
-bundle of allocation functions into one value and take it as an argument. The table
-of function pointers learned in chapter 56 does exactly this work here.
+*Windows' 1 MiB often makes trouble in practice.* There are three typical cases in
+which code that was fine on Linux dies of stack overflow on Windows — a large local
+array, deep recursion, and calls passing a large struct by value (chapter 45). The
+structure separating reservation from commitment is worth knowing too: the 1 MiB is
+merely *addresses held aside*, and physical memory attaches as much as is used. So
+reserving a large stack does not cost much if the actual usage is small.
 
 #realcase[
-  proven's memory model — a trailer for the next part
+  "It works on Linux but dies on Windows"
 ][
-  The library this book has leaned on uses exactly this design. proven handles the
-  allocator as one value (`proven_allocator_t`) — inside it are the `alloc`,
-  `realloc` and `free` function pointers and a context (`ctx`), exactly
-  chapter 56's vtable. And there are three providers that make that value.
+  An accident that comes up repeatedly in porting work. The cause is usually within
+  two lines.
 
-  - `proven_heap_allocator()` — the standard `malloc` wrapped in that interface.
-  - `proven_arena_create(backing)` — takes *memory already secured* and makes it a
-    bump allocator. It is returned whole with `proven_arena_reset` and fitted into
-    the same interface with `proven_arena_as_allocator`.
-  - `proven_pool_init(...)` — lays a pool of same-size pieces over a backing
-    allocator.
+  ```c
+  void process(void) {
+      char buffer[4 * 1024 * 1024];   /* 4 MiB — passes within Linux's 8 MiB */
+      ...                             /* instant death in Windows' 1 MiB */
+  }
+  ```
 
-  This structure gives three things. First, *the same data-structure code runs on
-  the heap, on an arena and in a pool* — where memory comes from is settled by an
-  argument. Second, the embedded norm seen in chapter 79 (no dynamic allocation) can
-  be kept — give a static array as the arena's backing and `malloc` is never called
-  once. Third, failure comes back as a value (`proven_result_mem_mut_t`) — instead of
-  checking for null you check the result.
+  There are three roads to mending it. Enlarge the stack with a linker option
+  (`/STACK:8388608`), turn the buffer `static` (though re-entrancy and thread safety
+  are lost), or move it to `malloc`. Which of the three is right is settled by that
+  buffer's character — if it is large and outlives the function, the heap; if it is
+  large but finished within the function, the heap or a larger stack; if it is small
+  and hot, the stack as it is.
+]
 
-  We meet these three as real code in Part XII. The heap's circumstances seen in
-  this chapter — that it is expensive, fragments, can fail, and is sometimes
-  forbidden outright in embedded work — are the whole reason for that design.
+== The world with no operating system — freestanding implementations
+
+Now we go down to the side with no kernel, no virtual memory and no ASLR. It is the
+world of the *freestanding implementation* seen in chapter 59. Here most of the
+earlier picture vanishes and instead *physical addresses appear bare*.
+
+The common skeleton is this. A chip mostly has two kinds of memory — *flash*, which
+remains when the power is off (code and constants), and *RAM*, which vanishes when
+it is off (variables and the stack). And when the program starts, the *startup code*
+(often `crt0` or `Reset_Handler`) does three things.
+
++ *Copies `.data` from flash to RAM.* The initial values must survive the power
+  being off, so they are stored in flash, and the variables must be in RAM, so they
+  are moved at startup.
++ *Fills `.bss` with zeros.* The work the kernel did for us on Linux.
++ *Sets up the stack pointer and calls `main`.*
+
+These three lines show that C's promise of "an uninitialised global is 0" is *not
+free but work somebody does*. And this code mostly pairs with a linker script — a
+file in which a human writes down which region is placed at which address.
+
+=== Arm Cortex-M — the first word of the vector table is the stack
+
+The family most widely used in microcontrollers. The layout is mostly this.
+
+```text
+0x0800_0000  flash  ┌──────────────┐
+                    │ vector table │  [0] the initial stack pointer value
+                    │              │  [1] the address of Reset_Handler
+                    │ .text        │
+                    │ .rodata      │
+                    │ .data source │ → copied to RAM at startup
+                    └──────────────┘
+0x2000_0000  RAM    ┌──────────────┐
+                    │ .data        │
+                    │ .bss         │
+                    │ heap    ↑    │ (if used)
+                    │   ...        │
+                    │ stack   ↓    │ ← initial SP = the end of RAM
+                    └──────────────┘
+```
+
+Three characteristics to take away.
+
+*① The stack's starting address is embedded in the vector table.* On reset, a
+Cortex-M reads the first word at address 0 and takes it as the stack pointer, then
+reads the second word and jumps there. The stack's place is, in effect, *set up by
+the hardware reading it from the file*.
+
+*② There are two stack pointers.* MSP (main) and PSP (process). Used without an
+operating system (an RTOS) only MSP is used, but lay an RTOS on top and it divides
+them so that the kernel uses MSP and each task uses PSP. Each task has its own
+stack, and its size is *written as a number by a human when creating the task* —
+there is no such generosity as Linux's 8 MiB; it is usually a few hundred bytes to a
+few KiB.
+
+*③ There is a device to report overflow, or there is not.* Higher chips have a stack
+limit register (MSPLIM/PSPLIM) or an MPU and can catch overflow as an exception. On
+chips without them the stack quietly overwrites `.bss` — so a practice arose:
+painting the stack region beforehand with a particular value (`0xAA`, say) and later
+counting how much has been erased to measure the *maximum usage* (*stack painting*).
+Static analysis tools also calculate the worst-case depth from the call graph.
+
+=== AVR — Harvard architecture, so even constants are copied
+
+The 8-bit family widely known through the Arduino. The *Harvard architecture* seen
+in chapter 57 — where the address spaces of code and data are entirely different —
+becomes flesh here.
+
+```text
+flash (program space)         RAM (data space)
+┌───────────────────┐        ┌──────────────────┐
+│ vector table      │        │ .data            │ ← copied from flash
+│ .text             │        │ .bss             │
+│ .data's initial   │──────▶ │ heap ↑ (if used) │
+│ values (and       │        │  ...             │
+│ constants)        │        │ stack ↓          │ ← starts at RAMEND
+└───────────────────┘        └──────────────────┘
+```
+
+Two characteristics dominate practice.
+
+*① String constants eat RAM.* The address spaces being divided, flash cannot be read
+with an ordinary pointer. So the compiler takes the safe side — it copies even string
+literals into RAM. On a chip with only 2 KiB of RAM, this is where the situation
+arises of a few lines of log strings eating half the RAM. The solutions are
+`PROGMEM` and `pgm_read_byte`, and macros such as `F("...")` — instructions saying
+*"leave this constant in flash and read it with a special instruction"*. These are
+not standard C but extensions of the AVR tools.
+
+*② The stack and the heap grow facing each other in the same RAM.* The stack grows
+down from the end of RAM, the heap grows up from after `.bss`. When the two meet —
+they overwrite each other with no warning. There is nothing like a guard page. So
+the long-standing practice of the AVR world is *not to use dynamic allocation at
+all*.
+
+=== PIC — banks and the "compiled stack"
+
+Microchip's 8-bit family (PIC10/12/16/18) is different again in structure.
+
+*① The data memory is divided into banks.* The window that can be seen at once is
+small, so to touch a variable in another bank the bank-select register must be
+changed. The compiler inserts this for you, but if the variable layout is bad the
+bank-switching instructions multiply and the code grows larger and slower.
+
+*② There is no data stack in the hardware.* PIC10/12/16 have only a *call stack* (a
+hardware stack piling up return addresses) and its depth is fixed (eight levels,
+say; PIC18 has thirty-one). There is no stack to hold local variables. So the XC8
+compiler uses a method called the *compiled stack* — it allocates a place for each
+function's local variables *statically*, and functions that cannot be alive at the
+same time overlap in that place.
+
+*③ So recursion is forbidden by default.* If the place for local variables is
+static, the same function cannot be called overlapping itself. The call depth cannot
+exceed the hardware limit either. Since the compiler calculates "can this function
+call that one" from the call graph in order to divide the places, scattering
+function pointers about (chapter 57) leaves the compiler unable to know the graph
+and the layout worsens. PIC24, dsPIC and PIC32 are different — they have a real data
+stack and are closer to ordinary C.
+
+#dtable(
+  columns: 4,
+  [], [*Arm Cortex-M*], [*AVR*], [*PIC (8-bit)*],
+  [architecture], [von Neumann (unified addresses)], [Harvard], [Harvard + banks],
+  [stack], [down from the end of RAM, two SPs], [down from RAMEND], [only a hardware call stack],
+  [local variables], [the stack], [the stack], [*laid out statically* (a compiled stack)],
+  [recursion], [possible], [possible (dangerous)], [effectively impossible],
+  [constants], [read ordinarily], [`PROGMEM` needed], [special access needed],
+  [heap], [usable (not recommended)], [barely used], [barely used],
+  [overflow detection], [MPU, SPLIM (if present)], [none], [none],
+)
+
+#misconception[
+  "Can `malloc` not just be used in embedded work too?"
+][
+  It can be used, but here chapter 43's reasons weigh far more. First, *there is
+  nowhere to go on failure.* On a desktop you can take the null and terminate, but
+  for a brake system or a pacemaker "terminate" is not an answer. Second,
+  *fragmentation does not recover.* In a device running for months or years without
+  a reboot, a fragmented heap leads in the end to allocation failure. Third, *the
+  time is not constant.* Allocation time varies with the request and the heap's
+  state, so it does not fit real-time control that must finish within a settled
+  time.
+
+  So the norm of this world is *static allocation*. Take as much as is needed at
+  compile time and reuse it. Next most common are *pools* (making pieces of the same
+  size in advance and lending them out) and *arenas* (cutting from one lump and
+  throwing the whole away) — both are constant in time and free of fragmentation. It
+  is why MISRA and the safety standards forbid or strongly restrict dynamic
+  allocation, and the next chapter and Part XII treat those alternatives.
 ]
 
 #qa[
-  Then should `malloc` no longer be used?
+  How is the stack size settled in embedded work? Can it not be taken generously as
+  on Linux?
 ][
-  No. `malloc` is still the right answer as the general-purpose tool for handling
-  *things of assorted lifetimes*. The knack is fitting the tool to the purpose.
+  In a world where the whole RAM is a few KiB there is no "generously". The method
+  in the field overlaps three things. *Calculation* — a static analysis tool obtains
+  the worst-case stack depth from the call graph (with recursion and function
+  pointers the calculation becomes impossible). *Measurement* — measure the real
+  maximum usage by the stack painting seen above and add a margin. *Protection* —
+  catch overflow as an exception with an MPU or a stack limit register.
 
-  - the lifetime equals a unit of work → *an arena*
-  - the sizes are all the same → *a pool*
-  - lifetimes and sizes are assorted → *`malloc`* (or an allocator wrapping it)
-  - real-time or safety-critical → *static allocation*, plus the two above
-
-  And whichever is used, chapter 42's discipline stands — settle the ownership,
-  confirm failure, and check with tools (ASan, Valgrind).
+  And one design rule follows: *do not use deep recursion or large local arrays.*
+  The fact seen in chapter 45 that "passing a struct by value makes the stack jump
+  by that much" leads here straight to the product's failure.
 ]
 
 #recap[
   #dtable(
     columns: 2,
     [*to remember*], [*the point*],
-    [the header], [the size is written just before the user's place — an overflow breaks the ledger],
-    [boundary tags], [writing the size at both ends makes coalescing with a neighbour constant time],
-    [bins], [lists by size. the per-strand cache (tcache) avoids locking],
-    [internal/external fragmentation], [waste vs. no *contiguous* large lump left],
-    [RSS], [it may not go down even after `free` — distinguish it from a leak],
-    [alternative allocators], [jemalloc, TCMalloc, mimalloc, snmalloc, scudo. *measure, then change*],
-    [alternative libcs], [musl, picolibc, newlib, Bionic — a trade of size, static linking and features],
-    [arena], [only pushing, and throwing the whole away. for things of the same lifetime],
-    [pool], [the same size only. no fragmentation],
-    [the allocator as an argument], [the same code runs on heap, arena or pool alike (Part XII)],
+    [`.bss`], [*only the size* in the file. filling with zeros happens at run time],
+    [Linux's stack], [8 MiB by default, `ulimit -s`. caught at once by the guard page],
+    [Windows' stack], [*1 MiB* by default (4 KiB committed), the linker's `/STACK`],
+    [porting accidents], [large local arrays and deep recursion die on Windows first],
+    [large allocations], [go separately through `mmap`/`VirtualAlloc`],
+    [freestanding], [the startup code copies `.data` + zeroes `.bss` + sets the SP],
+    [Cortex-M], [the vector table's first word is the initial SP. MSP/PSP],
+    [AVR], [Harvard — even constants eat RAM (`PROGMEM`). stack↔heap collision],
+    [8-bit PIC], [a compiled stack. recursion effectively impossible],
+    [embedded allocation], [static > pool > arena. `malloc` last],
   )
 ]
 
-We have walked the terrain of the standard library and opened even the warehouse
-beneath it. The next part is the attempt to handle all these traps and costs *by
-design* — proven, the library this book has leaned on.
+The map is drawn. The next chapter opens one region of that map — the heap — to see
+what an allocator actually does, and what choices there are besides the standard
+`malloc`.

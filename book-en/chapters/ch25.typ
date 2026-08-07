@@ -45,11 +45,11 @@ There are two new faces — one per stage.
 its name) and holds it in a space called `line`. The first line's
 `char line[100];` is a declaration meaning "take a space of 100 character slots
 and call it line" — but the formal syntax of a multi-slot space (an array)
-belongs to chapter 37, so for now know it only as "a container for a line" (a
+belongs to chapter 38, so for now know it only as "a container for a line" (a
 deliberate credit). The second material, `sizeof line`, is "the number of slots
 in the container" — a safety device telling fgets the container's size so that
 *nothing is ever put in past its edge* (formal treatment of the `sizeof`
-operator is chapter 34).
+operator is chapter 35).
 
 *Stage 2, `sscanf` — interpret the line we fetched.*
 `sscanf(line, "%d", &n)` is the partner of chapter 22's `printf` — it uses the
@@ -58,7 +58,7 @@ into characters and sent them out, `sscanf` finds in the characters (the `"7"`
 inside `line`) a value matching the format (`%d`) and *puts it into a variable*.
 The `&` before the name is "a mark telling it the *place* of the variable to
 put the value in" — the moment addresses, learned in chapter 5, first show their
-face in the grammar; formal treatment is in chapter 34 (this is Part V's last
+face in the grammar; formal treatment is in chapter 35 (this is Part V's last
 deliberate credit).
 
 #qa[
@@ -75,7 +75,7 @@ deliberate credit).
   Reading a line is a structure in which you tell the container's size as you
   read, so overflow is blocked at the source — what accidents the old ways that
   do not state a size caused, and how this two-stage practice seals them off, is
-  the story of chapter 39. Getting the safe grain into your hands from the start
+  the story of chapter 40. Getting the safe grain into your hands from the start
   — that is this book's choice.
 ]
 
@@ -89,9 +89,9 @@ above, 1 on success and 0 on failure.
 As we are now, we have no syntax — branching — for checking that return value and
 taking one road on success and another on failure. So the example above
 discarded the return value and laid a floor for the failing case by initialising
-`n` to 0 (chapter 23's habit). The fork appears in the next part (chapter 29),
+`n` to 0 (chapter 23's habit). The fork appears in the next part (chapter 30),
 and the discipline of "report failure as a value and always check it" is
-established formally in chapter 48 — checking input will be that discipline's
+established formally in chapter 49 — checking input will be that discipline's
 first real exercise.
 
 #misconception[
@@ -113,11 +113,11 @@ We have learned all of how to make names — the name of a value (chapter 23), t
 name of work (chapter 24), and how to take a value from the outside world and
 hold it in a name (chapter 25). Chapter 15's credit ledger is settled, and the
 credit newly taken is exactly two — the line container (`char line[100]`, in
-chapter 37) and the place marker (`&`, in chapter 34) — and both have their due
+chapter 38) and the place marker (`&`, in chapter 35) — and both have their due
 dates written down.
 
 Above all, a program can now *converse*. Take in, calculate, answer — in the
 next part we forge the calculation itself: facing the world of integers
-(chapters 26 and 27), comparing and deciding (chapters 29 and 30), repeating
-(chapter 31), and completing the meaning of functions (chapter 32). It is the
+(chapters 27 and 28), comparing and deciding (chapters 30 and 31), repeating
+(chapter 32), and completing the meaning of functions (chapter 33). It is the
 part of values and flow.

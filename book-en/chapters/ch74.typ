@@ -1,543 +1,598 @@
 #import "../../book/lib.typ": *
 
-= Non-local jumps — `<setjmp.h>`
+= Signals — `<signal.h>`
 
 #prereq(
-  ([chapter 73, Signals], [the thing that cuts into the flow]),
-  ([chapter 39, The stack and calls], [how call frames are stacked and cleared]),
-  ([chapter 48, How to report failure], [returning failure as a value]),
+  ([chapter 73, Diagnostics and control], [`errno` and the handler's restrictions]),
+  ([chapter 51, The three faces of `main`], [a program's start and end]),
+  ([chapter 3, Programs and processes], [the process as a container]),
 )
 
 #deepqa[
-  Chapter 39 said that calling a function stacks a frame, and that `return`
-  clears that frame and goes back *one step at a time*. Then how, in C, does one
-  return from ten levels deep to the top *in a single move*?
+  Chapter 73 said a signal handler may not call `printf` or `malloc`, and that
+  about all it may do is assign to a `volatile sig_atomic_t`. But a signal
+  ultimately calls *a function inside my own program* — why are the restrictions
+  so severe?
 ][
-  The two words of `<setjmp.h>` do exactly that. `setjmp` records "here, now",
-  and `longjmp` revives that record and *rewinds the stack whole*. Ten levels or
-  a hundred, it comes back at once.
+  *Because there is no telling when it will cut in.* A signal does not respect the
+  boundaries of functions. It can arrive while `malloc` has half-rewritten its
+  free list, or while `printf` has written half of a buffer. Call the same
+  function again from a handler in that state and the data structure breaks.
 
-  What is rewound, though, is only *the stack pointer and a few registers*. No
-  one closes the files opened in between, frees the memory taken, or releases the
-  locks held — half of this chapter is about that price.
+  A signal, in other words, is *a third thing* — neither a thread nor a function
+  call. It stops the current flow, cuts in, and returns, so there is no way to know
+  "what is half-done right now". Every rule in this chapter follows from that one
+  sentence.
 ]
 
 #organizer[
-#idx("non-local jump")  A close reading of one header, `<setjmp.h>`. Why it exists (the makeshift of a
-  language without exceptions), the exact shape and return values of the two
-  words, the eight slots of `jmp_buf` and which registers come back, the
-  `volatile` rule that follows from them (measured on a real build), how real
-  software such as libjpeg and PostgreSQL copes with the memory left behind by a
-  jump, and today's alternatives.
+#idx("signal")  A close reading of one header, `<signal.h>`. Where it came from (a Unix
+  inheritance), the exact shape of its two functions with their arguments and
+  return values, what `sig_atomic_t` really is, the list of what a handler may do,
+  why memory cannot be allocated inside one, how the kernel saves and restores
+  registers, POSIX's `sigaction` and the inside of its structures, and how
+  servers, the JVM and garbage collectors actually use signals.
 ]
 
 #chapter-questions()
 
-== Why it exists — the makeshift of a language without exceptions
+== Where it came from — a Unix inheritance
 
-When trouble arises deep down, a language with exceptions escapes to the upper
-floors with one `throw`. C has none. So an error must be *carried up one layer at
-a time as a return value*, and every function in between must take that value and
-pass it on (chapter 48).
+C did not invent signals. Unix made them in the 1970s as "the cheapest way to
+tell a process something", and the C standard took only *the minimum that would
+hold anywhere*.
 
-`setjmp`/`longjmp` is the device that skips that chain. It was already in Unix V7
-in the 1970s, and its reason for being was the same as now — *getting out of deep
-recursion in one move.*
+Early Unix signals had a famous flaw. Once a handler ran, the disposition
+immediately reverted to the default (so the first line of a handler had to
+re-install itself), and if the same signal arrived in that gap the program died.
+Because of that window, the signals of the time were called *unreliable
+signals*.
 
-The standard's footnote states the purpose narrowly: these functions "are useful
-for dealing with unusual conditions encountered in a low-level function of a
-program." That is, the original place of the device is *an escape hatch for
-exceptional situations, not a substitute for exceptions.*
+4.2BSD produced a new interface that fixed this (the `sigvec` family), and that
+design was tidied into POSIX's `sigaction`. What the 1989 C standard took,
+however, was not the fixed one but *the common denominator* — which is why the
+old window is still in the standard's `signal` today.
 
 #qa[
-  Is this then C's exception handling?
+  Why did the standard not take the better `sigaction`?
 ][
-  No. Three differences are decisive.
+  Because of C's long-standing principle: *take only what holds where there is no
+  operating system* (chapter 60). `sigaction` stands on operating-system notions —
+  processes, signal masks, restarting system calls. C must run on embedded chips
+  that have none of those, so the standard fixed only "if there is such a thing as
+  a signal, this much exists."
 
-  *First, nothing is cleaned up.* A C++ exception rewinds the stack calling
-  destructors (stack unwinding). `longjmp` simply jumps — open files, taken
-  memory, locked mutexes all stay as they were.
-
-  *Second, there is no type.* The only thing thrown is one `int`. To carry what
-  went wrong, that value must serve as an index into something written elsewhere.
-
-  *Third, the region is limited.* The function that called `setjmp` must *still be
-  alive*. There is no jumping into the place of a function that has already
-  returned — doing so is undefined behaviour.
-
-  So the conclusion of this chapter, stated in advance: *new code mostly does not
-  use it. But you must be able to read it* — because widely used libraries are
-  built on it.
+  So this chapter is in two layers. *The standard layer* (works anywhere, with
+  gaps) and *the POSIX layer* (no gaps, but only on Unix-like systems). Practical
+  Unix code uses the latter almost without exception.
 ]
 
-== The two words — the exact shape
+== Two functions — the exact shape
+
+The standard defines only two.
 
 #dtable(
   columns: 2,
   keycol: false,
   [*Declaration*], [*What it does*],
-  [`int setjmp(jmp_buf env);`], [Saves the present calling environment in `env`. *It is a macro*],
-  [`[[noreturn]] void longjmp(jmp_buf env, int val);`], [Goes back to the place saved in `env`. Does not return],
+  [`void (*signal(int sig, void (*func)(int)))(int);`], [Sets the disposition of signal `sig` to `func`, and returns *the previous one*],
+  [`int raise(int sig);`], [Sends signal `sig` to the caller itself],
 )
 
-=== `setjmp` — the macro that seems to return twice
+Why `signal`'s declaration is rough was read by procedure in chapter 58 — *"a
+function taking a signal number and a handler, returning the previous handler."*
 
-`setjmp` is a *macro*, not a function (the standard allows a function to be
-provided as well, but suppressing the macro and calling the function directly is
-undefined behaviour).
-
-The rule for its return value is simple, and it is nearly the whole header.
-
-#dtable(
-  columns: 2,
-  [*How it was reached*], [*What `setjmp` returns*],
-  [Called directly (the moment the place is saved)], [0],
-  [Returned to by `longjmp(env, val)`], [`val` — except that 0 becomes 1],
-)
-
-That is why `longjmp(env, 0)` cannot produce 0. Zero already means *"saving right
-now"*, so the standard turns it into 1.
-
-#demo("examples-en/ch74/jmp_basic.c")
-
-The demonstration follows that flow exactly. The first time it yields 0 and goes
-down into `deep`; at depth 3 the `longjmp(env, 42)` brings us *straight back to
-`main`'s `setjmp`* and 42 appears. The intervening `deep(2)` and `deep(1)` never
-get to print their "leaving normally" line — those frames simply vanished.
-
-The last test is `longjmp(env, 0)`. We gave 0, and 1 came back.
-
-=== Where `setjmp` may appear — four contexts only
-
-The standard (§7.13.1.1) restricts the context *by enumeration*. Using it outside
-these four is undefined behaviour.
-
-#dtable(
-  columns: 2,
-  keycol: false,
-  [*Permitted context*], [*Example*],
-  [The *entire* controlling expression of `if`, `switch`, `while`, …], [`if (setjmp(env)) { ... }`],
-  [One operand of a comparison with an integer constant expression (the whole being a controlling expression)], [`if (setjmp(env) == 0)`],
-  [The operand of a single `!` (likewise)], [`if (!setjmp(env))`],
-  [An entire expression statement (a cast to `void` is allowed)], [`setjmp(env);`],
-)
-
-So `int rc = setjmp(env);` is *not one of the standard's contexts.* It does work
-on many implementations and this book's demonstration writes it that way, but
-where portability matters, `switch (setjmp(env))` or `if (setjmp(env) == 0)` is
-the safer form.
-
-#qa[
-  Why does such an odd restriction exist?
-][
-  Because `setjmp` is a thing *called once and returned from twice*. To a
-  compiler this is not an ordinary call — if its return value sat in the middle of
-  a complicated expression, there would be no way to decide how to revive the
-  half-computed state (temporaries spread across registers).
-
-  So the standard narrowed the context down to *places where no temporary can be
-  alive*: one controlling expression, one comparison against a constant, and an
-  expression statement that discards the value. The restriction looks strange, but
-  it comes from implementability.
-]
-
-=== `longjmp` — three things to check before jumping
-
-`longjmp(env, val)` does not return (C23 marks it `[[noreturn]]`). Three
-conditions must hold before jumping, and breaking any one is undefined behaviour.
-
-#dtable(
-  columns: 2,
-  [*Condition*], [*If broken*],
-  [There really was a `setjmp` on that `env`], [Jumping to a place never saved],
-  [The function that called `setjmp` is *still alive*], [Jumping into a vanished frame — usually instant death],
-  [It is the same thread], [Jumping into another thread's stack],
-)
-
-The second is the accident that happens most often. Thinking "I will make an error
-handler and call it from anywhere", one calls `longjmp` after the function that
-called `setjmp` has already returned — and by then another function's frame has
-moved into that place.
-
-== What `jmp_buf` really is
-
-`jmp_buf` is *an array type*. The standard nails that down for a practical reason
-— being an array, passing it to a function decays it to the address of its first
-element (chapter 37), so `setjmp(env)` can *modify the original* without writing
-`&env`.
-
-What is inside? The standard says only "information sufficient for `longjmp` to
-restore the calling environment". In practice it is roughly these.
-
-#dtable(
-  columns: 2,
-  [*What is saved*], [*Why*],
-  [The stack pointer], [The place to rewind to must be known],
-  [The program counter (return address)], [Where to go back to],
-  [Callee-saved registers], [The values the calling convention promised to preserve],
-  [(Sometimes) the signal mask], [POSIX's `sigsetjmp`, optionally],
-)
-
-The size the demonstration printed (200 bytes on this implementation) is the sum
-of those contents. But *looking inside or editing it by hand is outside the
-contract* — treat it as opaque data.
-
-The standard is also explicit about what is *not* saved: *the state of the
-floating-point environment, of open files, or of any other component of the
-abstract machine.* That one sentence produces every pitfall in the next section.
-
-=== Looking inside the eight slots
-
-On this implementation (glibc, x86-64) the 200 bytes of a `jmp_buf` divide thus.
-
-#dtable(
-  columns: 2,
-  [*Part*], [*Size*],
-  [Eight register slots (`long [8]`)], [64 bytes],
-  [Whether the signal mask was saved (`int` + padding)], [8 bytes],
-  [Room for the signal mask], [128 bytes],
-)
-
-Print the eight slots and their order appears — RBX, RBP, R12, R13, R14, R15, the
-stack pointer, the return address. That is exactly the list the x86-64 SysV
-calling convention marks *callee-saved* (chapter 39's calling convention).
-
-Two things stand out.
-
-*First, three of the slots hold scrambled values.* Print the slots for RBP, the
-stack pointer and the return address and they do not look like stack addresses.
-glibc stores them mixed with a per-thread guard value — a device against
-overwriting a `jmp_buf` to jump to an address of the attacker's choosing. It
-confirms the rule that the inside of a `jmp_buf` is not to be edited by hand.
-
-*Second, registers not on that list are not saved.* RAX, RCX, RDX, RSI, RDI and
-R8--R11 are the ones the convention marks "the caller's business" (caller-saved),
-so `setjmp` does not keep them.
-
-=== And that is the `volatile` rule
-
-Read those two facts from a local variable's point of view and the next section's
-rule follows by itself. A compiler puts a local in one of three places.
+=== `signal`'s arguments and return value
 
 #dtable(
   columns: 3,
-  [*Where the variable was*], [After `longjmp`], [*Why*],
-  [In memory on the stack], [The changed value, intact], [`longjmp` restores only the stack *pointer*. It does not touch the contents],
-  [In a callee-saved register], [The old value from `setjmp`], [That slot is restored wholesale from the `jmp_buf`],
-  [In a caller-saved register], [Anything at all], [It is neither saved nor restored],
+  [*Place*], [*What you give*], [*Meaning*],
+  [`sig`], [A signal number], [One of the standard six, or a value the implementation defines],
+  [`func`], [`SIG_DFL`], [Back to default handling (mostly termination)],
+  [`func`], [`SIG_IGN`], [Ignore — the signal arrives and nothing happens],
+  [`func`], [A function pointer], [Use that function as the handler],
+  [return], [The previous disposition], [`SIG_DFL`, `SIG_IGN` or the previous handler],
+  [return], [`SIG_ERR`], [Setting failed; `errno` then holds the reason],
 )
 
-Turn optimisation off and the compiler mostly puts locals on the stack, so only
-the first row happens — which is why nothing *appears* wrong at `-O0`. Turn it on
-and heavily used variables move into registers, and the second and third rows
-appear.
+*Not discarding the return value* is the first discipline. Miss a failure and the
+program dies quietly when the signal finally arrives.
 
-It is also why the standard writes *"indeterminate representation"* rather than
-"becomes the old value". The result depends on where the variable was, so the
-standard promises none of them.
+=== `raise`'s argument and return value
 
-== What happens to values on return — the `volatile` rule
+`raise(sig)` sends the signal to the caller. It returns 0 on success and non-zero
+on failure. If a handler is installed it runs *before `raise` returns* — that is,
+synchronously.
 
-The most practical rule in this chapter. The standard (§7.13.2.1) settles it thus.
+That is exactly what `abort` does: it raises `SIGABRT`, and terminates abnormally
+if there is no handler or the handler returns (chapter 65).
 
-*All objects have the values they had at the time `longjmp` was called, with one
-exception — objects of automatic storage duration local to the function
-containing the `setjmp`, that are not `volatile` and have been changed since the
-`setjmp`, have indeterminate representations.*
+#demo("examples-en/ch74/sig_basic.c")
 
-#demo("examples-en/ch74/jmp_volatile.c")
+The demonstration shows four things in the flesh. *The previous value comes back*
+(first line), *`raise` calls the handler on the spot* (second), *`SIG_IGN` makes
+the signal vanish* (third), and the last one matters — *this implementation
+resets to `SIG_DFL` right after handling.*
 
-Three variables split exactly along that rule.
+=== The six signals the standard defines
 
 #dtable(
   columns: 3,
-  [*Variable*], [*Storage and qualifier*], [After `longjmp`],
-  [`plain`], [automatic, non-`volatile`, changed in between], [*No guarantee*],
-  [`guarded`], [automatic, `volatile`], [Guaranteed],
-  [`statik`], [static], [Guaranteed],
+  [*Name*], [*When it arrives*], [*Default action*],
+  [`SIGABRT`], [A call to `abort()`], [Abnormal termination],
+  [`SIGFPE`], [An arithmetic error (divide by zero, overflow, …)], [Abnormal termination],
+  [`SIGILL`], [Executing an invalid instruction], [Abnormal termination],
+  [`SIGINT`], [Interactive attention (usually Ctrl+C)], [Termination],
+  [`SIGSEGV`], [An invalid memory access], [Abnormal termination],
+  [`SIGTERM`], [A termination request], [Termination],
 )
 
-*This rule really does bite.* Build with optimisation off and all three show 2;
-build the same code with `-O2` and `plain` *comes back as 1* — the compiler had
-kept that variable in a register, and `longjmp` restored the registers to their
-values at `setjmp`. This book ran both builds and confirmed the difference, and
-the example reports which build it is by looking at `__OPTIMIZE__`.
+The standard does not fix the numeric values — the 2 and 15 the demonstration
+printed belong to this implementation. The rule is *use the names, never the
+numbers*.
+
+== What a handler may do
+
+The most important section in this chapter. The standard (§7.14.1.1) settles what
+is permitted inside a handler *by enumeration*. Outside that list is undefined
+behaviour.
+
+#dtable(
+  columns: 2,
+  [*What is permitted*], [*Condition*],
+  [*Assigning a value* to a `volatile sig_atomic_t` object], [Assigning, not reading],
+  [Handling lock-free atomic objects], [`<stdatomic.h>`, when lock-free (chapter 77)],
+  [Calling `abort`], [—],
+  [Calling `_Exit`], [—],
+  [Calling `quick_exit`], [—],
+  [Calling `signal`], [Only with *the signal number that invoked it*],
+)
+
+Every other standard library function is forbidden — `printf`, `malloc`,
+`strlen`, even `exit`. And touching objects with static or thread storage
+duration is forbidden too unless it falls under the first row.
 
 #misconception[
-  "`volatile` is for hardware registers and nothing else"
+  "Logging with `printf` in a handler is convenient"
 ][
-  This is `volatile`'s second legitimate use (the first was chapter 73's
-  `volatile sig_atomic_t`). Set the three side by side and the purpose is clear.
+  The most common and longest-lived accident. `printf` is a function with internal
+  buffers and locks, so cutting into its *intermediate state* breaks its data
+  structures. On a good day the output interleaves; on a bad one it deadlocks — a
+  signal arrives while `printf` holds a lock, the handler calls `printf` again, and
+  it waits for a lock it holds itself.
+
+  Worse, *it mostly works*. So the bug passes the tests, ships, and shows up as an
+  occasional freeze under load.
+
+  If something really must be printed from a handler on Unix, use `write` — a
+  function POSIX separately guarantees to be *async-signal-safe*. The second
+  demonstration does exactly that.
+]
+
+=== What `sig_atomic_t` really is
+
+`sig_atomic_t` is an integer type whose value *never appears half-written* even
+when a signal cuts in. Why does such a type need to exist? Because a large integer
+may be stored in two steps on some machines, and a signal arriving in between
+would see a half-changed value.
+
+`volatile` is there for a different reason. The compiler may decide "nothing in
+this loop changes `stop`" and delete the test altogether (chapter 14's
+optimisation). `volatile` says *really read it every time*. The two do different
+jobs, so *both* are needed — `volatile sig_atomic_t`.
+
+#dtable(
+  columns: 3,
+  [*What*], [*What it prevents*], [*Without it*],
+  [`sig_atomic_t`], [Seeing a half-written value], [A partially updated value can be read],
+  [`volatile`], [The compiler eliding the read], [The loop never sees the flag],
+)
+
+Since C11, lock-free atomic types such as `atomic_int` may also be used in a
+handler (chapter 77). In a program with several threads that is the more accurate
+choice — `sig_atomic_t` guarantees only *signal versus main flow*, not thread
+against thread.
+
+== Handlers and memory — why `malloc` is not on the list
+
+The most keenly felt absence from the permitted list is memory allocation. To
+record anything inside a handler you need a vessel, and neither `malloc` nor
+`free` may be called. Seeing why at the machine level makes the rule stick.
+
+An allocator manages a data structure called the *free list* (chapter 43). One
+`malloc` is a multi-step update that detaches a piece from that list and rewrites
+the links of its neighbours. There is necessarily a moment when the update is
+half done, and a signal can cut in *at exactly that moment*.
+
+#dtable(
+  columns: 2,
+  [*The moment it cuts in*], [*If the handler calls `malloc`*],
+  [The free-list links are half rewritten], [It follows a half-rewritten list and hands out the wrong piece],
+  [Just before the block's size is written], [A later `free` returns it with the wrong size],
+  [While the allocator's lock is held], [It waits for a lock it holds itself — deadlock],
+)
+
+The third row is the nastiest. Modern allocators keep an internal lock against
+being called from several threads at once. Let the thread holding that lock take
+a signal, and let the handler call `malloc` again, and the lock is never
+released. *The program does not die; it stops* — the hardest kind of accident to
+diagnose.
+
+There is one worse combination. Escaping from a handler with `longjmp`
+(chapter 75). Here the trouble comes without calling `malloc` again — because you
+*jump out still holding the lock*. From then on the main flow's first `malloc`
+hangs. Half the reason chapter 75 calls jumping from a handler dangerous is this.
+
+#qa[
+  Then what do you do when a handler really must record something?
+][
+  *Take it in advance.* Allocate the vessel you need *before* installing the
+  handler, and let the handler only write into it. A static array is better still
+  — there is no allocation at all.
+
+  ```c
+  static char report[4096];               /* obtained up front */
+  static volatile sig_atomic_t report_len;
+  ```
+
+  If the amount to record is not bounded, it was never a job for a handler. Raise
+  a flag and hand it to the main flow. If something truly must be recorded now —
+  a crash report, where the next moment is certain death — put it in a
+  pre-allocated buffer and push it out with `write`. That is what Redis's crash
+  report, seen later, does.
+]
+
+== What a signal saves and restores — the register context and `errno`
+
+A handler cuts in halfway through a function and *returns to exactly that place*,
+even though half-computed values are scattered across the registers. How?
+
+*Because the operating system saves every register and restores them.* When
+delivering a signal the kernel builds a signal frame on the stack and puts the
+whole current register set into it (on Linux, `ucontext_t` is that vessel). When
+the handler returns, `sigreturn` puts those values back. So *whichever
+instruction boundary it cut in at, the computation carries on.*
+
+#demo("examples-en/ch74/sig_context.c")
+
+The third part of the demonstration confirms it. A signal taken in the middle of
+a thousand-round computation (at round 500) leaves the result equal to the one
+computed undisturbed.
+
+#qa[
+  Does `setjmp`/`longjmp` not do the same thing?
+][
+  No. This is the decisive difference between the two devices.
 
   #dtable(
-    columns: 2,
-    [*Place*], [*What it prevents*],
-    [MMIO and hardware registers], [Optimisations that erase or merge reads and writes],
-    [Flags exchanged with a signal handler], [Optimisations that skip the read in a loop],
-    [Locals that cross a `longjmp`], [Optimisations that keep the value only in a register],
+    columns: 3,
+    keycol: false,
+    [], [*A signal*], [*`longjmp` (chapter 75)*],
+    [Who saves], [The kernel], [The `setjmp` macro],
+    [What is saved], [*Every* register], [Only the callee-saved ones (eight slots)],
+    [Where it returns], [The very instruction interrupted], [The place that called `setjmp`],
+    [Local variables], [All intact], [*No guarantee unless `volatile`*],
   )
 
-  All three prevent "the compiler bypassing memory". Conversely, *`volatile` is
-  useless for synchronization between threads* — that place belongs to
-  `<stdatomic.h>` (chapter 76). Miss this distinction and `volatile` becomes a
-  misunderstood charm against all evils.
+  A signal, then, is *a complete context switch*, and `longjmp` is *a partial
+  restoration*. That is why a handler may return into the middle of an expression
+  while `longjmp` may only be used in the four contexts the standard fixes
+  (chapter 75).
 ]
 
-== Nobody cleans up the resources
+=== `errno` is the exception — you must look after it yourself
 
-`longjmp` only rolls back the stack pointer. Whatever was taken in between stays
-taken.
+If the kernel looks after the registers, what is left? *State at the C level.*
+The one most often hit is `errno`.
 
-#antipattern("Code that leaves resources where it jumped over")[
-  ```c
-  void work(void) {
-      FILE *f = fopen("data", "r");     /* opened */
-      char *buf = malloc(1024);          /* taken */
-      parse(f, buf);                     /* if a longjmp happens here… */
-      free(buf);                         /* does not run — a leak */
-      fclose(f);                         /* does not run — the file leaks too */
-  }
-  ```
-  If a `longjmp` happens inside `parse`, `work`'s frame simply vanishes. Neither
-  `free` nor `fclose` runs. In a long-running program this pattern shows up as a
-  small leak per request.
-]
+A handler that calls nothing but `write` still changes `errno` when that call
+fails. If the main flow was about to read the reason for a failed call, the value
+it reads is the one the signal left behind.
 
-So code that uses this device keeps one discipline without exception — *gather
-the places that take and release resources inside the function that called
-`setjmp`.* Having jumped back, that function can clean up itself.
+The first part of the demonstration shows it in the flesh — `errno`, which was
+`ENOENT` (2) before the signal, came back as `EBADF` (9) after the handler. An
+attempt to open a missing file was turned into a bad-file-descriptor error.
 
-=== The quieter accident — a pointer reverts to its old value
-
-The previous counter-example was a `free` *that never ran*. There is a quieter
-one. The cleanup code runs perfectly well, but *the pointer saying what to free*
-falls foul of the previous section's rule and reverts to its old value.
-
-#demo("examples-en/ch74/jmp_leak.c")
-
-At `-O0` both survive, but build the same code at `-O1` or above and the
-non-`volatile` one reverts to the null it held at `setjmp` (we checked). Then
-`free(risky)` frees null, does nothing, and 64 bytes leak for good — clear the
-static copy and ASan reports it as "Direct leak of 64 byte(s)".
-
-*There is cleanup code, and it still leaks.* Reading the code will not show it,
-and it appears only in the optimised build that ships. Of the accidents in this
-pattern it is the hardest to diagnose.
-
-There is an opposite direction too. If the old value is not null but *an address
-already freed*, it is a double free.
-
-#antipattern("Code that reverts to an old address and frees it twice")[
-  ```c
-  char *p = malloc(64);
-  if (setjmp(env) == 0) {
-      free(p);            /* freed once */
-      p = malloc(128);    /* and taken afresh */
-      work(p);            /* a longjmp happens here */
-  }
-  free(p);                /* if p reverted, this frees what was already freed */
-  ```
-  Chapter 42's double free, reproduced exactly. The allocator's ledger is wrecked,
-  so every allocation after it is contaminated.
-]
-
-The discipline is one line — *do not keep a pointer that must survive a `longjmp`
-in an automatic local.* Give it `volatile`, or put it in a static variable or a
-context struct. The `load_image` of the next demonstration does exactly that.
-
-#demo("examples-en/ch74/jmp_error.c")
-
-The demonstration's `load_image` is that structure. The `malloc` happens *before*
-the `setjmp`, and the `free` sits once, in a place both the success and the
-failure path pass through. The deep `parse_header` and `parse_size` take no
-resources and only jump.
-
-== What is actually built on this
-
-The device is not recommended for new code, but *what is already built* is
-plentiful.
-
-#dtable(
-  columns: 3,
-  [*What*], [*How it uses it*], [*Why it did so*],
-  [libjpeg], [A `jmp_buf` inside `struct jpeg_error_mgr`; on error it jumps from `error_exit`], [Decoding is deep recursion, so a return-value chain would be far too long],
-  [libpng], [The same pattern through the `png_jmpbuf(png_ptr)` macro], [The same reason — imitating exceptions in a C API],
-  [The Lua interpreter], [`LUAI_THROW`/`LUAI_TRY` are implemented with `longjmp` in a C build], [A script's `error()` must be carried into the host language],
-  [Some coroutine implementations], [Save the context with `setjmp` and swap stacks], [The only road to imitating context switching with the standard alone],
-  [Test frameworks], [On a failed assertion, abandon that test and move to the next], [One test's failure must not stop the whole run],
-)
-
-#realcase("libjpeg's error manager — how it came to look like this")[
-  Code using libjpeg almost always begins like this.
-
-  ```c
-  struct my_error_mgr { struct jpeg_error_mgr pub; jmp_buf setjmp_buffer; };
-
-  static void my_error_exit(j_common_ptr cinfo) {
-      struct my_error_mgr *err = (struct my_error_mgr *)cinfo->err;
-      longjmp(err->setjmp_buffer, 1);
-  }
-  ```
-
-  The library's default behaviour was *to `exit` on error*. That amounts to a
-  library killing the application — one broken image and the whole editor
-  terminates. So libjpeg left open a hook for "the function to call on error", and
-  from inside that hook the only way back was `longjmp`.
-
-  What this case shows is the order of the design. *A deep call chain + a C API +
-  a library that must not kill the process* — when those three coincide, there was
-  hardly any choice besides `setjmp`/`longjmp`. Designed afresh today one would
-  take chapter 48's "failure as a value", but within the constraints of the 1990s
-  it was a reasonable decision.
-]
-
-=== How do they cope with memory — the answer is always the same
-
-Read the previous table again, this time asking only "who frees the memory taken
-before the jump?"
-
-#dtable(
-  columns: 3,
-  [*What*], [*Who frees it*], [*The device*],
-  [libjpeg], [One call to `jpeg_destroy_*`], [The library ties every allocation into pools of its own memory manager],
-  [libpng], [One `png_destroy_read_struct`], [The same way],
-  [Lua], [The garbage collector], [Every allocation is registered in the interpreter's state],
-  [PostgreSQL], [Resetting a memory context where the error is caught], [An arena per query and per transaction],
-  [Test frameworks], [Wholesale, when a test ends], [An arena per test, or separate processes altogether],
-)
-
-*The common thread is visible — they are all arenas.* The flaw that `longjmp`
-cleans up nothing was worked around by a structure in which *no individual `free`
-is needed*: tie everything taken into one bundle, and at the place you jump back
-to, throw away that one bundle.
-
-So one more conclusion attaches. *Use `setjmp` without an arena and a leak is a
-matter of time.* Part XII's arena is also the precondition that makes this
-pattern legitimate.
-
-#realcase("PostgreSQL's `PG_TRY`/`PG_CATCH`")[
-  PostgreSQL builds something very like exceptions out of this device.
-  `PG_TRY` and `PG_CATCH` are macros, and inside them are `sigsetjmp` and a global
-  exception stack. Reporting an error deep down jumps to the nearest `PG_CATCH`.
-
-  But a single query takes thousands of pieces of memory. How is that coped with?
-  *Memory contexts.* Every allocation belongs to some context, and resetting that
-  context where the error is caught makes thousands of pieces vanish at once. An
-  arena used as if it were a language feature.
-
-  And the previous section's rule is written into that source as a convention —
-  *a local variable modified inside a `PG_TRY` block and used in the `PG_CATCH`
-  must be declared `volatile`.* It is precisely the list of what a large C program
-  needs in order to use this device safely: one arena, one `volatile` convention,
-  and macros around the jump so that people never write `longjmp` themselves.
-]
-
-#qa[
-  What happens to `alloca` and variable-length arrays?
-][
-  Those alone are cleaned up automatically. They were taken from the stack, so
-  when the stack pointer rewinds they go with it — the VLAs of the skipped frames
-  do not leak.
-
-  The standard does nail down one thing, though. *A `longjmp` that would leave the
-  scope of an identifier with a variably modified type is undefined behaviour* —
-  the implementation loses its chance to tidy that place. So the rule becomes "do
-  not jump across a block in which a VLA is alive."
-
-  From the memory point of view it comes to this — *what was taken from the stack
-  is cleaned up for free; what was taken from the heap is cleaned up by nobody.*
-  That one line is why all the libraries above went to arenas.
-]
-
-== POSIX's `sigsetjmp`/`siglongjmp`
-
-Unix-like systems have one more pair.
+The prescription is two lines. *Save on the way in, restore on the way out.*
 
 ```c
-int  sigsetjmp(sigjmp_buf env, int savemask);
-[[noreturn]] void siglongjmp(sigjmp_buf env, int val);
-```
-
-The difference is whether the *signal mask* (chapter 73) is saved along with the
-rest. If `savemask` is non-zero the current mask is saved too, and `siglongjmp`
-restores it.
-
-Why is that needed? Consider code that escapes from a signal handler with
-`longjmp`. While the handler runs that signal is blocked, and jumping out with the
-standard `longjmp` may *leave it blocked* — after which that signal never arrives
-again. `sigsetjmp` closes that hole.
-
-#misconception[
-  "Escaping from a signal handler with `longjmp` is fine"
-][
-  A widely used but dangerous pattern. Two things compound.
-
-  *First, the mask problem* — exactly as above. On Unix the `sigsetjmp` pair must
-  be used.
-
-  *Second, and more fundamentally, you do not know where it was cut.* A signal
-  arrives in the middle of `malloc` or `printf` too (chapter 73). Jump out from
-  there and that data structure stays half-rewritten. Call `malloc` again after
-  jumping out and it collapses then.
-
-  So the places where the pattern is even defensible are narrow — *finish
-  immediately after jumping* (`_Exit`), or take a path that uses the standard
-  library no further. In a long-running program the pattern of "set a timeout with
-  a signal and escape with `longjmp`" runs well on the surface and collapses
-  rarely.
-]
-
-== Its place today — when to use it, what to use instead
-
-#dtable(
-  columns: 2,
-  [*What you want to do*], [*The recommended way*],
-  [Carry a deep failure upward], [Return it as a value (chapter 48). Tedious for the middle layers, but safer],
-  [Tidy several failure paths inside one function], [Gather them with a single `goto cleanup` — the Linux kernel's practice],
-  [Not forget to release resources], [By *structure*, not by attributes — take and release in the same function],
-  [A deep escape in a parser or interpreter], [One of the few legitimate places for `setjmp`, if the resource discipline is kept],
-  [Escape across threads], [Impossible — `longjmp` works only within one thread],
-)
-
-The `goto cleanup` pattern is worth writing out again, because most of what people
-reach for `setjmp` to do is in fact covered by it.
-
-```c
-int work(void) {
-    int rc = -1;
-    FILE *f = fopen("data", "r");
-    if (!f) goto out;
-    char *buf = malloc(1024);
-    if (!buf) goto close;
-    if (parse(f, buf) != 0) goto free_buf;
-    rc = 0;
-free_buf: free(buf);
-close:    fclose(f);
-out:      return rc;
+static void on_signal(int sig) {
+    int saved = errno;          /* first line */
+    /* … raise a flag, write, … */
+    errno = saved;              /* last line */
 }
 ```
 
-*Within one function* this is better. The flow is visible, the order of cleanup is
-written in the code, and the compiler checks it. `setjmp` is needed only when
-*several functions must be skipped over*.
+Code that omits it *mostly works* — the fault shows only when a signal happens to
+arrive at that moment. So it is better kept as a discipline.
+
+#platform[
+  Where the stack goes — the red zone and an alternate stack
+][
+  The kernel builds the signal frame *on the current stack*. Two pieces of
+  practical knowledge follow.
+
+  First, the x86-64 SysV convention has a 128-byte *red zone* below the stack
+  pointer that a function may use without growing the stack. The kernel skips
+  that zone when building a signal frame — otherwise it would overwrite the
+  interrupted function's temporaries. The practice of building kernel code with
+  `-mno-red-zone` comes from here.
+
+  Second, if the `SIGSEGV` came from *the stack overflowing*, there is no stack on
+  which to build the handler either. So POSIX provides `sigaltstack` to register a
+  separate stack for handlers, used by passing `SA_ONSTACK`. Tools that diagnose
+  stack overflow stand on this device.
+]
+
+== The working pattern — raise a flag and return at once
+
+Given so short a permitted list, handlers in practice converge on one shape.
+
+#demo("examples-en/ch74/sig_flag.c")
+
+*The handler only raises a flag. Judgement and cleanup belong to the main flow.*
+The demonstration's `serve` is that structure — it loops, sees the flags, and
+either reloads its configuration or cleans up and goes down. Printing, closing
+files and freeing all happen inside the loop.
+
+Three things make the pattern good. *It is safe* — the handler does one
+assignment, so it cannot leave the permitted list. *The moment is yours* — the
+main flow decides whether to finish the current request first. *It is testable* —
+raise the flag directly and the same path can be exercised without any signal.
+
+#realcase("Why the output order looked reversed")[
+  The first run of the demonstration printed the handler's output *before* the
+  `puts`. Not a bug but buffering — `printf` and `puts` accumulate in the stdout
+  buffer and flush later, while the handler's `write` goes straight out, bypassing
+  it (chapter 62's buffering).
+
+  That small observation re-explains the misconception above. The handler and the
+  main flow share a buffer but *do not write by the same rules*. So the
+  demonstration used `fflush` to line the order up, and practice avoids printing
+  from handlers altogether.
+]
+
+== POSIX's `sigaction` — filling the standard's gaps
+
+What Unix-like systems actually use is `sigaction`. It fills exactly three gaps in
+the standard `signal`.
+
+#dtable(
+  columns: 3,
+  [*Gap*], [*Standard `signal`*], [*`sigaction`*],
+  [Does the handler survive?], [Implementation-defined (it vanished in the demonstration)], [It stays, unless `SA_RESETHAND` is given],
+  [If the same signal arrives while handling], [Implementation-defined], [Blocked by default; `sa_mask` blocks more],
+  [Interrupted system calls], [Not settled], [Restarted automatically with `SA_RESTART`],
+)
+
+#demo("examples-en/ch74/sig_action.c")
+
+=== Inside `struct sigaction`
+
+This structure is this chapter's data-type story. POSIX fixes four members and
+does *not* fix their order (so it must be started with a designated initializer or
+`memset`).
+
+#dtable(
+  columns: 3,
+  [*Member*], [*Type*], [*What it is*],
+  [`sa_handler`], [`void (*)(int)`], [The plain handler, shaped like the standard's],
+  [`sa_sigaction`], [`void (*)(int, siginfo_t *, void *)`], [The one used with `SA_SIGINFO`; more information arrives],
+  [`sa_mask`], [`sigset_t`], [Signals blocked *while this handler runs*],
+  [`sa_flags`], [`int`], [Flags choosing the behaviour (below)],
+)
+
+`sa_handler` and `sa_sigaction` usually *overlap in a union* (chapter 45). So only
+one is filled, and the `SA_SIGINFO` flag says which.
+
+The four flags most often seen:
+
+#dtable(
+  columns: 2,
+  [*Flag*], [*Meaning*],
+  [`SA_SIGINFO`], [Use the three-argument handler — who sent it, and why],
+  [`SA_RESTART`], [Automatically restart system calls interrupted by the signal],
+  [`SA_NOCLDWAIT`], [Leave no zombie when a child ends (`SIGCHLD`)],
+  [`SA_RESETHAND`], [Reset to the default after one delivery, the old way],
+)
+
+=== `siginfo_t` — who sent it, and why
+
+With `SA_SIGINFO` the handler receives a `siginfo_t *`. The members most used:
+
+#dtable(
+  columns: 2,
+  [*Member*], [*What it is*],
+  [`si_signo`], [The signal number],
+  [`si_code`], [*Why* it came — `SI_USER` (kill), `SI_KERNEL`, `SI_TIMER`, …],
+  [`si_pid`], [The sending process's id],
+  [`si_uid`], [The sending user's id],
+  [`si_addr`], [For `SIGSEGV` and `SIGBUS`, *the address that faulted*],
+)
+
+The demonstration prints `si_code`. Raised at ourselves, Linux put `SI_TKILL`
+(−6) there — "sent by the same thread". The names and meanings of these values
+differ per implementation, so *check that platform's documentation before
+branching on one.*
+
+`si_addr` earns its keep in debugging. Record it in a `SIGSEGV` handler and you
+learn "which address it died touching" — though it cannot be printed from inside
+that handler (the permitted list), so raw bytes are usually written with `write`
+and the program ended with `_Exit`.
+
+=== Blocking a signal for a while — the mask
+
+`sigprocmask` declares "I will not receive this signal for now". A signal arriving
+while blocked does not vanish; it stays *pending* and is delivered the moment the
+block is lifted. The demonstration's last block is that scene — raised while
+blocked, the count stayed put; unblocked, it rose at once.
+
+Where this is needed is clear. When a signal must not cut in while a data
+structure is being fixed, block it for that stretch. It makes a *critical section*
+against signals as well.
+
+== Real uses
+
+Now to what signals actually do in practice.
+
+#dtable(
+  columns: 3,
+  [*Signal*], [*Use*], [*Representative case*],
+  [`SIGTERM`], [*A graceful shutdown request* — time to clean up], [`kill`'s default, container shutdown in Docker and Kubernetes],
+  [`SIGINT`], [The user's interruption (Ctrl+C)], [A command-line tool wrapping up its work],
+  [`SIGKILL`], [Kill at once — *cannot be caught*], [The last resort when graceful shutdown fails],
+  [`SIGHUP`], [Re-read configuration (by convention)], [nginx and Apache reloading without downtime],
+  [`SIGCHLD`], [A child has ended], [Shells and servers reaping zombies],
+  [`SIGPIPE`], [Wrote to a pipe whose reader is gone], [Servers mostly ignore it and handle `EPIPE`],
+  [`SIGWINCH`], [The terminal was resized], [`vim` and `top` redrawing the screen],
+  [`SIGUSR1`, `SIGUSR2`], [The application decides the meaning], [nginx's live binary upgrade, reopening log files],
+)
+
+=== Graceful shutdown — the most widely used pattern
+
+It became especially important in the container world. An orchestrator taking a
+container down sends `SIGTERM` first, and kills it with `SIGKILL` if it has not
+finished within the grace period (usually 30 seconds). So a server receiving
+`SIGTERM` must *stop accepting new requests, finish those in flight, close its
+connections and go down*.
+
+The flag pattern above does exactly this work. The handler only sets `stop = 1`
+and the main loop sees it and walks through the cleanup.
+
+=== `SIGPIPE` — the signal whose right answer is to ignore it
+
+Write to a pipe or socket whose reader has already gone and `SIGPIPE` arrives. The
+default action is *terminating the process* — for a web server, dying because a
+client closed a window.
+
+So network programs almost invariably begin like this:
+
+```c
+signal(SIGPIPE, SIG_IGN);   /* let write return -1/EPIPE instead of a signal */
+```
+
+Ignored, `write` returns the failure *as a value* (`errno == EPIPE`). Chapter 73's
+"failure as a value" is the better arrangement here too.
+
+=== Interrupted system calls — `EINTR`
+
+When a signal arrives, slow system calls such as `read` and `write` are *cut off*,
+return −1 and put `EINTR` in `errno`. Not knowing this produces the ghost bug of
+"reads sometimes fail".
+
+There are two prescriptions: give `SA_RESTART` so the kernel restarts them, or
+retry by hand.
+
+```c
+ssize_t n;
+do { n = read(fd, buf, len); } while (n < 0 && errno == EINTR);
+```
+
+`SA_RESTART` is not a cure-all either — some calls are not restarted (notably
+those with timeouts), so robust code keeps the retry loop as well.
+
+#realcase("The self-pipe trick and its descendants")[
+  Mixing signals with an event loop was a long-standing nuisance. A signal arriving
+  while waiting in `select` or `poll` breaks the loop, and almost nothing may be
+  done inside the handler.
+
+  So in the 1990s the *self-pipe trick* appeared. A program makes a pipe to itself,
+  and the handler writes a single byte into it (`write` is on the safe list). The
+  event loop then receives that as *an ordinary readable event* — the signal has
+  been turned into a file descriptor.
+
+  Today Linux offers `signalfd`, providing the idea in the kernel directly, and the
+  BSDs have `kqueue`'s `EVFILT_SIGNAL`. Different names, same idea — *turn a signal
+  from an asynchronous interruption into an event that queues.*
+]
+
+#qa[
+  In a program with several threads, where does a signal go?
+][
+  A delicate place, and without knowing the rules it becomes a bug that is hard to
+  reproduce.
+
+  A signal sent to the process (`kill`) is delivered to *any one thread that has
+  not blocked it* — which one is not fixed. `pthread_kill`, by contrast, goes to
+  the thread named. And while handlers are shared by the whole process, *the mask
+  is per thread*.
+
+  So the standard practice is this — *block the signal in every thread and let one
+  dedicated thread wait for it with `sigwait`*. The signal then turns from an
+  asynchronous interruption into an ordinary function return, and inside that
+  thread `printf` and `malloc` are free to use. It is the same idea as `signalfd`
+  above.
+]
+
+=== Which software uses signals, and why
+
+The reason for using signals differs from program to program, and those reasons
+make the device's place clear.
+
+#dtable(
+  columns: 3,
+  [*What*], [*What it uses them for*], [*Why it had to be a signal*],
+  [nginx, Apache], [`SIGHUP` to reload configuration, `SIGUSR2` to swap the executable], [The cheapest channel by which an operator gets *from outside to inside*. No port, no socket],
+  [PostgreSQL], [Query cancellation and shutdown requests (the handler only raises a flag)], [One process per connection, so a signal between processes *is* the means of communication],
+  [Redis], [`SIGSEGV`/`SIGBUS` handlers that print a crash report], [The *last chance* to record the state at the moment of death — into a pre-allocated buffer, out through `write`],
+  [The HotSpot JVM], [`SIGSEGV` for null checks and safepoints], [Removes the check from the normal path entirely and leaves the rare case to a hardware trap],
+  [WebAssembly runtimes], [`SIGSEGV`/`SIGBUS` trap handlers for out-of-bounds access], [Leaves bounds checking to guard pages, removing a compare from every access],
+  [The Boehm GC], [`mprotect` + `SIGSEGV` as a write barrier, signals to stop threads], [The only way to put a collector on a C program without help from the language],
+  [libuv, Node.js], [A dedicated thread and a pipe turn signals into events], [To mix with an event loop, a signal must become a file descriptor],
+  [CPython], [The handler only raises a flag; the bytecode loop checks it], [Interpreter state cannot be touched from a handler — the permitted list again],
+  [libcurl], [Ignores `SIGPIPE`; older versions used `SIGALRM` to time out name resolution], [A legacy of days with no other way to impose a timeout. Risky enough to deserve its own off switch (`CURLOPT_NOSIGNAL`)],
+)
+
+They sort into three groups. *Instructions arriving from outside* (nginx,
+PostgreSQL — the channel of operation), *lifting a hardware trap into user code*
+(the JVM, WebAssembly, the GC, Redis — emptying the normal path and signalling
+only the exception), and *turning signals into events* (libuv, CPython — the
+modern prescription for getting around the permitted list).
+
+The middle group is the interesting one. "Remove the null check and catch it with
+`SIGSEGV`" is the archetype of an optimisation that *pushes the cost onto the
+rare case* — one instruction is deleted from the normal path at the price of a
+long trip through the kernel and a handler when the accident happens. It is the
+same calculation as chapter 11's "a rare branch may be expensive."
+
+#antipattern("cleaning up directly in the handler")[
+  ```c
+  static void on_term(int sig) {
+      (void)sig;
+      fclose(logfile);        /* standard library — forbidden */
+      free(buffer);           /* forbidden */
+      printf("bye\\n");        /* forbidden */
+      exit(0);                /* exit is forbidden too (_Exit is allowed) */
+  }
+  ```
+  All four are outside the permitted list. And this code is more dangerous for
+  *mostly working* — the trouble only surfaces under load or when signals crowd in.
+
+  The correct form is one flag.
+
+  ```c
+  static volatile sig_atomic_t stop;
+  static void on_term(int sig) { (void)sig; stop = 1; }
+  ```
+]
 
 #recap[
   #dtable(
     columns: 2,
-    [*What to remember*], [*The point*],
-    [What it is], [An escape hatch that rewinds the stack whole — not an exception],
-    [`setjmp`], [A macro. 0 when called directly, `val` when jumped to (0 becomes 1)],
-    [Context restriction], [Controlling expression, comparison with a constant, `!`, expression statement — four only],
-    [`longjmp`'s premises], [The saving function is still alive, and it is the same thread],
-    [`jmp_buf`], [An array type. Eight callee-saved slots plus room for a signal mask],
-    [Registers], [Only callee-saved ones are restored → stack locals live, register locals revert],
-    [Pointers], [`free` through a reverted pointer means a leak or a double free — measured],
-    [The `volatile` rule], [Automatic, non-`volatile`, changed in between → no guarantee (measured)],
-    [Resources], [Nobody cleans up — keep taking and releasing in one function],
-    [Today's choice], [Mostly return values and `goto cleanup`. Legitimate only in deep parsers],
+    [*What to keep*], [*The point*],
+    [What it is], [Neither a thread nor a call — a third thing that cuts in unpredictably],
+    [The standard's scope], [Two functions (`signal`, `raise`) and six signals],
+    [`signal`'s return], [*The previous* disposition; `SIG_ERR` means failure],
+    [Inside a handler], [The permitted list is all there is — in practice, one assignment],
+    [`volatile sig_atomic_t`], [Both are needed: one against half values, one against optimisation],
+    [Allocation], [`malloc` is barred by the free list and the lock — obtain vessels *in advance*],
+    [Context], [The kernel restores every register. Only `errno` must be saved by hand],
+    [POSIX], [`sigaction` fills the three gaps (reset, re-entry, `EINTR`)],
+    [In practice], [Handler raises a flag, the main flow cleans up; ignore `SIGPIPE`],
+    [Modern alternatives], [`signalfd`, `kqueue`, a dedicated thread — turn signals into *events*],
   )
 ]
 
-We have seen the two devices that cut a flow and jump — the signal that comes from
-outside, and the non-local jump that leaps from within. The next chapter is what
-recent standards added, and the long argument over "safe" functions.
+We have handled the interruption that arrives from outside. The next chapter is
+its opposite — the device with which a program cuts its own flow and leaps back
+up the stack, `setjmp` and `longjmp`.

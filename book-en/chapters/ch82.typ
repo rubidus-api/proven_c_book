@@ -1,301 +1,281 @@
 #import "../../book/lib.typ": *
 
-= Getting started — there is nothing to install
+= The five bugs shipped for fifty years
 
 #prereq(
-  ([chapter 51, Several files], [several files and linking]),
-  ([chapter 81, The five bugs shipped for fifty years], [the five bugs]),
+  ([chapter 49, Errors and contracts], [errors and contracts]),
+  ([chapter 40, Strings], [the danger of strings]),
+  ([chapter 59, The terrain of the standard library], [the traps of the standard library]),
 )
 
 #deepqa[
-  Chapter 51 made a multi-file program and learned about headers, object files and
-#idx("the compilation process")  linking, and chapter 16 saw the four runners of
-  the compilation relay. Then what exactly is "using a library" in that picture?
+  Chapter 40 said the functions handling strings "do not know the size of the
+  vessel", and chapter 49 said "a failure not confirmed becomes a thing that never
+  happened". Then why do such problems still remain — is half a century not more
+  than enough time to mend them?
 ][
-  One of two things. *Compiling it together*, or *linking something compiled
-  separately*. The former road is handing somebody else's source to the compiler
-  along with mine; the latter is handing the linker a lump that has already become
-  object code (a static `.a` or a shared `.so`/`.dll`). Either way the compiler makes
-  the call from the *declaration* (the header) and the linker finds and joins the
-  *definition* — exactly chapter 51's picture. proven took the former road, and the
-  next section is why.
+  Not because they cannot be mended but because mending them *breaks all the code
+  already written*. The moment one more size parameter is put into `strcpy`'s
+  signature, every C program in the world stops compiling. The standard is an
+  institution that must protect existing code (chapter 59's reason for "thin and
+  old" appears here too), so instead of removing dangerous functions it has taken the
+  road of *placing better functions beside them*. So the choice comes over to the
+  programmer — it is, in effect, a language in which knowing what is dangerous and
+  choosing accordingly is itself skill.
 ]
 
 #organizer[
-  The first chapter that actually uses proven. We first see why this library has no
-  `configure`, no package manager and no shared library to link — and what that
-  choice gives and takes away — and then run a first program. The third bug seen in
-  chapter 81 (format mismatch) already disappears in this first program. Then we follow
-  *the whole life of one object* (make it, use it, give it back) and set up the three
-  rules needed to read the rest of this part.
+  This part's statement of the problem. We confirm with actually running code why C
+  has kept shipping the same five classes of bug for half a century — that it is not
+  the programmer's carelessness but *the shape of the API*. Only after all five have
+  been seen does the name proven appear again. Not introducing the tool first is
+  this part's principle.
+]
+
+#qa[
+  Then are these five a list of mistakes beginners make?
+][
+  No. These are mistakes *the skilled keep making too*, and that point matters. If
+  people who know the whole grammar still slip in the same places, the cause is not
+  the person but *the shape of the tool*. A function that does not take a size has
+  no way of checking a size, and a function whose return value may be thrown away
+  with nothing happening will one day be thrown away. This chapter takes that
+  "shape" apart one at a time.
 ]
 
 #chapter-questions()
 
-== The choice of having nothing to install
+== One — string functions do not know the size of the vessel
 
-proven has no installation procedure. Compile the source you have obtained together
-with your program and that is all. There are only two directories that matter.
+The oldest and most exploited class. Exactly as seen in chapter 40.
 
-- `src/proven/` — the portable body. The operating system is not called here.
-- `platform/` — a thin layer that makes system calls. It is the only part that must
-  be changed when moving to a new machine.
-
-In an environment with no operating system (embedded) it is built without
-`platform/`. This separation settled the shape of the whole library — the demand
-"it must run anywhere" becomes the discipline "keep neither hidden allocation nor
-hidden global state".
-
-#qa[
-  Why not distribute it as a package? Installing would be more convenient.
-][
-  It is a trade of price for gain. What is lost is convenience — it cannot be got
-  through a system package, and updating becomes not "raising a version" but
-  "fetching new source". What is gained is control. The library cannot differ from
-  the source you are looking at now, compilation options you did not choose do not
-  come attached, and links do not break because a distribution built it with
-  different settings. Above all, it is *the only model that works both in a hosted
-  environment and on bare metal* — embedded work has no package manager to begin
-  with.
-]
-
-== How this book's examples are built
-
-To state it honestly, this book's proven examples are compiled as follows. The
-library's source is made into object files once and linked with the example.
-
-```text
-$ cc -std=c23 -O1 -Ivendor/proven/include -c vendor/proven/src/proven/*.c
-$ cc -std=c23 -Wall -Wextra -Werror -Ivendor/proven/include \
-     hello.c vendor-obj/*.o -lm -o hello
+```c
+char buf[64];
+strcpy(buf, name);            /* how long is name? strcpy does not ask */
+strcat(buf, ", welcome!");    /* and how much room is left now? */
 ```
 
-The first line handles the body, the second my program. `-I` tells it where to find
-headers (chapter 51), `-lm` joins the mathematical functions. These two lines are
-what this book's verification script really runs every time, and every execution
-result printed on these pages is the output of a program made that way.
+`strcpy`'s signature has no destination size. What is not there cannot be checked,
+so this function will happily write to the 200th byte of a 64-byte vessel. What gets
+wrecked depends on what the compiler placed after it, and commonly that is the
+function's return address (recall chapter 42's picture of the stack).
 
-== The first program
+The modern prescription is to use the editions that take a size — `snprintf` is
+representative. And here is a second trap. Functions that take a size *quietly
+truncate* when it overflows.
 
-One `#include <proven.h>` opens the whole library.
+#demo("examples-en/ch82/truncate.c")
 
-#demo("examples-en/ch82/hello.c")
-
-We read it line by line. `proven_println` takes a format and arguments and prints
-one line to standard output — so far the same as `printf`. What differs is the
-*placeholder*.
-
-- `{}` has no type in it. It is neither `%d` nor `%s` but simply `{}`.
-- The type comes *from the argument*. `PROVEN_ARG(x)` looks at `x`'s type and wraps
-  the value with a fitting tag attached.
-- So chapter 81's third bug — the mismatch of format and argument — *structurally*
-  cannot happen. The type is not written twice, so there is no place for them to go
-  out of step.
-
-What is written after the colon, as in `{:>8}`, corresponds to the width, alignment
-and precision seen in chapter 58. `>` is right alignment, `<` left alignment, `.3` is
-to three decimal places. That the alignment symbol comes first is what differs from
-`printf`.
-
-== Three rules — the key to this whole part
-
-The functions ahead number more than a hundred, but the rules for reading their
-signatures are only three. Get these three into your hand and you can read half of any
-function you have never seen, without the documentation.
-
-+ *Only a function that takes an allocator as an argument takes memory.* If
-  `proven_allocator_t` appears in the signature it means "this function may allocate",
-  and if it does not, it takes *not one byte*. So which functions are usable in
-  embedded work and which are not divide before your eyes (chapter 85).
-+ *Failure comes as a value.* If there is no result to return it gives a single
-  `proven_err_t`; if there is, an `{err, value}` bundle. Before checking `err` you do
-  not look at `value` (chapter 83).
-+ *Give a thing back with the allocator you made it with.* What was obtained with
-  `_create` is let go with `_destroy`, and what has `view` in its name is borrowed and
-  is not destroyed (chapters 84 and 85).
-
-The naming rules have almost no exceptions either.
-
-#dtable(
-  columns: 3,
-  [*shape of the name*], [*meaning*], [*example*],
-  [`_create`], [obtain a new object from an allocator — returns a bundle], [`proven_u8str_create`],
-  [`_borrow`], [lay an object over somebody's memory — no allocation], [`proven_u8str_borrow`],
-  [`_destroy`], [give it back with the allocator it was made with], [`proven_u8str_destroy`],
-  [`_as_`], [see the same thing through another eye — no copying], [`proven_u8str_as_view`],
-  [`_view`], [borrowed. it is not destroyed], [`proven_u8str_view_t`],
-  [`_checked`], [check the boundary and error if it is broken], [`..._slice_checked`],
-  [`_unchecked`], [skip the check — for places the caller has already confirmed], [`..._slice_unchecked`],
-  [`_grow`], [enlarge if short — which is why it takes an allocator], [`proven_u8str_append_grow`],
-  [`_or_panic`], [panic on failure. for places with nobody to return to], [`proven_arena_alloc_or_panic`],
-)
-
-== The life of one object
-
-Rather than reading three lines of rules, it is quicker to follow one real thing to
-the end. The program below holds the whole course of *making, using and giving back* a
-string object on one screen.
-
-#demo("examples-en/ch82/first.c")
-
-Six places to point at.
-
-*① It took an allocator as an argument.* That `build_line`'s first argument is an
-allocator is the declaration that "this function may take memory". The caller settles
-whether to give it the heap or an arena (chapter 85).
-
-*② Making returns a bundle.* `proven_u8str_create` gives a
-`proven_result_u8str_t` (that is, `{err, value}`). Before checking `err` you do not
-take `value` out — that order is the whole of chapter 83.
-
-*③ The capacity is "by content".* The 64 of `create(alloc, 64)` is *the number of
-bytes of content to hold*, and the library internally takes one more byte for the NUL.
-That is how `as_cstr` can hand out a C string without copying.
-
-*④ The failure path gives back too.* If formatting fails, the string taken so far is
-returned with `destroy` before the error is raised. Grow this pattern and it becomes
-chapter 83's `goto` cleanup idiom.
-
-*⑤ The place where ownership passes is explicit.* `*out = line;` is that place. After
-this line the string's owner is the caller, and the responsibility to destroy it is the
-caller's too.
-
-*⑥ Destroying empties the struct.* That the length prints as 0 after `destroy` is the
-evidence. It is so that the returned buffer is not still pointed at, and the contract
-that *a destroyed object is not used again* stands as it is.
+Look at the third line. What was to be made was
+`/var/log/service/http/access.log`, and what remained in hand is
+`/var/log/service/http/a`. The program neither stopped nor warned. If this string is
+a file path it opens the wrong file, if a command it becomes a different command, if
+a log the record of an accident is cut without a sound. *A truncated path is not a
+short path but a wrong path.*
 
 #antipattern[
-  The four mistakes a beginner meets on the first day
+  Treating truncation as success
 ][
   ```c
-  /* ① taking value out without checking */
-  proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* rubbish on failure */
-
-  /* ② destroying with a different allocator */
-  proven_u8str_destroy(other_alloc, &s);                     /* contract violation */
-
-  /* ③ holding a view longer than its original */
-  proven_u8str_view_t v = proven_u8str_as_view(&s);
-  proven_u8str_destroy(alloc, &s);
-  proven_println("{}", PROVEN_ARG(v));                       /* reads a dead place */
-
-  /* ④ forgetting PROVEN_ARG */
-  proven_println("count={}", count);                         /* does not compile */
+  snprintf(path, sizeof path, "%s/%s", dir, name);
+  open_file(path);          /* nobody asked whether it was truncated */
   ```
-  Of the four only ④ is caught by the compiler. The other three are blocked *by a human
-  keeping the rules*, which is why the previous section said to get the three rules into
-  your hand. ③ in particular is met again in chapter 86, and once more when an arena is
-  reset.
-]
-
-#qa[
-  Must an object be made with `_create`? What about where there is no heap?
-][
-  No. Most objects come with *a borrowing edition* as well.
-  `proven_u8str_borrow(buf, sizeof buf)` lays a string over a stack or static array —
-  it takes no allocator, so it takes not one byte, and therefore needs no `destroy`
-  either (the caller is already the owner). Embedded code handles strings this way
-  (chapter 86), and several of this book's examples run so.
-
-  There is a middle form too. Take the memory once in a large piece, lay an arena over
-  it and hand out from there (chapter 85) — then `malloc` is never called once while the
-  `_create` family can be used as it is.
-]
-
-#qa[
-  How does `PROVEN_ARG` find out the type? Does C not lack function overloading?
-][
-  It uses a device that came in with C11, `_Generic` — the syntax that chooses one
-  of several things *at compile time* according to an expression's type.
-  `PROVEN_ARG(x)` makes a small struct with an integer tag attached if `x` is an
-  `int`, a real tag if a `double`, a string tag if a `const char *`. It is not
-  determining the type at run time but *using as it stands what the compiler already
-  knows*, so there is no cost. The syntax and the whole formatting rules are treated
-  head on in chapter 87.
-]
-
-#misconception[
-  "Using a library makes the program heavy"
-][
-  A frequently heard worry, and it depends on the character of the language and the
-  library. In C, a library compiled together as source leaves *what is not used out
-  of the executable* — because the linker does not put in an object file that is not
-  referenced (chapter 16's linking stage). Moreover proven has no initialisation code
-  running at startup, no global state being registered, and no thread quietly rising.
-  Becoming heavy is not the price of using a library but what happens when a
-  framework takes over the program's structure.
+  `snprintf` in fact gives the answer — it returns *the length that would have been
+  needed*. If that value is at least the vessel's size it was truncated (the
+  example's last line is that check). The problem is that this check is *optional*.
+  Throw the return value away and the compiler says nothing. That leads straight
+  into the second bug.
 ]
 
 #realcase[
-  The practice of distributing as source — SQLite in one file
+  The compiler catches only what it can see
 ][
-  This distribution model is not a peculiar choice of proven's alone. SQLite, the
-  most widely used database engine in the world, provides as its official
-  distribution form an *amalgamation* joining dozens of source files into one huge
-  `.c` file — fetch it, compile it with your program, and that is all. The `stb`
-  family of libraries, famous for image and font handling, is a single header file
-  entire. The reason is the same in every case. In a world where build environments
-  are all different, *the most portable unit of distribution is source*.
+  Something that really happened while making this example. At first `snprintf` was
+  called directly inside `main` with literal arguments, and gcc caught it.
+
+  ```text
+  error: ‘%s’ directive output truncated writing 10 bytes
+         into a region of size 2 [-Werror=format-truncation=]
+  note: ‘snprintf’ output 33 bytes into a destination of size 24
+  ```
+
+  An excellent diagnosis. Yet moving the same call inside a function called
+  `build_path` made the warning *vanish*. The moment a function boundary is crossed
+  the compiler cannot know the real lengths of `dir` and `name`. In a real program
+  strings come from files or from the network, so cases where the compiler can help
+  are rather rare. A warning is a free review, not a guarantee (chapter 17).
 ]
 
-== Attaching it to your own project — a minimal Makefile
+== Two — there is no device that makes you confirm failure
 
-To avoid typing the two lines above every time, use chapter 92's `make`. Supposing the
-library has been put whole into `vendor/proven`, this much suffices.
-
-```make
-CC      = cc
-CFLAGS  = -std=c23 -Wall -Wextra -Werror -O2 -Ivendor/proven/include
-VSRC    = $(wildcard vendor/proven/src/proven/*.c) \
-          $(wildcard vendor/proven/platform/*.c)
-VOBJ    = $(VSRC:.c=.o)
-
-app: app.o $(VOBJ)
-	$(CC) $^ -lm -o $@
-
-clean:
-	rm -f app app.o $(VOBJ)
+```c
+char *p = malloc(n);
+p[0] = 'x';                   /* malloc gives null on failure */
 ```
 
-Only three things need be known. *`-I`* tells it where to find `<proven.h>`
-(chapter 51). *`platform/`* is the thin layer that calls the operating system, so when
-going to bare metal only this line is removed (chapter 90). *`-lm`* joins the
-mathematical functions that real-number formatting uses — take reals out of the
-formatter (chapter 90's `PROVEN_FMT_NO_FLOAT`) and this is not needed either.
+C's ways of reporting failure are two. Return a *sentinel value* (null, `-1`, `EOF`),
+or leave the reason in the global variable `errno`. Neither can compel a check. Code
+that throws the return value away is perfectly legal, and `errno` is global state
+that must be read at exactly the right moment, before the next call overwrites it
+(chapter 59).
 
-#platform[
-  On Windows and in embedded work
+#demo("examples-en/ch82/unchecked.c")
+
+That `careless typo` returned 8080 is this section's heart. There was a typo in the
+configuration and the program *quietly fell back to the default*. On the surface
+nothing happened, and months later only the question "why is the setting not taking
+effect?" remains. That `strtol("abc")` gives 0 is the same pattern — failure and "a
+real 0" come back as the same value.
+
+#misconception[
+  "Failure is exceptional, so it can be handled later"
 ][
-  *MSVC* — this library requires C23. Recent updates of Visual Studio 2022 support a
-  good deal of it with `/std:clatest`, but the surest road is to use `clang-cl` or
-  MinGW-w64 (GCC) on Windows too (chapter 18's terrain).
-
-  *Embedded* — leave out `platform/` and compile only `src/proven/*.c`. There being no
-  heap, `proven_heap_allocator()` returns an unusable value (all zeros), and an arena
-  laid over a static array is used instead (chapter 85). The detailed procedure is
-  chapter 90.
+  The premise that failure is rare is wrong to begin with. A file may not exist,
+  input carries typos, disks fill, networks break — every place where the program
+  touches the outside world is a point of failure. And the real reason "later" is
+  dangerous lies elsewhere. Code that ignored a failure *does not stop but keeps
+  running*. A wrong value flows into the next calculation, into the function after
+  that, and by the time the problem finally shows itself it blows up far from its
+  cause. Chapter 49's "fail early" returns here.
 ]
 
-#recap[
-  This chapter in summary.
+== Three — `printf` believes exactly what you tell it
 
+Chapter 59 took the grammar of the format string apart. That grammar has one
+structural weakness — *the type is written twice*. Once in the format (`%d`) and
+once in the argument (the variable's type). If the two go out of step the language
+cannot prevent it, because as seen in chapter 56 type information does not ride
+along into variadic arguments.
+
+Today's compilers catch this. The real message is like this.
+
+```text
+warning: format ‘%d’ expects argument of type ‘int’,
+         but argument 2 has type ‘double’ [-Wformat=]
+    3 |     printf("%d\n", 3.0);
+      |             ~^     ~~~
+      |              |     |
+      |              int   double
+```
+
+But only this far. The moment the format becomes a *variable* — the moment a
+multilingual message is taken from a table or a log format is received from a
+configuration — the compiler has nothing left to look at.
+
+#antipattern[
+  Code that takes the format as a variable
+][
+  ```c
+  const char *fmt = load_message("greeting");   /* a format taken from a table */
+  printf(fmt, count);                           /* no warning. no check either */
+  ```
+  Not a single warning comes from this code. Because a way of knowing whether format
+  and arguments match does not exist at compile time. Worst is when the format is
+  *user input*, which becomes the format string vulnerability seen in chapter 59.
+]
+
+== Four — who frees this
+
+```c
+char *s = build_message();    /* must this be freed? the type says nothing */
+```
+
+As learned in chapter 43, dynamically taken memory must be released by somebody
+exactly once. Yet a `char *` a function returned may be any of four things.
+
+- Just allocated — it must be freed.
+- Pointing at a buffer the caller gave — it must not be freed.
+- A string literal in a read-only place — freeing it is an accident.
+- A static buffer the next call will overwrite — it must neither be freed nor held
+  for long (chapter 59's `strtok` was such).
+
+The types of the four cases are *all the same*. The answer is in the documentation,
+and documentation goes out of step with code as a matter of course. Here arise
+chapter 43's three accidents — a leak (nobody frees), a double free (both free), and
+use after free (somebody still points at it after freeing).
+
+#antipattern[
+  An API whose type does not state ownership
+][
+  ```c
+  const char *lookup(int code);        /* a literal? an allocation? a static buffer? */
+  char       *format_time(time_t t);   /* must this be freed? */
+  ```
+  It cannot be known from the name and type alone. *Every place* that uses this API
+  must remember the documentation, and if even one forgets it becomes one of the
+  three accidents above. That the discipline is entrusted to human memory is the
+  essence of the problem.
+]
+
+== Five — a callback nobody can type-check for you
+
+```c
+qsort(a, n, sizeof *a, cmp);   /* cmp takes const void* */
+```
+
+`qsort` takes a comparison function through a `void *` interface in order to sort any
+type. In a language with no generics this is nearly the only way, but the price is
+*the complete abandonment of type checking*. Whatever you cast to inside the
+comparator, the compiler believes you.
+
+#demo("examples-en/ch82/cmp_bad.c")
+
+The `first-char` comparator's types match perfectly, it compiles without a single
+warning, and it does not die. It is only that `peach` and `pear` are in the wrong
+order — seeing only the first letter, the two were judged "equal" and the rest was
+left to chance. This class of bug is found last of all, because it gives *a quietly
+wrong answer*.
+
+#realcase[
+  Attacks aiming at a data structure's worst case
+][
+  There is a performance trap in the same place. Widely used sorting and hashing
+  implementations are fast on average but slow down sharply on particular inputs, and
+  the technique of an attacker deliberately making such inputs to paralyse a server
+  (an algorithmic complexity attack) was organised in a 2003 paper and used in real
+  attacks. Attacks of the same family aiming at hash collisions brought down several
+  web frameworks at once in 2011. They were events showing that a data structure's
+  *worst case* is itself a security problem, and so today's libraries take as their
+  defaults sorting with a guarantee even in the worst case (introsort) and hashes
+  using a random seed — we see them in the flesh in chapter 89.
+]
+
+== And a sixth — bytes have types
+
+We said five, but one more must be added to be fair. It is the strict aliasing seen
+in chapter 13. A hand-written parser that peers into a byte buffer through pointers
+of different widths runs perfectly at `-O0` and quietly gives a different answer at
+`-O2`. It is the representative of the "bug that appears only in release" seen in
+chapter 17, and the clause to which the Linux kernel surrendered with a single flag.
+
+Gathering the six into one table gives this part's map.
+
+#recap[
   #dtable(
-  columns: 2,
-    [*what*], [*how*],
-    [header], [one `#include <proven.h>`],
-    [build], [compile `src/proven/*.c` with the program (`-I` for the header path, `-lm`)],
-    [OS dependence], [only in `platform/` (build without it if absent)],
-    [rule ①], [only a function that takes an allocator takes memory],
-    [rule ②], [failure comes as a value — check `err`, then `value`],
-    [rule ③], [destroy with the allocator it was made with. a `view` is not destroyed],
-    [making], [`_create` (allocates) / `_borrow` (over somebody's buffer, no allocation)],
-    [output], [`proven_println("... {} ...", PROVEN_ARG(x))`],
-    [format specification], [`{:>8}` `{:<8}` `{:.3}` — after the colon],
-    [the price], [a `PROVEN_ARG` per argument, a syntax unlike the familiar `%d`],
+  columns: 3,
+    [*problem*], [*what C gives*], [*what is needed*],
+    [buffer overflow and truncation], [string functions that do not know the size], [strings that carry their length, writes that do not truncate],
+    [unconfirmed failure], [sentinel values and `errno`], [errors that come as values, a compile refusal if discarded],
+    [format mismatch], [a `printf` that believes the format string], [placeholders that take the type from the argument],
+    [unclear ownership], [a `char *` that means four things], [different types for owning and borrowing],
+    [unchecked callbacks], [the `void *` interface], [documented contracts and worst-case-guaranteed algorithms],
+    [the hidden type of bytes], [UB on breaking the aliasing rule], [a byte type the rule exempts],
 )
 ]
 
-The first program has run. Yet the `proven_println` just used can in fact fail too —
-because the band going to the screen may break (chapter 10). This function returns an
-error but *does not compel a check*, and that choice itself is a good entrance to
-understanding this library's error model. The next chapter is that.
+#qa[
+  Would it not be better to use another language entirely to avoid such problems?
+][
+  That too is an answer, and many places really went that road (chapter 1). But the
+  places where C must be used still remain — operating systems, firmware, the floor
+  layer other languages lean on, and projects where decades of code have already
+  piled up. What can be done in such places is *not to change the language but to
+  change the shape of the API*. The right-hand column of the table above is not a
+  list of items requiring a new language but things that can be made by design within
+  C. From the next chapter we see that design.
+]
+
+The library that implements that right-hand column as it stands is the proven this
+book has leaned on. We first met it in chapter 41 and its name has come up a few
+times since, but treating it head on begins now. The next chapter is installation and
+a first program — and why this library has the shape of "nothing to install".

@@ -1,281 +1,303 @@
 #import "../../book/lib.typ": *
 
-= The five bugs shipped for fifty years
+= Inside the allocator — the heap, alternative allocators, alternative standard libraries
 
 #prereq(
-  ([chapter 48, Errors and contracts], [errors and contracts]),
-  ([chapter 39, Strings], [the danger of strings]),
-  ([chapter 58, The terrain of the standard library], [the traps of the standard library]),
+  ([chapter 43, Dynamic memory], [dynamic allocation]),
+  ([chapter 80, A program's map of memory], [a program's map of memory]),
 )
 
 #deepqa[
-  Chapter 39 said the functions handling strings "do not know the size of the
-  vessel", and chapter 48 said "a failure not confirmed becomes a thing that never
-  happened". Then why do such problems still remain — is half a century not more
-  than enough time to mend them?
+  Chapter 43 said one `malloc` is "a trip to the warehouse office", and
+  chapter 80 showed where in the address space that warehouse lies. Then what
+  ledgers exactly does that office keep inside?
 ][
-  Not because they cannot be mended but because mending them *breaks all the code
-  already written*. The moment one more size parameter is put into `strcpy`'s
-  signature, every C program in the world stops compiling. The standard is an
-  institution that must protect existing code (chapter 58's reason for "thin and
-  old" appears here too), so instead of removing dangerous functions it has taken the
-  road of *placing better functions beside them*. So the choice comes over to the
-  programmer — it is, in effect, a language in which knowing what is dangerous and
-  choosing accordingly is itself skill.
+  It writes two things down — *which piece is free* and *how many bytes each piece
+  is*. The classic answer manages the former with lists by size (bins) and the
+  latter with a header attached to each block. How these two ledgers are designed
+  settles an allocator's performance and security entire. This chapter is the map of
+  that design.
 ]
 
 #organizer[
-  This part's statement of the problem. We confirm with actually running code why C
-  has kept shipping the same five classes of bug for half a century — that it is not
-  the programmer's carelessness but *the shape of the API*. Only after all five have
-  been seen does the name proven appear again. Not introducing the tool first is
-  this part's principle.
-]
-
-#qa[
-  Then are these five a list of mistakes beginners make?
-][
-  No. These are mistakes *the skilled keep making too*, and that point matters. If
-  people who know the whole grammar still slip in the same places, the cause is not
-  the person but *the shape of the tool*. A function that does not take a size has
-  no way of checking a size, and a function whose return value may be thrown away
-  with nothing happening will one day be thrown away. This chapter takes that
-  "shape" apart one at a time.
+#idx("allocator")  We open the inside of the `malloc` chapter 43 passed over saying
+  only "it is expensive". How an allocator manages free pieces (bins, boundary
+  tags, coalescing), why there is a cache per strand, what fragmentation is and why
+#idx("fragmentation")  it does not recover. Then the alternatives that can be
+  swapped in for the standard `malloc` (jemalloc, tcmalloc, mimalloc, snmalloc) and
+  the alternative standard libraries (musl, picolibc and others), and the arenas and
+  pools that change the very shape of allocation. The end of this chapter is the
+  door to Part XII.
 ]
 
 #chapter-questions()
 
-== One — string functions do not know the size of the vessel
+== Ledger ① — the header attached to each block
 
-The oldest and most exploited class. Exactly as seen in chapter 39.
-
-```c
-char buf[64];
-strcpy(buf, name);            /* how long is name? strcpy does not ask */
-strcat(buf, ", welcome!");    /* and how much room is left now? */
-```
-
-`strcpy`'s signature has no destination size. What is not there cannot be checked,
-so this function will happily write to the 200th byte of a 64-byte vessel. What gets
-wrecked depends on what the compiler placed after it, and commonly that is the
-function's return address (recall chapter 41's picture of the stack).
-
-The modern prescription is to use the editions that take a size — `snprintf` is
-representative. And here is a second trap. Functions that take a size *quietly
-truncate* when it overflows.
-
-#demo("examples-en/ch81/truncate.c")
-
-Look at the third line. What was to be made was
-`/var/log/service/http/access.log`, and what remained in hand is
-`/var/log/service/http/a`. The program neither stopped nor warned. If this string is
-a file path it opens the wrong file, if a command it becomes a different command, if
-a log the record of an accident is cut without a sound. *A truncated path is not a
-short path but a wrong path.*
-
-#antipattern[
-  Treating truncation as success
-][
-  ```c
-  snprintf(path, sizeof path, "%s/%s", dir, name);
-  open_file(path);          /* nobody asked whether it was truncated */
-  ```
-  `snprintf` in fact gives the answer — it returns *the length that would have been
-  needed*. If that value is at least the vessel's size it was truncated (the
-  example's last line is that check). The problem is that this check is *optional*.
-  Throw the return value away and the compiler says nothing. That leads straight
-  into the second bug.
-]
-
-#realcase[
-  The compiler catches only what it can see
-][
-  Something that really happened while making this example. At first `snprintf` was
-  called directly inside `main` with literal arguments, and gcc caught it.
-
-  ```text
-  error: ‘%s’ directive output truncated writing 10 bytes
-         into a region of size 2 [-Werror=format-truncation=]
-  note: ‘snprintf’ output 33 bytes into a destination of size 24
-  ```
-
-  An excellent diagnosis. Yet moving the same call inside a function called
-  `build_path` made the warning *vanish*. The moment a function boundary is crossed
-  the compiler cannot know the real lengths of `dir` and `name`. In a real program
-  strings come from files or from the network, so cases where the compiler can help
-  are rather rare. A warning is a free review, not a guarantee (chapter 17).
-]
-
-== Two — there is no device that makes you confirm failure
-
-```c
-char *p = malloc(n);
-p[0] = 'x';                   /* malloc gives null on failure */
-```
-
-C's ways of reporting failure are two. Return a *sentinel value* (null, `-1`, `EOF`),
-or leave the reason in the global variable `errno`. Neither can compel a check. Code
-that throws the return value away is perfectly legal, and `errno` is global state
-that must be read at exactly the right moment, before the next call overwrites it
-(chapter 58).
-
-#demo("examples-en/ch81/unchecked.c")
-
-That `careless typo` returned 8080 is this section's heart. There was a typo in the
-configuration and the program *quietly fell back to the default*. On the surface
-nothing happened, and months later only the question "why is the setting not taking
-effect?" remains. That `strtol("abc")` gives 0 is the same pattern — failure and "a
-real 0" come back as the same value.
-
-#misconception[
-  "Failure is exceptional, so it can be handled later"
-][
-  The premise that failure is rare is wrong to begin with. A file may not exist,
-  input carries typos, disks fill, networks break — every place where the program
-  touches the outside world is a point of failure. And the real reason "later" is
-  dangerous lies elsewhere. Code that ignored a failure *does not stop but keeps
-  running*. A wrong value flows into the next calculation, into the function after
-  that, and by the time the problem finally shows itself it blows up far from its
-  cause. Chapter 48's "fail early" returns here.
-]
-
-== Three — `printf` believes exactly what you tell it
-
-Chapter 58 took the grammar of the format string apart. That grammar has one
-structural weakness — *the type is written twice*. Once in the format (`%d`) and
-once in the argument (the variable's type). If the two go out of step the language
-cannot prevent it, because as seen in chapter 55 type information does not ride
-along into variadic arguments.
-
-Today's compilers catch this. The real message is like this.
+`free(p)` does not take a size. And yet it must know how many bytes are being
+returned. The answer is simple — *the size is written just before the address that
+was returned.*
 
 ```text
-warning: format ‘%d’ expects argument of type ‘int’,
-         but argument 2 has type ‘double’ [-Wformat=]
-    3 |     printf("%d\n", 3.0);
-      |             ~^     ~~~
-      |              |     |
-      |              int   double
+        ┌────────────┬──────────────────────────┐
+        │ header     │ the place given to you   │
+        │ size·flags │ ← the address malloc gave│
+        └────────────┴──────────────────────────┘
 ```
 
-But only this far. The moment the format becomes a *variable* — the moment a
-multilingual message is taken from a table or a log format is received from a
-configuration — the compiler has nothing left to look at.
+This header explains two facts seen in chapter 43. *Even a request for 1 byte
+consumes far more* (the header plus alignment padding), and *making countless small
+pieces makes the management information as large as the data.*
 
-#antipattern[
-  Code that takes the format as a variable
+The classic design (the dlmalloc family) lays one more layer on top of this. It
+writes the size *at the end of the block too* — a *boundary tag*. Then from any
+block the size of "the block just before" can be known at once, so *coalescing* with
+a neighbouring free piece on release finishes in constant time. It is the most basic
+device for preventing pieces from scattering finely.
+
+#misconception[
+  "A heap block's header is an internal matter, no need to care"
 ][
-  ```c
-  const char *fmt = load_message("greeting");   /* a format taken from a table */
-  printf(fmt, count);                           /* no warning. no check either */
-  ```
-  Not a single warning comes from this code. Because a way of knowing whether format
-  and arguments match does not exist at compile time. Worst is when the format is
-  *user input*, which becomes the format string vulnerability seen in chapter 58.
+  It is worth caring about for two reasons.
+
+  First, *security*. The header being right beside the user data, one buffer
+  overflow can overwrite a neighbouring block's header. Then the allocator's ledger
+  tells lies, and an attacker can make "the next `malloc` return the address I want".
+  The whole family of techniques called heap exploitation grows from this place. So
+  modern allocators put defences in — scrambling the free list's pointers with the
+  address (safe-linking), inserting marks that notice a double free, or putting the
+  header entirely away from the user data (mimalloc and snmalloc below go in that
+  direction).
+
+  Second, *memory accounting*. The answer to "why do a million 100-byte pieces eat
+  160 MB rather than 100 MB" is this header and the alignment padding.
 ]
 
-== Four — who frees this
+== Ledger ② — lists by size and caches per strand
 
-```c
-char *s = build_message();    /* must this be freed? the type says nothing */
-```
+Keep the free pieces in one long list and every request must scan the whole list. So
+the lists are divided by size — these are *bins*. Taking glibc's allocator as an
+example, there are roughly these layers.
 
-As learned in chapter 42, dynamically taken memory must be released by somebody
-exactly once. Yet a `char *` a function returned may be any of four things.
+#dtable(
+  columns: 3,
+  [*layer*], [*what*], [*why*],
+  [tcache], [a small cache kept separately per strand], [to take pieces out at once without locking],
+  [fastbin], [singly linked lists of small sizes], [quick reuse without coalescing],
+  [smallbin], [lists by exact size], [finding is constant time],
+  [largebin], [sorted lists by range], [to choose a fitting size],
+  [unsorted bin], [a temporary place for the just-freed], [to reuse as it is for the next request],
+  [top chunk], [the lump remaining at the very end of the heap], [when short, it is cut from here],
+)
 
-- Just allocated — it must be freed.
-- Pointing at a buffer the caller gave — it must not be freed.
-- A string literal in a read-only place — freeing it is an accident.
-- A static buffer the next call will overwrite — it must neither be freed nor held
-  for long (chapter 58's `strtok` was such).
+The heart of it is the *cache per strand* (tcache). If several strands touch the
+same ledger it becomes slow through locking (chapter 77), so each strand keeps a
+small drawer of its own and takes from there first. Only when the drawer is empty
+does it go to the shared ledger. It is the common design of today's fast allocators,
+differing only in name (tcache, thread cache, mimalloc's local heap) while the idea
+is the same.
 
-The types of the four cases are *all the same*. The answer is in the documentation,
-and documentation goes out of step with code as a matter of course. Here arise
-chapter 42's three accidents — a leak (nobody frees), a double free (both free), and
-use after free (somebody still points at it after freeing).
+Two things seen in chapter 80 attach here. When the heap is short it is enlarged
+with `brk` (for small requests), and large requests are received separately through
+`mmap`. And releasing a large block may return it to the operating system, while
+small ones are mostly only marked in the ledger.
 
-#antipattern[
-  An API whose type does not state ownership
-][
-  ```c
-  const char *lookup(int code);        /* a literal? an allocation? a static buffer? */
-  char       *format_time(time_t t);   /* must this be freed? */
-  ```
-  It cannot be known from the name and type alone. *Every place* that uses this API
-  must remember the documentation, and if even one forgets it becomes one of the
-  three accidents above. That the discipline is entrusted to human memory is the
-  essence of the problem.
-]
+== Fragmentation — memory grows though there is no leak
 
-== Five — a callback nobody can type-check for you
+#idx("fragmentation")*Fragmentation* has two faces.
 
-```c
-qsort(a, n, sizeof *a, cmp);   /* cmp takes const void* */
-```
+*Internal fragmentation* — the waste arising from giving a piece larger than the
+request. Request 24 bytes and be given a 32-byte slot and 8 bytes die. It is the
+fate of allocators that use size classes, and speed is gained in exchange.
 
-`qsort` takes a comparison function through a `void *` interface in order to sort any
-type. In a language with no generics this is nearly the only way, but the price is
-*the complete abandonment of type checking*. Whatever you cast to inside the
-comparator, the compiler believes you.
+*External fragmentation* — the state in which the total free space is ample but
+there is no *contiguous* large lump, so a large request fails. If small pieces are
+lodged among the large ones, those large pieces cannot be joined.
 
-#demo("examples-en/ch81/cmp_bad.c")
+This is the identity of the phenomenon "there is no leak and yet memory keeps
+growing". It appears especially in long-running servers, and the cause is usually
+*allocating things of different lifetimes mixed together* — one long-lived small
+object lodged in the middle of a large empty region ties up that whole region.
 
-The `first-char` comparator's types match perfectly, it compiles without a single
-warning, and it does not die. It is only that `peach` and `pear` are in the wrong
-order — seeing only the first letter, the two were judged "equal" and the rest was
-left to chance. This class of bug is found last of all, because it gives *a quietly
-wrong answer*.
+#dtable(
+  columns: 2,
+  [*how to mitigate it*], [*explanation*],
+  [gather things of similar lifetime], [an arena does exactly this (below)],
+  [things of the same size into a pool], [no pieces arise],
+  [take long-lived objects early], [taken at startup, they do not lodge in the middle],
+  [change the allocator], [there are ones with different purge and shrink policies (below)],
+  [periodic restarts], [an honest last resort — really used],
+)
 
 #realcase[
-  Attacks aiming at a data structure's worst case
+  Why RSS does not go down
 ][
-  There is a performance trap in the same place. Widely used sorting and hashing
-  implementations are fast on average but slow down sharply on particular inputs, and
-  the technique of an attacker deliberately making such inputs to paralyse a server
-  (an algorithmic complexity attack) was organised in a 2003 paper and used in real
-  attacks. Attacks of the same family aiming at hash collisions brought down several
-  web frameworks at once in 2011. They were events showing that a data structure's
-  *worst case* is itself a security problem, and so today's libraries take as their
-  defaults sorting with a guarantee even in the worst case (introsort) and hashes
-  using a random seed — we see them in the flesh in chapter 88.
+  There is a conversation that recurs in operations. "There seems to be a memory
+  leak — the request has ended and the process memory (RSS) does not go down." And
+  yet checking with tools shows no leak.
+
+  The reason is, as seen in chapter 43, that `free` is not a return to the operating
+  system, and two more things compound it. First, even to return it *the end side of
+  the heap must be empty* to shrink (if even one live block sits below the top chunk
+  it cannot shrink). Second, the allocator judges that being sparing with returns is
+  advantageous — another request will come soon.
+
+  Hence a rule of observation in the field. *When diagnosing a memory problem do not
+  look at RSS alone* — look together at the allocator's statistics (`malloc_info`,
+  say) and at the number and size distribution of live allocations. And if you really
+  want to give it back there is a road of asking explicitly (glibc's `malloc_trim`,
+  the purge settings of jemalloc and mimalloc).
 ]
 
-== And a sixth — bytes have types
+== Swapping out the standard `malloc` — alternative allocators
 
-We said five, but one more must be added to be fair. It is the strict aliasing seen
-in chapter 13. A hand-written parser that peers into a byte buffer through pointers
-of different widths runs perfectly at `-O0` and quietly gives a different answer at
-`-O2`. It is the representative of the "bug that appears only in release" seen in
-chapter 17, and the clause to which the Linux kernel surrendered with a single flag.
+The allocator alone can be changed without mending the program. `malloc` and `free`
+are, after all, names, so linking another implementation (statically) or inserting
+it at run time (Linux's `LD_PRELOAD`) makes that one be used.
 
-Gathering the six into one table gives this part's map.
-
-#recap[
-  #dtable(
+#dtable(
   columns: 3,
-    [*problem*], [*what C gives*], [*what is needed*],
-    [buffer overflow and truncation], [string functions that do not know the size], [strings that carry their length, writes that do not truncate],
-    [unconfirmed failure], [sentinel values and `errno`], [errors that come as values, a compile refusal if discarded],
-    [format mismatch], [a `printf` that believes the format string], [placeholders that take the type from the argument],
-    [unclear ownership], [a `char *` that means four things], [different types for owning and borrowing],
-    [unchecked callbacks], [the `void *` interface], [documented contracts and worst-case-guaranteed algorithms],
-    [the hidden type of bytes], [UB on breaking the aliasing rule], [a byte type the rule exempts],
+  [*allocator*], [*where it came from*], [*character*],
+  [glibc malloc (ptmalloc)], [GNU], [the default. balanced. improved with tcache],
+  [jemalloc], [FreeBSD → Meta], [size classes and arenas. strong on suppressing fragmentation and on statistics],
+  [TCMalloc], [Google], [centred on per-strand caches. multi-strand throughput],
+  [mimalloc], [Microsoft], [relatively new (2019–). small and fast, with a safety-minded header layout],
+  [snmalloc], [MS Research], [a design that passes cross-strand frees as messages],
+  [scudo], [LLVM], [security-hardened. the default on Android],
 )
+
+How much difference does changing make — *it depends on the workload* is the honest
+answer. On a server with many strands and a flood of small allocations tens of per
+cent can change, while in a single-strand computational program there is almost no
+difference. So the rule is one: *measure, then change.* And before changing, trying
+chapter 43's first prescription — not allocating at all in the hot loop — is usually
+the greater gain.
+
+#platform[
+  How swapping is actually done
+][
+  - *At run time* — `LD_PRELOAD=/usr/lib/libjemalloc.so ./program` (Linux). Neither
+    the code nor the build is touched.
+  - *At link time* — join it as `-ljemalloc` and that `malloc` is used.
+  - *Windows* — the above do not work. It is common to use the CRT's heap, or to
+    link the allocator as a library and call its API directly from your own code.
+  - *The road that works anywhere* — writing the code from the start so that it
+    *takes an allocator as an argument*. This chapter's last section and Part XII
+    are that way.
+]
+
+== Alternative standard libraries
+
+There is also the choice of swapping out one layer larger than the allocator — the
+standard library implementation itself. It is the flesh of chapter 59's "the
+standard is a list and the implementations are several".
+
+#dtable(
+  columns: 3,
+  [*implementation*], [*where it is used*], [*character*],
+  [glibc], [mainstream Linux distributions], [the most features. large and rich in extensions],
+  [musl], [containers, static linking, Alpine], [small and simple. advantageous for static linking],
+  [uClibc-ng], [small embedded Linux], [features chosen and cut down],
+  [picolibc], [bare metal, RTOS], [a small one split off from newlib and avr-libc],
+  [newlib(-nano)], [the default of embedded toolchains], [it comes with `arm-none-eabi-gcc`],
+  [Bionic], [Android], [security-minded (the scudo allocator)],
+  [UCRT], [Windows], [the runtime MSVC and MinGW use],
+)
+
+The criteria for choosing are mostly three — *size* (embedded, containers), *the
+convenience of static linking* (musl's strength), and *the breadth of features*
+(glibc's strength). And what one runs into when moving is mostly not standard C but
+*extensions*: functions only glibc has, locale handling, subtle differences in
+threads and signals. Chapter 59's conclusion — "use only what is in the standard and
+it ports" — pays here.
+
+== Alternatives that change the shape — arenas, pools, and the allocator as an argument
+
+Until now the story has been *making the same `malloc` better*. There is another
+road. It is changing *the very shape* of allocation.
+
+*Arena (region, bump allocator).* Take a large lump once, and when a request comes
+merely push a pointer forward. Allocation is one addition and so nearly free, and
+release *is not done individually* — when the work is done the pointer is returned to
+the beginning and the whole is thrown away. There is no fragmentation, the time is
+constant, and release cannot be forgotten. In exchange, individual release is given
+up.
+
+This way fits perfectly "things of the same lifetime". One request of a web server,
+one function of a compiler, one frame of a game — for each unit of work with a clear
+beginning and end, keep one arena and reset it when it ends. It really is widely
+used (Apache's memory pools and PostgreSQL's memory contexts are the same idea).
+
+*Pool (slab).* An allocator that handles only pieces of the same size. Slots cut in
+advance are managed as a list, so allocation and release are one list operation each,
+and there is no internal fragmentation either. It fits data structures with tens of
+thousands of nodes, or the fixed-object management of embedded work seen in
+chapter 80.
+
+*Taking the allocator as an argument.* For the two above to have force, a library
+must *ask the caller* "where shall I get memory from". So modern C libraries make a
+bundle of allocation functions into one value and take it as an argument. The table
+of function pointers learned in chapter 57 does exactly this work here.
+
+#realcase[
+  proven's memory model — a trailer for the next part
+][
+  The library this book has leaned on uses exactly this design. proven handles the
+  allocator as one value (`proven_allocator_t`) — inside it are the `alloc`,
+  `realloc` and `free` function pointers and a context (`ctx`), exactly
+  chapter 57's vtable. And there are three providers that make that value.
+
+  - `proven_heap_allocator()` — the standard `malloc` wrapped in that interface.
+  - `proven_arena_create(backing)` — takes *memory already secured* and makes it a
+    bump allocator. It is returned whole with `proven_arena_reset` and fitted into
+    the same interface with `proven_arena_as_allocator`.
+  - `proven_pool_init(...)` — lays a pool of same-size pieces over a backing
+    allocator.
+
+  This structure gives three things. First, *the same data-structure code runs on
+  the heap, on an arena and in a pool* — where memory comes from is settled by an
+  argument. Second, the embedded norm seen in chapter 80 (no dynamic allocation) can
+  be kept — give a static array as the arena's backing and `malloc` is never called
+  once. Third, failure comes back as a value (`proven_result_mem_mut_t`) — instead of
+  checking for null you check the result.
+
+  We meet these three as real code in Part XII. The heap's circumstances seen in
+  this chapter — that it is expensive, fragments, can fail, and is sometimes
+  forbidden outright in embedded work — are the whole reason for that design.
 ]
 
 #qa[
-  Would it not be better to use another language entirely to avoid such problems?
+  Then should `malloc` no longer be used?
 ][
-  That too is an answer, and many places really went that road (chapter 1). But the
-  places where C must be used still remain — operating systems, firmware, the floor
-  layer other languages lean on, and projects where decades of code have already
-  piled up. What can be done in such places is *not to change the language but to
-  change the shape of the API*. The right-hand column of the table above is not a
-  list of items requiring a new language but things that can be made by design within
-  C. From the next chapter we see that design.
+  No. `malloc` is still the right answer as the general-purpose tool for handling
+  *things of assorted lifetimes*. The knack is fitting the tool to the purpose.
+
+  - the lifetime equals a unit of work → *an arena*
+  - the sizes are all the same → *a pool*
+  - lifetimes and sizes are assorted → *`malloc`* (or an allocator wrapping it)
+  - real-time or safety-critical → *static allocation*, plus the two above
+
+  And whichever is used, chapter 43's discipline stands — settle the ownership,
+  confirm failure, and check with tools (ASan, Valgrind).
 ]
 
-The library that implements that right-hand column as it stands is the proven this
-book has leaned on. We first met it in chapter 40 and its name has come up a few
-times since, but treating it head on begins now. The next chapter is installation and
-a first program — and why this library has the shape of "nothing to install".
+#recap[
+  #dtable(
+    columns: 2,
+    [*to remember*], [*the point*],
+    [the header], [the size is written just before the user's place — an overflow breaks the ledger],
+    [boundary tags], [writing the size at both ends makes coalescing with a neighbour constant time],
+    [bins], [lists by size. the per-strand cache (tcache) avoids locking],
+    [internal/external fragmentation], [waste vs. no *contiguous* large lump left],
+    [RSS], [it may not go down even after `free` — distinguish it from a leak],
+    [alternative allocators], [jemalloc, TCMalloc, mimalloc, snmalloc, scudo. *measure, then change*],
+    [alternative libcs], [musl, picolibc, newlib, Bionic — a trade of size, static linking and features],
+    [arena], [only pushing, and throwing the whole away. for things of the same lifetime],
+    [pool], [the same size only. no fragmentation],
+    [the allocator as an argument], [the same code runs on heap, arena or pool alike (Part XII)],
+  )
+]
+
+We have walked the terrain of the standard library and opened even the warehouse
+beneath it. The next part is the attempt to handle all these traps and costs *by
+design* — proven, the library this book has leaned on.

@@ -1,353 +1,384 @@
 #import "../../book/lib.typ": *
 
-= Locales ② — numbers, money, time and sorting
+= Locales ① — a program's regional settings
 
 #prereq(
-  ([chapter 65, Locales ①], [categories and `setlocale`]),
-  ([chapter 60, Streams in practice], [`printf` formats]),
-  ([chapter 71, Time], [`strftime`]),
+  ([chapter 65, Character classification], [that the judgement depends on the locale]),
+  ([chapter 51, The three faces of `main`], [environment variables]),
 )
 
 #deepqa[
-  Chapter 65 said a locale is data holding conventions. What exactly is that data
-  made of, and how does a program get at it?
+  Chapter 65 said the answer `isalpha` gives depends on "the current locale". But
+  I have never set a locale. What does it mean for an answer to depend on
+  something I never set?
 ][
-  The window is surprisingly narrow — one function (`localeconv`) and one struct
-  (`struct lconv`). Every convention about numbers and money sits in that struct's
-  twenty-four members.
+  *Because one is already settled even if you set nothing.* The standard fixes
+  that too — at program startup the state is as if `setlocale(LC_ALL, "C")` had
+  been called (§7.11.1.1p4). So a program that does nothing runs in the minimal
+  environment called the C locale.
 
-  For the rest there is *no window at all.* `strftime` writes dates by itself and
-  `strcoll` compares by itself — the standard gives a program no way to look at
-  that data. This asymmetry is the map of the chapter: what you *fetch* (numbers
-  and money) and what you *delegate* (time and sorting).
+  A locale is *the device by which settings outside the program change behaviour
+  inside it.* It is what makes one executable print `2026년 8월 6일` in Seoul,
+  `06.08.2026` in Berlin, and `3,14` from `printf("%f")`. This chapter is about
+  the names and rules of that device; the next is about what it changes.
 ]
 
 #organizer[
-#idx("localeconv")  What a locale actually changes, one at a time. All twenty-four members of
-  `struct lconv`, how the grouping string is encoded, the rule by which a
-  monetary form is assembled, the pattern in which `LC_NUMERIC` corrupts data,
-  `strftime`'s locale-dependent and locale-independent formats, `strcoll` and
-  sort keys, and locales in threads.
+#idx("locale")  What a locale is, from the ground up. Why it exists, what the six categories
+  divide, the exact contract of `setlocale`, by what rule and which international
+  standards a name like `ko_KR.UTF-8` is built, the precedence of the environment
+  variables, and where on the machine that data lives.
 ]
 
 #chapter-questions()
 
-== One window — `localeconv`
+== Why it exists — conventions differ by country
 
-```c
-struct lconv *localeconv(void);
-```
-
-What it returns is the address of a struct filled with *the numeric and monetary
-conventions of the current locale.* Two rules attach. A program *must not modify*
-the contents, and a later `localeconv` or a `setlocale` with `LC_ALL`,
-`LC_MONETARY` or `LC_NUMERIC` *may overwrite* them. It is a value to read on the
-spot, not to hold on to.
-
-#demo("examples-en/ch66/lconv.c")
-
-=== A map of the twenty-four members
-
-The standard says the struct shall contain *at least* the following members, in
-any order. So reach them by name, never by position or designated order.
+When a program shows something to a person, there is not one "correct" way to
+write it.
 
 #dtable(
   columns: 3,
-  [*Member*], [*What*], [*"C" locale*],
-  [`decimal_point`], [Decimal point, plain numbers], [`"."`],
-  [`thousands_sep`], [Group separator, plain numbers], [`""`],
-  [`grouping`], [Grouping rule, plain numbers], [`""`],
-  [`mon_decimal_point`], [Decimal point, money], [`""`],
-  [`mon_thousands_sep`], [Group separator, money], [`""`],
-  [`mon_grouping`], [Grouping rule, money], [`""`],
-  [`positive_sign`], [The string for a non-negative amount], [`""`],
-  [`negative_sign`], [The string for a negative amount], [`""`],
-  [`currency_symbol`], [The local currency symbol], [`""`],
-  [`frac_digits`], [Digits after the decimal point], [`CHAR_MAX`],
-  [`p_cs_precedes`, `n_cs_precedes`], [Symbol before the value? (1/0)], [`CHAR_MAX`],
-  [`p_sep_by_space`, `n_sep_by_space`], [A space between symbol and value (0/1/2)], [`CHAR_MAX`],
-  [`p_sign_posn`, `n_sign_posn`], [Where the sign goes (0\~4)], [`CHAR_MAX`],
-  [`int_curr_symbol`], [International symbol + one separator character], [`""`],
-  [`int_frac_digits` and six more `int_*`], [The same items for the international form], [`CHAR_MAX`],
+  [*What*], [*Korea*], [*Germany*],
+  [Decimal point], [`3.14`], [`3,14`],
+  [Thousands], [`1,234,567`], [`1.234.567`],
+  [Date], [`2026년 8월 6일`], [`06.08.2026`],
+  [Currency], [`₩1,234`], [`1.234,00 €`],
+  [Sorting], [Hangul order], [`ä` filed with `a`],
 )
 
-Two conventions must be read. A string member of `""` means *this locale does not
-specify that value* (`decimal_point` alone always has one), and a `char` member of
-`CHAR_MAX` means the same. The `CHAR_MAX` values the demonstration printed in the
-`"C"` locale are exactly that — the C locale says nothing at all about money.
-
-#idx("ISO 4217")For `int_curr_symbol` the standard reaches straight into another international
-standard. *The first three characters are the alphabetic international currency
-symbol of ISO 4217*, and the fourth is the character separating that symbol from
-the amount. That is why `"KRW "` and `"EUR "` came out with a trailing space.
-
-=== How the grouping string is encoded
-
-`grouping` is not a string for people to read; it is *an array of numbers*. The
-standard fixes the reading.
-
-#dtable(
-  columns: 2,
-  [*Element value*], [*Meaning*],
-  [`CHAR_MAX`], [No further grouping is to be performed],
-  [`0`], [Repeat the previous element for the remaining digits],
-  [Anything else], [The size of the group at this position; the next element sizes the group before it],
-)
-
-So `"\3"` looks as though it should mean "one group of three and no more", yet
-real locales produce `1,234,567` from it, because glibc treats the last element as
-repeating. To be explicit, write `"\3\0"`.
-
-What the demonstration measured is en_IN's `3 2`. Three digits from the right,
-then two at a time — `12345678` becomes `1,23,45,678`. It is India's lakh-crore
-system, and living proof that *the assumption of fixed groups of three is wrong.*
-
-=== A monetary form is assembled from three values
-
-Why does printing one amount need six members? Because the real forms differ that
-much. The combination of `p_cs_precedes` (symbol first?), `p_sep_by_space`
-(a space?) and `p_sign_posn` (where the sign goes) decides the form.
-
-#dtable(
-  columns: 2,
-  [`p_sign_posn`], [*Meaning*],
-  [0], [Parentheses surround the quantity and the currency symbol],
-  [1], [The sign string precedes the quantity and the symbol],
-  [2], [The sign string follows the quantity and the symbol],
-  [3], [The sign string immediately precedes the currency symbol],
-  [4], [The sign string immediately follows the currency symbol],
-)
-
-The standard carries the resulting table itself. With `$` as the symbol and `+`
-as the sign, printing `1.25` splits like this (an excerpt).
-
-#dtable(
-  columns: 4,
-  [`p_cs_precedes`], [`p_sign_posn`], [`p_sep_by_space`=0], [`p_sep_by_space`=1],
-  [0], [0], [`(1.25$)`], [`(1.25 $)`],
-  [0], [1], [`+1.25$`], [`+1.25 $`],
-  [0], [3], [`1.25+$`], [`1.25 +$`],
-  [1], [0], [`($1.25)`], [`($ 1.25)`],
-  [1], [1], [`+$1.25`], [`+$ 1.25`],
-  [1], [4], [`$+1.25`], [`$+ 1.25`],
-)
-
-That *the accountant's parentheses* (a `p_sign_posn` of 0) are in the standard is
-worth noticing — the convention of writing a negative as `(1,234)` rather than
-`-1,234`.
+Writing this out by hand in every program multiplies the code by the number of
+countries. So Unix and C took another road — *make the conventions data, keep
+them outside the program, and let the program choose only which set to work
+with.* That bundle of data is a locale.
 
 #qa[
-  Then which standard function prints an amount?
+  Is a locale translation?
 ][
-  *There is none in standard C.* `localeconv` hands over the materials; the
-  assembly is the program's job. You must look at those six members and build the
-  string as the table above says.
+  No, and the distinction matters. A locale deals with *conventions* — decimal
+  points, grouping, the order of a date, sorting, case, currency symbols.
+  Turning the messages a program prints into another language, that is,
+  *translation*, is outside standard C.
 
-  POSIX has `strfmon` to do it for you (`strfmon(buf, n, "%n", 1234.5)`). Windows
-  has `GetCurrencyFormat`. Neither is standard C, so where portability matters you
-  assemble it yourself or use a library.
-
-  A more important discipline, in passing: *do not hold money in a `double`*
-  (chapter 47). Keep it as an integer number of the smallest unit and insert the
-  decimal point only when displaying.
+  Unix has a separate `LC_MESSAGES` category and tools such as `gettext` for
+  translation, but it is not among the six categories C fixes. What this book
+  covers stops at conventions too.
 ]
 
-== `LC_NUMERIC` — where data is quietly corrupted
+== A locale is process-global state
 
-The most practical warning in this chapter. `LC_NUMERIC` changes not only what
-`localeconv` reports but *the decimal-point character `printf`, `scanf` and
-`strtod` themselves use.*
+The nature of a locale in one line: *one locale per process.*
 
-The last part of the demonstration is that. The same `printf("%.2f", 1234.5)`
-prints `1234.50` in one place and `1234,50` in another. And `strtod("3.14", …)`
-stops after `3` in a locale whose decimal point is a comma.
+#demo("examples-en/ch66/locale_probe.c")
 
-#realcase[
-  How one decimal point stopped a server
-][
-  The same program writing `3.14` on the developer's machine (English locale) and
-  `3,14` on the user's (German locale) has happened over and over.
+The first line of the demonstration shows the standard's rule in the flesh.
+Before anything happens, `LC_ALL` is `C`. And one `setlocale(LC_ALL, "")` moves
+it to whatever the environment says.
 
-  - *A configuration file cannot be read back* — written as `3,14`, expected as
-    `3.14`.
-  - *A CSV loses its columns* — the comma inside a value collides with the column
-    separator.
-  - *JSON between two servers disagrees* — the JSON standard nails the decimal
-    point to `.`, and `printf` writes `,`.
-  - *Numbers in the logs cannot be aggregated.*
+Two things follow from its being global.
 
-  They have one thing in common. All of them sent *a number a machine will read*
-  down the path meant for people. There is one prescription — pin `LC_NUMERIC` to
-  `"C"` with chapter 65's idiom, and format separately when showing a person.
-]
+*First, it can change without you calling anything.* If a library you linked
+calls `setlocale`, your `printf("%f")` is affected from that moment. GUI toolkits
+commonly do.
 
-#misconception[
-  "Our service is only used inside one country, so locales are not our problem"
-][
-  It catches you in two places. First, *the locale is settled by the user's
-  machine.* The same program runs under a different locale on someone else's
-  computer — the desktop's settings, or a container image's environment
-  variables.
+*Second, it is a race between threads.* C23 states this explicitly — a call to
+`setlocale` may introduce *a data race* with other `setlocale` calls or with
+functions affected by the locale (§7.11.1.1p5). If you want different locales in
+different threads, standard C has no road; POSIX's `uselocale` family is needed
+(chapter 67).
 
-  Second, *a Korean locale is not `"C"` either.* `ko_KR.UTF-8` happens to use `.`
-  as its decimal point, but its grouping, dates and sorting all differ. Try to
-  parse back a date printed with `%c` and it catches you there.
-]
+== The six categories — what governs what
 
-== `LC_TIME` — writing dates and times
-
-The time arithmetic itself has nothing to do with the locale (chapter 71). What
-the locale changes is *the writing*, and the window is `strftime`'s conversion
-specifiers.
-
-#demo("examples-en/ch66/time_locale.c")
-
-The demonstration prints one instant in six locales. The knack is to split the
-specifiers into two groups.
+A locale is not one lump; it divides into *categories*. The standard fixes six,
+and it also enumerates what each one affects.
 
 #dtable(
   columns: 3,
-  [*Group*], [*Specifiers*], [*Nature*],
-  [Locale decides], [`%c` `%x` `%X` `%A` `%a` `%B` `%b` `%p` `%r`], [Differs by country — *only for showing people*],
-  [Locale-independent], [`%Y` `%m` `%d` `%H` `%M` `%S` `%j` `%F` `%T`], [The same everywhere — *for recording, sending, parsing*],
+  [*Category*], [*What it governs*], [*Functions affected*],
+  [`LC_CTYPE`], [Classification, case, *multibyte conversion*], [`isalpha` family (chapter 65), `mbrtowc` family (chapter 68)],
+  [`LC_NUMERIC`], [The decimal point and grouping of plain numbers], [★ `printf`, `scanf`, `strtod`],
+  [`LC_MONETARY`], [Monetary formatting information], [`localeconv`],
+  [`LC_COLLATE`], [String comparison order], [`strcoll`, `strxfrm`],
+  [`LC_TIME`], [Date and time formatting], [`strftime`, `wcsftime`],
+  [`LC_ALL`], [(the name for all of the above at once)], [—],
 )
 
-`%F %T` produces ISO 8601 (`2026-08-06 15:04:05`) exactly. Using only these in
-logs, file names and API responses is the discipline. In the demonstration these
-two are the only lines identical across all six locales.
+You need not memorise the table, but one line is worth keeping: *`LC_NUMERIC`
+governs `printf`.* Nearly every case of this device corrupting data in practice
+comes from that line (chapter 67).
 
 #platform[
-  The time zone is not the locale
+  The categories POSIX added
 ][
-  A common mix-up. What `%Z` (zone name) and `%z` (offset) show is settled by the
-  *`TZ` environment variable* and `tzset`, not by `LC_TIME`. "I changed the locale
-  to Korea and the time is still wrong" usually means `TZ` was not changed.
+  On top of standard C's six, POSIX and glibc laid more. `LC_MESSAGES`
+  (translation), and glibc's `LC_PAPER` (paper size), `LC_NAME` (the order of
+  name parts), `LC_ADDRESS`, `LC_TELEPHONE`, `LC_MEASUREMENT` (metric or not),
+  `LC_IDENTIFICATION`. The long semicolon-separated list the demonstration
+  printed when asking `LC_ALL` is exactly those.
 
-  Locale and time zone are different axes — *the locale says how to write it, the
-  zone says when it is.* Printing Seoul time with a German locale is a perfectly
-  normal combination.
+  The standard leaves the door open: names beginning with `LC_` and an upper-case
+  letter may be defined by the implementation (§7.11p3). So these names work on
+  Linux and may not elsewhere.
 ]
 
-== `LC_COLLATE` — `strcmp` is not dictionary order
+== The exact contract of `setlocale`
 
-`strcmp` compares *byte values*. So `"Zebra"` sorts before `"apfel"`
-(`Z`=0x5A \< `a`=0x61), and Hangul lines up in code-point order. That is not what
-a reader expects.
-
-#demo("examples-en/ch66/collate.c")
-
-The result shows the difference plainly. In the `"C"` locale `strcoll` and
-`strcmp` give the same answer, but elsewhere they part — in German, `Äpfel` comes
-right after `apfel`, and case is interleaved rather than separated.
-
-=== `strxfrm` — why such a function exists
-
-`strxfrm` turns a string into a *sort key*. Keys compared with an ordinary
-`strcmp` come out in the same order as `strcoll`. The last part of the
-demonstration confirms it.
-
-Why is it needed? One `strcoll` is not cheap — the locale's rules must be applied
-every time. Sorting `n` items takes roughly $n log n$ comparisons, so it is better
-to *transform `n` times and compare cheaply.*
+One function, simple in shape, dense in contract.
 
 ```c
-/* build the keys before sorting */
-size_t need = strxfrm(NULL, s, 0);   /* ask for the size first */
-char *key = malloc(need + 1);        /* take that much */
-strxfrm(key, s, need + 1);           /* and fill it */
+char *setlocale(int category, const char *locale);
 ```
-
-The key sizes the demonstration printed reveal the function's character. In the
-`"C"` locale the key is the same 6 bytes as the original; in the German locale it
-is 43 — locale collation stacks *several levels of weight* (base letter, then
-accent, then case).
-
-#qa[
-  Is `strcoll` enough for Korean sorting?
-][
-  For a simple list, yes. Hangul syllables are already arranged in dictionary
-  order in Unicode, so `ko_KR.UTF-8`'s `strcoll` gives the expected order.
-
-  Real-world sorting adds rules, though — natural number order ("file2" before
-  "file10"), grouping by initial consonant, folding Chinese characters by their
-  reading, ignoring case and spaces. That is beyond `strcoll` and belongs to
-  Unicode's collation algorithm (UTS \#10) and its implementation, ICU.
-
-  Draw the line like this — *`strcoll` for what locale collation covers, a
-  dedicated library beyond it.* Only avoid sorting a human-facing list with
-  `strcmp`.
-]
-
-== Locales and threads
-
-Chapter 65 said the locale is process-global. In a program with several threads
-that becomes a problem — one thread changing the locale to print a date for a
-user shakes another thread's `printf("%f")`.
-
-Standard C has no remedy. What exists are extensions.
-
-#dtable(
-  columns: 3,
-  [*System*], [*Means*], [*Shape*],
-  [POSIX], [Thread-local locale], [`newlocale`/`uselocale`/`freelocale`],
-  [POSIX], [Functions taking a locale], [`strtod_l`, `strcoll_l`, `strftime_l`, …],
-  [Windows], [Per-thread locale mode], [`_configthreadlocale`, `_locale_t` and `_l` functions],
-)
-
-The `_l` family is the real remedy — it names the locale *for that call only*,
-touching no global state. Where portability matters you end up writing a thin
-layer over the two.
-
-#antipattern[
-  Calling `setlocale` inside a library
-][
-  ```c
-  /* a library function */
-  double parse_number(const char *s) {
-      setlocale(LC_NUMERIC, "C");     /* changes someone else's program state */
-      return strtod(s, NULL);
-  }
-  ```
-  These three lines quietly wreck the application's date and currency formatting.
-  And between threads it is a data race.
-
-  A library has one discipline — *read the locale, never change it.* If you need
-  parsing that the locale cannot shake, use `strtod_l` or handle the digits
-  yourself.
-]
-
-== Prescriptions
 
 #dtable(
   columns: 2,
-  [*What you want*], [*How*],
-  [Dates, sorting and money in the user's own way], [`setlocale(LC_ALL, "")`],
-  [Writing numbers into files and protocols], [Pin `LC_NUMERIC` to `"C"`],
-  [Timestamps in logs], [`strftime` with `%F %T` (ISO 8601)],
-  [Sorting a list for people], [`strcoll` (or `strxfrm` keys)],
-  [Strings a machine compares], [`strcmp` — it must not be shaken by the locale],
-  [A different locale per thread], [`uselocale` / the `_l` family (outside the standard)],
-  [Writing a library], [Do not call `setlocale`],
+  [*Second argument*], [*Meaning*],
+  [`"C"`], [The minimal environment the standard fixes. Where a program starts],
+  [`""` (empty string)], [*The locale the environment says* — it reads the environment variables],
+  [`NULL`], [Do not change anything; only report the present value],
+  [Any other string], [An implementation-defined name (`"ko_KR.UTF-8"`, …)],
 )
+
+The return value splits two ways. On success it returns a string holding *the
+name of the locale that was set (or is in force)*; on failure it returns null.
+
+#misconception[
+  "`setlocale` does not fail"
+][
+  The quietest accident starts here. If the requested locale is *not installed*
+  on that machine, `setlocale` returns null and *changes nothing.* Without
+  looking at the return value the program carries on believing the locale
+  changed, dates come out in English and Korean comes out broken.
+
+  The `no_SUCH.locale` line of the demonstration is that case. Linux
+  distributions often ship a minimum of locales to save space (container images
+  especially), which makes this the classic place where what worked on the
+  developer's machine does not work in production.
+
+  ```c
+  if (!setlocale(LC_ALL, "")) {
+      fprintf(stderr, "warning: could not apply the locale; continuing in C.\n");
+  }
+  ```
+]
+
+The returned pointer has a rule too. That string points into static storage that
+*a later `setlocale` call may overwrite*. If you intend to restore it later, copy
+it, as the demonstration does.
+
+#qa[
+  May categories be mixed?
+][
+  They may, and doing so is the standard practice. The last part of the
+  demonstration is the idiom.
+
+  ```c
+  setlocale(LC_ALL, "");        /* follow the environment for everything, then */
+  setlocale(LC_NUMERIC, "C");   /* put numbers back into "C" */
+  ```
+
+  Dates, sorting and currency shown to a person follow the environment, while
+  *numbers a machine will read and write are pinned* so the locale cannot move
+  them. These two lines prevent most of the data corruption seen in chapter 67.
+
+  Once categories are mixed, `setlocale(LC_ALL, NULL)` returns a long string of
+  the form `LC_CTYPE=…;LC_NUMERIC=…;…`. That is the demonstration's last line —
+  the rule is "one name if they all agree, a list if they do not."
+]
+
+== The grammar of a locale name
+
+`ko_KR.UTF-8`. Take the name apart and there are four international standards
+inside it.
+
+#dtable(
+  columns: 3,
+  [*Position*], [*Example*], [*Fixed by*],
+  [Language], [`ko`], [ISO 639-1 (two letters), or ISO 639-2/-3 (three)],
+  [`_` + territory], [`_KR`], [ISO 3166-1 alpha-2 country code],
+  [`.` + codeset], [`.UTF-8`], [A character-set name (IANA registry, ISO 8859 family, …)],
+  [`@` + modifier], [`@euro`], [A variant convention for the same language and place],
+)
+
+The whole grammar can be written like this.
+
+```text
+language[_TERRITORY][.codeset][@modifier]
+
+ko_KR.UTF-8      Korean, Republic of Korea, UTF-8
+de_DE@euro       German, Germany, the euro variant
+sr_RS@latin      Serbian written in the Latin script
+C   or  POSIX    the minimal locale the standard fixes
+```
+
+#idx("ISO 639")#idx("ISO 3166")What matters is that the language and the territory are *codes borrowed from
+other standards*. `ko` is the code ISO 639-1 gave Korean and `KR` is the one
+ISO 3166-1 gave the Republic of Korea. A locale name is not something C invented;
+it is an assembly of code systems that already existed.
+
+#qa[
+  Which standard fixes this grammar?
+][
+  Not the C standard. C fixes only `"C"` and `""`, and says the rest are
+  *implementation-defined strings* (§7.11.1.1p3).
+
+  But one footnote points the way — "*ISO/IEC 9945* specifies locale and charmap
+  formats that can be used to specify locales for C." ISO/IEC 9945 is *POSIX*
+  (IEEE Std 1003.1). The `language_TERRITORY.codeset@modifier` grammar, the format
+  of locale definition files, and the precedence of the environment variables are
+  all fixed by POSIX.
+
+  So the naming rules of this chapter are *the rules that hold on Unix-like
+  systems.* Windows uses another system, and the web uses a third — compared
+  below.
+]
+
+=== Codeset names and normalisation
+
+`.UTF-8`, `.utf8`, `.UTF8` — all three name the same thing. glibc compares names
+ignoring case and `-`. So even when `locale -a` prints `ko_KR.utf8`, a program may
+ask for `"ko_KR.UTF-8"`.
+
+The codeset names themselves come from yet another registry. `UTF-8`, `EUC-KR`
+and `ISO-8859-1` are registered in IANA's character-set registry, and behind them
+stand the ISO/IEC 8859 family or Unicode (ISO/IEC 10646).
+
+*The codeset part often matters more than the rest of the name.* `ko_KR.UTF-8`
+and `ko_KR.EUC-KR` share a language and a territory but differ in *how many bytes
+a character takes*. In the demonstration their `MB_CUR_MAX` values split, 6
+against 2.
+
+#realcase[
+  One country, two encodings — the era of `ko_KR.EUC-KR`
+][
+  Korean Unix environments of the 1990s and early 2000s defaulted to
+  `ko_KR.eucKR` (or `ko_KR.EUC-KR`) — a world in which one Hangul syllable is two
+  bytes. Code written then has the assumption "Hangul is two bytes" embedded
+  everywhere: string lengths divided by two, cursors moved by two, truncation
+  rounded to an even byte count.
+
+  Moving to UTF-8 broke all of it. Hangul became three bytes, and that code began
+  cutting letters in half. This is what the encoding transition actually felt like
+  in Korea, and it is also why the three layers of chapter 70 — bytes, code
+  points, characters — have to be told apart.
+]
+
+=== Names in other worlds — BCP 47 and Windows
+
+The same "Korean (Republic of Korea)" is named differently by each system.
+
+#dtable(
+  columns: 3,
+  [*System*], [*Notation*], [*Basis*],
+  [POSIX and C], [`ko_KR.UTF-8`], [ISO/IEC 9945 (POSIX)],
+  [BCP 47 (web, XML, HTTP)], [`ko-KR`], [RFC 5646 (tags), RFC 4647 (matching)],
+  [Windows (Vista onwards)], [`ko-KR`], [Follows BCP 47],
+  [Windows (the old way)], [`Korean_Korea.949`], [Windows-specific],
+  [Unicode CLDR], [`ko_KR`], [UTS \#35 (LDML)],
+)
+
+#idx("BCP 47")BCP 47 is the internet standard — the tag in HTML's `lang="ko-KR"` and in HTTP's
+`Accept-Language`. It uses a hyphen instead of an underscore and has no codeset
+part, because the web handles encoding separately. When the script must be
+stated, an ISO 15924 code goes in the middle, as in `sr-Latn-RS`.
+
+*A program that spans both worlds must translate names.* To pass a browser's
+`ko-KR` to `setlocale` it has to become `ko_KR.UTF-8`, which means holding a
+mapping table somewhere. Mistakes are frequent at that seam.
+
+#platform[
+  The modern source of locale data — CLDR
+][
+  Who maintains the actual convention data — how a country writes dates, what its
+  currency symbol is? Today's answer is the Unicode Consortium's *CLDR* (Common
+  Locale Data Repository), in the format UTS \#35 (LDML) fixes. ICU, Java, Android
+  and browsers all take their data from there.
+
+  glibc's locale definitions come from an older line — ISO/IEC TR 14652
+  (a specification method for cultural conventions) and ISO/IEC 15897 (procedures
+  for registering cultural elements) — and the files themselves sit in
+  `/usr/share/i18n/locales/` in a human-readable form.
+
+  Since the two lines differ, *the same locale may carry slightly different
+  values.* That is where a Java program and a C program printing the same date
+  differently comes from.
+]
+
+== The precedence of the environment variables
+
+We said `setlocale(LC_ALL, "")` uses "the locale the environment says". Exactly
+what environment — POSIX fixes the precedence.
+
+#dtable(
+  columns: 3,
+  [*Rank*], [*Variable*], [*Meaning*],
+  [1], [`LC_ALL`], [If present, it overrides every category],
+  [2], [`LC_CTYPE`, `LC_TIME`, …], [Sets only that category],
+  [3], [`LANG`], [The default for categories not set above],
+)
+
+So `LANG=ko_KR.UTF-8 LC_NUMERIC=C ./program` runs mostly with Korean conventions
+but with numbers in C conventions. The scripts that launch server programs pin
+`LC_ALL=C` for the same reason — *to insulate logs and parsing from the
+environment.*
+
+```sh
+$ locale                 # what the environment is setting right now
+$ locale -a              # the locales installed on this machine
+$ locale -k LC_NUMERIC   # the values of one category in detail
+```
+
+== Where locale data lives
+
+A locale is not inside the program. It has to be *installed on the machine*.
+
+#dtable(
+  columns: 2,
+  [*Step*], [*What*],
+  [Definition file], [`/usr/share/i18n/locales/ko_KR` — human-readable],
+  [Charmap], [`/usr/share/i18n/charmaps/UTF-8.gz`],
+  [Compile], [`localedef -i ko_KR -f UTF-8 ko_KR.UTF-8`],
+  [Installed under], [`/usr/lib/locale/` (or `locale-archive`)],
+  [Search path], [Changeable with the `LOCPATH` environment variable],
+)
+
+Knowing this structure lets you solve the "missing locale" problem yourself. If a
+container has no `ko_KR.UTF-8`, put the definition file in and build it with
+`localedef`.
+
+#realcase[
+  How this book checked its locale tables
+][
+  The machine this book is built on also started with only `C`, `C.UTF-8` and
+  `POSIX`. So, to check the tables of the next chapter, the necessary locales were
+  built from glibc 2.41's definitions.
+
+  ```sh
+  localedef -i ko_KR -f UTF-8 <path>/ko_KR.UTF-8
+  localedef -i de_DE -f UTF-8 <path>/de_DE.UTF-8
+  export LOCPATH=<path>
+  ```
+
+  So the values from other locales printed in this book are not guesses; they are
+  *what came out of running it that way.* Conversely, if the reader's machine
+  lacks those locales the examples print "not on this machine" — they are written
+  so as not to assume any locale exists.
+]
 
 #recap[
   #dtable(
     columns: 2,
     [*What to remember*], [*The point*],
-    [The window], [`localeconv` alone. Do not modify it, do not keep it],
-    [`struct lconv`], [Twenty-four members. `""` and `CHAR_MAX` mean "not specified"],
-    [`int_curr_symbol`], [The first three characters are an ISO 4217 code],
-    [`grouping`], [An array of numbers. `CHAR_MAX`=stop, `0`=repeat. Not always three],
-    [Money], [Assembled from `cs_precedes`, `sep_by_space`, `sign_posn`. No standard function],
-    [`LC_NUMERIC`], [★ Changes the decimal point of `printf` and `strtod` — the chief corrupter],
-    [`LC_TIME`], [`%c %x %X %A %B %p` follow the locale; `%F %T %Y-%m-%d` do not],
-    [Time zone], [`TZ`, not the locale],
-    [`LC_COLLATE`], [`strcmp` ≠ dictionary order. Repeated comparison → `strxfrm` keys],
-    [Threads], [Nothing in the standard. `uselocale`, the `_l` family],
+    [What it is], [*Conventions* set outside the program. Not translation],
+    [Starting value], [Always `"C"` — the standard says so],
+    [Scope], [Process-global. A library can change it; threads race over it],
+    [Categories], [`LC_CTYPE`, `LC_NUMERIC`, `LC_MONETARY`, `LC_COLLATE`, `LC_TIME` (+`LC_ALL`)],
+    [`setlocale`], [`""`=environment, `NULL`=query. *Null return means failure*],
+    [Names], [`language_TERRITORY.codeset@modifier` — ISO 639, ISO 3166, charset registry],
+    [Basis], [The grammar and formats are POSIX (ISO/IEC 9945). The web uses BCP 47],
+    [Environment], [`LC_ALL` > `LC_`category > `LANG`],
+    [In practice], [`LC_ALL, ""` followed by `LC_NUMERIC, "C"`],
   )
 ]
 
-We have followed what a locale changes to the end. One axis remains — the
-*multibyte and wide characters* governed by `LC_CTYPE`. The next chapter takes up
-what `wchar_t` really is and how a byte string unfolds into characters, one step
-at a time.
+We have seen what a locale is and how one is chosen. The next chapter is *what it
+changes and how* — numbers, money, time and sorting, one at a time.

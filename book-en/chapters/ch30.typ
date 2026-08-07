@@ -1,147 +1,126 @@
 #import "../../book/lib.typ": *
 
-= Deciding — if and switch
+= Booleans and comparison
 
 #prereq(
-  ([chapter 29, Booleans and comparison], [the result of a comparison is true or false]),
+  ([chapter 20, Expressions], [the value of an expression]),
+  ([chapter 29, Implicit conversions], [the promotion rules]),
 )
 
 #deepqa[
-  Chapter 12 foreshadowed the instinct that "an `if` is not free" — a mispredicted
-  branch pays the penalty of flushing the pipeline. Should a programmer then
-  avoid branches?
+  Chapter 23 announced that `=` (putting) and `==` (comparing) use separate
+  symbols. Then what is the *result* of a comparison like `3 < 5` — an
+  expression becomes a value (chapter 20), so if a comparison is an expression,
+  what value does it become?
 ][
-  No — branches are the skeleton of a program, and the predictor is right well
-  over 90% of the time in everyday code. The use of that instinct is not "do not
-  use branches" but *knowing that the cost of a branch is not constant* — a
-  regular fork is cheap, a random one expensive (the sorted-array episode). It is
-  knowledge to be taken out only in the very small amount of code where
-  performance matters; the branching learned today may be used freely.
+  True or false — it becomes a value holding only those two. In C23 that type is
+  named `bool` and its values `true` and `false`. That a comparison is not a
+  "question" but *an expression computing a bool value* — that perspective is
+  this chapter's centre, and in the next chapter branching consumes that value.
 ]
 
 #organizer[
-  The program meets a fork. `if`, which takes a different road according to a
-  condition, and `switch`, which spreads several branches at once — we learn both
-  branching devices. This is the chapter in which chapter 4's model of
-  computation ("if the result is zero, jump over there") finally appears with the
-  face of C syntax.
+#idx("boolean")  The world of true and false as values — C23's `bool`, the
+  comparison operators, and the logical operators with their special property
+#idx("condition")  (short-circuit evaluation). The "condition" the next
+  chapter's branching will ask about is made here.
 ]
 
 #chapter-questions()
 
-== if — when the condition is true
+== bool — a type with two values
 
-The syntax is as it reads:
+`bool` is a type whose value set is just {`false`, `true`}. It is the smallest
+container beside chapter 27's family of integers. One line of history unravels
+its odd corners — early C had *no* boolean type, and the practice of counting 0
+as false and every nonzero value as true stood in its place. C99 brought one in
+through the back door (via the `<stdbool.h>` box), and *only with C23* did
+`bool`, `true` and `false` become proper keywords usable without the box. A
+formal adoption half a century late — and as a trace of that practice, printing
+a `bool` with `%d` gives 1 and 0 (confirmed in the demonstration).
 
-```c
-if (condition) {
-    statements when the condition is true
-} else {
-    statements when it is false   /* the else part may be omitted */
-}
-```
+== Comparison — expressions that make bools
 
-In the condition's place goes an expression that becomes a bool (chapter 29),
-and each branch takes a block (chapter 19). When there are several branches you
-build a ladder with `else if` — the demonstration is that shape. Notice too that
-chapter 25's input practice (fgets + sscanf) appears again.
+There are six comparison operators — `==` (equal), `!=` (not equal), `<`, `<=`,
+`>`, `>=`. All take two values as material and put out a bool.
 
-#demo("examples-en/ch30/grade.c", stdin: true)
+#demo("examples-en/ch30/cmp.c")
 
-The ladder is checked *in order from the top*, and only the first branch that
-becomes true is executed — that 87 stops at "우" and does not fall further down
-is that guarantee. So the order of the ladder is the logic itself: narrow
-conditions above, broad conditions below, is the standard.
+The first line is the check — the value of the expression `10 > 3` (true) was
+held in a variable and printed as 1 with `%d`. The instinct that judgement is not
+the property of branching alone but *something that can be stored and passed as a
+value* — the more complex conditions get, the more this instinct keeps code clean
+(the practice of naming a judgement, as in `bool is_leap = ...`).
+
+#misconception[
+  "Writing `x = 3` instead of `x == 3` will behave about the same anyway"
+][
+  Here chapter 23's warning is collected head on — they are entirely different
+  expressions, and the worst of it is that *both are legal*. `x = 3` is a putting
+  expression, so it changes x to 3, and that expression's value 3 is read as
+  "nonzero, therefore true" — slipped into a condition by mistake it becomes a
+  double accident that is *always true and wrecks the variable as well*. So many
+  accidents piled up on this trap historically that compiler warnings (`-Wall`)
+  point specially at an `=` in a condition — the representative case for why
+  chapter 17 said to keep warnings on.
+]
+
+== Logical operators — weaving judgements together
+
+Three operators weave judgements: AND `&&` (both true), OR `||` (at least one
+true), NOT `!` (invert). The demonstration's second line is an example of `&&` —
+`3 < 5 && 2 + 2 == 4`, both judgements true, so 1.
+
+And these operators have a property of particular importance in C —
+*short-circuit evaluation*. If `&&`'s left side is false it puts out false
+*without evaluating the right side at all* (`||` skips the right side if the left
+is true). The demonstration's third line is the proof — the `printf` on the right
+is an expression with a side effect (output), and because the left was 0 (false)
+*the call itself never happened*.
+
+This is not an optimisation but a *guarantee* — and a precious exception to
+chapter 20's "the order of evaluation is mostly unspecified": `&&` and `||`
+evaluate the left first and fix even whether the right is evaluated as part of
+the contract. So C programmers use this guarantee as a *gatekeeper* — writing
+"divide only if it is not zero" as `b != 0 && a / b > 10`, with the left-hand
+judgement standing in front of the right-hand danger (chapter 28's division by
+zero), is idiom.
+
+Let us record the rule's name exactly — *short-circuit evaluation*. In the
+standard's terms there is a *sequence point* (chapter 33) after the evaluation of
+`&&`'s and `||`'s left operand, and the right is evaluated only when needed. So
+these two are among the few operators in C that guarantee both the order and the
+fact of evaluation (the conditional operator `?:` has the same property — the
+branch not chosen is not evaluated).
+
+The idioms of practice have hardened into three shapes.
+
+- *Gatekeeper* — `if (p != nullptr && p->count > 0)`. If the left is false the
+  dereference on the right never happens at all (this one line blocks chapter
+  36's null dereference).
+- *Filling a default* — `ok = load(&cfg) || load_default(&cfg);` If the left
+  succeeds the right is not even attempted.
+- *Deferring an expensive check* — `if (cheap_check(x) && expensive_check(x))`.
+  Swap the order and the result is the same while only the cost grows.
+
+The trap is the inverted face of this. *Put a side effect on the right and it may
+not be executed.* In `if (init() && start())`, if `init()` returns false then
+`start()` is never called — good code if intended, a hard-to-find bug if written
+without thinking. And the bitwise operators `&` and `|` do *not* have this
+guarantee — both sides are evaluated.
 
 #qa[
-  I hear the braces may be omitted when a branch has only one statement — may
-  they be?
+  How do `&` (chapter 28) and `&&` really differ — both are called AND.
 ][
-  Grammatically they may — and this book recommends not doing it. A brace-less
-  branch takes "only the next single statement" into the branch, and adding a
-  line later while forgetting the missing braces is a classic path to accident.
-  It really happened in Apple's SSL library, where this pattern pushed
-  verification code outside the branch and the security check was skipped
-  entirely (the "goto fail" incident, 2014) — the day it was expensively proved
-  that indentation is visible only to human eyes and not to the compiler
-  (chapter 19). Always braces on a branch — the rule every example in this book
-  follows.
+  They live on different layers. `&` is an arithmetic operator doing AND *bit by
+  bit* — `5 & 3` puts the bits together and gets 1. `&&` is AND of *whole
+  judgements* — it looks only at whether a value is zero or not, and it has the
+  short-circuit guarantee. Swapping them by mistake is the more dangerous for
+  often giving the same answer by accident — `2 && 4` is 1 (neither is zero) but
+  `2 & 4` is 0 (no bits overlap). `&&` for judgement, `&` for bits — the rule is
+  not to mix their places.
 ]
 
-== switch — a board that forks by value
-
-When the fork is not "which range" but "which *value*", there is a dedicated
-device — `switch`.
-
-#demo("examples-en/ch30/season.c", stdin: true)
-
-How to read it — when `switch (month)` steps onto the board holding one value,
-execution *jumps* to the `case` label matching that value. And here is switch's
-most important property: a `case` is not a fence but a *label*, so once jumped to
-it *keeps flowing downward*, past the next `case`. This flow is called
-*fall-through*, and where you want to stop you write `break` (leave the board)
-explicitly.
-
-Fall-through cuts both ways. It is ideal for binding several values to one answer
-as in the demonstration (December, January and February into a single winter),
-but *forget* the `break` and it becomes the classic accident of flowing into an
-unintended branch — so compiler warnings and C23's explicit notation
-(`[[fallthrough]]` — documentation saying "this flow is intended") guard this
-place. `default` is the branch for when no label matches — always keeping it, as
-*a net that catches unexpected values* ("there is no such month"), is the
-practice.
-
-#realcase[
-  A curious example the standard gives — a declaration nobody reaches
-][
-  Push the property that a `case` label is not a fence to its extreme and strange code
-  becomes possible. The following is one the C standard gives directly as an example in
-  its `switch` clause.
-
-  ```c
-  switch (expr) {
-      int i = 4;          /* ← nobody comes here */
-      f(i);               /* ← nor here */
-  case 0:
-      i = 17;
-      /* falls through */
-  default:
-      printf("%d\n", i);
-  }
-  ```
-
-  On entering a `switch`, execution *jumps straight to the matching label*. So the two
-  lines at the head of the block are executed for no value at all. And yet the variable
-  `i` *exists* — once the block has been entered, that block's local variables get their
-  places (chapter 41's automatic storage duration).
-
-  The result is curious. If `expr` is 0 it jumps to `case 0:`, `i = 17` runs and 17 is
-  printed; but *if it is not 0* it jumps straight to `default:` and `i` is read
-  *never having been initialised* — the reading of an indeterminate value learned in
-  chapter 49. And that with the initialising line sitting there in plain sight.
-
-  This example is in the standard not to say "write it this way" but to pin down *the
-  consequence of a `case` being merely a label*. The rules in practice are two — *do not
-  put a declaration at the head of a `switch` block*, and *if a variable must be declared
-  inside a `case`, make a block with braces* (otherwise the compiler may refuse it as an
-  initialisation jumped over by a case label).
-]
-
-#qa[
-  An `if` ladder can do it all, so why is `switch` needed at all?
-][
-  The difference between them is not expressive power but *conveying intent*.
-  switch pins down in syntax the intent of "matching one value against several
-  constants", so the structure is visible both to the reader and to the compiler
-  — the compiler may use that structure to produce fast code such as a jump table
-  (a shape chapter 13's editor likes), and the warning features can point out "a
-  case missing from an enumeration". Fork on a single value, use switch; on
-  ranges or compound conditions, an if ladder — fitting the tool to the intent.
-  And in the next chapter we finally meet the legendary code that abused (?) this
-  fall-through property to its limit.
-]
-
-We have learned the fork — but a program's real power comes not from forking but
-from *repeating*. The repetition of which chapter 4 said "even simple steps,
-#idx("loop")taken billions of times", is taken into our hands in the next
-chapter.
+We can now make conditions. In the next chapter the program at last *forks* —
+taking different roads according to a condition's value. The homework of
+"checking input", deferred in chapter 25, can be done then too.

@@ -1,223 +1,199 @@
 #import "../../book/lib.typ": *
 
-= Strings and memory — `<string.h>`
+= The traps of reading and writing — `<stdio.h>` ②
 
 #prereq(
-  ([chapter 39, Strings], [a string is an array that only marks its end]),
-  ([chapter 37, Arrays], [handling memory in bulk]),
+  ([chapter 61, Streams in reality], [the state of a stream]),
+  ([chapter 41, Safe input], [safe input]),
 )
 
 #deepqa[
-  Chapter 39 said a C string is "up to the NUL", so its length must be counted
-  every time, and chapter 59 said functions that do not take a size are the first
-  chronic illness. Then does using `strncpy` instead of `strcpy` cure that illness?
+  Chapter 41 said `gets` was deleted from the standard, and chapter 59 said its
+  funeral took decades. Then what exactly was wrong with `gets`, and why did it
+  take so long?
 ][
-  It does not. Contrary to the impression the name gives, `strncpy` *was not
-  designed as a safe copying function.* Its original purpose was filling the
-  fixed-length fields of old Unix (a 14-byte directory entry name, say) — so it
-  fills all the spare places with zeros, and if there is not enough room it does
-  not attach a NUL. Both properties go against the expectations of "string
-  copying". This chapter's first example shows it before your eyes.
+  The problem is simple — *it does not take the size of the destination buffer.*
+  Its signature is only `char *gets(char *s)`, so there is no way at all to know
+  how much may be written, and if the input is long it necessarily overflows. It is
+  one of the rare functions for which "use it carefully and it is fine" does not
+  hold — a safe way to use it does not exist.
+
+  It took long because of the standard's character (chapter 60). Not breaking code
+  already written is the standard's duty, so C99 marked it "do not use"
+  (deprecated) and only C11 deleted it. For over twenty years in between, every
+  compiler spat warnings and yet compiled it.
 ]
 
 #organizer[
-  The header in which the most accidents have happened in C. Functions that do not
-  take a size, `strncpy` which is not safe despite its name, copying that touches
-  overlapping regions, `strtok` which destroys the original and hides state — the
-  dangers of strings learned in chapter 39 take concrete shape here function by
-  function. We also see the real portability of the non-standard alternatives (the
-  `strlcpy` family).
+  We begin with the story of the only function ever *deleted* from the standard
+  library. Why `gets` died, what stands in its place, and what traps that
+  replacement carries in its turn. Then the remaining dangers of formatted input
+  and output, and how safe the functions known as safe really are.
 ]
 
 #chapter-questions()
 
-== The truth about `strncpy`
+== The death of `gets` and its successors
 
-#demo("examples-en/ch62/strncpy.c")
-
-Two things come out.
-
-*First, it fills all the spare places with zeros.* Put 3 characters into a 10-byte
-buffer and it writes zeros over the remaining seven. The bigger the buffer, the
-bigger the waste.
-
-*Second, when it fits exactly or overflows it does not attach a NUL.* Put `abcd`
-into a 4-byte buffer and there is no room for the NUL, so what remains is *a byte
-array, not a string*. Print that with `%s` or pass it to `strlen` and it reads
-outside the buffer — the typical route of "I used the safe function and it blew
-up."
-
-gcc really does catch this mistake. Here is the diagnosis received when first
-writing the example.
-
-```text
-error: ‘strncpy’ output truncated before terminating nul copying 4 bytes
-       from a string of the same length [-Werror=stringop-truncation]
-```
-
-But as seen in chapter 59, the compiler catches *only what it can see*. If the
-source's length is settled during execution, this warning does not appear.
-
-#antipattern[
-  Copying "safely" with `strncpy`
-][
-  ```c
-  char dst[32];
-  strncpy(dst, src, sizeof dst);      /* there may be no NUL */
-  printf("%s\n", dst);                 /* it reads outside the buffer */
-  ```
-  It must be mended at least like this.
-  ```c
-  strncpy(dst, src, sizeof dst - 1);
-  dst[sizeof dst - 1] = '\0';          /* close it by hand */
-  if (strlen(src) >= sizeof dst) { /* truncated — handle it */ }
-  ```
-  Three lines are needed, and leaving out even one of them is an accident. That is
-  why this function is assessed as "a safety device that is hard to use."
-]
-
-== Then what is used
-
-Within the standard, the most practical tool for safely joining strings is in fact
-in `<stdio.h>`.
-
-```c
-int need = snprintf(dst, sizeof dst, "%s", src);
-if (need < 0 || (size_t)need >= sizeof dst) { /* truncated */ }
-```
-
-There is the criticism that it is slow (the cost of interpreting the format), but
-it is the only standard function that keeps the boundary while letting you *know
-about truncation*.
+The hole the 1988 internet worm bored into was exactly this function (chapter 41).
+Today `gets` is not in the standard, and three remain in its place.
 
 #dtable(
-  columns: 4,
-  [*function*], [*status*], [*boundary*], [*can truncation be known*],
-  [`strcpy`, `strcat`], [standard], [none], [—],
-  [`strncpy`], [standard], [yes], [no (must be measured by hand)],
-  [`strncat`], [standard], [yes (but the argument is the *remaining room*)], [no],
-  [`snprintf`], [standard], [yes], [yes (the return value)],
-  [`strlcpy`, `strlcat`], [the BSD family, a C23 annex], [yes], [yes (the return value)],
-  [`strcpy_s`, `strcat_s`], [C11 annex K (optional)], [yes], [yes (an error return)],
+  columns: 3,
+  [*function*], [*status*], [*assessment*],
+  [`gets`], [deleted in C11], [there is no way to use it. mend it wherever it is seen in old code],
+  [`fgets`], [standard], [the realistic standard solution. but truncation must be checked by hand],
+  [`gets_s`], [C11 annex K (optional)], [implementations barely exist — treated in chapter 76],
 )
 
-`strncat`'s argument is a particular trap — the second argument is not *the
-destination's size* but *the number of bytes that may additionally be written*.
-`strncat(dst, src, sizeof dst)` is almost always wrong, and
-`sizeof dst - strlen(dst) - 1` is right.
+`fgets` is the right answer, but it is not the end in itself. As seen in
+chapter 61, if the buffer is too small it quietly reads only the front piece.
 
-#realcase[
-  Why `strlcpy` was not standard
+#demo("examples-en/ch62/reading.c")
+
+The difference between the two approaches is clear. The fixed buffer split the
+long line into five pieces, while the edition that reads while growing returned
+the 34-byte line whole.
+
+The rules for reading code come to three in the end.
+
++ Turn the loop on `fgets`'s return value (whether it is null).
++ Check whether the line read has a newline and judge *whether it was truncated*.
++ Erase the newline with `buf[strcspn(buf, "\n")] = '\0';` — this idiom is safer
+  than hand-written code based on `strlen`.
+
+#antipattern[
+  `scanf("%s", buf)` — reading a string without a width
 ][
-  OpenBSD put out `strlcpy` and `strlcat` in 1998. They take the destination's
-  size, always close with a NUL, and return *the length of the source* so that
-  truncation can be known. They spread through the BSD family and several
-  libraries, but glibc long refused to adopt them — the counter-argument being that
-  "an API that quietly permits truncation only moves the problem."
-
-  So code using `strlcpy` was long unportable on Linux, and every project came to
-  have its own edition. In 2023 glibc 2.38 finally added them and C23 brought in
-  functions of similar intent as an annex, but *the state in which you must check
-  the target platform's edition before saying "it can be used"* persists. It is a
-  representative case showing the gap between the standard and reality.
+  ```c
+  char name[32];
+  scanf("%s", name);        /* exactly the same danger as gets */
+  ```
+  Give `%s` no width and it writes without knowing the destination's size. Always
+  write *a number one less than the buffer size*, as in `scanf("%31s", name)` (for
+  the NUL). And that this number must be written by hand is this API's weakness —
+  change the buffer size and the format string must be mended with it, which is
+  easy to forget.
 ]
 
-== Overlapping regions — `memcpy` and `memmove`
+== The remaining traps of formatted input
 
-#demo("examples-en/ch62/overlap.c")
+Chapter 59 took the grammar apart, so here we gather only the places where
+accidents happen.
 
-`memcpy`'s contract includes "the two regions must not overlap". Calling it with
-them overlapping is undefined behaviour, and in an optimised implementation values
-really do get scrambled — because there is no guarantee that bytes are moved in
-order (several bytes may be moved at once with SIMD, or moved from the back).
+*First, not checking the return value.* The `scanf` family returns the number of
+items filled. Without checking it you end up using the *previous value* of the
+variable that failed (we see it in the flesh in chapter 82).
 
-If they may overlap, it is `memmove`. Contrary to the impression its name gives,
-it does not mean "moving" but *copying that is safe even when overlapping*.
+*Second, leftover input.* After `scanf("%d", &n)` a newline remains in the input
+buffer. Call `fgets` in that state and it reads an empty line. Not mixing them is
+the best policy, and if you must mix, empty the rest of the line and move on.
+
+*Third, integer overflow.* Give `99999999999` to a `%d` and it is outside the
+contract. If the range must be checked, read with `strtol` (chapter 64).
+
+*Fourth, `%s` and the locale.* The definition of whitespace may change with the
+locale (chapter 65).
 
 #misconception[
-  "`memcpy` is always faster than `memmove`"
+  "`snprintf` instead of `sprintf` is safe"
 ][
-  An old saying. Today the performance difference between the two is mostly
-  negligible, and in some implementations they converge on the same code. The
-  reason `memcpy` can be faster is that it can use the premise "they do not
-  overlap" in optimisation, and if that premise is set wrongly, what is lost (a
-  bug that is hard to find) is far greater than what is gained (a few nanoseconds).
-  *If there is the slightest possibility of overlap, `memmove`* — that is the
-  modern default.
+  Half right. `snprintf` is safe in that it does not overrun the buffer, but it
+  brings in the new danger of *quietly truncating*. And the meaning of its return
+  value is peculiar — it is not the number of characters written but *the number of
+  characters that would have been needed*.
+
+  ```c
+  int need = snprintf(buf, sizeof buf, "%s/%s", dir, name);
+  if (need < 0 || (size_t)need >= sizeof buf) {
+      /* truncated — this path must not be used as it is */
+  }
+  ```
+
+  Leave this check out and it becomes "I used the safe function and opened the
+  wrong file." We run this pattern for real in chapter 82.
 ]
 
-== `strtok` — it destroys the original and hides state
+== The traps on the output side
 
-The last part of the example. `strtok` has two sins.
+*`printf`'s return value* — code that checks it is rare, but it fails in the
+situation of a broken pipe (`program | head`, say). For a program that keeps logs
+there is a value worth checking.
 
-*First, it destroys the original.* It makes tokens by overwriting the separators
-with NUL. So it cannot be used on a read-only string (a string literal) — using it
-there is outside the contract — and if the original is needed it must be copied
-first.
+*The format string vulnerability* — the one treated in chapter 59. The rule is
+one. The format string must always be a constant written by the program.
 
-*Second, it hides state inside the function.* That is why `NULL` is passed from
-the second call onward. That state is *singular*, so if another function calls
-`strtok` in the middle of cutting tokens the two wreck each other's traversal. In
-a program running along several strands it gets worse.
+*`%n`* — the conversion that *writes* the number of characters printed to where
+the argument points. Being the passage that promotes a format string vulnerability
+into an arbitrary memory write, several implementations block it by default today.
+There is almost no reason to use it.
 
-There are three alternatives. Use an edition in which the caller holds the state,
-such as `strtok_r` (POSIX) or `strtok_s` (annex K); cut it yourself with `strcspn`
-and `strchr`; or use a tool that *does not touch the original*, like Part XII's
-view-based splitting.
+*Buffering and order* — mix `printf` (standard output, usually line-buffered) with
+`fprintf(stderr, ...)` (mostly unbuffered) and the order in which things appear on the
+screen can be reversed. Half of the occasions on which "the output vanished"
+during debugging are this, and the other half are cases where the buffer was not
+emptied just before a collapse.
 
-== The traps of the remaining functions
+#realcase[
+  Why output vanishes — buffers and abnormal termination
+][
+  When a program dies by `abort` or a signal, the output remaining in the buffer
+  vanishes with it. That is why the inference "the last printed line came out, so
+  execution reached at least there" is dangerous — in reality several more lines
+  may have run and died trapped in the buffer.
+
+  The practice of sending debugging output to `stderr` came from here. What the
+  standard promises about `stderr` goes only as far as *"it is not fully buffered"*
+  (that is, it is unbuffered or line-buffered), and real implementations mostly make it
+  unbuffered. So the record right up to the moment of death is *likely* to survive, but
+  that is not a guarantee — it can be set again with `setvbuf`, and the manner of
+  abnormal termination changes the outcome too. It is also
+  the reason chapter 17 discussed debuggers and logs together.
+]
+
+== The remaining functions that handle files
 
 #dtable(
   columns: 3,
   [*function*], [*what it does*], [*to beware of*],
-  [`strlen`], [length], [with no NUL it runs away. $O(n)$ every time],
-  [`strcmp`], [comparison in dictionary order], [only the sign of the return value means anything. 0 is "equal"],
-  [`strncmp`], [compare the first n bytes], [if n exceeds the length it stops at the NUL],
-  [`strchr`, `strrchr`], [find a character], [if the sought character is `'\0'` it points at the end],
-  [`strstr`], [substring], [worst-case performance differs by implementation],
-  [`strspn`, `strcspn`], [length by a set of characters], [the heart of the cutting idiom],
-  [`memset`], [fill with a byte], [★ for erasing secrets it may vanish under optimisation],
-  [`memcmp`], [compare bytes], [★ it compares padding too. it must not be used to compare structs],
+  [`remove`], [delete a file], [implementation-defined for an open file],
+  [`rename`], [change a name], [if the target exists it fails or overwrites, depending on the implementation],
+  [`tmpfile`], [create a temporary file], [deleted automatically on closing. the only portable safe edition],
+  [`tmpnam`], [generate a temporary name], [★ a race condition — it can be intercepted between receiving the name and creating the file],
+  [`setvbuf`], [specify the buffering mode], [it may be called only right after opening the stream],
+  [`freopen`], [reconnect a stream], [used when turning `stdout` to a file],
 )
 
-The two starred entries are especially dangerous in practice.
-
-*Erasing a secret with `memset`* — the `memset(key, 0, len)` that erases after use
-may, if `key` is not read afterwards, be seen by the compiler as a "useless write"
-and deleted (chapter 13's optimisation story). C11 put `memset_s` in annex K for
-this, and each platform has a function such as `explicit_bzero` or
-`SecureZeroMemory`.
-
-*Comparing structs with `memcmp`* — because of the padding seen in chapter 43.
-Even for two structs holding the same values, if the padding bytes differ `memcmp`
-answers "different". The members must be compared one by one.
+`tmpnam` is in the standard, but not using it is the right answer — because
+another program can slip in between the returning of the name and the creating of
+a file with that name (the class of race called TOCTOU). Within the standard
+`tmpfile` is the answer, and if a platform API is permitted, `mkstemp` (POSIX).
 
 #qa[
-  I hear `memcmp` is dangerous for comparing passwords too?
+  Then can "safe file handling" be written with standard I/O alone?
 ][
-  Correct, for a different reason. `memcmp` returns the instant it meets a
-  differing byte, so *the time the comparison took leaks how much of the front
-  matched.* That means an attacker can measure time and get it right one byte at a
-  time (a timing attack). When comparing a secret, use a constant-time comparison
-  function that always takes the same time regardless of length — it is not in the
-  standard; cryptographic libraries provide it.
+  Mostly it can. But there are clearly places where the standard gives no answer —
+  handling directories, file locking, atomic replacement (writing to a temporary
+  file and then renaming), permissions, symbolic links. All of these are the
+  territory of platform APIs, and so a serious program lays one thin layer over
+  standard I/O. Part XII's file layer is exactly that layer.
 ]
 
 #recap[
-  `<string.h>` in summary.
+  Reading and writing in summary.
 
   #dtable(
     columns: 3,
-    [*what you want to do*], [*what to use*], [*what not to use*],
-    [copy a string], [`snprintf` (or the platform's `strlcpy`)], [`strcpy`, a careless `strncpy`],
-    [join], [`snprintf` in one go], [`strcat`, `strncat` with its confusing argument],
-    [copy that may overlap], [`memmove`], [`memcpy`],
-    [cut tokens], [`strcspn`/`strchr` or `strtok_r`], [`strtok`],
-    [compare structs], [compare member by member], [`memcmp` (padding)],
-    [compare secrets], [constant-time comparison], [`memcmp` (time leak)],
-    [erase secrets], [the platform's explicit function], [`memset` (vanishes under optimisation)],
+    [*what you want to do*], [*what to use*], [*what to check*],
+    [read one line], [`fgets`], [whether null + whether there is a newline (truncation)],
+    [a line of unknown length], [an `fgetc` loop + reallocation], [preserve the original when `realloc` fails],
+    [print into a string], [`snprintf`], [return value ≥ buffer size means truncation],
+    [parse user input], [`fgets` + `strtol`/`sscanf`], [the item count and the range],
+    [temporary file], [`tmpfile`], [`tmpnam` is a race condition],
+    [debugging output], [`fprintf(stderr, …)`], [not fully buffered (mostly unbuffered) — likely to survive],
+    [never to be used], [`gets`, `%s` without a width, `%n`], [—],
   )
 ]
 
-We have passed the strings. The next chapter is the drawer of odds and ends and a
-treasury of accidents — `<stdlib.h>`.
+We have crossed the minefield of input and output. The next chapter is another
+minefield just as famous — the string functions.

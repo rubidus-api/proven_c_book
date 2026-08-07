@@ -135,7 +135,7 @@ the most accurate.
   [OnlineGDB (`onlinegdb.com`)], [Editing, running and debugging. Breakpoints and variable views in the browser], [Learning a debugger before installing one (chapter 17)],
   [Wandbox (`wandbox.org`)], [Pick a compiler build and run. Several files too], [Finding code that only works on your own compiler],
   [Coliru (`coliru.stacked-crooked.com`)], [Write the command line yourself. No frills], [Watching warnings change as options change],
-  [Replit (`replit.com`)], [A workspace with files and a terminal. Needs an account], [Examples split across files (chapter 51)],
+  [Replit (`replit.com`)], [A workspace with files and a terminal. Needs an account], [Examples split across files (chapter 52)],
   [TIO (`tio.run`)], [Dozens of languages in one place], [Comparing the same task in another language],
 )
 
@@ -144,10 +144,10 @@ the most accurate.
 #dtable(
   columns: 3,
   [*Name*], [*What it shows*], [*Chapters it connects to*],
-  [Python Tutor's C mode (`pythontutor.com/c.html`)], [Steps through execution and draws the stack, the heap and pointers], [Chapters 34–42 (pointers, arrays, lifetime, dynamic memory)],
-  [Compiler Explorer], [Which machine-code lines a source line became], [Chapter 13 (optimisation), chapter 46 (what an operator becomes)],
-  [`cdecl.org`], [A complicated declaration, put into words], [Chapter 57 (reading declarations)],
-  [Godbolt's execution pane], [The output and exit status of the same code], [Chapter 50 (exit status)],
+  [Python Tutor's C mode (`pythontutor.com/c.html`)], [Steps through execution and draws the stack, the heap and pointers], [Chapters 35–43 (pointers, arrays, lifetime, dynamic memory)],
+  [Compiler Explorer], [Which machine-code lines a source line became], [Chapter 13 (optimisation), chapter 47 (what an operator becomes)],
+  [`cdecl.org`], [A complicated declaration, put into words], [Chapter 58 (reading declarations)],
+  [Godbolt's execution pane], [The output and exit status of the same code], [Chapter 51 (exit status)],
 )
 
 Visualisers *pay off on small code*. Past twenty or thirty lines the picture gets
@@ -166,7 +166,7 @@ considerably in character, so choose by purpose.
   [Advent of Code (`adventofcode.com`)], [A puzzle a day through December, any language], [Good practice at input parsing and data structures],
   [Codewars (`codewars.com`)], [Short problems by difficulty; other people's solutions are visible], [Training at polishing one short function],
   [HackerRank, LeetCode], [Interview problem banks], [Algorithm-centred; a different thing from learning C],
-  [Project Euler], [Mathematics through programs], [You will meet integer overflow in the flesh (chapters 26 and 72)],
+  [Project Euler], [Mathematics through programs], [You will meet integer overflow in the flesh (chapters 27 and 73)],
 )
 
 #qa[
@@ -181,7 +181,7 @@ considerably in character, so choose by purpose.
   short problems*; the other is *one small program carried all the way to the
   end.* Without the second you never meet the difference between "code that
   runs" and "code you can hand to someone." That second sense is what Part XII
-  (proven) and chapter 90, C in practice, are about.
+  (proven) and chapter 91, C in practice, are about.
 ]
 
 == What can be read for free
@@ -207,13 +207,13 @@ any of the following shows up, *the material is at least twenty years behind*.
 #dtable(
   columns: 2,
   [*If you see this*], [*Why it is stale*],
-  [`void main()`], [A form the standard never defined (chapter 50)],
+  [`void main()`], [A form the standard never defined (chapter 51)],
   [`gets(buf)`], [Removed outright in C11. There was no safe way to use it],
-  [A cast on `malloc`'s return], [Unnecessary in C, and it hides a missing header (chapter 42)],
+  [A cast on `malloc`'s return], [Unnecessary in C, and it hides a missing header (chapter 43)],
   [`#include <conio.h>`, `clrscr()`], [Belongs to old DOS compilers (Turbo C)],
   [Declarations with `int` omitted (`f(x) int x; { }`)], [K\&R-era syntax, gone entirely in C23 (chapter 24)],
-  ["A pointer is just an integer"], [An explanation that ignores provenance and alignment (chapter 36)],
-  [Assuming `char` is always signed], [It is implementation-defined (chapters 26, 64)],
+  ["A pointer is just an integer"], [An explanation that ignores provenance and alignment (chapter 37)],
+  [Assuming `char` is always signed], [It is implementation-defined (chapters 27, 65)],
 )
 
 There are *trustworthy* signals too — material that says which edition it speaks
@@ -289,10 +289,10 @@ conventions that help in reading.
 
 - "shall" is a requirement, "shall not" a prohibition. *Break a shall in a constraints
   clause and a diagnostic follows; break a shall outside the constraints and it is
-  undefined behaviour* (chapter 49).
+  undefined behaviour* (chapter 50).
 - Annex J gathers the *lists* of undefined, unspecified and implementation-defined
   behaviour. It is a good place for skimming all at once the three grey zones treated
-  in chapter 49.
+  in chapter 50.
 - The "EXAMPLE" at the end of each clause, and the footnotes, are explanation, not
   normative. Where there is a dispute, the sentences of the body are the criterion.
 
@@ -304,7 +304,7 @@ Three of them.
   habit of opening the standard itself.
 - *Write more* — loosen your hands on problem sites, and carry one small program
   all the way to the end.
-- *Look deeper* — the fields chapter 90 points at (systems programming, embedded,
+- *Look deeper* — the fields chapter 91 points at (systems programming, embedded,
   performance) and the library design shown in Part XII.
 
 What this book aimed at was the *floor* under all three. With a solid floor,

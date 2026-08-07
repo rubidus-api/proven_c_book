@@ -1,249 +1,408 @@
 #import "../../book/lib.typ": *
 
-= Integers — a world of finite numbers
+= The map of types — how the standard divides them
 
 #prereq(
-  ([chapter 7, Representing integers], [sign and overflow]),
-  ([chapter 23, Declaring variables], [a type is the shape of the vessel]),
+  ([chapter 23, Declaring variables], [a declaration — type, name and first value]),
+  ([chapter 6, Memory and addresses], [size and alignment]),
+  ([chapter 8, Representing numbers], [how integers and floating point are represented]),
 )
 
 #deepqa[
-  Chapter 7 said that overflow of unsigned integers is "defined wrap-around"
-  while signed overflow is outside the contract. But is the `int` we made in
-  chapter 23 signed or unsigned — which world have our variables been in all
-  along?
+  Chapter 23 kept using the word "type" while writing `int x = 0;`. So what
+  exactly does a type *settle*? Name three.
 ][
-  `int` is a *signed* integer — that is, our variables have been in the world of
-  "outside the contract if it overflows." Fortunately the examples so far never
-  came near the ±2.1 billion container, but it is time to draw that boundary
-  exactly. The kinds and sizes of containers, where the boundary lies, and the
-  rule when it is crossed — that is this chapter.
+  Four can be named.
+
+  - *Size* --- how many bytes this value occupies (chapter 6).
+  - *Representation* --- through what eye those bytes are read (chapter 7 and 8's
+    two's complement and IEEE 754).
+  - *Permitted operations* --- what may be done (`%` only on integers, `++` only on
+    real types and pointers).
+  - *Contract* --- what the compiler checks and what it guarantees.
+
+  This chapter sets out *what branches exist* under that word "type", exactly as
+  the standard divides them.
 ]
 
 #organizer[
-#idx("integer types")  Part VI forges values and governs flow. Its first chapter
-  faces C's integers head on — how the world of representation learned in
-  chapter 7 appears as C's family of types, what face overflow wears in
-  practice, and the modern C practice (`<stdint.h>`).
+#idx("type")  This book has been using words like "arithmetic type", "scalar type",
+  "aggregate" and "complete type" already. This is where they get defined. The whole
+  classification of §6.2.5 gets built --- object and function, complete and
+  incomplete, basic types, integer, real and arithmetic, derived, scalar and
+  aggregate, qualifiers --- and on top of it the types of `<stdint.h>` that write
+  their width into their name. The next chapter's integers, and the one after that's
+  promotion, stand entirely on this vocabulary.
 ]
 
 #chapter-questions()
 
-== The family of integer types
+== The four things a type settles
 
-C's integer types are not `int` alone but a family. The basic members on the
-signed side, in order of size, are `char` (1 byte — the "byte = character" story
-of chapter 4 survives in the name), `short`, `int`, `long` and `long long`, and
-putting `unsigned` in front of each gives its unsigned partner (`unsigned int`
-and so on). The standard fixes only each type's *minimum* size — `int` at least
-16 bits, `long` at least 32 — so the exact size is the platform's business (on
-mainstream systems `int` is 32 bits).
+Given the same eight bytes, reading them as a `double` gives 3.14 and as a `long`
+gives 4614253070214989087 (exactly as chapter 8 showed). Bytes do not know what they
+are; *only the type knows.*
 
-If "it differs by machine" sounds uneasy, that is an accurate instinct — which
-is why modern C practice is to use types with the size fixed in the name. The
-`<stdint.h>` toolbox's `int32_t` (exactly 32 bits, signed), `uint8_t`, `int64_t`
-and the like. Wherever size is part of the contract — file formats,
-communication, everywhere chapter 5's endianness matters — that side is standard
-practice. C23 added `_BitInt(N)` on top: an integer whose bit width you write
-yourself. This book's examples use `int` by default for simplicity on the page,
-but switch to the `<stdint.h>` family in scenes where size matters.
+#dtable(
+  columns: 3,
+  [*What a type settles*], [*Example*], [*More*],
+  [size], [`sizeof(int)` = 4], [chapter 6],
+  [representation], [`-1` as an `int` is `FF FF FF FF`], [chapters 7, 8],
+  [permitted operations], [`%` only on integers, `/` on arithmetic types], [chapters 28, 47],
+  [contract], [`const` says "I will not change this"], [chapters 23, 49],
+)
 
-== A map of the basic types — minimum and actual ranges
+So "knowing a type" is not knowing syntax but *knowing those four*. And the standard
+settles those four branch by branch.
 
-Here we gather in one place exactly what C's basic types are and how large each
-is. This section is a place to look things up.
+== The first division — object types and function types
 
-*Integer types* come in five tiers, each with a signed and an unsigned version —
-`char`, `short`, `int`, `long`, `long long`. To these are attached `bool` (C99)
-and the character-specific types (`char16_t`, `char32_t`, `wchar_t`).
-*Floating types* are three — `float`, `double`, `long double`.
+The topmost division is in two.
 
-What the standard pins down is *not size but minimum range*. The common saying
-"int is 4 bytes" is not a sentence of the standard but an observation that most
-platforms are like that today.
+#dtable(
+  columns: 3,
+  [*Branch*], [*What it is*], [*Examples*],
+  [*object type*], [describes a place that holds a value], [`int`, `double`, `struct point`, `int[10]`, `char *`],
+  [*function type*], [describes something that works — by return type and parameters], [`int(void)`, `void(int, char *)`],
+)
+
+This division shows itself in practice. *`sizeof` cannot be applied to a function
+type*, and being no object it has neither size nor alignment. That is why treating a
+function as a value means turning it into *a pointer to a function* (chapter 57).
+
+=== Complete and incomplete types
+
+Object types divide again --- *is the size known?*
+
+#dtable(
+  columns: 3,
+  [*State*], [*What it cannot do*], [*Example*],
+  [complete type], [(no restriction)], [`int`, `struct point` once its definition is seen],
+  [incomplete type], [`sizeof` is unusable, and no object of it can be made], [an array with no size `int a[]`, a `struct node` declared by tag only],
+  [`void`], [an incomplete object type *that cannot be completed*], [its set of values is empty],
+)
+
+An incomplete type is not a defect but *a tool*. It can express "I know this type
+exists and nothing of its insides", which is what makes an *opaque type* possible ---
+hiding the insides in a header and passing only pointers (`FILE *` is the archetype).
+Hiding the insides means callers cannot depend on them, and that is the design gain
+(chapter 45).
+
+#qa[
+  `void` means "nothing at all", so why is it a type?
+][
+  Because it does three different jobs in three places.
+
+  - *`void f(void)`* --- "there is no value to return" and "there are no parameters".
+  - *`(void)printf(…)`* --- a cast that writes down "I am discarding this value".
+  - *`void *`* --- "what kind of object it points at is not settled yet". This one
+    alone is *a complete object type* (being a pointer, it has a size).
+
+  The standard's definition is "an incomplete object type whose set of values is
+  empty and *that cannot be completed*". So no `void` variable can be made and
+  `sizeof(void)` is not usable in the standard --- GCC gives 1 as an extension
+  (chapter 12's grey area).
+]
+
+== The basic types
+
+What the standard calls the *basic types* is exactly these three groups together.
+
+#dtable(
+  columns: 2,
+  [*What the basic types are (§6.2.5p18)*], [*Note*],
+  [`char`], [just one. One of the three character types below],
+  [the signed and unsigned integer types], [`short`, `int`, `long`, `long long` and their `unsigned` partners],
+  [the floating types], [`float`, `double`, `long double`, and complex],
+)
+
+*Enumerated types are not basic types.* They are integer types, but they do not
+appear in the list of basic types --- a commonly confused spot.
+
+The standard nails down one more sentence about them: *"even if the implementation
+defines two or more basic types to have the same representation, they are
+nevertheless distinct types."* The character types of the next section are the
+example of that sentence.
+
+=== There are three character types
+
+#dtable(
+  columns: 3,
+  [*Type*], [*Signedness*], [*Where it is used*],
+  [`char`], [the implementation settles it --- *the same range, representation and behaviour* as either `signed char` or `unsigned char`], [for holding characters],
+  [`signed char`], [signed], [a small signed integer],
+  [`unsigned char`], [unsigned], [*for looking at bytes* (chapter 46)],
+)
+
+The heart of it is the sentence a footnote nails down --- *whichever choice was made,
+`char` is a separate type from the other two and is compatible with neither.* There
+are three, not two.
+
+#misconception[
+  "`char` is just `signed char`"
+][
+  It depends on the platform. On x86 Linux it is signed; on ARM Linux and many
+  embedded toolchains it is unsigned. `CHAR_MIN` in `<limits.h>` being 0 or
+  `SCHAR_MIN` tells you which.
+
+  The difference bites quietly in one place. Put a byte of 128 or more into a `char`
+  and compare, and on the signed side it is *negative*.
+
+  ```c
+  char c = 0xFF;
+  if (c == 0xFF) { … }      /* does not hold with a signed char */
+  ```
+
+  So the discipline is simple --- *`char` for letters, `unsigned char` for bytes,
+  `int8_t` for small numbers.* Separate the three uses by name and this trap never
+  appears.
+]
+
+#platform[
+  C23: `bool` is an unsigned integer type
+][
+  C23's §6.2.5p8 says that *`bool`* together with the unsigned types corresponding to
+  the standard signed integer types are collectively the *standard unsigned integer
+  types*. So `bool` is an integer type, an arithmetic type, and a scalar.
+
+  The measurement confirms it --- the type of `bool + 0` is `int` (it was promoted).
+  All that is special is the value: it is always 0 or 1, since putting any scalar into
+  a `bool` gives 0 for zero and 1 for anything else. C99's `_Bool` gained the keyword
+  `bool` in C23, and `<stdbool.h>` became a header you may or may not include
+  (chapter 79).
+]
+
+== Integer, real, arithmetic — the collective names
+
+From here comes the source of the vocabulary this book has been using. These names
+are not *branches* of the tree but *words that gather several branches.*
+
+#dtable(
+  columns: 3,
+  [*Name*], [*What it gathers (§6.2.5)*], [*Where the name is used*],
+  [integer types], [`char` + signed integer + unsigned integer + *enumerated types*], [the operands of `%` and `<<`],
+  [real types], [integer types + *real* floating types (complex excluded)], [the operands of `++` and `--` (chapter 47)],
+  [arithmetic types], [integer types + floating types (complex included)], [the operands of `+`, `-`, `*`, `/`; what promotion acts on],
+  [scalar types], [arithmetic types + pointers + *`nullptr_t`* (C23)], [the condition of `if` and `while`, the operand of `!`],
+  [aggregate types], [array + struct --- ★*not union*], [the rules for initializer lists],
+)
+
+In chapter 47's tables of operator contracts you will meet cells such as "operand: a
+real type or a pointer", and now they can be read exactly.
+
+#misconception[
+  "A union is an aggregate too"
+][
+  Not in C. Section 6.2.5p26 says only *"array and structure types are collectively
+  called aggregate types"*. The union is missing.
+
+  The reason is that "aggregate" means *holding several things at once*. A union has
+  only one member alive at a time (chapter 46's active member), so it does not fit
+  that definition.
+
+  *C++ differs* --- there a union that meets the conditions is an aggregate. The
+  difference shows when comparing the two languages' initialisation rules.
+]
+
+#figure-svg("type-tree", caption: [How the standard divides types. A dashed box is a name that gathers several branches.])
+
+== Derived types — made out of what is there
+
+New types can be *constructed* from object and function types, and what is so
+constructed is a *derived type*.
+
+#dtable(
+  columns: 3,
+  [*Derivation*], [*From what to what*], [*More*],
+  [array], [from element type T to "array of T"], [chapter 38],
+  [structure], [holding several types *in sequence*], [chapter 44],
+  [union], [holding several types *overlapping*], [chapter 46],
+  [function], [from return type T to "function returning T"], [chapter 24],
+  [pointer], [from referenced type T to "pointer to T"], [chapter 35],
+  [atomic], [`_Atomic(T)` --- a conditional feature], [chapter 77],
+)
+
+*These constructions apply recursively.* "An array of 10 pointers to int" and "a
+pointer to a function returning int" are both built that way. That recursion is
+exactly why chapter 58, "Reading declarations", is hard, and the standard gathers
+three of them --- *array, function and pointer* --- under the name *derived declarator
+types*. Those three are precisely what must be unwrapped from the inside out when
+reading a declaration.
+
+== Qualifiers — a qualified edition of the same type
+
+`const`, `volatile` and `restrict` do not make new types; they make *qualified
+versions*.
+
+#dtable(
+  columns: 3,
+  [*Qualifier*], [*What it promises*], [*More*],
+  [`const`], [I will not change it through this name], [chapter 23],
+  [`volatile`], [it may change without my knowing, so do not optimise it away], [chapters 13, 75, 77],
+  [`restrict`], [this object is reached only through this pointer], [chapter 38],
+)
+
+A qualified type and an unqualified one have *the same size, representation and
+alignment* --- what changes is only *what may be done*. So `const int` is the same
+four bytes as `int`, and adding `volatile` does not make a value bigger.
+
+#demo("examples-en/ch26/type_map.c")
+
+`_Generic` is the device that picks, *at compile time*, on "what is this expression's
+type" (C11). Instead of learning the classification in words, we asked the compiler
+directly. Three things in the output are worth pointing at.
+
+- *`uint8_t` came out as `unsigned char`* --- an alias, not a new type.
+- *The constant `RED` is `int` while the enum variable is `unsigned int`* --- which
+  integer type an enumeration is paired with is implementation-defined.
+- *Both `char + 0` and `uint8_t + 0` are `int`* --- the promotion of the
+  chapter-after-next showing its face early.
+
+== Types with their width in the name — `<stdint.h>`
+
+That was the types the language gives; now the ones *the standard library names for
+us*. They are the direct answer to the problem that `int`'s size differs by
+implementation (the next chapter).
+
+#demo("examples-en/ch26/stdint_kinds.c")
+
+=== What separates the three families is "what they demand"
 
 #dtable(
   columns: 4,
-  [*type*], [*minimum range guaranteed*], [*minimum width*], [*limit macros*],
-  [`signed char`], [−127 to +127], [8 bits], [`SCHAR_MIN` `SCHAR_MAX`],
-  [`unsigned char`], [0 to 255], [8 bits], [`UCHAR_MAX`],
-  [`char`], [one of the two above (implementation-defined)], [8 bits], [`CHAR_MIN` `CHAR_MAX`],
-  [`short`], [−32767 to +32767], [16 bits], [`SHRT_MIN` `SHRT_MAX`],
-  [`unsigned short`], [0 to 65535], [16 bits], [`USHRT_MAX`],
-  [`int`], [−32767 to +32767], [16 bits], [`INT_MIN` `INT_MAX`],
-  [`unsigned int`], [0 to 65535], [16 bits], [`UINT_MAX`],
-  [`long`], [−2147483647 to +2147483647], [32 bits], [`LONG_MIN` `LONG_MAX`],
-  [`unsigned long`], [0 to 4294967295], [32 bits], [`ULONG_MAX`],
-  [`long long`], [about ±9.2×10#super[18]], [64 bits], [`LLONG_MIN` `LLONG_MAX`],
-  [`unsigned long long`], [0 to about 1.8×10#super[19]], [64 bits], [`ULLONG_MAX`],
+  [*Family*], [*Names*], [*What it guarantees*], [*Is it there?*],
+  [exact width], [`int8_t`, `uint32_t`, …], [*exactly* N bits, *no padding bits*, two's complement], [*optional* --- defined only by implementations that have such a type],
+  [minimum width], [`int_least8_t`, `uint_least32_t`, …], [the smallest with *at least* N bits], [8, 16, 32, 64 are *required*],
+  [fastest], [`int_fast8_t`, `uint_fast32_t`, …], [*usually the fastest* with at least N bits], [8, 16, 32, 64 are *required*],
+  [holding a pointer], [`intptr_t`, `uintptr_t`], [a `void *` put in and taken back out compares equal], [*optional* (chapter 35)],
+  [widest], [`intmax_t`, `uintmax_t`], [holds the value of any integer type], [*required*],
 )
 
-Your eye will go to the minimum range being −127 (not −128). That is because the
-old standard permitted all three sign representations (chapter 7); now that C23
-has pinned two's complement down, it is effectively −128.
+The measurement shows the difference --- on this machine `uint_fast32_t` was *eight
+bytes*. Thirty-two bits would have sufficed and it took sixty-four; that is what
+"fast" means (matching the register width is faster). *It is not a type for saving
+space.*
 
-The standard also fixes *the order of sizes*. Widths cannot run against this
-order.
+#qa[
+  "Optional"? Is there really a machine without `uint32_t`?
+][
+  Rare, but yes. An exact-width type demands a type with *no padding bits*, and some
+  DSPs have a 16-bit `char` or padding bits in their integers, so they can offer no
+  type that is "exactly 8 bits". Such an implementation *does not define* `uint8_t`.
 
-```text
-char  ≤  short  ≤  int  ≤  long  ≤  long long
-```
+  Practice judges it this way. If you face only desktops, servers and mainstream
+  embedded targets, use the exact-width types freely (rungs 1–2 of chapter 12's
+  ladder). If you write a library facing *every* C implementation, use the
+  minimum-width types and, where exact width is genuinely required, let the build say
+  so with something like `static_assert(sizeof(uint8_t) == 1)` (rung 3).
+]
 
-And `sizeof(char)` is always 1 — because a byte is by definition the size of a
-`char` (chapter 4). How many bits are in a byte, though, is told by `CHAR_BIT`,
-and the standard guarantees only 8 or more.
+=== The three traps of `uint8_t`
 
-The limits of *floating types* are the business of `<float.h>`. Picking only
-those in frequent use:
-
-#dtable(
-  columns: 3,
-  [*macro*], [*meaning*], [*for IEEE 754 double*],
-  [`FLT_DIG` `DBL_DIG`], [trustworthy decimal digits], [6 / 15],
-  [`FLT_MAX` `DBL_MAX`], [largest representable value], [about 1.8×10#super[308]],
-  [`FLT_MIN` `DBL_MIN`], [smallest normalised value], [about 2.2×10#super[−308]],
-  [`FLT_EPSILON` `DBL_EPSILON`], [smallest difference distinguishable from 1.0], [about 2.2×10#super[−16]],
-  [`FLT_RADIX`], [the base of the exponent], [2],
-)
-
-`DBL_EPSILON` is met again in chapter 47 when comparing floating-point numbers —
-it is the value used to set the criterion for judging "equal".
-
-#demo("examples-en/ch26/limits.c")
-
-What matters is that this output belongs to *the machine that made this book*.
-Run it on another machine and different numbers may appear — and that is exactly
-this section's point: *do not assume sizes; ask.*
-
-== The type of an integer constant — the same value, typed by its notation
-
-Chapter 20 showed the four bases and the suffixes for writing an integer constant.
-What was deferred there --- *which type the compiler gives that constant* --- can be
-faced now that integers have been met.
-
-The rule is "walk a list and take the first type that fits". But *the list differs by
-base.*
-
-#dtable(
-  columns: 3,
-  [*Unsuffixed constant*], [*The candidate list, in order*], [*The point*],
-  [decimal (`4294967295`)], [`int` → `long` → `long long`], [*unsigned types are not candidates*],
-  [octal, hex, binary (`0xFFFFFFFF`)], [`int` → `unsigned int` → `long` → `unsigned long` → `long long` → `unsigned long long`], [unsigned types are *interleaved*],
-)
-
-Adding a suffix narrows the list by hand --- `u` walks only the unsigned ones, `l`
-starts at `long`, `ll` at `long long`.
-
-The difference shows up for real.
-
-#dtable(
-  columns: 3,
-  [*Written*], [*Measured `sizeof`*], [*Type*],
-  [`0xFFFFFFFF`], [4], [`unsigned int`],
-  [`4294967295`], [8], [`long`],
-)
-
-*The same number, a different type.* And once the type differs, everything downstream
-differs --- promotion and the usual arithmetic conversions (chapter 28) apply
-differently, and comparisons can come out reversed.
+The most used, and the most injuring, so it gets its own treatment.
 
 #antipattern[
-  Writing a bit mask in decimal
+  1. A number goes in and a letter comes out
 ][
   ```c
-  x & 4294967295      /* becomes an operation with a long */
-  x & 0xFFFFFFFFU     /* visibly an unsigned 32-bit mask */
+  uint8_t age = 65;
+  printf("%c\n", age);      /* 'A' comes out */
+  putchar(age);             /* the same trap */
   ```
 
-  Practice writes masks in hexadecimal not only because it reads better. *The type
-  differs*, and above all *the number of bits is visible* --- `0xFFFF` is 16 bits and
-  `0xFFFFFFFF` is 32, right there in the digit count. Adding `U` to pin the signedness
-  as well is the convention (shifting a signed integer is chapter 27's grey area).
+  `uint8_t` is usually an *alias* for `unsigned char`, so it slots straight into a
+  place expecting a character. The types match, so the compiler says nothing.
+
+  *`uint8_t` is safer used as "a byte" than as "a small number".* For a small number
+  a person will read, use `int` or `int16_t`; if it must be printed, use `%u` (it is
+  promoted, so it arrives as `unsigned`) or `PRIu8`.
 ]
 
-#qa[
-  What happens if the value fits nothing in the list?
+#antipattern[
+  2. Thinking it is 8-bit arithmetic
 ][
-  If it does not fit even the widest candidate, it goes into an *extended integer type
-  the implementation provides*, or, if there is none, it is a constraint violation and
-  gets diagnosed. Meeting this in practice has one answer --- *use the fixed-width
-  types and their macros* (`UINT64_C(…)`, `<stdint.h>`). "Do not leave the type to the
-  compiler" is the same discipline as the rest of this chapter.
+  ```c
+  uint8_t a = 200, b = 100;
+  a + b     /* 300, not 44 */
+  ```
+
+  The measurement shows it. `uint8_t` is narrower than `int`, so before arithmetic it
+  is *promoted to `int`* (the chapter after next). The computation happens in 32 bits,
+  and to make it wrap you must *put it back* --- `(uint8_t)(a + b)` is 44.
+
+  This is a safeguard rather than a defect: multiply two narrow types and the
+  intermediate result is not cut off. Only *the expectation that "I used an 8-bit
+  variable so it will compute in 8 bits" must be abandoned.*
 ]
 
-== Where size is the contract — fixed-width types
+#antipattern[
+  3. Thinking it is a new type
+][
+  A `typedef` makes an alias, not a new type (chapter 58). So `uint8_t` and
+  `unsigned char` are *the same type*, and neither `_Generic` nor overloading can tell
+  them apart. The measurement's first output is the evidence.
 
-There are places where the width must be exactly determined: file formats,
-network protocols, hardware registers. In such places use the fixed-width types
-of `<stdint.h>`.
+  For the same reason the compiler will not catch this.
+
+  ```c
+  void send(uint8_t port, uint8_t value);
+  send(value, port);        /* swapped, and it stays silent */
+  ```
+
+  To distinguish them by type, *wrapping in a struct* is C's way ---
+  `struct port { uint8_t v; };`. The price is clumsier syntax; what you buy is the
+  compiler's checking.
+]
+
+=== So which do you use
 
 #dtable(
   columns: 3,
-  [*kind*], [*examples*], [*meaning*],
-  [exact width], [`int8_t` `uint16_t` `int32_t` `uint64_t`], [exactly that many bits. not provided if unavailable],
-  [minimum width], [`int_least16_t`], [the smallest type that is at least that wide],
-  [fastest], [`int_fast32_t`], [at least that wide and fastest for the machine to handle],
-  [pointer-sized], [`intptr_t` `uintptr_t`], [an integer able to hold a pointer (mind chapter 14's provenance)],
-  [largest], [`intmax_t` `uintmax_t`], [the widest integer],
-  [size and difference], [`size_t` `ptrdiff_t`], [the types of a size and of a pointer difference],
+  [*In this place*], [*use this*], [*why*],
+  [protocols, file formats, hardware registers], [exact width `uint32_t`], [the byte count is the contract (chapter 46)],
+  [portable code facing every implementation], [minimum width `uint_least16_t`], [exact width is optional],
+  [loop counters, local computation], [fastest `uint_fast32_t`, or simply `int`], [where speed is worth more than width],
+  [sizes, indices, byte counts], [`size_t` (`<stddef.h>`)], [it is `sizeof`'s type and covers any array],
+  [the difference of two pointers], [`ptrdiff_t` (`<stddef.h>`)], [a sign is needed (chapter 38)],
+  [a small number a person will read], [`int`], [it gets promoted to `int` anyway],
 )
 
-Each has its limit macros too — `INT32_MAX`, `UINT64_MAX`, `SIZE_MAX`,
-`PTRDIFF_MAX` and so on. Their format specifiers come from `<inttypes.h>`'s
-`PRId32` family (appendix B).
+Emphasise that last row as practice's default. *With no particular reason, use
+`int`.* The types with a width in their name are a tool for *places where the width
+is the contract*, not something good to sprinkle about for thrift.
 
-The rule is simple. *If the meaning is "this machine's natural integer", `int`;
-if "a size or an index", `size_t`; if "a width fixed by a format", a
-fixed-width type.*
-
-== Seeing the boundary with our own eyes
-
-The edge of a container is told by the `<limits.h>` toolbox. And the
-wrap-around of the unsigned world — the one learned on the page in chapter 7 —
-can now be run and shown.
-
-#demo("examples-en/ch26/wrap.c")
-
-One new format has joined — unsigned integers are printed with `%u`, not `%d`
-(chapter 22's format contract growing along with the family of types). And the
-third line is exactly chapter 7's promise: add 1 to the maximum and you get 0 —
-the clock has gone round once, and this is *defined* behaviour.
-
-The signed side is another matter. Code that computes `INT_MAX + 1` is outside
-the contract (undefined behaviour), so *it cannot even be put into this book's
-verification pipeline* — the UBSan equipped in chapter 17 catches exactly this
-kind of code at run time. That the same "+1" can be demonstrated on one side and
-not on the other is itself eloquent about the difference between the two worlds.
-
-#misconception[
-  "Overflow is a problem for special programs that handle large numbers"
+#realcase[
+  Where does `size_t` live?
 ][
-  Plausible, but the list of real accidents says the opposite. The commonest
-  overflows happen in perfectly ordinary places — taking the average of two
-  indices as `(a + b) / 2` and having *the intermediate sum* overflow (the famous
-  binary search bug, which hid in standard libraries for nearly twenty years); a
-  millisecond timer wrapping after 49 days (the Windows 95 49.7-day hang); a size
-  calculation `count * size` overflowing and taking an absurdly small piece of
-  memory (a classic of security incidents). What they share is that *the
-  intermediate calculation overflows, not the final value* — worrying about the
-  container is done for every intermediate step of an expression, not for the
-  result, and that is why checked arithmetic of the kind proven provides exists
-  (chapter 40).
+  A frequently confused spot, so it is written down. `size_t` and `ptrdiff_t` belong
+  not to `<stdint.h>` but to **`<stddef.h>`**. `<stdint.h>` is the home of the types
+  *with a width in their name*; `<stddef.h>` is the home of the types *the language
+  itself uses* (`size_t`, `ptrdiff_t`, `nullptr_t`, `max_align_t`).
+
+  In practice another header such as `<stdio.h>` often drags `size_t` in for you,
+  which blurs the distinction --- and *the day that header changes, it breaks.* The
+  discipline is to include the header that defines the type you use (the same grain
+  as chapter 53's story about names).
 ]
 
-#qa[
-  It seems strange that `char` is a member of the integer family — is it not a
-  character?
-][
-  In C a character and a small integer are the same thing — as chapter 8 taught,
-  a character is a number, and `char` is merely a one-byte integer container
-  holding that number. The value of the character literal `'A'` is simply 65. One
-  trap in advance — whether `char` is signed or unsigned *differs by platform*
-  (it is a third type, neither of the two). So `char` is not used for numeric
-  work; when a byte is needed, modern practice uses `uint8_t`. The proper story
-  of strings and `char` is in chapter 39.
-]
+== Summary — the standard's words and this book's chapters
 
-The containers of integers are sorted. The next chapter takes the operations on
-those containers — the truth about division, deferred in chapter 20, and the
-operators of the bit world learned in chapter 7, joining C's syntax.
+#dtable(
+  columns: 3,
+  [*The standard's word*], [*What it is*], [*The chapter that faces it*],
+  [object type / function type], [what holds a value / what works], [here, chapters 24, 57],
+  [complete / incomplete type], [is the size known], [here, chapter 45],
+  [basic types], [`char` + integer + floating], [here, chapters 27, 47],
+  [character types], [the three `char`, `signed char`, `unsigned char`], [here, chapters 9, 40],
+  [integer types], [`char` + integer + enumerated], [chapter 27],
+  [real types], [integer + real floating], [chapter 47],
+  [arithmetic types], [integer + floating], [chapter 29 (promotion)],
+  [derived types], [array, struct, union, function, pointer, atomic], [chapters 35–38, 44–46],
+  [scalar types], [arithmetic + pointer + `nullptr_t`], [chapters 30, 36],
+  [aggregate types], [array + struct], [chapters 38, 44],
+  [qualified types], [`const`, `volatile`, `restrict`], [chapters 23, 38, 75],
+)
+
+The map is open. From the next chapter we dig into its cells one at a time --- first
+*integers*. The family passed over here in the single phrase "the signed and unsigned
+integer types" gets its insides, its ranges, its representation and its accidents.

@@ -53,7 +53,7 @@ turn of a loop (counting, judging the fork), there is a technique of handling
 pushed this technique to its limit by grotesquely overlapping two pieces of C
 syntax, and the code became a legend under the name *Duff's device*. The code
 itself cannot be shown yet — this book has not introduced those constructs. A
-reunion is booked (chapter 31). One sentence suffices for now: in those days
+reunion is booked (chapter 32). One sentence suffices for now: in those days
 people squeezed the machine's beats with acrobatics like this, and today the
 acrobatics are the compiler's job (chapter 13).
 
@@ -83,7 +83,7 @@ and hit rates in everyday code run well past 90%.
   half the time and pays the line-flush penalty each time. In a sorted array the
   answer at the fork stays on one side for a long stretch and the predictions are
   almost all right. An invisible guessing circuit split the speed of the same
-  code several-fold (we use this feel again in chapter 30 — "an `if` is not
+  code several-fold (we use this feel again in chapter 31 — "an `if` is not
   free").
 ]
 
@@ -158,7 +158,7 @@ the contract does not mention?*
 The standard speaks in three ways — *it promises* (this is how it goes
 everywhere), *the implementation decides* (it varies, but must be documented), and
 *it says nothing at all*. The proper names for the three and the exact
-distinctions are chapter 49's business.
+distinctions are chapter 50's business.
 
 And practice holds one more place that has no name at all — *not guaranteed by
 the standard's words, yet working on every major implementation, and so widely
@@ -171,7 +171,7 @@ three above, a *grey area*.
   *Let this be nailed down: "grey area" is a name this book adopted for
   convenience.* Search the standard as long as you like and the phrase is not
   there. The standard uses three words, and each has an exact definition —
-  *implementation-defined*, *unspecified*, and *undefined behavior*. Chapter 49
+  *implementation-defined*, *unspecified*, and *undefined behavior*. Chapter 50
   treats those three properly.
 
   Why have another name, then? Because the standard's three leave one place in
@@ -213,12 +213,12 @@ names are enough.
 #dtable(
   columns: 2,
   [*The practice*], [*Where it is treated*],
-  [Pushing a pointer to zero with `memset` and calling it null], [Chapters 6, 35, 43],
-  [Walking a declared two-dimensional array as if it were flat], [Chapter 38],
-  [Subtracting an `offsetof` to recover the enclosing struct (`container_of`)], [Chapter 44],
-  [Writing `int rc = setjmp(env);` outside the four contexts the standard fixes], [Chapter 69],
-  [Forcing a layout with `#pragma pack`], [Chapter 44],
-  [Converting a function pointer to `void *` to print or pass it], [Chapter 56 — where POSIX requires it],
+  [Pushing a pointer to zero with `memset` and calling it null], [Chapters 6, 36, 44],
+  [Walking a declared two-dimensional array as if it were flat], [Chapter 39],
+  [Subtracting an `offsetof` to recover the enclosing struct (`container_of`)], [Chapter 45],
+  [Writing `int rc = setjmp(env);` outside the four contexts the standard fixes], [Chapter 70],
+  [Forcing a layout with `#pragma pack`], [Chapter 45],
+  [Converting a function pointer to `void *` to print or pass it], [Chapter 57 — where POSIX requires it],
 )
 
 #qa[
@@ -275,11 +275,11 @@ another standard makes the promise in its place.*
 #dtable(
   columns: 3,
   [*What C leaves open*], [*What promises instead*], [*Example*],
-  [The format and rounding of floating point], [IEEE 754 (= ISO/IEC 60559)], [That a `float` is 32 bits and how it rounds (chapters 8, 47)],
-  [Conversion between function pointers and `void *`], [POSIX (ISO/IEC 9945)], [`dlsym` returning a function's address as `void *` (chapter 56)],
-  [File names, paths, processes], [POSIX], [`open`, `fork`, the path separator (chapter 89)],
-  [The grammar of locale names], [POSIX], [The spelling `ko_KR.UTF-8` (chapter 65)],
-  [The character set], [Unicode (ISO/IEC 10646)], [When `__STDC_ISO_10646__` is defined (chapter 67)],
+  [The format and rounding of floating point], [IEEE 754 (= ISO/IEC 60559)], [That a `float` is 32 bits and how it rounds (chapters 8, 48)],
+  [Conversion between function pointers and `void *`], [POSIX (ISO/IEC 9945)], [`dlsym` returning a function's address as `void *` (chapter 57)],
+  [File names, paths, processes], [POSIX], [`open`, `fork`, the path separator (chapter 90)],
+  [The grammar of locale names], [POSIX], [The spelling `ko_KR.UTF-8` (chapter 66)],
+  [The character set], [Unicode (ISO/IEC 10646)], [When `__STDC_ISO_10646__` is defined (chapter 68)],
 )
 
 Do not read this as "C did not settle it, so anything goes". *Another contract is
@@ -295,7 +295,7 @@ lying in that place*, and it too was written with care.
   machine at all, the committee had to leave out what is true on particular
   machines only. Floating point was not nailed to IEEE 754, and function pointers
   were not equated with data pointers, because machines existed on which that
-  would not have worked (chapter 56's platform note is the list).
+  would not have worked (chapter 57's platform note is the list).
 
   *Second, the standard that fills the gap has its own reasons, and the two can
   collide.* POSIX required the conversion between function pointers and `void *`
