@@ -6,6 +6,38 @@ This project follows Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.24.0] - 2026-08-07
+
+### Added
+- **소스 문자 집합과 실행 문자 집합**(저자 지시 — "C에서는 소스 코드랑 결과물 문자셋을
+  서로 다르게 취급하잖아. 정확한 표준에서의 이름") — 개념은 9장, 도구는 17장에 나눠 실었다.
+  - **9장 「C가 가르는 두 문자 집합 — 소스와 실행」 신설** — 표준의 정확한 용어를 표로
+    확정했다: *source character set* / *execution character set* / *basic character set* /
+    *extended characters* / *extended character set*(§5.2.1). ★§5.2.2 는 실행 문자 집합의
+    멀티바이트 인코딩이 *소스 문자 집합의 것과 같을 것을 요구하지 않는다*고 명시한다.
+    두 집합이 만나는 자리는 번역 단계 1(물리적 소스 → 소스 문자 집합, 구현 정의)과
+    5(리터럴을 실행 문자 집합으로 변환, 대응이 없으면 *조용히 다른 글자*)로 못박혀 있다
+    (§5.1.1.2).
+  - ★**C23 이 새로 붙인 이름**: §6.2.9 「Encodings」의 *literal encoding* 과
+    *wide literal encoding*. 「실행 문자 집합」이 어떤 글자가 있는가라면 「리터럴 인코딩」은
+    그 글자를 어떤 값으로 적는가다.
+  - ★**흔한 오해 정정**: 「C23 이 translation character set 으로 개명했다」는 사실이 아니다.
+    그 개명은 *C++20/23* 의 것이고, C23(N3220) §5.2.1 은 여전히 source/execution character
+    set 을 쓴다 — 두 표준을 함께 읽을 때의 함정이라 플랫폼 상자로 실었다.
+  - 리터럴 접두어 표(`"…"` / `u8"…"` / `u"…"` / `U"…"` / `L"…"`)와 각각을 *누가* 보장하는가
+    (`__STDC_UTF_16__`·`__STDC_UTF_32__`·`__STDC_ISO_10646__`).
+  - **17장 「②와 ③을 컴파일러에 못박는 법」 신설** — `-finput-charset`/`-fexec-charset`/
+    `-fwide-exec-charset` 과 MSVC `/source-charset`/`/execution-charset`/`/utf-8` 대응표,
+    기본값(GCC·Clang=양쪽 UTF-8, MSVC=시스템 코드 페이지)의 차이.
+    ★실측 표: *바이트가 똑같은 EUC-KR 소스 파일*이 `-finput-charset` 을 주었느냐에 따라
+    `EA B0 80` 과 `B0 A1` 로 갈린다 — 틀리게 알려 줘도 오류 없이 통과한다.
+    ★실측: `-fexec-charset=EUC-KR` 로 빌드해도 `u8"가"` 만은 UTF-8 을 지켰다.
+  - ★실제 사례 「`__STDC_ISO_10646__` 이 참말만 하지는 않는다」 — `-fwide-exec-charset=EUC-KR`
+    로 와이드 리터럴 인코딩을 유니코드가 아닌 것으로 바꿔도(`L"가"[0]` = `U+A1B0`) 매크로는
+    여전히 `201706L` 로 정의되어 있었다. 기능 검사 매크로는 「구현이 그렇다고 말한 것」이지
+    「이 빌드에서 참인 것」이 아닐 수 있다.
+  - 예제 `ch17/charset.c` 신설(양판) — 리터럴 인코딩·`u8`·`u`/`U`/`L`·보장 매크로를 한 번에.
+
 ## [v0.23.0] - 2026-08-07
 
 ### Added

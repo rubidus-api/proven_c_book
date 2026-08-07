@@ -217,6 +217,88 @@ knack of diagnosis is *narrowing down which link broke*: open the source in hex
 (separating ① from ②), redirect the output to a file (separating ④), and the
 culprit appears.
 
+=== Nailing ② and ③ down for the compiler
+
+As chapter 9 showed, C treats the *source character set* and the *execution
+character set* as different things, and both are settled by the implementation.
+There are options that let a person state what "the implementation settles".
+
+#dtable(
+  columns: 3,
+  [*What it settles*], [*GCC, Clang*], [*MSVC*],
+  [② the encoding the compiler reads the source in], [`-finput-charset=…`], [`/source-charset:…`],
+  [③ the execution character set (the literal encoding)], [`-fexec-charset=…`], [`/execution-charset:…`],
+  [③ the wide literal encoding], [`-fwide-exec-charset=…`], [(no separate option)],
+  [②③ both to UTF-8 at once], [already the default], [`/utf-8`],
+)
+
+Knowing the defaults prevents accidents. GCC and Clang default to *UTF-8 on both
+sides*; MSVC defaults to *the current system code page* (CP949 on a Korean Windows).
+That single `/utf-8` removes half the Windows-side trouble for this reason.
+
+#demo("examples/ch17/charset.c")
+
+The listing was run *with the defaults*. Rebuild the same source with different
+options and the first line changes --- measured, it runs like this.
+
+#dtable(
+  columns: 4,
+  [*Source file encoding*], [`-finput-charset`], [`-fexec-charset`], [*the bytes of the literal*],
+  [UTF-8], [(default UTF-8)], [(default UTF-8)], [`EA B0 80`],
+  [UTF-8], [(default)], [`EUC-KR`], [`B0 A1`],
+  [EUC-KR], [`EUC-KR`], [(default UTF-8)], [`EA B0 80`],
+  [EUC-KR], [*not given*], [(default)], [`B0 A1` — the bytes simply passed through],
+)
+
+Two things can be read out of it.
+
+*First, the same source file becomes a different program.* Rows three and four are
+*byte-identical files* with different results. What separated them was whether the
+compiler was told "this file is EUC-KR".
+
+*Second, telling it wrongly usually raises no error.* In row four the compiler
+believed the file was UTF-8, said nothing, and put the bytes into the executable as
+they were. The screen may even look fine by accident --- if the terminal is CP949.
+*All four links wrong and the result looking right* is the nastiest state of all,
+because it breaks the moment one machine or one person changes.
+
+#qa[
+  When, then, is `-fexec-charset` used?
+][
+  Almost never is the answer. For a program written today the right move is
+  *everything in UTF-8*, and then these options are unnecessary (that is already the
+  GCC and Clang default).
+
+  There are only two places you reach for them. *Reviving old code* --- when an old
+  project stored in CP949 must be built without touching it, `-finput-charset=CP949`
+  tells the compiler the truth. And *a counterpart you cannot change* --- if output
+  must go to old equipment that accepts only EUC-KR, match the execution character
+  set to it.
+
+  Both are *places where an exception is being declared*, so follow chapter 12's
+  ladder and write the reason in the build file. One option changes every byte of
+  the program; if that is recorded nowhere, the next person spends a day finding it.
+
+  And where the bytes must not move, write `u8"…"` from the start (chapter 9) --- the
+  standard guarantees UTF-8 whatever the options. Measured: build the listing with
+  `-fexec-charset=EUC-KR` and `u8"가"` alone stayed `EA B0 80`.
+]
+
+#realcase[
+  `__STDC_ISO_10646__` does not only tell the truth
+][
+  The standard says that if some other encoding is used, this macro *shall not* be
+  defined (§6.10.10.3). Yet build with `-fwide-exec-charset=EUC-KR`, making the wide
+  literal encoding something other than Unicode, and --- while `L"가"[0]` becomes
+  `U+A1B0` (EUC-KR bytes) --- `__STDC_ISO_10646__` was still defined, as `201706L`.
+
+  The lesson is not to distrust macros but that *a feature-test macro is "what the
+  implementation said", which need not be "what is true in this particular build"* ---
+  especially in a build given options away from the defaults. In the language of
+  chapter 12's ladder, this is a place to confirm with a *test* rather than lean on
+  a macro alone.
+]
+
 #platform[
   When Hangul breaks on Windows
 ][

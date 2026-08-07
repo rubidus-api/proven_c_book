@@ -165,6 +165,105 @@ the web and for source code today. It is what this book's examples and C23's
   has collapsed will certainly cause an accident when handling Hangul.
 ]
 
+== The two character sets C keeps apart — source and execution
+
+So far this has been the world's story of character sets. Now for *how C handles
+them.* The core is one sentence --- **C treats the character set the source code is
+written in and the character set of the running program as two different things.**
+
+Start with the standard's exact names (§5.2.1).
+
+#dtable(
+  columns: 3,
+  [*The standard's term*], [*What it is*], [*Note*],
+  [source character set], [the set of characters the source file *is written in*], [mapped in translation phase 1],
+  [execution character set], [the set *interpreted in the execution environment*], [its members' values are implementation-defined],
+  [basic character set], [the common denominator both must have], [52 Latin letters, 10 digits, 32 graphic characters, space and a few controls],
+  [extended characters], [the locale-specific rest, absent from the basic set], [Hangul lives here],
+  [extended character set], [the basic set and the extended characters together], [],
+)
+
+The standard does not say the two must share an encoding. Section 5.2.2 splits them
+explicitly --- the execution character set may also contain multibyte characters,
+and those are *not required to have the same encoding as for the source character
+set.* And §5.2.1 drives in one more nail: *the values of the members of the
+execution character set are implementation-defined.*
+
+=== Where the crossing happens — translation phases 1 and 5
+
+The place the two sets meet is pinned down in the translation phases (chapter 54).
+
+#dtable(
+  columns: 2,
+  [*Phase*], [*What the standard makes it do (§5.1.1.2)*],
+  [1], [physical source file multibyte characters are mapped, *in an implementation-defined manner*, to the source character set],
+  [5], [each source character set member and escape sequence in character constants and string literals is *converted to the corresponding member of the execution character set*],
+)
+
+Phase 5's second sentence matters most --- where there is *no* corresponding member,
+it is converted, in an implementation-defined manner, to some member other than the
+null character. That is: *it quietly becomes a different character.* Not an error.
+
+#misconception[
+  "The letters I typed in the source go into the executable unchanged"
+][
+  For the basic character set --- letters, digits, symbols --- effectively yes. But
+  an *extended character* such as Hangul is converted once, in phase 5. Write the
+  source in UTF-8 and, if the execution character set is EUC-KR, EUC-KR bytes are
+  what get embedded --- chapter 17 measures exactly this.
+
+  So "what encoding the source file is in" and "what bytes the program emits" are
+  *different questions*. Treat them as one and you will never narrow down which link
+  to fix when Korean text breaks.
+]
+
+=== The more precise name C23 added — the literal encoding
+
+C23 added §6.2.9, "Encodings", tidying up one more name.
+
+#dtable(
+  columns: 2,
+  [*The standard's term (§6.2.9)*], [*Definition*],
+  [literal encoding], [an implementation-defined mapping of the characters of the execution character set to *the values in a character constant or string literal*],
+  [wide literal encoding], [the same mapping for `wchar_t` character constants and string literals],
+)
+
+If the "execution character set" is *which characters exist*, the "literal encoding"
+is *what byte values write them.* The standard requires only that both map the whole
+basic execution character set, and leaves the rest to the implementation.
+
+#platform[
+  C++ renamed all of this
+][
+  C++20 and C++23 overhauled the same concepts. C++ uses *translation character set*
+  in place of "source character set" and pins it to Unicode, while using the same
+  names, *literal encoding* and *wide literal encoding*, for the execution side.
+
+  So when reading both standards together, know that the vocabulary diverges ---
+  *C has no term "translation character set" yet.* C23 (N3220) §5.2.1 still says
+  source character set and execution character set, and only §6.2.9 adds the name
+  literal encoding.
+]
+
+=== Prefixes that nail the encoding down
+
+There is a way to fix an encoding *regardless* of the execution character set ---
+the literal prefixes (§6.4.5).
+
+#dtable(
+  columns: 4,
+  [*Literal*], [*Element type*], [*Encoding*], [*Who guarantees it*],
+  [`"가"`], [`char`], [the literal encoding --- implementation-defined], [nobody. Options change it],
+  [`u8"가"`], [`char8_t` (C23)], [*always UTF-8*], [the standard],
+  [`u"가"`], [`char16_t`], [UTF-16], [if `__STDC_UTF_16__` is 1],
+  [`U"가"`], [`char32_t`], [UTF-32], [if `__STDC_UTF_32__` is 1],
+  [`L"가"`], [`wchar_t`], [the wide literal encoding], [Unicode if `__STDC_ISO_10646__` is defined],
+)
+
+Where the bytes must not move --- protocols, file formats, a test's expected value
+--- write `u8"…"`. *Two characters that turn "the implementation decides" into "the
+standard decides."* The fuller story of the wide side returns in chapters 67 and 68.
+
 == Same letter, several representations — the security terrain hidden in text
 
 Unicode unifying the table did not end the problems. If anything, as the table
@@ -275,7 +374,7 @@ current length, the capacity of the container] — length queries are immediate,
 appending is free within the capacity, and when it runs out the content moves to
 a larger container. C++'s `std::string` and Rust's `String` have this structure,
 and proven's string handling, which we meet later, thinks in the same family by
-treating length explicitly (chapter 40).
+treating length explicitly (Part XII).
 
 #realcase[
   The magic of fifteen characters — small string optimisation in the MS STL
