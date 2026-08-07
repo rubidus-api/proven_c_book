@@ -144,7 +144,7 @@
 #realcase[
   Compiler Explorer — 브라우저에서 여는 컴파일러 박물관
 ][
-  설치가 필요 없는 도구 하나를 적어 둔다. `godbolt.org` 라는 웹사이트
+  설치가 필요 없는 도구 하나를 적어 둔다. #link("https://godbolt.org")[`godbolt.org`] 라는 웹사이트
   (Compiler Explorer)는 왼쪽에 C 코드를 적으면 오른쪽에 *그 코드가 어떤
   기계어가 되는지*를 즉시 보여 준다. 컴파일러와 판(gcc 4 부터 최신까지,
   clang, MSVC, 임베디드용 arm 계열 등 수백 종)과 최적화 옵션을 골라 가며

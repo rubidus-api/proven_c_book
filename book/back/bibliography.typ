@@ -21,7 +21,7 @@
   CPL→BCPL→B→C의 계보와 초기 설계 결정에 대한 창시자의 서술(4·12장).
 - Brian W. Kernighan, Dennis M. Ritchie, #box[The C Programming Language]
   (1978, 1988) — 이른바 K&R. C89 이전과 이후를 가르는 기준점.
-- WG14 문서 저장소(`open-std.org`) — 제안서와 결함 보고서. "이 조항이 왜
+- WG14 문서 저장소(#link("https://open-std.org")[`open-std.org`]) — 제안서와 결함 보고서. "이 조항이 왜
   이렇게 되었나"의 1차 자료.
 
 == 이 책이 인용한 사건들

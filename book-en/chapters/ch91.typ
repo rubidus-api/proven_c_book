@@ -155,7 +155,7 @@ not work" problems are wiring and power is an old proverb of this world.
 #realcase[
   Compiler Explorer — a museum of compilers opened in a browser
 ][
-  One tool that needs no installation. The website `godbolt.org` (Compiler
+  One tool that needs no installation. The website #link("https://godbolt.org")[`godbolt.org`] (Compiler
   Explorer) lets you write C on the left and shows, immediately on the right,
   *what machine code that code becomes*. You can compare across compilers and
   versions (from gcc 4 to the newest, clang, MSVC, embedded arm targets —

@@ -45,7 +45,10 @@ exactly the relationship that has caused the most confusion in C — arrays and
 pointers.
 
 *The rule: in most contexts an array's name decays into "the address of its first
-element."* That is why `int *p = a;` is legal — `a` was read as the pointer value
+element."* Put side by side what survives the decay and what is lost:
+
+#figure-svg("decay", caption: [The address is the same and the type is not — so how many elements there are disappears.])
+ That is why `int *p = a;` is legal — `a` was read as the pointer value
 `&a[0]`. And the notation `a[i]` is itself sugar for `*(a + i)` — add an integer
 to a pointer and you get the address "$i$ slots along, by that type's size"
 (pointer arithmetic — chapter 36's rules apply here), and dereferencing that is

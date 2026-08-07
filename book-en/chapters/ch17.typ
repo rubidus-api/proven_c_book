@@ -86,7 +86,7 @@ promised, even this chapter's installation is a demonstration, not homework).
   integrated environment is an excellent choice too, but its command and option
   spellings differ from this book's (the gcc/clang family), so it is not covered
   here. Interested readers can follow Microsoft's official documentation
-  (`learn.microsoft.com/cpp`), which guides from installation to the first
+  (#link("https://learn.microsoft.com/cpp")[`learn.microsoft.com/cpp`]), which guides from installation to the first
   program in detail.
 ]
 
@@ -113,12 +113,12 @@ the optimised machine code, and where a pointer points.
 #dtable(
   columns: 3,
   [*What*], [*Character*], [*Where it helps in this book*],
-  [Compiler Explorer (`godbolt.org`)], [Source and *assembly* side by side. Over a thousand C compiler builds], [Chapter 13 (optimization), chapter 16 (compilation), chapter 46 (operators)],
+  [Compiler Explorer (#link("https://godbolt.org")[`godbolt.org`])], [Source and *assembly* side by side. Over a thousand C compiler builds], [Chapter 13 (optimization), chapter 16 (compilation), chapter 46 (operators)],
   [OnlineGDB], [Editing, running and a *debugger* in the browser], [Following this chapter's debugger section without installing],
   [Wandbox, Coliru], [Running the same code under several compiler builds], [Spotting "works only on my compiler"],
   [Replit], [A workspace with files and a terminal], [Examples split across files (chapter 51)],
   [Python Tutor (C mode)], [Steps through execution and *draws memory*], [Chapters 34–42, pointers and memory],
-  [`cdecl.org`], [Puts a complicated declaration into words], [Chapter 55, reading declarations],
+  [#link("https://cdecl.org")[`cdecl.org`]], [Puts a complicated declaration into words], [Chapter 55, reading declarations],
 )
 
 #figure-svg("explorer", caption: [How a screen that shows one source line becoming several machine-code lines is laid out.])
@@ -169,7 +169,7 @@ wrote.
 ]
 
 Places that hand you problems, material that can be read for free, and a knack for
-spotting out-of-date writing are collected in *Appendix F*. Since this book has no
+spotting out-of-date writing are collected in *Appendix D*. Since this book has no
 exercises (see the preface), the hands-on part carries on from there.
 
 == Warnings — leave the free review switched on

@@ -43,6 +43,11 @@ ninth bit to hold 256 — 0. It is the structure of a clock, where one hour afte
 twelve is one. In mathematics this kind of arithmetic is called *modular
 arithmetic*.
 
+#figure-svg("int-wheel", caption: [Outside, the value read as an `unsigned char`; inside, the same bits read as a `signed char`.])
+
+The inner ring answers something in advance — *read the same bits as a signed
+type and the far side of the wheel becomes negative.* That is the next section.
+
 #mathbox[
   Modular arithmetic — the exact mathematics of finite numbers
 ][
@@ -276,6 +281,8 @@ eight new positions at the top?
 For unsigned numbers the answer is obvious — *fill with 0* (zero extension).
 The eight-bit `11111011` (= 251) becomes the sixteen-bit
 `00000000 11111011` (= 251). The value is unchanged.
+
+#figure-svg("sign-extend", caption: [The same eight bits: what fills the front depends on the signedness of the original type.])
 
 For signed numbers the same method causes an accident. The eight-bit
 `11111011` is $-5$ in two's complement, but filling the top with zeros gives

@@ -150,6 +150,76 @@ implementation is free." It is within a few years of chapter 8's IEEE 754
 languages alike, arbitrary from vendor to vendor, began to be governed by
 written agreements.
 
+=== The places the contract does not cover — grey areas
+
+Once there is a contract, one question follows at once: *what about the things
+the contract does not mention?*
+
+The standard speaks in three ways — *it promises* (this is how it goes
+everywhere), *the implementation decides* (it varies, but must be documented), and
+*it says nothing at all*. The proper names for the three and the exact
+distinctions are chapter 49's business.
+
+But practice has a fourth place. This book calls it a *grey area*.
+
+#dtable(
+  columns: 2,
+  [*What a grey area is*], [*What it is not*],
+  [Not guaranteed by the standard's words alone], [Not forbidden either — nothing says "do not"],
+  [Yet it really works on the major implementations], [Not luck — there is usually a reason],
+  [So widely used that it became the practice], [Still not a contract],
+)
+
+Why do such places arise? The standard writes the *lowest common denominator* —
+it promises only as much as would hold even on very odd machines. Real
+implementations usually give more. And once large codebases build on that extra
+room, compilers cannot easily take it back — *break it and half the world stops
+running.*
+
+Here are a few grey areas this book will meet, listed in advance. For now the
+names are enough.
+
+#dtable(
+  columns: 2,
+  [*The practice*], [*Where it is treated*],
+  [Pushing a pointer to zero with `memset` and calling it null], [Chapters 6, 35, 43],
+  [Walking a declared two-dimensional array as if it were flat], [Chapter 38],
+  [Subtracting an `offsetof` to recover the enclosing struct (`container_of`)], [Chapter 44],
+  [Writing `int rc = setjmp(env);` outside the four contexts the standard fixes], [Chapter 67],
+  [Forcing a layout with `#pragma pack`], [Chapter 44],
+)
+
+#qa[
+  So may a grey area be used, or not?
+][
+  *The judgement is a human one, case by case.* This book does not decide it for
+  you — an embedded project aiming at one machine and a library that may be
+  compiled anywhere have different answers. Four questions serve as criteria.
+
+  #dtable(
+    columns: 2,
+    [*The question*], [*What pushes towards avoiding the grey area*],
+    [Where will this be compiled?], [In places you do not know],
+    [How long will this code live?], [A long time — compilers change meanwhile],
+    [What breaks if it breaks?], [A quietly wrong value (crashing would be kinder)],
+    [What does the alternative cost?], [The alternative is a few lines],
+  )
+
+  *Whichever you choose, one thing must be done — prepare for both outcomes.* A
+  grey area is "what works now", not "what will keep working".
+
+  - *If you use it* — mark the place in the code (one comment will do). Check it
+    regularly with another compiler and with sanitizers (chapter 17). And *know in
+    advance what you would switch to if it broke.*
+  - *If you avoid it* — you usually pay in longer and slower code. Paying that
+    price knowingly is not the same as avoiding it blindly.
+
+  The worst is the third attitude — *using a grey area without knowing it is
+  one.* Then you do not even know there is something to prepare for. That is why
+  this book takes care to say "outside the contract" and "a grey area" as two
+  different things.
+]
+
 Why does this notion of a contract matter more and more? Because machines, as
 this chapter has shown, increasingly overlap and guess and divide, and a
 programmer cannot know every detail of that vortex. Between the vortex and the

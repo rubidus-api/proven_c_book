@@ -25,7 +25,7 @@ as cases in the body. How to obtain the standard document is in appendix D.
   of the CPL→BCPL→B→C lineage and the early design decisions (chapters 4 and 12).
 - Brian W. Kernighan and Dennis M. Ritchie, #box[The C Programming Language]
   (1978, 1988) — the so-called K&R. The reference point dividing before C89 from after.
-- The WG14 document repository (`open-std.org`) — proposals and defect reports. The
+- The WG14 document repository (#link("https://open-std.org")[`open-std.org`]) — proposals and defect reports. The
   primary source for "why did this clause end up like this".
 
 == The incidents this book cites

@@ -369,7 +369,7 @@ cdecl> declare table as array 4 of pointer to function (int) returning pointer t
 
 The first line does what we did by hand above, and the second is the opposite
 direction — *it builds a C declaration from what was said in English*. It can be
-installed as a package on Linux distributions (`cdecl`), and there is `cdecl.org`
+installed as a package on Linux distributions (`cdecl`), and there is #link("https://cdecl.org")[`cdecl.org`]
 for using it in a browser without installing.
 
 #qa[
@@ -396,7 +396,7 @@ for using it in a browser without installing.
     [`typedef`], [a word in the storage-class position — a *type name* is created instead of a variable],
     [`typedef`'s limit], [an alias only, not a new type. to distinguish, use a struct],
     [hiding pointers], [not recommended (the meaning of `const` blurs). the exception is an opaque type],
-    [tool], [`cdecl` (explain/declare), `cdecl.org`],
+    [tool], [`cdecl` (explain/declare), #link("https://cdecl.org")[`cdecl.org`]],
   )
 ]
 

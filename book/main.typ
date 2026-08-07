@@ -2,7 +2,7 @@
 #import "lib.typ": *
 
 // 이 책의 판 번호. 갱신할 때마다 여기만 고친다 (VERSION.md 와 함께).
-#let book-version = "v0.19.0"
+#let book-version = "v0.20.0"
 #let book-date = "2026년 8월"
 #let book-updated = "2026-08-06"          // 최종 수정일
 #let book-status = "초안(draft)"           // 판의 성격
@@ -13,6 +13,12 @@
 #set page(paper: "a4", margin: (x: 2.2cm, y: 2.5cm), numbering: "1")
 #set text(font: ("Noto Serif CJK KR",), size: 10.5pt, lang: "ko")
 #set par(justify: true, leading: 0.78em, first-line-indent: (amount: 1em, all: true))
+
+// 바깥 주소(URL)로 가는 링크는 눈에 보이게 — 클릭할 수 있다는 표시다
+// (저자 지시 2026-08-07). 안쪽 링크(차례·색인·상호 참조)는 그대로 둔다.
+#show link: it => if type(it.dest) == str {
+  text(fill: rgb("#1A4F8A"), it)
+} else { it }
 #show heading: set text(font: ("Noto Sans CJK KR",))
 // 코드 글꼴 = D2Coding (비리가처판, 리가처도 명시적으로 끔)
 #show raw: set text(font: "D2Coding", size: 0.96em, ligatures: false)
@@ -204,7 +210,6 @@
 #include "appendix/a3-conversions.typ"
 #include "appendix/a4-reading.typ"
 #include "appendix/a6-grammar.typ"
-#include "appendix/a7-learning.typ"
 
 // ── 찾아보기 ─────────────────────────────────────────
 #pagebreak(weak: true)

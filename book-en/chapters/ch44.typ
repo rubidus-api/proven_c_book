@@ -242,6 +242,8 @@ place the struct will occupy is dirtied with `0xAA` and only the members are
 filled in; printing the whole thing shows `AA` still sitting between them —
 *because the members were touched and the padding was not.*
 
+#figure-svg("serialize", caption: [Above, twelve bytes with the padding going out; below, seven bytes in the order we chose.])
+
 === So how is it done — field by field
 
 There is one prescription. *Decide the byte order yourself and write fixed-width

@@ -125,8 +125,8 @@ MSP430, SuperH, PowerPC 같은 임베디드 칩까지 하나의 계보로 덮는
 LCC의 대폭 개작판"이라고 설명한다. 자료를 찾을 때 이 사실을 알아 두면 헛수고를
 던다 — *"Pelles C" 위키백과 문서를 찾으면 나오지 않는다.*
 
-받는 곳은 공식 홈페이지 `pellesc.se`이고, 질문과 배포 소식은 별도의
-포럼(`forum.pellesc.de`)에 모인다. 만든 사람이 그 포럼에서 직접 답하는
+받는 곳은 공식 홈페이지 #link("https://pellesc.se")[`pellesc.se`]이고, 질문과 배포 소식은 별도의
+포럼(#link("https://forum.pellesc.de")[`forum.pellesc.de`])에 모인다. 만든 사람이 그 포럼에서 직접 답하는
 것이 이 도구의 오래된 풍경이다.
 
 사용자들의 평가를 모으면 대체로 이렇게 갈린다.
@@ -285,11 +285,11 @@ MFC → WinForms → WPF → UWP → WinUI로 여러 번 갈아엎혔고, 그때
 #dtable(
   columns: 3,
   [*무엇*], [*공식 자료*], [*영어 위키백과 항목*],
-  [GCC], [`gcc.gnu.org` — 매뉴얼·옵션·릴리스 노트], [`GNU Compiler Collection`],
-  [Clang / LLVM], [`clang.llvm.org`(프런트엔드), `llvm.org`(전체)], [`Clang`, `LLVM`],
-  [MSVC], [`visualstudio.microsoft.com`(설치), `learn.microsoft.com/cpp`(문서)], [`Microsoft Visual C++`],
-  [Pelles C], [`pellesc.se`(홈), `forum.pellesc.de`(포럼)], [단독 문서 없음 — `LCC (compiler)` 항목의 절],
-  [tcc], [`bellard.org/tcc`], [`Tiny C Compiler`],
+  [GCC], [#link("https://gcc.gnu.org")[`gcc.gnu.org`] — 매뉴얼·옵션·릴리스 노트], [`GNU Compiler Collection`],
+  [Clang / LLVM], [#link("https://clang.llvm.org")[`clang.llvm.org`] (프런트엔드), #link("https://llvm.org")[`llvm.org`] (전체)], [`Clang`, `LLVM`],
+  [MSVC], [#link("https://visualstudio.microsoft.com")[`visualstudio.microsoft.com`] (설치), #link("https://learn.microsoft.com/cpp")[`learn.microsoft.com/cpp`] (문서)], [`Microsoft Visual C++`],
+  [Pelles C], [#link("https://pellesc.se")[`pellesc.se`] (홈), #link("https://forum.pellesc.de")[`forum.pellesc.de`] (포럼)], [단독 문서 없음 — `LCC (compiler)` 항목의 절],
+  [tcc], [#link("https://bellard.org/tcc")[`bellard.org/tcc`]], [`Tiny C Compiler`],
 )
 
 세 가지만 덧붙인다. *첫째, 옵션의 정확한 뜻은 그 컴파일러의 매뉴얼에만 있다* —

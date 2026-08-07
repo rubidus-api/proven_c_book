@@ -59,6 +59,10 @@ The order to remember in practice:
 - If both are integers — go to the wider one. At equal width, *the unsigned side
   wins*.
 
+Spelled out in the standard's own order, the integer rules are four steps.
+
+#figure-svg("conversions", caption: [Follow the four in order. Most accidents happen at step 3.])
+
 That last line is the source of the trap. The second part of the demonstration
 is it in the flesh — read `-1` through unsigned eyes and it becomes an enormous
 positive number over four billion (exactly chapter 7's modular world). So a

@@ -1,7 +1,7 @@
 // Proven C Book — English edition. Build: scripts/build-book-en.sh
 #import "../book/lib.typ": *
 
-#let book-version = "v0.19.0"
+#let book-version = "v0.20.0"
 #let book-updated = "2026-08-06"
 #let book-status = "draft"
 #let book-repo = "https://github.com/rubidus-api/proven_c_book"
@@ -13,6 +13,12 @@
 // 이따금 인용되는 한글만 받는다.
 #set text(font: ("Noto Serif", "Noto Serif CJK KR"), size: 10.5pt, lang: "en")
 #set par(justify: true, leading: 0.78em, first-line-indent: (amount: 1em, all: true))
+
+// 바깥 주소(URL)로 가는 링크는 눈에 보이게 — 클릭할 수 있다는 표시다
+// (저자 지시 2026-08-07). 안쪽 링크(차례·색인·상호 참조)는 그대로 둔다.
+#show link: it => if type(it.dest) == str {
+  text(fill: rgb("#1A4F8A"), it)
+} else { it }
 #show heading: set text(font: ("Noto Sans", "Noto Sans CJK KR"))
 // 절 제목(1.2 꼴)은 위아래로 숨을 준다 — 기본값은 본문에 너무 붙는다
 #show heading.where(level: 1): set block(below: 1.35em)
@@ -239,7 +245,6 @@ The Korean edition is at:
 #include "appendix/a3-conversions.typ"
 #include "appendix/a4-reading.typ"
 #include "appendix/a6-grammar.typ"
-#include "appendix/a7-learning.typ"
 
 // ── Index ───────────────────────────────────────────
 #pagebreak(weak: true)

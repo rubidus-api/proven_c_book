@@ -139,8 +139,8 @@ C23 support, amd64 support, optimizations such as inline expansion, and an IDE.
 Knowing this saves effort when hunting for material — *searching Wikipedia for a
 "Pelles C" article finds nothing.*
 
-Downloads are at the official home `pellesc.se`, while questions and release
-announcements gather on a separate forum (`forum.pellesc.de`). The author
+Downloads are at the official home #link("https://pellesc.se")[`pellesc.se`], while questions and release
+announcements gather on a separate forum (#link("https://forum.pellesc.de")[`forum.pellesc.de`]). The author
 answering there himself is a long-standing feature of the tool.
 
 Gathering users' assessments, they divide roughly like this.
@@ -305,11 +305,11 @@ this book was written (domains only — paths change, domains last).
 #dtable(
   columns: 3,
   [*What*], [*Official material*], [*English Wikipedia article*],
-  [GCC], [`gcc.gnu.org` — manual, options, release notes], [`GNU Compiler Collection`],
-  [Clang / LLVM], [`clang.llvm.org` (the front end), `llvm.org` (the whole)], [`Clang`, `LLVM`],
-  [MSVC], [`visualstudio.microsoft.com` (install), `learn.microsoft.com/cpp` (docs)], [`Microsoft Visual C++`],
-  [Pelles C], [`pellesc.se` (home), `forum.pellesc.de` (forum)], [No article of its own — a section of `LCC (compiler)`],
-  [tcc], [`bellard.org/tcc`], [`Tiny C Compiler`],
+  [GCC], [#link("https://gcc.gnu.org")[`gcc.gnu.org`] — manual, options, release notes], [`GNU Compiler Collection`],
+  [Clang / LLVM], [#link("https://clang.llvm.org")[`clang.llvm.org`] (the front end), #link("https://llvm.org")[`llvm.org`] (the whole)], [`Clang`, `LLVM`],
+  [MSVC], [#link("https://visualstudio.microsoft.com")[`visualstudio.microsoft.com`] (install), #link("https://learn.microsoft.com/cpp")[`learn.microsoft.com/cpp`] (docs)], [`Microsoft Visual C++`],
+  [Pelles C], [#link("https://pellesc.se")[`pellesc.se`] (home), #link("https://forum.pellesc.de")[`forum.pellesc.de`] (forum)], [No article of its own — a section of `LCC (compiler)`],
+  [tcc], [#link("https://bellard.org/tcc")[`bellard.org/tcc`]], [`Tiny C Compiler`],
 )
 
 Three things to add. *First, the exact meaning of an option is only in that

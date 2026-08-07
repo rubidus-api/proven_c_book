@@ -350,7 +350,7 @@ cdecl> declare table as array 4 of pointer to function (int) returning pointer t
 
 첫 줄은 우리가 위에서 손으로 한 일을 대신하고, 둘째 줄은 그 반대 방향
 이다 — *영어로 말한 것을 C 선언으로 지어 준다.* 리눅스 배포판의 패키지로
-설치할 수 있고(`cdecl`), 설치 없이 브라우저에서 쓰는 `cdecl.org`도 있다.
+설치할 수 있고(`cdecl`), 설치 없이 브라우저에서 쓰는 #link("https://cdecl.org")[`cdecl.org`]도 있다.
 
 #qa[
   도구가 있으면 굳이 손으로 읽는 법을 배워야 하는가?
@@ -375,7 +375,7 @@ cdecl> declare table as array 4 of pointer to function (int) returning pointer t
     [`typedef`], [저장 클래스 자리의 낱말 — 변수 대신 *타입 이름*이 생긴다],
     [`typedef`의 한계], [별명일 뿐 새 타입이 아니다. 구별하려면 구조체],
     [포인터 숨기기], [권하지 않는다(`const`의 뜻이 흐려진다). 예외는 불투명 타입],
-    [도구], [`cdecl`(explain/declare), `cdecl.org`],
+    [도구], [`cdecl`(explain/declare), #link("https://cdecl.org")[`cdecl.org`]],
   )
 ]
 
