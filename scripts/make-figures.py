@@ -178,6 +178,74 @@ def fig_pointer_parts(L):
     return "".join(out)
 
 
+# ── F6. 온라인 컴파일러 탐색기의 화면 얼개 (17장) ─────────────
+def fig_explorer(L):
+    w, h = 760, 250
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+
+    # 왼쪽: 소스, 오른쪽: 번역 결과
+    out.append(box(30, 44, 330, 170, sw=1.8))
+    out.append(box(400, 44, 330, 170, sw=1.8))
+    out.append(text(195, 64, L["left"], size=12, weight="bold"))
+    out.append(text(565, 64, L["right"], size=12, weight="bold"))
+    out.append(f'<line x1="30" y1="72" x2="360" y2="72" stroke="#111" stroke-width="1"/>')
+    out.append(f'<line x1="400" y1="72" x2="730" y2="72" stroke="#111" stroke-width="1"/>')
+
+    # 짝지어진 줄들 — 한 줄이 여러 줄로 부푸는 모양
+    rows = [(90, [90]), (120, [116, 138]), (150, [164]), (180, [186, 202])]
+    for i, (ly, rys) in enumerate(rows):
+        out.append(f'<line x1="48" y1="{ly}" x2="{200 + (i % 2) * 60}" y2="{ly}" '
+                   f'stroke="#111" stroke-width="{3 if i == 1 else 1.4}" opacity="0.85"/>')
+        for ry in rys:
+            out.append(f'<line x1="418" y1="{ry}" x2="{560 + (ry % 3) * 30}" y2="{ry}" '
+                       f'stroke="#111" stroke-width="1.4" opacity="0.6"/>')
+        out.append(arrow(305 + (i % 2) * 60, ly, 412, rys[0], sw=1.2 if i != 1 else 2.0))
+
+    out.append(text(w / 2, 238, L["note"], size=11.5))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F7. 기억 시각화 도구가 보여 주는 것 (17장) ────────────────
+def fig_viz(L):
+    w, h = 760, 240
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+
+    # 왼쪽 = 스택 프레임, 오른쪽 = 힙
+    out.append(box(40, 46, 300, 160, sw=1.8, dash="6 4"))
+    out.append(text(190, 66, L["stack"], size=12, weight="bold"))
+    out.append(box(430, 46, 290, 160, sw=1.8, dash="6 4"))
+    out.append(text(575, 66, L["heap"], size=12, weight="bold"))
+
+    # 스택의 변수 칸 셋
+    labels = [L["v1"], L["v2"], L["v3"]]
+    vals = [L["v1v"], L["v2v"], L["v3v"]]
+    for i, (nm, vv) in enumerate(zip(labels, vals)):
+        y = 84 + i * 40
+        out.append(box(60, y, 110, 30))
+        out.append(box(170, y, 150, 30))
+        out.append(text(115, y + 20, nm, size=12))
+        out.append(text(245, y + 20, vv, size=12))
+
+    # 힙의 블록
+    out.append(box(455, 100, 240, 46))
+    for k in range(7):
+        out.append(f'<line x1="{455 + 30 * (k + 1)}" y1="100" x2="{455 + 30 * (k + 1)}" '
+                   f'y2="146" stroke="#111" stroke-width="1"/>')
+    out.append(text(575, 166, L["block"], size=11.5))
+
+    # 포인터 → 힙 화살표
+    out.append(arrow(320, 139, 452, 122, sw=2.0))
+    out.append(text(386, 108, L["arrow"], size=11.5))
+
+    out.append(text(w / 2, 228, L["note"], size=11.5))
+    out.append(TAIL)
+    return "".join(out)
+
+
+
 FIGS = {
     "regions": (fig_regions, {
         "ko": dict(title="한 프로그램의 기억 지도", names=["코드", "정적 구역", "힙 (창고)", "스택 (작업대)"],
@@ -211,6 +279,26 @@ FIGS = {
                    row="row {0}", jump1="a + 2 → twice the row size (16 bytes)",
                    jump2="+1 → one element (4 bytes)",
                    note="memory is one run; the thick lines are row boundaries, not gaps."),
+    }),
+    "explorer": (fig_explorer, {
+        "ko": dict(title="온라인 컴파일러 탐색기가 보여 주는 것",
+                   left="내가 적은 C", right="컴파일러가 낸 기계어(어셈블리)",
+                   note="한 줄이 몇 줄이 되는지, 어떤 줄이 아예 사라지는지가 보인다 — 13장의 최적화를 눈으로."),
+        "en": dict(title="what an online compiler explorer shows",
+                   left="the C you wrote", right="the machine code the compiler produced",
+                   note="you see how one line becomes several, and which lines vanish — chapter 13's optimization, visible."),
+    }),
+    "viz": (fig_viz, {
+        "ko": dict(title="기억 시각화 도구가 보여 주는 것", stack="스택 (지금 도는 함수)",
+                   heap="힙 (malloc 이 준 자리)", v1="int n", v1v="7",
+                   v2="int *p", v2v="→", v3="char *buf", v3v="→",
+                   block="여덟 칸짜리 한 덩어리", arrow="가리킨다",
+                   note="값은 상자로, 포인터는 화살표로 그린다 — 34장의 '가리킨다'가 그림이 된다."),
+        "en": dict(title="what a memory visualiser shows", stack="the stack (the running function)",
+                   heap="the heap (what malloc gave)", v1="int n", v1v="7",
+                   v2="int *p", v2v="→", v3="char *buf", v3v="→",
+                   block="one block of eight slots", arrow="points at",
+                   note="values are boxes and pointers are arrows — chapter 34's \u201cpoints at\u201d, drawn."),
     }),
     "pointer-parts": (fig_pointer_parts, {
         "ko": dict(title="포인터 값에 붙어 다니는 것", value="포인터 값", value_sub="복사·비교할 수 있다",

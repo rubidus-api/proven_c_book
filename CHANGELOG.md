@@ -6,6 +6,40 @@ This project follows Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.18.0] - 2026-08-07
+
+### Added
+- **부록 F 「온라인 도구와 학습 자료」 신설**(저자 지시) — 브라우저에서 바로
+  돌려 보는 곳(Compiler Explorer·OnlineGDB·Wandbox·Coliru·Replit·TIO), 눈으로
+  보는 도구(Python Tutor C 모드·`cdecl.org`), 문제를 주는 곳(Exercism·Advent of
+  Code·Codewars·HackerRank/LeetCode·Project Euler), 무료 자료(cppreference·
+  Beej's Guide·Modern C·comp.lang.c FAQ·SEI CERT C·WG14·컴파일러 매뉴얼),
+  그리고 **낡은 자료를 가려내는 신호 표**(`void main()`·`gets`·`conio.h` 등).
+  링크는 전부 실제로 응답을 확인했다.
+- **17장에 절 「설치가 부담이면 — 웹에서 바로 해 보기」 신설** — 위 도구들의
+  표, 학습용 옵션(`-std=c23 -Wall -Wextra -Werror` 를 웹 도구의 어느 칸에
+  적는지), 온라인 도구의 한계(시간·파일·입력·비공개 코드·판 차이).
+  **개념도 두 개 신설**(`explorer`·`viz`) — 남의 화면을 캡처하는 대신 이 책이
+  직접 그린 도해다(저작권과 수명 때문).
+- **18장 Pelles C 절 보강** — 공식 홈페이지 `pellesc.se`·포럼 `forum.pellesc.de`,
+  그리고 ★**위키백과에 단독 문서가 없다**는 사실(「LCC (compiler)」 항목의 절로
+  실려 있다 — Pelles C 가 LCC 의 대폭 개작판이기 때문). 새 절 「윈도 앱을 C로
+  짠다는 선택」 — Win32 의 강점과 대가를 표로, 마이크로소프트가 새 앱에 권하는
+  것은 WinUI 3/Windows App SDK 라는 점을 분명히 하되 UI 스택의 세대교체
+  (MFC→WinForms→WPF→UWP→WinUI) 밖에 Win32 가 있다는 것, 그리고 보일러플레이트를
+  AI 가 맡아 주는 시대라 그 대가가 예전만큼 무겁지 않다는 것.
+- **18장에 절 「공식 자료가 있는 곳」 신설** — GCC·Clang/LLVM·MSVC·Pelles C·tcc 의
+  공식 사이트와 영어 위키백과 항목명(전부 응답 확인).
+- **부록 D 보강** — 서지 사항을 **ACM 참고문헌 서식**으로 정리(저자·연도·제목·
+  판·출판사·ISBN). Modern C 는 2판(2019, ISBN 978-1-61729-581-2)과 **C23 을 다루는
+  3판(2024, ISBN 978-1-63343-777-7)** 을 함께, King 2판(2008, ISBN
+  978-0-393-97950-3), Preschern (2022, ISBN 978-1-4920-9733-4). 온라인 참고서·표준
+  문서의 주소를 표로.
+
+### Changed
+- **HTML `index.html` 에서 머리말 본문 중복 제거**(저자 지시) — 머리말은 제
+  페이지가 따로 있으므로 차례 아래에 다시 싣지 않는다(색인 페이지 32KB → 20KB).
+
 ## [v0.17.0] - 2026-08-07
 
 ### Added
