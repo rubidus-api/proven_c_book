@@ -131,6 +131,18 @@ Its standard support is notably diligent: the latest edition at the time of
 writing (14.50, July 2026) states support for C99, C11, C17 and C23. There have
 been periods in which it followed new standards faster than far larger tools.
 
+Its lineage is interesting too. Pelles C did not appear from nowhere; it is a
+heavily reworked *LCC* (the small, portable teaching compiler of Fraser and
+Hanson). Wikipedia carries it not as an article of its own but as a section of
+"LCC (compiler)", describing it there as a heavily modified LCC with C11, C17 and
+C23 support, amd64 support, optimizations such as inline expansion, and an IDE.
+Knowing this saves effort when hunting for material — *searching Wikipedia for a
+"Pelles C" article finds nothing.*
+
+Downloads are at the official home `pellesc.se`, while questions and release
+announcements gather on a separate forum (`forum.pellesc.de`). The author
+answering there himself is a long-standing feature of the tool.
+
 Gathering users' assessments, they divide roughly like this.
 
 #dtable(
@@ -142,6 +154,40 @@ Gathering users' assessments, they divide roughly like this.
   [Windows API and resource editing fit smoothly], [a thin user base, so fewer materials turn up in a search],
   [a low barrier for beginners], [weak integration with build systems and outside tools],
 )
+
+=== Writing a Windows app in C
+
+One more place for this tool is worth marking. It fits *writing a desktop app
+against the Windows API (Win32)* particularly well — the resource editor and the
+linker come in one package, and what comes out is a single executable with no
+runtime dependency.
+
+"Why write a Windows app in C in this day and age?" is a fair question. Stated
+without exaggeration, the grounds are these.
+
+#dtable(
+  columns: 2,
+  [*What Win32 has*], [*What it costs*],
+  [It is the *foundation* API of Windows — the UI stacks above it come and go, this remains], [The code is long; even opening a window needs a body of set-up code],
+  [Its backward compatibility is remarkable — executables built twenty years ago commonly still run], [High-DPI, dark mode and accessibility must be handled by hand],
+  [No runtime or framework to install], [Some newer UI features exist only on the WinRT/WinUI side],
+  [Documentation and examples are vast, and Microsoft keeps maintaining them], [Little help from a visual designer],
+)
+
+*What Microsoft recommends for new apps is not Win32 but the current stack (the
+Windows App SDK and WinUI 3)* — let that be clear. But Windows's UI stacks have
+been torn up and replaced several times, MFC → WinForms → WPF → UWP → WinUI, and
+each time the previous generation moved to the "maintained, but no longer
+recommended" shelf. What stood outside that churn is Win32, and for *a small tool
+meant to last*, that stability is itself the gain.
+
+One thing has changed as well. The cost in the table's first row — "the code is
+long" — no longer weighs as much, because *boilerplate is exactly the kind of code
+today's AI produces well.* The shell that creates a window and runs a message loop
+looks the same everywhere, and there is less reason to memorise it. This book's
+attitude holds here too, though: *code you were handed still has to be readable
+before it can be fixed.* Even if someone else writes the shell, what runs inside
+it — the message loop, handles, the lifetime of resources — is yours to know.
 
 In short: it suits *working on Windows, in pure C, lightly*. Good for learning,
 for small Windows utilities, and for testing whether some new standard
@@ -200,6 +246,29 @@ what to take. A good share of the walls met while following an old textbook —
   code is right — it may simply mean *that tool has no eye for that mistake*.
   Keeping one more tool is like keeping one more reviewer.
 ]
+
+== Where the official material lives
+
+Compiler talk is tied to versions and options, which makes *the habit of opening
+the primary source* especially valuable. Here are the addresses that were live as
+this book was written (domains only — paths change, domains last).
+
+#dtable(
+  columns: 3,
+  [*What*], [*Official material*], [*English Wikipedia article*],
+  [GCC], [`gcc.gnu.org` — manual, options, release notes], [`GNU Compiler Collection`],
+  [Clang / LLVM], [`clang.llvm.org` (the front end), `llvm.org` (the whole)], [`Clang`, `LLVM`],
+  [MSVC], [`visualstudio.microsoft.com` (install), `learn.microsoft.com/cpp` (docs)], [`Microsoft Visual C++`],
+  [Pelles C], [`pellesc.se` (home), `forum.pellesc.de` (forum)], [No article of its own — a section of `LCC (compiler)`],
+  [tcc], [`bellard.org/tcc`], [`Tiny C Compiler`],
+)
+
+Three things to add. *First, the exact meaning of an option is only in that
+compiler's manual* — including what the warnings turned on in chapter 17 catch.
+*Second, the release notes tell you which standard features arrived in which
+version* — the quickest way to check the state of C23 support. *Third, Wikipedia
+is good for history and lineage; for the basis of exact behaviour, use the
+official documentation.*
 
 #qa[
   What is the practical criterion for choosing a compiler, in one line?

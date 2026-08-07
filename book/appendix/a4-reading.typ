@@ -17,9 +17,26 @@ C 입문을 뗀 독자가 다음에 집는 것이 대체로 그쪽이라, 이어
 이 책이 굳이 컴퓨터 이야기부터 시작해 계약과 라이브러리 설계까지 온 것도
 그 사정을 의식했기 때문이다.
 
+온라인 도구와 무료 자료, 연습할 곳은 *부록 F*에 따로 모았다. 이 부록은
+*책*과 *표준 문서*를 다룬다.
+
 다행히 최근 몇 해 사이 이 칸을 메우는 책들이 나오고 있다. C11 이후의
 변화와 C23의 확정이 새 책을 쓸 이유를 만들어 준 덕이다. 아래는 그중
 읽어 볼 만한 것들이다.
+
+#platform[
+  이 부록의 서지 표기
+][
+  아래의 서지 사항은 전산 분야에서 널리 쓰이는 *ACM 참고문헌 서식*(ACM
+  Reference Format)을 따른다 — 저자. 연도. #box[제목] (판). 출판사, 지역.
+  식별자(ISBN·DOI·URL) 순이다. IEEE 서식을 쓰는 학회도 많지만, 표기 순서만
+  다를 뿐 담는 항목은 같다.
+
+  세 가지를 눈여겨보면 인용을 읽는 눈이 생긴다. *판(edition)이 표시된다* —
+  같은 제목이라도 판이 다르면 다른 책이다(C 교재에서는 특히 그렇다).
+  *연도는 그 판의 연도다.* 그리고 *식별자를 적는다* — 제목은 겹치지만
+  ISBN·DOI 는 겹치지 않는다.
+]
 
 == 옌스 구스테트, 『모던 C』 — 표준을 기준으로 삼는 교재
 
@@ -39,6 +56,17 @@ C 입문을 뗀 독자가 다음에 집는 것이 대체로 그쪽이라, 이어
 공개 저장소(HAL)에서 받을 수 있다. 번역서를 읽다가 표현이 걸리거나
 C23의 최신 내용이 필요하면 원서를 함께 펴 보는 방법이 있다는 뜻이다.
 
+*서지.*
+
+- Jens Gustedt. 2019. #box[Modern C] (2nd. ed.). Manning Publications, Shelter
+  Island, NY. ISBN 978-1-61729-581-2.
+- Jens Gustedt. 2024. #box[Modern C] (3rd. ed.). Manning Publications, Shelter
+  Island, NY. ISBN 978-1-63343-777-7. — C23을 다루는 판.
+- 한국어판: 옌스 구스테트. 2022. 『모던 C』(2판 번역). 길벗, 서울.
+- 저자가 공개한 전자판: `gustedt.gitlabpages.inria.fr/modern-c/`
+  (INRIA 의 공개 저장소 HAL 에도 올라와 있다).
+- 출판사 소개면: `manning.com/books/modern-c`
+
 == K. N. 킹, #box[C Programming: A Modern Approach] — 정통 교과서
 
 이 목록에서 유일하게 정식 한국어판이 없는 책인데도 넣는 이유는, 영어권
@@ -52,6 +80,13 @@ C23의 최신 내용이 필요하면 원서를 함께 펴 보는 방법이 있�
 이 "오래됨"은 상황에 따라 장점이 되기도 한다 — 실무에서 C99까지만
 허용하는 오래된 코드베이스나 임베디드 도구 체인을 다뤄야 한다면, 그
 세계를 정확히 기준으로 삼은 책이 오히려 맞다.
+
+*서지.*
+
+- K. N. King. 2008. #box[C Programming: A Modern Approach] (2nd. ed.).
+  W. W. Norton & Company, New York, NY. ISBN 978-0-393-97950-3.
+- 저자가 운영하는 책 소개면: `knking.com/books/c2/` — 예제 소스와 정오표가
+  있다(이 책을 쓰는 시점에 HTTPS 가 아니라 HTTP 로만 열린다).
 
 == 크리스토퍼 프레셰른, 『우아한 C언어 코딩 패턴』 — 설계와 패턴
 
@@ -71,7 +106,29 @@ C를 배운 뒤 "이제 이걸로 뭘 어떻게 짜야 하지"라는 자리에�
 패턴 목록을 규범이 아니라 *선택지의 목록*으로 읽으면 그 지적을 감안하고도
 얻을 것이 많다.
 
+*서지.*
+
+- Christopher Preschern. 2022. #box[Fluent C: Principles, Practices, and
+  Patterns]. O'Reilly Media, Sebastopol, CA. ISBN 978-1-4920-9733-4.
+- 한국어판: 크리스토퍼 프레셰른. 2023. 『우아한 C언어 코딩 패턴』. 한빛미디어, 서울.
+- 출판사 소개면: `oreilly.com`
+
 == 온라인 참고서
+
+주소부터 적어 둔다.
+
+#dtable(
+  columns: 2,
+  [*무엇*], [*주소*],
+  [cppreference 의 C 항목], [`en.cppreference.com/w/c`],
+  [GCC 매뉴얼(옵션·경고·확장)], [`gcc.gnu.org/onlinedocs/`],
+  [Clang 문서], [`clang.llvm.org/docs/`],
+  [MSVC 문서], [`learn.microsoft.com/cpp/`],
+  [WG14(표준 위원회) 문서], [`open-std.org/jtc1/sc22/wg14/`],
+  [무료 초안 내려받기], [`open-std.org/jtc1/sc22/wg14/www/docs/` (예: `n3220.pdf`)],
+  [ISO 온라인 스토어], [`iso.org`],
+  [한국표준정보망(KSSN)], [`kssn.net`],
+)
 
 #box[cppreference.com]의 C 항목이 사실상의 표준 레퍼런스다. 함수마다 어느
 표준판에서 들어왔고 무엇이 바뀌었는지가 표시되어 있어, 이 책이 강조한

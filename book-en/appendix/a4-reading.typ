@@ -22,6 +22,20 @@ Happily, over the last few years books filling this shelf have been appearing. T
 changes since C11 and the settling of C23 gave a reason to write new books. Below are
 those among them worth reading.
 
+#platform[
+  How references are given in this appendix
+][
+  The bibliographic entries below follow the *ACM Reference Format*, widely used in
+  computing — author. year. #box[title] (edition). publisher, place. identifier
+  (ISBN, DOI or URL). Many venues use the IEEE style instead; the order differs, the
+  items do not.
+
+  Three things are worth noticing, and they train the eye. *The edition is stated* —
+  the same title in another edition is another book, especially among C textbooks.
+  *The year is that edition's year.* And *an identifier is given* — titles collide,
+  ISBNs and DOIs do not.
+]
+
 == Jens Gustedt, #box[Modern C] — a textbook that takes the standard as its criterion
 
 The author, Jens Gustedt, is a research director at France's INRIA and a member of the
@@ -58,6 +72,13 @@ before reading. But this "oldness" is sometimes an advantage, depending on the
 situation — if in practice you must handle an old codebase or an embedded toolchain that
 permits only up to C99, a book taking exactly that world as its criterion rather suits.
 
+*References.*
+
+- K. N. King. 2008. #box[C Programming: A Modern Approach] (2nd. ed.).
+  W. W. Norton & Company, New York, NY. ISBN 978-0-393-97950-3.
+- The author's page for the book: `knking.com/books/c2/` — source code and errata
+  (at the time of writing it serves over HTTP, not HTTPS).
+
 == Christopher Preschern, #box[Fluent C] — design and patterns
 
 The original came out from O'Reilly in 2022 as #box[Fluent C: Principles, Practices,
@@ -75,7 +96,28 @@ to error handling, testing is not treated, and questioning the appropriateness o
 patterns (such as deferred cleanup). Read the pattern list not as a norm but as *a list
 of options* and there is much to gain even allowing for those points.
 
+*References.*
+
+- Christopher Preschern. 2022. #box[Fluent C: Principles, Practices, and Patterns].
+  O'Reilly Media, Sebastopol, CA. ISBN 978-1-4920-9733-4.
+- Publisher's page: `oreilly.com`
+
 == Online references
+
+The addresses first.
+
+#dtable(
+  columns: 2,
+  [*What*], [*Address*],
+  [cppreference's C section], [`en.cppreference.com/w/c`],
+  [The GCC manual (options, warnings, extensions)], [`gcc.gnu.org/onlinedocs/`],
+  [Clang documentation], [`clang.llvm.org/docs/`],
+  [MSVC documentation], [`learn.microsoft.com/cpp/`],
+  [WG14 (the committee) documents], [`open-std.org/jtc1/sc22/wg14/`],
+  [Downloading the free drafts], [`open-std.org/jtc1/sc22/wg14/www/docs/` (e.g. `n3220.pdf`)],
+  [The ISO online store], [`iso.org`],
+  [Korea's KSSN], [`kssn.net`],
+)
 
 The C section of #box[cppreference.com] is the de facto standard reference. For each
 function it marks which edition of the standard it entered in and what changed, which

@@ -2,7 +2,7 @@
 #import "lib.typ": *
 
 // 이 책의 판 번호. 갱신할 때마다 여기만 고친다 (VERSION.md 와 함께).
-#let book-version = "v0.17.0"
+#let book-version = "v0.18.0"
 #let book-date = "2026년 8월"
 #let book-updated = "2026-08-06"          // 최종 수정일
 #let book-status = "초안(draft)"           // 판의 성격
@@ -204,6 +204,7 @@
 #include "appendix/a3-conversions.typ"
 #include "appendix/a4-reading.typ"
 #include "appendix/a6-grammar.typ"
+#include "appendix/a7-learning.typ"
 
 // ── 찾아보기 ─────────────────────────────────────────
 #pagebreak(weak: true)

@@ -103,6 +103,75 @@ promised, even this chapter's installation is a demonstration, not homework).
   are cross-checked with both compilers.
 ]
 
+== If installing is too much — try it straight in a browser
+
+Getting the three things above is the proper way, but *when you want to run one
+line right now*, a browser is enough. Several places compile and run code with no
+installation, and some of them show what this book could only describe on paper —
+the optimised machine code, and where a pointer points.
+
+#dtable(
+  columns: 3,
+  [*What*], [*Character*], [*Where it helps in this book*],
+  [Compiler Explorer (`godbolt.org`)], [Source and *assembly* side by side. Over a thousand C compiler builds], [Chapter 13 (optimization), chapter 16 (compilation), chapter 46 (operators)],
+  [OnlineGDB], [Editing, running and a *debugger* in the browser], [Following this chapter's debugger section without installing],
+  [Wandbox, Coliru], [Running the same code under several compiler builds], [Spotting "works only on my compiler"],
+  [Replit], [A workspace with files and a terminal], [Examples split across files (chapter 51)],
+  [Python Tutor (C mode)], [Steps through execution and *draws memory*], [Chapters 34–42, pointers and memory],
+  [`cdecl.org`], [Puts a complicated declaration into words], [Chapter 55, reading declarations],
+)
+
+#figure-svg("explorer", caption: [How a screen that shows one source line becoming several machine-code lines is laid out.])
+
+=== Study options — the same on the web
+
+Whichever tool you use, the knack is *not to leave the options box empty*. The
+warning options of the next section work here too.
+
+```text
+-std=c23 -Wall -Wextra -Werror -g -O0
+-fsanitize=address,undefined        <- only where the site supports it
+```
+
+- Compiler Explorer takes them in the *Compiler options* box next to the compiler
+  name.
+- OnlineGDB takes them under the gear icon, in *Extra Compiler Flags*.
+- Sites often default to an old compiler. *If `-std=c23` is refused, the compiler
+  is old* — pick a newer one from the list (some middle-generation builds accept
+  `-std=c2x`).
+
+#figure-svg("viz", caption: [Values as boxes, pointers as arrows — the picture a visualiser draws.])
+
+Visualising memory pays off most in Part VII (pointers and memory). What this
+book explained in pictures and words, you can move around yourself in code you
+wrote.
+
+#platform[
+  The limits of online tools — easier once you know them
+][
+  The browser's place is as narrow as it is convenient. Knowing the limits saves
+  wasted effort.
+
+  - *There are time and memory limits.* Long loops and large arrays get cut off.
+  - *Files and networking are usually blocked.* Run the file-I/O examples
+    (chapter 58 onwards) on your own machine.
+  - *Standard input goes in a box you fill in advance.* Interactive input is only
+    imitated.
+  - *It is someone else's server.* Do not paste company code or anything that must
+    not be public. A Compiler Explorer share link puts that code into a URL.
+  - *Compiler builds and libraries differ per site.* Half of "it works here but
+    not there" is a version difference (chapter 16).
+
+  So this book's advice: *the web while you are learning, your own machine once
+  you start building something.* Getting the three things above can be postponed,
+  but not skipped.
+
+]
+
+Places that hand you problems, material that can be read for free, and a knack for
+spotting out-of-date writing are collected in *Appendix F*. Since this book has no
+exercises (see the preface), the hands-on part carries on from there.
+
 == Warnings — leave the free review switched on
 
 There is one habit to adopt immediately after installation: asking the compiler

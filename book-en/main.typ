@@ -1,7 +1,7 @@
 // Proven C Book — English edition. Build: scripts/build-book-en.sh
 #import "../book/lib.typ": *
 
-#let book-version = "v0.17.0"
+#let book-version = "v0.18.0"
 #let book-updated = "2026-08-06"
 #let book-status = "draft"
 #let book-repo = "https://github.com/rubidus-api/proven_c_book"
@@ -239,6 +239,7 @@ The Korean edition is at:
 #include "appendix/a3-conversions.typ"
 #include "appendix/a4-reading.typ"
 #include "appendix/a6-grammar.typ"
+#include "appendix/a7-learning.typ"
 
 // ── Index ───────────────────────────────────────────
 #pagebreak(weak: true)
