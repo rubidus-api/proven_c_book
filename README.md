@@ -9,12 +9,12 @@
 > 생겼는지에서 출발해, C23을 기본값으로 삼고, 마지막 부에서
 > [proven](https://github.com/rubidus-api) C 라이브러리로 이어진다.
 
-- **현재 판**: v0.21.0 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-en.pdf)
+- **현재 판**: v0.22.0 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.21.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.21.0-en.pdf)
-- 13부 92장 + 부록 A~E + 찾아보기 — 한국어판 639쪽, 영어판 670쪽
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.22.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.22.0-en.pdf)
+- 13부 92장 + 부록 A~E + 찾아보기 — 한국어판 645쪽, 영어판 678쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 어떤 책인가
@@ -24,7 +24,7 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
 고쳐진 판이 아니라 공통분모로 표준에 들어왔는지 — 이런 자리들은 문법을 외워서는
 넘을 수 없고, 넘지 못하면 나중에 정확히 그 자리에서 사고가 난다.
 
-이 책은 그 자리들을 **하나씩 짚어 가며 읽는 책**이다. 각 장은 「이 장이 기대는
+이 책은 그 자리들을 **하나씩 짚어 가며 읽는 책**이다. 각 장은 「먼저 알아야 할
 것 → 돌아보기 → 이 장이 끝나면 → 이 장에서 답할 질문」으로 열고, 본문은
 설명·즉문즉답·흔한 오해·실제 사례·반례가 번갈아 나온다. 연습문제는 없다.
 부담 없이 끝까지 읽히는 쪽을 택했고, 그 대가로 수행 훈련은 다른 책과 자기
