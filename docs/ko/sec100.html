@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>찾아보기 — Proven C Book</title><style>
+<title>부록 E — 문법을 적는 법(EBNF)과 C 문법 전문 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
@@ -266,9 +266,796 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="sec99.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><span class="off" aria-hidden="true">→</span></span><a href="../en/">English</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="sec99.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="sec101.html" title="다음" aria-label="다음">→</a></span><a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>찾아보기</h2><p>이 책이 개념을 <strong>정의하거나 정면으로 다루는</strong> 자리만 모았다. 낱말이 스쳐 지나가는 자리는 싣지 않았다 — 찾아보기의 목적은 모든 등장을 세는 것이 아니라 “어디를 펴면 되는지”를 알려 주는 것이기 때문이다.</p><p>이 판(HTML)에는 쪽 번호가 없으므로 표제어만 싣는다. 쪽 번호가 붙은 찾아보기는 PDF 판에 있다.</p><ul><li><a href="ch07.html#idx-entry-15">1의 보수</a></li><li><a href="ch07.html#idx-entry-13">2의 보수</a></li><li><a href="ch63.html#idx-entry-101">BCP 47</a></li><li><a href="sec98.html#idx-entry-131">BNF</a></li><li><a href="ch31.html#idx-entry-57">Duff's device</a></li><li><a href="sec98.html#idx-entry-132">EBNF</a></li><li><a href="ch08.html#idx-entry-18">IEEE 754</a></li><li><a href="ch63.html#idx-entry-100">ISO 3166</a></li><li><a href="ch64.html#idx-entry-103">ISO 4217</a></li><li><a href="ch63.html#idx-entry-99">ISO 639</a></li><li><a href="ch89.html#idx-entry-129">JSON</a></li><li><a href="ch06.html#idx-entry-12">NUL 문자</a></li><li><a href="ch66.html#idx-entry-105">UTF-16</a></li><li><a href="ch09.html#idx-entry-19">UTF-8</a></li><li><a href="ch48.html#idx-entry-83">assert</a></li><li><a href="ch76.html#idx-entry-111">bool</a></li><li><a href="ch02.html#idx-entry-2">bss</a></li><li><a href="ch48.html#idx-entry-84">const</a></li><li><a href="ch03.html#idx-entry-4">fork</a></li><li><a href="ch86.html#idx-entry-126">introsort</a></li><li><a href="ch64.html#idx-entry-102">localeconv</a></li><li><a href="ch50.html#idx-entry-88">main</a></li><li><a href="ch81.html#idx-entry-117">nodiscard</a></li><li><a href="ch76.html#idx-entry-112">nullptr</a></li><li><a href="ch55.html#idx-entry-95">typedef</a></li><li><a href="ch13.html#idx-entry-35">volatile</a></li><li><a href="ch53.html#idx-entry-93">가변 인자</a></li><li><a href="ch12.html#idx-entry-32">거짓 공유</a></li><li><a href="ch75.html#idx-entry-110">검사 산술</a></li><li><a href="ch37.html#idx-entry-65">경계 침범</a></li><li><a href="ch17.html#idx-entry-42">경고 옵션</a></li><li><a href="ch48.html#idx-entry-82">계약</a></li><li><a href="ch45.html#idx-entry-79">공용체</a></li><li><a href="ch43.html#idx-entry-75">구조체</a></li><li><a href="ch49.html#idx-entry-85">구현 정의</a></li><li><a href="ch27.html#idx-entry-50">나눗셈</a></li><li><a href="ch06.html#idx-entry-10">널 포인터</a></li><li><a href="ch38.html#idx-entry-66">다차원 배열</a></li><li><a href="ch78.html#idx-entry-115">단편화</a></li><li><a href="ch33.html#idx-entry-61">대입</a></li><li><a href="ch74.html#idx-entry-109">데이터 경쟁</a></li><li><a href="ch42.html#idx-entry-74">동적 할당</a></li><li><a href="ch17.html#idx-entry-40">디버거</a></li><li><a href="ch11.html#idx-entry-26">레지스터</a></li><li><a href="ch63.html#idx-entry-98">로케일</a></li><li><a href="ch10.html#idx-entry-25">리다이렉션</a></li><li><a href="ch16.html#idx-entry-39">링크</a></li><li><a href="ch13.html#idx-entry-36">멀티코어</a></li><li><a href="ch02.html#idx-entry-1">메모리 구역</a></li><li><a href="ch05.html#idx-entry-9">메모리 주소</a></li><li><a href="ch62.html#idx-entry-97">문자 분류</a></li><li><a href="ch09.html#idx-entry-20">문자 집합</a></li><li><a href="ch39.html#idx-entry-67">문자열</a></li><li><a href="ch49.html#idx-entry-86">미지정</a></li><li><a href="ch04.html#idx-entry-6">바이트</a></li><li><a href="ch30.html#idx-entry-56">반복문</a></li><li><a href="ch36.html#idx-entry-64">배열</a></li><li><a href="ch52.html#idx-entry-92">번역 단계</a></li><li><a href="ch51.html#idx-entry-90">번역 단위</a></li><li><a href="ch23.html#idx-entry-46">변수</a></li><li><a href="ch44.html#idx-entry-77">복합 리터럴</a></li><li><a href="ch08.html#idx-entry-17">부동소수점</a></li><li><a href="ch32.html#idx-entry-58">부수효과</a></li><li><a href="ch27.html#idx-entry-51">부호 확장</a></li><li><a href="ch12.html#idx-entry-31">분기 예측</a></li><li><a href="ch29.html#idx-entry-54">불리언</a></li><li><a href="ch82.html#idx-entry-119">뷰(view)</a></li><li><a href="ch72.html#idx-entry-107">비지역 점프</a></li><li><a href="ch04.html#idx-entry-5">비트</a></li><li><a href="ch17.html#idx-entry-41">새니타이저</a></li><li><a href="ch22.html#idx-entry-45">서식 문자열</a></li><li><a href="ch55.html#idx-entry-94">선언 읽기</a></li><li><a href="ch83.html#idx-entry-122">소유와 빌림</a></li><li><a href="ch46.html#idx-entry-80">수식</a></li><li><a href="ch85.html#idx-entry-124">스캐너</a></li><li><a href="ch41.html#idx-entry-69">스택</a></li><li><a href="ch77.html#idx-entry-113">스택 크기</a></li><li><a href="ch10.html#idx-entry-24">스트림</a></li><li><a href="ch32.html#idx-entry-59">시퀀스 포인트</a></li><li><a href="ch07.html#idx-entry-16">시프트</a></li><li><a href="ch71.html#idx-entry-106">신호</a></li><li><a href="ch47.html#idx-entry-81">실수 비교</a></li><li><a href="ch81.html#idx-entry-118">실패 원자성</a></li><li><a href="ch83.html#idx-entry-120">아레나</a></li><li><a href="ch85.html#idx-entry-123">암묵적 변환</a></li><li><a href="ch13.html#idx-entry-37">엄격한 앨리어싱</a></li><li><a href="ch05.html#idx-entry-8">엔디안</a></li><li><a href="ch34.html#idx-entry-63">역참조</a></li><li><a href="ch41.html#idx-entry-72">연결</a></li><li><a href="ch07.html#idx-entry-14">오버플로</a></li><li><a href="ch65.html#idx-entry-104">와이드 문자</a></li><li><a href="ch05.html#idx-entry-7">워드</a></li><li><a href="ch74.html#idx-entry-108">원자적 연산</a></li><li><a href="ch09.html#idx-entry-21">유니코드</a></li><li><a href="ch43.html#idx-entry-76">유연 배열 멤버</a></li><li><a href="ch41.html#idx-entry-71">유효범위</a></li><li><a href="ch09.html#idx-entry-22">인코딩</a></li><li><a href="ch91.html#idx-entry-130">임베디드</a></li><li><a href="ch40.html#idx-entry-68">입력 해석</a></li><li><a href="ch32.html#idx-entry-60">재귀</a></li><li><a href="ch41.html#idx-entry-70">저장 기간</a></li><li><a href="ch52.html#idx-entry-91">전처리기</a></li><li><a href="ch09.html#idx-entry-23">정규화</a></li><li><a href="ch06.html#idx-entry-11">정렬</a></li><li><a href="ch28.html#idx-entry-52">정수 승격</a></li><li><a href="ch26.html#idx-entry-49">정수 타입</a></li><li><a href="ch49.html#idx-entry-87">정의되지 않은 동작(UB)</a></li><li><a href="ch29.html#idx-entry-55">조건문</a></li><li><a href="ch50.html#idx-entry-89">종료 상태</a></li><li><a href="ch11.html#idx-entry-28">지역성</a></li><li><a href="ch13.html#idx-entry-33">추상 기계</a></li><li><a href="ch14.html#idx-entry-38">출처(provenance)</a></li><li><a href="ch11.html#idx-entry-27">캐시</a></li><li><a href="ch11.html#idx-entry-29">캐시 라인</a></li><li><a href="ch80.html#idx-entry-116">컴파일 과정</a></li><li><a href="ch18.html#idx-entry-43">컴파일러</a></li><li><a href="ch13.html#idx-entry-34">컴파일러 최적화</a></li><li><a href="ch88.html#idx-entry-127">코루틴</a></li><li><a href="ch28.html#idx-entry-53">통상 산술 변환</a></li><li><a href="ch12.html#idx-entry-30">파이프라인</a></li><li><a href="ch44.html#idx-entry-78">패딩</a></li><li><a href="ch34.html#idx-entry-62">포인터</a></li><li><a href="ch56.html#idx-entry-96">표준 라이브러리</a></li><li><a href="ch22.html#idx-entry-44">표준 출력</a></li><li><a href="ch83.html#idx-entry-121">풀(pool)</a></li><li><a href="ch03.html#idx-entry-3">프로세스</a></li><li><a href="ch88.html#idx-entry-128">프리스탠딩</a></li><li><a href="ch78.html#idx-entry-114">할당자</a></li><li><a href="ch24.html#idx-entry-47">함수 원형</a></li><li><a href="ch86.html#idx-entry-125">해시 맵</a></li><li><a href="ch24.html#idx-entry-48">헤더 파일</a></li><li><a href="ch42.html#idx-entry-73">힙</a></li></ul>
-<div class="nav"><a href="sec99.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><span></span></div>
+<h2>부록 E — 문법을 적는 법(EBNF)과 C 문법 전문</h2><p>이 부록은 두 가지를 담는다. 프로그래밍 언어의 문법을 <strong>적는 표기법</strong>인 EBNF와, 그 표기로 읽는 <strong>C 문법 전체</strong>다. 16장에서 본 파서가 실제로 무엇을 보고 일하는지, 그리고 표준 문서의 문법 절을 어떻게 읽는지가 여기서 풀린다.</p><p>뒤쪽 절들은 C23 표준(ISO/IEC 9899:2024, 무료 초안 N3220)의 <strong>부속서 A</strong>를 그대로 따라간다 — 어휘 문법, 구문 문법, 전처리 지시문의 순서다. 규칙은 표준의 것을 옮기되, 절마다 “이 규칙이 실제로 무엇을 허용하는가”를 덧붙였다.</p><h3>문법을 적는 표기 — BNF에서 EBNF로</h3><p>언어의 문법은 <strong>규칙의 목록</strong>으로 적을 수 있다. “문장은 이런 것들로 이루어지고, 그 각각은 또 이런 것들로 이루어진다”를 끝까지 밀고 내려가는 방식이다.</p><span id="idx-entry-133"></span><p>이 방식을 처음 널리 쓴 것이 <strong>BNF</strong>(Backus–Naur Form)다. 1960년의 ALGOL 60 보고서에서 쓰였고, 두 사람(존 배커스, 페테르 나우르)의 이름이 붙었다. 표기는 단순하다.</p><pre><code data-lang="text">&lt;digit>  ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+&lt;number> ::= &lt;digit> | &lt;digit> &lt;number></code></pre><p>읽는 법은 이렇다. <code>::=</code>는 “ 는 다음과 같이 이루어진다”, <code>|</code>는 “또는”, 꺾쇠 안의 이름은 <strong>비단말</strong>(다른 규칙으로 더 풀리는 것), 그냥 적힌 글자는 <strong>단말</strong>(더 풀리지 않는 실제 글자)이다. 두 번째 줄은 재귀로 “숫자 하나, 또는 숫자 하나 뒤에 다시 수”라고 적어 <strong>한 자리 이상의 수</strong>를 정의한다.</p><span id="idx-entry-134"></span><p>BNF에는 반복과 선택을 적을 때마다 재귀를 써야 하는 불편이 있다. 그래서 확장한 것이 <strong>EBNF</strong>(Extended BNF)이고, 기호 몇 개가 더해졌다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>표기</strong></th><th><strong>뜻</strong></th><th><strong>예</strong></th></tr><tr><td><code>=</code> 또는 <code>::=</code></td><td>정의한다</td><td><code>digit = "0" | "1" ;</code></td></tr><tr><td><code>|</code></td><td>또는(선택)</td><td><code>sign = "+" | "-" ;</code></td></tr><tr><td><code>[ … ]</code></td><td>있어도 되고 없어도 된다(0 또는 1회)</td><td><code>[ sign ] number</code></td></tr><tr><td><code>{ … }</code></td><td>0회 이상 반복</td><td><code>digit { digit }</code></td></tr><tr><td><code>( … )</code></td><td>묶음</td><td><code>( "+" | "-" ) digit</code></td></tr><tr><td><code>" … "</code></td><td>단말(글자 그대로)</td><td><code>";"</code></td></tr><tr><td><code>;</code></td><td>규칙의 끝</td><td>—</td></tr></table></div><p class="float-caption">표 94.1</p></figure><p>같은 “한 자리 이상의 수”를 EBNF로 적으면 재귀가 사라진다.</p><pre><code data-lang="text">number = digit { digit } ;</code></pre><p>표준화된 EBNF(ISO/IEC 14977)가 있지만, 실제 문서들은 조금씩 다른 방언을 쓴다. 흔한 변형이 정규식에서 온 후위 기호들이다 — <code>?</code>(0 또는 1회), <code>*</code>(0회 이상), <code>+</code>(1회 이상).</p><h3>C 표준의 표기법 읽는 법</h3><p><strong>C 표준 문서는 EBNF를 쓰지 않는다.</strong> 대신 BNF에 가까운 표기를 쓰며, 규칙은 이런 모양이다.</p><pre><code data-lang="text">iteration-statement:
+    while ( expression ) secondary-block
+    do secondary-block while ( expression ) ;
+    for ( expression_opt ; expression_opt ; expression_opt ) secondary-block</code></pre><p>네 가지 규약만 알면 표준의 문법 절을 그대로 읽을 수 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>규약</strong></th><th><strong>뜻</strong></th></tr><tr><td><code>이름:</code> 뒤 들여쓴 각 줄</td><td>하나의 선택지(대안). <code>|</code>를 줄바꿈으로 대신한다</td></tr><tr><td><code>_opt</code> (표준에서는 아래첨자 opt)</td><td>그 요소는 없어도 된다</td></tr><tr><td><code>one of</code> 다음 목록</td><td>나열된 것 중 하나. 전부 단말이다</td></tr><tr><td>기울임체 이름</td><td>비단말. 다른 규칙으로 풀린다</td></tr></table></div><p class="float-caption">표 94.2</p></figure><p>이 부록에서는 아래첨자를 쓸 수 없으므로 표준의 opt를 <code>_opt</code>로 적는다. <code>for (;;)</code>가 왜 무한 루프로 성립하는지가 위 규칙 한 줄에 그대로 적혀 있다 — 세 자리가 모두 생략 가능하기 때문이다.</p><p>문법이 두 층으로 나뉘어 있다는 점도 미리 알아 두면 좋다. <strong>어휘 문법</strong>은 글자를 모아 토큰을 만드는 규칙이고, <strong>구문 문법</strong>은 그 토큰을 엮는 규칙이다 — 16장에서 본 렉서와 파서의 구분 그대로다. 전처리기는 아예 별도의 문법을 갖는다(54장의 번역 단계에서 이미 처리되어 사라지므로, 아래 A.2의 C 문법에는 <code>#include</code> 같은 것이 나오지 않는다).</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 문법을 이렇게 적어 두면 무엇이 좋은가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 세 가지가 좋아진다.</p><p>첫째, <strong>모호함이 드러난다.</strong> 자연어로 “조건 뒤에 문장이 온다”고 쓰면 <code>if (a) if (b) x; else y;</code>에서 <code>else</code>가 어느 <code>if</code>에 붙는지 알 수 없지만, 문법으로 적으면 그 모호함이 규칙의 충돌로 드러난다(C는 “가장 가까운 <code>if</code>에 붙는다”로 정한다).</p><p>둘째, <strong>도구가 읽을 수 있다.</strong> 파서를 손으로 짜지 않고 문법에서 생성하는 도구들(yacc/bison, ANTLR 같은 것)이 이 표기를 입력으로 받는다.</p><p>셋째, <strong>사람이 확인할 수 있다.</strong> “이 자리에 이것을 적어도 되는가”라는 질문에 표준 문서가 답하는 방식이 바로 이 문법 절이다.</p></p></div></div><h3>A.1 어휘 문법</h3><h4>A.1.1 어휘 요소</h4><pre><code data-lang="text">token:
+    keyword
+    identifier
+    constant
+    string-literal
+    punctuator
+
+preprocessing-token:
+    header-name
+    identifier
+    pp-number
+    character-constant
+    string-literal
+    punctuator
+    앞의 어느 것도 아닌 공백 아닌 문자 하나</code></pre><p>두 규칙의 차이가 54장에서 본 번역 단계의 경계다. <strong>전처리 토큰</strong>은 아직 C의 낱말이 아니다 — <code>#include &lt;stdio.h></code>의 <code>&lt;stdio.h></code>가 헤더 이름 토큰으로 잡히는 것도, <code>123abc</code> 같은 것이 <code>pp-number</code>로 통째로 잡히는 것도 이 층의 일이다. 그 뒤 번역 단계 7에서 각 전처리 토큰이 <strong>토큰</strong>으로 바뀌는데, 이때 비로소 “이건 정수 상수가 아니다” 같은 진단이 나온다.</p><p>마지막 줄(“어느 것도 아닌 문자 하나”)이 중요하다. <code>@</code>나 <code>$</code>처럼 C가 쓰지 않는 글자도 <strong>전처리 토큰으로는 존재한다.</strong> 그래서 매크로 안에서는 그런 글자가 지나갈 수 있고, 최종 코드에 남으면 그때 오류가 된다.</p><h4>A.1.2 키워드</h4><pre><code data-lang="text">keyword: one of
+    alignas        alignof        auto           bool
+    break          case           char           const
+    constexpr      continue       default        do
+    double         else           enum           extern
+    false          float          for            goto
+    if             inline         int            long
+    nullptr        register       restrict       return
+    short          signed         sizeof         static
+    static_assert  struct         switch         thread_local
+    true           typedef        typeof         typeof_unqual
+    union          unsigned       void           volatile
+    while          _Alignas       _Alignof       _Atomic
+    _BitInt        _Bool          _Complex       _Decimal128
+    _Decimal32     _Decimal64     _Generic       _Imaginary
+    _Noreturn      _Static_assert _Thread_local</code></pre><p>78장에서 다룬 승격이 이 목록에 그대로 보인다. <code>bool</code>·<code>true</code>·<code>false</code>· <code>nullptr</code>·<code>static_assert</code>·<code>alignas</code>·<code>thread_local</code>·<code>constexpr</code>·<code>typeof</code>가 <strong>키워드</strong>로 올라와 있고, 그 아래 밑줄 이름들(<code>_Bool</code>, <code>_Alignas</code>, …)이 옛 코드를 위해 그대로 남아 있다. 두 이름은 같은 것을 가리킨다.</p><p><code>_BitInt</code>도 눈에 띈다 — C23이 들여온 <strong>비트 폭을 지정하는 정수</strong>로, <code>_BitInt(5)</code>처럼 쓴다. 하드웨어 레지스터 필드나 고정소수점 연산처럼 “정확히 n비트”가 필요한 자리를 위한 것이다.</p><h4>A.1.3 식별자</h4><pre><code data-lang="text">identifier:
+    identifier-start
+    identifier identifier-continue
+
+identifier-start:
+    nondigit
+    XID_Start 성질을 갖는 문자
+    XID_Start 성질을 갖는 universal-character-name
+
+identifier-continue:
+    digit
+    nondigit
+    XID_Continue 성질을 갖는 문자
+    XID_Continue 성질을 갖는 universal-character-name
+
+nondigit: one of
+    _ a b c d e f g h i j k l m n o p q r s t u v w x y z
+      A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+
+digit: one of
+    0 1 2 3 4 5 6 7 8 9</code></pre><p>첫 규칙의 재귀가 “첫 글자는 숫자가 아니어야 한다”는 그 익숙한 규칙이다 — 시작에는 <code>identifier-start</code>만 올 수 있고 <code>digit</code>은 <code>identifier-continue</code> 에만 있다.</p><p>C23이 바꾼 것은 <strong>유니코드 처리</strong>다. 예전 표준은 허용되는 문자를 목록으로 적어 두었지만, C23은 유니코드의 XID_Start/XID_Continue 성질을 참조한다. 그래서 한글로 된 식별자가 원리적으로는 가능하다. 다만 9장에서 본 이유들(인코딩, 정규화, 보이지 않는 글자) 때문에 실무 관행은 여전히 아스키다.</p><h4>A.1.4 보편 문자 이름</h4><pre><code data-lang="text">universal-character-name:
+    \u hex-quad
+    \U hex-quad hex-quad
+
+hex-quad:
+    hexadecimal-digit hexadecimal-digit hexadecimal-digit hexadecimal-digit</code></pre><p>소스 파일의 인코딩과 무관하게 특정 코드포인트를 적는 방법이다(9장). <code>"é"</code>는 파일이 무슨 인코딩이든 U+00E9를 뜻한다.</p><h4>A.1.5 상수</h4><pre><code data-lang="text">constant:
+    integer-constant
+    floating-constant
+    enumeration-constant
+    character-constant
+    predefined-constant</code></pre><p><strong>정수 상수.</strong></p><pre><code data-lang="text">integer-constant:
+    decimal-constant integer-suffix_opt
+    octal-constant integer-suffix_opt
+    hexadecimal-constant integer-suffix_opt
+    binary-constant integer-suffix_opt
+
+decimal-constant:
+    nonzero-digit
+    decimal-constant '_opt digit
+
+octal-constant:
+    0
+    octal-constant '_opt octal-digit
+
+hexadecimal-constant:
+    hexadecimal-prefix hexadecimal-digit-sequence
+
+binary-constant:
+    binary-prefix binary-digit
+    binary-constant '_opt binary-digit
+
+hexadecimal-prefix: one of  0x 0X
+binary-prefix:      one of  0b 0B
+nonzero-digit:      one of  1 2 3 4 5 6 7 8 9
+octal-digit:        one of  0 1 2 3 4 5 6 7
+hexadecimal-digit:  one of  0 1 2 3 4 5 6 7 8 9 a b c d e f A B C D E F
+
+hexadecimal-digit-sequence:
+    hexadecimal-digit
+    hexadecimal-digit-sequence '_opt hexadecimal-digit
+
+binary-digit: one of  0 1
+
+integer-suffix:
+    unsigned-suffix long-suffix_opt
+    unsigned-suffix long-long-suffix
+    unsigned-suffix bit-precise-int-suffix
+    long-suffix unsigned-suffix_opt
+    long-long-suffix unsigned-suffix_opt
+    bit-precise-int-suffix unsigned-suffix_opt
+
+bit-precise-int-suffix: one of  wb WB
+unsigned-suffix:        one of  u U
+long-suffix:            one of  l L
+long-long-suffix:       one of  ll LL</code></pre><p>세 가지를 짚어 둔다.</p><p><strong>① <code>0</code>으로 시작하면 8진이다.</strong> <code>octal-constant</code>의 첫 줄이 그 규칙이고, <code>017</code>이 15가 되는 이유가 여기 있다. 날짜나 시각을 <code>08</code>처럼 적어 두었다가 컴파일 오류를 만나는 고전적 실수의 출처다(<code>8</code>은 8진 숫자가 아니다).</p><p><strong>② C23이 2진 리터럴과 자릿수 구분자를 들였다.</strong> <code>0b1010'0110</code>처럼 적을 수 있다 — 규칙에 보이는 <code>'_opt</code>가 그 구분자다. 27장의 비트 연산을 적을 때 훨씬 읽기 좋아진다.</p><p><strong>③ 접미사에 <code>wb</code>가 생겼다.</strong> <code>_BitInt</code> 상수를 위한 것이다(<code>123wb</code>).</p><p><strong>부동소수점 상수.</strong></p><pre><code data-lang="text">floating-constant:
+    decimal-floating-constant
+    hexadecimal-floating-constant
+
+decimal-floating-constant:
+    fractional-constant exponent-part_opt floating-suffix_opt
+    digit-sequence exponent-part floating-suffix_opt
+
+hexadecimal-floating-constant:
+    hexadecimal-prefix hexadecimal-fractional-constant
+        binary-exponent-part floating-suffix_opt
+    hexadecimal-prefix hexadecimal-digit-sequence
+        binary-exponent-part floating-suffix_opt
+
+fractional-constant:
+    digit-sequence_opt . digit-sequence
+    digit-sequence .
+
+exponent-part:
+    e sign_opt digit-sequence
+    E sign_opt digit-sequence
+
+sign: one of  + -
+
+digit-sequence:
+    digit
+    digit-sequence '_opt digit
+
+hexadecimal-fractional-constant:
+    hexadecimal-digit-sequence_opt . hexadecimal-digit-sequence
+    hexadecimal-digit-sequence .
+
+binary-exponent-part:
+    p sign_opt digit-sequence
+    P sign_opt digit-sequence
+
+floating-suffix: one of  f l F L df dd dl DF DD DL</code></pre><p><code>fractional-constant</code>의 둘째 줄이 <code>1.</code>을 허용하고, 첫 줄의 <code>_opt</code>가 <code>.5</code>를 허용한다. 그리고 지수부가 있으면 소수점이 없어도 된다(<code>1e9</code>).</p><p><strong>16진 부동소수점</strong>(<code>0x1.8p3</code>)은 C99가 들인 것으로, 8장에서 본 비트 표현을 정확히 적고 읽는 데 쓴다 — 십진으로 적으면 반올림이 끼어들지만 이 표기는 표현을 그대로 옮긴다. 지수부 <code>p</code>가 <strong>2의 거듭제곱</strong>이라는 점이 요령이다.</p><p>접미사의 <code>df</code>·<code>dd</code>·<code>dl</code>은 십진 부동소수점(<code>_Decimal32/64/128</code>)의 것으로, 금액 계산처럼 십진 반올림이 요구되는 자리를 위한 선택 기능이다.</p><p><strong>문자 상수와 미리 정의된 상수.</strong></p><pre><code data-lang="text">enumeration-constant:
+    identifier
+
+character-constant:
+    encoding-prefix_opt ' c-char-sequence '
+
+encoding-prefix: one of  u8 u U L
+
+c-char-sequence:
+    c-char
+    c-char-sequence c-char
+
+c-char:
+    작은따옴표·역슬래시·개행을 제외한 소스 문자 집합의 아무 문자
+    escape-sequence
+
+escape-sequence:
+    simple-escape-sequence
+    octal-escape-sequence
+    hexadecimal-escape-sequence
+    universal-character-name
+
+simple-escape-sequence: one of
+    \' \" \? \\ \a \b \f \n \r \t \v
+
+octal-escape-sequence:
+    \ octal-digit
+    \ octal-digit octal-digit
+    \ octal-digit octal-digit octal-digit
+
+hexadecimal-escape-sequence:
+    \x hexadecimal-digit
+    hexadecimal-escape-sequence hexadecimal-digit
+
+predefined-constant: one of
+    false true nullptr</code></pre><p><code>hexadecimal-escape-sequence</code>의 재귀가 유명한 함정 하나를 설명한다 — <strong>자릿수에 상한이 없다.</strong> <code>"\x41BC"</code>는 <code>\x41</code> 다음에 <code>BC</code>가 아니라 <code>\x41BC</code> 하나로 읽히고, 값이 <code>char</code>에 안 들어가면 계약 밖이다. 8진 이스케이프는 반대로 최대 세 자리로 끊긴다.</p><p><code>predefined-constant</code>가 별도 규칙으로 있는 것이 C23의 변화다(78장) — <code>true</code>·<code>false</code>·<code>nullptr</code>이 매크로가 아니라 <strong>문법 요소</strong>가 됐다.</p><h4>A.1.6 문자열 리터럴</h4><pre><code data-lang="text">string-literal:
+    encoding-prefix_opt " s-char-sequence_opt "
+
+s-char-sequence:
+    s-char
+    s-char-sequence s-char
+
+s-char:
+    큰따옴표·역슬래시·개행을 제외한 소스 문자 집합의 아무 문자
+    escape-sequence</code></pre><p><code>_opt</code>가 빈 문자열 <code>""</code>을 허용한다. 접두사는 문자 상수와 같은 넷이다 — <code>u8"..."</code>(UTF-8), <code>u"..."</code>(UTF-16), <code>U"..."</code>(UTF-32), <code>L"..."</code>(와이드). 인접한 문자열 리터럴이 하나로 이어지는 것은 문법이 아니라 <strong>번역 단계 6</strong>의 일이다(54장).</p><h4>A.1.7 구두점</h4><pre><code data-lang="text">punctuator: one of
+    [  ]  (  )  {  }  .  ->
+    ++  --  &amp;  *  +  -  ~  !
+    /  %  &lt;&lt;  >>  &lt;  >  &lt;=  >=  ==  !=  ^  |  &amp;&amp;  ||
+    ?  :  ::  ;  ...
+    =  *=  /=  %=  +=  -=  &lt;&lt;=  >>=  &amp;=  ^=  |=
+    ,  #  ##
+    &lt;:  :>  &lt;%  %>  %:  %:%:</code></pre><p>마지막 줄은 <strong>대체 표기</strong>(digraph)다. <code>&lt;:</code>는 <code>[</code>, <code>%:</code>는 <code>#</code>과 같다 — 키보드에 그 글자가 없던 시절의 유물이고, 삼중자(trigraph)와 달리 C23에도 남아 있다.</p><p><code>::</code>이 새로 들어온 것은 78장의 속성 문법 때문이다(<code>[[gnu::packed]]</code>).</p><h4>A.1.8 헤더 이름</h4><pre><code data-lang="text">header-name:
+    &lt; h-char-sequence >
+    " q-char-sequence "
+
+h-char-sequence:
+    h-char
+    h-char-sequence h-char
+
+h-char:
+    개행과 > 를 제외한 소스 문자 집합의 아무 문자
+
+q-char-sequence:
+    q-char
+    q-char-sequence q-char
+
+q-char:
+    개행과 큰따옴표를 제외한 소스 문자 집합의 아무 문자</code></pre><p>이 토큰은 <strong>전처리 지시문 안에서만</strong> 만들어진다. 그래서 <code>&lt;stdio.h></code> 안의 <code>/</code>나 <code>.</code>이 나눗셈이나 멤버 접근으로 읽히지 않는다 — 렉서가 문맥에 따라 다르게 자르는 드문 자리다.</p><h4>A.1.9 전처리 수</h4><pre><code data-lang="text">pp-number:
+    digit
+    . digit
+    pp-number identifier-continue
+    pp-number ' digit
+    pp-number ' nondigit
+    pp-number e sign
+    pp-number E sign
+    pp-number p sign
+    pp-number P sign
+    pp-number .</code></pre><p>전처리기는 아직 수의 문법을 모른다. 그래서 “숫자로 시작해서 글자·점·부호가 이어지는 덩어리”를 통째로 하나의 토큰으로 잡아 둔다 — <code>1.2e+3</code>도, <code>0xFFul</code>도, 심지어 <code>1abc</code>도 전부 <code>pp-number</code> 하나다. 유효한지는 번역 단계 7 에서 정수·부동소수점 상수 문법에 대어 보며 가려진다.</p><p>이 규칙 덕에 매크로 치환이 수를 쪼개지 않고, <code>1.2e+3</code> 한가운데의 <code>+</code>가 덧셈으로 읽히지도 않는다.</p><h3>A.2 구문 문법</h3><h4>A.2.1 식</h4><pre><code data-lang="text">primary-expression:
+    identifier
+    constant
+    string-literal
+    ( expression )
+    generic-selection
+
+generic-selection:
+    _Generic ( assignment-expression , generic-assoc-list )
+
+generic-assoc-list:
+    generic-association
+    generic-assoc-list , generic-association
+
+generic-association:
+    type-name : assignment-expression
+    default : assignment-expression
+
+postfix-expression:
+    primary-expression
+    postfix-expression [ expression ]
+    postfix-expression ( argument-expression-list_opt )
+    postfix-expression . identifier
+    postfix-expression -> identifier
+    postfix-expression ++
+    postfix-expression --
+    compound-literal
+
+argument-expression-list:
+    assignment-expression
+    argument-expression-list , assignment-expression
+
+compound-literal:
+    ( storage-class-specifiers_opt type-name ) braced-initializer
+
+storage-class-specifiers:
+    storage-class-specifier
+    storage-class-specifiers storage-class-specifier
+
+unary-expression:
+    postfix-expression
+    ++ unary-expression
+    -- unary-expression
+    unary-operator cast-expression
+    sizeof unary-expression
+    sizeof ( type-name )
+    alignof ( type-name )
+
+unary-operator: one of  &amp; * + - ~ !
+
+cast-expression:
+    unary-expression
+    ( type-name ) cast-expression
+
+multiplicative-expression:
+    cast-expression
+    multiplicative-expression * cast-expression
+    multiplicative-expression / cast-expression
+    multiplicative-expression % cast-expression
+
+additive-expression:
+    multiplicative-expression
+    additive-expression + multiplicative-expression
+    additive-expression - multiplicative-expression
+
+shift-expression:
+    additive-expression
+    shift-expression &lt;&lt; additive-expression
+    shift-expression >> additive-expression
+
+relational-expression:
+    shift-expression
+    relational-expression &lt;  shift-expression
+    relational-expression >  shift-expression
+    relational-expression &lt;= shift-expression
+    relational-expression >= shift-expression
+
+equality-expression:
+    relational-expression
+    equality-expression == relational-expression
+    equality-expression != relational-expression
+
+AND-expression:
+    equality-expression
+    AND-expression &amp; equality-expression
+
+exclusive-OR-expression:
+    AND-expression
+    exclusive-OR-expression ^ AND-expression
+
+inclusive-OR-expression:
+    exclusive-OR-expression
+    inclusive-OR-expression | exclusive-OR-expression
+
+logical-AND-expression:
+    inclusive-OR-expression
+    logical-AND-expression &amp;&amp; inclusive-OR-expression
+
+logical-OR-expression:
+    logical-AND-expression
+    logical-OR-expression || logical-AND-expression
+
+conditional-expression:
+    logical-OR-expression
+    logical-OR-expression ? expression : conditional-expression
+
+assignment-expression:
+    conditional-expression
+    unary-expression assignment-operator assignment-expression
+
+assignment-operator: one of
+    =  *=  /=  %=  +=  -=  &lt;&lt;=  >>=  &amp;=  ^=  |=
+
+expression:
+    assignment-expression
+    expression , assignment-expression
+
+constant-expression:
+    conditional-expression</code></pre><p>이 사다리가 부록 A의 우선순위 표와 <strong>같은 내용</strong>이다. 표는 외우기 위한 요약이고, 문법은 그 표가 어디서 왔는지를 보여 준다 — 곱셈이 덧셈보다 강한 이유는 “덧셈 식이 곱셈 식들로 이루어진다”고 정의됐기 때문이다.</p><p>문법에서만 보이는 것 몇 가지를 짚는다.</p><p><strong>① 대입의 왼쪽은 <code>unary-expression</code>이다.</strong> 그래서 <code>a + b = c</code>는 문법 단계 에서 이미 걸린다 — 좌변이 단항 식이 아니기 때문이다. 반면 <code>*p = c</code>나 <code>a[i] = c</code>는 통과한다(둘 다 단항 식·후위 식이다).</p><p><strong>② 대입이 오른쪽 결합인 이유가 보인다.</strong> 우변이 다시 <code>assignment-expression</code>이라 <code>a = b = c</code>가 <code>a = (b = c)</code>로 묶인다. 덧셈은 좌재귀(<code>additive-expression + …</code>)라 왼쪽부터 묶인다.</p><p><strong>③ 조건 연산자의 가운데는 <code>expression</code>이다.</strong> 그래서 <code>a ? b, c : d</code>처럼 쉼표 식을 넣을 수 있지만, 마지막 자리는 <code>conditional-expression</code>이라 대입을 적으려면 괄호가 필요하다.</p><p><strong>④ <code>constant-expression</code>은 문법이 아니라 제약으로 정해진다.</strong> 규칙만 보면 그냥 조건 식이고, “상수여야 한다”는 요구는 별도의 제약 조항에 있다. 배열 크기나 <code>case</code> 라벨에 무엇을 적을 수 있는지가 그 조항의 몫이다(23장).</p><p><strong>⑤ 복합 리터럴에 저장 클래스가 붙는다.</strong> <code>storage-class-specifiers_opt</code>가 C23의 추가로, <code>(static int[]){1,2,3}</code>처럼 수명을 정할 수 있게 됐다 (44장의 블록 수명 함정을 피하는 길이다).</p><h4>A.2.2 선언</h4><pre><code data-lang="text">declaration:
+    declaration-specifiers init-declarator-list_opt ;
+    attribute-specifier-sequence declaration-specifiers init-declarator-list ;
+    static_assert-declaration
+    attribute-declaration
+
+declaration-specifiers:
+    declaration-specifier attribute-specifier-sequence_opt
+    declaration-specifier declaration-specifiers
+
+declaration-specifier:
+    storage-class-specifier
+    type-specifier-qualifier
+    function-specifier
+
+init-declarator-list:
+    init-declarator
+    init-declarator-list , init-declarator
+
+init-declarator:
+    declarator
+    declarator = initializer
+
+attribute-declaration:
+    attribute-specifier-sequence ;</code></pre><p>첫 규칙의 <code>init-declarator-list_opt</code>가 <code>struct point { int x; };</code>처럼 <strong>선언자 없는 선언</strong>을 허용한다 — 타입만 만들고 변수는 만들지 않는 경우다.</p><p><code>declaration-specifiers</code>가 재귀라는 사실이 <code>unsigned static long const int</code> 같은 뒤죽박죽 순서를 허용하는 근거다. 문법은 순서를 강제하지 않고 의미도 같지만, 읽는 사람을 위해 관행적 순서를 지키는 것이 좋다.</p><p><strong>저장 클래스와 타입.</strong></p><pre><code data-lang="text">storage-class-specifier: one of
+    auto  constexpr  extern  register  static  thread_local  typedef
+
+type-specifier:
+    void
+    char
+    short
+    int
+    long
+    float
+    double
+    signed
+    unsigned
+    _BitInt ( constant-expression )
+    bool
+    _Complex
+    _Decimal32
+    _Decimal64
+    _Decimal128
+    atomic-type-specifier
+    struct-or-union-specifier
+    enum-specifier
+    typedef-name
+    typeof-specifier
+
+type-qualifier: one of
+    const  restrict  volatile  _Atomic
+
+function-specifier: one of
+    inline  _Noreturn
+
+alignment-specifier:
+    alignas ( type-name )
+    alignas ( constant-expression )
+
+type-specifier-qualifier:
+    type-specifier
+    type-qualifier
+    alignment-specifier</code></pre><p>41장에서 정리한 네 축이 이 몇 줄에 그대로 있다. <code>typedef</code>가 <strong>저장 클래스 지정자의 하나</strong>라는 사실이 여기 보이고(57장), “저장 클래스는 하나만”이라는 요구는 문법이 아니라 제약 조항이 못박는다. <code>constexpr</code>이 저장 클래스 자리에 온 것도 78장에서 본 대로다.</p><p><strong>구조체와 공용체.</strong></p><pre><code data-lang="text">struct-or-union-specifier:
+    struct-or-union attribute-specifier-sequence_opt identifier_opt
+        { member-declaration-list }
+    struct-or-union attribute-specifier-sequence_opt identifier
+
+struct-or-union: one of
+    struct  union
+
+member-declaration-list:
+    member-declaration
+    member-declaration-list member-declaration
+
+member-declaration:
+    attribute-specifier-sequence_opt specifier-qualifier-list
+        member-declarator-list_opt ;
+    static_assert-declaration
+
+specifier-qualifier-list:
+    type-specifier-qualifier attribute-specifier-sequence_opt
+    type-specifier-qualifier specifier-qualifier-list
+
+member-declarator-list:
+    member-declarator
+    member-declarator-list , member-declarator
+
+member-declarator:
+    declarator
+    declarator_opt : constant-expression</code></pre><p><code>member-declarator</code>의 둘째 줄이 <strong>비트 필드</strong>이고, <code>declarator_opt</code>가 이름 없는 비트 필드(<code>int : 3;</code> — 자리만 띄우는 채움)를 허용한다(43장).</p><p><code>member-declaration-list</code>에 <code>static_assert-declaration</code>이 들어 있는 것도 눈여겨볼 만하다. 구조체 안에서 배치를 검사할 수 있다는 뜻이다.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> header <span class="tok-x">{</span>
+    <strong><span class="tok-t">uint32_t</span></strong> magic<span class="tok-x">;</span>
+    <strong><span class="tok-t">uint16_t</span></strong> version<span class="tok-x">;</span>
+    <strong>static_assert</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">uint32_t</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 구조체 안에서 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p><strong>열거.</strong></p><pre><code data-lang="text">enum-specifier:
+    enum attribute-specifier-sequence_opt identifier_opt
+        enum-type-specifier_opt { enumerator-list }
+    enum attribute-specifier-sequence_opt identifier_opt
+        enum-type-specifier_opt { enumerator-list , }
+    enum identifier enum-type-specifier_opt
+
+enumerator-list:
+    enumerator
+    enumerator-list , enumerator
+
+enumerator:
+    enumeration-constant attribute-specifier-sequence_opt
+    enumeration-constant attribute-specifier-sequence_opt = constant-expression
+
+enum-type-specifier:
+    : specifier-qualifier-list</code></pre><p>둘째 줄의 <code>, }</code>가 <strong>마지막 쉼표</strong>를 허용한다 — 목록에 항목을 더할 때 차이가 깨끗해지는 실용적인 배려다.</p><p><code>enum-type-specifier</code>는 C23의 추가로, 열거의 밑바탕 타입을 정할 수 있게 한다.</p><pre><code data-lang="c"><strong><span class="tok-t">enum</span></strong> status : uint8_t <span class="tok-x">{</span> OK <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">,</span> FAIL <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span> <span class="tok-x">}</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 정확히 1바이트 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>프로토콜 구조체처럼 크기가 계약인 자리에서 값을 한다(45장).</p><p><strong>원자적 타입과 typeof.</strong></p><pre><code data-lang="text">atomic-type-specifier:
+    _Atomic ( type-name )
+
+typeof-specifier:
+    typeof ( typeof-specifier-argument )
+    typeof_unqual ( typeof-specifier-argument )
+
+typeof-specifier-argument:
+    expression
+    type-name</code></pre><p><code>_Atomic</code>이 두 자리에 나온다는 점이 헷갈리기 쉽다 — <strong>한정자</strong>로 쓰면 <code>_Atomic int x;</code>이고, <strong>타입 지정자</strong>로 쓰면 <code>_Atomic(int) x;</code>다(76장).</p><p><code>typeof</code>는 GCC 확장으로 30년 넘게 쓰이다 C23에서 표준이 됐다. <code>typeof_unqual</code>은 <code>const</code>·<code>volatile</code>을 벗겨 낸 판이라, 매크로에서 임시 변수를 만들 때 특히 쓸모 있다.</p><p><strong>선언자 — 57장의 그 구조.</strong></p><pre><code data-lang="text">declarator:
+    pointer_opt direct-declarator
+
+direct-declarator:
+    identifier attribute-specifier-sequence_opt
+    ( declarator )
+    array-declarator attribute-specifier-sequence_opt
+    function-declarator attribute-specifier-sequence_opt
+
+array-declarator:
+    direct-declarator [ type-qualifier-list_opt assignment-expression_opt ]
+    direct-declarator [ static type-qualifier-list_opt assignment-expression ]
+    direct-declarator [ type-qualifier-list static assignment-expression ]
+    direct-declarator [ type-qualifier-list_opt * ]
+
+function-declarator:
+    direct-declarator ( parameter-type-list_opt )
+
+pointer:
+    * attribute-specifier-sequence_opt type-qualifier-list_opt
+    * attribute-specifier-sequence_opt type-qualifier-list_opt pointer
+
+type-qualifier-list:
+    type-qualifier
+    type-qualifier-list type-qualifier
+
+parameter-type-list:
+    parameter-list
+    parameter-list , ...
+    ...
+
+parameter-list:
+    parameter-declaration
+    parameter-list , parameter-declaration
+
+parameter-declaration:
+    attribute-specifier-sequence_opt declaration-specifiers declarator
+    attribute-specifier-sequence_opt declaration-specifiers
+        abstract-declarator_opt</code></pre><p>57장에서 손으로 익힌 독법이 이 규칙들에 들어 있다. <code>*</code>는 <strong>앞에</strong> 붙고 (<code>pointer_opt direct-declarator</code>), <code>[]</code>와 <code>()</code>는 <strong>뒤에</strong> 붙으며 (<code>array-declarator</code>와 <code>function-declarator</code> 모두 <code>direct-declarator</code>로 시작한다), 괄호로 묶으면 그 안이 먼저 선언자가 된다(<code>( declarator )</code>). “오른쪽이 왼쪽보다 세다”는 규칙이 문법의 모양에서 나온 것임을 여기서 확인할 수 있다.</p><p><code>array-declarator</code>의 네 줄이 배열 매개변수의 특수 문법을 담는다(37장).</p><ul><li>둘째·셋째 줄의 <code>static</code> — <code>void f(int a[static 10])</code>은 “적어도 10개는 있다”는 계약이다.</li><li>넷째 줄의 <code>*</code> — <code>int a[*]</code>는 원형에서만 쓰는 “길이가 가변인 배열” 표기다.</li><li><code>type-qualifier-list</code> — <code>void f(int a[const 10])</code>처럼 매개변수 자리에서 (실제로는 포인터인) 그것에 한정자를 붙이는 표기다.</li></ul><p><code>parameter-type-list</code>의 셋째 줄(<code>...</code>만)이 C23의 변화다. 이제 <code>int f(...)</code>처럼 이름 있는 매개변수 없이 가변 인자만 받을 수 있다(55장의 <code>va_start</code> 완화와 짝이다).</p><p>한 가지 더 — <strong>구식(K&amp;R) 함수 정의가 문법에서 사라졌다.</strong> C17까지 있던 <code>identifier-list</code>(<code>int f(a, b) int a, b; { }</code>)가 C23에서 제거됐고, 빈 괄호 <code>f()</code>도 이제 “인자를 받지 않는다”(<code>f(void)</code>와 같다)는 뜻이 됐다(12장).</p><p><strong>타입 이름과 추상 선언자.</strong></p><pre><code data-lang="text">type-name:
+    specifier-qualifier-list abstract-declarator_opt
+
+abstract-declarator:
+    pointer
+    pointer_opt direct-abstract-declarator
+
+direct-abstract-declarator:
+    ( abstract-declarator )
+    array-abstract-declarator attribute-specifier-sequence_opt
+    function-abstract-declarator attribute-specifier-sequence_opt
+
+array-abstract-declarator:
+    direct-abstract-declarator_opt [ type-qualifier-list_opt
+        assignment-expression_opt ]
+    direct-abstract-declarator_opt [ static type-qualifier-list_opt
+        assignment-expression ]
+    direct-abstract-declarator_opt [ type-qualifier-list static
+        assignment-expression ]
+    direct-abstract-declarator_opt [ * ]
+
+function-abstract-declarator:
+    direct-abstract-declarator_opt ( parameter-type-list_opt )
+
+typedef-name:
+    identifier</code></pre><p><strong>추상 선언자</strong>는 이름이 빠진 선언자다 — 캐스트와 <code>sizeof</code>에 적는 그것이다. 57장에서 말한 요령(“이름이 있어야 할 자리에 이름을 얹어 놓고 읽는다”)이 문법으로는 이렇게 표현된다: 선언자 규칙에서 <code>identifier</code>가 있던 자리에 아무것도 없는 판이 추상 선언자다.</p><p><strong>초기화.</strong></p><pre><code data-lang="text">braced-initializer:
+    { }
+    { initializer-list }
+    { initializer-list , }
+
+initializer:
+    assignment-expression
+    braced-initializer
+
+initializer-list:
+    designation_opt initializer
+    initializer-list , designation_opt initializer
+
+designation:
+    designator-list =
+
+designator-list:
+    designator
+    designator-list designator
+
+designator:
+    [ constant-expression ]
+    . identifier</code></pre><p>첫 줄의 빈 중괄호 <code>{ }</code>가 C23의 추가다. 예전에는 <code>{0}</code>이라고 적어야 했지만 이제 <code>struct point p = { };</code>로 “전부 0”을 적을 수 있다.</p><p><code>designator-list</code>가 반복이라는 점이 중첩 지정 초기화를 허용한다.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> config c <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>net<span class="tok-x">.</span>port <strong><span class="tok-x">=</span></strong> <span class="tok-n">8080</span><span class="tok-x">,</span> <span class="tok-x">.</span>paths<span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">/tmp</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>44장에서 본 <strong>이름 붙은 인자</strong> 관용구가 이 규칙 위에 서 있다.</p><p><strong>정적 단언과 속성.</strong></p><pre><code data-lang="text">static_assert-declaration:
+    static_assert ( constant-expression , string-literal ) ;
+    static_assert ( constant-expression ) ;
+
+attribute-specifier-sequence:
+    attribute-specifier-sequence_opt attribute-specifier
+
+attribute-specifier:
+    [ [ attribute-list ] ]
+
+attribute-list:
+    attribute_opt
+    attribute-list , attribute_opt
+
+attribute:
+    attribute-token attribute-argument-clause_opt
+
+attribute-token:
+    standard-attribute
+    attribute-prefixed-token
+
+standard-attribute:
+    identifier
+
+attribute-prefixed-token:
+    attribute-prefix :: identifier
+
+attribute-prefix:
+    identifier
+
+attribute-argument-clause:
+    ( balanced-token-sequence_opt )
+
+balanced-token-sequence:
+    balanced-token
+    balanced-token-sequence balanced-token
+
+balanced-token:
+    ( balanced-token-sequence_opt )
+    [ balanced-token-sequence_opt ]
+    { balanced-token-sequence_opt }
+    괄호·대괄호·중괄호가 아닌 아무 토큰</code></pre><p>메시지 없는 <code>static_assert(cond);</code>가 C23의 추가다(72장).</p><p>속성 문법은 C++에서 건너온 것으로, C23이 언어에 정식으로 들였다. 표준이 정한 것은 <code>[[deprecated]]</code>, <code>[[fallthrough]]</code>, <code>[[maybe_unused]]</code>, <code>[[nodiscard]]</code>, <code>[[noreturn]]</code>, <code>[[unsequenced]]</code>, <code>[[reproducible]]</code>이고, 컴파일러 확장은 접두사를 붙여 <code>[[gnu::packed]]</code>처럼 적는다. 83장에서 본 <code>[[nodiscard]]</code>가 이 문법의 산물이다.</p><p><code>balanced-token</code>이 “괄호만 짝이 맞으면 아무 토큰이나”라고 열어 둔 덕에, 표준이 모르는 확장 속성의 인자도 문법적으로는 통과한다 — 모르는 속성은 <strong>무시하는 것</strong>이 표준의 규정이다.</p><h4>A.2.3 문장</h4><pre><code data-lang="text">statement:
+    labeled-statement
+    unlabeled-statement
+
+unlabeled-statement:
+    expression-statement
+    attribute-specifier-sequence_opt primary-block
+    attribute-specifier-sequence_opt jump-statement
+
+primary-block:
+    compound-statement
+    selection-statement
+    iteration-statement
+
+secondary-block:
+    statement
+
+label:
+    attribute-specifier-sequence_opt identifier :
+    attribute-specifier-sequence_opt case constant-expression :
+    attribute-specifier-sequence_opt default :
+
+labeled-statement:
+    label statement
+
+compound-statement:
+    { block-item-list_opt }
+
+block-item-list:
+    block-item
+    block-item-list block-item
+
+block-item:
+    declaration
+    unlabeled-statement
+    label
+
+expression-statement:
+    expression_opt ;
+    attribute-specifier-sequence expression ;
+
+selection-statement:
+    if ( expression ) secondary-block
+    if ( expression ) secondary-block else secondary-block
+    switch ( expression ) secondary-block
+
+iteration-statement:
+    while ( expression ) secondary-block
+    do secondary-block while ( expression ) ;
+    for ( expression_opt ; expression_opt ; expression_opt ) secondary-block
+    for ( declaration expression_opt ; expression_opt ) secondary-block
+
+jump-statement:
+    goto identifier ;
+    continue ;
+    break ;
+    return expression_opt ;</code></pre><p>C23이 문장 문법을 재구성했다. 예전에는 <code>labeled-statement</code>가 라벨과 문장을 한 덩어리로 묶었는데, 지금은 <code>label</code>을 따로 떼어 <code>block-item</code>에도 넣었다. 효과는 하나다 — <strong>블록 끝에 라벨을 둘 수 있다.</strong></p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-x">...</span></strong>
+cleanup<span class="tok-x">:</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> C17 까지는 문법 오류(뒤에 문장이 있어야 했다) </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span></code></pre><p>72장에서 본 <code>goto cleanup</code> 관용구가 마지막 라벨 뒤에 억지로 <code>;</code>를 넣지 않아도 되게 됐다.</p><p>나머지도 읽을거리가 있다.</p><p><strong>① 빈 문장은 <code>expression_opt ;</code>에서 나온다.</strong> <code>;</code>만 적어도 문장이다.</p><p><strong>② <code>for</code>가 두 줄인 것</strong>은 C99에서 첫 자리에 선언을 쓸 수 있게 된 결과다(<code>for (int i = 0; …)</code>). 그 선언의 유효범위가 루프 안이라는 것은 문법이 아니라 의미 규칙이 정한다(41장).</p><p><strong>③ <code>if</code>의 <code>else</code>가 선택</strong>이라는 사실이 매달린 <code>else</code> 문제의 출처다. 문법만 으로는 <code>if (a) if (b) x; else y;</code>가 모호하고, 표준이 별도 문장으로 “가장 가까운 <code>if</code>에 붙는다”고 정한다. 30장에서 중괄호를 권한 이유다.</p><p><strong>④ <code>case</code>의 라벨 값은 <code>constant-expression</code>이다</strong> — 그래서 변수는 올 수 없고, 78장의 <code>constexpr</code> 상수는 올 수 있다.</p><h4>A.2.4 외부 정의</h4><pre><code data-lang="text">translation-unit:
+    external-declaration
+    translation-unit external-declaration
+
+external-declaration:
+    function-definition
+    declaration
+
+function-definition:
+    attribute-specifier-sequence_opt declaration-specifiers declarator
+        function-body
+
+function-body:
+    compound-statement</code></pre><p>51장에서 본 <strong>번역 단위</strong>가 여기서 문법의 시작 기호로 나온다. 파일 하나가 전처리를 마친 뒤 이 규칙에 대어진다.</p><p><code>function-definition</code>에서 두 가지가 보인다. 첫째, 정의는 <strong>선언자 하나</strong>만 갖는다 — 그래서 <code>int f(void), g(void) { }</code>처럼 여러 함수를 한 번에 정의할 수 없다. 둘째, 본문은 반드시 복합 문장이다 — 그래서 함수 하나는 언제나 중괄호로 감싼 블록이다.</p><h3>A.3 전처리 지시문</h3><pre><code data-lang="text">preprocessing-file:
+    group_opt
+
+group:
+    group-part
+    group group-part
+
+group-part:
+    if-section
+    control-line
+    text-line
+    # non-directive
+
+if-section:
+    if-group elif-groups_opt else-group_opt endif-line
+
+if-group:
+    # if constant-expression new-line group_opt
+    # ifdef identifier new-line group_opt
+    # ifndef identifier new-line group_opt
+
+elif-groups:
+    elif-group
+    elif-groups elif-group
+
+elif-group:
+    # elif constant-expression new-line group_opt
+    # elifdef identifier new-line group_opt
+    # elifndef identifier new-line group_opt
+
+else-group:
+    # else new-line group_opt
+
+endif-line:
+    # endif new-line
+
+control-line:
+    # include pp-tokens new-line
+    # embed pp-tokens new-line
+    # define identifier replacement-list new-line
+    # define identifier lparen identifier-list_opt ) replacement-list new-line
+    # define identifier lparen ... ) replacement-list new-line
+    # define identifier lparen identifier-list , ... ) replacement-list new-line
+    # undef identifier new-line
+    # line pp-tokens new-line
+    # error pp-tokens_opt new-line
+    # warning pp-tokens_opt new-line
+    # pragma pp-tokens_opt new-line
+    # new-line
+
+text-line:
+    pp-tokens_opt new-line
+
+non-directive:
+    pp-tokens new-line
+
+lparen:
+    바로 앞에 공백이 없는 ( 문자
+
+replacement-list:
+    pp-tokens_opt
+
+pp-tokens:
+    preprocessing-token
+    pp-tokens preprocessing-token
+
+new-line:
+    개행 문자
+
+identifier-list:
+    identifier
+    identifier-list , identifier</code></pre><p>여기가 54장에서 본 “C의 문법을 모르는 두 번째 언어”다. 규칙에서 세 가지가 드러난다.</p><p><strong>① <code>lparen</code>이 따로 정의된 이유.</strong> “바로 앞에 공백이 없는 <code>(</code>“라는 조건이 함수형 매크로와 객체형 매크로를 가른다.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">F</span></strong><span class="tok-x">(</span>x<span class="tok-x">)</span><span class="tok-p"> </span><span class="tok-x">(</span><span class="tok-x">(</span><span class="tok-p">x</span><span class="tok-x">)</span><strong><span class="tok-x">+</span></strong><span class="tok-n">1</span><span class="tok-x">)</span><span class="tok-p">      </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 함수형 — F(3) 이 치환된다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">G</span><span class="tok-p"> </span><span class="tok-x">(</span><span class="tok-p">x</span><span class="tok-x">)</span><span class="tok-p"> </span><span class="tok-x">(</span><span class="tok-x">(</span><span class="tok-p">x</span><span class="tok-x">)</span><strong><span class="tok-x">+</span></strong><span class="tok-n">1</span><span class="tok-x">)</span><span class="tok-p">     </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 객체형 — G 가 "(x) ((x)+1)" 로 치환된다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>공백 하나가 뜻을 바꾸는 드문 자리이고, 초보자가 한 번은 밟는 지뢰다.</p><p><strong>② <code># new-line</code>(널 지시문)이 합법이다.</strong> <code>#</code>만 있는 줄은 아무 일도 하지 않는다.</p><p><strong>③ C23이 셋을 더했다.</strong> <code>#elifdef</code>/<code>#elifndef</code>(그전에는 <code>#elif defined(X)</code>라고 적어야 했다), <code>#warning</code>(오래된 관행의 표준화), 그리고 <code>#embed</code>다.</p><p><strong><code>#embed</code>와 조건부 검사 연산자.</strong></p><pre><code data-lang="text">pp-parameter:
+    pp-parameter-name pp-parameter-clause_opt
+
+pp-parameter-name:
+    pp-standard-parameter
+    pp-prefixed-parameter
+
+pp-standard-parameter:
+    identifier
+
+pp-prefixed-parameter:
+    identifier :: identifier
+
+pp-parameter-clause:
+    ( pp-balanced-token-sequence_opt )
+
+pp-balanced-token-sequence:
+    pp-balanced-token
+    pp-balanced-token-sequence pp-balanced-token
+
+pp-balanced-token:
+    ( pp-balanced-token-sequence_opt )
+    [ pp-balanced-token-sequence_opt ]
+    { pp-balanced-token-sequence_opt }
+    괄호·대괄호·중괄호가 아닌 아무 전처리 토큰
+
+pp-parameters:
+    pp-parameter
+    pp-parameters pp-parameter
+
+defined-macro-expression:
+    defined identifier
+    defined ( identifier )
+
+h-preprocessing-token:
+    > 가 아닌 아무 preprocessing-token
+
+h-pp-tokens:
+    h-preprocessing-token
+    h-pp-tokens h-preprocessing-token
+
+header-name-tokens:
+    string-literal
+    &lt; h-pp-tokens >
+
+has-include-expression:
+    __has_include ( header-name )
+    __has_include ( header-name-tokens )
+
+has-embed-expression:
+    __has_embed ( header-name pp-parameters_opt )
+    __has_embed ( header-name-tokens pp-parameters_opt )
+
+has-c-attribute-express:
+    __has_c_attribute ( pp-tokens )
+
+va-opt-replacement:
+    __VA_OPT__ ( pp-tokens_opt )</code></pre><p><strong><code>#embed</code></strong> 가 C23의 가장 실용적인 추가일지 모른다. 파일의 <strong>내용</strong>을 정수 목록으로 그 자리에 박아 넣는다.</p><pre><code data-lang="c"><strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> logo<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span>
+#embed <span class="tok-s">"</span><span class="tok-s">logo.png</span><span class="tok-s">"</span>
+<span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>그전에는 이 일을 하려고 별도 도구(<code>xxd -i</code> 같은)로 소스를 생성해 빌드에 끼워야 했다. 펌웨어에 폰트·아이콘·인증서를 넣는 자리에서 흔한 일이다. 매개변수 문법(<code>limit(…)</code>, <code>prefix(…)</code>, <code>if_empty(…)</code>)이 위의 <code>pp-parameter</code>이고, 확장은 <code>gnu::</code> 같은 접두사를 붙인다.</p><p><strong><code>__has_include</code></strong> 는 77장에서 이미 쓴 그것이다 — 헤더가 있는지 물어보고 없으면 다른 길로 간다. <code>__has_c_attribute</code>는 속성 지원 여부를, <code>__has_embed</code>는 <code>#embed</code> 가능 여부를 묻는다.</p><p><strong><code>__VA_OPT__</code></strong> 는 C23이 들인 가변 인자 매크로의 도우미다. “가변 인자가 비어 있지 않을 때만” 무언가를 넣는다.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">LOG</span></strong><span class="tok-x">(</span>fmt<span class="tok-x">,</span><span class="tok-p"> </span><strong><span class="tok-x">...</span></strong><span class="tok-x">)</span><span class="tok-p"> </span><strong>printf</strong><strong><span class="tok-x">(</span></strong><strong>fmt </strong><strong>__VA_OPT__</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">,</span></strong><strong><span class="tok-x">)</span></strong><strong> __VA_ARGS__</strong><strong><span class="tok-x">)</span></strong>
+<strong>LOG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">hi</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> printf("hi")     — 쉼표가 안 붙는다 </span></em><em><span class="tok-c">*/</span></em>
+<strong>LOG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">42</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> printf("%d", 42) — 쉼표가 붙는다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>인자가 없을 때 남는 쉼표 때문에 GCC 확장(<code>, ##__VA_ARGS__</code>)에 기대던 자리가 표준으로 정리됐다. 87장에서 본 proven의 형식화 매크로가 이것을 쓴다.</p><h3>문법이 답하지 못하는 것</h3><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>타입 이름 문제와 렉서 해킹</p><p>16장에서 본 모호함이 이 문법의 한계를 보여 준다.</p><pre><code data-lang="c">A <strong><span class="tok-x">*</span></strong> B<span class="tok-x">;</span></code></pre><p>문법만 보면 이것은 <strong>식 문장</strong>(A와 B의 곱)일 수도, <strong>선언</strong>(A를 가리키는 포인터 B)일 수도 있다. 두 규칙이 같은 토큰 열을 받아들이는 것이다. C는 이 충돌을 문법 밖에서 해결한다 — <code>A</code>가 <code>typedef</code>로 만든 타입 이름 으로 <strong>이미 선언되어 있는가</strong>를 보고 정한다. 그래서 C 파서는 문법만으로는 동작할 수 없고, 이름표(심벌 테이블)와 대화해야 한다(“lexer hack”이라 불리는 구현 관행이 여기서 나왔다).</p><p>문법은 형태를 정하고, 의미 분석이 나머지를 정한다 — 컴파일러가 왜 여러 단계로 나뉘는지(16장)를 이 한 줄이 설명한다.</p></div><p>문법이 정하지 않는 것을 정리하면 이렇다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>문법이 정하는 것</strong></th><th><strong>문법 밖에서 정하는 것</strong></th></tr><tr><td>토큰의 배열이 합법인가</td><td>이름이 무엇을 가리키는가(유효범위·연결)</td></tr><tr><td>무엇이 무엇에 묶이는가(우선순위)</td><td>평가의 시간 순서(20·32장)</td></tr><tr><td><code>case</code> 자리에 식이 온다는 것</td><td>그 식이 상수여야 한다는 제약</td></tr><tr><td>선언의 형태</td><td>타입이 서로 맞는가</td></tr><tr><td><code>A * B;</code>의 두 가지 해석 가능성</td><td><code>A</code>가 타입 이름인지 여부</td></tr></table></div><p class="float-caption">표 94.3</p></figure><h3>표준 문서에서 문법을 찾는 법</h3><p>C 표준(그리고 무료로 받을 수 있는 초안, 부록 D 참고)에는 문법이 두 자리에 있다. 본문의 각 절에 그 절이 다루는 규칙이 붙어 있고, <strong>부속서 A</strong>에 전체 문법이 한데 모여 있다 — 이 부록이 따라간 그 부속서다. 실무에서 “이 자리에 이렇게 적어도 되는가”를 확인할 때는 부속서를 펴는 것이 빠르고, “왜 그런가”를 알고 싶으면 본문의 해당 절과 그 제약 조항을 읽는다.</p><div class="dev recap"><p class="dev-label">복습 정리</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>BNF</td><td><code>::=</code>, <code>|</code>, 비단말과 단말. 반복은 재귀로</td></tr><tr><td>EBNF</td><td><code>[ ]</code> 선택, <code>{ }</code> 반복, <code>( )</code> 묶음 — 재귀 없이 적는다</td></tr><tr><td>C 표준의 표기</td><td>들여쓴 줄이 대안, <code>_opt</code>는 생략 가능, <code>one of</code>는 단말 나열</td></tr><tr><td>두 층</td><td>어휘 문법(토큰 만들기) + 구문 문법(토큰 엮기). 전처리는 별도</td></tr><tr><td>식의 계층</td><td>우선순위 표는 이 계층의 요약. 대입은 우결합, 좌변은 단항 식</td></tr><tr><td>선언자 규칙</td><td><code>*</code>는 앞, <code>[]</code>·<code>()</code>는 뒤 — 57장 독법의 근거</td></tr><tr><td>C23의 변화</td><td><code>_BitInt</code>·2진 리터럴·자릿수 구분자·<code>enum : T</code>·빈 <code>{ }</code>·라벨 위치·<code>#embed</code>·<code>__VA_OPT__</code></td></tr><tr><td>문법의 한계</td><td><code>A * B;</code> — 타입 이름을 알아야 갈린다</td></tr></table></div><p class="float-caption">표 94.4</p></figure></div>
+<div class="nav"><a href="sec99.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec101.html">다음 →</a></div>
 </div></main></body></html>

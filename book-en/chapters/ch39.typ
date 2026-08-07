@@ -90,7 +90,7 @@ implementation's kindness, not the language's guarantee.
 
 *C++ differs.* In C++ a string literal's type is `const char[N]`, and the first line
 above is *a compile error*. This item belongs in the list of "differences between the
-two languages" seen in chapter 90.
+two languages" seen in chapter 92.
 
 #qa[
   Why did C not attach `const`?
@@ -100,11 +100,11 @@ two languages" seen in chapter 90.
   string literals into a `char *`. The moment the literal's type became `const char[N]`,
   all of that code would be subject to diagnosis.
 
-  It is the same circumstance as `gets`'s funeral taking twenty years (chapter 59) —
+  It is the same circumstance as `gets`'s funeral taking twenty years (chapter 61) —
   *the standard is an institution that must protect existing code*, so when "the right
   type" and "code already written" collide it leans towards the latter. C++, first
   standardised in 1998, carried no such burden and could attach `const` from the start
-  (chapter 90's "siblings, not parent and child" is confirmed here too).
+  (chapter 92's "siblings, not parent and child" is confirmed here too).
 
   So discipline stands in for the language. *A pointer at a literal is always declared
   `const char *`.* Then what the type cannot do has been written in by a human, and from
@@ -172,7 +172,7 @@ Write two string literals side by side and the compiler joins them into one.
 ```
 
 That the example's `sizeof("abc" "def")` is 7 confirms it (3+3+NUL). This happens not
-in the preprocessor but in *translation phase 6* (chapter 52's table) — so a string
+in the preprocessor but in *translation phase 6* (chapter 54's table) — so a string
 fragment produced by a macro joins with the literal beside it too.
 
 There are two uses.
@@ -202,7 +202,7 @@ puts("build: " __DATE__ " " __TIME__);     /* with the compiler's own literals t
 ```
 
 The point is that raising the version means mending *one line*. It weaves just as well
-with literals the compiler predefines (`__DATE__`, chapter 52), so many programs build
+with literals the compiler predefines (`__DATE__`, chapter 54), so many programs build
 their banner and `--version` output this way.
 
 *Keeping format fragments under names.* The same technique applied to `printf`'s
@@ -215,14 +215,14 @@ format.
 printf("id = " ID_FMT ", temp = " TEMP_FMT "\n", id, temp);
 ```
 
-The demand that a format string *be a constant* (chapter 56's format string
+The demand that a format string *be a constant* (chapter 58's format string
 vulnerability, and the compiler's format checking) is kept while the fragments are
 managed under names. It contrasts with passing a variable, as in
 `printf(fmt_string_variable, …)`, which makes all that checking vanish at once —
 *concatenation finishes at compile time, so the result is still one literal.*
 
 *The standard library uses the same technique.* The format macros of `<inttypes.h>`
-seen in chapter 73 and appendix B stand exactly on this rule.
+seen in chapter 75 and appendix B stand exactly on this rule.
 
 ```c
 printf("total = %" PRIu64 "\n", total);
@@ -233,14 +233,14 @@ fragments before and after into one format string. The problem that the format f
 fixed-width integer differs by platform was solved *by concatenation alone*.
 
 The three cases come to the same one thing — *give literal fragments names and weave
-them at the place of use.* And all three pair with chapter 52's `#` operator. If the
+them at the place of use.* And all three pair with chapter 54's `#` operator. If the
 version is managed as numbers, the numbers can be turned into strings and woven.
 
 ```c
 #define VER_MAJOR 3
 #define VER_MINOR 1
 #define STR_RAW(x) #x
-#define STR(x)     STR_RAW(x)                     /* double expansion (chapter 52) */
+#define STR(x)     STR_RAW(x)                     /* double expansion (chapter 54) */
 #define VERSION    "v" STR(VER_MAJOR) "." STR(VER_MINOR)   /* "v3.1" */
 ```
 
@@ -277,7 +277,7 @@ is*.
 
 The example really prints this table. That `L"AB"` is 12 bytes is because this Linux
 machine's `wchar_t` is 4 bytes — *on Windows it is 2 bytes and this becomes 6.* It is
-where chapter 62's "the size of `wchar_t` differs by implementation" shows itself at
+where chapter 64's "the size of `wchar_t` differs by implementation" shows itself at
 the level of literals.
 
 Character constants take the same prefixes (`L'A'`, `u'A'`). And where concatenation

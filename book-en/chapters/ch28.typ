@@ -88,7 +88,7 @@ comes out fine. The format `%f` in fact expects a double, and the float argument
 arrived as a double after promotion (which is why printf has no float-specific
 format at all). The "contract between format and materials" learned in
 chapter 22 has this promotion rule as a hidden clause — the full contract, and
-how to write variadic functions yourself, is faced head on in chapter 53.
+how to write variadic functions yourself, is faced head on in chapter 55.
 
 #realcase[
   The conversion that destroyed a rocket — Ariane 5, 1996

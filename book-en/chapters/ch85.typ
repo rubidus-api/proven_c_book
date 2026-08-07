@@ -1,322 +1,333 @@
 #import "../../book/lib.typ": *
 
-= Formatting and parsing — not writing the type twice
+= Allocation is a parameter
 
 #prereq(
-  ([chapter 53, Variadic functions], [variadic arguments and the format string]),
-  ([chapter 56, The terrain of the standard library], [the printf contract]),
+  ([chapter 42, Dynamic memory], [dynamic memory]),
+  ([chapter 80, Inside the allocator], [inside the allocator]),
 )
 
 #deepqa[
-  Chapter 53 said type information does not ride along into variadic arguments, and
-  chapter 56 said that is why the format string alone settles "how the stack is to be
-  read". Then what is needed to take the type from the argument?
+  Chapter 42 said memory obtained with `malloc` must be `free`d by somebody exactly
+  once, and that settling that "somebody" is the program's design. Then is there a
+  way to know from a function alone whether "this function allocates memory"?
 ][
-  Catch the type *at the call site* and send it along with the value. That is, do not
-  pass the argument as it is but wrap it into a `{type tag, value}` bundle. The
-  remaining problem is "how is the type tag attached automatically", and the answer is
-  C11's `_Generic` — the device that chooses different code at compile time according
-  to an expression's type. The run-time cost is zero, and unlike the implicit
-#idx("implicit conversion")  conversion rules learned in chapter 28, here the type is
-  *preserved*.
+  In standard C there is not. `malloc` can be called anywhere, so any function can
+  allocate in secret, and the signature does not say so. proven's answer is to return
+  that information to the signature with one rule — *a function that does not take an
+  allocator as an argument does not allocate.* If this rule is kept, reading the
+  signature alone tells you "this function may take memory".
 ]
 
 #organizer[
-  The answer to chapter 79's third bug — the mismatch of format and argument. How the
-  typeless placeholder `{}` obtains type safety, what `_Generic` does beneath it, and
-  how failure appears as a value in the opposite direction, parsing. It is the
-  alternative to the `printf` and `scanf` taken apart in chapter 56.
+  The answer to chapter 81's fourth bug — unclear ownership. The *allocator* that
+#idx("allocator")  handles the source of memory as a value, the *arena* that returns
+#idx("arena")  things of the same lifetime all at once, and the rule that divides
+  owning from borrowing by type. The dangers of the heap learned in chapter 42 are
+  organised here into design.
 ]
 
 #chapter-questions()
 
-== `{}` — the placeholder with no type
+== An allocator is a value
 
-The rules are only three.
-
-- `{}` — put the next argument here. The type is not written.
-- `{:...}` — after the colon write the format specification (width, alignment,
-  digits).
-- `{{` `}}` — the brace characters themselves.
-
-There being no `%d`, there is no place for a `%d` and a `double` to go out of step.
-The possibility of mismatch seen in chapter 56 is removed at the level of syntax.
-
-=== The whole grammar after the colon
-
-The order of the specifiers is fixed, and every one may be omitted.
-
-#align(center, block(inset: (y: 4pt))[
-  `{:` `[fill][align]` `[sign]` `[#]` `[0]` `[width]` `[.precision]` `[type]` `}`
-])
-
-#dtable(
-  columns: 3,
-  [*place*], [*what may be written*], [*meaning*],
-  [fill], [any character], [the character filling the spare places. it comes *before* the alignment symbol],
-  [align], [`<` `>` `^`], [left, right, centre. the default is right for numbers, left otherwise],
-  [sign], [`+`], [attach a sign to positives too],
-  [alternative form], [`#`], [attach the `0x`, `0b`, `0` prefix],
-  [zero fill], [`0`], [put before the width to fill with zeros (it goes after the sign)],
-  [width], [a number], [the minimum number of characters. it does not cut if over],
-  [precision], [`.number`], [decimal places for reals],
-  [type], [`x X o b f e g`], [hexadecimal (lower, upper), octal, binary, fixed, exponential, shortest],
-)
-
-They correspond to chapter 56's `printf` formats but differ in three ways. *The
-alignment symbol comes first* (`{:<10}` instead of `%-10s`), *the fill character can be
-chosen* (`{:*>8}`), and *there is no type letter* (`%d`'s `d` has gone — the type comes
-from the argument).
-
-#demo("examples-en/ch85/spec.c")
-
-The example shows this table in the flesh, a line at a time. A few points.
-
-*① The fill is written before the alignment.* `{:*>8}` is "fill with asterisks, align
-right". Swap the order (`{:>*8}`) and it does not mean anything.
-
-*② The 0 of `{:08}` goes after the sign.* Zero-fill `-42` to a width of 8 and it is
-`-0000042`, not `000000-42` — the same rule as `%08d` seen in chapter 56.
-
-*③ The default notation for reals differs from `printf`'s.* Very large and very small
-numbers are printed by `printf("%f")` as `100000000000000000000.000000` or `0.000000`,
-while this library uses exponential notation, `1.000000e+20` and `5.000000e-07`. The
-side that *does not lose information* was taken as the default, and it is a difference
-to know before comparing two logs. If fixed notation is needed, force it with `{:f}`.
-
-*④ `{:g}` gives the shortest notation that round-trips.* That `3.14159` comes out as it
-stands is that result — the notation keeping the "read it back and it is the same value"
-property seen in chapter 8.
-
-=== Printing a type the library has never heard of
-
-What can go into `{}` is only the types in the `_Generic` list. Then how is my own
-struct printed — *give it one function that draws.*
-
-```c
-static proven_err_t render_frac(proven_fmt_sink_t out, const void *obj)
-{
-    const frac_t *f = obj;
-    /* ... make it ... */
-    return proven_fmt_put(out, view);      /* and send it out */
-}
-
-proven_arg_t a = proven_arg_custom(&half, render_frac);
-proven_println("{} and |{:>8}|", PROVEN_ARG(a), PROVEN_ARG(a));
-```
-
-`proven_fmt_sink_t` is "a hole that receives bytes", and `proven_fmt_put` sends them
-out. As the example's output shows, *width and alignment apply to a user type too*.
-
-There is one contract to know here. *The drawing function is called twice per `{}`* —
-once with a counting sink (because the width and alignment must be calculated) and once
-for real. So this function must be *deterministic* and must not mutate its target. If
-the two results disagree the library returns `INVALID_ARG` rather than print a misaligned
-field. It is the price paid for aligning without allocating.
-
-#demo("examples-en/ch85/fmt.c")
-
-This example formats not to the screen but *into a string* — the `proven_println`
-seen in chapter 80 is the edition connecting this machinery to standard output. Three
-things can be pointed out.
-
-*First, formatting too can fail.* `example.org:8080` cannot go into an 8-byte vessel,
-so it was refused. Chapter 84's principle stands here too — rather than truncate, it
-returns a failure. The opposite default from `snprintf`.
-
-*Second, the format specification syntax is a little different.* The `>` of `{:>10}`
-is right alignment, `{:<10}` left alignment, `{:.3}` three decimal places. They
-correspond to chapter 56's `%10s`, `%-10s` and `%.3f`, differing in that *there is no
-type letter*.
-
-*Third, it rounds but keeps the number of digits.* `load=0.42` is what `{:.2}` made.
-
-=== Which formatting function to use
-
-Chapter 84's three kinds are here in formatting too. Organised in a table there is
-nothing to choose over.
-
-#dtable(
-  columns: 4,
-  [*function*], [*when short*], [*allocator*], [*where it is used*],
-  [`proven_println(fmt, …)`], [—], [not needed], [one line to the screen],
-  [`proven_print(fmt, …)`], [—], [not needed], [without a line break],
-  [`proven_eprint(fmt, …)`], [—], [not needed], [to standard error],
-  [`proven_u8str_append_fmt`], [refuses (the original stands)], [not needed], [a fixed buffer. the default],
-  [`proven_u8str_append_fmt_trunc`], [as much as fits], [not needed], [places that may be cut, such as a log line],
-  [`proven_u8str_append_fmt_grow`], [grows], [needed], [when the length is unknown],
-  [`proven_u8str_append_fmt_with_scratch`], [grows], [needed (+ scratch)], [when the temporary memory is to be given separately],
-)
-
-All of them return a `proven_fmt_result_t`, and this bundle has two more numbers beside
-`err`.
+`proven_allocator_t` is one struct — a context pointer and three function pointers
+(allocate, reallocate, free). There is no special global and no registration
+procedure. Being simply a value, it can be passed as an argument, held in a struct,
+and returned from a function. The *virtual function table* seen in chapter 56 is here
+as it stands.
 
 ```c
 typedef struct {
-    proven_err_t  err;
-    proven_size_t written;    /* the number of bytes actually written */
-    proven_size_t required;   /* the number of bytes needed to write it all */
-} proven_fmt_result_t;
+    void *ctx;                        /* this allocator's state (for an arena, the arena) */
+    proven_alloc_fn_t   alloc_fn;
+    proven_realloc_fn_t realloc_fn;
+    proven_free_fn_t    free_fn;
+} proven_allocator_t;
 ```
 
-`required` is the same information as `snprintf`'s return value seen in chapter 56. The
-difference is *that it sits in a named slot* — with `snprintf` a human had to remember
-the convention "if the return value is at least the buffer size it was truncated", while
-here `err` already says that and `required` answers "so how much was needed". In the
-output of the example `spec.c`, `written=7 required=10` is that use — how much to enlarge
-the buffer by is known as it stands.
+The three functions' signatures write the contract down as they stand.
+
+```c
+proven_result_mem_mut_t (*alloc_fn)(void *ctx, proven_size_t size,
+                                    proven_size_t align);
+proven_result_mem_mut_t (*realloc_fn)(void *ctx, void *old_ptr,
+                                      proven_size_t old_size,
+                                      proven_size_t new_size,
+                                      proven_size_t align);
+void                    (*free_fn)(void *ctx, void *ptr);
+```
+
+*Why pass `old_size` and `align` too.* The standard `realloc` does not ask the old size
+— because the allocator wrote it into the block's header (chapter 80). But an arena has
+no header. Not making a place to write the size is why an arena is fast, so the choice
+was for *the caller to tell it* instead. This decision is what lets a "headerless
+allocator" fit the same interface.
+
+Four things from the contract must be remembered.
+
++ *`align` must be a power of two.* And *a block must be reallocated and freed with the
+  same alignment it was allocated with.* Because the heap allocator handles requests at
+  or below the default alignment differently from stricter ones (chapter 84) — handing
+  a block back in a different alignment class is outside the contract.
++ *`size == 0` is `INVALID_ARG`.* A zero-byte allocation is treated as a caller's bug.
+  Before this rule the heap said `NOMEM` (a lie — nothing was out of memory) and the
+  arena returned a valid pointer, so *the answer differed per allocator*. Generic code
+  cannot be written on a rule like that.
++ *A reallocation with `new_size == 0` is a free* — it gives a null pointer and
+  `PROVEN_OK`.
++ *Reallocation is failure-atomic.* On failure `old_ptr` is still valid and its contents
+  untouched — chapter 63's `realloc` leak counterexample blocked at the level of the
+  interface.
+
+And every function that allocates has this shape.
+
+```c
+proven_result_u8str_t proven_u8str_create(proven_allocator_t alloc,
+                                          proven_size_t limit);
+void                  proven_u8str_destroy(proven_allocator_t alloc,
+                                           proven_u8str_t *str);
+```
+
+*Destroy with the allocator given at creation* — that is the whole of the ownership
+rule.
+
+== Swapping the three sources
+
+#demo("examples-en/ch85/three.c")
+
+Look at the `make_list` function. This function *does not know* whether the memory it
+uses comes from `malloc`, from a static array, or from a recycling bin. The caller
+settles it, and the same code runs identically over all three.
+
+Three things can be read in the output.
+
+*① An arena's usage is visible.* That `arena.offset` is 129 means exactly 129 bytes
+(128 of content + 1 NUL) went out for one string. A number that cannot be known on the
+heap can be counted in an arena — in embedded work this transparency pays when setting
+a memory budget.
+
+*② Reset makes individual release meaningless.* The usage did not fall although
+`destroy` was called (an arena's `free` does nothing), and one `reset` took it to 0.
+"Instead of giving back individually, give the whole back" is this picture.
+
+*③ When it runs dry it refuses as a value.* Requesting 128 bytes from a 64-byte arena
+gave back `NOMEM` (1). It neither collapses nor quietly falls back to the heap.
 
 #qa[
-  What exactly does `PROVEN_ARG` do?
+  Besides `heap`, `arena` and `pool`, can I make an allocator myself?
 ][
-  It chooses on the argument's type with `_Generic` and makes a small struct with a
-  tag fitting that type attached. Carried over in concept alone it has this shape.
+  Of course. Chapter 83's example already did — a testing allocator that "fails from the
+  nth call" made of three functions and inserted. The only rule is keeping the contract
+  above.
 
-  ```c
-  #define PROVEN_ARG(x) _Generic((x),          \
-      int:          proven_arg_i32,            \
-      double:       proven_arg_f64,            \
-      const char *: proven_arg_cstr,           \
-      bool:         proven_arg_bool            \
-      /* ... */ )(x)
-  ```
+  The cases for making one in practice are mostly these. *Instrumentation* — a shell
+  counting allocations and peak usage. *Testing* — failing on purpose, painting freed
+  memory with 0xDD. *Debugging* — recording the place (file and line) of an allocation.
+  *Special resources* — obtaining from shared memory or a DMA-capable region, places
+  `malloc` cannot give.
 
-  `_Generic` chooses the branch *at compile time*, so there is no run-time cost of
-  determining the type. And passing a type not in the list is *a compile error* — the
-  exact opposite of chapter 56's `printf`, which accepted anything.
+  All four take the shape of *wrapping an existing allocator*. They hold a backing
+  allocator inside, do their own work and pass it on. Chapter 83's example is the model.
 ]
 
+#qa[
+  Why is this such an important property? Most of the time the heap will be used
+  anyway.
+][
+  Because three things follow at once. First, *the same code runs in an environment
+  with no heap* — such is embedded work (chapter 90), and such is inside a kernel.
+  Second, *testing becomes easy* — insert an allocator that fails on purpose and you
+  can test "does this code recover properly when memory runs short". Third, *the
+  caller can choose the performance* — for data that lives briefly and dies all at
+  once, an arena is far faster than the heap. The moment the library calls `malloc`
+  directly, all three of these vanish.
+]
+
+== The arena — things of the same lifetime, all at once
+
+Chapter 42 taught the heap's three dangers (leak, double free, use after free). All
+three come from *individual release*. Then what if individual release were removed —
+that is the arena's idea.
+
+An arena takes one large lump of memory and, whenever a request comes, cuts from the
+front. There is a release function but it does nothing. Instead there is *reset* — it
+returns everything at once.
+
+That the struct has only two slots shows this simplicity as it stands.
+
+```c
+typedef struct {
+    proven_mem_mut_t backing;   /* the memory that backs it (borrowed) */
+    proven_size_t    offset;    /* how far it has been handed out */
+} proven_arena_t;
+```
+
+*An arena does not own its memory.* That `backing` is a writing window (`mem_mut_t`) is
+that declaration — a static array, a stack array, or a lump received once from the heap
+is prepared by the caller, and the arena only cuts on top of it. So
+`proven_arena_destroy` *does nothing* (there is nothing borrowed to give back). If the
+lump came from the heap, returning it is still the caller's part.
+
+The life cycle is four steps.
+
+#dtable(
+  columns: 3,
+  [*step*], [*function*], [*what happens*],
+  [making], [`proven_arena_create(backing)`], [`offset = 0`. no allocation],
+  [handing out], [`proven_arena_alloc(&a, n)`], [aligns and pushes `offset`],
+  [taking back], [`proven_arena_reset(&a)`], [`offset = 0` — everything becomes invalid],
+  [ending], [`proven_arena_destroy(&a)`], [the formal partner. it does nothing],
+)
+
+The allocation function has four editions. Choose the one that fits.
+
+#dtable(
+  columns: 2,
+  [*function*], [*when to use it*],
+  [`proven_arena_alloc(&a, size)`], [the default. cuts at the default alignment],
+  [`proven_arena_alloc_aligned(&a, size, align)`], [data where alignment matters (SIMD, DMA)],
+  [`proven_arena_alloc_or_panic(&a, size)`], [places where failure should stop the program],
+  [`proven_arena_realloc_aligned(...)`], [grows in place if it is the last block],
+)
+
+The `_or_panic` family exists for the reason given in chapter 83 — where the memory
+budget has been calculated in advance (embedded work is representative), "the arena is
+short" is not a failure to recover from but *a design error*, so demanding a check every
+time is rather noise.
+
+The `realloc` has one interesting property. An arena having no header, ordinary
+reallocation is "cut anew and copy", but *if the block being grown happens to be the
+last one handed out* it can grow in place simply by pushing `offset`. It is why code
+that appends to a string a little at a time is fast on an arena, and why calling
+chapter 86's `proven_u8str_reserve` in advance pays especially on an arena (an
+intervening allocation breaks the property).
+
+#demo("examples-en/ch85/arena.c")
+
+There really are many places this model fits. The temporary data made while handling
+one request, a game's calculation results used for one frame, the syntax tree made
+while parsing one file — all data *born at different moments but dying at the same
+one*. For such data, individual release is only cost and risk.
+
+#recap[
+  A comparison of the three sources of memory.
+
+  #dtable(
+  columns: 4,
+    [], [*heap*], [*arena*], [*pool*],
+    [how it gives], [arbitrary sizes], [cuts from the front], [fixed-size slots],
+    [individual release], [yes], [no (reset)], [yes (return the slot)],
+    [fragmentation], [can arise], [none], [none],
+    [speed], [ordinary], [very fast], [very fast],
+    [where it fits], [assorted lifetimes], [a group of the same lifetime], [the same size repeatedly],
+)
+]
+
+#idx("pool")The pool (`proven_pool_t`) is the third branch. It is used where objects
+of the same size are repeatedly made and unmade — a game's bullets, a server's
+connection objects, a parser's nodes. The slot size being fixed there is no
+fragmentation, and a returned slot is reused at once. A pool too becomes an allocator
+through `proven_pool_as_allocator`, so the previous example's `build` function runs
+on it as it is.
+
 #antipattern[
-  Passing a value without `PROVEN_ARG`
+  Destroying with a different allocator
 ][
   ```c
-  proven_println("count={}", count);        /* it does not compile */
+  proven_result_u8str_t r = proven_u8str_create(proven_heap_allocator(), 64);
+  ...
+  proven_u8str_destroy(proven_arena_as_allocator(&arena), &r.value);  /* wrong */
   ```
-  A raw value rather than a bundle was passed, so the types do not match and the build
-  fails. It can feel tiresome, but this is the point of the design — *forget to wrap
-  it and the program is not made.* Herein lies the difference from `printf`, which
-  compiles even when you forget and goes strange during execution.
+  It amounts to giving back to an arena what was obtained from `malloc`. This rule
+  cannot be enforced by the library — an allocator is simply a value, and which value
+  is passed is settled by the caller. So the practice in the field is *to carry the
+  allocator along with the data structure*, or to narrow the scope so that only one is
+  used within a module.
 ]
 
 #misconception[
-  "The placeholder has no type, so it must be slow"
+  "Use an arena and you need not care about releasing"
 ][
-  The opposite. `printf` interprets the format string letter by letter *during
-  execution* and decides what to take out next. `{}` scans the format too, but each
-  argument's type is already settled by its tag, so there is no guessing. Above all,
-  there being no UB from type mismatch, no defensive code is needed either. The
-  difference in cost is mostly negligible, and this library's real-number formatting
-  has rather taken more care over accuracy — reproducing exactly the rounding rules of
-  `%f` seen in chapter 56 is the more awkward task.
-]
-
-== The opposite direction — the scanner
-
-Parsing is formatting's mirror, but the character of failure differs. Formatting
-fails only when the vessel is too small, while parsing fails *whenever the input
-differs from expectation*. And as seen in chapter 56, `sscanf` tells only "how many
-succeeded" — it does not say where or why it stopped.
-
-#idx("scanner")proven's scanner is an object with a cursor. It is placed over a view
-and reads onward one at a time. Each read gives its result as a bundle.
-
-```c
-typedef struct {
-    proven_u8str_view_t view;     /* the input being read (borrowed) */
-    proven_size_t       cursor;   /* how far it has read */
-} proven_scan_t;
-```
-
-That there are only two slots says two things. First, *the scanner does not own the
-input* — it is only a cursor laid over a view, so making it allocates nothing and there
-is no destroying. Second, *the cursor can be saved and restored by hand*. Copy the whole
-struct, and on failure put it back, so a parser that "looks a few characters ahead to
-judge" is not hard to write.
-
-```c
-proven_scan_t save = sc;         /* a mark to go back to */
-proven_result_i64_t n = proven_scan_i64(&sc);
-if (!proven_is_ok(n.err)) sc = save;   /* it failed, so let it never have happened */
-```
-
-There are six reading functions, and all of them push the cursor forward.
-
-#dtable(
-  columns: 3,
-  [*function*], [*what it reads*], [*what it returns*],
-  [`proven_scan_i64(&sc)`], [a signed integer], [`{err, val}`],
-  [`proven_scan_u64(&sc)`], [an unsigned integer], [`{err, val}`],
-  [`proven_scan_f64(&sc)`], [a real], [`{err, val}`],
-  [`proven_scan_str(&sc)`], [a word up to whitespace], [`{err, view}` — *a view into the original*],
-  [`proven_scan_skip_whitespace(&sc)`], [skips whitespace], [—],
-  [`proven_scan_skip_until(&sc, t)`], [skips until `t` appears], [`err` (the cursor stands if absent)],
-)
-
-That `proven_scan_str` *returns a view without copying* matters — chapter 84's "text
-handling without copying" holds in parsing too. In exchange that view is valid only
-while the original input is alive (chapter 82).
-
-#demo("examples-en/ch85/lines.c")
-
-That three inputs divided into three branches is the heart of it. `bob thirty` had
-its name read but stopped at the age, and the line of whitespace only failed from the
-name. With `sscanf` both would have been lumped together as "one item succeeded" or
-"0".
-
-Having a cursor has another advantage. *How far it has read* can be known, so the
-remaining part can be handled another way or the position can be carried in an error
-message. It is the answer to the problem chapter 25 named when parsing a line with
-`sscanf`: "you cannot know how many characters were consumed."
-
-#qa[
-  Does the scanner have a format string too?
-][
-  It does. It is written like this.
+  Individual release disappears but *the lifetime remains as it was.* The moment the
+  arena is reset, every piece cut on it becomes invalid at once, so data that must
+  still be alive after the reset must not be put in the arena. Chapter 84's "a view
+  cannot outlive its owner" has grown here to arena scale. What an arena removes is
+  the *number of times* one releases, not the *thinking* about lifetime.
 
   ```c
-  proven_scan_fmt_cursor(&sc, "{}:{}",
-                         PROVEN_SCAN_ARG(&host), PROVEN_SCAN_ARG(&port));
+  proven_u8str_t name;
+  for (int i = 0; i < n; i++) {
+      proven_arena_reset(&per_request);        /* taken back per request */
+      handle(proven_arena_as_allocator(&per_request), &name);
+  }
+  use(&name);        /* ← dangerous. what name pointed at has already gone back */
   ```
 
-  It is symmetrical with formatting, and the arguments are
-  wrapped addresses of the places to hold the results. But there is one caution the
-  header states honestly — if it fails in the middle of the format, *the values filled
-  in up to that point have already been changed*. The failure atomicity learned in
-  chapter 81 is not guaranteed here, so if it is really needed the cursor and the
-  destinations must be saved beforehand and restored. Writing the contract in the
-  documentation rather than hiding it is this library's way.
+  The discipline in the field is one — *call the arena's lifetime and the lifetime of
+  the data on it by the same name.* "the request arena", "the frame arena", "the file
+  arena". Then which data must survive the reset shows itself in the name alone, and
+  data that must cross over is copied to *a longer-lived allocator*.
 ]
+
+== Which to choose
+
+#dtable(
+  columns: 4,
+  [*situation*], [*what to choose*], [*why*], [*caution*],
+  [data of assorted lifetimes], [the heap], [general-purpose. individual release possible], [cost and fragmentation (chapter 80)],
+  [data born and dying with a unit of work], [an arena], [allocation is one addition, release one reset], [everything invalid after a reset],
+  [the same struct by the thousand], [a pool], [no fragmentation, immediate reuse], [one size only],
+  [an environment with no heap at all], [a static array + an arena], [`malloc` is never called once], [the budget must be calculated in advance],
+  [testing the out-of-memory path], [a failing shell (chapter 83)], [it runs the path that never otherwise runs], [for testing only],
+)
+
+In practice these four are *layered*. The program as a whole uses the heap, while
+handling one request uses a request arena, and a data structure making thousands of
+nodes inside it lays a pool on top. That all three share the same interface, so that
+layering needs no special device, is the value of this design.
+
+== Owning and borrowing, and state that points at itself
+
+Now we return to chapter 81's fourth bug. The problem of `char *` meaning four things
+#idx("owning and borrowing")is solved by dividing the type in two.
+
+- *Owned* — things such as `proven_u8str_t` and `proven_array_t`. Obtained with
+  `_create` and let go with `_destroy`.
+- *Borrowed* — `proven_u8str_view_t`, `proven_mem_view_t`. Never destroyed. When the
+  owner vanishes they become invalid with it.
+
+That "must I release this?" can be answered from the signature alone is the whole of
+this distinction and its purpose.
+
+There is one more rule attached. *State that points at itself is not copied.*
+Chapter 43 taught that struct assignment is a shallow copy. Copy an object that holds
+inside a pointer to its own buffer that way, and the copy's pointer still points at
+the original, so two objects share the same memory and destroying both is a double
+free. So such objects are not copied by value but passed by pointer.
 
 #realcase[
-  What happens when a parser is lenient
+  The spread of the allocator-as-argument design
 ][
-  There is a problem that has come to light repeatedly in the handling of HTTP
-  requests. If a server and a proxy interpret the same request *slightly differently*,
-  an attacker can slip a second request in through that gap (request smuggling). The
-  cause was differences such as one side generously letting odd whitespace in a header
-  pass while the other refused strictly. The lesson is exactly the same as
-  chapter 84's story of encodings — *do not read ambiguous input as something mended;
-  refuse it.* A parser that returns failure as a value is also a parser equipped with
-  the means to express that refusal.
+  This way is not proven's invention but is close to the recent consensus of systems
+  programming. In Zig, almost every allocating API of the standard library takes an
+  allocator as an argument and "no hidden allocation" is the language's motto. In Rust
+  too, attaching an allocator to a container is on its way into the standard, and
+  C++'s `std::pmr` arose from the same problem-consciousness. The reason is the same
+  in every case — in games, embedded work, kernels and high-performance servers,
+  *choosing the source of memory* is the heart of both performance and safety.
 ]
 
-#recap[
-  Formatting and parsing in summary.
-
-  #dtable(
-  columns: 3,
-    [*what it does*], [*API*], [*note*],
-    [one line to the screen], [`proven_println(fmt, ARG…)`], [returns an error but does not compel],
-    [format into a string], [`proven_u8str_append_fmt(&s, …)`], [refuses if short],
-    [permitting truncation], [`…_append_fmt_trunc`], [states the intent in the name],
-    [growing as it goes], [`…_append_fmt_grow(alloc, …)`], [needs an allocator],
-    [wrapping an argument], [`PROVEN_ARG(x)`], [`_Generic` — a type not listed is a compile error],
-    [starting a scanner], [`proven_scan_init(view)`], [an object with a cursor],
-    [reading one at a time], [`proven_scan_i64/f64/str`], [result and failure as a bundle],
-    [reading by format], [`proven_scan_fmt_cursor(…)`], [beware partial changes on mid-way failure],
-)
+#qa[
+  Then what is the price?
+][
+  One more parameter attaches to the signature. And a new design problem arises of
+  *how far the allocator is to be carried* — whether to pass it to every function or
+  to hold it in a struct. In a small program this can look like nothing but tiresome
+  formality. Its value shows itself after the program grows, or when the code must be
+  moved to a place where the heap cannot be used.
 ]
 
-The vocabulary for holding, making and reading back strings is equipped. Next are the
-tools that *hold many* — growing arrays, lists, ring buffers, hash maps, and the
-algorithms with "a guarantee even in the worst case" foretold in chapter 79.
+We have set up the rules for obtaining and letting go of memory. From the next chapter
+come the real components that rise on top of it — first, the strings this book warned
+about all through chapter 39.

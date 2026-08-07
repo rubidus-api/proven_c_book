@@ -1,384 +1,247 @@
 #import "../../book/lib.typ": *
 
-= Locales ① — a program's regional settings
+= The drawer of odds and ends — `<stdlib.h>`
 
 #prereq(
-  ([chapter 62, Character classification], [that the judgement depends on the locale]),
-  ([chapter 50, The three faces of `main`], [environment variables]),
+  ([chapter 58, The terrain of the standard library], [the terrain of the standard library]),
+  ([chapter 42, Dynamic memory], [allocating and giving back]),
 )
 
 #deepqa[
-  Chapter 62 said the answer `isalpha` gives depends on "the current locale". But
-  I have never set a locale. What does it mean for an answer to depend on
-  something I never set?
+  Chapter 25 read input with `fgets` and parsed it with `sscanf`, and chapter 58
+  said `sscanf` does not tell you "where and why it failed". Then what is the most
+  accurate way to turn one string into an integer?
 ][
-  *Because one is already settled even if you set nothing.* The standard fixes
-  that too — at program startup the state is as if `setlocale(LC_ALL, "C")` had
-  been called (§7.11.1.1p4). So a program that does nothing runs in the minimal
-  environment called the C locale.
-
-  A locale is *the device by which settings outside the program change behaviour
-  inside it.* It is what makes one executable print `2026년 8월 6일` in Seoul,
-  `06.08.2026` in Berlin, and `3,14` from `printf("%f")`. This chapter is about
-  the names and rules of that device; the next is about what it changes.
+  The `strtol` family. This function tells three things at once — the converted
+  value, *where it stopped* (the end pointer), and whether the range was exceeded
+  (`errno` being `ERANGE`). `atoi` tells none of them. Its name is short so it
+  appears often in introductions, but it is a function not used in the field.
 ]
 
 #organizer[
-#idx("locale")  What a locale is, from the ground up. Why it exists, what the six categories
-  divide, the exact contract of `setlocale`, by what rule and which international
-  standards a name like `ko_KR.UTF-8` is built, the precedence of the environment
-  variables, and where on the machine that data lives.
+  A drawer named, exactly as it says, "the standard library". Functions that turn
+  strings into numbers, random numbers, dynamic allocation, program termination,
+  sorting and binary search are all in here together. In place of anything in
+  common there are many traps — in particular *conversion functions with no way to
+  report failure* and *the subtle differences between the terminating functions*
+  are this chapter's two axes.
 ]
 
 #chapter-questions()
 
-== Why it exists — conventions differ by country
+== Conversion — why `atoi` is abandoned
 
-When a program shows something to a person, there is not one "correct" way to
-write it.
+#demo("examples-en/ch63/convert.c")
 
-#dtable(
-  columns: 3,
-  [*What*], [*Korea*], [*Germany*],
-  [Decimal point], [`3.14`], [`3,14`],
-  [Thousands], [`1,234,567`], [`1.234.567`],
-  [Date], [`2026년 8월 6일`], [`06.08.2026`],
-  [Currency], [`₩1,234`], [`1.234,00 €`],
-  [Sorting], [Hangul order], [`ä` filed with `a`],
-)
+Put the output side by side and the difference is clear.
 
-Writing this out by hand in every program multiplies the code by the number of
-countries. So Unix and C took another road — *make the conventions data, keep
-them outside the program, and let the program choose only which set to work
-with.* That bundle of data is a locale.
+- `atoi("abc")` is 0. But `atoi("0")` is 0 too — *failure and success cannot be
+  distinguished.*
+- `atoi("42abc")` is 42. It quietly ignores the rubbish attached behind.
+- `atoi("99999999999999999999")` came out as −1. The standard says only that this
+  case is *undefined behaviour* — −1 came out by accident; any value at all could
+  come out and nothing is guaranteed.
+
+`strtol` distinguished, for the same inputs, "not a number", "characters left
+over" and "out of range" separately. The checking code looks long, but that length
+is precisely *the real complexity of handling a string that came from outside*.
+
+#antipattern[
+  Reading user input with `atoi`
+][
+  ```c
+  int port = atoi(argv[1]);      /* "0" and "bad input" are the same value */
+  ```
+  Mended, it goes like this.
+  ```c
+  errno = 0;
+  char *end;
+  long v = strtol(argv[1], &end, 10);
+  if (end == argv[1] || *end != '\0') { /* not a number */ }
+  else if (errno == ERANGE || v < 1 || v > 65535) { /* out of range */ }
+  else port = (int)v;
+  ```
+  *Setting `errno` to 0 just before the call* is the convention (chapter 72).
+  Without it you read the value a previous call left behind.
+]
+
+Real conversion is the same. `atof` cannot report failure, while `strtod` gives an
+end pointer and `ERANGE`. Moreover `strtod` may, according to the locale, read the
+decimal point as `,` rather than `.` (chapter 64) — a point always to be remembered
+when parsing a data format.
 
 #qa[
-  Is a locale translation?
+  Why does `qsort` take its comparison through two `void *` — would knowing the type not be faster?
 ][
-  No, and the distinction matters. A locale deals with *conventions* — decimal
-  points, grouping, the order of a date, sorting, case, currency symbols.
-  Turning the messages a program prints into another language, that is,
-  *translation*, is outside standard C.
-
-  Unix has a separate `LC_MESSAGES` category and tools such as `gettext` for
-  translation, but it is not among the six categories C fixes. What this book
-  covers stops at conventions too.
+  Because the standard library must sort *an array of any type at all*. C has no
+  generics, so the only passage that erases a type is `void *` (chapter 34), and
+  the price is a cast and a dereference inside the comparator every time. The
+  price is not only speed. Where the type has been erased, a mistake gets no help
+  from the compiler: pass the wrong element size, or write a comparator that takes
+  `int` where it must take `int*`, and it collapses quietly. That is why chapter
+  88's `proven_array_sort` pins the type with a macro, and why chapter 81 counts
+  "the unchecked callback" among the five bugs.
 ]
 
-== A locale is process-global state
+== Dynamic allocation — four functions and their contracts
 
-The nature of a locale in one line: *one locale per process.*
-
-#demo("examples-en/ch63/locale_probe.c")
-
-The first line of the demonstration shows the standard's rule in the flesh.
-Before anything happens, `LC_ALL` is `C`. And one `setlocale(LC_ALL, "")` moves
-it to whatever the environment says.
-
-Two things follow from its being global.
-
-*First, it can change without you calling anything.* If a library you linked
-calls `setlocale`, your `printf("%f")` is affected from that moment. GUI toolkits
-commonly do.
-
-*Second, it is a race between threads.* C23 states this explicitly — a call to
-`setlocale` may introduce *a data race* with other `setlocale` calls or with
-functions affected by the locale (§7.11.1.1p5). If you want different locales in
-different threads, standard C has no road; POSIX's `uselocale` family is needed
-(chapter 64).
-
-== The six categories — what governs what
-
-A locale is not one lump; it divides into *categories*. The standard fixes six,
-and it also enumerates what each one affects.
+We organise what chapter 42 taught, function by function.
 
 #dtable(
   columns: 3,
-  [*Category*], [*What it governs*], [*Functions affected*],
-  [`LC_CTYPE`], [Classification, case, *multibyte conversion*], [`isalpha` family (chapter 62), `mbrtowc` family (chapter 65)],
-  [`LC_NUMERIC`], [The decimal point and grouping of plain numbers], [★ `printf`, `scanf`, `strtod`],
-  [`LC_MONETARY`], [Monetary formatting information], [`localeconv`],
-  [`LC_COLLATE`], [String comparison order], [`strcoll`, `strxfrm`],
-  [`LC_TIME`], [Date and time formatting], [`strftime`, `wcsftime`],
-  [`LC_ALL`], [(the name for all of the above at once)], [—],
+  [*function*], [*what it does*], [*contract and traps*],
+  [`malloc(n)`], [allocate n bytes], [the content is undetermined. null on failure],
+  [`calloc(k, n)`], [allocate k×n bytes + fill with zeros], [★ *the implementation* checks the multiplication for overflow],
+  [`realloc(p, n)`], [change the size], [★ on failure the original is kept — assigning the return value straight to the original leaks],
+  [`free(p)`], [release], [null is safe. freeing twice is outside the contract],
+  [`aligned_alloc(a, n)`], [aligned allocation (C11)], [n must be a multiple of a],
 )
 
-You need not memorise the table, but one line is worth keeping: *`LC_NUMERIC`
-governs `printf`.* Nearly every case of this device corrupting data in practice
-comes from that line (chapter 64).
+`calloc`'s multiplication check is where it is useful. `malloc(k * n)` may have the
+product wrap round as seen in chapter 62, but for `calloc(k, n)` the standard
+requires the implementation to check for overflow and return null. *If sizes must
+be multiplied, `calloc` is the safer choice.*
 
-#platform[
-  The categories POSIX added
+#antipattern[
+  Assigning `realloc`'s return value straight to the original
 ][
-  On top of standard C's six, POSIX and glibc laid more. `LC_MESSAGES`
-  (translation), and glibc's `LC_PAPER` (paper size), `LC_NAME` (the order of
-  name parts), `LC_ADDRESS`, `LC_TELEPHONE`, `LC_MEASUREMENT` (metric or not),
-  `LC_IDENTIFICATION`. The long semicolon-separated list the demonstration
-  printed when asking `LC_ALL` is exactly those.
-
-  The standard leaves the door open: names beginning with `LC_` and an upper-case
-  letter may be defined by the implementation (§7.11p3). So these names work on
-  Linux and may not elsewhere.
+  ```c
+  buf = realloc(buf, new_size);   /* on failure the original address is lost → a leak */
+  if (!buf) return -1;
+  ```
+  The correct idiom goes through a temporary variable.
+  ```c
+  char *tmp = realloc(buf, new_size);
+  if (!tmp) { /* buf is still valid — it can be cleaned up or gone on using */ return -1; }
+  buf = tmp;
+  ```
+  It is why chapter 61's line-reading example used this idiom.
 ]
 
-== The exact contract of `setlocale`
+`realloc` has two more peculiar rules. `realloc(NULL, n)` is the same as
+`malloc(n)`, and *`realloc(p, 0)` is not to be used.* Its status changed from
+edition to edition — up to C17 it was *implementation-defined* and marked as
+deprecated, and in C23 it became outright *undefined behaviour* (proposal N2464).
+It is a place where implementations diverged so far that the standard gave up on
+settling it.
 
-One function, simple in shape, dense in contract.
+What this change leaves in practice is one line — *to release, use `free(p)`.* Code
+that reallocates to a size that may become 0 must filter that case first.
 
 ```c
-char *setlocale(int category, const char *locale);
+proven_err_t resize(char **buf, size_t n) {
+    if (n == 0) { free(*buf); *buf = nullptr; return OK; }  /* never pass 0 */
+    char *tmp = realloc(*buf, n);
+    ...
+}
 ```
 
-#dtable(
-  columns: 2,
-  [*Second argument*], [*Meaning*],
-  [`"C"`], [The minimal environment the standard fixes. Where a program starts],
-  [`""` (empty string)], [*The locale the environment says* — it reads the environment variables],
-  [`NULL`], [Do not change anything; only report the present value],
-  [Any other string], [An implementation-defined name (`"ko_KR.UTF-8"`, …)],
-)
-
-The return value splits two ways. On success it returns a string holding *the
-name of the locale that was set (or is in force)*; on failure it returns null.
-
-#misconception[
-  "`setlocale` does not fail"
-][
-  The quietest accident starts here. If the requested locale is *not installed*
-  on that machine, `setlocale` returns null and *changes nothing.* Without
-  looking at the return value the program carries on believing the locale
-  changed, dates come out in English and Korean comes out broken.
-
-  The `no_SUCH.locale` line of the demonstration is that case. Linux
-  distributions often ship a minimum of locales to save space (container images
-  especially), which makes this the classic place where what worked on the
-  developer's machine does not work in production.
-
-  ```c
-  if (!setlocale(LC_ALL, "")) {
-      fprintf(stderr, "warning: could not apply the locale; continuing in C.\n");
-  }
-  ```
-]
-
-The returned pointer has a rule too. That string points into static storage that
-*a later `setlocale` call may overwrite*. If you intend to restore it later, copy
-it, as the demonstration does.
-
-#qa[
-  May categories be mixed?
-][
-  They may, and doing so is the standard practice. The last part of the
-  demonstration is the idiom.
-
-  ```c
-  setlocale(LC_ALL, "");        /* follow the environment for everything, then */
-  setlocale(LC_NUMERIC, "C");   /* put numbers back into "C" */
-  ```
-
-  Dates, sorting and currency shown to a person follow the environment, while
-  *numbers a machine will read and write are pinned* so the locale cannot move
-  them. These two lines prevent most of the data corruption seen in chapter 64.
-
-  Once categories are mixed, `setlocale(LC_ALL, NULL)` returns a long string of
-  the form `LC_CTYPE=…;LC_NUMERIC=…;…`. That is the demonstration's last line —
-  the rule is "one name if they all agree, a list if they do not."
-]
-
-== The grammar of a locale name
-
-`ko_KR.UTF-8`. Take the name apart and there are four international standards
-inside it.
+== Termination — the difference between four ways
 
 #dtable(
   columns: 3,
-  [*Position*], [*Example*], [*Fixed by*],
-  [Language], [`ko`], [ISO 639-1 (two letters), or ISO 639-2/-3 (three)],
-  [`_` + territory], [`_KR`], [ISO 3166-1 alpha-2 country code],
-  [`.` + codeset], [`.UTF-8`], [A character-set name (IANA registry, ISO 8859 family, …)],
-  [`@` + modifier], [`@euro`], [A variant convention for the same language and place],
+  [*way*], [*cleanup*], [*where it is used*],
+  [`return` (in main)], [the same as `exit`], [normal termination],
+  [`exit(status)`], [runs `atexit`, flushes and closes streams], [normal termination (from deep inside)],
+  [`quick_exit(status)`], [runs only `at_quick_exit`, no flush], [quick termination (C11)],
+  [`_Exit(status)`], [does nothing], [special places such as a child process],
+  [`abort()`], [no cleanup, an abnormal-termination signal], [an unrecoverable error],
 )
 
-The whole grammar can be written like this.
+The heart of it is *the buffer*. `exit` empties the streams while `_Exit` and
+`abort` do not — the "output vanishing" accident seen in chapter 61 happens here.
+It is also why the last log of a program dying by `abort` is not seen.
 
-```text
-language[_TERRITORY][.codeset][@modifier]
+Functions registered with `atexit` are called in the *reverse* order of
+registration, and the standard guarantees registration of at least 32. Calling
+`exit` again inside a registered function is outside the contract.
 
-ko_KR.UTF-8      Korean, Republic of Korea, UTF-8
-de_DE@euro       German, Germany, the euro variant
-sr_RS@latin      Serbian written in the Latin script
-C   or  POSIX    the minimal locale the standard fixes
-```
+== Sorting and searching — `qsort` and `bsearch`
 
-#idx("ISO 639")#idx("ISO 3166")What matters is that the language and the territory are *codes borrowed from
-other standards*. `ko` is the code ISO 639-1 gave Korean and `KR` is the one
-ISO 3166-1 gave the Republic of Korea. A locale name is not something C invented;
-it is an assembly of code systems that already existed.
+The functions chapter 59 foretold. Written out exactly, the contract is this.
 
-#qa[
-  Which standard fixes this grammar?
+- The comparator is `int cmp(const void *a, const void *b)` and returns a
+  negative, zero or positive value. *Making it by subtraction can overflow* —
+  `return *x - *y;` is wrong for large values.
+  `return (*x > *y) - (*x < *y);` is the safe idiom.
+- The comparator must be a *total order* (chapter 81). If it is inconsistent the
+  result is not merely jumbled — it can trespass outside the array.
+- `qsort` is *not a stable sort.* The relative order of equal values is not
+  preserved. If it is needed, lay the original index on top in the comparator to
+  break ties.
+- Worst-case performance is settled by the implementation. The standard guarantees
+  nothing — the reason chapter 59's complexity attack was possible.
+- `bsearch` presumes *a sorted array*. If it is not sorted the result is
+  meaningless.
+
+== Random numbers — the limits of `rand`
+
+`rand` returns a number from 0 to `RAND_MAX`. `RAND_MAX` is guaranteed only to be
+at least 32767, so if a larger range is needed it must be composed.
+
+#antipattern[
+  Making a range with `rand() % n`
 ][
-  Not the C standard. C fixes only `"C"` and `""`, and says the rest are
-  *implementation-defined strings* (§7.11.1.1p3).
+  ```c
+  int dice = rand() % 6 + 1;      /* the values are not even */
+  ```
+  If `RAND_MAX + 1` is not a multiple of `n`, the values at the front come out
+  more often. If the range is small the bias is small too, but as `n` grows it
+  becomes noticeable. Moreover some old implementations had poor quality in the low
+  bits, so `% 2` even came out alternating.
 
-  But one footnote points the way — "*ISO/IEC 9945* specifies locale and charmap
-  formats that can be used to specify locales for C." ISO/IEC 9945 is *POSIX*
-  (IEEE Std 1003.1). The `language_TERRITORY.codeset@modifier` grammar, the format
-  of locale definition files, and the precedence of the environment variables are
-  all fixed by POSIX.
-
-  So the naming rules of this chapter are *the rules that hold on Unix-like
-  systems.* Windows uses another system, and the web uses a third — compared
-  below.
+  If an even distribution is needed, use *rejection sampling* — throw away a value
+  that exceeds the range and draw again. And *never use it for secrets* (Part XII's
+  random number story).
 ]
 
-=== Codeset names and normalisation
+Give no seed with `srand` and it is the same as `srand(1)` — the same sequence
+every time. `srand(time(NULL))` is a common idiom, but two processes started in the
+same second get the same sequence.
 
-`.UTF-8`, `.utf8`, `.UTF8` — all three name the same thing. glibc compares names
-ignoring case and `-`. So even when `locale -a` prints `ko_KR.utf8`, a program may
-ask for `"ko_KR.UTF-8"`.
+== The environment and processes
 
-The codeset names themselves come from yet another registry. `UTF-8`, `EUC-KR`
-and `ISO-8859-1` are registered in IANA's character-set registry, and behind them
-stand the ISO/IEC 8859 family or Unicode (ISO/IEC 10646).
+`getenv` returns an environment variable, but that string *must not be modified*
+and may not be valid after a subsequent `setenv`-like call. If the value is needed,
+copy it.
 
-*The codeset part often matters more than the rest of the name.* `ko_KR.UTF-8`
-and `ko_KR.EUC-KR` share a language and a territory but differ in *how many bytes
-a character takes*. In the demonstration their `MB_CUR_MAX` values split, 6
-against 2.
+`system` raises a shell and executes a command. If user input is mixed into that
+string it becomes *command injection* — the same class as the classic
+vulnerability of web applications. Within the standard there is no alternative, and
+the right answer is to use a platform API (`posix_spawn`, `CreateProcess`) and pass
+the arguments as an array.
 
 #realcase[
-  One country, two encodings — the era of `ko_KR.EUC-KR`
+  A real bug made by subtraction in a `qsort` comparator
 ][
-  Korean Unix environments of the 1990s and early 2000s defaulted to
-  `ko_KR.eucKR` (or `ko_KR.EUC-KR`) — a world in which one Hangul syllable is two
-  bytes. Code written then has the assumption "Hangul is two bytes" embedded
-  everywhere: string lengths divided by two, cursors moved by two, truncation
-  rounded to an even byte count.
+  A comparator of the form `return a - b;` is the most common mistake in sorting
+  code. If the values are near `INT_MIN` the subtraction overflows and the sign
+  flips, and the sort quietly gives a wrong result — since the signed overflow
+  learned in chapter 7 is outside the contract, the symptom even changes with the
+  compiler's optimisation.
 
-  Moving to UTF-8 broke all of it. Hangul became three bytes, and that code began
-  cutting letters in half. This is what the encoding transition actually felt like
-  in Korea, and it is also why the three layers of chapter 67 — bytes, code
-  points, characters — have to be told apart.
-]
-
-=== Names in other worlds — BCP 47 and Windows
-
-The same "Korean (Republic of Korea)" is named differently by each system.
-
-#dtable(
-  columns: 3,
-  [*System*], [*Notation*], [*Basis*],
-  [POSIX and C], [`ko_KR.UTF-8`], [ISO/IEC 9945 (POSIX)],
-  [BCP 47 (web, XML, HTTP)], [`ko-KR`], [RFC 5646 (tags), RFC 4647 (matching)],
-  [Windows (Vista onwards)], [`ko-KR`], [Follows BCP 47],
-  [Windows (the old way)], [`Korean_Korea.949`], [Windows-specific],
-  [Unicode CLDR], [`ko_KR`], [UTS \#35 (LDML)],
-)
-
-#idx("BCP 47")BCP 47 is the internet standard — the tag in HTML's `lang="ko-KR"` and in HTTP's
-`Accept-Language`. It uses a hyphen instead of an underscore and has no codeset
-part, because the web handles encoding separately. When the script must be
-stated, an ISO 15924 code goes in the middle, as in `sr-Latn-RS`.
-
-*A program that spans both worlds must translate names.* To pass a browser's
-`ko-KR` to `setlocale` it has to become `ko_KR.UTF-8`, which means holding a
-mapping table somewhere. Mistakes are frequent at that seam.
-
-#platform[
-  The modern source of locale data — CLDR
-][
-  Who maintains the actual convention data — how a country writes dates, what its
-  currency symbol is? Today's answer is the Unicode Consortium's *CLDR* (Common
-  Locale Data Repository), in the format UTS \#35 (LDML) fixes. ICU, Java, Android
-  and browsers all take their data from there.
-
-  glibc's locale definitions come from an older line — ISO/IEC TR 14652
-  (a specification method for cultural conventions) and ISO/IEC 15897 (procedures
-  for registering cultural elements) — and the files themselves sit in
-  `/usr/share/i18n/locales/` in a human-readable form.
-
-  Since the two lines differ, *the same locale may carry slightly different
-  values.* That is where a Java program and a C program printing the same date
-  differently comes from.
-]
-
-== The precedence of the environment variables
-
-We said `setlocale(LC_ALL, "")` uses "the locale the environment says". Exactly
-what environment — POSIX fixes the precedence.
-
-#dtable(
-  columns: 3,
-  [*Rank*], [*Variable*], [*Meaning*],
-  [1], [`LC_ALL`], [If present, it overrides every category],
-  [2], [`LC_CTYPE`, `LC_TIME`, …], [Sets only that category],
-  [3], [`LANG`], [The default for categories not set above],
-)
-
-So `LANG=ko_KR.UTF-8 LC_NUMERIC=C ./program` runs mostly with Korean conventions
-but with numbers in C conventions. The scripts that launch server programs pin
-`LC_ALL=C` for the same reason — *to insulate logs and parsing from the
-environment.*
-
-```sh
-$ locale                 # what the environment is setting right now
-$ locale -a              # the locales installed on this machine
-$ locale -k LC_NUMERIC   # the values of one category in detail
-```
-
-== Where locale data lives
-
-A locale is not inside the program. It has to be *installed on the machine*.
-
-#dtable(
-  columns: 2,
-  [*Step*], [*What*],
-  [Definition file], [`/usr/share/i18n/locales/ko_KR` — human-readable],
-  [Charmap], [`/usr/share/i18n/charmaps/UTF-8.gz`],
-  [Compile], [`localedef -i ko_KR -f UTF-8 ko_KR.UTF-8`],
-  [Installed under], [`/usr/lib/locale/` (or `locale-archive`)],
-  [Search path], [Changeable with the `LOCPATH` environment variable],
-)
-
-Knowing this structure lets you solve the "missing locale" problem yourself. If a
-container has no `ko_KR.UTF-8`, put the definition file in and build it with
-`localedef`.
-
-#realcase[
-  How this book checked its locale tables
-][
-  The machine this book is built on also started with only `C`, `C.UTF-8` and
-  `POSIX`. So, to check the tables of the next chapter, the necessary locales were
-  built from glibc 2.41's definitions.
-
-  ```sh
-  localedef -i ko_KR -f UTF-8 <path>/ko_KR.UTF-8
-  localedef -i de_DE -f UTF-8 <path>/de_DE.UTF-8
-  export LOCPATH=<path>
-  ```
-
-  So the values from other locales printed in this book are not guesses; they are
-  *what came out of running it that way.* Conversely, if the reader's machine
-  lacks those locales the examples print "not on this machine" — they are written
-  so as not to assume any locale exists.
+  This pattern has been reported repeatedly in kernels, databases and game engines
+  alike, common enough that static analysis tools catch it with a rule of their
+  own. The mend is one line — do not subtract, compare.
 ]
 
 #recap[
+  `<stdlib.h>` in summary.
+
   #dtable(
-    columns: 2,
-    [*What to remember*], [*The point*],
-    [What it is], [*Conventions* set outside the program. Not translation],
-    [Starting value], [Always `"C"` — the standard says so],
-    [Scope], [Process-global. A library can change it; threads race over it],
-    [Categories], [`LC_CTYPE`, `LC_NUMERIC`, `LC_MONETARY`, `LC_COLLATE`, `LC_TIME` (+`LC_ALL`)],
-    [`setlocale`], [`""`=environment, `NULL`=query. *Null return means failure*],
-    [Names], [`language_TERRITORY.codeset@modifier` — ISO 639, ISO 3166, charset registry],
-    [Basis], [The grammar and formats are POSIX (ISO/IEC 9945). The web uses BCP 47],
-    [Environment], [`LC_ALL` > `LC_`category > `LANG`],
-    [In practice], [`LC_ALL, ""` followed by `LC_NUMERIC, "C"`],
+    columns: 3,
+    [*what you want to do*], [*what to use*], [*what to avoid*],
+    [string → integer], [`strtol` + end pointer + `errno`], [`atoi`],
+    [string → real], [`strtod` (mind the locale)], [`atof`],
+    [allocate an array], [`calloc(k, n)`], [`malloc(k * n)`],
+    [change the size], [`realloc` via a temporary variable], [assigning straight to the original],
+    [normal termination], [`return`/`exit`], [`_Exit` (buffer loss)],
+    [sorting], [`qsort` + a total-order comparator], [a subtracting comparator, assuming stability],
+    [random numbers], [rejection sampling, a generator fit for the purpose], [`rand() % n`, using it for secrets],
+    [external commands], [an argument array through a platform API], [joining input into `system`],
   )
 ]
 
-We have seen what a locale is and how one is chosen. The next chapter is *what it
-changes and how* — numbers, money, time and sorting, one at a time.
+The drawer is tidied. The next chapter is the functions that handle a single
+character — and the fact that those functions are tied to the global state called
+the locale.

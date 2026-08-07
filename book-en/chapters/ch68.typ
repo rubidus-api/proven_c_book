@@ -1,177 +1,292 @@
 #import "../../book/lib.typ": *
 
-= Numbers — `<math.h>`, `<fenv.h>`, `<tgmath.h>`
+= Wide characters ② — the platforms, and wide I/O
 
 #prereq(
-  ([chapter 47, Real numbers], [the mathematics of approximation]),
-  ([chapter 8, Representing numbers], [IEEE 754]),
+  ([chapter 67, Wide characters ①], [`wchar_t`'s contract and conversion]),
+  ([chapter 60, Streams in practice], [streams and buffers]),
 )
 
 #deepqa[
-  Chapter 47 said not to compare reals with `==`, and chapter 8 said 0.1 is not
-  exactly representable. Then how does a mathematical function tell you when it
-  receives "input it cannot calculate"?
+  Chapter 67 said the standard fixes neither the size nor the encoding of
+  `wchar_t`. If it does not, the implementation picks — is that really such a
+  problem?
 ][
-  There are two paths. It gives NaN or an infinity as the *return value*, and at
-  the same time leaves the reason in *`errno`* — `EDOM` for outside the domain,
-  `ERANGE` when the result exceeds the representable range. But an implementation
-  may choose to report through the floating-point exception flags (`<fenv.h>`)
-  instead of `errno`, so to check portably you must be ready to look at both. In
-  the field it is usually simpler to check the return value with `isnan` and
-  `isinf`.
+  *That it split into two camps* is the problem. Linux and macOS chose four
+  bytes; Windows chose two. And that choice stood on one fact of the 1990s —
+  "sixteen bits are enough for Unicode" — which broke in 1996.
+
+  Once Unicode went past U+FFFF, a two-byte `wchar_t` could no longer keep its
+  original promise of *holding one character in one unit.* The patch was the
+  surrogate pair, and most of the string traps in Windows programming today come
+  from it.
+
+  This chapter is the exact shape of that split, and what each platform and
+  toolkit chose to build on top of it.
 ]
 
 #organizer[
-  We look at how real-number calculation reports failure. The mathematics of
-  approximation learned in chapters 8 and 47 becomes the contract of functions here
-  — calls outside the domain, results beyond the range, the properties of NaN and
-  infinity, and the hidden global state called the rounding mode.
+#idx("UTF-16")  What the same `wchar_t` became on each platform. The limit of UTF-16 and the
+  arithmetic of surrogate pairs, Windows's `W` functions and their exact
+  encoding, glibc's choice, how GTK and Qt hold strings, and the little-known
+  rule of stream orientation.
 ]
 
 #chapter-questions()
 
-== The properties of NaN and infinity
+== A `wchar_t` split into two camps
 
-#demo("examples-en/ch68/math.c")
+#dtable(
+  columns: 4,
+  [*Platform*], [`sizeof(wchar_t)`], [*Encoding in practice*], [`__STDC_ISO_10646__`],
+  [Linux (glibc), macOS], [4], [UTF-32 (UCS-4)], [Defined],
+  [Windows (MSVC, MinGW)], [2], [UTF-16], [Not defined],
+  [Some other Unixes (AIX, …)], [2 or 4], [Varies], [Varies],
+)
 
-Four things to point out in the output.
-
-*① NaN is not equal to itself.* IEEE 754 settled it so. Hence the old idiom that
-if `x != x` is true then `x` is NaN, while the standard function is `isnan(x)`.
-Because of this property, sorting an array containing NaN with `qsort` breaks the
-comparator's total order and the result collapses (chapter 61).
-
-*② Dividing a real by zero is not outside the contract.* Unlike integer division
-(chapter 27), in an IEEE 754 environment it yields an infinity or a NaN. But the
-same holds that *the very fact of dividing by zero is usually a bug*.
-
-*③ `sqrt(-1)` is `EDOM`, `exp(1000)` is `ERANGE`.* The former is outside the
-domain, the latter a case where the result exceeded the representable range. If you
-mean to look at `errno`, set it to 0 just before the call (chapter 70).
-
-*④ 0.0 and −0.0 are equal under `==`.* But the sign bit differs, and `1/0.0` and
-`1/-0.0` are +∞ and −∞ respectively. If the sign must be distinguished, use
-`signbit`.
-
-#misconception[
-  "Comparing reals is safe if you use an epsilon"
-][
-  The epsilon comparison learned in chapter 47 is not omnipotent. Absolute error
-  (`fabs(a-b) < eps`) becomes meaningless when the values are large — near 1e9,
-  1e-9 is not even representable — and relative error collapses near zero. The
-  prescription in the field is *settling a tolerance that fits the situation*, not
-  using a universal constant. And it is better to ask first whether it can be
-  handled with integers or fixed point so that the comparison is not needed at all
-  (chapter 8's story of calculating money).
-]
+Chapter 67's demonstration gave this machine's answer — four bytes, and
+`__STDC_ISO_10646__` defined. One `wchar_t` is one code point. On Windows that
+equation does not hold.
 
 #qa[
-  How do the functions of `math.h` report failure — the return value alone cannot say?
+  Why did Windows choose two bytes?
 ][
-  In three ways. *Outside the domain* (say `sqrt(-1)`) they return NaN and set
-  `errno` to `EDOM`. *Beyond the range* (say `exp(1000)`) they return infinity and
-  set `ERANGE`. And the floating-point exception flags of `<fenv.h>` are raised.
+  The circumstances of the age. In the early 1990s, while Windows NT was being
+  designed, Unicode was *a fixed-width 16-bit character set.* The design of the
+  day was to hold every character in the world within 65,536, and on that premise
+  "two bytes is one character" was a reasonable choice. Java's `char`,
+  JavaScript's strings and Qt's `QChar` all made the same choice at the same time.
 
-  The trouble is that *how far each of the three is honoured varies between
-  implementations*. So the practical idiom is to clear `errno = 0` before the call
-  and check immediately after (chapter 70). To inspect the value itself use
-  `isnan` and `isinf` — they say what they mean, unlike tricks such as `x != x`.
+  Unicode 2.0 broke the premise in 1996. Chinese characters alone exceeded 65,536,
+  and opening the range to U+10FFFF created *characters that sixteen bits cannot
+  hold.* Systems already built on 16 bits could not change the type, so they
+  changed the encoding instead — UTF-16, writing one character as two units.
+
+  So Windows's `wchar_t` today is *not "one character" but "one UTF-16 code
+  unit."* Name and reality have been at odds for thirty years.
 ]
 
-== Functions often got wrong
+== The limit of UTF-16 and the surrogate pair
+
+Unicode's code point space runs from U+0000 to U+10FFFF. The first part,
+U+0000\~U+FFFF, is the *Basic Multilingual Plane* (BMP), and that is as far as
+sixteen bits reach.
+
+To write characters above it in 16-bit units, Unicode set aside *a region that is
+never used for characters* inside the BMP itself.
 
 #dtable(
   columns: 3,
-  [*function*], [*what it does*], [*trap*],
-  [`pow(x, y)`], [raising to a power], [used for an integer power it can be slow and inexact],
-  [`round`, `nearbyint`], [rounding], [`round` goes away from zero, `nearbyint` follows the current mode],
-  [`floor`, `ceil`, `trunc`], [cutting to an integer], [the direction differs for negatives],
-  [`fmod`, `remainder`], [the remainder], [their sign rules differ from each other],
-  [`abs`, `fabs`], [absolute value], [★ `abs` is for integers. used on a real it truncates],
-  [`atan2(y, x)`], [angle], [the argument order is `y, x`],
-  [`isnan`, `isinf`], [classification], [they are macros — they cannot be used as function pointers],
+  [*Region*], [*Range*], [*What*],
+  [High surrogates], [U+D800\~U+DBFF], [The first unit of a pair (1024 of them)],
+  [Low surrogates], [U+DC00\~U+DFFF], [The second unit of a pair (1024)],
+  [(The range they express together)], [U+10000\~U+10FFFF], [1024 × 1024 = 1,048,576 characters],
 )
 
-`pow(x, 2)` is widely used, but for an integer square `x * x` is faster and exact.
-The compiler often optimises it, but not always.
+#demo("examples-en/ch68/surrogate.c")
 
-The mistake of using `abs` on a real is especially quiet. `<stdlib.h>`'s `abs`
-takes an `int`, so `abs(-1.5)` turns −1.5 into 1. Today's compilers warn, but it is
-easy to miss in a file that does not include `<math.h>`.
+The demonstration shows the arithmetic itself. For U+1F600:
 
-== Rounding modes and floating-point exceptions — `<fenv.h>`
++ Subtract 0x10000 from the code point → 0x0F600 (it fits in 20 bits)
++ Add the top ten bits to 0xD800 → 0xD83D (high)
++ Add the bottom ten bits to 0xDC00 → 0xDE00 (low)
 
-Floating-point operations have two pieces of *hidden global state*.
+*Surrogate values are not characters.* U+D800\~U+DFFF are assigned to no letter,
+and appearing alone in UTF-8 or UTF-32 they are invalid data (we meet them again
+in chapter 69's validation). That is why trying to hold U+D800 as UTF-16 printed
+"cannot be represented".
 
-*The rounding mode* — the default is "to the nearest value, ties to even". It can
-be changed with `fesetround`, and once changed every subsequent real operation is
-affected.
-
-*The exception flags* — flags are raised when division by zero, overflow,
-inexactness and so on occur. They are read with `fetestexcept` and cleared with
-`feclearexcept`. They are finer than `errno`, but to use this facility
-`#pragma STDC FENV_ACCESS ON` must be turned on — and then the compiler refrains
-from reordering real operations, so optimisation is reduced.
-
-#antipattern[
-  Turning on `-ffast-math` and checking for NaN
+#misconception[
+  "The length of a string is the number of characters"
 ][
-  ```sh
-  cc -O2 -ffast-math app.c        # tells the compiler "take it that NaN and infinity do not exist"
-  ```
-  ```c
-  if (isnan(x)) { /* this branch can vanish entirely */ }
-  ```
-  Options of the `-ffast-math` family tell the compiler it may assume
-  associativity and ignore the existence of NaN and −0.0. Speed is gained, but *the
-  checking code can vanish under optimisation* — the real-number edition of the
-  "bug that appears only in release" seen in chapter 17. In a program where
-  numerical accuracy matters, not turning it on is the default.
+  Which layer that sentence is about decides between three answers. The latter
+  part of the demonstration measures them — one emoji is *4 bytes in UTF-8, 1 code
+  point, 2 UTF-16 units.*
+
+  So "length" means different things in different languages. C's `strlen` counts
+  bytes; the `length` of Java, JavaScript and C\# counts UTF-16 units; Python 3's
+  `len` counts code points. JavaScript's famous surprise — putting in one emoji
+  and getting a length of 2 — is exactly this place.
+
+  And none of the three is *the number of characters a reader sees.* That fourth
+  layer is chapter 69.
 ]
 
-== Type-generic — `<tgmath.h>`
+== Windows — the `W` functions and their exact encoding
 
-`sqrt` is for `double`, `sqrtf` for `float`, `sqrtl` for `long double`. Include
-`<tgmath.h>` and the edition fitting the argument's type is chosen by `sqrt(x)`
-alone — the representative case of the `_Generic` seen in chapter 53 being used in
-the standard library.
+The Windows API offers nearly every function that takes a string in two versions.
 
-It is convenient but has a price. Being macros, they cannot be passed as function
-pointers, and there may be implementations that evaluate the argument twice, so
-putting in an expression with side effects is dangerous.
+#dtable(
+  columns: 3,
+  [*Suffix*], [*String type*], [*Encoding*],
+  [`A` (ANSI)], [`char *`], [The process's *active code page* (CP949 on a Korean install)],
+  [`W` (Wide)], [`wchar_t *` (`WCHAR`)], [UTF-16LE],
+)
+
+`MessageBoxA` and `MessageBoxW` are the pair, and the name `MessageBox` is a
+macro — it expands to `W` if `UNICODE` is defined and to `A` otherwise. Names like
+`TCHAR` and `_T()` are relics of the same era.
+
+#platform[
+  Three roads for strings on Windows
+][
+  *① Use the `W` functions and convert at the boundary (the classic road).* Keep
+  the program's insides in UTF-8 and convert to UTF-16 only when calling the API,
+  with `MultiByteToWideChar(CP_UTF8, …)`, and back with `WideCharToMultiByte`.
+  Both are two-call functions — ask the required size first (pass 0 for the
+  length and it returns the count), then fill.
+
+  *② Write the whole program in UTF-16.* The old way for Windows-only programs.
+  Every literal carries an `L`, and you use `wcslen` and the `wprintf` family.
+  Portability is given up.
+
+  *③ Make the active code page UTF-8 (the modern prescription).* Since Windows 10
+  1903, putting `<activeCodePage>UTF-8</activeCodePage>` in the application
+  manifest makes the `A` functions take UTF-8. Then UTF-8 code written for Linux
+  runs almost unchanged. For a new program this is the shortest road.
+
+  The console is separate again. To get Unicode out of a console, either turn on
+  wide mode with `_setmode(_fileno(stdout), _O_U16TEXT)` or change the code page
+  with `SetConsoleOutputCP(CP_UTF8)`. "Korean comes out as question marks" is
+  usually this.
+]
 
 #realcase[
-  The same calculation, a different answer — the history of excess precision
+  Unpaired surrogates — the shadow over Windows file names
 ][
-  x86's old floating-point unit (x87) calculated internally in 80 bits. So it
-  happened that the same `double` operation differed depending on whether it was
-  still in a register or had been stored to memory — change the optimisation level
-  and the result changed minutely, and `x == y` that had been true could become
-  false.
+  A Windows file name is "an array of UTF-16 units", not "a valid Unicode
+  string". Because nothing checks, *a name holding a lone high surrogate* can
+  exist in the file system.
 
-  C99 made this circumstance explicit with `FLT_EVAL_METHOD`, and today's 64-bit
-  x86 uses SSE so the problem has greatly diminished. But the possibility of "the
-  same code, a different answer" still remains in compilation options and the
-  target machine — the reason chapter 47 said "real-number calculation needs
-  reproducibility looked after separately."
+  Converting such a name to UTF-8 causes trouble — the value cannot be represented
+  in valid UTF-8. `WideCharToMultiByte` either fails or substitutes U+FFFD, and
+  then *the file can no longer be opened.*
+
+  Because of this some programs use an extension called "WTF-8" internally (a
+  non-standard encoding that writes unpaired surrogates in UTF-8 style). Rust's
+  `OsString` is implemented that way on Windows.
+
+  The lesson: *do not assume that a string the platform hands you is valid
+  Unicode.* File names, command-line arguments and environment variables
+  especially.
+]
+
+== Linux and glibc — large, and unused
+
+glibc's `wchar_t` is four-byte UCS-4 and `__STDC_ISO_10646__` is defined; it is
+the implementation closest to the picture the standard drew. And yet Linux code in
+practice hardly uses `wchar_t`. There are four reasons.
+
+#dtable(
+  columns: 2,
+  [*Reason*], [*Explanation*],
+  [It uses four times the memory], [For mostly-ASCII text, 4× is a large waste],
+  [You must convert at every boundary], [Files, sockets and APIs are all bytes],
+  [It is tied to the locale], [Conversion fails unless `LC_CTYPE` is UTF-8 (chapter 67)],
+  [UTF-8 already does most of the work], [`strlen`, `strcmp` and `strstr` still work],
+)
+
+The last line is decisive. UTF-8 is *ASCII-compatible, self-synchronising, and
+its byte order matches code-point order*, so the existing byte functions remain
+mostly useful (chapter 69). So the Linux camp took the road of "UTF-8 inside
+too."
+
+== What the toolkits chose — GTK and Qt
+
+The same split appears at the application layer.
+
+#dtable(
+  columns: 4,
+  [*Toolkit*], [*String type*], [*Encoding*], [*Code point type*],
+  [GTK / GLib], [`gchar *` (= `char *`)], [UTF-8], [`gunichar` (32-bit), `gunichar2` (16-bit)],
+  [Qt], [`QString`], [UTF-16], [`QChar` (a 16-bit unit)],
+  [Windows API], [`WCHAR *`], [UTF-16], [—],
+)
+
+GLib set the rule "every string is UTF-8" and laid functions on top of it —
+`g_utf8_strlen` (characters), `g_utf8_next_char`, `g_utf8_validate`. It does not
+use `wchar_t` at all: a decision not to put a type that changes per platform into
+an API.
+
+Qt went the other way. Its insides are fixed at UTF-16, and it crosses the
+boundary with `QString::fromUtf8` and `toUtf8`. The gain is no conversion when
+meeting the Windows API; the cost is the trap that `QString::size()` counts UTF-16
+units.
+
+#qa[
+  So what should my program choose?
+][
+  *For new code, UTF-8 byte strings.* The table above says why — smaller, at home
+  with existing C functions, the same as the representation on files and networks,
+  and less tied to the locale.
+
+  The places `wchar_t` is needed are narrow: *calling the Windows API directly*
+  (and only at the boundary), and *fitting an existing library that only takes
+  wide characters.*
+
+  If you genuinely need fixed-width code points, use `char32_t` rather than
+  `wchar_t`. It is four bytes everywhere and its being UTF-32 is guaranteed by a
+  macro — two things `wchar_t` cannot give you.
+]
+
+== Streams have an orientation
+
+Wide characters come with I/O functions of their own — `wprintf`, `fputws`,
+`getwc`, `fgetws`, and `WEOF` in place of `EOF`. But there is a rule that is not
+widely known.
+
+*A stream has an orientation, and once settled it cannot be changed.*
+
+#dtable(
+  columns: 2,
+  [*State*], [*Meaning*],
+  [No orientation], [A freshly opened stream. Neither yet],
+  [Byte-oriented], [Settled by the first use of a byte function such as `fputs` or `fprintf`],
+  [Wide-oriented], [Settled by the first use of a wide function such as `fputws` or `fwprintf`],
+)
+
+Using the opposite family after it is settled is *undefined behaviour*. The
+`fwide` function asks (pass 0) or settles it in advance while there is none.
+
+#demo("examples-en/ch68/wide_io.c")
+
+The demonstration shows the rule plainly. A freshly opened stream has no
+orientation; `fwide(f, 1)` can make it wide; and afterwards `fwide(f, -1)` *does
+not move it back.* And this program's `stdout` is already byte-oriented because
+it began with `printf` — calling `wprintf` here would be outside the contract.
+
+#antipattern[
+  Mixing `printf` and `wprintf`
+][
+  ```c
+  printf("name: ");
+  wprintf(L"%ls\n", name);      /* wide output on an already byte-oriented stdout */
+  ```
+  At best the output interleaves; at worst nothing appears. On Windows, calling
+  `printf` after turning on `_O_U16TEXT` can kill the program outright.
+
+  One discipline — *one family per stream.* If you decide on wide output, do it
+  throughout the program; otherwise do not use it at all. This book recommends the
+  latter: what wide functions gain is smaller than the portability they cost.
 ]
 
 #recap[
-  Numbers in summary.
-
   #dtable(
-    columns: 3,
-    [*situation*], [*what to use*], [*what to beware of*],
-    [checking for NaN], [`isnan`], [`x == NaN` is always false],
-    [checking for infinity], [`isinf`], [dividing a real by zero is not UB],
-    [the kind of a value], [`fpclassify`], [the existence of subnormal numbers],
-    [domain and range errors], [the return value + `errno`], [`errno = 0` just before the call],
-    [integer squares], [`x * x`], [`pow(x, 2)`],
-    [absolute value of a real], [`fabs`], [`abs` (for integers)],
-    [per-type functions], [`<tgmath.h>`], [macros — no arguments with side effects],
-    [fast-math options], [off by default], [checking code vanishes],
+    columns: 2,
+    [*What to remember*], [*The point*],
+    [The split], [Linux 4-byte UTF-32, Windows 2-byte UTF-16],
+    [The cause], [The 1990s premise "Unicode = 16 bits" broke in 1996],
+    [Surrogates], [U+10000 and above as a D800\~DBFF + DC00\~DFFF pair. The values themselves are not characters],
+    [Length], [Bytes, code points and UTF-16 units all differ],
+    [Windows], [`W` functions are UTF-16LE. New code: a UTF-8 code page via the manifest],
+    [File names], [May not be valid Unicode (unpaired surrogates)],
+    [Toolkits], [GTK = UTF-8 `char*`, Qt = UTF-16 `QString`],
+    [If you need fixed width], [`char32_t`, not `wchar_t`],
+    [Stream orientation], [Once settled it cannot change. Mixing is undefined behaviour],
   )
 ]
 
-We have passed numbers. The next chapter is time — a place with unusually much
-that the standard does not settle for you.
+We have seen the platforms as they are. The next chapter is the conclusion —
+*how*, in practice, to handle Unicode and multibyte encodings. The three layers of
+length, normalisation, UTF-8 validation, and the traps of the legacy two-byte
+encodings that are still with us.

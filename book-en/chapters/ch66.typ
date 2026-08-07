@@ -1,292 +1,353 @@
 #import "../../book/lib.typ": *
 
-= Wide characters ② — the platforms, and wide I/O
+= Locales ② — numbers, money, time and sorting
 
 #prereq(
-  ([chapter 65, Wide characters ①], [`wchar_t`'s contract and conversion]),
-  ([chapter 58, Streams in practice], [streams and buffers]),
+  ([chapter 65, Locales ①], [categories and `setlocale`]),
+  ([chapter 60, Streams in practice], [`printf` formats]),
+  ([chapter 71, Time], [`strftime`]),
 )
 
 #deepqa[
-  Chapter 65 said the standard fixes neither the size nor the encoding of
-  `wchar_t`. If it does not, the implementation picks — is that really such a
-  problem?
+  Chapter 65 said a locale is data holding conventions. What exactly is that data
+  made of, and how does a program get at it?
 ][
-  *That it split into two camps* is the problem. Linux and macOS chose four
-  bytes; Windows chose two. And that choice stood on one fact of the 1990s —
-  "sixteen bits are enough for Unicode" — which broke in 1996.
+  The window is surprisingly narrow — one function (`localeconv`) and one struct
+  (`struct lconv`). Every convention about numbers and money sits in that struct's
+  twenty-four members.
 
-  Once Unicode went past U+FFFF, a two-byte `wchar_t` could no longer keep its
-  original promise of *holding one character in one unit.* The patch was the
-  surrogate pair, and most of the string traps in Windows programming today come
-  from it.
-
-  This chapter is the exact shape of that split, and what each platform and
-  toolkit chose to build on top of it.
+  For the rest there is *no window at all.* `strftime` writes dates by itself and
+  `strcoll` compares by itself — the standard gives a program no way to look at
+  that data. This asymmetry is the map of the chapter: what you *fetch* (numbers
+  and money) and what you *delegate* (time and sorting).
 ]
 
 #organizer[
-#idx("UTF-16")  What the same `wchar_t` became on each platform. The limit of UTF-16 and the
-  arithmetic of surrogate pairs, Windows's `W` functions and their exact
-  encoding, glibc's choice, how GTK and Qt hold strings, and the little-known
-  rule of stream orientation.
+#idx("localeconv")  What a locale actually changes, one at a time. All twenty-four members of
+  `struct lconv`, how the grouping string is encoded, the rule by which a
+  monetary form is assembled, the pattern in which `LC_NUMERIC` corrupts data,
+  `strftime`'s locale-dependent and locale-independent formats, `strcoll` and
+  sort keys, and locales in threads.
 ]
 
 #chapter-questions()
 
-== A `wchar_t` split into two camps
+== One window — `localeconv`
+
+```c
+struct lconv *localeconv(void);
+```
+
+What it returns is the address of a struct filled with *the numeric and monetary
+conventions of the current locale.* Two rules attach. A program *must not modify*
+the contents, and a later `localeconv` or a `setlocale` with `LC_ALL`,
+`LC_MONETARY` or `LC_NUMERIC` *may overwrite* them. It is a value to read on the
+spot, not to hold on to.
+
+#demo("examples-en/ch66/lconv.c")
+
+=== A map of the twenty-four members
+
+The standard says the struct shall contain *at least* the following members, in
+any order. So reach them by name, never by position or designated order.
+
+#dtable(
+  columns: 3,
+  [*Member*], [*What*], [*"C" locale*],
+  [`decimal_point`], [Decimal point, plain numbers], [`"."`],
+  [`thousands_sep`], [Group separator, plain numbers], [`""`],
+  [`grouping`], [Grouping rule, plain numbers], [`""`],
+  [`mon_decimal_point`], [Decimal point, money], [`""`],
+  [`mon_thousands_sep`], [Group separator, money], [`""`],
+  [`mon_grouping`], [Grouping rule, money], [`""`],
+  [`positive_sign`], [The string for a non-negative amount], [`""`],
+  [`negative_sign`], [The string for a negative amount], [`""`],
+  [`currency_symbol`], [The local currency symbol], [`""`],
+  [`frac_digits`], [Digits after the decimal point], [`CHAR_MAX`],
+  [`p_cs_precedes`, `n_cs_precedes`], [Symbol before the value? (1/0)], [`CHAR_MAX`],
+  [`p_sep_by_space`, `n_sep_by_space`], [A space between symbol and value (0/1/2)], [`CHAR_MAX`],
+  [`p_sign_posn`, `n_sign_posn`], [Where the sign goes (0\~4)], [`CHAR_MAX`],
+  [`int_curr_symbol`], [International symbol + one separator character], [`""`],
+  [`int_frac_digits` and six more `int_*`], [The same items for the international form], [`CHAR_MAX`],
+)
+
+Two conventions must be read. A string member of `""` means *this locale does not
+specify that value* (`decimal_point` alone always has one), and a `char` member of
+`CHAR_MAX` means the same. The `CHAR_MAX` values the demonstration printed in the
+`"C"` locale are exactly that — the C locale says nothing at all about money.
+
+#idx("ISO 4217")For `int_curr_symbol` the standard reaches straight into another international
+standard. *The first three characters are the alphabetic international currency
+symbol of ISO 4217*, and the fourth is the character separating that symbol from
+the amount. That is why `"KRW "` and `"EUR "` came out with a trailing space.
+
+=== How the grouping string is encoded
+
+`grouping` is not a string for people to read; it is *an array of numbers*. The
+standard fixes the reading.
+
+#dtable(
+  columns: 2,
+  [*Element value*], [*Meaning*],
+  [`CHAR_MAX`], [No further grouping is to be performed],
+  [`0`], [Repeat the previous element for the remaining digits],
+  [Anything else], [The size of the group at this position; the next element sizes the group before it],
+)
+
+So `"\3"` looks as though it should mean "one group of three and no more", yet
+real locales produce `1,234,567` from it, because glibc treats the last element as
+repeating. To be explicit, write `"\3\0"`.
+
+What the demonstration measured is en_IN's `3 2`. Three digits from the right,
+then two at a time — `12345678` becomes `1,23,45,678`. It is India's lakh-crore
+system, and living proof that *the assumption of fixed groups of three is wrong.*
+
+=== A monetary form is assembled from three values
+
+Why does printing one amount need six members? Because the real forms differ that
+much. The combination of `p_cs_precedes` (symbol first?), `p_sep_by_space`
+(a space?) and `p_sign_posn` (where the sign goes) decides the form.
+
+#dtable(
+  columns: 2,
+  [`p_sign_posn`], [*Meaning*],
+  [0], [Parentheses surround the quantity and the currency symbol],
+  [1], [The sign string precedes the quantity and the symbol],
+  [2], [The sign string follows the quantity and the symbol],
+  [3], [The sign string immediately precedes the currency symbol],
+  [4], [The sign string immediately follows the currency symbol],
+)
+
+The standard carries the resulting table itself. With `$` as the symbol and `+`
+as the sign, printing `1.25` splits like this (an excerpt).
 
 #dtable(
   columns: 4,
-  [*Platform*], [`sizeof(wchar_t)`], [*Encoding in practice*], [`__STDC_ISO_10646__`],
-  [Linux (glibc), macOS], [4], [UTF-32 (UCS-4)], [Defined],
-  [Windows (MSVC, MinGW)], [2], [UTF-16], [Not defined],
-  [Some other Unixes (AIX, …)], [2 or 4], [Varies], [Varies],
+  [`p_cs_precedes`], [`p_sign_posn`], [`p_sep_by_space`=0], [`p_sep_by_space`=1],
+  [0], [0], [`(1.25$)`], [`(1.25 $)`],
+  [0], [1], [`+1.25$`], [`+1.25 $`],
+  [0], [3], [`1.25+$`], [`1.25 +$`],
+  [1], [0], [`($1.25)`], [`($ 1.25)`],
+  [1], [1], [`+$1.25`], [`+$ 1.25`],
+  [1], [4], [`$+1.25`], [`$+ 1.25`],
 )
 
-Chapter 65's demonstration gave this machine's answer — four bytes, and
-`__STDC_ISO_10646__` defined. One `wchar_t` is one code point. On Windows that
-equation does not hold.
+That *the accountant's parentheses* (a `p_sign_posn` of 0) are in the standard is
+worth noticing — the convention of writing a negative as `(1,234)` rather than
+`-1,234`.
 
 #qa[
-  Why did Windows choose two bytes?
+  Then which standard function prints an amount?
 ][
-  The circumstances of the age. In the early 1990s, while Windows NT was being
-  designed, Unicode was *a fixed-width 16-bit character set.* The design of the
-  day was to hold every character in the world within 65,536, and on that premise
-  "two bytes is one character" was a reasonable choice. Java's `char`,
-  JavaScript's strings and Qt's `QChar` all made the same choice at the same time.
+  *There is none in standard C.* `localeconv` hands over the materials; the
+  assembly is the program's job. You must look at those six members and build the
+  string as the table above says.
 
-  Unicode 2.0 broke the premise in 1996. Chinese characters alone exceeded 65,536,
-  and opening the range to U+10FFFF created *characters that sixteen bits cannot
-  hold.* Systems already built on 16 bits could not change the type, so they
-  changed the encoding instead — UTF-16, writing one character as two units.
+  POSIX has `strfmon` to do it for you (`strfmon(buf, n, "%n", 1234.5)`). Windows
+  has `GetCurrencyFormat`. Neither is standard C, so where portability matters you
+  assemble it yourself or use a library.
 
-  So Windows's `wchar_t` today is *not "one character" but "one UTF-16 code
-  unit."* Name and reality have been at odds for thirty years.
+  A more important discipline, in passing: *do not hold money in a `double`*
+  (chapter 47). Keep it as an integer number of the smallest unit and insert the
+  decimal point only when displaying.
 ]
 
-== The limit of UTF-16 and the surrogate pair
+== `LC_NUMERIC` — where data is quietly corrupted
 
-Unicode's code point space runs from U+0000 to U+10FFFF. The first part,
-U+0000\~U+FFFF, is the *Basic Multilingual Plane* (BMP), and that is as far as
-sixteen bits reach.
+The most practical warning in this chapter. `LC_NUMERIC` changes not only what
+`localeconv` reports but *the decimal-point character `printf`, `scanf` and
+`strtod` themselves use.*
 
-To write characters above it in 16-bit units, Unicode set aside *a region that is
-never used for characters* inside the BMP itself.
-
-#dtable(
-  columns: 3,
-  [*Region*], [*Range*], [*What*],
-  [High surrogates], [U+D800\~U+DBFF], [The first unit of a pair (1024 of them)],
-  [Low surrogates], [U+DC00\~U+DFFF], [The second unit of a pair (1024)],
-  [(The range they express together)], [U+10000\~U+10FFFF], [1024 × 1024 = 1,048,576 characters],
-)
-
-#demo("examples-en/ch66/surrogate.c")
-
-The demonstration shows the arithmetic itself. For U+1F600:
-
-+ Subtract 0x10000 from the code point → 0x0F600 (it fits in 20 bits)
-+ Add the top ten bits to 0xD800 → 0xD83D (high)
-+ Add the bottom ten bits to 0xDC00 → 0xDE00 (low)
-
-*Surrogate values are not characters.* U+D800\~U+DFFF are assigned to no letter,
-and appearing alone in UTF-8 or UTF-32 they are invalid data (we meet them again
-in chapter 67's validation). That is why trying to hold U+D800 as UTF-16 printed
-"cannot be represented".
-
-#misconception[
-  "The length of a string is the number of characters"
-][
-  Which layer that sentence is about decides between three answers. The latter
-  part of the demonstration measures them — one emoji is *4 bytes in UTF-8, 1 code
-  point, 2 UTF-16 units.*
-
-  So "length" means different things in different languages. C's `strlen` counts
-  bytes; the `length` of Java, JavaScript and C\# counts UTF-16 units; Python 3's
-  `len` counts code points. JavaScript's famous surprise — putting in one emoji
-  and getting a length of 2 — is exactly this place.
-
-  And none of the three is *the number of characters a reader sees.* That fourth
-  layer is chapter 67.
-]
-
-== Windows — the `W` functions and their exact encoding
-
-The Windows API offers nearly every function that takes a string in two versions.
-
-#dtable(
-  columns: 3,
-  [*Suffix*], [*String type*], [*Encoding*],
-  [`A` (ANSI)], [`char *`], [The process's *active code page* (CP949 on a Korean install)],
-  [`W` (Wide)], [`wchar_t *` (`WCHAR`)], [UTF-16LE],
-)
-
-`MessageBoxA` and `MessageBoxW` are the pair, and the name `MessageBox` is a
-macro — it expands to `W` if `UNICODE` is defined and to `A` otherwise. Names like
-`TCHAR` and `_T()` are relics of the same era.
-
-#platform[
-  Three roads for strings on Windows
-][
-  *① Use the `W` functions and convert at the boundary (the classic road).* Keep
-  the program's insides in UTF-8 and convert to UTF-16 only when calling the API,
-  with `MultiByteToWideChar(CP_UTF8, …)`, and back with `WideCharToMultiByte`.
-  Both are two-call functions — ask the required size first (pass 0 for the
-  length and it returns the count), then fill.
-
-  *② Write the whole program in UTF-16.* The old way for Windows-only programs.
-  Every literal carries an `L`, and you use `wcslen` and the `wprintf` family.
-  Portability is given up.
-
-  *③ Make the active code page UTF-8 (the modern prescription).* Since Windows 10
-  1903, putting `<activeCodePage>UTF-8</activeCodePage>` in the application
-  manifest makes the `A` functions take UTF-8. Then UTF-8 code written for Linux
-  runs almost unchanged. For a new program this is the shortest road.
-
-  The console is separate again. To get Unicode out of a console, either turn on
-  wide mode with `_setmode(_fileno(stdout), _O_U16TEXT)` or change the code page
-  with `SetConsoleOutputCP(CP_UTF8)`. "Korean comes out as question marks" is
-  usually this.
-]
+The last part of the demonstration is that. The same `printf("%.2f", 1234.5)`
+prints `1234.50` in one place and `1234,50` in another. And `strtod("3.14", …)`
+stops after `3` in a locale whose decimal point is a comma.
 
 #realcase[
-  Unpaired surrogates — the shadow over Windows file names
+  How one decimal point stopped a server
 ][
-  A Windows file name is "an array of UTF-16 units", not "a valid Unicode
-  string". Because nothing checks, *a name holding a lone high surrogate* can
-  exist in the file system.
+  The same program writing `3.14` on the developer's machine (English locale) and
+  `3,14` on the user's (German locale) has happened over and over.
 
-  Converting such a name to UTF-8 causes trouble — the value cannot be represented
-  in valid UTF-8. `WideCharToMultiByte` either fails or substitutes U+FFFD, and
-  then *the file can no longer be opened.*
+  - *A configuration file cannot be read back* — written as `3,14`, expected as
+    `3.14`.
+  - *A CSV loses its columns* — the comma inside a value collides with the column
+    separator.
+  - *JSON between two servers disagrees* — the JSON standard nails the decimal
+    point to `.`, and `printf` writes `,`.
+  - *Numbers in the logs cannot be aggregated.*
 
-  Because of this some programs use an extension called "WTF-8" internally (a
-  non-standard encoding that writes unpaired surrogates in UTF-8 style). Rust's
-  `OsString` is implemented that way on Windows.
-
-  The lesson: *do not assume that a string the platform hands you is valid
-  Unicode.* File names, command-line arguments and environment variables
-  especially.
+  They have one thing in common. All of them sent *a number a machine will read*
+  down the path meant for people. There is one prescription — pin `LC_NUMERIC` to
+  `"C"` with chapter 65's idiom, and format separately when showing a person.
 ]
 
-== Linux and glibc — large, and unused
+#misconception[
+  "Our service is only used inside one country, so locales are not our problem"
+][
+  It catches you in two places. First, *the locale is settled by the user's
+  machine.* The same program runs under a different locale on someone else's
+  computer — the desktop's settings, or a container image's environment
+  variables.
 
-glibc's `wchar_t` is four-byte UCS-4 and `__STDC_ISO_10646__` is defined; it is
-the implementation closest to the picture the standard drew. And yet Linux code in
-practice hardly uses `wchar_t`. There are four reasons.
+  Second, *a Korean locale is not `"C"` either.* `ko_KR.UTF-8` happens to use `.`
+  as its decimal point, but its grouping, dates and sorting all differ. Try to
+  parse back a date printed with `%c` and it catches you there.
+]
+
+== `LC_TIME` — writing dates and times
+
+The time arithmetic itself has nothing to do with the locale (chapter 71). What
+the locale changes is *the writing*, and the window is `strftime`'s conversion
+specifiers.
+
+#demo("examples-en/ch66/time_locale.c")
+
+The demonstration prints one instant in six locales. The knack is to split the
+specifiers into two groups.
 
 #dtable(
-  columns: 2,
-  [*Reason*], [*Explanation*],
-  [It uses four times the memory], [For mostly-ASCII text, 4× is a large waste],
-  [You must convert at every boundary], [Files, sockets and APIs are all bytes],
-  [It is tied to the locale], [Conversion fails unless `LC_CTYPE` is UTF-8 (chapter 65)],
-  [UTF-8 already does most of the work], [`strlen`, `strcmp` and `strstr` still work],
+  columns: 3,
+  [*Group*], [*Specifiers*], [*Nature*],
+  [Locale decides], [`%c` `%x` `%X` `%A` `%a` `%B` `%b` `%p` `%r`], [Differs by country — *only for showing people*],
+  [Locale-independent], [`%Y` `%m` `%d` `%H` `%M` `%S` `%j` `%F` `%T`], [The same everywhere — *for recording, sending, parsing*],
 )
 
-The last line is decisive. UTF-8 is *ASCII-compatible, self-synchronising, and
-its byte order matches code-point order*, so the existing byte functions remain
-mostly useful (chapter 67). So the Linux camp took the road of "UTF-8 inside
-too."
+`%F %T` produces ISO 8601 (`2026-08-06 15:04:05`) exactly. Using only these in
+logs, file names and API responses is the discipline. In the demonstration these
+two are the only lines identical across all six locales.
 
-== What the toolkits chose — GTK and Qt
+#platform[
+  The time zone is not the locale
+][
+  A common mix-up. What `%Z` (zone name) and `%z` (offset) show is settled by the
+  *`TZ` environment variable* and `tzset`, not by `LC_TIME`. "I changed the locale
+  to Korea and the time is still wrong" usually means `TZ` was not changed.
 
-The same split appears at the application layer.
+  Locale and time zone are different axes — *the locale says how to write it, the
+  zone says when it is.* Printing Seoul time with a German locale is a perfectly
+  normal combination.
+]
 
-#dtable(
-  columns: 4,
-  [*Toolkit*], [*String type*], [*Encoding*], [*Code point type*],
-  [GTK / GLib], [`gchar *` (= `char *`)], [UTF-8], [`gunichar` (32-bit), `gunichar2` (16-bit)],
-  [Qt], [`QString`], [UTF-16], [`QChar` (a 16-bit unit)],
-  [Windows API], [`WCHAR *`], [UTF-16], [—],
-)
+== `LC_COLLATE` — `strcmp` is not dictionary order
 
-GLib set the rule "every string is UTF-8" and laid functions on top of it —
-`g_utf8_strlen` (characters), `g_utf8_next_char`, `g_utf8_validate`. It does not
-use `wchar_t` at all: a decision not to put a type that changes per platform into
-an API.
+`strcmp` compares *byte values*. So `"Zebra"` sorts before `"apfel"`
+(`Z`=0x5A \< `a`=0x61), and Hangul lines up in code-point order. That is not what
+a reader expects.
 
-Qt went the other way. Its insides are fixed at UTF-16, and it crosses the
-boundary with `QString::fromUtf8` and `toUtf8`. The gain is no conversion when
-meeting the Windows API; the cost is the trap that `QString::size()` counts UTF-16
-units.
+#demo("examples-en/ch66/collate.c")
+
+The result shows the difference plainly. In the `"C"` locale `strcoll` and
+`strcmp` give the same answer, but elsewhere they part — in German, `Äpfel` comes
+right after `apfel`, and case is interleaved rather than separated.
+
+=== `strxfrm` — why such a function exists
+
+`strxfrm` turns a string into a *sort key*. Keys compared with an ordinary
+`strcmp` come out in the same order as `strcoll`. The last part of the
+demonstration confirms it.
+
+Why is it needed? One `strcoll` is not cheap — the locale's rules must be applied
+every time. Sorting `n` items takes roughly $n log n$ comparisons, so it is better
+to *transform `n` times and compare cheaply.*
+
+```c
+/* build the keys before sorting */
+size_t need = strxfrm(NULL, s, 0);   /* ask for the size first */
+char *key = malloc(need + 1);        /* take that much */
+strxfrm(key, s, need + 1);           /* and fill it */
+```
+
+The key sizes the demonstration printed reveal the function's character. In the
+`"C"` locale the key is the same 6 bytes as the original; in the German locale it
+is 43 — locale collation stacks *several levels of weight* (base letter, then
+accent, then case).
 
 #qa[
-  So what should my program choose?
+  Is `strcoll` enough for Korean sorting?
 ][
-  *For new code, UTF-8 byte strings.* The table above says why — smaller, at home
-  with existing C functions, the same as the representation on files and networks,
-  and less tied to the locale.
+  For a simple list, yes. Hangul syllables are already arranged in dictionary
+  order in Unicode, so `ko_KR.UTF-8`'s `strcoll` gives the expected order.
 
-  The places `wchar_t` is needed are narrow: *calling the Windows API directly*
-  (and only at the boundary), and *fitting an existing library that only takes
-  wide characters.*
+  Real-world sorting adds rules, though — natural number order ("file2" before
+  "file10"), grouping by initial consonant, folding Chinese characters by their
+  reading, ignoring case and spaces. That is beyond `strcoll` and belongs to
+  Unicode's collation algorithm (UTS \#10) and its implementation, ICU.
 
-  If you genuinely need fixed-width code points, use `char32_t` rather than
-  `wchar_t`. It is four bytes everywhere and its being UTF-32 is guaranteed by a
-  macro — two things `wchar_t` cannot give you.
+  Draw the line like this — *`strcoll` for what locale collation covers, a
+  dedicated library beyond it.* Only avoid sorting a human-facing list with
+  `strcmp`.
 ]
 
-== Streams have an orientation
+== Locales and threads
 
-Wide characters come with I/O functions of their own — `wprintf`, `fputws`,
-`getwc`, `fgetws`, and `WEOF` in place of `EOF`. But there is a rule that is not
-widely known.
+Chapter 65 said the locale is process-global. In a program with several threads
+that becomes a problem — one thread changing the locale to print a date for a
+user shakes another thread's `printf("%f")`.
 
-*A stream has an orientation, and once settled it cannot be changed.*
+Standard C has no remedy. What exists are extensions.
+
+#dtable(
+  columns: 3,
+  [*System*], [*Means*], [*Shape*],
+  [POSIX], [Thread-local locale], [`newlocale`/`uselocale`/`freelocale`],
+  [POSIX], [Functions taking a locale], [`strtod_l`, `strcoll_l`, `strftime_l`, …],
+  [Windows], [Per-thread locale mode], [`_configthreadlocale`, `_locale_t` and `_l` functions],
+)
+
+The `_l` family is the real remedy — it names the locale *for that call only*,
+touching no global state. Where portability matters you end up writing a thin
+layer over the two.
+
+#antipattern[
+  Calling `setlocale` inside a library
+][
+  ```c
+  /* a library function */
+  double parse_number(const char *s) {
+      setlocale(LC_NUMERIC, "C");     /* changes someone else's program state */
+      return strtod(s, NULL);
+  }
+  ```
+  These three lines quietly wreck the application's date and currency formatting.
+  And between threads it is a data race.
+
+  A library has one discipline — *read the locale, never change it.* If you need
+  parsing that the locale cannot shake, use `strtod_l` or handle the digits
+  yourself.
+]
+
+== Prescriptions
 
 #dtable(
   columns: 2,
-  [*State*], [*Meaning*],
-  [No orientation], [A freshly opened stream. Neither yet],
-  [Byte-oriented], [Settled by the first use of a byte function such as `fputs` or `fprintf`],
-  [Wide-oriented], [Settled by the first use of a wide function such as `fputws` or `fwprintf`],
+  [*What you want*], [*How*],
+  [Dates, sorting and money in the user's own way], [`setlocale(LC_ALL, "")`],
+  [Writing numbers into files and protocols], [Pin `LC_NUMERIC` to `"C"`],
+  [Timestamps in logs], [`strftime` with `%F %T` (ISO 8601)],
+  [Sorting a list for people], [`strcoll` (or `strxfrm` keys)],
+  [Strings a machine compares], [`strcmp` — it must not be shaken by the locale],
+  [A different locale per thread], [`uselocale` / the `_l` family (outside the standard)],
+  [Writing a library], [Do not call `setlocale`],
 )
-
-Using the opposite family after it is settled is *undefined behaviour*. The
-`fwide` function asks (pass 0) or settles it in advance while there is none.
-
-#demo("examples-en/ch66/wide_io.c")
-
-The demonstration shows the rule plainly. A freshly opened stream has no
-orientation; `fwide(f, 1)` can make it wide; and afterwards `fwide(f, -1)` *does
-not move it back.* And this program's `stdout` is already byte-oriented because
-it began with `printf` — calling `wprintf` here would be outside the contract.
-
-#antipattern[
-  Mixing `printf` and `wprintf`
-][
-  ```c
-  printf("name: ");
-  wprintf(L"%ls\n", name);      /* wide output on an already byte-oriented stdout */
-  ```
-  At best the output interleaves; at worst nothing appears. On Windows, calling
-  `printf` after turning on `_O_U16TEXT` can kill the program outright.
-
-  One discipline — *one family per stream.* If you decide on wide output, do it
-  throughout the program; otherwise do not use it at all. This book recommends the
-  latter: what wide functions gain is smaller than the portability they cost.
-]
 
 #recap[
   #dtable(
     columns: 2,
     [*What to remember*], [*The point*],
-    [The split], [Linux 4-byte UTF-32, Windows 2-byte UTF-16],
-    [The cause], [The 1990s premise "Unicode = 16 bits" broke in 1996],
-    [Surrogates], [U+10000 and above as a D800\~DBFF + DC00\~DFFF pair. The values themselves are not characters],
-    [Length], [Bytes, code points and UTF-16 units all differ],
-    [Windows], [`W` functions are UTF-16LE. New code: a UTF-8 code page via the manifest],
-    [File names], [May not be valid Unicode (unpaired surrogates)],
-    [Toolkits], [GTK = UTF-8 `char*`, Qt = UTF-16 `QString`],
-    [If you need fixed width], [`char32_t`, not `wchar_t`],
-    [Stream orientation], [Once settled it cannot change. Mixing is undefined behaviour],
+    [The window], [`localeconv` alone. Do not modify it, do not keep it],
+    [`struct lconv`], [Twenty-four members. `""` and `CHAR_MAX` mean "not specified"],
+    [`int_curr_symbol`], [The first three characters are an ISO 4217 code],
+    [`grouping`], [An array of numbers. `CHAR_MAX`=stop, `0`=repeat. Not always three],
+    [Money], [Assembled from `cs_precedes`, `sep_by_space`, `sign_posn`. No standard function],
+    [`LC_NUMERIC`], [★ Changes the decimal point of `printf` and `strtod` — the chief corrupter],
+    [`LC_TIME`], [`%c %x %X %A %B %p` follow the locale; `%F %T %Y-%m-%d` do not],
+    [Time zone], [`TZ`, not the locale],
+    [`LC_COLLATE`], [`strcmp` ≠ dictionary order. Repeated comparison → `strxfrm` keys],
+    [Threads], [Nothing in the standard. `uselocale`, the `_l` family],
   )
 ]
 
-We have seen the platforms as they are. The next chapter is the conclusion —
-*how*, in practice, to handle Unicode and multibyte encodings. The three layers of
-length, normalisation, UTF-8 validation, and the traps of the legacy two-byte
-encodings that are still with us.
+We have followed what a locale changes to the end. One axis remains — the
+*multibyte and wide characters* governed by `LC_CTYPE`. The next chapter takes up
+what `wchar_t` really is and how a byte string unfolds into characters, one step
+at a time.

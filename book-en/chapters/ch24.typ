@@ -123,7 +123,8 @@ workers name things freely without worrying about touching one another's tools �
 half the secret of a program not collapsing as it grows is this partition. (The
 deeper circumstances of the workbench — the lifetime of names, the precise
 picture of how values travel between functions — continue in chapters 29 and
-41.)
+41. And a name has two further properties besides scope — *linkage* and its
+*name space* — which chapters 51 and 52 set side by side with it.)
 
 == Settling the credit — int main(void)
 

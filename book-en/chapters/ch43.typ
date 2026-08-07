@@ -293,7 +293,7 @@ Three things are the contract.
 
 There is a reason for using `offsetof` rather than `sizeof`: `sizeof` includes the
 tail padding, so it is counted twice — not wrong, merely a little more than
-needed. And the length arithmetic *must be checked for overflow* (chapter 70) — a
+needed. And the length arithmetic *must be checked for overflow* (chapter 72) — a
 large length that wraps around means writing large data into a small vessel, which
 is precisely a heap overflow.
 

@@ -175,7 +175,7 @@ Four things are gained.
 ][
   This pattern is widespread. Various initialisation functions in the Linux
   kernel, the way standard and POSIX APIs take options as a struct (such as
-  `struct sigaction`, chapter 70, or `struct timespec`), and the `..._desc`
+  `struct sigaction`, chapter 72, or `struct timespec`), and the `..._desc`
   structs of graphics libraries (the `..._DESC` of several GPU APIs, say) are all
   the same idea. "When arguments grow numerous, bind them into a struct" is
   practically an idiom in C, and C99's designated initialisers made it read well.
@@ -201,7 +201,7 @@ in practice.*
   there, or whatever previously used that place may remain. Three practical traps
   come from this.
 
-  - *Do not compare structs with `memcmp`* (chapter 60) — equal values may come
+  - *Do not compare structs with `memcmp`* (chapter 62) — equal values may come
     out "different" because the padding differs. Compare member by member.
   - *Do not hash a struct whole* — for the same reason, the same value gives
     different hashes.
@@ -251,7 +251,7 @@ types one at a time.*
 
 The demonstration's `encode` is that shape. Four knacks belong to it.
 
-+ *Use fixed-width types* — `uint8_t`, `uint16_t`, `uint32_t` (chapter 70). The
++ *Use fixed-width types* — `uint8_t`, `uint16_t`, `uint32_t` (chapter 72). The
   size of an `int` or a `long` depends on the platform.
 + *Write the byte order into the code.* The demonstration writes big endian
   (network byte order). Written with shifts and masks, *the same bytes come out
@@ -311,7 +311,7 @@ can be read later.
 ][
   In many cases that is the right answer. Text formats such as JSON, INI and CSV
   have no endianness, no padding and no type-size problem, and a person can read
-  and fix them by eye. That is also why chapter 84 writes a small JSON reader
+  and fix them by eye. That is also why chapter 86 writes a small JSON reader
   three ways.
 
   Where a binary format is needed is clear — *when the volume is large* (text
@@ -366,7 +366,7 @@ implementations provide devices for turning padding off.
 ]
 
 There is a tool in the opposite direction, *forcing alignment*, and this one is a
-standard word of C23 (chapter 76).
+standard word of C23 (chapter 78).
 
 ```c
 struct cacheline { alignas(64) int counter; };   /* on a 64-byte boundary */
@@ -482,7 +482,7 @@ The price is clear too.
 Pass a 16 KiB struct by value and that much more is piled on per call — measure
 it and the stack position before and after the call really does widen by the
 struct's size. The stack is usually about 8 MiB (chapter 36), and can be far
-smaller in recursion or on a per-thread stack (chapter 73). Recursion passing
+smaller in recursion or on a per-thread stack (chapter 75). Recursion passing
 large structs by value is the shortest road to stack overflow.
 
 *The cost of copying.* But saying "a copy always happens" would be inaccurate.

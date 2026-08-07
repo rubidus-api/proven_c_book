@@ -90,7 +90,7 @@ It is worth knowing in advance too that the grammar is divided into two layers. 
 lexical grammar* is the rules that gather characters into tokens, and *the phrase
 structure grammar* is the rules that weave those tokens — exactly the division of lexer
 and parser seen in chapter 16. The preprocessor has a separate grammar altogether
-(having already been handled and vanished in chapter 52's translation phases, so
+(having already been handled and vanished in chapter 54's translation phases, so
 nothing like `#include` appears in the C grammar of A.2 below).
 
 #qa[
@@ -133,7 +133,7 @@ preprocessing-token:
 ```
 
 The difference between the two rules is the boundary of the translation phases seen in
-chapter 52. A *preprocessing token* is not yet a word of C — that the `<stdio.h>` of
+chapter 54. A *preprocessing token* is not yet a word of C — that the `<stdio.h>` of
 `#include <stdio.h>` is caught as a header-name token, and that something like `123abc`
 is caught whole as a `pp-number`, are the business of this layer. Then in translation
 phase 7 each preprocessing token turns into a *token*, and only then does a diagnosis
@@ -165,7 +165,7 @@ keyword: one of
     _Noreturn      _Static_assert _Thread_local
 ```
 
-The promotion treated in chapter 76 is visible in this list as it stands.
+The promotion treated in chapter 78 is visible in this list as it stands.
 `bool`, `true`, `false`, `nullptr`, `static_assert`, `alignas`, `thread_local`,
 `constexpr` and `typeof` have risen to being *keywords*, and beneath them the
 underscored names (`_Bool`, `_Alignas`, …) remain as they were for old code. The two
@@ -398,7 +398,7 @@ upper limit on the number of digits.* `"\x41BC"` is read not as `\x41` followed 
 but as one `\x41BC`, and if the value does not fit in a `char` it is outside the
 contract. Octal escapes, by contrast, are cut at three digits at most.
 
-That `predefined-constant` exists as a rule of its own is C23's change (chapter 76) —
+That `predefined-constant` exists as a rule of its own is C23's change (chapter 78) —
 `true`, `false` and `nullptr` became *grammatical elements* rather than macros.
 
 === A.1.6 String literals
@@ -419,7 +419,7 @@ s-char:
 The `_opt` permits the empty string `""`. The prefixes are the same four as for
 character constants — `u8"..."` (UTF-8), `u"..."` (UTF-16), `U"..."` (UTF-32),
 `L"..."` (wide). That adjacent string literals join into one is not grammar but the
-business of *translation phase 6* (chapter 52).
+business of *translation phase 6* (chapter 54).
 
 === A.1.7 Punctuators
 
@@ -438,7 +438,7 @@ The last line is the *digraphs*. `<:` is the same as `[`, `%:` the same as `#` �
 of the days when keyboards lacked those characters, and unlike trigraphs they remain in
 C23.
 
-`::` newly entered because of chapter 76's attribute syntax (`[[gnu::packed]]`).
+`::` newly entered because of chapter 78's attribute syntax (`[[gnu::packed]]`).
 
 === A.1.8 Header names
 
@@ -728,10 +728,10 @@ type-specifier-qualifier:
 ```
 
 The four axes organised in chapter 41 are in these few lines as they stand. That
-`typedef` is *one of the storage-class specifiers* is visible here (chapter 55), and the
+`typedef` is *one of the storage-class specifiers* is visible here (chapter 57), and the
 demand that "there be only one storage class" is pinned down not by the grammar but by a
 constraints clause. That `constexpr` came into the storage-class place is as seen in
-chapter 76.
+chapter 78.
 
 *Structures and unions.*
 
@@ -830,13 +830,13 @@ typeof-specifier-argument:
 ```
 
 That `_Atomic` appears in two places is easy to confuse — used as a *qualifier* it is
-`_Atomic int x;`, and as a *type specifier* `_Atomic(int) x;` (chapter 74).
+`_Atomic int x;`, and as a *type specifier* `_Atomic(int) x;` (chapter 76).
 
 `typeof` was used as a GCC extension for over thirty years and became standard in C23.
 `typeof_unqual` is the edition with `const` and `volatile` stripped off, which is
 especially useful when making a temporary variable inside a macro.
 
-*Declarators — that structure of chapter 55.*
+*Declarators — that structure of chapter 57.*
 
 ```text
 declarator:
@@ -880,7 +880,7 @@ parameter-declaration:
         abstract-declarator_opt
 ```
 
-The reading learned by hand in chapter 55 is in these rules. `*` attaches *in front*
+The reading learned by hand in chapter 57 is in these rules. `*` attaches *in front*
 (`pointer_opt direct-declarator`), `[]` and `()` attach *behind* (both
 `array-declarator` and `function-declarator` begin with `direct-declarator`), and
 binding with parentheses makes what is inside a declarator first (`( declarator )`).
@@ -899,7 +899,7 @@ The four lines of `array-declarator` hold the special syntax of array parameters
 
 The third line of `parameter-type-list` (`...` alone) is C23's change. Now variadic
 arguments can be taken with no named parameter at all, as in `int f(...)` (the partner
-of chapter 53's relaxation of `va_start`).
+of chapter 55's relaxation of `va_start`).
 
 One thing more — *the old-style (K&R) function definition has vanished from the
 grammar.* The `identifier-list` that existed up to C17 (`int f(a, b) int a, b; { }`) was
@@ -938,7 +938,7 @@ typedef-name:
 ```
 
 An *abstract declarator* is a declarator with the name left out — the one written in
-casts and in `sizeof`. The knack stated in chapter 55 ("lay a name in the place where
+casts and in `sizeof`. The knack stated in chapter 57 ("lay a name in the place where
 the name ought to be and read") is expressed in the grammar like this: the abstract
 declarator is the edition with nothing where `identifier` was in the declarator rules.
 
@@ -1028,13 +1028,13 @@ balanced-token:
     any token other than a parenthesis, a bracket or a brace
 ```
 
-`static_assert(cond);` without a message is C23's addition (chapter 70).
+`static_assert(cond);` without a message is C23's addition (chapter 72).
 
 The attribute syntax came over from C++ and C23 brought it formally into the language.
 What the standard settles are `[[deprecated]]`, `[[fallthrough]]`, `[[maybe_unused]]`,
 `[[nodiscard]]`, `[[noreturn]]`, `[[unsequenced]]` and `[[reproducible]]`, while
 compiler extensions attach a prefix and are written like `[[gnu::packed]]`. The
-`[[nodiscard]]` seen in chapter 81 is a product of this syntax.
+`[[nodiscard]]` seen in chapter 83 is a product of this syntax.
 
 Thanks to `balanced-token` leaving it open as "any token so long as the brackets
 match", the arguments of an extension attribute the standard does not know pass
@@ -1113,7 +1113,7 @@ cleanup:            /* a syntax error up to C17 (a statement had to follow) */
 }
 ```
 
-The `goto cleanup` idiom seen in chapter 70 no longer needs a forced `;` after the last
+The `goto cleanup` idiom seen in chapter 72 no longer needs a forced `;` after the last
 label.
 
 There is more to read in the rest.
@@ -1131,7 +1131,7 @@ separate sentence that "it attaches to the nearest `if`". It is why chapter 30
 recommended braces.
 
 *④ A `case` label's value is a `constant-expression`* — so a variable cannot come there,
-while chapter 76's `constexpr` constants can.
+while chapter 78's `constexpr` constants can.
 
 === A.2.4 External definitions
 
@@ -1237,7 +1237,7 @@ identifier-list:
     identifier-list , identifier
 ```
 
-Here is "the second language that does not know C's grammar" seen in chapter 52. Three
+Here is "the second language that does not know C's grammar" seen in chapter 54. Three
 things come out of the rules.
 
 *① Why `lparen` is defined separately.* The condition "a `(` not immediately preceded by
@@ -1334,7 +1334,7 @@ certificates go into firmware. The parameter syntax (`limit(…)`, `prefix(…)`
 `if_empty(…)`) is the `pp-parameter` above, and extensions attach a prefix such as
 `gnu::`.
 
-*`__has_include`* is the one already used in chapter 75 — it asks whether a header
+*`__has_include`* is the one already used in chapter 77 — it asks whether a header
 exists and takes another road if not. `__has_c_attribute` asks about attribute support
 and `__has_embed` about whether `#embed` is possible.
 
@@ -1349,7 +1349,7 @@ LOG("%d", 42);          /* printf("%d", 42) — a comma attaches */
 
 The place that leaned on a GCC extension (`, ##__VA_ARGS__`) because of the comma left
 over when there are no arguments has been tidied into the standard. proven's formatting
-macros seen in chapter 85 use this.
+macros seen in chapter 87 use this.
 
 == What the grammar cannot answer
 
@@ -1403,7 +1403,7 @@ constraints clause.
     [the C standard's notation], [indented lines are alternatives, `_opt` may be omitted, `one of` lists terminals],
     [two layers], [lexical grammar (making tokens) + phrase structure grammar (weaving them). preprocessing is separate],
     [the expression hierarchy], [the precedence table is a summary of this hierarchy. assignment is right-associative, its left side a unary expression],
-    [the declarator rules], [`*` in front, `[]` and `()` behind — the ground of chapter 55's reading],
+    [the declarator rules], [`*` in front, `[]` and `()` behind — the ground of chapter 57's reading],
     [C23's changes], [`_BitInt`, binary literals, digit separators, `enum : T`, empty `{ }`, label position, `#embed`, `__VA_OPT__`],
     [the grammar's limit], [`A * B;` — it divides only if the type name is known],
   )

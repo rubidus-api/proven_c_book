@@ -138,7 +138,7 @@ C compiler solves this by passing information between the parser and the name
 table (the symbol table). One root of C's reputation for hard-to-read
 declaration syntax is here.
 
-The *translation phases* covered in chapter 52 are the front half of this
+The *translation phases* covered in chapter 54 are the front half of this
 picture pinned down in the standard's language — what remains after
 preprocessing is the token stream above, and the compiler starts work from
 there.

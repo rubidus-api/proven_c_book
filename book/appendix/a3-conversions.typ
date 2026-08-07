@@ -35,7 +35,7 @@
 - `bool`·`char`·`short` 계열 → `int`(또는 `unsigned int`)
 
 그래서 `printf`에 float 전용 서식이 없고, `%f`가 double을 받는다
-(19·25·53장).
+(19·25·55장).
 
 == 정수 변환 등급 (변환 규칙의 기준자)
 

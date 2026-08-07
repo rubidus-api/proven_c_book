@@ -37,7 +37,7 @@ Arguments crossing into a place with no type in the prototype (`...`):
 - the `bool`, `char` and `short` families → `int` (or `unsigned int`)
 
 So `printf` has no float-specific format, and `%f` takes a double (chapters 19, 25 and
-53).
+55).
 
 == Integer conversion rank (the criterion of the conversion rules)
 

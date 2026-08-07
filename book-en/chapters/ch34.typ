@@ -175,7 +175,7 @@ free*.
 
 That choice became C's power and its danger. The power is expressiveness — arrays
 arrive with no extra syntax (chapter 37), and memory can be handled in bulk
-(chapter 82). The danger is the illusion that the number may be handled *like any
+(chapter 84). The danger is the illusion that the number may be handled *like any
 other number*.
 
 === The abstraction has thickened with time
@@ -249,7 +249,7 @@ Two practical rules follow at once.
 
 *First, cast anything else.* Passing an `int *` straight in, as in
 `printf("%p", &n)`, is outside the contract: variadic arguments carry no type
-check (chapter 53), and nothing guarantees that pointer types share a
+check (chapter 55), and nothing guarantees that pointer types share a
 representation — the standard says only that `void *` and character pointers do,
 and states plainly that *pointers to other types may not* (§6.2.5p33).
 
@@ -297,7 +297,7 @@ demonstration checks that round trip.
 
 Two things to know. *`uintptr_t` is optional*, so an implementation may lack it
 (rare today), and *the round trip is guaranteed for `void *` only* — function
-pointers are outside that sentence (chapter 54).
+pointers are outside that sentence (chapter 56).
 
 #qa[
   Then why not always use `PRIxPTR` instead of `%p`?
@@ -397,7 +397,7 @@ Why leave it so loose — because machines really were different.
   data live in entirely separate address spaces. Function pointers have a
   different width from data pointers, and reading a constant out of flash needs
   separate instructions and a separate kind of pointer (AVR's `__flash`, the
-  `PROGMEM` idiom). Chapter 91's embedded story stands on this ground.
+  `PROGMEM` idiom). Chapter 93's embedded story stands on this ground.
 
   *IBM AS/400 (OS/400).* Pointers were 128 bits with a tag inside them, and the
   hardware refused forged ones. Code that converts an address to an integer and

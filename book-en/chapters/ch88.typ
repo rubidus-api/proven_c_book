@@ -1,319 +1,310 @@
 #import "../../book/lib.typ": *
 
-= The boundaries — running things overlapped, and when there is no OS
+= Containers and algorithms
 
 #prereq(
-  ([chapter 74, Operations that do not split], [operations that do not split]),
-  ([chapter 77, A program's map of memory], [when there is no OS]),
+  ([chapter 43, Structs], [structs]),
+  ([chapter 42, Dynamic memory], [a growing array]),
+  ([chapter 84, The foundation], [views and bounds]),
 )
 
 #deepqa[
-  Chapter 12 said cores became several because of the clock's limits, and that
-  accidents such as false sharing arise. Then how many different meanings does the
-  phrase "doing several things at once" have?
+  Chapter 36 taught that a C array's size is settled at compile time, and chapter 42
+  that it can be grown with `realloc`. Then where is it easiest to go wrong when
+  making a "growing array" yourself?
 ][
-  At least two. *Concurrency* is several tasks progressing by turns while waiting for
-  each other, and it holds even with one core — such is a server doing other work
-  while waiting for input and output. *Parallelism* is several cores really
-  calculating at the same moment. The former is a problem of *structure*, the latter a
-  problem of *performance*. This chapter's coroutines treat the former and the job
-  system the latter.
+  In three places. First, *calculating the size to grow to* — the multiplication
+  wrap-round seen in chapter 84 happens here. Second, *the state on failure* — when
+  `realloc` fails the original pointer is still valid, and the common code that
+  assigns the return value straight into the original variable loses that original (a
+  leak). Third, *pointers after the growth* — a pointer that pointed at an element
+  becomes invalid after reallocation. Rather than getting these three right afresh
+  every time you make a container, it is better to use one made properly once.
 ]
 
 #organizer[
-  The last chapter of Part XII. We see the two ways of running several things
-#idx("coroutine")  overlapped (stackless coroutines and the job system), why
-  allocators and pointer provenance become a problem in a program running along
-  several strands, and what shape this library takes in a place with no operating
-  system at all. The last section is *when it is better not to use it*.
+#idx("hash map")  The tools that hold many — the growing array, the intrusive list,
+  the ring buffer, the hash map. And as the answer to chapter 81's fifth bug
+  (unchecked callbacks) and the performance trap attached to that place, we see
+  sorting *guaranteed even in the worst case* and hashing that *withstands attack*.
+  Chapter 36's arrays and chapter 43's structs become practical components here.
 ]
 
 #chapter-questions()
 
-== Stackless coroutines — overlapping without threads
+== The life cycle of the four containers
 
-If a function can do some work, stop, and later start again *from that place*, much
-becomes easy. Because the code can be written in order instead of a state machine
-being written by hand.
+First we see the four on one screen. How making, putting in, traversing and giving back
+differ between them is all in this example.
 
-#demo("examples-en/ch88/coro.c")
-
-The heart of it is the last line — the state this coroutine remembers is *4 bytes*.
-There is no separate stack, no thread and no allocation. It is a tidying up of an old
-knack in C in which macros make re-entry points with `switch` and `case` (a cousin of
-Duff's device — that syntax seen in chapter 30 is used again here).
-
-The price is clear too. *Local variables do not survive* — stop and come back and they
-are gone, so state that must be maintained has to be kept in a struct. It is why the
-example kept `sent` as a struct member. And, being implemented with `switch`,
-`PROVEN_CORO_YIELD` cannot be put inside another `switch`.
-
-Even so the reason this model is loved in embedded work is plain. If one task is
-4 bytes, hundreds may be raised with no burden, and since no stack is taken separately
-the memory usage can be calculated at compile time.
-
-#misconception[
-  "A coroutine is a light version of a thread"
-][
-  What they do is entirely different. Threads are switched by the operating system
-  *cutting in as it pleases* (pre-emption), while a coroutine stops only where it
-  itself wrote `YIELD` (co-operation). So race conditions do not arise between
-  coroutines — because two coroutines never run at the same moment. There is a price
-  in exchange. If one coroutine calculates long without yielding, all the rest starve.
-  And coroutines cannot use several cores — which is why the next section's job system
-  exists separately.
-]
-
-== The job system — using several cores
-
-`proven_job_sys_t` is a small system equipped with a queue of work and worker threads.
-Its characteristic is that the queue's size is *fixed* — if it overflows, submission
-fails, and that failure comes as a value. The judgement is that an infinitely growing
-queue is merely a device for putting the problem off until memory is exhausted.
-
-There are five doors, and their order is itself the contract.
-
-```c
-proven_job_sys_t *sys;
-proven_err_t e = proven_job_system_init(alloc, 4, 256, &sys);  /* ① 4 workers, queue 256 */
-bool ok = proven_job_submit(sys, routine, arg);                /* ② submit (false if full) */
-bool did = proven_job_execute_one(sys);                        /* ③ this thread handles one too */
-proven_job_system_close(sys);                                  /* ④ take no more */
-proven_job_system_destroy(sys);                                /* ⑤ join the workers and clean up */
-```
-
-That it is an *opaque type* stands out — the inside of `proven_job_sys_t` is not in the
-header and it is handled only by pointer (the opaque type of chapter 55 in the flesh).
-Platform resources such as threads and locks are inside, and their layout is not to be
-exposed to user code.
-
-That ④ and ⑤ are divided is a contract too. *Closing* is "no more submissions are
-taken", and *destroying* is "wait for the workers to finish and then clean up". Between
-them, the header requires the producer threads to be joined.
-
-`proven_job_execute_one` is a little special. It lets *the submitting side handle one
-item of work itself* — so when submission fails because the queue is full, instead of
-merely waiting one can handle one and try again (a simple form of work stealing).
-
-#antipattern[
-  Overlapping closing with submitting
-][
-  ```c
-  /* thread A */                    /* thread B */
-  proven_job_submit(sys, job);      proven_job_system_destroy(sys);
-  ```
-  A pattern the header explicitly forbids. The correct order is *close, join all the
-  producers, then destroy*. Such ordering contracts are not solved by hiding a lock
-  inside the data structure — rather, a hidden lock increases the code that "mistakenly
-  believes it works". It is also why this library puts no locks in its containers and
-  pins down that *shared mutation is synchronised by the caller*.
-]
-
-== Threads, allocators, and provenance
-
-In a program running along several strands the allocator demands special care. If two
-threads use one arena together, the simple action seen in chapter 83 of "cutting from
-the front" becomes a race at once. The prescription is mostly *one per thread* — and
-then no synchronisation is needed at all.
-
-Pointer *provenance*, whose name only was seen in chapter 14, becomes practical here
-too. Since even at the same address it matters which allocation a pointer came from,
-giving a block obtained from one allocator back to another is a contract violation
-(as in chapter 83's counterexample) even if the address happens to match. The library's
-name came from here.
-
-== When there is no OS — freestanding
-
-This is the constraint that most shaped this library. It is the demand to run in the
-very environment chapter 56 gave as the reason the standard library is thin — a place
-with no operating system, no heap and no files.
-
-#idx("freestanding")What changes in a freestanding build is this.
-
-- `platform/` is not included at all. Files, time and OS randomness disappear.
-- Allocation is done with an arena over a static buffer (chapter 83). There is no
-  `malloc`.
-- Strings are handled with `_borrow` over stack and static buffers (chapter 84).
-- The panic handler is registered by you — there may be no console to print to, so it
-  becomes a matter of lighting an LED, kicking a watchdog or rebooting.
-- Real-number formatting uses large-integer arithmetic, so it can be taken out whole
-  if it is not needed.
-
-Why the disciplines of the earlier chapters — "take the allocator as an argument", "a
-view is borrowed", "no hidden globals" — were so persistent shows itself here. Those
-disciplines were not a taste but *the minimum condition for running in this
-environment*.
-
-=== The actual build procedure
-
-Left in words alone it stays vague, so here is the order.
-
-+ *Take `platform/` out of the compilation list.* Leave only `src/proven/*.c`. Files,
-  time, OS randomness, streams, mmap and the job system go out with it.
-+ *Define `PROVEN_FREESTANDING`* (`-DPROVEN_FREESTANDING=1`). `proven_heap_allocator()`
-  then returns *an unusable value* (all zeros), and if it is used by mistake
-  `proven_alloc_is_valid` says false.
-+ *Take the backing memory statically.* Put one array where the linker script knows it
-  and lay an arena over it (chapter 83).
-+ *Register a panic handler.* There being no console, one of an LED, a watchdog or a
-  reboot (chapter 81's example).
-+ *Take out what is not needed.* If real-number formatting is not used,
-  `-DPROVEN_FMT_NO_FLOAT` strips the large-integer arithmetic code out whole.
-
-```c
-/* the skeleton of a freestanding program */
-static proven_byte_t g_pool[8 * 1024];      /* the memory budget is settled here */
-
-int main(void)
-{
-    proven_set_panic_handler(board_panic);
-    proven_arena_t arena = proven_arena_create(
-        (proven_mem_mut_t){ .ptr = g_pool, .size = sizeof g_pool });
-    proven_allocator_t alloc = proven_arena_as_allocator(&arena);
-
-    for (;;) {
-        proven_arena_reset(&arena);          /* taken back each turn */
-        handle_one_event(alloc);
-    }
-}
-```
-
-These twenty lines contain all of this part's discipline — *the allocator is an
-argument*, *lifetime is per arena*, *`main` does not return* (chapter 50), and *the
-memory budget is written as a number in the source*.
-
-#realcase[
-  The same code in two worlds — and its price
-][
-  Keeping as one set the code that runs both in embedded work and on a host really is
-  of great value. If a protocol parser can be tested on a PC and put into the firmware
-  as it stands, the time spent floundering on a board with no debugging environment
-  shrinks greatly. It is why many embedded teams keep a separate "test build that runs
-  on the host", and what makes that structure possible is exactly the design of
-  *confining platform dependence to one layer*. The price is that the API becomes a
-  little more formal — code that works anywhere is specialised to nowhere.
-]
-
-== Where this library stands — what it is, and what it is not
-
-Before closing the part its place has to be made clear. The design seen so far —
-taking an allocator as a parameter, returning failure as a value, views that
-carry a length, refusing rather than truncating — was not invented by proven.
-Zig's allocator parameter, Rust's `Result` and slices, recent C++'s `span` and
-`expected`, and the in-house C conventions of many companies have all moved in
-the same direction. There is considerable common ground about it.
-
-*proven, however, is not that common ground itself.* It is *one attempt* to
-implement that direction in C23 — neither a standard nor an industry component.
-The distinction matters for a simple reason: the direction has been verified in
-many places, this implementation has not yet. What to take from this part is the
-direction rather than the code, and if you do take the code, take it knowing what
-follows.
-
-=== What has been verified so far
-
-What this book has put in print is exactly this much.
+#demo("examples-en/ch88/tour.c")
 
 #dtable(
-  columns: 2,
-  [*confirmed*], [*not confirmed*],
-  [this book's 94 examples build and run under GCC 14 and Clang 22], [behaviour under other compilers (MSVC, older GCC)],
-  [they all pass on x86-64 Linux], [continuous verification on other systems and architectures],
-  [the contracts of the API the examples use match the documentation], [coverage of the whole API],
-  [the platform layer has two branches, POSIX and Win32], [continuous automated verification of the Win32 branch],
+  columns: 5,
+  [*container*], [*making*], [*allocation*], [*traversal*], [*giving back*],
+  [`array`], [`PROVEN_ARRAY_INIT(alloc, T, n)`], [grows], [by index], [`PROVEN_ARRAY_DESTROY`],
+  [`list`], [`proven_list_init(&l)`], [*none*], [`PROVEN_LIST_FOR_EACH`], [unnecessary],
+  [`ring`], [`PROVEN_RING_INIT(alloc, T, n)`], [once, fixed], [by popping], [`proven_ring_destroy`],
+  [`map`], [`PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)`], [grows (rehashing)], [by key lookup], [`proven_map_destroy`],
 )
 
-That is, what this book vouches for is that *the code printed here runs in this
-environment* — not that the whole library is verified in every environment. The
-book claims no more than that.
+That only the list has no allocation stands out — because the node lives inside the
+data. So a list is the only container that *cannot fail for lack of memory*, and it is
+especially loved in embedded work (chapter 90).
 
-=== Stability — what may still change
+== The growing array
 
-proven is not at 1.0. The edition this book uses is a snapshot of the
-`v26.07.23b` line, and that means:
+`proven_array_t` is a byte buffer that knows the element size and alignment. Open it up
+and why the type is filled in by macros becomes clear.
 
-- *The API may change.* Names and signatures are still being tidied. There is no
-  guarantee that this book's examples compile unchanged against the next edition.
-- *No ABI is promised.* Struct layouts may change, so mixing pre-compiled
-  binaries is not advisable at this stage; building from source alongside your
-  own code is safer.
-- *Pin the edition.* If you use it in earnest, vendor a specific snapshot into
-  your repository (as this book does under `vendor/proven`) and move it
-  deliberately.
+```c
+typedef struct {
+    proven_allocator_t alloc;       /* it remembers the allocator given at creation */
+    proven_byte_t     *data;        /* the byte buffer */
+    proven_size_t      len;         /* the number of elements held now */
+    proven_size_t      cap;         /* the number of elements it can hold */
+    proven_size_t      elem_size;   /* the size of one element */
+    proven_size_t      align;       /* the element's alignment requirement */
+} proven_array_t;
+```
 
-=== What is not there yet
+*That the array remembers the allocator* differs from strings. A string takes an
+allocator per operation (chapter 86), while an array takes one at creation and keeps it
+inside — making `push` pass an allocator every time it grows would make the code noisy.
+So the allocator is not given again at destruction either
+(`PROVEN_ARRAY_DESTROY(&arr)`).
 
-Set down honestly, the following are absent or thin in this edition.
+C having no generics, the type is filled in by macros.
 
-- *Performance and size comparisons.* No benchmarks against the standard library
-  or other C libraries are published. That is why this book makes no performance
-  claim — a performance claim without data is advertising.
-- *Outside users.* There is little record of use in projects beyond the author's.
-- *A wide platform matrix.* The freestanding branch is designed for, but the list
-  of continuously verified targets is narrow.
-- *A long compatibility history.* The trust an old library earns — "it has been
-  carried across many editions already" — accumulates only with time.
+#demo("examples-en/ch88/arr.c")
 
-#qa[
-  Then what is this part to be read for?
+`PROVEN_ARRAY_INIT(alloc, int, 4)` means "an array to hold ints, initial capacity 4",
+and `PROVEN_ARRAY_PUSH` writes the type again to *check at compile time that it
+matches*. At the fifth element, which exceeded the capacity of 4, the array grew by
+itself — and that growth happens through the allocator (exactly chapter 85's rule; the
+array remembers the allocator it was given at creation).
+
+#antipattern[
+  Holding an element pointer and then pushing
 ][
-  Two things. One is *how to read a design* — the eye that asks, of whatever
-  library you meet, "how does it report failure, who supplies the memory, where
-  is the length, what happens at the boundary?" That eye remains whether or not
-  you use proven.
-
-  The other is *grounds for a choice*. If, looking at the table above, you judge
-  that it is too early for your project, that too is the result of reading this
-  part properly. It means the same as the preface saying that deciding you do not
-  need proven is a fine outcome too.
+  ```c
+  int *first = PROVEN_ARRAY_GET_MUT(&arr, int, 0);
+  (void)PROVEN_ARRAY_PUSH(&arr, int, 42);   /* the buffer may move here */
+  *first = 7;                               /* writes at the old address — use after free */
+  ```
+  When the array grows the contents move to a new buffer and a pointer to the old
+  address becomes invalid. It is the form in which the use after free learned in
+  chapter 42 appears on a container. The rule is one — *after changing a container,
+  obtain it again by index.* The habit of carrying an index rather than a pointer
+  becomes the defence here.
 ]
 
-== When it is better not to use it
+== The intrusive list — linking without allocation
 
-We close honestly. There are cases where this library is not the answer.
+`proven_list_t` is an *intrusive* linked list — the node does not hold the data;
+rather a link field is planted inside the data struct. It amounts to putting one
+`proven_list_node_t link;` slot inside a `struct` made in chapter 43.
 
-- *Short, script-like programs* — for a twenty-line tool, ownership discipline and
-  allocator parameters are mere formality. The standard library is enough.
-- *A codebase that already has other conventions* — a large project mostly already has
-  its own string, container and error conventions. Mix two conventions and conversion
-  code arises at every boundary, and those boundaries become the places of new bugs.
-- *Places like C++ and Rust where the language already solves the problem* — in an
-  environment where the language handles ownership and error propagation, there is
-  little reason to lay a C library on top.
-- *Work that one standard function finishes* — exactly as this book said in
-  chapter 56. The right attitude is neither "do not use it" nor "use it
-  unconditionally" but *knowing the contract and choosing*.
+```c
+typedef struct proven_list_node_t {
+    struct proven_list_node_t *next;
+    struct proven_list_node_t *prev;
+} proven_list_node_t;
+
+typedef struct {
+    proven_list_node_t head;      /* a sentinel pointing at itself */
+} proven_list_t;
+```
+
+That `head` is a *sentinel* is this implementation's knack. In an empty list
+`head.next` and `head.prev` point at head itself, and so not one "is it null" check
+appears in the insertion and deletion code — a pattern the Linux kernel long used.
+
+What is good about it? *There is nothing to allocate separately* in order to put
+something in the list — because the node is the data. A list can be used even in an
+environment with no heap (chapter 90), and hanging the same object on two lists at
+once is a matter of keeping two link fields. The price is that the data struct must
+know about the list.
+
+Getting back the other way is the problem, and one macro solves it.
+
+```c
+task_t *t = PROVEN_LIST_ENTRY(node, task_t, link);
+```
+
+It is the macro that *works the struct's starting address back* from the address of the
+`link` member — the `offsetof` seen in chapter 43 used here in the flesh. This one line
+returning from node to data is nearly the whole of the intrusive list.
+
+There are two traversal macros.
+
+#dtable(
+  columns: 3,
+  [*macro*], [*what it does*], [*when*],
+  [`PROVEN_LIST_FOR_EACH(it, &l)`], [traverses from the front], [when only reading],
+  [`PROVEN_LIST_FOR_EACH_SAFE(it, tmp, &l)`], [holds the next node in advance], [★ when removing while traversing],
+)
+
+The star matters. Remove a node during traversal and its `next` becomes meaningless, so
+the loop loses its way. The `_SAFE` edition turns with *the next node already in hand*,
+so removing the present node is safe. It is why the example used it when detaching item
+20.
+
+It is worth knowing too that both macros require the iteration variables to be
+*declared in advance* (`proven_list_node_t *node, *tmp;`). The macro does not put a
+declaration in the `for`'s initialiser — a kernel practice carried on from the C89 days.
+
+== The ring buffer — a stream of fixed size
+
+`proven_ring_t` is a fixed-size circular buffer. It is used where a producer and a
+consumer come and go, for the most recent N of a log, and for streams such as audio
+and sensor samples where *what has passed may be thrown away*. The size being fixed,
+what to do when it is full is part of the contract — and here too the default is to
+report rather than quietly overwrite (the example's `err=2` is that confirmation).
+
+There are only `push` and `pop`, and both *copy the element*. Putting in gives an
+address, and taking out gives the address of the place to receive it.
+
+```c
+int v = 42;
+proven_err_t e = proven_ring_push(&ring, &v);     /* copies the value in */
+int out;
+e = proven_ring_pop(&ring, &out);                 /* copies the value out */
+```
+
+Thanks to this design no pointer into an element inside the ring leaks outward — holding
+a pointer in a circular buffer and having that place overwritten is a classic accident,
+and it was blocked by the interface.
+
+== The hash map, and data structures under attack
+
+`proven_map_t` is an open-addressing hash map. Keys are integers or byte sequences,
+and string keys have two modes — *a borrowed key* (the caller keeps the bytes alive)
+and *an owned key* (the map copies and holds it). Chapter 85's owning-borrowing
+distinction appears here as it is too.
+
+The kind of key is settled at creation.
+
+#dtable(
+  columns: 3,
+  [*creation macro*], [*key*], [*caution*],
+  [`PROVEN_MAP_INIT_INT(alloc, T, n)`], [an integer (`key.id`)], [the fastest],
+  [`PROVEN_MAP_INIT_U8_BORROWED(alloc, T, n)`], [a string (borrowed)], [★ the key bytes must outlive the map],
+  [`PROVEN_MAP_INIT_U8_OWNED(alloc, T, n)`], [a string (copied)], [a copy cost on insertion. safe in exchange],
+)
+
+The key is passed as one union — `.id` for an integer, `.str` for a string.
+
+```c
+proven_map_key_t k = { .str = PROVEN_LIT("beta") };
+const int *v = proven_map_get(&map, k);      /* null if absent */
+```
+
+*Lookup answers with null.* The reason it returns a pointer rather than a bundle is
+that "absent" is not a failure but a normal answer (distinct from chapter 83's error
+branches). And that pointer *points inside the map*, so it becomes invalid the next time
+the map grows — the same rule as with arrays.
+
+There are three functions for putting in. `proven_map_set` (general),
+`proven_map_set_u8_owned` (copying a string key in), and
+`proven_map_set_with_scratch` (giving the temporary memory separately). The last is used
+when the temporary buffers of internal work such as rehashing are to be obtained from
+another allocator — a device for keeping dead memory from piling up when running a map
+on an arena.
+
+#demo("examples-en/ch88/wordcount.c")
+
+This one example contains all of this chapter's tools — it counts with a map, gathers
+into an array, sorts and prints. Chapter 86's views were used to cut the words, so
+string copying happens only once, when the map owns the key.
+
+#realcase[
+  HashDoS — when hash maps became a target of attack
+][
+  In 2011 several web frameworks collapsed at once through the same vulnerability. If
+  an attacker chose *keys that crowd into the same bucket* and sent thousands of them
+  as parameters in one request, insertion that had been $O(1)$ on average became
+  $O(n)$ and the whole degenerated to $O(n^2)$, so a few requests stopped a server. The
+  cause was that the hash function was public and collisions *could be calculated*.
+
+  Today's prescription is a *keyed hash* — draw a random secret per process and mix it
+  into the hash, and the attacker cannot precompute collisions. It is why proven's
+  `proven_map_create` uses SipHash-2-4 and a random seed by default for string keys,
+  and conversely why there is a separate `proven_map_create_trusted` using the faster
+  FNV-1a for cases where the keys all come from my own code. *The default is the safe
+  side, and the fast side states itself in the name* — the principle met repeatedly in
+  this part.
+]
 
 #qa[
-  Then what remains of what was learned in this part if proven is not used?
+  How much slower is a keyed hash? And where does the random secret come from if
+  there is no OS?
 ][
-  Almost all of it. Strings that carry their length, writes that refuse rather than
-  truncate, errors that come back as values, allocation visible in the signature, the
-  distinction of owning and borrowing, size calculation done with checked arithmetic,
-  comparators that keep a total order, hashes that assume adversarial input — these are
-  not a library but *design principles*, and they can be applied by hand to any C code.
-  Open chapter 79's table again and the right-hand column is entirely such items. What
-  this part really wanted to sell is not the code but that column.
+  SipHash is slower than FNV-1a, but by an amount proportional to the string length,
+  and the share hash computation takes in the whole of a map operation is mostly not
+  large. The random secret is drawn once from the operating system's source of
+  randomness — and in an environment with no OS (chapter 90) there is nowhere to draw
+  it from, so it falls back to FNV-1a. The library does not hide this fact but writes
+  it in the documentation, and the grounds are clear: *where there is no attacker
+  there is no need for an attacker model either.* There exists no outsider choosing
+  keys inside your firmware.
 ]
+
+== Sorting with a worst-case guarantee
+
+The two problems seen in chapter 81 — the unchecked comparator, and the algorithm
+that collapses in the worst case — are treated together here.
+
+#idx("introsort")`proven_array_sort` is *introsort*. It begins as a fast quicksort
+and, if the recursion becomes too deep, switches to heapsort. So the average is as
+fast as quicksort and $O(n log n)$ is *guaranteed* even in the worst case — the
+complexity attack seen in chapter 81 does not work. To carry the header's wording
+over as it is: "$O(n log n)$ is not an average but a guarantee."
+
+On the comparator side the language cannot help, so the contract is stated in the
+documentation and in examples. The example's `by_count_desc` is the model — descending
+by count, and *ties broken by the word*. It contrasts exactly with chapter 81's
+counterexample (the comparator that sees only the first letter).
+
+#misconception[
+  "Ties may be handled however you like"
+][
+  They may not. A comparator must form a *total order* — 0 if equal, consistently
+  greater and less, and the signs of `cmp(a,b)` and `cmp(b,a)` must be opposite. Break
+  this and the result is not merely jumbled; depending on the implementation it may
+  even *trespass outside the array* (because the partitioning algorithm judges its
+  boundaries from the comparison results). A comparator that returns anything at all
+  for ties is therefore a bug, not a taste.
+]
+
+== Bytes into letters — hashes and encodings
+
+We note the remaining tools in the same box too.
+
+- *Hashes by purpose* — for the map's internals (fast mixing), for integrity checking
+  (CRC-32), for cryptographic use (SHA-256), and the keyed hash seen above (SipHash).
+  The library distinguishes them because *the same word "hash" means entirely
+  different demands* — using SHA-256 where only speed is needed is waste, and using
+  FNV-1a where adversarial input comes is dangerous.
+- *hex and Base64* — two standards for moving bytes into text. The principle here is
+  the same. Wrong input (hex of odd length, wrong padding) is *not guessed at and
+  mended* but refused with `PROVEN_ERR_INVALID_ENCODING` (that norm from chapter 86).
 
 #recap[
-  A summary of the whole of Part XII — problems and answers.
+  Containers in summary.
 
   #dtable(
-  columns: 3,
-    [*chapter 79's problem*], [*the answer*], [*chapter*],
-    [strings that do not know the size], [views (ptr+size), refusing rather than truncating], [chapters 82 and 84],
-    [unconfirmed failure], [errors as values, `[[nodiscard]]`], [chapter 81],
-    [format mismatch], [`{}` and `PROVEN_ARG` (`_Generic`)], [chapter 85],
-    [unclear ownership], [the allocator parameter, owning versus borrowing], [chapter 83],
-    [unchecked callbacks], [documented contracts, introsort, keyed hashes], [chapter 86],
-    [the hidden type of bytes], [`proven_byte_t`], [chapter 82],
-    [environments with no OS], [separating the platform layer, static arenas], [chapter 88],
+  columns: 4,
+    [*tool*], [*shape*], [*where it fits*], [*caution*],
+    [`array`], [a growing contiguous array], [an ordered list], [pointers invalid after growth],
+    [`list`], [an intrusive linked list], [joining without allocation], [the data holds the link],
+    [`ring`], [fixed-size circular], [streams, the most recent N], [the contract when full],
+    [`map`], [open-addressing hash], [finding by key], [choose whether the key is owned],
+    [`array_sort`], [introsort], [sorting anything], [the comparator must be a total order],
+    [four hashes], [by purpose], [map, integrity, cryptography, anti-attack], [do not mix the purposes],
 )
 ]
 
-With this, the promise this book made in chapter 1 has been kept — showing C's problems
-first, and showing one answer to them through to the end. The two remaining chapters
-are the story beyond these pages. In the next chapter we look round the terrain of
-practice (build tools, version control, real projects), and in the last we gather up the
-road this book has travelled.
+That is as far as the world of pure computation — it all runs even with no operating
+system. In the next chapter we go outside. Files, streams, time, random numbers — the
+places that touch the OS.

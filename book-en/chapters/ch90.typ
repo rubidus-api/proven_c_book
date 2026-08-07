@@ -1,591 +1,319 @@
 #import "../../book/lib.typ": *
 
-= C in practice — tools, projects, and territories
+= The boundaries — running things overlapped, and when there is no OS
 
 #prereq(
-  ([chapter 51, Several files], [a project of several files]),
-  ([chapter 17, Setting up a development environment], [setting up the tools]),
+  ([chapter 76, Operations that do not split], [operations that do not split]),
+  ([chapter 79, A program's map of memory], [when there is no OS]),
 )
 
 #deepqa[
-  Chapter 51 said that for a multi-file program the practice is to make each file
-  into an object file and then only link again. In a project with hundreds of files a
-  person cannot do that work by hand — what does it instead?
+  Chapter 12 said cores became several because of the clock's limits, and that
+  accidents such as false sharing arise. Then how many different meanings does the
+  phrase "doing several things at once" have?
 ][
-  *A build tool.* Write down the dependencies between files and it looks at what has
-  changed and makes only what needs remaking. The classic of the C world and still its
-  standard is `make`, and this chapter begins with that tool.
+  At least two. *Concurrency* is several tasks progressing by turns while waiting for
+  each other, and it holds even with one core — such is a server doing other work
+  while waiting for input and output. *Parallelism* is several cores really
+  calculating at the same moment. The former is a problem of *structure*, the latter a
+  problem of *performance*. This chapter's coroutines treat the former and the job
+  system the latter.
 ]
 
 #organizer[
-  Before closing the book we look round the world beyond these pages. The two
-  essential tools of the field (make and git), the representative projects that run
-  in pure C even today and why they chose C, what C does in embedded work, and how
-  C's limits are crossed in practice. It is a map of where the language this book has
-  taught actually stands.
+  The last chapter of Part XII. We see the two ways of running several things
+#idx("coroutine")  overlapped (stackless coroutines and the job system), why
+  allocators and pointer provenance become a problem in a program running along
+  several strands, and what shape this library takes in a place with no operating
+  system at all. The last section is *when it is better not to use it*.
 ]
 
 #chapter-questions()
 
-== make — what is to be remade
+== Stackless coroutines — overlapping without threads
 
-`make`'s idea is one line — *if the product is older than its materials, make it
-again.* The syntax for writing rules is that idea as it stands:
+If a function can do some work, stop, and later start again *from that place*, much
+becomes easy. Because the code can be written in order instead of a state machine
+being written by hand.
 
-```text
-hello: hello.c greet.c greet.h      # target: materials
-	cc -Wall -Wextra -o hello hello.c greet.c    # how to make it (begins with a tab)
-```
+#demo("examples-en/ch90/coro.c")
 
-Call `make hello` and it compares the files' times and runs the command only when
-needed. Not recompiling everything when one file has been mended — this is how
-chapter 16's relay and chapter 51's division save time in practice.
+The heart of it is the last line — the state this coroutine remembers is *4 bytes*.
+There is no separate stack, no thread and no allocation. It is a tidying up of an old
+knack in C in which macros make re-entry points with `switch` and `case` (a cousin of
+Duff's device — that syntax seen in chapter 30 is used again here).
 
-make was made in 1976 and is used still. Even the eccentricities of its syntax remain
-(a command line must begin with a tab — a mistake its maker himself looked back on
-with "at the time there were only twelve users"), but the idea that "write down the
-dependencies and only what is needed is remade" became the root of every later build
-tool. Today's large projects lay tools such as CMake, Meson and Ninja on top, but what
-those tools produce in the end is mostly make-like rules too.
+The price is clear too. *Local variables do not survive* — stop and come back and they
+are gone, so state that must be maintained has to be kept in a struct. It is why the
+example kept `sent` as a struct member. And, being implemented with `switch`,
+`PROVEN_CORO_YIELD` cannot be put inside another `switch`.
 
-== git — what changed and when
+Even so the reason this model is loved in embedded work is plain. If one task is
+4 bytes, hundreds may be raised with no burden, and since no stack is taken separately
+the memory usage can be calculated at compile time.
 
-The second essential tool is *version control*. A tool that records every change to
-the code, lets you go back at any time, and lets several people mend the same code and
-merge it — today's de facto standard is `git`.
-
-Everyday commands can be started with five.
-
-```text
-$ git init                 # make this folder a repository
-$ git add hello.c          # choose the change to record
-$ git commit -m "first program"   # record it with a reason
-$ git log                  # see the record travelled
-$ git diff                 # what has changed now
-```
-
-There is one place where git connects with this book's theme — *git itself is a
-program written in pure C.* In 2005 Linus Torvalds made the first version in a few
-days for the development of the Linux kernel, and it is now the most widely used
-development tool in the world. That tool giving the CRLF warning seen in chapter 10 is
-itself made in the language this book has taught.
-
-== The rest of the toolbox — building, observing, checking
-
-make and git are only the beginning. A C project in the field mostly layers several
-tools, and grouping them by *what question each answers* leaves nothing to memorise.
-
-=== ① What to make and how — building and dependencies
-
-#dtable(
-  columns: 3,
-  [*tool*], [*what it does*], [*note*],
-  [`make`], [looks at dependencies and remakes], [the classic and the ground],
-  [`CMake`], [*generates* build files], [the de facto standard. exports to several platforms and IDEs],
-  [`Ninja`], [runs generated rules very fast], [the back end of CMake and Meson],
-  [`Meson`], [a readable generator], [paired with Ninja. popular in Linux projects],
-  [Autotools], [the `./configure` family], [still met in old Unix projects],
-  [`Bazel`, `xmake`], [large-scale, reproducible builds], [big organisations, monorepos],
-  [`ccache`], [does not redo the same compilation], [the effect is keenly felt in large projects],
-  [`pkg-config`], [tells the compile and link options of a library], [the Unix family],
-  [`vcpkg`, `Conan`], [fetching external libraries], [C has no standard package manager],
-)
-
-The last row is C's long-standing weakness — there being no official package manager
-attached to the language, how dependencies are brought in differs by project (system
-packages, putting the source in whole (vendoring), submodules, tools such as vcpkg and
-Conan). That this book's examples use proven by *putting it into the repository whole*
-is because of that reality too.
-
-=== ② What has gone wrong — debuggers and record-replay
-
-Chapter 17 learned `gdb` and `lldb`. In practice there are two more families beside
-them.
-
-- *Platform debuggers* — Windows' `WinDbg` and the Visual Studio debugger. WinDbg's
-  *time travel debugging* (TTD) in particular records the execution whole and lets you
-  turn it *backwards* as you look.
-- *Record and replay* — Linux's `rr` does the same. Record a bug once reproduced and
-  that execution can be turned back identically as many times as you like, which is
-  especially strong against bugs that "reproduce only sometimes". It is the frontal
-  method against the heisenbug seen in chapter 17.
-- *Post-mortem crash analysis* — open a core dump (Linux) or a minidump (Windows) in a
-  debugger and retrace the scene. The practice of building release builds with `-g` too
-  and keeping the debug information separately (chapter 17) pays here.
-
-=== ③ Where is it slow — profilers
-
-"Do not guess, measure" is the first rule of performance work.
-
-#dtable(
-  columns: 3,
-  [*tool*], [*what it measures*], [*where*],
-  [`perf`], [CPU time, cache misses and branch failures by sampling], [Linux. effectively the default],
-  [Valgrind `callgrind`], [counts instructions exactly (slow but precise)], [Linux, macOS],
-  [Valgrind `cachegrind`], [simulates cache behaviour], [chapter 11's ladder before your eyes],
-  [`massif`, `heaptrack`], [heap usage over time], [leaks and over-allocation (chapter 42)],
-  [Intel VTune, AMD uProf], [microarchitecture-level analysis], [vendor tools],
-  [the Visual Studio profiler, WPA], [CPU, memory, ETW tracing], [Windows],
-  [`uftrace`, `Tracy`], [function tracing, per-frame visualisation], [games, real-time code],
-)
-
-Use a profiler and the stories of chapters 11 and 12 are confirmed in numbers — loops
-with many cache misses, conditionals where branch prediction misses, and where
-expensive allocations (chapter 42) are crowded, all become visible as they are.
-
-=== ④ Is the code right — checking and testing
-
-- *Static analysis* — `clang-tidy`, `cppcheck`, and the compiler's own `-fanalyzer`
-  (GCC). Commercially, `PC-lint Plus`, `PVS-Studio`, `Coverity`.
-- *Dynamic checking* — chapter 17's sanitizers (ASan, UBSan, TSan) and
-  `valgrind --tool=memcheck`. The former must be recompiled and is fast, the latter can
-  be run as it stands and is slow.
-- *Coverage* — `gcov`/`lcov` (GCC), `llvm-cov` (Clang). They show "which lines the
-  tests actually passed through".
-- *Fuzzing* — `libFuzzer`, `AFL++`, `honggfuzz`. Pour in random input and find the
-  places it dies. The effect is great in code that *eats outside input*, such as parsers
-  and decoders.
-- *Unit testing* — C having no standard test framework, libraries such as `Unity`,
-  `CppUTest` and `Criterion` are used.
-
-=== ⑤ Is it good for people to read — formatting and documentation
-
-`clang-format` (automatic formatting), `uncrustify`, `Doxygen` (generating
-documentation from comments), and `compile_commands.json` (a list of the build
-commands). The last is the file an editor's autocompletion (`clangd`) and static
-analysis tools read in order to know "with what options is this file compiled", so
-turning it on with one line in CMake is today's practice.
-
-#platform[
-  Observation tools of embedded work — how to measure a machine with no screen
+#misconception[
+  "A coroutine is a light version of a thread"
 ][
-  Over the tools seen in chapter 18 (probes, OpenOCD, RTT, static analysis) there is
-  one more layer that *measures performance and behaviour*.
-
-  - *Cycle counters* — read a counter inside the chip, such as the DWT cycle counter
-    of Arm Cortex-M, and count the clocks of a stretch directly. The most accurate and
-    the cheapest.
-  - *GPIO toggling* — raise and lower one pin before and after the stretch you want to
-    measure and look at it with chapter 18's logic analyser. It is the frontal method
-    still widely used on chips with no software profiler.
-  - *RTOS tracing* — tools such as SEGGER `SystemView` and Percepio `Tracealyzer` draw
-    task switches, interrupts and queue waits on a time axis. It is the way to see with
-    your eyes "why is this task late".
-  - *Measuring stack usage* — the stack painting seen in chapter 77, and static
-    analysis tools' worst-case depth calculation.
-  - *Tracking code size* — it is common practice to hang chapter 18's map files and
-    `bloaty` on CI and watch how much the size has grown with each commit.
-  - *Hardware in the loop (HIL)* — attaching a real board to test equipment and running
-    it automatically. With simulators (QEMU, Renode) it is one of the two axes of
-    embedded CI.
+  What they do is entirely different. Threads are switched by the operating system
+  *cutting in as it pleases* (pre-emption), while a coroutine stops only where it
+  itself wrote `YIELD` (co-operation). So race conditions do not arise between
+  coroutines — because two coroutines never run at the same moment. There is a price
+  in exchange. If one coroutine calculates long without yielding, all the rest starve.
+  And coroutines cannot use several cores — which is why the next section's job system
+  exists separately.
 ]
 
-#qa[
-  When should all these tools be brought in?
-][
-  There is an order. Only three are put in place *from the start* — version control
-  (git), a build tool (make or CMake), and warnings at maximum (`-Wall -Wextra`). After
-  that it is one at a time as the need arises.
+== The job system — using several cores
 
-  - bugs are frequent → sanitizers and unit tests
-  - it is slow → a profiler (no guessing)
-  - people have multiplied → formatting tools and CI
-  - it eats outside input → fuzzing
-  - it reproduces only sometimes → record and replay (rr, TTD)
+`proven_job_sys_t` is a small system equipped with a queue of work and worker threads.
+Its characteristic is that the queue's size is *fixed* — if it overflows, submission
+fails, and that failure comes as a value. The judgement is that an infinitely growing
+queue is merely a device for putting the problem off until memory is exhausted.
 
-  Install a heap of tools first and you mostly end up not using them. *Letting the
-  problem call for the tool* is the order of the field.
-]
-
-== The industry's rulebooks — MISRA C and its neighbours
-
-Where lives or large sums are at stake, "let us write C well" is not enough. So
-industries have *written down the subset of C that may be used.* How chapter 12's
-grey areas and chapter 49's undefined behaviour are handled in practice is written
-into these rulebooks.
-
-=== MISRA C — out of the car industry and into everything
-
-The most widely used is *MISRA C*. The name comes from its origin: the Motor
-Industry Software Reliability Association, a British automotive body.
-
-#dtable(
-  columns: 2,
-  [*What*], [*Detail*],
-  [Origin], [The 1994 "Development guidelines for vehicle based software" called for a *"restricted subset of a standardized programming language"*],
-  [First editions], [MISRA C:1998, then MISRA C:2004, "Guidelines for the use of the C language in critical systems"],
-  [Today], [MISRA C:2012 (third edition) and its revisions — *MISRA C:2023* is the third edition's second revision and covers C11 and C18],
-  [Stewardship], [Since 2021, an independent not-for-profit (The MISRA Consortium)],
-  [Standing], [Beyond automotive into medical, rail, aerospace and defence — the de facto standard for C where safety and security are at stake],
-)
-
-The rules look like a list of prohibitions, but the structure matters more.
-
-*First, rules have categories.*
-
-#dtable(
-  columns: 2,
-  [*Category*], [*Meaning*],
-  [Mandatory], [May not be broken],
-  [Required], [May be broken only through a *documented deviation procedure*],
-  [Advisory], [Recommended; not following it is allowed, better with a reason written down],
-)
-
-*Second, there is a formal procedure called a deviation.* Because places that must
-break a rule always arise in practice, MISRA settled not on *do not break it* but
-on *if you break it, record it this way* — which rule, where, why, and what was
-done instead.
-
-Notice that this structure carries exactly the discipline of chapter 12: *not
-forbidding the choice, but making the choice visible.*
-
-=== The neighbours — safety standards and coding rules
-
-MISRA C is not alone. They divide into two kinds: **safety standards**, which
-settle *how to build*, and **coding rules**, which settle *how to write*.
-
-#dtable(
-  columns: 3,
-  [*Name*], [*Where*], [*What it settles*],
-  [IEC 61508], [Industry at large (the base standard)], [The frame of functional safety; risk levels SIL 1\~4],
-  [ISO 26262], [Automotive], [IEC 61508 fitted to vehicles; risk levels ASIL A\~D],
-  [DO-178C], [Airborne software], [Development and verification for certification; levels DAL A\~E],
-  [IEC 62304], [Medical devices], [The software life cycle; classes A\~C],
-  [EN 50128 / EN 50657], [Railway], [Signalling and on-board software],
-  [MISRA C], [(industry-independent)], [A safe subset of C — cited by the standards above],
-  [SEI CERT C], [(security-centred)], [Rules and recommendations, each with a risk assessment and CWE mapping],
-  [ISO/IEC TS 17961], [(tool-centred)], [C secure coding rules — what *an analyser* must catch],
-  [JPL Power of Ten], [Aerospace (NASA/JPL)], [Ten short rules: no recursion, no dynamic allocation, and so on],
-  [BARR-C], [Embedded in general], [Weighted towards readable code; designed to sit alongside MISRA],
-)
-
-Safety standards mostly say only *use a subset of the language* without defining
-that subset. So "we use MISRA C in order to satisfy ISO 26262" is the standard
-combination.
-
-=== What gets forbidden — a common pattern
-
-The items differ from rulebook to rulebook, yet the faces of what is forbidden or
-tightly limited are remarkably alike. And that list *overlaps with what this book
-has been calling dangerous.*
-
-#dtable(
-  columns: 2,
-  [*Frequently forbidden or limited*], [*Which of this book's stories*],
-  [Dynamic allocation (`malloc`/`free`)], [Fragmentation and unpredictable timing (chapters 42, 78); arenas and pools instead],
-  [Recursion], [You cannot know how much stack it will take (chapter 77)],
-  [Code that relies on undefined behaviour], [The whole of chapter 49],
-  [Expressions that lean on implicit conversion], [Chapter 28 — explicit casts are demanded],
-  [`goto`, multiple `return`, multiple `break`], [Making the flow readable at a glance (chapter 30)],
-  [Variadic functions], [No type checking (chapter 53)],
-  [Type punning through a union], [Code that leans on representation (chapter 45)],
-  [Overuse of `#define` macros], [The preprocessor knows no types (chapter 52)],
-  [Parts of the standard library], [Things like `gets`, `atoi`, `strcpy` (chapters 59, 60)],
-)
-
-Read that table backwards and it summarises this book — *stay inside the contract,
-keep the lifetime and size of resources predictable, and write so that a person can
-read and check it.*
-
-#qa[
-  So must I follow MISRA C too?
-][
-  No — you follow it *if you work where it is required*, and otherwise you do not.
-  A rulebook is not a definition of "good code" but *a contract about the price of
-  a particular risk.* Forbidding dynamic allocation is the right rule in a car's
-  braking system and pointless in a text editor.
-
-  Reading one is worth it anywhere, though. Each rule carries a "why is this
-  forbidden", so it reads as a list of where practice has been hurt. A good number
-  of this book's traps are named there.
-
-  Three things are worth stealing even for a project under no rulebook.
-
-  - *Write down what you have decided not to use* — the team's "we do not use
-    these" list.
-  - *When you break it, leave the reason* — MISRA's deviation procedure in
-    miniature. How much to leave follows chapter 12's ladder: *scale it to the
-    stakes.*
-  - *Let a tool do the checking* — rules a person must remember are not kept
-    (the static analysers seen earlier in this chapter).
-]
-
-#realcase[
-  What a rulebook really costs
-][
-  Adopting something like MISRA shows its cost in three ways.
-
-  *Tools and time.* Rule checking is not done by people — commercial static
-  analysers (PC-lint Plus, Polyspace, Coverity and others) or open-source tools do
-  it. Run one over a large codebase for the first time and thousands of warnings is
-  ordinary; triaging them alone can take months.
-
-  *The code gets longer.* Forbid implicit conversions and casts multiply; forbid
-  dynamic allocation and buffers must be reserved up front. The room for "short and
-  clever" shrinks.
-
-  *And what is bought with that is an invisible result — that no accident
-  happened.* This asymmetry is the real reason such rules are hard to keep: the
-  benefit is unseen while the cost is visible daily. Which is why a rulebook is
-  sustained by *an organisation's procedures*, not by an individual's willpower.
-]
-
-== What runs in C even today — and why
-
-Chapter 1 said "C is everywhere". Now the concrete names and reasons can be written
-down.
-
-#dtable(
-  columns: 3,
-  [*project*], [*what*], [*why C*],
-  [the Linux kernel], [the heart of an operating system], [it must handle hardware directly, must have no runtime dependency, and every architecture has a compiler],
-  [SQLite], [the most widely deployed database in the world], [it must be ported everywhere (phones, aircraft, browsers) and needed the extreme simplicity of distributing as a single source file],
-  [FFmpeg], [the standard tool of video and audio processing], [codec work where performance is everything, direct connection with hardware acceleration APIs],
-  [Redis], [an in-memory data store], [predictable latency and control of memory — it manages chapter 11's ladder itself],
-  [curl], [the universal tool of internet transfer], [it must go onto every platform and every device (cars, TVs, even spacecraft)],
-  [CPython, Ruby and others], [implementations of other languages], [a language runtime needs the lowest layer in the end, and the C interface is the ecosystem's common tongue],
-  [OpenSSL, zlib], [cryptography and compression libraries], [because they must be called from every language — the C ABI is the de facto universal interface],
-)
-
-Draw out the common threads and the reasons for choosing C organise into four.
-
-- *When you must stand at the lowest layer* — operating systems, drivers, runtimes.
-- *When it must be moved everywhere* — when a new chip appears, a C compiler is made
-  first (chapter 4's portability revolution has held for half a century).
-- *When performance and resources must be controlled by hand* — memory layout, latency,
-  executable size.
-- *When it must speak with every other language* — from Python, Java or Rust alike, a C
-  function can be called. The C ABI is the international common tongue between
-  languages.
-
-== C and C++ — siblings, not parent and child
-
-We settle the most common misunderstanding here. *C is not a subset of C++.* C++ is
-not "C with object orientation and templates added" but *a different language* that
-split off from C and grew separately.
-
-A short look at the history makes the relation clear. In 1979 Bjarne Stroustrup made
-"C with Classes", laying classes on C, and in 1983 the name changed to C++. Up to here
-it is indeed an extension. But after that the two languages diverged, *each making its
-own standard in its own committee* — C obtained its first standard as C89 in 1989, C++
-as C++98 in 1998, and afterwards they referred to each other without being subordinate
-to each other.
-
-So today each has things the other does not.
-
-#dtable(
-  columns: 2,
-  [*in C and not in C++*], [*in C++ and not in C*],
-  [the `restrict` qualifier], [classes, inheritance, virtual functions],
-  [variable-length arrays (chapter 37)], [templates and the standard library upon them],
-  [flexible array members], [references (`&`) and operator overloading],
-  [`_Generic` (chapter 53)], [exceptions and RAII],
-  [order-independent designated initialisers], [namespaces],
-  [compound literals (chapter 44)], [`auto` type deduction, lambdas],
-)
-
-== Put C code into a C++ compiler
-
-It is seen not in words but in the flesh. Below is *entirely correct C code*.
-
-#demo("examples-en/ch90/ccompat.c")
-
-Compile the same file with `g++ -std=c++20` and this happens.
-
-```text
-error: invalid conversion from ‘void*’ to ‘int*’ [-fpermissive]
-   15 |     int *buf = malloc(4 * sizeof *buf);
-      |                ~~~~~~^~~~~~~~~~~~~~~~~
-      |                      void*
-error: designator order for field ‘point::x’ does not match
-       declaration order in ‘point’
-   23 |     struct point p = { .y = 2, .x = 1 };
-```
-
-C++ refuses the implicit conversion of `void *` that C permits — so in C++ a cast is
-always attached to `malloc`'s result (and that is a practice *not recommended* in C.
-That is where the "must malloc's return value be cast" debate divides). Designated
-initialisers too, though C++20 accepted them, *cannot have their order changed*.
-
-There are places besides where the meaning quietly differs. The representative is the
-character constant.
-
-```text
-C  : sizeof('a') = 4      (the type of a character constant is int)
-C++: sizeof('a') = 1      (the type is char)
-```
-
-It compiles on both sides and the result differs — such places are the most dangerous.
-Code that used C++ reserved words such as `class`, `new`, `template` and `this` as
-variable names in C does not pass over as it is either.
-
-#realcase[
-  The standard writes the differences down separately
-][
-  The C++ standard treats this problem formally too. The C++ standard document has a
-  section called *annex C (Compatibility)* that lists "the points differing from C"
-  clause by clause — the type of character constants, `void *` conversion, tag name
-  spaces, the type of string literals and so on. If you want to know the differences,
-  opening that annex is more accurate than guessing. That the annex exists at all
-  proves this section's argument — *the two languages are different enough that
-  compatibility must be cared about.*
-]
-
-== Time flows faster on the C++ side
-
-We write a little more here of the circumstance mentioned briefly in chapter 1. Since
-2011 C++ has put out a standard on a *three-year cycle* — C++11, 14, 17, 20, 23, 26.
-Each edition brings large features into the language and the standard library, and the
-look of "modern C++" changes correspondingly fast. C's revision cycle, by contrast, is
-far longer (C89 → C99 → C11 → C17 → C23), and what enters is mostly small and
-conservative.
-
-This difference of speed is not a matter of taste but comes from *a difference of
-role*. C is the language of operating systems and firmware, of the floor layer other
-languages lean on, so not changing is itself a feature. That thirty-year-old code
-compiles today, and that every platform has a C compiler, are the assets obtained in
-exchange.
-
-#qa[
-  Then with what attitude should a learner look at this difference?
-][
-  Three things are recommended.
-
-  *First, abandon the thought that "learn C++ and you know C automatically".* The
-  reverse likewise. It is true that much overlapping syntax lets you pick each up
-  quickly, but the idioms and ways of thinking are quite different. Bring C++'s habits
-  (exceptions, RAII, templates) into C as they are and the code becomes awkward; bring
-  C's habits (manual management, macros) into C++ and the code becomes dangerous.
-
-  *Second, always be conscious of which language it is being compiled as.* `.c` and
-  `.cpp` differ not in extension but in *language*. Merely knowing that the same file
-  can mean different things in the two languages prevents half the accidents.
-
-  *Third, most of what was learned in this book holds on either side.* The ladder of
-  memory, the distinction of representation and abstraction, contracts and undefined
-  behaviour, ownership and lifetime — these are not syntax but *the realities of
-  machines and of language design*. Go off to learn C++ and that eye is used just the
-  same.
-]
-
-== How to mix them — `extern "C"`
-
-Mixing the two languages is very common in practice. The representative case is a C++
-program calling a library written in C. The problem is *name mangling* — a C++
-compiler, in order to support overloading, mixes parameter type information into the
-function name it plants in the object file (recall chapter 51's linking), while a C
-compiler leaves the name as it is. So joining them just so leaves the linker unable to
-find the pair.
-
-The solution is to mark the declarations "handle this by the C convention".
+There are five doors, and their order is itself the contract.
 
 ```c
-/* mylib.h — the header of a library made in C */
-#ifndef MYLIB_H
-#define MYLIB_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int mylib_add(int a, int b);
-void mylib_reset(void);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+proven_job_sys_t *sys;
+proven_err_t e = proven_job_system_init(alloc, 4, 256, &sys);  /* ① 4 workers, queue 256 */
+bool ok = proven_job_submit(sys, routine, arg);                /* ② submit (false if full) */
+bool did = proven_job_execute_one(sys);                        /* ③ this thread handles one too */
+proven_job_system_close(sys);                                  /* ④ take no more */
+proven_job_system_destroy(sys);                                /* ⑤ join the workers and clean up */
 ```
 
-`__cplusplus` is a macro only a C++ compiler defines. So this header, read in C, is
-two ordinary declarations, and read in C++ becomes declarations wrapped in
-`extern "C" { ... }` — the standard idiom for *satisfying both languages with one
-header*, and nearly every C library header in the world has this shape.
+That it is an *opaque type* stands out — the inside of `proven_job_sys_t` is not in the
+header and it is handled only by pointer (the opaque type of chapter 57 in the flesh).
+Platform resources such as threads and locks are inside, and their layout is not to be
+exposed to user code.
 
-A few rules are worth remembering with it.
+That ④ and ⑤ are divided is a contract too. *Closing* is "no more submissions are
+taken", and *destroying* is "wait for the workers to finish and then clean up". Between
+them, the header requires the producer threads to be joined.
 
-- `extern "C"` concerns *the name and the calling convention* only. It has nothing to
-  do with the function's contents or with type checking.
-- Overloaded functions cannot be bound in `extern "C"` — because there must be only one
-  name.
-- When using a C header from C++ it is courteous not to use C++ reserved words
-  (`class`, `new`, `template`, `namespace`, `this`) as parameter names.
-- Data crossing the boundary is kept in *a shape both languages understand* — plain
-  structs and pointers, and explicit sizes. Do not throw C++ classes or exceptions
-  across the boundary.
+`proven_job_execute_one` is a little special. It lets *the submitting side handle one
+item of work itself* — so when submission fails because the queue is full, instead of
+merely waiting one can handle one and try again (a simple form of work stealing).
 
-== Embedded — C's home ground
+#antipattern[
+  Overlapping closing with submitting
+][
+  ```c
+  /* thread A */                    /* thread B */
+  proven_job_submit(sys, job);      proven_job_system_destroy(sys);
+  ```
+  A pattern the header explicitly forbids. The correct order is *close, join all the
+  producers, then destroy*. Such ordering contracts are not solved by hiding a lock
+  inside the data structure — rather, a hidden lock increases the code that "mistakenly
+  believes it works". It is also why this library puts no locks in its containers and
+  pins down that *shared mutation is synchronised by the caller*.
+]
 
-Unnoticed in daily life but, by volume, C's largest territory is embedded work. The
-control panels of washing machines and air conditioners, the dozens of control units in
-a car, medical devices, the low-level control of drones and robots, the firmware of
-communication modules — most of it is written in C.
+== Threads, allocators, and provenance
 
-The reason lies in that environment's constraints. Memory is in kilobytes, there may be
-no operating system (that world of chapter 6 where address 0 is the interrupt vector),
-execution time must be predictable (unpredictable pauses such as garbage collection are
-not permitted), and power is limited. C fits naturally in such an environment because it
-is a language that *charges no cost for what is not executed* — it can be used without
-the standard library (chapter 56's freestanding) and the code generated is predictable.
+In a program running along several strands the allocator demands special care. If two
+threads use one arena together, the simple action seen in chapter 85 of "cutting from
+the front" becomes a race at once. The prescription is mostly *one per thread* — and
+then no synchronisation is needed at all.
 
-In embedded C the knowledge of this book is used unusually directly — handling a
-particular address as a device register (chapter 6), blocking optimisation with
-`volatile` (chapter 13), manipulating hardware flags with bit operations (chapters 5
-and 27), not using dynamic allocation at all (chapter 42), handling communication
-protocols conscious of alignment and representation (chapters 6 and 45).
+Pointer *provenance*, whose name only was seen in chapter 14, becomes practical here
+too. Since even at the same address it matters which allocation a pointer came from,
+giving a block obtained from one allocator back to another is a contract violation
+(as in chapter 85's counterexample) even if the address happens to match. The library's
+name came from here.
 
-== How to cross the limits — the knack of practice
+== When there is no OS — freestanding
 
-C's lacks are clear — there are no namespaces, no generics, resource cleanup is not
-automatic, and safety is not enforced. Practice fills these with discipline and tools
-outside the language. Gathering what this book has passed through into practical
-guidance gives this.
+This is the constraint that most shaped this library. It is the demand to run in the
+very environment chapter 58 gave as the reason the standard library is thin — a place
+with no operating system, no heap and no files.
 
-- *No namespaces* → the prefix convention (chapter 40's `proven_`) and file-level
-  `static` (chapter 51's internal linkage).
-- *No generics* → code generation with macros (chapter 52's `##`, the X macro), or
-  generalisation taking `void *` with a size and a comparison function (the standard's
-  `qsort` is that way), or C11's `_Generic` selection.
-- *Resource cleanup is not automatic* → state the ownership convention in names and
-  documentation (chapter 42), and gather one function's cleanup points into one place
-  (the pattern of `goto` to a cleanup label is standard practice in the kernel).
-- *Safety is not enforced* → layer the nets (chapter 17): maximum warnings, sanitizers,
-  cross-checking with two compilers, static analysis tools, and components with checking
-  built in (Part XII).
-- *The standard library is thin* → choose or make the layer you need. Bringing it in as
-  a vendored copy to keep the build simple is the canonical way for a small project.
-- *The complexity of large projects* → divide the translation units small and reveal the
-  contracts through headers (chapter 51), and automate the tests and the build (this
-  chapter's make and git).
+#idx("freestanding")What changes in a freestanding build is this.
+
+- `platform/` is not included at all. Files, time and OS randomness disappear.
+- Allocation is done with an arena over a static buffer (chapter 85). There is no
+  `malloc`.
+- Strings are handled with `_borrow` over stack and static buffers (chapter 86).
+- The panic handler is registered by you — there may be no console to print to, so it
+  becomes a matter of lighting an LED, kicking a watchdog or rebooting.
+- Real-number formatting uses large-integer arithmetic, so it can be taken out whole
+  if it is not needed.
+
+Why the disciplines of the earlier chapters — "take the allocator as an argument", "a
+view is borrowed", "no hidden globals" — were so persistent shows itself here. Those
+disciplines were not a taste but *the minimum condition for running in this
+environment*.
+
+=== The actual build procedure
+
+Left in words alone it stays vague, so here is the order.
+
++ *Take `platform/` out of the compilation list.* Leave only `src/proven/*.c`. Files,
+  time, OS randomness, streams, mmap and the job system go out with it.
++ *Define `PROVEN_FREESTANDING`* (`-DPROVEN_FREESTANDING=1`). `proven_heap_allocator()`
+  then returns *an unusable value* (all zeros), and if it is used by mistake
+  `proven_alloc_is_valid` says false.
++ *Take the backing memory statically.* Put one array where the linker script knows it
+  and lay an arena over it (chapter 85).
++ *Register a panic handler.* There being no console, one of an LED, a watchdog or a
+  reboot (chapter 83's example).
++ *Take out what is not needed.* If real-number formatting is not used,
+  `-DPROVEN_FMT_NO_FLOAT` strips the large-integer arithmetic code out whole.
+
+```c
+/* the skeleton of a freestanding program */
+static proven_byte_t g_pool[8 * 1024];      /* the memory budget is settled here */
+
+int main(void)
+{
+    proven_set_panic_handler(board_panic);
+    proven_arena_t arena = proven_arena_create(
+        (proven_mem_mut_t){ .ptr = g_pool, .size = sizeof g_pool });
+    proven_allocator_t alloc = proven_arena_as_allocator(&arena);
+
+    for (;;) {
+        proven_arena_reset(&arena);          /* taken back each turn */
+        handle_one_event(alloc);
+    }
+}
+```
+
+These twenty lines contain all of this part's discipline — *the allocator is an
+argument*, *lifetime is per arena*, *`main` does not return* (chapter 50), and *the
+memory budget is written as a number in the source*.
 
 #realcase[
-  The reality of mixing — C does not vanish but becomes a layer
+  The same code in two worlds — and its price
 ][
-  Today's large systems are mostly not written in one language. It is common to have a
-  layered structure with the core needing performance in C (or C++ or Rust) and the
-  logic above it in Python or JavaScript. The reason Python's numerical libraries are
-  fast is that beneath them is C and Fortran, and the reason a browser plays video is
-  that beneath it is a C codec. Chapter 1 said Rust and Zig are encroaching on C's
-  territory, but what actually happens is closer to *coexistence* than to replacement —
-  the new languages too must speak with existing C assets, so they are born equipped
-  with a C interface. To be able to read and write C means, therefore, that whatever
-  layer you work at, you can look into the layer below.
+  Keeping as one set the code that runs both in embedded work and on a host really is
+  of great value. If a protocol parser can be tested on a PC and put into the firmware
+  as it stands, the time spent floundering on a board with no debugging environment
+  shrinks greatly. It is why many embedded teams keep a separate "test build that runs
+  on the host", and what makes that structure possible is exactly the design of
+  *confining platform dependence to one layer*. The price is that the API becomes a
+  little more formal — code that works anywhere is specialised to nowhere.
 ]
+
+== Where this library stands — what it is, and what it is not
+
+Before closing the part its place has to be made clear. The design seen so far —
+taking an allocator as a parameter, returning failure as a value, views that
+carry a length, refusing rather than truncating — was not invented by proven.
+Zig's allocator parameter, Rust's `Result` and slices, recent C++'s `span` and
+`expected`, and the in-house C conventions of many companies have all moved in
+the same direction. There is considerable common ground about it.
+
+*proven, however, is not that common ground itself.* It is *one attempt* to
+implement that direction in C23 — neither a standard nor an industry component.
+The distinction matters for a simple reason: the direction has been verified in
+many places, this implementation has not yet. What to take from this part is the
+direction rather than the code, and if you do take the code, take it knowing what
+follows.
+
+=== What has been verified so far
+
+What this book has put in print is exactly this much.
+
+#dtable(
+  columns: 2,
+  [*confirmed*], [*not confirmed*],
+  [this book's 94 examples build and run under GCC 14 and Clang 22], [behaviour under other compilers (MSVC, older GCC)],
+  [they all pass on x86-64 Linux], [continuous verification on other systems and architectures],
+  [the contracts of the API the examples use match the documentation], [coverage of the whole API],
+  [the platform layer has two branches, POSIX and Win32], [continuous automated verification of the Win32 branch],
+)
+
+That is, what this book vouches for is that *the code printed here runs in this
+environment* — not that the whole library is verified in every environment. The
+book claims no more than that.
+
+=== Stability — what may still change
+
+proven is not at 1.0. The edition this book uses is a snapshot of the
+`v26.07.23b` line, and that means:
+
+- *The API may change.* Names and signatures are still being tidied. There is no
+  guarantee that this book's examples compile unchanged against the next edition.
+- *No ABI is promised.* Struct layouts may change, so mixing pre-compiled
+  binaries is not advisable at this stage; building from source alongside your
+  own code is safer.
+- *Pin the edition.* If you use it in earnest, vendor a specific snapshot into
+  your repository (as this book does under `vendor/proven`) and move it
+  deliberately.
+
+=== What is not there yet
+
+Set down honestly, the following are absent or thin in this edition.
+
+- *Performance and size comparisons.* No benchmarks against the standard library
+  or other C libraries are published. That is why this book makes no performance
+  claim — a performance claim without data is advertising.
+- *Outside users.* There is little record of use in projects beyond the author's.
+- *A wide platform matrix.* The freestanding branch is designed for, but the list
+  of continuously verified targets is narrow.
+- *A long compatibility history.* The trust an old library earns — "it has been
+  carried across many editions already" — accumulates only with time.
 
 #qa[
-  What is worth making next for someone who has read this book through?
+  Then what is this part to be read for?
 ][
-  Something small and finite is good. A tool that reads a text file and produces
-  statistics, a simple configuration-file parser (chapter 85's scanner is used as it
-  stands), implementing one data structure yourself (chapter 43's linked structures),
-  reading the source of a small C project you like and mending one place. The last is
-  especially recommended — the ability to read somebody else's code takes up most of the
-  time spent in practice, and this book spent a good deal of itself on growing the eye
-  for that reading.
+  Two things. One is *how to read a design* — the eye that asks, of whatever
+  library you meet, "how does it report failure, who supplies the memory, where
+  is the length, what happens at the boundary?" That eye remains whether or not
+  you use proven.
+
+  The other is *grounds for a choice*. If, looking at the table above, you judge
+  that it is too early for your project, that too is the result of reading this
+  part properly. It means the same as the preface saying that deciding you do not
+  need proven is a fine outcome too.
 ]
 
-We have looked round the terrain beyond these pages too. The next chapter enlarges one
-region of it — in embedded work, where C is most deeply rooted, what compilers and what
-tools one works with. Then in the last chapter we retrace the road this book has
-travelled and close it.
+== When it is better not to use it
+
+We close honestly. There are cases where this library is not the answer.
+
+- *Short, script-like programs* — for a twenty-line tool, ownership discipline and
+  allocator parameters are mere formality. The standard library is enough.
+- *A codebase that already has other conventions* — a large project mostly already has
+  its own string, container and error conventions. Mix two conventions and conversion
+  code arises at every boundary, and those boundaries become the places of new bugs.
+- *Places like C++ and Rust where the language already solves the problem* — in an
+  environment where the language handles ownership and error propagation, there is
+  little reason to lay a C library on top.
+- *Work that one standard function finishes* — exactly as this book said in
+  chapter 58. The right attitude is neither "do not use it" nor "use it
+  unconditionally" but *knowing the contract and choosing*.
+
+#qa[
+  Then what remains of what was learned in this part if proven is not used?
+][
+  Almost all of it. Strings that carry their length, writes that refuse rather than
+  truncate, errors that come back as values, allocation visible in the signature, the
+  distinction of owning and borrowing, size calculation done with checked arithmetic,
+  comparators that keep a total order, hashes that assume adversarial input — these are
+  not a library but *design principles*, and they can be applied by hand to any C code.
+  Open chapter 81's table again and the right-hand column is entirely such items. What
+  this part really wanted to sell is not the code but that column.
+]
+
+#recap[
+  A summary of the whole of Part XII — problems and answers.
+
+  #dtable(
+  columns: 3,
+    [*chapter 81's problem*], [*the answer*], [*chapter*],
+    [strings that do not know the size], [views (ptr+size), refusing rather than truncating], [chapters 84 and 86],
+    [unconfirmed failure], [errors as values, `[[nodiscard]]`], [chapter 83],
+    [format mismatch], [`{}` and `PROVEN_ARG` (`_Generic`)], [chapter 87],
+    [unclear ownership], [the allocator parameter, owning versus borrowing], [chapter 85],
+    [unchecked callbacks], [documented contracts, introsort, keyed hashes], [chapter 88],
+    [the hidden type of bytes], [`proven_byte_t`], [chapter 84],
+    [environments with no OS], [separating the platform layer, static arenas], [chapter 90],
+)
+]
+
+With this, the promise this book made in chapter 1 has been kept — showing C's problems
+first, and showing one answer to them through to the end. The two remaining chapters
+are the story beyond these pages. In the next chapter we look round the terrain of
+practice (build tools, version control, real projects), and in the last we gather up the
+road this book has travelled.

@@ -113,7 +113,7 @@ changed with the editions.
 #misconception[
   "C23 mandated two's complement, so the negative-shift problem is gone"
 ][
-  Two's complement representation was indeed mandated (chapter 73). The shift
+  Two's complement representation was indeed mandated (chapter 75). The shift
   clause, however, was left alone — *left-shifting a signed negative value is
   still outside the contract in C23*, and *right-shifting a negative value is
   still implementation-defined*. That gcc and clang do an arithmetic shift is a

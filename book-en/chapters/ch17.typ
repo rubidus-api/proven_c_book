@@ -118,7 +118,7 @@ the optimised machine code, and where a pointer points.
   [Wandbox, Coliru], [Running the same code under several compiler builds], [Spotting "works only on my compiler"],
   [Replit], [A workspace with files and a terminal], [Examples split across files (chapter 51)],
   [Python Tutor (C mode)], [Steps through execution and *draws memory*], [Chapters 34–42, pointers and memory],
-  [#link("https://cdecl.org")[`cdecl.org`]], [Puts a complicated declaration into words], [Chapter 55, reading declarations],
+  [#link("https://cdecl.org")[`cdecl.org`]], [Puts a complicated declaration into words], [Chapter 57, reading declarations],
 )
 
 #figure-svg("explorer", caption: [How a screen that shows one source line becoming several machine-code lines is laid out.])
@@ -154,7 +154,7 @@ wrote.
 
   - *There are time and memory limits.* Long loops and large arrays get cut off.
   - *Files and networking are usually blocked.* Run the file-I/O examples
-    (chapter 58 onwards) on your own machine.
+    (chapter 60 onwards) on your own machine.
   - *Standard input goes in a box you fill in advance.* Interactive input is only
     imitated.
   - *It is someone else's server.* Do not paste company code or anything that must
@@ -206,7 +206,7 @@ The four links in the chain:
   string literals are mangled right there.
 - *③ the execution character set* — what bytes the compiler embeds in the
   executable (stage 5 of chapter 9; the conversion seen in the translation
-  phases of chapter 52).
+  phases of chapter 54).
 - *④ the encoding the terminal interprets* — which table the window reads the
   program's bytes with. Get this wrong and the screen shows broken characters
   even if the first three are perfect.
@@ -456,7 +456,7 @@ boards with neither screen nor keyboard. The order of attack is roughly this.
   dump in a debugger afterwards and trace the crash site back to source lines.
 + *Narrow by bisection.* Lower the optimisation level (`-O2` → `-O1` → `-O0`) to
   see where behaviour diverges, and halve the version-control history to find
-  when the bug entered (chapter 90's `git bisect`).
+  when the bug entered (chapter 92's `git bisect`).
 + *Make a minimal reproduction.* Reducing the problem to the smallest program
   that reproduces it often exposes the cause by itself, and turns it into
   something you can ask others about.
@@ -572,7 +572,7 @@ that relay (chapter 17). The preparation is done.
 The next chapter is this part's finish and a map: which C compilers, other than
 the gcc and clang we just installed, are in active service in the world
 (chapter 18). What embedded developers carry beside make and git is a wide
-enough subject that it waits until the end of the book (chapter 91).
+enough subject that it waits until the end of the book (chapter 93).
 
 From the part after that, the real study of the language begins — not a list of
 new syntax, but the goal of Part IV: *reading one piece of chapter 15's hello

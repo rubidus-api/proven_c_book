@@ -113,7 +113,7 @@ C23 (ISO/IEC 9899:2024) — it is the second entry of annex J.2. C++, for refere
 dropped the clause in 2011 (deciding that a missing new-line counts as one appended).
 It is a rare place where the two languages parted.
 
-Why should such a thing be UB? Recall the *translation phases* seen in chapter 52 and
+Why should such a thing be UB? Recall the *translation phases* seen in chapter 54 and
 the answer appears. The preprocessor works by lines, and one directive is complete
 only when a new-line ends it. If the file ends with no new-line, the last line is left
 *unfinished*, and what happens next differs by implementation. The third row's
@@ -145,7 +145,7 @@ practice is not the compiler but *the other tools that handle the file*.
 
   So today's practice is one line — *end a text file with a new-line.* An editor
   setting (add a final new-line automatically), `.editorconfig`'s
-  `insert_final_newline`, and the formatting tools seen in chapter 90 do that work for
+  `insert_final_newline`, and the formatting tools seen in chapter 92 do that work for
   you. The C standard's clause is, in effect, the oldest ground for that practice.
 ]
 
@@ -166,7 +166,7 @@ to computation at run time.
   [`#include <a//b.h>`], [`//`, `/*`, `'` and `"` likewise are UB], [6.4.7],
   [`#define defined(x) …`], [using `defined` as a macro name], [6.10.9],
   [using `assert` after `#undef assert`], [erasing a standard library macro and then using it], [7.1.3],
-  [`int _Value;`, `int __x;`], [trespassing on the reserved name space (chapter 76)], [7.1.3],
+  [`int _Value;`, `int __x;`], [trespassing on the reserved name space (chapter 78)], [7.1.3],
   [`memcpy(p, q, 0)` with `p` null], [even at size 0 a null pointer is outside the contract (see below)], [7.26.2],
   [`printf("%s", NULL)`], [passing null as a string], [7.23.6.1],
   [`short a[10]; short *p = &a[15];`], [*merely making* an out-of-range pointer is UB, without dereferencing], [6.5.7],
@@ -286,9 +286,9 @@ safe code.*
 
 The last parts remain. Every program so far has been a single file — now it grows
 into several files (chapter 51), we face the layer of preprocessing and
-translation (chapter 52), we learn the terrain of the standard library
-(chapter 56), we treat proven head on (Part XII), and we close the book with the
-practices of modern C (chapter 92).
+translation (chapter 54), we learn the terrain of the standard library
+(chapter 58), we treat proven head on (Part XII), and we close the book with the
+practices of modern C (chapter 94).
 
 The next part is the story of *composing* a program. Its first chapter is the
 place we have used only as a six-line convention until now — `main` itself. We see

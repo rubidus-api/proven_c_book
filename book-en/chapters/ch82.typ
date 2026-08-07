@@ -1,287 +1,301 @@
 #import "../../book/lib.typ": *
 
-= The foundation — bytes, views, and arithmetic that does not overflow
+= Getting started — there is nothing to install
 
 #prereq(
-  ([chapter 36, The rules of pointers], [alignment and provenance]),
-  ([chapter 37, Arrays], [arrays and bounds]),
-  ([chapter 75, How to ask about overflow], [arithmetic that does not overflow]),
+  ([chapter 51, Several files], [several files and linking]),
+  ([chapter 81, The five bugs shipped for fifty years], [the five bugs]),
 )
 
 #deepqa[
-  Chapter 36 said that pointers to a character type (`char*`, `signed char*`,
-  `unsigned char*`) alone have the privilege of
-  peering into any object byte by byte, and chapter 13 showed code that broke that
-  rule quietly collapsing under optimisation. Then what, concretely, does "handling
-  bytes safely" keep?
+  Chapter 51 made a multi-file program and learned about headers, object files and
+#idx("the compilation process")  linking, and chapter 16 saw the four runners of
+  the compilation relay. Then what exactly is "using a library" in that picture?
 ][
-  Two things. First, *fix the type you peer with to the one the rule exempts* —
-  `unsigned char`. Second, *do not lose the range you are peering into* — carry a
-  pointer alone and you forget where your land ends, which is chapter 37's boundary
-  trespass. proven's basic vocabulary is these two each made into a type.
+  One of two things. *Compiling it together*, or *linking something compiled
+  separately*. The former road is handing somebody else's source to the compiler
+  along with mine; the latter is handing the linker a lump that has already become
+  object code (a static `.a` or a shared `.so`/`.dll`). Either way the compiler makes
+  the call from the *declaration* (the header) and the linker finds and joins the
+  *definition* — exactly chapter 51's picture. proven took the former road, and the
+  next section is why.
 ]
 
 #organizer[
-  We see the four basic vocabularies the whole library stands on — the type that
-#idx("view")  points at raw bytes, the *view* binding pointer and length into one,
-  size calculation that does not wrap, and alignment. Chapter 79's sixth bug (the
-  hidden type of bytes) and chapter 37's boundary problem obtain their answer at the
-  level of types here.
+  The first chapter that actually uses proven. We first see why this library has no
+  `configure`, no package manager and no shared library to link — and what that
+  choice gives and takes away — and then run a first program. The third bug seen in
+  chapter 81 (format mismatch) already disappears in this first program. Then we follow
+  *the whole life of one object* (make it, use it, give it back) and set up the three
+  rules needed to read the rest of this part.
 ]
 
 #chapter-questions()
 
-== Bytes have a name
+== The choice of having nothing to install
 
-`proven_byte_t` is an alias for `unsigned char`. It seems no great thing, but one
-declaration writes down a contract — "this pointer is an eye that looks at
-*representation*, not something pointing at a value of some type".
+proven has no installation procedure. Compile the source you have obtained together
+with your program and that is all. There are only two directories that matter.
 
-Why this distinction matters was already seen in chapter 13. Code that looks at the
-same memory alternately through `uint32_t*` and `uint16_t*` breaks the aliasing rule,
-and the compiler uses that premise in optimisation. Looking through `unsigned char`,
-on the other hand, is explicitly permitted by the standard. It is why the library
-always goes through this type when handling raw memory, and so through the library
-that bug cannot be written.
+- `src/proven/` — the portable body. The operating system is not called here.
+- `platform/` — a thin layer that makes system calls. It is the only part that must
+  be changed when moving to a new machine.
 
-== Views — pointer and length as one
+In an environment with no operating system (embedded) it is built without
+`platform/`. This separation settled the shape of the whole library — the demand
+"it must run anywhere" becomes the discipline "keep neither hidden allocation nor
+hidden global state".
 
-The vocabulary for pointing at memory is only three, and all are structs of two slots.
-The difference between the three is only *does it own* and *may it be changed*.
+#qa[
+  Why not distribute it as a package? Installing would be more convenient.
+][
+  It is a trade of price for gain. What is lost is convenience — it cannot be got
+  through a system package, and updating becomes not "raising a version" but
+  "fetching new source". What is gained is control. The library cannot differ from
+  the source you are looking at now, compilation options you did not choose do not
+  come attached, and links do not break because a distribution built it with
+  different settings. Above all, it is *the only model that works both in a hosted
+  environment and on bare metal* — embedded work has no package manager to begin
+  with.
+]
 
-```c
-/* ① an owned lump — "this memory is mine, and one day I give it back" */
-typedef struct {
-    proven_byte_t *ptr;
-    proven_size_t  size;
-} proven_mem_t;
+== How this book's examples are built
 
-/* ② a borrowed reading window — it only peers into somebody's memory */
-typedef struct {
-    const proven_byte_t *ptr;
-    proven_size_t        size;
-} proven_mem_view_t;
+To state it honestly, this book's proven examples are compiled as follows. The
+library's source is made into object files once and linked with the example.
 
-/* ③ a borrowed writing window — it may change somebody's memory but not return it */
-typedef struct {
-    proven_byte_t *ptr;
-    proven_size_t  size;
-} proven_mem_mut_t;
+```text
+$ cc -std=c23 -O1 -Ivendor/proven/include -c vendor/proven/src/proven/*.c
+$ cc -std=c23 -Wall -Wextra -Werror -Ivendor/proven/include \
+     hello.c vendor-obj/*.o -lm -o hello
 ```
 
-One `const` divides ② from ③, and *the name* divides ① from the rest. What this small
-struct does is one thing — *making sure the pointer and the length never part*. It is
-the answer to the problem chapter 39 called "the real problem of strings is carrying
-the length separately".
+The first line handles the body, the second my program. `-I` tells it where to find
+headers (chapter 51), `-lm` joins the mathematical functions. These two lines are
+what this book's verification script really runs every time, and every execution
+result printed on these pages is the output of a program made that way.
 
-#dtable(
-  columns: 4,
-  [*type*], [*owns*], [*writes*], [*where it comes from*],
-  [`proven_mem_t`], [yes], [yes], [an allocator (chapter 83)],
-  [`proven_mem_view_t`], [no], [no], [`_as_view`, slicing, literals],
-  [`proven_mem_mut_t`], [no], [yes], [an allocation result, a stack array, slicing],
-)
+== The first program
 
-There are paired functions for obtaining a window from an owned lump too —
-`proven_mem_view_from_owned` and `proven_mem_mut_from_owned`. The `from_owned` in the
-name means "leave the ownership as it is and open only a window".
+One `#include <proven.h>` opens the whole library.
 
-#demo("examples-en/ch82/mem.c")
+#demo("examples-en/ch82/hello.c")
 
-The example runs the vocabulary of this section and the next once each. Five places to
-point at.
+We read it line by line. `proven_println` takes a format and arguments and prints
+one line to standard output — so far the same as `printf`. What differs is the
+*placeholder*.
 
-*① A view is two words.* The output's `sizeof(mem_view_t)=16` is that (on 64-bit,
-pointer 8 + length 8). That it is larger than a bare pointer (8 bytes) is a view's only
-cost, and in exchange bounds checking becomes possible.
+- `{}` has no type in it. It is neither `%d` nor `%s` but simply `{}`.
+- The type comes *from the argument*. `PROVEN_ARG(x)` looks at `x`'s type and wraps
+  the value with a fitting tag attached.
+- So chapter 81's third bug — the mismatch of format and argument — *structurally*
+  cannot happen. The type is not written twice, so there is no place for them to go
+  out of step.
 
-*② Only the writing window can change things.* The example changed the first letter
-with `mut.ptr[0] = 'A'` and every later output begins with `A`. Try to change the same
-place through the reading view and it is *a compile error* — that is what the `const`
-does.
+What is written after the colon, as in `{:>8}`, corresponds to the width, alignment
+and precision seen in chapter 58. `>` is right alignment, `<` left alignment, `.3` is
+to three decimal places. That the alignment symbol comes first is what differs from
+`printf`.
 
-*③ Slicing has two editions.* We look at them closely in the next section.
+== Three rules — the key to this whole part
 
-*④ Copying and moving have boundaries too.* `proven_mem_copy(dst, dst_cap, src)`
-*compulsorily* takes the destination's capacity and, if the source does not fit, writes
-not one byte and returns `OUT_OF_BOUNDS` (the output's `copy 15 into 8`). If they may
-overlap it is `proven_mem_move` — chapter 60's `memcpy`/`memmove` distinction as it
-stands.
+The functions ahead number more than a hundred, but the rules for reading their
+signatures are only three. Get these three into your hand and you can read half of any
+function you have never seen, without the documentation.
 
-*⑤ You can ask which lump a pointer belongs to.*
-`proven_range_contains_ptr` is that, and what is worth noticing is that *the
-implementation compares as integers*. Comparing pointers from different allocations
-with `<` or `>=` is outside the contract (chapter 36), so the library converts to
-`uintptr_t` and then checks. It is the function chapter 83's arena uses when confirming
-"is this pointer one I handed out".
++ *Only a function that takes an allocator as an argument takes memory.* If
+  `proven_allocator_t` appears in the signature it means "this function may allocate",
+  and if it does not, it takes *not one byte*. So which functions are usable in
+  embedded work and which are not divide before your eyes (chapter 85).
++ *Failure comes as a value.* If there is no result to return it gives a single
+  `proven_err_t`; if there is, an `{err, value}` bundle. Before checking `err` you do
+  not look at `value` (chapter 83).
++ *Give a thing back with the allocator you made it with.* What was obtained with
+  `_create` is let go with `_destroy`, and what has `view` in its name is borrowed and
+  is not destroyed (chapters 84 and 85).
 
-This detour is not, however, *a portable check the standard guarantees.*
-`uintptr_t` is an optional type — an implementation need not have it — and the
-standard nowhere promises that converting pointers to integers preserves the
-order of addresses. What it promises is only the round trip: pointer →
-`uintptr_t` → the same pointer. On today's mainstream platforms, with their flat
-address spaces, the ordered comparison does what one expects; on machines where
-an address is not a single number — segmented addresses, or capability pointers
-(the CHERI of chapter 5) — it is another story. So this function should be read
-not as a contract but as *an assumption about the platforms proven supports*:
-a flat address space in which the integer conversion preserves order (see the
-support range in chapter 88).
-
-== Slicing — the operation used most in this part
-
-#demo("examples-en/ch82/view.c")
-
-`slice 6+4` is this section's heart. From an 8-byte view we asked for 4 bytes from
-the 6th, so two bytes are short. The library *does not cut off as much as there is* —
-it returns an error (number 2 is `PROVEN_ERR_OUT_OF_BOUNDS`). Giving as much as there
-is looks kinder, but then the caller cannot know whether what was received is what
-was requested. It is blocking chapter 79's truncation problem from repeating here.
-
-Four functions form pairs — reading/writing × checked/unchecked.
+The naming rules have almost no exceptions either.
 
 #dtable(
   columns: 3,
-  [*function*], [*what it returns*], [*when*],
-  [`proven_mem_view_slice_checked`], [an `{err, view}` bundle], [the default. when the boundary is unknown],
-  [`proven_mem_view_slice_unchecked`], [a view (no check)], [a hot loop whose boundary is already confirmed],
-  [`proven_mem_mut_slice_checked`], [an `{err, mut}` bundle], [the default (writing)],
-  [`proven_mem_mut_slice_unchecked`], [a writing window (no check)], [the same],
+  [*shape of the name*], [*meaning*], [*example*],
+  [`_create`], [obtain a new object from an allocator — returns a bundle], [`proven_u8str_create`],
+  [`_borrow`], [lay an object over somebody's memory — no allocation], [`proven_u8str_borrow`],
+  [`_destroy`], [give it back with the allocator it was made with], [`proven_u8str_destroy`],
+  [`_as_`], [see the same thing through another eye — no copying], [`proven_u8str_as_view`],
+  [`_view`], [borrowed. it is not destroyed], [`proven_u8str_view_t`],
+  [`_checked`], [check the boundary and error if it is broken], [`..._slice_checked`],
+  [`_unchecked`], [skip the check — for places the caller has already confirmed], [`..._slice_unchecked`],
+  [`_grow`], [enlarge if short — which is why it takes an allocator], [`proven_u8str_append_grow`],
+  [`_or_panic`], [panic on failure. for places with nobody to return to], [`proven_arena_alloc_or_panic`],
 )
 
-The checked edition's contract is three lines. *If the length is nonzero and the
-pointer is null*, `INVALID_ARG`. *If `offset` exceeds the size, or `offset + size`
-exceeds it*, `OUT_OF_BOUNDS` — and it matters that this check is written not as
-`offset + size > view.size` but as `size > view.size - offset`. The former can wrap in
-the addition; the latter never can (the same spirit as the checked arithmetic later in
-this chapter). *If the size is 0* it returns an empty view with a null pointer and size
-0 — a safeguard against dereferencing a pointer to nothing.
+== The life of one object
 
-#qa[
-  I saw the slicing function in two editions, `_checked` and `_unchecked` — why does
-  the latter exist?
-][
-  For places where the boundary has *already been checked*. Redoing the same check
-  every turn inside a loop is waste, so one checks once before the loop and uses the
-  unchecked edition inside.
+Rather than reading three lines of rules, it is quicker to follow one real thing to
+the end. The program below holds the whole course of *making, using and giving back* a
+string object on one screen.
 
-  ```c
-  /* read in 8-byte pieces — the loop condition already guarantees the boundary */
-  for (proven_size_t off = 0; off + 8 <= buf.size; off += 8) {
-      proven_mem_view_t chunk = proven_mem_view_slice_unchecked(buf, off, 8);
-      process(chunk);
-  }
-  ```
+#demo("examples-en/ch82/first.c")
 
-  That the name carries `_unchecked` matters — the dangerous choice can be made only
-  through *a visible name*, and the default is always the safe side. It is one form of
-  chapter 48's "write the contract as code", with the practical benefit too that
-  searching for `_unchecked` in review skims the dangerous places.
-]
+Six places to point at.
+
+*① It took an allocator as an argument.* That `build_line`'s first argument is an
+allocator is the declaration that "this function may take memory". The caller settles
+whether to give it the heap or an arena (chapter 85).
+
+*② Making returns a bundle.* `proven_u8str_create` gives a
+`proven_result_u8str_t` (that is, `{err, value}`). Before checking `err` you do not
+take `value` out — that order is the whole of chapter 83.
+
+*③ The capacity is "by content".* The 64 of `create(alloc, 64)` is *the number of
+bytes of content to hold*, and the library internally takes one more byte for the NUL.
+That is how `as_cstr` can hand out a C string without copying.
+
+*④ The failure path gives back too.* If formatting fails, the string taken so far is
+returned with `destroy` before the error is raised. Grow this pattern and it becomes
+chapter 83's `goto` cleanup idiom.
+
+*⑤ The place where ownership passes is explicit.* `*out = line;` is that place. After
+this line the string's owner is the caller, and the responsibility to destroy it is the
+caller's too.
+
+*⑥ Destroying empties the struct.* That the length prints as 0 after `destroy` is the
+evidence. It is so that the returned buffer is not still pointed at, and the contract
+that *a destroyed object is not used again* stands as it is.
 
 #antipattern[
-  Holding a view longer than its owner
+  The four mistakes a beginner meets on the first day
 ][
   ```c
-  proven_mem_view_t get_view(void) {
-      proven_byte_t local[16] = {0};
-      return (proven_mem_view_t){ .ptr = local, .size = sizeof local };
-  }   /* local dies here — the returned view is already invalid */
+  /* ① taking value out without checking */
+  proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* rubbish on failure */
+
+  /* ② destroying with a different allocator */
+  proven_u8str_destroy(other_alloc, &s);                     /* contract violation */
+
+  /* ③ holding a view longer than its original */
+  proven_u8str_view_t v = proven_u8str_as_view(&s);
+  proven_u8str_destroy(alloc, &s);
+  proven_println("{}", PROVEN_ARG(v));                       /* reads a dead place */
+
+  /* ④ forgetting PROVEN_ARG */
+  proven_println("count={}", count);                         /* does not compile */
   ```
-  A view is *borrowed*. When the owner vanishes it becomes invalid that instant, and
-  use after that is the access to a dead automatic variable learned in chapter 41.
-  That a view is safer than a pointer is about *boundaries*, not about *lifetime* —
-  lifetime is still for a human to keep. That is why the next chapter's story of
-  allocators becomes necessary.
+  Of the four only ④ is caught by the compiler. The other three are blocked *by a human
+  keeping the rules*, which is why the previous section said to get the three rules into
+  your hand. ③ in particular is met again in chapter 86, and once more when an arena is
+  reset.
 ]
 
-== Size arithmetic that does not overflow
+#qa[
+  Must an object be made with `_create`? What about where there is no heap?
+][
+  No. Most objects come with *a borrowing edition* as well.
+  `proven_u8str_borrow(buf, sizeof buf)` lays a string over a stack or static array —
+  it takes no allocator, so it takes not one byte, and therefore needs no `destroy`
+  either (the caller is already the owner). Embedded code handles strings this way
+  (chapter 86), and several of this book's examples run so.
 
-Chapter 26 taught the wrap-round of unsigned integers, and chapter 7 showed why it is
-defined behaviour. The fact that wrapping is quiet becomes especially dangerous in one
-place — *when calculating the number of bytes to allocate*.
+  There is a middle form too. Take the memory once in a large piece, lay an arena over
+  it and hand out from there (chapter 85) — then `malloc` is never called once while the
+  `_create` family can be used as it is.
+]
 
-```c
-void *p = malloc(count * sizeof(item_t));   /* if count is large it wraps */
-```
-
-If `count` is large enough the product wraps into a very small number, and `malloc`
-succeeds at that small size. Then the program begins writing as many items as it
-originally intended — a typical heap overflow. This is the pattern chapter 26 gave as
-the real accident case of overflow, "size calculation".
-
-#idx("checked arithmetic")The library uses C23's checked arithmetic for size
-calculation. The example's `PROVEN_CKD_MUL` is that: if the product overflows it
-returns *true* (the return value is whether it overflowed, not the result of the
-calculation). If it overflows, the allocation is not even attempted.
+#qa[
+  How does `PROVEN_ARG` find out the type? Does C not lack function overloading?
+][
+  It uses a device that came in with C11, `_Generic` — the syntax that chooses one
+  of several things *at compile time* according to an expression's type.
+  `PROVEN_ARG(x)` makes a small struct with an integer tag attached if `x` is an
+  `int`, a real tag if a `double`, a string tag if a `const char *`. It is not
+  determining the type at run time but *using as it stands what the compiler already
+  knows*, so there is no cost. The syntax and the whole formatting rules are treated
+  head on in chapter 87.
+]
 
 #misconception[
-  "`size_t` is as much as 64 bits, so it cannot overflow"
+  "Using a library makes the program heavy"
 ][
-  It can, and it does. Because multiplication grows values *on a squared scale* —
-  four billion × four billion already exceeds 64 bits. Moreover on a 32-bit machine
-  `size_t` is still 32 bits, and code multiplying two 32-bit fields read from a file
-  format wraps on the spot. Most important of all is *who settles that number*. If the
-  size is a constant inside the program you may rest easy, but if it is a number that
-  came from a file or the network then it is *an operand chosen by the attacker*.
+  A frequently heard worry, and it depends on the character of the language and the
+  library. In C, a library compiled together as source leaves *what is not used out
+  of the executable* — because the linker does not put in an object file that is not
+  referenced (chapter 16's linking stage). Moreover proven has no initialisation code
+  running at startup, no global state being registered, and no thread quietly rising.
+  Becoming heavy is not the price of using a library but what happens when a
+  framework takes over the program's structure.
 ]
 
 #realcase[
-  The vulnerabilities one multiplication made
+  The practice of distributing as source — SQLite in one file
 ][
-  This pattern is a regular in the CVE lists. Cases have been reported repeatedly of
-  an image decoder wrapping while calculating
-  `width * height * bytes_per_pixel` in 32 bits, of a font parser wrapping while
-  multiplying the glyph count, of decompression code wrapping while multiplying the
-  original size. What they share is that *the input file settles the size* — that is,
-  the attacker can choose the multiplication's operands. So today's languages and
-  libraries do size calculation with checked arithmetic, or handle it with types that
-  cannot overflow at all.
+  This distribution model is not a peculiar choice of proven's alone. SQLite, the
+  most widely used database engine in the world, provides as its official
+  distribution form an *amalgamation* joining dozens of source files into one huge
+  `.c` file — fetch it, compile it with your program, and that is all. The `stb`
+  family of libraries, famous for image and font handling, is a single header file
+  entire. The reason is the same in every case. In a world where build environments
+  are all different, *the most portable unit of distribution is source*.
 ]
 
-== Alignment — pushing up to the next boundary
+== Attaching it to your own project — a minimal Makefile
 
-The alignment learned in chapter 6 becomes a practical tool here.
-`proven_mem_align_up(13, 8)` returns 16 — because to fit an object starting at
-address 13 to an 8-byte boundary it must be pushed to 16. This is exactly the
-calculation the next chapter's arena does every time it lays objects out in a row.
+To avoid typing the two lines above every time, use chapter 92's `make`. Supposing the
+library has been put whole into `vendor/proven`, this much suffices.
 
-#dtable(
-  columns: 3,
-  [*name*], [*what*], [*note*],
-  [`proven_mem_align_up(a, n)`], [rounds `a` up to a multiple of `n`], [0 if it overflows or `n` is not a power of two],
-  [`proven_uintptr_align_up(p, n)`], [rounds an address up], [as an integer, instead of pointer arithmetic],
-  [`proven_is_pow2(n)`], [is it a power of two], [checking an alignment value],
-  [`PROVEN_MAX_ALIGN`], [`alignof(max_align_t)`], [usually 16. holds any type],
-  [`PROVEN_DEFAULT_ALIGNMENT`], [8], [the default for byte data such as strings and buffers],
-)
+```make
+CC      = cc
+CFLAGS  = -std=c23 -Wall -Wextra -Werror -O2 -Ivendor/proven/include
+VSRC    = $(wildcard vendor/proven/src/proven/*.c) \
+          $(wildcard vendor/proven/platform/*.c)
+VOBJ    = $(VSRC:.c=.o)
 
-*Reporting failure as 0* is these functions' peculiar contract. If the alignment is not
-a power of two or the rounding overflows they return 0, so the result must be checked
-for 0 before being used as a size. Inside the library the arena does that check for
-you, so you will call these directly only when making a data structure of your own.
+app: app.o $(VOBJ)
+	$(CC) $^ -lm -o $@
 
-It is worth knowing too that the two constants have different uses. A byte array or a
-string is content with `PROVEN_DEFAULT_ALIGNMENT` (8), while *general allocation that
-does not know what type is coming* uses `PROVEN_MAX_ALIGN`. It is also why chapter 83's
-heap allocator divides the two — requests at or below the default alignment go to
-`malloc` (growth in place is then possible), and stricter requests to an aligned
-allocation.
+clean:
+	rm -f app app.o $(VOBJ)
+```
+
+Only three things need be known. *`-I`* tells it where to find `<proven.h>`
+(chapter 51). *`platform/`* is the thin layer that calls the operating system, so when
+going to bare metal only this line is removed (chapter 90). *`-lm`* joins the
+mathematical functions that real-number formatting uses — take reals out of the
+formatter (chapter 90's `PROVEN_FMT_NO_FLOAT`) and this is not needed either.
+
+#platform[
+  On Windows and in embedded work
+][
+  *MSVC* — this library requires C23. Recent updates of Visual Studio 2022 support a
+  good deal of it with `/std:clatest`, but the surest road is to use `clang-cl` or
+  MinGW-w64 (GCC) on Windows too (chapter 18's terrain).
+
+  *Embedded* — leave out `platform/` and compile only `src/proven/*.c`. There being no
+  heap, `proven_heap_allocator()` returns an unusable value (all zeros), and an arena
+  laid over a static array is used instead (chapter 85). The detailed procedure is
+  chapter 90.
+]
 
 #recap[
-  This chapter's vocabulary.
+  This chapter in summary.
 
   #dtable(
-  columns: 3,
-    [*name*], [*what*], [*contract*],
-    [`proven_byte_t`], [an alias for `unsigned char`], [the only legal window onto representation],
-    [`proven_mem_view_t`], [a read-only view (ptr+size)], [borrowed — it cannot outlive its owner],
-    [`proven_mem_mut_t`], [a writable view], [the same],
-    [`..._slice_checked`], [making a sub-view], [an error if it exceeds the range, no truncation],
-    [`PROVEN_CKD_MUL/ADD`], [checked arithmetic], [true if it overflows — the calculation is discarded],
-    [`proven_mem_align_up`], [rounding up an alignment], [alignment is a power of two],
+  columns: 2,
+    [*what*], [*how*],
+    [header], [one `#include <proven.h>`],
+    [build], [compile `src/proven/*.c` with the program (`-I` for the header path, `-lm`)],
+    [OS dependence], [only in `platform/` (build without it if absent)],
+    [rule ①], [only a function that takes an allocator takes memory],
+    [rule ②], [failure comes as a value — check `err`, then `value`],
+    [rule ③], [destroy with the allocator it was made with. a `view` is not destroyed],
+    [making], [`_create` (allocates) / `_borrow` (over somebody's buffer, no allocation)],
+    [output], [`proven_println("... {} ...", PROVEN_ARG(x))`],
+    [format specification], [`{:>8}` `{:<8}` `{:.3}` — after the colon],
+    [the price], [a `PROVEN_ARG` per argument, a syntax unlike the familiar `%d`],
 )
 ]
 
-We are equipped with the vocabulary for *looking at* memory. Next is the story of
-*obtaining* memory — and in that place we meet this library's most characteristic
-decision.
+The first program has run. Yet the `proven_println` just used can in fact fail too —
+because the band going to the screen may break (chapter 10). This function returns an
+error but *does not compel a check*, and that choice itself is a good entrance to
+understanding this library's error model. The next chapter is that.

@@ -145,7 +145,7 @@ Now each family in turn. Every table has the same columns.
   columns: 5,
   [*operator*], [*operands*], [*result*], [*grey zone*], [*in detail*],
   [`a[i]` subscript], [one a pointer to a complete object type, the other an integer], [an lvalue of the pointed-at type. `a[i]` is `*(a+i)`], [*UB*: access outside the array (including following the one-past-the-end position)], [chapter 37],
-  [`f(...)` call], [a function, or a pointer to one], [the function's return type; not an lvalue], [*unspecified*: the order in which arguments are evaluated. *UB*: arguments that disagree with the prototype], [chapters 21, 24, 53],
+  [`f(...)` call], [a function, or a pointer to one], [the function's return type; not an lvalue], [*unspecified*: the order in which arguments are evaluated. *UB*: arguments that disagree with the prototype], [chapters 21, 24, 55],
   [`s.m` member], [a struct or union value and a member name], [the member's type; an lvalue if the left side is one], [*UB*: reading a union member other than the one last written (the common initial sequence is an exception)], [chapters 43, 45],
   [`p->m` member], [a pointer to a struct or union, and a member name], [the member's type, an lvalue], [*UB*: a null or otherwise invalid pointer], [chapter 43],
   [`x++` post-increment], [a modifiable lvalue of real or pointer type], [*the value before the change*; not an lvalue], [*UB*: two modifications within one sequence point; signed integer overflow], [chapter 31],
@@ -332,9 +332,9 @@ The same characters appear in the grammar without being operators.
   [the comma in `{1, 2}`], [a separator in an initialiser list], [chapters 37, 43],
   [`(type){...}`], [a compound literal — not a cast but *syntax that makes an object*], [chapter 44],
   [the parentheses of `sizeof(int)`], [syntax wrapping a type name — not a call], [chapter 34],
-  [`#` `##`], [preprocessor operators — they act in a different phase of translation], [chapter 52],
+  [`#` `##`], [preprocessor operators — they act in a different phase of translation], [chapter 54],
   [the dot in `{.x = 1}`], [designated-initialiser syntax, not member access], [chapter 43],
-  [the star in `int *p;`], [declarator syntax, not indirection], [chapter 55],
+  [the star in `int *p;`], [declarator syntax, not indirection], [chapter 57],
 )
 
 #recap[

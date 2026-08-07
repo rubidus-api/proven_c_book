@@ -1,204 +1,214 @@
 #import "../../book/lib.typ": *
 
-= How to ask about overflow — `<stdckdint.h>`
+= What the new standards added, and the `*_s` controversy
 
 #prereq(
-  ([chapter 26, Integers], [the finiteness of integers]),
-  ([chapter 49, Undefined behaviour], [overflow is outside the contract]),
+  ([chapter 59, The whole map of the standard library], [the whole map of the standard library]),
+  ([chapter 61, The traps of reading and writing], [bounds and truncation]),
 )
 
 #deepqa[
-  Chapter 7 said unsigned overflow is defined wrap-round while signed overflow is
-  outside the contract, and chapter 61 said `calloc` checks the product of the
-  element count and the size. Then how do we write the check for whether a
-  multiplication overflows ourselves?
+  Chapter 59 said the speed at which headers grow is the same as the language's
+  speed of change, and chapter 61 said `gets`'s funeral took twenty years. Then
+  where are the "safe functions" the standard brought in to fill that place?
 ][
-  That very "checking ourselves" is the code that has been written wrongly for half
-  a century. With signed values, *checking after it has overflowed is itself
-  already outside the contract*, so the compiler may erase the checking code
-  (chapter 13's editor), and with unsigned values the idiom that inserts a division
-  is hard to read and easy to get wrong. C23 tidied this place up at the level of
-  the language.
+  Mostly *nowhere*. C11 brought in dozens of functions such as `gets_s` and
+  `strcpy_s` as annex K, but it was *optional* and the major implementations
+  refused to adopt it. What was confirmed on the machine that made this book is the
+  same — the "annex K: not present in this implementation" the example printed. The
+  latter part of this chapter is that story.
 ]
 
 #organizer[
-#idx("checked arithmetic")  We learn the checked arithmetic C23 brought in. Why
-  hand-written code that "checks after calculating whether it overflowed" is
-  dangerous, exactly what `ckd_add`, `ckd_sub` and `ckd_mul` promise, and how to
-  move the size calculations of existing code onto this tool.
+  The last chapter of this part. We skim the headers C99, C11 and C23 added to the
+  standard library, and then see the whole story of this language's most famous
+  failed attempt — annex K, which tried to bring "safe functions" into the
+  standard. Why `gets_s` and `strcpy_s` are not widely used, and what is different
+  about Microsoft's functions of the same names.
 ]
 
 #chapter-questions()
 
-== The trap of checking afterwards
-
-We start from the most common hand-written check.
-
-#antipattern[
-  Adding and then seeing whether it overflowed
-][
-  ```c
-  int sum = a + b;
-  if (sum < a) { /* it overflowed */ }        /* ← this check can vanish */
-  ```
-  If `a` and `b` are signed integers, the moment `a + b` overflows it is already
-  undefined behaviour. The check after it has meaning only on the premise "if it
-  did not overflow", so the compiler judges that `sum < a` can never be true and
-  *erases the conditional entirely.* This pattern really did make checks vanish
-  quietly in several projects, and among them were security checks.
-
-  For unsigned values, wrap-round being defined, the check above *does work*. But
-  going to multiplication makes even that awkward.
-  ```c
-  if (n != 0 && bytes / n != sz) { /* it overflowed */ }   /* correct but hard to read */
-  ```
-]
-
-So compilers each put out extensions — GCC's and Clang's `__builtin_add_overflow`
-family, MSVC's `SafeInt`, the home-made macros of many projects. They worked well
-but *were not portable*, and to secure portability every project had to write the
-same shell again. It is the same pattern as chapter 60's `strlcpy` story — reality
-finds the answer first and the standard ratifies it belatedly.
-
-== C23's answer — `ckd_add`, `ckd_sub`, `ckd_mul`
-
-#demo("examples-en/ch75/ckdint.c")
-
-The way to read it is this. All three macros have the same shape.
-
-```c
-bool overflowed = ckd_add(&result, left, right);
-```
-
-There are four promises.
-
-+ *It calculates in infinite precision and then puts it in the vessel.* The
-  judgement is "does the mathematical result fit in the result type", and there is
-  no overflow in the intermediate calculation. So it judges exactly even when the
-  arguments' types differ from each other, and even when the result type is
-  narrower than the arguments — the example's `signed char <- 300` confirms it.
-+ *The result type is settled by the first argument (the pointer).* It means the
-  arguments' promotion rules (chapter 27) do not sway the result, so there is no
-  need to fret over "in which type is it calculated".
-+ *Even on overflow the result is stored.* That value is the value wrapped round
-  into the result type. The example's `INT_MAX + 1` remaining as `-2147483648` is
-  that — and it matters that even for a signed value *it is defined behaviour in
-  this place*.
-+ *Unsigned wrap-round is reported as "overflowed" too.* The example's `3u - 5u`
-  confirms it. The value itself is a defined result (`4294967294`), but checked
-  arithmetic reports that *it differs from the mathematical value*. In size
-  calculations this is the property needed.
-
-#qa[
-  Are the `ckd_*` functions or macros? Do they not evaluate arguments several
-  times?
-][
-  What the standard settles are macros, but they are pinned down not to evaluate
-  their arguments several times (implementations mostly expand them into compiler
-  builtins). So code such as `ckd_add(&r, i++, j)` is safe too.
-
-  But there is *another* trap. The judgement and the result must not be mixed
-  inside one expression.
-  ```c
-  printf("%s %d", ckd_add(&r, a, b) ? "overflow" : "fine", r);   /* dangerous */
-  ```
-  There is no settled order between the moment `r` is read and the moment `ckd_add`
-  writes to `r`, so the old value may be printed (chapter 20's story of ordering).
-  This mistake really did print a wrong value when this chapter's example was first
-  written. *Take the judgement into a variable, and use the result on the next
-  line* — that one line of discipline is the whole of it.
-]
-
-== Where it is used — size calculation comes first
-
-The `alloc_array` in the latter part of the example is the type. Calculating an
-allocation size is the place where checked arithmetic is most sorely needed. If
-`n * sz` overflows you end up *obtaining a small vessel and using it believing it
-big*, which leads straight to a buffer overflow accident. Several famous
-vulnerabilities took exactly this route.
+== What C99 added
 
 #dtable(
   columns: 3,
-  [*place*], [*the old idiom*], [*now*],
-  [array allocation], [the check `n && SIZE_MAX/n < sz`], [`ckd_mul(&bytes, n, sz)`],
-  [growing a buffer], [just calculating `cap * 2`], [`ckd_mul(&cap2, cap, 2)`],
-  [joining lengths], [`len1 + len2 + 1`], [`ckd_add` twice],
-  [index calculation], [`base + off` just so], [`ckd_add` (compulsory for signed values)],
-  [numbers from input], [using it straight after `atoi`], [`strtol` (chapter 61) + a range check],
+  [*header*], [*what*], [*its position today*],
+  [`<stdint.h>`], [fixed-width integers (`int32_t` and so on)], [effectively compulsory. chapter 26],
+  [`<inttypes.h>`], [the format macros for those types], [the `PRId32` family. appendix B],
+  [`<stdbool.h>`], [`bool`, `true`, `false`], [unnecessary, having become keywords in C23],
+  [`<complex.h>`], [complex numbers], [optional. support is uneven],
+  [`<fenv.h>`], [the floating-point environment], [chapter 70],
+  [`<tgmath.h>`], [type-generic mathematics], [chapter 70],
 )
 
-The last line matters. Checked arithmetic only catches the overflow of a
-*calculation*; it does not filter out a value that was too large to begin with. The
-check at the input-parsing stage (chapter 61) and the check at the calculation
-stage do not stand in for each other.
+`<stdint.h>` is this list's winner. A standard way to express "exactly 32 bits"
+finally arose, and the practice of every project keeping its own `typedef` until
+then was tidied away.
 
-#misconception[
-  "Use `ckd_*` and worry about integer overflow ends"
+#qa[
+  If annex K's `*_s` functions failed, what fills their place now?
 ][
-  Three things remain. First, *division* is not in this header — `INT_MIN / -1` is
-  still an outside-the-contract case you must block yourself. Second, *conversions*
-  are not checked. Assigning from a wide type to a narrow one is not arithmetic but
-  conversion (chapter 7's truncation), so a value being wrecked there is not
-  `ckd_*`'s business. Third, *floating point* is not its subject (chapter 68).
+  Not one thing but three, sharing it out. *Compiler diagnostics* (warnings and
+  hardened builds such as `_FORTIFY_SOURCE`), *sanitizers* (chapter 17), and
+  *API designs that carry the length along*. The last is the direction this book
+  has pushed, and chapters 84 and 86 are its implementation.
 
-  In summary, checked arithmetic is a tool answering the narrow and clear question
-  "did an addition, subtraction or multiplication overflow its vessel". It is a good
-  tool precisely because it is narrow.
+  The lesson is that safety does not arrive by appending `_s` to a function name.
+  What actually worked was making failure impossible to ignore, putting the bounds
+  inside the type, and making the checks something a tool can perform. That is how
+  chapter 81 arranges the five bugs.
 ]
 
-== Where this tool is absent
+== What C11 added
 
-In an environment that cannot yet use the C23 header, prepare in two steps.
+#dtable(
+  columns: 3,
+  [*header*], [*what*], [*its position today*],
+  [`<stdatomic.h>`], [atomic operations and memory orders], [the foundation of concurrency. chapter 12's story],
+  [`<threads.h>`], [threads, mutexes, condition variables], [★ adoption is slow — pthreads are usually used],
+  [`<stdalign.h>`], [`alignas`, `alignof`], [keywords in C23],
+  [`<stdnoreturn.h>`], [`noreturn`], [to be retired in C23, in favour of `[[noreturn]]`],
+  [`<uchar.h>`], [`char16_t`, `char32_t`], [chapter 64],
+)
+
+`<threads.h>`'s circumstance is interesting. Though it is in the standard, glibc
+long did not provide it, so portable code still uses POSIX threads. It is a case
+showing that *entering the standard and becoming usable are different things*.
+
+== What C23 added
+
+#demo("examples-en/ch75/newheaders.c")
+
+`<stdckdint.h>` is this edition's practical winner. It reports the wrap-round of
+the size calculations seen in chapter 62 *as a value* — `ckd_add`, `ckd_sub` and
+`ckd_mul` return true on overflow, and the result may be treated as "unusable"
+rather than as the wrapped value.
+
+`<stdbit.h>` is new too. Bit manipulations such as counting leading zeros, counting
+set bits and rounding up to a power of two have become standard functions — until
+then a place that leaned on compiler builtins (`__builtin_clz` and the like).
+
+Besides these, C23 promoted `bool`, `true`, `false`, `static_assert` and
+`thread_local` to keywords, brought in `nullptr` (chapter 35), and effectively
+retired compatibility headers such as `<stdbool.h>` and `<stdnoreturn.h>`.
+
+== Annex K — the failed attempt at "safe functions"
+
+Now the main business of this chapter.
+
+In the early 2000s Microsoft put functions such as `strcpy_s` and `sprintf_s` into
+its compiler and began raising warnings on use of the existing functions. The
+proposal to make that design a standard entered C11 as *annex K*
+(bounds-checking interfaces).
+
+The core ideas were three.
+
++ The destination size is *compulsorily* taken as an argument.
++ When a problem arises it does not truncate and carry on but *returns an error*
+  (`errno_t`).
++ When a contract violation is detected, the program's chosen *constraint handler*
+  is called.
 
 ```c
-#if defined(__has_include)
-#  if __has_include(<stdckdint.h>)
-#    include <stdckdint.h>
-#    define HAVE_CKDINT 1
-#  endif
-#endif
+#define __STDC_WANT_LIB_EXT1__ 1
+#include <string.h>
 
-#ifndef HAVE_CKDINT                      /* fill in with the GCC/Clang extensions */
-#  define ckd_add(r, a, b) __builtin_add_overflow((a), (b), (r))
-#  define ckd_sub(r, a, b) __builtin_sub_overflow((a), (b), (r))
-#  define ckd_mul(r, a, b) __builtin_mul_overflow((a), (b), (r))
-#endif
+char dst[8];
+errno_t e = strcpy_s(dst, sizeof dst, src);   /* an error if it overflows */
 ```
 
-Only beware that the argument order differs — the standard puts the result pointer
-first, the compiler builtins put it last. Gathering such shells in one place is the
-real shape of the portability layer spoken of in chapter 52, and Part XII's library
-does the same work.
+The direction resembles what we organised in chapter 59 as "what is needed". Yet
+the result was a failure.
 
-#platform[
-  The road of leaving the checking to tools
+#realcase[
+  Why annex K was not adopted
 ][
-  There is also a way of catching overflow without mending the code. GCC's and
-  Clang's `-fsanitize=signed-integer-overflow` (UBSan) catches overflow during
-  execution and reports it, and `-ftrapv` stops the program on overflow. Both are
-  *for testing* — they show themselves only in a run in which an overflow actually
-  happened, so they are different in character from checked arithmetic, which
-  "blocks in code the places where it could happen". It is the same conclusion as
-  chapter 17's story of debuggers: tools help observation but do not stand in for
-  the contract.
+  In 2015, C standards committee document N1967, "Field Experience With Annex K",
+  surveyed the actual state. Its summary was cold — *it was not widely implemented,
+  it behaved differently where it was implemented, and there was no evidence that
+  it made real code safer*.
+
+  Concretely these were the circumstances.
+
+  - *Microsoft's functions and the standard's functions are not the same.* The
+    names are the same while arguments and behaviour go out of step in places, so
+    code fitted to one side broke on the other.
+  - *Major implementations, glibc among them, did not adopt it.* That is still so
+    today — the reason the earlier example printed "not present in this
+    implementation".
+  - *The global state called the constraint handler* caused conflicts between
+    libraries.
+  - It merely changed existing code mechanically, while the real defects remained
+    *where the size is calculated wrongly*.
+
+  The committee went as far as discussing removing annex K, and in the end it was
+  settled to be kept but effectively not recommended. It is a representative case
+  showing how the expectation that "putting it in the standard makes things safe"
+  goes wrong in reality.
 ]
 
+#misconception[
+  "Using functions with `_s` attached is safe"
+][
+  Three things must be checked. First, *is that function there* — the standard's
+  annex K is optional and is absent on most of the Unix family. Second, *which
+  edition is it* — the standard's and Microsoft's may differ. Third, *what becomes
+  safe* — it means the size is taken as an argument, not that the size you passed
+  is right. The mistake of passing `strlen` instead of `sizeof` is just as much an
+  accident in an `_s` function.
+
+  The realistic choice in portable code is still this — within the standard,
+  `snprintf` and explicit bounds checking; where the platform permits, the
+  `strlcpy` family; and for the repeated danger zones, components with checking
+  built in (Part XII).
+]
+
+#platform[
+  The `_s` functions met on Windows
+][
+  MSVC has long provided `strcpy_s`, `sprintf_s`, `fopen_s` and so on, and raises
+  the `C4996` warning when the existing functions are used. Defining
+  `_CRT_SECURE_NO_WARNINGS` to turn the warning off is the practice.
+
+  The point to beware of is that *these functions are not entirely the same as the
+  standard's annex K*. For example the behaviour on argument-validation failure and
+  the rules for return values may differ. So unless the code is Windows-only one
+  does not lean on the `_s` family, and cross-platform projects mostly choose to
+  keep a wrapper of their own.
+]
+
+== What this part leaves behind
+
+We have walked the standard library across ten chapters. Memorising function names
+was not the aim, so what remains to be kept is a few attitudes.
+
++ *Read the contract first.* Does it take a size, how does it report failure, who
+  owns the pointer it returned.
++ *Do not throw away return values.* Especially `fclose`, `snprintf` and the
+  `scanf` family.
++ *Suspect global state.* `errno`, the locale, static buffers, the rounding mode.
++ *Being in the standard does not make it safe.* `gets` survived twenty-two years.
++ *Weigh platform extensions between the gain and portability.*
+
 #recap[
+  A table of the editions.
+
   #dtable(
-    columns: 2,
-    [*to remember*], [*the point*],
-    [checking afterwards], [with signed values the check itself is outside the contract — it can be erased],
-    [the shape], [`bool overflowed = ckd_add(&result, a, b)`],
-    [the criterion], [does the mathematical result fit in *the result type*],
-    [the result type], [settled by the first argument. not swayed by promotion rules],
-    [even on overflow], [the wrapped value is stored (defined behaviour)],
-    [unsigned values], [wrap-round too is reported as "overflow"],
-    [one expression], [do not mix the judgement and the result],
-    [first place to apply it], [allocation size calculation],
-    [where it is absent], [make a shell with `__builtin_*_overflow`],
+    columns: 3,
+    [*edition*], [*representative addition*], [*is it actually used*],
+    [C99], [`<stdint.h>`, `<inttypes.h>`], [yes — effectively compulsory],
+    [C99], [`<complex.h>`], [rarely],
+    [C11], [`<stdatomic.h>`], [yes — the foundation of concurrency],
+    [C11], [`<threads.h>`], [rarely — pthreads prevail],
+    [C11], [annex K (`*_s`)], [no — this chapter's story],
+    [C23], [`<stdckdint.h>`], [yes — the right answer for size calculations],
+    [C23], [`<stdbit.h>`], [growing],
+    [C23], [keyword promotion (`bool`, `nullptr` and so on)], [yes],
   )
 ]
 
-We have learned how to ask about overflow according to the contract. The next
-chapter is this part's last and the most conspicuous change C23 made to the
-language — the story of things that were macros becoming keywords.
+The bottom three lines of that table — `<stdatomic.h>`, `<stdckdint.h>` and
+keyword promotion — have only shown their faces. The three remaining chapters of
+this part treat those three in detail, one each. We begin with the foundation of
+concurrency.

@@ -1,264 +1,370 @@
 #import "../../book/lib.typ": *
 
-= The terrain of the standard library
+= Functions as values — the function pointer
 
 #prereq(
-  ([chapter 40, Safe input], [the traps of the standard functions]),
-  ([chapter 16, The general shape of compilation], [a library is linked in]),
+  ([chapter 24, Declaring and defining functions], [the name of a function]),
+  ([chapter 37, Arrays], [a name decaying into a value]),
 )
 
 #deepqa[
-  Chapter 16 said the linker finds `printf`'s body in the standard library and
-  joins it up, and chapter 40 said `gets` was *removed* from the standard. Who
-  settles the standard library, and how does it change?
+  Chapter 37 said an array name decays into the address of its first element, and
+  chapter 55 said a variadic function loses type information. Then what does a
+  *function name* evaluate to in an expression?
 ][
-  The language standard settles it along with the language — the C standard
-  document pins down not only the grammar but also *the list of libraries that must
-  be provided and the contract of each function* (hence "the C standard library").
-  The speed of change is as slow as the language's, and removing something is far
-  slower still — the reason `gets`'s funeral took decades, and the key to this
-  library's character.
+  *To a pointer to the function* — the same decay as with arrays exists for
+  functions. The exceptions are only when it is the operand of `sizeof` or `&`, and
+  since applying `sizeof` to a function is forbidden to begin with, effectively `&`
+  alone is the exception. And `&function` gives the same pointer in the end anyway.
+  So the strange situation arises in which `f`, `&f` and `*f` are all the same
+  value — which is this chapter's first example.
 ]
 
 #organizer[
-#idx("standard library")  We spread out a map of the standard library we have
-  merely been using until now — what toolboxes there are, and what to trust and
-  what to beware of. And why this library has its "thin and old" appearance, down
-  to the historical reason.
+  Until now a function has been "a thing you call". In this chapter we handle a
+  function *as a value* — put it in a variable, pass it as an argument, lay several
+  out in an array. Along the way we see an old rule of C (*a function name decays
+  into a pointer*), the strange syntax that rule makes, and how to build object
+  orientation by hand with this tool.
 ]
 
 #chapter-questions()
 
-== The map — the toolboxes
+== The name decays into a pointer
 
-Group the headers you meet often into families and the terrain comes into view at
-a glance.
+#demo("examples-en/ch56/funcptr.c")
 
-#dtable(
-  columns: 2,
-  [*family*], [*representative headers and content*],
-  [input and output], [`<stdio.h>` — streams, the printf/scanf families, files],
-  [strings and memory], [`<string.h>` — copying, comparing, searching; `<ctype.h>` — character classification],
-  [numbers], [`<stdlib.h>` — conversion and random numbers, `<math.h>` — mathematical functions, `<stdint.h>`, `<limits.h>`, `<float.h>` — the limits of types],
-  [memory management], [`<stdlib.h>` — the malloc/free family],
-  [time and environment], [`<time.h>`, the environment access in `<stdlib.h>`],
-  [contracts and diagnosis], [`<assert.h>`, `<errno.h>`],
-  [the modern additions], [`<stdbool.h>` (C99, made unnecessary by C23), `<stdatomic.h>` and `<threads.h>` (C11), `<stdckdint.h>` (C23 checked arithmetic)],
-)
+The first two lines of the output are this chapter's heart.
 
-Two things stand out in this list. First, *it is thin* — there are no data
-structures (lists, hash tables), no regular expressions, no networking, no
-graphics. Second, *it is old* — most of it was in C89, and what has newly entered
-can be counted on the fingers.
+*`add == &add`* — the function name decays into a pointer, and attaching `&` gives
+the same pointer. So the two are equal.
 
-== Why it is thin — design and history
+*`(*******p)(2,3)` compiles* — the reason any number of stars gives the same result
+is this. `*p` dereferences the pointer to obtain a *function designator*, and the
+moment that designator is used as a value it *decays back into a pointer*. That
+is, each `*` merely goes once round the loop "pointer → function → pointer" and
+stays where it was.
 
-The reason lies where C grew up. C was born as a language for making operating
-systems (chapter 4), and it had to write in the same language not only programs
-running *on top of* an operating system but the operating system *itself* and
-embedded firmware too. In such places there may be no file system, no dynamic
-allocation, not even an operating system — so the standard library was narrowed to
-"the minimum that can exist anywhere" (the reason the standard separately defines
-a freestanding environment). Abundance was given up and portability gained.
-
-And the thinness came at a price — the world made what it needed in the end, and
-the result is the forest of platform-specific APIs and third-party libraries. That
-is the background of the saying "in C, choosing libraries is half the work" —
-chapter 40's five disciplines are about what to demand of that choice.
-
-== An anatomy of the output format string
-
-This is the place to take apart head on the function used most. In chapter 22 we
-learned only the minimal set (`%d`, `%s`, `%%`), but `printf`'s format is in fact
-a small language of five pieces.
-
-#align(center, block(inset: (y: 4pt))[
-  `%` `[flags]` `[width]` `[.precision]` `[length]` `conversion`
-])
-
-Reading from the back is quicker to understand. The *conversion* settles "as what
-shall it be printed" — this alone is required — and the rest is decoration laid on
-top.
-
-- *flag*: `-` left-align, `0` fill the spare places with zeros, `+` a sign even on
-  positives, space a space before positives, `#` alternative form (`%#x` attaches
-  `0x`).
-- *width*: the minimum number of characters. If short it fills, if over it *does
-  not cut* — width is a lower bound, not an upper one.
-- *precision*: begins with `.`. For reals it is decimal places, for strings the
-  *maximum* length, for integers the minimum number of digits.
-- *length modifier*: tells the width of the argument. `l` (long), `ll` (long
-  long), `z` (`size_t`), `h` (interpret narrowed to short).
-
-Write `*` in the width or precision place and that value can be passed as an
-argument. When printing a string that travels as "pointer and length", like
-chapter 10's view, `%.*s` comes in handy.
-
-#demo("examples-en/ch56/fmtspec.c")
-
-There are several things to read here. `%06d` becoming `000042` is because the `0`
-flag fills with zeros instead of spaces, and `%.3s` stopping at `pro` is because
-for strings precision is *maximum length*. The `0x` of `%#x` was attached by the
-`#`. `%g` shortening to `3.14159` is because that conversion automatically chooses
-the shorter of `%e` and `%f`.
-
-The length modifier is not decoration but *a contract*. As chapter 53 showed, type
-information does not ride along into variadic arguments, so `printf` reads the
-stack at exactly the width the format stated. That is why code printing a `size_t`
-with `%d` quietly goes out of step on 64-bit — 8 bytes were put in and only 4 are
-taken out.
-
-#dtable(
-  columns: 3,
-  [*type*], [*output format*], [*note*],
-  [`int`], [`%d` `%i`], [the basic form],
-  [`unsigned int`], [`%u` `%x` `%o`], [hexadecimal when looking at bits],
-  [`short`], [`%d`], [it is promoted, so `%hd` is optional],
-  [`long`], [`%ld`], [],
-  [`long long`], [`%lld`], [],
-  [`size_t`], [`%zu`], [★ printing it with `%d` goes out of step],
-  [`ptrdiff_t`], [`%td`], [],
-  [`double`], [`%f` `%e` `%g`], [`float` is promoted and the same],
-  [`long double`], [`%Lf`], [],
-  [`char` (as a character)], [`%c`], [the argument is promoted to int],
-  [`char *`], [`%s`], [it must be NUL-terminated],
-  [`void *`], [`%p`], [the form is implementation-defined],
-  [`bool`], [`%d`], [printed as 0 or 1],
-)
+The opposite direction does not hold. `&&add` is a syntax error — `&add` is
+already a *value* (a pointer), and in C the address of a value cannot be taken (to
+take an address there must be a named place, that is, an lvalue). Hence the
+asymmetry that `**add` works while `&&add` does not.
 
 #misconception[
-  "`%f` when printing a `float`, `%lf` for a `double`"
+  "To call a function pointer you must dereference it, as in `(*p)(x)`"
 ][
-  Half right. In *output*, a `float` goes over as a `double` by the default
-  argument promotion (chapter 28), so both are `%f` — the standard permits `%lf`
-  too, but it means the same. The real root of the confusion is in *input*. `scanf`
-  takes addresses, so no promotion happens and `float *` and `double *` must be
-  distinguished — `%f` is `float *` and `%lf` is `double *`. It is the most famous
-  asymmetry of these two functions: the same letter meaning different things
-  depending on the direction.
+  An old practice. `p(x)` and `(*p)(x)` are entirely the same and the standard
+  permits both. The reason some codebases prefer `(*p)(x)` is the documentary
+  purpose of *telling the reader that this is a function pointer*, not a
+  requirement of the grammar. Either way, be consistent.
 ]
 
-== The input format string — what differs
+== The type is the contract
 
-The formats of the `scanf` family overlap in their letters with output and so look
-like the same language, but what they do is the opposite and their rules differ.
-Five points of difference.
+A function pointer's type is settled by the return type and the parameter list.
 
-*First, the argument is not a value but the address of a place to hold it.* Leave
-out the `&` and it mistakes an integer for an address and tries to write at that
-address — the reason the `&` met in chapter 25 is compulsory here.
+```c
+int  (*p)(int, int);       /* pointer to a function taking two ints, giving an int */
+void (*q)(void);           /* pointer to a function with no arguments and no return */
+int  (*r[4])(int);         /* an array of four such pointers */
+int  (*(*s)(void))(int);   /* hard to read — use a typedef */
+```
 
-*Second, whitespace in the format means "any number of whitespace characters (none
-is fine too)".* In output a space is simply one space, but in input it is *an
-instruction to skip*. Most conversions skip leading whitespace by themselves — the
-exceptions are `%c` and `%[`, which read whitespace as characters too.
+As the last line shows, declarations quickly turn rough. The practice in the field
+is `typedef`.
 
-*Third, ordinary characters in the format must match the input exactly.* `"x=%d"`
-requires the input to begin with `x=`. If it does not match it stops with *a
-matching failure*.
+```c
+typedef int (*binop_fn)(int, int);
+binop_fn table[] = { add, mul };
+```
 
-*Fourth, the return value is not the number of characters printed but the number
-of items successfully assigned.* So when three were to be read and 2 comes back,
-one was not filled, and that argument *is left untouched*. If there was no input
-at all, EOF (a negative value) comes back — it must be distinguished from 0.
+*Casting to a function pointer of a different type and calling it is outside the
+contract.* For example, something stored as `void (*)(void)` must not be called
+back as `int (*)(int)`. Only storing and *converting back to the original type* to
+call is guaranteed.
 
-*Fifth, always give `%s` a maximum width.* A `%s` without a width writes without
-knowing the destination's size, the same danger as chapter 40's `gets`.
+#antipattern[
+  Matching a comparator signature by casting
+][
+  ```c
+  int cmp_int(const int *a, const int *b);            /* looks convenient, but */
+  qsort(v, n, sizeof v[0], (int (*)(const void *, const void *))cmp_int);
+  ```
+  `qsort` passes two `const void *`, while the real function expects
+  `const int *`. Since it is *not guaranteed* that the two types have the same
+  representation, this call is outside the contract. The right way is to match the
+  signature exactly and cast inside — as the example's `cmp` did.
+]
 
-#demo("examples-en/ch56/scanspec.c")
+== `void *` and function pointers are different worlds
 
-Going through the output line by line makes the rules visible. `mismatch` and
-`nonnum` both have `k=0`, and what matters is that the argument remains as it was —
-use it without checking the value and you mistake *the previous value* for new
-input. `empty`'s `-1` means "the input has ended", not "the format was wrong".
-`partial` is the case where only the leading integer was read and it stopped
-after. `set`'s `%15[^,]` means "at most 15 characters that are not a comma", used
-for cutting a line with separators.
+Chapter 34 taught that `void *` is "a vessel that holds any data pointer". Yet
+*function pointers do not go into that vessel.* The standard does not define
+conversion between data pointers and function pointers.
+
+The reason lies in history and hardware. On a machine using a *Harvard
+architecture*, code and data are in different address spaces — the AVR
+microcontroller is representative, and there "address 0" exists separately in the
+code region and in the data region. Even the widths of the addresses may differ.
+On such a machine, putting the two pointers in the same vessel is impossible to
+begin with.
+
+That is why the example printed the two sizes together. On this machine they
+happened to be equal, but *there is no guarantee anywhere that they are*.
+
+#realcase[
+  The place POSIX parted from the standard — `dlsym`
+][
+  The POSIX function `dlsym`, which finds a function in a dynamic library, returns
+  a `void *`. But what we want is a function pointer. That is, this API demands *a
+  conversion standard C does not define*.
+
+  POSIX acknowledged this contradiction and, in its 2008 edition, separately pinned
+  down that "implementations shall support this conversion." Compilers still warn,
+  so the following idiom has settled in practice.
+
+  ```c
+  void (*fn)(void);
+  *(void **)&fn = dlsym(handle, "do_work");   /* the idiom that skirts the gap in the standard */
+  ```
+
+  It is a rare case of "the platform demanding what the standard forbids", and a
+  good specimen of where C's portability splits.
+]
+
+== How to print a function pointer
+
+The previous section said `void *` and function pointers are different worlds.
+The place that fact trips people up most often is *logging* — you want to record
+"which callback ran", and chapter 34's `printf("%p", (void *)p)` does not work
+here.
+
+#demo("examples-en/ch56/print_funcptr.c")
+
+=== Why it cannot be passed to `%p`
+
+The reason is two-layered.
+
+*First, `%p` takes a `void *` (or a character pointer) only* (chapter 34). A
+function pointer is not on that list.
+
+*Second, the conversion from a function pointer to `void *` is not defined by the
+standard at all*, exactly as the previous section said. So the line below has no
+basis in the standard's text, even where a compiler accepts it.
+
+```c
+printf("%p", (void *)f);      /* a conversion ISO C does not define */
+```
+
+GCC's own reaction, as checked for this book, says the same: turn on `-Wpedantic`
+and you get *"ISO C forbids conversion of function pointer to object pointer
+type"*.
+
+#antipattern[
+  Three common wrong answers
+][
+  ```c
+  printf("%p", f);              /* 1: the function pointer itself — outside the contract */
+  printf("%p", (void *)f);      /* 2: a conversion outside ISO C (POSIX allows it) */
+  printf("%p", (void *)&f);     /* 3: compiles, warns about nothing, and… */
+  ```
+  The third is the nastiest. `&f` is *the address of the pointer variable*, not of
+  the function. The compiler says nothing, the output is a plausible hexadecimal
+  number, and the value is entirely wrong. "No warning, so it must be right" does
+  not hold here.
+]
+
+#platform[
+  POSIX fills the gap
+][
+  On Unix-like systems things differ. Because POSIX defines `dlsym()` as returning
+  *the address of a function as a `void *`*, conversion between function pointers
+  and `void *` has to work there.
+
+  So in code aimed only at Linux, macOS and the BSDs, `(void *)f` is closer to a
+  specification than to a habit. But it is *POSIX's promise, not C's* — a textbook
+  grey area (chapter 12), with the same discipline: *if you use it, write one line
+  saying why it is safe here, and know what you would switch to when portability
+  starts to matter.*
+]
+
+=== The portable road — lift the bytes
+
+To solve it with the standard alone, *do not read the pointer as a value; move its
+bytes.* `memcpy` is inside the contract for any type.
+
+```c
+unsigned char raw[sizeof f];
+memcpy(raw, &f, sizeof raw);
+for (size_t i = sizeof raw; i-- > 0; ) printf("%02X", raw[i]);
+```
+
+The demonstration's `fmt_funcptr` is that shape. What it gains and loses is plain
+— *it compiles everywhere with no warning*, and *it is a riddle to a reader*. On
+some platforms those bytes are not even the function's entry point but the address
+of a descriptor (see the platform note below).
+
+=== The best answer — a name instead of an address
+
+The practical answer is the third road: *do not print the address, print the
+name.*
+
+The demonstration's `struct named_op` is that pattern. Keep a name string in the
+function table and the log holds a line a person reads at once, such as
+`mul(7, 3) = 21`. *Comparing* function pointers is guaranteed by the standard
+(equal when they point at the same function), so scanning the table for the name
+is inside the contract too.
 
 #dtable(
   columns: 3,
-  [*type*], [*input format*], [*argument*],
-  [`int`], [`%d`], [`int *`],
-  [`unsigned`], [`%u` `%x`], [`unsigned *`],
-  [`long`], [`%ld`], [`long *`],
-  [`long long`], [`%lld`], [`long long *`],
-  [`size_t`], [`%zu`], [`size_t *`],
-  [`float`], [`%f`], [★ `float *`],
-  [`double`], [`%lf`], [★ `double *`],
-  [`long double`], [`%Lf`], [`long double *`],
-  [one character], [`%c`], [`char *` (it reads whitespace too)],
-  [a word], [`%99s`], [`char[100]` — width compulsory],
-  [a set of characters], [`%15[^,]`], [`char[16]`],
-  [skipping], [`%*d`], [read but do not store],
+  [*Method*], [*Portability*], [*Value as a log*],
+  [Carrying the name alongside], [★ everywhere], [★ read directly by a person],
+  [Printing bytes with `memcpy`], [★ everywhere], [A riddle — needs symbols to decode],
+  [`(void *)f` through `%p`], [POSIX only], [A riddle, as above],
+  [Recovering the name with `dladdr`, `SymFromAddr`], [Per platform], [★ Best when a name comes out],
 )
 
 #realcase[
-  What one format brought down — the format string vulnerability
+  Recovering a name from an address, and its limits
 ][
-  We complete here the accident chapter 22 brushed past by name only. Code that
-  puts a user-given string straight into the format position (`printf(user)`) lets
-  an attacker input `%s` or `%x` and read the stack, and in the days when the old
-  `%n` (which *writes* the number of characters printed to where the argument
-  points) was still alive it led even to arbitrary memory writes. Around 1999 this
-  class was discovered on a large scale and several servers including wu-ftpd were
-  remotely compromised. The lesson is one line — *the format string must always be
-  a constant written by the program, and user input goes in only as an argument*
-  (`printf("%s", user)`).
+  There is a way to go from an address to a name in a running program: `dladdr()`
+  on Unix, DbgHelp's `SymFromAddr()` on Windows, and the kernel's `%pS` specifier
+  seen earlier.
+
+  Running `dladdr` for this book showed the limits directly.
+
+  #dtable(
+    columns: 2,
+    [*Target*], [*Result*],
+    [A `static` function], [No name found — it is not in the symbol table],
+    [An ordinary global function], [Not found without `-rdynamic`; found with it],
+    [`printf`], [Found, but as the internal alias `_IO_printf`],
+  )
+
+  In other words, *getting a name is a stroke of luck.* A build that keeps no
+  symbols — as release builds usually do — yields nothing, and what does come out
+  may differ from the name in the source. So "turning an address back into a name"
+  is *a debugger's job*, and a log the program writes itself had better *carry the
+  name from the start*.
+]
+
+#platform[
+  Machines where a function pointer is not one address
+][
+  There is a reason this section follows the standard so carefully: *platforms
+  really existed where a function pointer was not a plain address.*
+
+  - On segmented x86, a `far` function pointer was a segment and an offset pair,
+    differing from data pointers even in size.
+  - On IBM AIX and the old Itanium ABI a function pointer pointed at a
+    *descriptor* — a struct holding the entry point and a global data pointer.
+    Print "the address" of two function pointers there and you get the addresses
+    of those structs, not the entry points.
+  - On Harvard-architecture microcontrollers, code and data live in different
+    address spaces entirely.
+
+  That is why the standard never said "a function pointer can be converted to
+  `void *`", and never will. Looking only at an ordinary desktop it seems
+  over-careful; *go down to embedded and it is still alive today.*
+]
+
+== Dispatch tables — an array instead of a `switch`
+
+The example's ④ is that. Pair names with functions and lay them out in an array,
+and you choose by *data* instead of by branching. To add an item you mend only the
+table, not the code, and combined with chapter 54's X macro you can even generate
+the table from a single list.
+
+Grow this pattern and it becomes a state machine, a command interpreter, a plugin
+structure. And grow it further — that is the next section's story.
+
+== The virtual function table — object orientation built in C
+
+C has no classes. But *put, as a struct's first member, a pointer to a table of
+function pointers* and you obtain polymorphism, the heart of object orientation.
+
+#demo("examples-en/ch56/vtable.c")
+
+The design has four bones.
+
++ *One table per type* (`static const`). Copying the function pointers into every
+  instance makes objects large and the cache worse — so the table is kept
+  separately in a single copy, and the object holds only one pointer to it.
++ *The base struct is the first member.* The standard guarantees that "a struct's
+  first member begins at the same address as the struct itself", so
+  `struct circle *` and `struct shape *` can be safely gone between (chapter 43).
++ *Calls go through the table* — `s->vt->area(s)`. This one line does exactly what
+  a C++ virtual function call does.
++ *The object itself is passed as the first argument.* Writing by hand the `this`
+  that C++ hides.
+
+The last two lines of the output show the cost. What grows per object is one
+pointer (8 bytes) only, and the table exists once per type.
+
+#realcase[
+  GTK's GObject — a hand-built object system in real use
+][
+  The proof that this approach is not a toy is GTK. GTK, the major toolkit of the
+  Linux desktop, is written in pure C and beneath it lies an object system called
+  *GObject*. Its structure stands on the same bones we have just seen.
+
+  - The first member of the instance struct points at the *class struct* (our
+    vtable).
+  - Function pointers are laid out in the class struct, and a derived class
+    "overrides" some of them by writing its own functions over them.
+  - Inheritance is expressed by putting the base struct as the first member, and
+    type conversion is wrapped in macros with checks attached (things like
+    `GTK_WIDGET(x)`).
+  - On top of that ride reference counting, signals (the observer pattern) and a
+    property system.
+
+  The same design can be seen elsewhere. The Linux kernel's
+  `struct file_operations` — a table holding the `read` and `write` functions that
+  differ per file system — is exactly a vtable, and Windows' COM is this very
+  convention pinned down at the ABI level.
 ]
 
 #qa[
-  Then may input parsing always be done with `sscanf`?
+  Then what differs from C++'s virtual functions?
 ][
-  For simple formats it is enough. But `sscanf` does not tell you *where and why it
-  failed* — all it gives back is the number of successful items, so "the third
-  field was not a number" and "the line ended early" cannot be distinguished.
-  Moreover it does not detect integer overflow (give `99999999999` to a `%d` and it
-  is outside the contract), and you cannot know how many characters were consumed
-  up to the failing place either. When the format grows complex and the input came
-  from somebody else, a tool is needed in which failure appears as a value and the
-  remaining input can be held in the hand — Part XII's scanner is that answer.
+  The concept is the same; *the degree of automation* differs. In C++ the compiler
+  makes the table, plants the pointer, connects it in the constructor, and checks
+  type conversions. In C all of that is handwork, so there are many places to slip
+  — an object whose table was not connected, a struct that broke the first-member
+  rule, code that casts a derived type wrongly.
+
+  What is gained in exchange is clear too. *Everything is visible — what is where.*
+  You can count how many tables there are, how many pointers are followed per call,
+  how many bytes an object is. It is the place where this book's constant refrain,
+  "a language in which cost is visible", appears just the same in object
+  orientation.
+
+  One thing more. C++'s virtual table layout is *not settled by the standard* (the
+  ABI settles it). That is why, when mixing C and C++, class objects are not passed
+  across the boundary and only `extern "C"` functions and plain structs are
+  exchanged (chapter 92).
 ]
 
-== The places to beware
+#recap[
+  Function pointers in summary.
 
-Gathering the traps this book has met along the way, from the library's point of
-view, gives this.
-
-- *Functions that do not take a size* — the `strcpy`, `strcat` and `sprintf`
-  families do not know the size of the destination vessel (chapter 40's `gets` was
-  the extreme). The alternatives are the editions that take a size (`snprintf`) or
-  components that manage the boundary.
-- *Functions whose return value reports failure* — `malloc`, `fopen` and `fgets`
-  give null on failure (chapter 48's discipline: do not use without checking).
-- *The global state called `errno`* — many functions leave the reason for failure
-  in a global variable. Some do not clear it even on success, so the convention of
-  "set it to 0 just before the call and read it just after" must be kept — a
-  textbook case showing the inconvenience of global mutable state (chapter 41).
-- *Locale- and culture-dependent functions* — character functions such as
-  `toupper` and `strtod`'s interpretation of the decimal point behave differently
-  according to the locale setting. When handling a data format it is safer to use
-  locale-independent processing (the same grain as chapter 9's "do not guess the
-  encoding").
-- *Functions that return a static buffer* — the `asctime` and `strtok` families
-  reuse a fixed place inside, so the next call overwrites the previous result. It
-  is especially dangerous in a program running along several strands
-  (chapter 12's multicore).
-
-#qa[
-  Then is the standard library so old that it is better not used?
-][
-  Not at all — *that it is everywhere* is an overwhelming virtue. Components
-  existing with the same contract on every platform and every compiler are only
-  these, and most of this book's examples ran with the standard library alone. The
-  right attitude is not "do not use it" but *knowing which function has which
-  contract and choosing accordingly* — choosing the editions that take a size,
-  checking return values, and keeping the conventions when using functions that
-  lean on global state. And laying components with checking built in over the
-  repeated danger zones (string assembly, input parsing) — the next chapter is that
-  practice.
+  #dtable(
+    columns: 2,
+    [*rule*], [*content*],
+    [decay], [a function name used as a value becomes a pointer],
+    [`f`, `&f`, `*f`], [all the same pointer. `&&f` is a syntax error],
+    [call notation], [`p(x)` and `(*p)(x)` are identical],
+    [type], [return type + parameters. casting to another type and calling is outside the contract],
+    [`void *`], [no guarantee of conversion with function pointers (Harvard architecture)],
+    [`dlsym`], [POSIX guarantees it separately. the `*(void **)&fn` idiom],
+    [dispatch table], [choosing by data instead of by branching],
+    [vtable], [one table per type, one pointer per object. the first-member rule is the ground],
+    [in the flesh], [GObject (GTK), the kernel's `file_operations`, COM],
+  )
 ]
 
-The map is spread out. The next part (Part XI) walks the regions of this map one
-by one and faces head on the places where accidents really happen in each header —
-streams and files, strings, conversion and allocation, characters and locales,
-numbers and time, and diagnosis and control.
+We are equipped even to handle functions as values. Yet several times in this
+chapter there were places where the declaration itself was hard to read and we
+fled to `typedef` — things like `int (*(*s)(void))(int);`. The next chapter pays
+that debt: C's most notorious place, *reading declarations*, met head on with two
+ways of reading and with `typedef`.

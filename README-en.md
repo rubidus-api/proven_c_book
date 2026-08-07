@@ -10,12 +10,12 @@
 > default, and ends as a manual for the
 > [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.22.0 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-ko.pdf)
+- **Current edition**: v0.23.0 — **draft**
+- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.23.0/proven_c_book-v0.23.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.23.0/proven_c_book-v0.23.0-ko.pdf)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.22.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.22.0-ko.pdf)
-- 13 parts, 92 chapters, appendices A–E and an index — 678 pages in English, 645 in Korean.
+- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.23.0/proven_c_book-v0.23.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.23.0/proven_c_book-v0.23.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.23.0/proven_c_book-v0.23.0-all.zip)
+- Copies inside the repository: [en PDF](dist/proven_c_book-v0.23.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.23.0-ko.pdf)
+- 13 parts, 94 chapters, appendices A–E and an index — 695 pages in English, 660 in Korean.
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## What kind of book is this
@@ -47,7 +47,7 @@ something first, read chapter 15 and then come back to chapter 1.
 | V–VI | Declarations, values, control flow | Implicit conversions — promotion and the usual arithmetic conversions / Loops and invariants |
 | VII | **Memory** | Null — the three siblings handled properly / The rules of pointers: alignment and provenance / Multidimensional arrays / Lifetime and storage duration |
 | VIII–IX | The shape of data, and the deep corners | Unions and representation / Floating point as approximation / **Undefined behaviour** |
-| X | Composition | The preprocessor and translation phases / Functions as values / Reading declarations and `typedef` |
+| X | Composition | **The world of names — four name spaces and three axes** / **Handling name collisions — from prefixes to `namespace`** / The preprocessor and translation phases / Functions as values |
 | XI | **The standard library, closely read** | Streams in practice / Signals / Non-local jumps / Locales (two chapters) / Wide characters (two chapters) / Unicode in practice / Inside the allocator |
 | XII | **proven — proven fundamentals** | Five bugs still shipping after 50 years / Errors are values / Allocation is a parameter / Writing it three ways — a small JSON reader |
 | XIII | Closing | C in practice / The embedded toolbox / Modern C, gathered up |
@@ -58,7 +58,7 @@ documents, and the complete C grammar in EBNF.
 
 ## What makes it different
 
-- **Every printed output is real.** All 139 listings are compiled and run on
+- **Every printed output is real.** All 142 listings are compiled and run on
   every build and their output is pasted into the page (GCC, cross-checked with
   Clang). Not one line of output was copied by hand.
 - **Claims are measured by running code.** Statements such as "at `-O2` a
@@ -103,7 +103,7 @@ CC=clang scripts/verify-examples.sh     # cross-check with another compiler
 ```
 dist/        Distribution — PDFs (ko, en) and zip bundles
 docs/        The HTML edition served by GitHub Pages (ko/, en/)
-examples/    The 139 listings that appear in the book — all verified
+examples/    The 142 listings that appear in the book — all verified
 examples-en/ The same listings in English (comments, strings, output)
 scripts/     Listing verification scripts
 vendor/      A snapshot of the proven library (for linking the listings)

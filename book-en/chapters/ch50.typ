@@ -51,7 +51,7 @@ too — `argc` and `argv` are only convention.
 The representative third form is
 `int main(int argc, char *argv[], char *envp[])`. Unix-family systems and Windows
 commonly support it, but it is *not standard*, and the portable road to reading
-environment variables is `getenv` (chapter 58).
+environment variables is `getenv` (chapter 60).
 
 #antipattern[
   `void main()`
@@ -64,7 +64,7 @@ environment variables is `getenv` (chapter 58).
   environment*. Many compilers warn about it and some treat it as an error.
 
   Only two exceptional circumstances need be known. First, in a *freestanding
-  implementation* (chapter 56) the name and form of the starting function are the
+  implementation* (chapter 58) the name and form of the starting function are the
   implementation's to decide, so there really are embedded compilers that
   officially support `void main(void)` — there being nowhere to receive the return
   value, they remove that code to save size. Second, that is *that compiler's
@@ -106,7 +106,7 @@ argument-handling code.
 
   *Write it yourself* — for a short program this is enough. Scan `argv`,
   distinguish with `strcmp`, and for arguments with an attached value read the next
-  slot. To convert to a number use `strtol`, not `atoi` (chapter 58).
+  slot. To convert to a number use `strtol`, not `atoi` (chapter 60).
 
   *Platform tools* — the Unix family has POSIX's `getopt` (`<unistd.h>`) and GNU's
   `getopt_long` (which handles the `--name` form), and glibc has `argp`, which even
@@ -146,7 +146,7 @@ argument-handling code.
   and backslashes especially. Hence the advice, when launching another program and
   building its arguments, to use APIs that *pass the arguments as an array rather than
   joining a string by hand* (`posix_spawn`, and `CreateProcess`'s argument-assembly
-  rules) — the same grain as chapter 61's `system` counterexample.
+  rules) — the same grain as chapter 63's `system` counterexample.
 ]
 
 == The value returned — three notations, one meaning
@@ -179,7 +179,7 @@ meaning failure." Returning any other number is *implementation-defined*.
 )
 
 The example's `atexit` shows that cleanup procedure — the registered function ran
-after `main` ended. Flushing open streams (chapter 58's buffers) is included in
+after `main` ended. Flushing open streams (chapter 60's buffers) is included in
 it. So *ending with `_Exit` or `abort` can lose output.*
 
 #misconception[
@@ -260,9 +260,9 @@ it. So *ending with `_Exit` or `abort` can lose output.*
   startup code may hold it in an infinite loop, reset the chip, or let it wander
   anywhere. So embedded coding conventions often explicitly require that "`main`
   does not return." That the entry point may not even be called `main` is exactly
-  as chapter 56 showed — the function the reset vector points at is the starting
+  as chapter 58 showed — the function the reset vector points at is the starting
   point, and that function copies `.data`, fills `.bss` with zeros and then calls
-  `main` (chapter 77).
+  `main` (chapter 79).
 ]
 
 #realcase[
@@ -294,7 +294,7 @@ it. So *ending with `_Exit` or `abort` can lose output.*
   Know one thing instead. That `main` is the starting point is a statement from
   *the C program's point of view*. In reality, startup code (something like `crt0`)
   runs before it, preparing the static region and gathering the arguments before
-  calling `main` (chapter 77). `main` is not "the first code that runs" but "the
+  calling `main` (chapter 79). `main` is not "the first code that runs" but "the
   first of the code we write that runs."
 ]
 

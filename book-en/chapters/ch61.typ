@@ -1,247 +1,199 @@
 #import "../../book/lib.typ": *
 
-= The drawer of odds and ends — `<stdlib.h>`
+= The traps of reading and writing — `<stdio.h>` ②
 
 #prereq(
-  ([chapter 56, The terrain of the standard library], [the terrain of the standard library]),
-  ([chapter 42, Dynamic memory], [allocating and giving back]),
+  ([chapter 60, Streams in reality], [the state of a stream]),
+  ([chapter 40, Safe input], [safe input]),
 )
 
 #deepqa[
-  Chapter 25 read input with `fgets` and parsed it with `sscanf`, and chapter 56
-  said `sscanf` does not tell you "where and why it failed". Then what is the most
-  accurate way to turn one string into an integer?
+  Chapter 40 said `gets` was deleted from the standard, and chapter 58 said its
+  funeral took decades. Then what exactly was wrong with `gets`, and why did it
+  take so long?
 ][
-  The `strtol` family. This function tells three things at once — the converted
-  value, *where it stopped* (the end pointer), and whether the range was exceeded
-  (`errno` being `ERANGE`). `atoi` tells none of them. Its name is short so it
-  appears often in introductions, but it is a function not used in the field.
+  The problem is simple — *it does not take the size of the destination buffer.*
+  Its signature is only `char *gets(char *s)`, so there is no way at all to know
+  how much may be written, and if the input is long it necessarily overflows. It is
+  one of the rare functions for which "use it carefully and it is fine" does not
+  hold — a safe way to use it does not exist.
+
+  It took long because of the standard's character (chapter 59). Not breaking code
+  already written is the standard's duty, so C99 marked it "do not use"
+  (deprecated) and only C11 deleted it. For over twenty years in between, every
+  compiler spat warnings and yet compiled it.
 ]
 
 #organizer[
-  A drawer named, exactly as it says, "the standard library". Functions that turn
-  strings into numbers, random numbers, dynamic allocation, program termination,
-  sorting and binary search are all in here together. In place of anything in
-  common there are many traps — in particular *conversion functions with no way to
-  report failure* and *the subtle differences between the terminating functions*
-  are this chapter's two axes.
+  We begin with the story of the only function ever *deleted* from the standard
+  library. Why `gets` died, what stands in its place, and what traps that
+  replacement carries in its turn. Then the remaining dangers of formatted input
+  and output, and how safe the functions known as safe really are.
 ]
 
 #chapter-questions()
 
-== Conversion — why `atoi` is abandoned
+== The death of `gets` and its successors
 
-#demo("examples-en/ch61/convert.c")
-
-Put the output side by side and the difference is clear.
-
-- `atoi("abc")` is 0. But `atoi("0")` is 0 too — *failure and success cannot be
-  distinguished.*
-- `atoi("42abc")` is 42. It quietly ignores the rubbish attached behind.
-- `atoi("99999999999999999999")` came out as −1. The standard says only that this
-  case is *undefined behaviour* — −1 came out by accident; any value at all could
-  come out and nothing is guaranteed.
-
-`strtol` distinguished, for the same inputs, "not a number", "characters left
-over" and "out of range" separately. The checking code looks long, but that length
-is precisely *the real complexity of handling a string that came from outside*.
-
-#antipattern[
-  Reading user input with `atoi`
-][
-  ```c
-  int port = atoi(argv[1]);      /* "0" and "bad input" are the same value */
-  ```
-  Mended, it goes like this.
-  ```c
-  errno = 0;
-  char *end;
-  long v = strtol(argv[1], &end, 10);
-  if (end == argv[1] || *end != '\0') { /* not a number */ }
-  else if (errno == ERANGE || v < 1 || v > 65535) { /* out of range */ }
-  else port = (int)v;
-  ```
-  *Setting `errno` to 0 just before the call* is the convention (chapter 70).
-  Without it you read the value a previous call left behind.
-]
-
-Real conversion is the same. `atof` cannot report failure, while `strtod` gives an
-end pointer and `ERANGE`. Moreover `strtod` may, according to the locale, read the
-decimal point as `,` rather than `.` (chapter 62) — a point always to be remembered
-when parsing a data format.
-
-#qa[
-  Why does `qsort` take its comparison through two `void *` — would knowing the type not be faster?
-][
-  Because the standard library must sort *an array of any type at all*. C has no
-  generics, so the only passage that erases a type is `void *` (chapter 34), and
-  the price is a cast and a dereference inside the comparator every time. The
-  price is not only speed. Where the type has been erased, a mistake gets no help
-  from the compiler: pass the wrong element size, or write a comparator that takes
-  `int` where it must take `int*`, and it collapses quietly. That is why chapter
-  86's `proven_array_sort` pins the type with a macro, and why chapter 79 counts
-  "the unchecked callback" among the five bugs.
-]
-
-== Dynamic allocation — four functions and their contracts
-
-We organise what chapter 42 taught, function by function.
+The hole the 1988 internet worm bored into was exactly this function (chapter 40).
+Today `gets` is not in the standard, and three remain in its place.
 
 #dtable(
   columns: 3,
-  [*function*], [*what it does*], [*contract and traps*],
-  [`malloc(n)`], [allocate n bytes], [the content is undetermined. null on failure],
-  [`calloc(k, n)`], [allocate k×n bytes + fill with zeros], [★ *the implementation* checks the multiplication for overflow],
-  [`realloc(p, n)`], [change the size], [★ on failure the original is kept — assigning the return value straight to the original leaks],
-  [`free(p)`], [release], [null is safe. freeing twice is outside the contract],
-  [`aligned_alloc(a, n)`], [aligned allocation (C11)], [n must be a multiple of a],
+  [*function*], [*status*], [*assessment*],
+  [`gets`], [deleted in C11], [there is no way to use it. mend it wherever it is seen in old code],
+  [`fgets`], [standard], [the realistic standard solution. but truncation must be checked by hand],
+  [`gets_s`], [C11 annex K (optional)], [implementations barely exist — treated in chapter 75],
 )
 
-`calloc`'s multiplication check is where it is useful. `malloc(k * n)` may have the
-product wrap round as seen in chapter 60, but for `calloc(k, n)` the standard
-requires the implementation to check for overflow and return null. *If sizes must
-be multiplied, `calloc` is the safer choice.*
+`fgets` is the right answer, but it is not the end in itself. As seen in
+chapter 60, if the buffer is too small it quietly reads only the front piece.
+
+#demo("examples-en/ch61/reading.c")
+
+The difference between the two approaches is clear. The fixed buffer split the
+long line into five pieces, while the edition that reads while growing returned
+the 34-byte line whole.
+
+The rules for reading code come to three in the end.
+
++ Turn the loop on `fgets`'s return value (whether it is null).
++ Check whether the line read has a newline and judge *whether it was truncated*.
++ Erase the newline with `buf[strcspn(buf, "\n")] = '\0';` — this idiom is safer
+  than hand-written code based on `strlen`.
 
 #antipattern[
-  Assigning `realloc`'s return value straight to the original
+  `scanf("%s", buf)` — reading a string without a width
 ][
   ```c
-  buf = realloc(buf, new_size);   /* on failure the original address is lost → a leak */
-  if (!buf) return -1;
+  char name[32];
+  scanf("%s", name);        /* exactly the same danger as gets */
   ```
-  The correct idiom goes through a temporary variable.
-  ```c
-  char *tmp = realloc(buf, new_size);
-  if (!tmp) { /* buf is still valid — it can be cleaned up or gone on using */ return -1; }
-  buf = tmp;
-  ```
-  It is why chapter 59's line-reading example used this idiom.
+  Give `%s` no width and it writes without knowing the destination's size. Always
+  write *a number one less than the buffer size*, as in `scanf("%31s", name)` (for
+  the NUL). And that this number must be written by hand is this API's weakness —
+  change the buffer size and the format string must be mended with it, which is
+  easy to forget.
 ]
 
-`realloc` has two more peculiar rules. `realloc(NULL, n)` is the same as
-`malloc(n)`, and *`realloc(p, 0)` is not to be used.* Its status changed from
-edition to edition — up to C17 it was *implementation-defined* and marked as
-deprecated, and in C23 it became outright *undefined behaviour* (proposal N2464).
-It is a place where implementations diverged so far that the standard gave up on
-settling it.
+== The remaining traps of formatted input
 
-What this change leaves in practice is one line — *to release, use `free(p)`.* Code
-that reallocates to a size that may become 0 must filter that case first.
+Chapter 58 took the grammar apart, so here we gather only the places where
+accidents happen.
 
-```c
-proven_err_t resize(char **buf, size_t n) {
-    if (n == 0) { free(*buf); *buf = nullptr; return OK; }  /* never pass 0 */
-    char *tmp = realloc(*buf, n);
-    ...
-}
-```
+*First, not checking the return value.* The `scanf` family returns the number of
+items filled. Without checking it you end up using the *previous value* of the
+variable that failed (we see it in the flesh in chapter 81).
 
-== Termination — the difference between four ways
+*Second, leftover input.* After `scanf("%d", &n)` a newline remains in the input
+buffer. Call `fgets` in that state and it reads an empty line. Not mixing them is
+the best policy, and if you must mix, empty the rest of the line and move on.
 
-#dtable(
-  columns: 3,
-  [*way*], [*cleanup*], [*where it is used*],
-  [`return` (in main)], [the same as `exit`], [normal termination],
-  [`exit(status)`], [runs `atexit`, flushes and closes streams], [normal termination (from deep inside)],
-  [`quick_exit(status)`], [runs only `at_quick_exit`, no flush], [quick termination (C11)],
-  [`_Exit(status)`], [does nothing], [special places such as a child process],
-  [`abort()`], [no cleanup, an abnormal-termination signal], [an unrecoverable error],
-)
+*Third, integer overflow.* Give `99999999999` to a `%d` and it is outside the
+contract. If the range must be checked, read with `strtol` (chapter 63).
 
-The heart of it is *the buffer*. `exit` empties the streams while `_Exit` and
-`abort` do not — the "output vanishing" accident seen in chapter 59 happens here.
-It is also why the last log of a program dying by `abort` is not seen.
+*Fourth, `%s` and the locale.* The definition of whitespace may change with the
+locale (chapter 64).
 
-Functions registered with `atexit` are called in the *reverse* order of
-registration, and the standard guarantees registration of at least 32. Calling
-`exit` again inside a registered function is outside the contract.
-
-== Sorting and searching — `qsort` and `bsearch`
-
-The functions chapter 57 foretold. Written out exactly, the contract is this.
-
-- The comparator is `int cmp(const void *a, const void *b)` and returns a
-  negative, zero or positive value. *Making it by subtraction can overflow* —
-  `return *x - *y;` is wrong for large values.
-  `return (*x > *y) - (*x < *y);` is the safe idiom.
-- The comparator must be a *total order* (chapter 79). If it is inconsistent the
-  result is not merely jumbled — it can trespass outside the array.
-- `qsort` is *not a stable sort.* The relative order of equal values is not
-  preserved. If it is needed, lay the original index on top in the comparator to
-  break ties.
-- Worst-case performance is settled by the implementation. The standard guarantees
-  nothing — the reason chapter 57's complexity attack was possible.
-- `bsearch` presumes *a sorted array*. If it is not sorted the result is
-  meaningless.
-
-== Random numbers — the limits of `rand`
-
-`rand` returns a number from 0 to `RAND_MAX`. `RAND_MAX` is guaranteed only to be
-at least 32767, so if a larger range is needed it must be composed.
-
-#antipattern[
-  Making a range with `rand() % n`
+#misconception[
+  "`snprintf` instead of `sprintf` is safe"
 ][
-  ```c
-  int dice = rand() % 6 + 1;      /* the values are not even */
-  ```
-  If `RAND_MAX + 1` is not a multiple of `n`, the values at the front come out
-  more often. If the range is small the bias is small too, but as `n` grows it
-  becomes noticeable. Moreover some old implementations had poor quality in the low
-  bits, so `% 2` even came out alternating.
+  Half right. `snprintf` is safe in that it does not overrun the buffer, but it
+  brings in the new danger of *quietly truncating*. And the meaning of its return
+  value is peculiar — it is not the number of characters written but *the number of
+  characters that would have been needed*.
 
-  If an even distribution is needed, use *rejection sampling* — throw away a value
-  that exceeds the range and draw again. And *never use it for secrets* (Part XII's
-  random number story).
+  ```c
+  int need = snprintf(buf, sizeof buf, "%s/%s", dir, name);
+  if (need < 0 || (size_t)need >= sizeof buf) {
+      /* truncated — this path must not be used as it is */
+  }
+  ```
+
+  Leave this check out and it becomes "I used the safe function and opened the
+  wrong file." We run this pattern for real in chapter 81.
 ]
 
-Give no seed with `srand` and it is the same as `srand(1)` — the same sequence
-every time. `srand(time(NULL))` is a common idiom, but two processes started in the
-same second get the same sequence.
+== The traps on the output side
 
-== The environment and processes
+*`printf`'s return value* — code that checks it is rare, but it fails in the
+situation of a broken pipe (`program | head`, say). For a program that keeps logs
+there is a value worth checking.
 
-`getenv` returns an environment variable, but that string *must not be modified*
-and may not be valid after a subsequent `setenv`-like call. If the value is needed,
-copy it.
+*The format string vulnerability* — the one treated in chapter 58. The rule is
+one. The format string must always be a constant written by the program.
 
-`system` raises a shell and executes a command. If user input is mixed into that
-string it becomes *command injection* — the same class as the classic
-vulnerability of web applications. Within the standard there is no alternative, and
-the right answer is to use a platform API (`posix_spawn`, `CreateProcess`) and pass
-the arguments as an array.
+*`%n`* — the conversion that *writes* the number of characters printed to where
+the argument points. Being the passage that promotes a format string vulnerability
+into an arbitrary memory write, several implementations block it by default today.
+There is almost no reason to use it.
+
+*Buffering and order* — mix `printf` (standard output, usually line-buffered) with
+`fprintf(stderr, ...)` (mostly unbuffered) and the order in which things appear on the
+screen can be reversed. Half of the occasions on which "the output vanished"
+during debugging are this, and the other half are cases where the buffer was not
+emptied just before a collapse.
 
 #realcase[
-  A real bug made by subtraction in a `qsort` comparator
+  Why output vanishes — buffers and abnormal termination
 ][
-  A comparator of the form `return a - b;` is the most common mistake in sorting
-  code. If the values are near `INT_MIN` the subtraction overflows and the sign
-  flips, and the sort quietly gives a wrong result — since the signed overflow
-  learned in chapter 7 is outside the contract, the symptom even changes with the
-  compiler's optimisation.
+  When a program dies by `abort` or a signal, the output remaining in the buffer
+  vanishes with it. That is why the inference "the last printed line came out, so
+  execution reached at least there" is dangerous — in reality several more lines
+  may have run and died trapped in the buffer.
 
-  This pattern has been reported repeatedly in kernels, databases and game engines
-  alike, common enough that static analysis tools catch it with a rule of their
-  own. The mend is one line — do not subtract, compare.
+  The practice of sending debugging output to `stderr` came from here. What the
+  standard promises about `stderr` goes only as far as *"it is not fully buffered"*
+  (that is, it is unbuffered or line-buffered), and real implementations mostly make it
+  unbuffered. So the record right up to the moment of death is *likely* to survive, but
+  that is not a guarantee — it can be set again with `setvbuf`, and the manner of
+  abnormal termination changes the outcome too. It is also
+  the reason chapter 17 discussed debuggers and logs together.
+]
+
+== The remaining functions that handle files
+
+#dtable(
+  columns: 3,
+  [*function*], [*what it does*], [*to beware of*],
+  [`remove`], [delete a file], [implementation-defined for an open file],
+  [`rename`], [change a name], [if the target exists it fails or overwrites, depending on the implementation],
+  [`tmpfile`], [create a temporary file], [deleted automatically on closing. the only portable safe edition],
+  [`tmpnam`], [generate a temporary name], [★ a race condition — it can be intercepted between receiving the name and creating the file],
+  [`setvbuf`], [specify the buffering mode], [it may be called only right after opening the stream],
+  [`freopen`], [reconnect a stream], [used when turning `stdout` to a file],
+)
+
+`tmpnam` is in the standard, but not using it is the right answer — because
+another program can slip in between the returning of the name and the creating of
+a file with that name (the class of race called TOCTOU). Within the standard
+`tmpfile` is the answer, and if a platform API is permitted, `mkstemp` (POSIX).
+
+#qa[
+  Then can "safe file handling" be written with standard I/O alone?
+][
+  Mostly it can. But there are clearly places where the standard gives no answer —
+  handling directories, file locking, atomic replacement (writing to a temporary
+  file and then renaming), permissions, symbolic links. All of these are the
+  territory of platform APIs, and so a serious program lays one thin layer over
+  standard I/O. Part XII's file layer is exactly that layer.
 ]
 
 #recap[
-  `<stdlib.h>` in summary.
+  Reading and writing in summary.
 
   #dtable(
     columns: 3,
-    [*what you want to do*], [*what to use*], [*what to avoid*],
-    [string → integer], [`strtol` + end pointer + `errno`], [`atoi`],
-    [string → real], [`strtod` (mind the locale)], [`atof`],
-    [allocate an array], [`calloc(k, n)`], [`malloc(k * n)`],
-    [change the size], [`realloc` via a temporary variable], [assigning straight to the original],
-    [normal termination], [`return`/`exit`], [`_Exit` (buffer loss)],
-    [sorting], [`qsort` + a total-order comparator], [a subtracting comparator, assuming stability],
-    [random numbers], [rejection sampling, a generator fit for the purpose], [`rand() % n`, using it for secrets],
-    [external commands], [an argument array through a platform API], [joining input into `system`],
+    [*what you want to do*], [*what to use*], [*what to check*],
+    [read one line], [`fgets`], [whether null + whether there is a newline (truncation)],
+    [a line of unknown length], [an `fgetc` loop + reallocation], [preserve the original when `realloc` fails],
+    [print into a string], [`snprintf`], [return value ≥ buffer size means truncation],
+    [parse user input], [`fgets` + `strtol`/`sscanf`], [the item count and the range],
+    [temporary file], [`tmpfile`], [`tmpnam` is a race condition],
+    [debugging output], [`fprintf(stderr, …)`], [not fully buffered (mostly unbuffered) — likely to survive],
+    [never to be used], [`gets`, `%s` without a width, `%n`], [—],
   )
 ]
 
-The drawer is tidied. The next chapter is the functions that handle a single
-character — and the fact that those functions are tied to the global state called
-the locale.
+We have crossed the minefield of input and output. The next chapter is another
+minefield just as famous — the string functions.

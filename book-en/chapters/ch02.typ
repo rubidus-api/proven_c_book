@@ -133,7 +133,7 @@ these three regions are broken.
   on the workbench, or write a program that calls itself endlessly, and the workbench
   overflows and the program dies on the spot — the name is exactly that, *stack
   overflow* (the name of the world's most famous programming question site came from
-  here). The detailed numbers and remedies are treated in chapters 41 and 77.
+  here). The detailed numbers and remedies are treated in chapters 41 and 79.
 ]
 
 #misconception[
@@ -160,8 +160,8 @@ whole book.
   [chapter 11], [the ladder of memory — even the same region differs in speed by cache],
   [chapter 41], [lifetime and storage duration — what C's grammar calls these regions],
   [chapter 42], [dynamic memory — the discipline of borrowing from and returning to the warehouse],
-  [chapter 77], [the real map in operating systems and embedded work],
-  [chapter 78], [inside the allocator that manages the warehouse],
+  [chapter 79], [the real map in operating systems and embedded work],
+  [chapter 80], [inside the allocator that manages the warehouse],
 )
 
 We have seen what a program puts where. The next chapter looks briefly at what the

@@ -1,175 +1,308 @@
 #import "../../book/lib.typ": *
 
-= Time — `<time.h>`
+= In practice — handling Unicode and multibyte encodings
 
 #prereq(
-  ([chapter 43, Structs], [values bundled in a struct]),
-  ([chapter 56, The terrain of the standard library], [the contract the standard settles]),
+  ([chapter 68, Wide characters ②], [UTF-16 and the platform split]),
+  ([chapter 67, Wide characters ①], [conversion functions and `mbstate_t`]),
+  ([chapter 9, Characters and text], [code points and encodings]),
 )
 
 #deepqa[
-  Bringing forward a story to be treated in Part XII: calendar time and elapsed
-  time were said to be different things. Then what is used in standard C to measure
-  exactly "whether three seconds have passed"?
+  Through chapters 67 and 68 the advice "handle UTF-8 byte strings as they are"
+  kept returning. But if you handle bytes as they are, how do you do something
+  like "delete the third character"?
 ][
-  With the standard alone there is no way to measure it exactly. `time` is in
-  seconds and can go backwards when the system adjusts the clock, and `clock`
-  measures not wall-clock time but *the CPU time the process used* (so it does not
-  grow while waiting for input and output). C11 brought in `timespec_get` but does
-  not require a monotonic clock. Accurate elapsed measurement is the part of
-  POSIX's `clock_gettime(CLOCK_MONOTONIC, …)` or Windows'
-  `QueryPerformanceCounter` — that is, of *a platform API*.
+  *Because most programs never do that.* Count what they actually do: read,
+  store, compare, concatenate, search, and hand back out. All six work on UTF-8
+  byte strings *with no decoding at all.*
+
+  The work that needs characters — moving a cursor, finding a line-break point,
+  counting letters — belongs to an editor or a renderer, and at that layer even
+  code points are not enough; you need *grapheme clusters*. This chapter draws
+  that line: how far to go on bytes, where decoding begins, and what to watch for
+  there.
 ]
 
 #organizer[
-  The header the standard settled unusually little of. The standard says neither
-  what `time_t` is nor how time zones are handled. We look at the traps that arise
-  in those gaps — the year with 1900 subtracted, the month starting from 0,
-  functions that return a static buffer, and the fact that *there is no monotonic
-  clock in the standard for measuring elapsed time*.
+#idx("UTF-8")  The prescriptions of practice. Why a UTF-8-first design wins, the three layers
+  of "how many characters" and grapheme clusters, normalisation, case that
+  depends on language, a UTF-8 validator written by hand, and the traps of the
+  legacy two-byte encodings still in use.
 ]
 
 #chapter-questions()
 
-== Three representations of time
+== The principle — UTF-8 inside, conversion only at the boundary
+
+The conclusion first.
+
+#dtable(
+  columns: 2,
+  [*Place*], [*What to use*],
+  [Inside the program], [UTF-8 byte strings (`char *`, length in bytes)],
+  [Files, networks, databases], [UTF-8],
+  [Calling the Windows API], [Convert to UTF-16 at the boundary only],
+  [Character-level editing and rendering], [Decode to code points or graphemes only where needed],
+)
+
+Why this design wins follows straight from UTF-8's properties.
+
+#dtable(
+  columns: 2,
+  [*Property of UTF-8*], [*What it buys*],
+  [Fully compatible with ASCII], [Existing code, protocols and file formats keep working],
+  [Trail bytes are always 0x80 or above], [They never collide with separators like `'/'`, `'\\'` or `','`],
+  [It is self-synchronising], [A character boundary can be found from any position],
+  [Byte order equals code-point order], [`strcmp` gives a code-point-ordered sort],
+  [It has no endianness], [No byte order mark is needed],
+)
+
+#demo("examples-en/ch69/utf8_scan.c")
+
+The last part of the demonstration shows self-synchronisation. Point at any byte
+and testing `(b & 0xC0) == 0x80` alone tells you whether you are inside a
+character or at its start — which is why a buffer can be cut anywhere and
+recovered, and why a scanner can move on to the next character in damaged data.
+
+== Validation — what to reject even when the shape is right
+
+Code that reads UTF-8 *must validate*. The rules are RFC 3629 (STD 63), and three
+things are not caught by the shape alone.
 
 #dtable(
   columns: 3,
-  [*type or function*], [*what*], [*to know*],
-  [`time_t`], [calendar time (usually seconds since 1970)], [★ the standard settles only "an arithmetic type"],
-  [`struct tm`], [split into year, month, day, hour, minute, second], [the field rules are a trap],
-  [`clock_t`], [the CPU time the process used], [divide by `CLOCKS_PER_SEC`],
-  [`struct timespec`], [seconds + nanoseconds (C11)], [`timespec_get`],
+  [*What to reject*], [*Example*], [*Why*],
+  [Overlong encodings], [`C0 80`], [U+0000 written in two bytes — a classic way past a check],
+  [Encoded surrogates], [`ED A0 80`], [U+D800 is not a character (chapter 68)],
+  [Out of range], [`F5 80 80 80`], [Beyond U+10FFFF],
 )
 
-That the standard did not settle what `time_t` is matters. In most implementations
-it is seconds since 1970-01-01 UTC, but that is *a practice*, not a guarantee of
-the standard. So portable code does not calculate with `time_t`'s internal value
-directly but takes the difference with `difftime`.
+The demonstration rejects each of the three. The first row matters most —
+*overlong encodings are a security problem.* There really were attacks that wrote
+`..` or `/` in several bytes to slip past a path check, so that a later layer
+would interpret them again. That is why "only the shortest form is valid" became a
+requirement of the specification.
+
+#misconception[
+  "UTF-8 is just bytes, so it can be passed through without validation"
+][
+  Passing it through the middle untouched is mostly safe. The problem is *the
+  moment of interpretation.*
+
+  An unvalidated byte string can be interpreted differently by different layers,
+  and that mismatch becomes a security hole — the first layer sees "odd bytes" and
+  lets them by, the next reads them as `/`. This is especially so where a web
+  server, a file system and a database meet.
+
+  One discipline — *validate once at the input boundary and trust it afterwards.*
+  Marking clearly in the code where that happened is part of the discipline. Part
+  XII's `u8` family in proven is an example of enforcing it through the type.
+]
+
+== The three layers of "how many characters", and the fourth
+
+Chapter 68 said length has three answers. Counting what a reader sees makes four.
+
+#demo("examples-en/ch69/graphemes.c")
+
+#dtable(
+  columns: 3,
+  [*Layer*], [*Unit*], [*Where it is used*],
+  [Bytes], [`char`], [Storage, transmission, buffer sizes],
+  [Code units], [A UTF-16 unit, …], [The `length` of Java and JavaScript],
+  [Code points], [One Unicode value], [Normalisation, classification, conversion],
+  [Grapheme clusters], [What a reader sees as one character], [Cursor movement, counting, truncation],
+)
+
+The demonstration measures the difference. One emoji family is *18 bytes, 5 code
+points, 1 visible character.* An invisible character, ZWJ (U+200D), joined three
+people into one. A flag is two regional indicators gathered into one.
+
+The same happens in Hangul. "가" can be written as the precomposed U+AC00 or as
+U+1100 (ㄱ) + U+1161 (ㅏ) — what appears on screen is the same letter.
 
 #qa[
-  Why do so many types exist for time — would one count of seconds not do?
+  How do you count grapheme clusters?
 ][
-  Because three different jobs are involved. `time_t` is an opaque value naming
-  *one moment*; `struct tm` is the *calendar notation* people read (year, month,
-  day, hour, minute, second); `clock_t` is a scale for measuring *elapsed time*.
-  Turning a moment into a calendar is a hard computation full of time zones,
-  daylight saving and leap seconds, so the standard keeps the two in separate
-  types and lets `localtime` and `mktime` bridge them.
+  The rules are Unicode Annex UAX \#29. It defines "where a character breaks" by
+  combinations of character properties, and implementing it properly needs the
+  Unicode database.
 
-  The accidents in practice happen exactly at that border — subtracting two
-  `time_t` values gives seconds, but adding to the fields of a `struct tm`
-  directly produces an unnormalised date. Date arithmetic must go through
-  `mktime`.
+  The demonstration's count is a *simplified version* covering the four cases you
+  meet most — combining marks, Hangul conjoining jamo, ZWJ joins and regional
+  indicator pairs. That is enough to count most emoji and Hangul correctly, but it
+  is not complete.
+
+  The practical conclusion: *do not implement it yourself.* Where grapheme units
+  are genuinely needed (an editor's cursor, display width), use ICU or its like.
+  The purpose of this section is to know *when* they are needed: not for storage,
+  comparison or transmission, but only when handling what a person sees.
 ]
 
-== The traps of `struct tm`
+== Normalisation — the same letter, different bytes
 
-#demo("examples-en/ch69/timefns.c")
+The two ways of writing "가" become a problem at once in practice, *because
+different bytes make `strcmp` say different.* To the user it is the same letter,
+yet the search misses, file names collide, and a login name is treated as another.
 
-Two fields are famous traps.
-
-- `tm_year` is *the value with 1900 subtracted*. 2026 is 126.
-- `tm_mon` is *from 0*. August is 7.
-
-With `tm_mday` (from 1), `tm_wday` (Sunday is 0) and `tm_yday` (from 0) the rules
-are all different, so when filling them by hand it is better to keep a table
-beside you.
-
-`mktime` does two things — it turns a `struct tm` into a `time_t`, and it
-*normalises the struct*. In the example, adding 30 to `tm_mday` exceeded the range
-and yet it was tidied into 4 September thanks to that. Not doing date arithmetic
-yourself but using this property is the canonical way.
-
-`tm_isdst` is easy to forget too. Putting in −1 means "I do not know, judge for
-yourself", and putting 0 or 1 in wrongly puts you an hour out.
-
-#antipattern[
-  Carrying around the result of `localtime`
-][
-  ```c
-  struct tm *a = localtime(&t1);
-  struct tm *b = localtime(&t2);   /* what a pointed at has been overwritten */
-  printf("%d %d\n", a->tm_hour, b->tm_hour);   /* both are t2's time */
-  ```
-  `localtime`, `gmtime`, `ctime` and `asctime` return *an internal static buffer*
-  (those functions chapter 56 brushed past by name only). The next call overwrites
-  the previous result, and in a program running along several strands they wreck
-  each other's results.
-
-  There are two prescriptions. *Copy it* immediately on receipt, or use the edition
-  in which the caller gives the buffer (`localtime_r` and `gmtime_r` are POSIX,
-  `localtime_s` is annex K and MSVC). To keep portability with the standard alone,
-  copying is the right answer.
-]
-
-== Printing to a string — `strftime`
-
-Unlike `printf`, `strftime` takes the buffer size and *returns 0 if it does not
-fit*. The example's small buffer is that case. If the return value is 0 the
-buffer's content is undetermined, so it must not be used.
-
-`asctime` and `ctime` are better not used. Besides returning a static buffer, the
-form is fixed (`"Wed Aug  5 13:45:30 2026\n"`) and it can overflow when the year
-exceeds four digits, so C23 marked them for retirement.
+Unicode handles this with *normalisation* (UAX \#15). There are four forms.
 
 #dtable(
   columns: 3,
-  [*specifier*], [*meaning*], [*note*],
-  [`%Y`, `%m`, `%d`], [year, month, day], [the ISO date is `%Y-%m-%d`],
-  [`%H`, `%M`, `%S`], [hour, minute, second], [24-hour],
-  [`%F`, `%T`], [`%Y-%m-%d`, `%H:%M:%S`], [C99],
-  [`%z`, `%Z`], [time-zone offset and name], [locale- and platform-dependent],
-  [`%s`], [epoch seconds], [★ not standard (a POSIX extension)],
-  [`%c`, `%x`, `%X`], [locale notation], [for humans. not used for machines],
+  [*Form*], [*What*], [*Example*],
+  [NFC], [Compose as far as possible (the usual recommendation)], [`ㄱ`+`ㅏ` → `가`],
+  [NFD], [Decompose as far as possible], [`가` → `ㄱ`+`ㅏ`],
+  [NFKC, NFKD], [Also unify compatibility characters that look different], [`㈜` → `(주)`, fullwidth `Ａ` → `A`],
 )
 
-== Time zones and summer time — what the standard does not handle
-
-The time zones standard C knows are only two, "local" and "UTC", and there is not
-even a standard way to *change* the local time zone (POSIX's `TZ` environment
-variable is the practice). To handle an arbitrary time zone a library is needed.
-
-Summer time is trickier still. On a transition day there arise times that do not
-exist (the hour skipped in spring) and times that exist twice (the hour repeated in
-autumn). What `mktime` returns when given such input is settled by the
-implementation.
-
 #realcase[
-  Real accidents time has called down
+  macOS file names and NFD
 ][
-  Time is a regular in quiet accidents. In 2012 and 2015, when *leap seconds* were
-  inserted, several server programs burned CPU at 100% or froze — because kernels
-  and applications had not assumed a situation in which "one second comes twice".
+  macOS's HFS+ file system stored file names *normalised into something close to
+  NFD*. So a Korean file name created on macOS and moved to Linux often appeared
+  with its jamo pulled apart.
 
-  The limit of a *32-bit `time_t`* overflows on 19 January 2038 (the day
-  chapter 26's overflow appears on a worldwide scale). In embedded and old systems
-  it is an ongoing task even now, and so the transition to a 64-bit `time_t` has
-  long been under way.
+  For the same reason archives broke, web servers returned 404, and `git status`
+  reported perfectly good files as modified. Git ended up adding a
+  `core.precomposeunicode` setting to put names back into NFC on macOS.
 
-  *Code that measures elapsed time in local time* loses or gains an hour on every
-  summer-time transition day. A log's timestamps go backwards, a timeout becomes an
-  hour long, a scheduler runs the same job twice. The prescription is always the
-  same — *a monotonic clock for elapsed time, UTC for records, local time only when
-  showing it to a human*.
+  Two lessons. *One, normalise before comparing strings* — especially when using
+  something a person typed (a file name, a user name, a search term) as a key.
+  *Two, settle on one form across the whole system* — usually NFC.
+
+  Standard C has no normalisation function. ICU or its like is required.
 ]
 
-#recap[
-  Time in summary.
+== Case and sorting depend on the language
 
+The assumption that `toupper` turns one character into one character also
+collapses under Unicode.
+
+#dtable(
+  columns: 3,
+  [*Example*], [*What happens*], [*So*],
+  [Turkish `i`], [Its capital is `İ` (dotted I)], [Without a locale it cannot be done right],
+  [Turkish `I`], [Its lower case is `ı` (dotless i)], [The exact opposite of English],
+  [German `ß`], [Its capital is `SS`, two letters], [Not a one-to-one mapping],
+  [Greek `Σ`], [At the end of a word it is `ς`], [It depends on position],
+)
+
+#realcase[
+  The Turkish `i` — code that really did break
+][
+  The common idiom "to compare case-insensitively, upper-case both and compare"
+  breaks in a Turkish locale. Upper-casing `"file"` gives `"FİLE"`, which is not
+  `"FILE"`.
+
+  Because of this, extension checks failed, HTTP header names did not match and
+  configuration keys went unrecognised in real software. Java's
+  `toUpperCase(Locale.ROOT)` exists as a separate call because of this problem.
+
+  The remedy is to separate the layers. *What a machine compares — protocols,
+  identifiers, file extensions — is folded by ASCII rules only, independent of the
+  locale.* The locale is used only for names shown to people.
+
+  ```c
+  /* for machines — ASCII only, independent of the locale */
+  static char ascii_lower(char c)
+  { return (c >= 'A' && c <= 'Z') ? (char)(c - 'A' + 'a') : c; }
+  ```
+]
+
+== Still alive — the legacy two-byte encodings
+
+The world has not all become UTF-8. Old files, old databases and the protocols of
+old equipment still carry regional two-byte encodings.
+
+#dtable(
+  columns: 3,
+  [*Encoding*], [*Region*], [*Underlying standard*],
+  [EUC-KR / CP949 (UHC)], [Korea], [KS X 1001 (formerly KS C 5601)],
+  [Shift_JIS / CP932], [Japan], [JIS X 0208],
+  [Big5], [Taiwan, Hong Kong], [— (a de facto standard)],
+  [GBK / GB 18030], [China], [GB 18030-2022 (a mandatory Chinese national standard)],
+)
+
+Their common structure is "lead byte + trail byte". And *in some of them the
+trail byte reaches into ASCII* — which is where the famous accident happens.
+
+#demo("examples-en/ch69/legacy_lead.c")
+
+The demonstration reproduces it. In Shift_JIS, 表 is `95 5C` and ソ is `83 5C`,
+and that second byte `0x5C` is the ASCII backslash. So
+`strrchr(path, '\\')` *mistakes a character's trail byte for a path separator.*
+In the demonstration it points at 7 instead of the correct 5, and cutting there
+breaks the file name.
+
+In Japan these characters even have a name — *dame-moji* (ダメ文字). 表, ソ, 十
+and ダ caused accidents over and over in path handling, escaping and SQL.
+
+#dtable(
+  columns: 3,
+  [*Encoding*], [*Trail byte range*], [`0x5C` as a trail?],
+  [EUC-KR], [A1\~FE], [No — safe],
+  [CP949], [41\~5A, 61\~7A, 81\~FE], [No — safe],
+  [Shift_JIS], [40\~7E, 80\~FC], [★ Yes],
+  [Big5], [40\~7E, A1\~FE], [★ Yes],
+  [GBK], [40\~FE (not 7F)], [★ Yes],
+  [UTF-8], [80\~BF], [No — structurally impossible],
+)
+
+*The Korean encodings escaped this accident by luck.* EUC-KR's trail bytes are
+all 0xA1 or above and so never touch ASCII. Code handling Japanese or Chinese, by
+contrast, must use a lead-byte-aware scan.
+
+#antipattern[
+  Scanning a legacy-encoded string byte by byte
+][
+  ```c
+  char *ext = strrchr(filename, '.');    /* can misbehave in Shift_JIS */
+  for (char *p = s; *p; p++)             /* mistakes a trail byte for a character */
+      if (*p == ',') split(p);
+  ```
+  On meeting a lead byte you must step over two. The `safe_last_sep` of the
+  demonstration is that shape. With standard functions, advance one character at a
+  time with `mblen` or `mbrtowc` — but only if the locale is that encoding
+  (chapter 67).
+
+  The better prescription is not to create the problem — *convert to UTF-8 at the
+  input boundary and handle only UTF-8 inside.*
+]
+
+== What does the converting
+
+#dtable(
+  columns: 3,
+  [*Means*], [*Where*], [*Character*],
+  [`iconv`], [POSIX], [Named by encoding. Outside standard C, but on every Unix],
+  [The `MultiByteToWideChar` family], [Windows], [Named by code page number],
+  [ICU], [Portable], [The most complete — normalisation, collation, graphemes],
+  [The `mbrtowc` family], [Standard C], [*Only the locale's encoding* (chapter 67)],
+  [Writing it yourself], [—], [UTF-8 ↔ UTF-16/32 is short. The demonstrations are the example],
+)
+
+Let us restate that standard C alone cannot handle an arbitrary encoding.
+`mbrtowc` knows only "the encoding of the current locale". So a task like "read a
+EUC-KR file and save it as UTF-8" is outside standard C and needs `iconv` or a
+conversion table of your own.
+
+#recap[
   #dtable(
-    columns: 3,
-    [*what you want to do*], [*what to use*], [*what to beware of*],
-    [the current time], [`time(NULL)`], [in seconds. it can go backwards],
-    [splitting it up], [`localtime`/`gmtime` + *copy at once*], [the static buffer],
-    [date arithmetic], [add to the fields and `mktime`], [do not calculate seconds by hand],
-    [to a string], [`strftime`], [a return of 0 = failure],
-    [difference], [`difftime`], [`t2 - t1` is not portable],
-    [measuring elapsed time], [the platform's monotonic clock], [`time` and `localtime` forbidden],
-    [storing and transmitting], [UTC + ISO 8601], [do not store local time],
-    [not to be used], [`asctime`, `ctime`], [static buffer, fixed form, to be retired in C23],
+    columns: 2,
+    [*What to remember*], [*The point*],
+    [Design], [UTF-8 byte strings inside, conversion at the boundary only],
+    [Validation], [Once, at the input boundary. Reject overlong, surrogate and out-of-range],
+    [Length], [Bytes, code units, code points, graphemes — settle which layer first],
+    [Normalisation], [To NFC before comparing. Not in standard C],
+    [Case], [ASCII rules for machines. Remember the Turkish `i`],
+    [Legacy], [Shift_JIS, Big5 and GBK have trail bytes that reach into ASCII],
+    [Scanning], [In legacy encodings, know the lead bytes and step over],
+    [Conversion], [`iconv`, ICU, platform APIs. Standard C only does the locale's encoding],
   )
 ]
 
-We have passed time. The next chapter is the tools used when a program *has gone
-wrong* — error numbers, assertions, signals, and non-local jumps.
+The story of characters that began in chapter 64 closes after six chapters —
+from the judgement of one byte through locales and `wchar_t` to the prescriptions
+of practice. The next chapter is what recent standards added, and the long
+argument over "safe" functions.

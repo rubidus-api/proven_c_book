@@ -28,7 +28,7 @@ int main(void)
 {
     const size_t rows = 4, cols = 5;
 
-    /* one run — check the multiplication for overflow first (chapter 82's habit) */
+    /* one run — check the multiplication for overflow first (chapter 84's habit) */
     size_t n;
     if (__builtin_mul_overflow(rows, cols, &n)) return 1;
     double *m = malloc(n * sizeof *m);

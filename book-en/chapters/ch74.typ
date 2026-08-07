@@ -1,279 +1,543 @@
 #import "../../book/lib.typ": *
 
-= Operations that do not split — `<stdatomic.h>`
+= Non-local jumps — `<setjmp.h>`
 
 #prereq(
-  ([chapter 11, Memory divides], [the cache and the layers of memory]),
-  ([chapter 41, Lifetime and storage duration], [lifetime and sharing]),
+  ([chapter 73, Signals], [the thing that cuts into the flow]),
+  ([chapter 39, The stack and calls], [how call frames are stacked and cleared]),
+  ([chapter 48, How to report failure], [returning failure as a value]),
 )
 
 #deepqa[
-  Chapter 12 said the CPU does several things in one beat and even executes out of
-  order, and chapter 11 said each core carries its own cache. Then if two strands
-  increase the same variable by 1 at once — is the result 2?
+  Chapter 39 said that calling a function stacks a frame, and that `return`
+  clears that frame and goes back *one step at a time*. Then how, in C, does one
+  return from ten levels deep to the top *in a single move*?
 ][
-  It may not be. `x = x + 1` is not one step to the machine but *three* (read, add,
-  write), and if two strands interleave these three steps they read the same value
-  and write the same value — one increment vanishes whole. On top of that, caches
-  differ per core, so the lag of "written but not visible to the other" is
-  compounded. This chapter's first example actually counts that loss out.
+  The two words of `<setjmp.h>` do exactly that. `setjmp` records "here, now",
+  and `longjmp` revives that record and *rewinds the stack whole*. Ten levels or
+  a hundred, it comes back at once.
+
+  What is rewound, though, is only *the stack pointer and a few registers*. No
+  one closes the files opened in between, frees the memory taken, or releases the
+  locks held — half of this chapter is about that price.
 ]
 
 #organizer[
-#idx("atomic operations")  We see what happens when several strands touch the same
-  memory at once, and learn the tool C11 brought into that place — atomic types and
-  operations. Why a data race is *outside the contract* rather than "slow", why
-#idx("data race")  `volatile` is not the answer, and when to touch and when to
-  leave alone the difficult handle called the memory order.
+#idx("non-local jump")  A close reading of one header, `<setjmp.h>`. Why it exists (the makeshift of a
+  language without exceptions), the exact shape and return values of the two
+  words, the eight slots of `jmp_buf` and which registers come back, the
+  `volatile` rule that follows from them (measured on a real build), how real
+  software such as libjpeg and PostgreSQL copes with the memory left behind by a
+  jump, and today's alternatives.
 ]
 
 #chapter-questions()
 
-== The lost update — confirmed with the eyes
+== Why it exists — the makeshift of a language without exceptions
 
-#demo("examples-en/ch74/atomic.c")
+When trouble arises deep down, a language with exceptions escapes to the upper
+floors with one `throw`. C has none. So an error must be *carried up one layer at
+a time as a return value*, and every function in between must take that value and
+pass it on (chapter 48).
 
-Four strands turned the same loop 200,000 times each. The expected value is
-800,000, but the unprotected `long` did not even get near it. The vanished share
-differs on every run — and this non-determinism is precisely the character of this
-class of bug. *A loss that does not reproduce.*
+`setjmp`/`longjmp` is the device that skips that chain. It was already in Unix V7
+in the 1970s, and its reason for being was the same as now — *getting out of deep
+recursion in one move.*
 
-The atomic variable's side is exactly 800,000 every time. Because
-`atomic_fetch_add` performs "read-add-write" as *one lump that cannot be split*.
-The name atom means just that — that which is not split further.
+The standard's footnote states the purpose narrowly: these functions "are useful
+for dealing with unusual conditions encountered in a low-level function of a
+program." That is, the original place of the device is *an escape hatch for
+exceptional situations, not a substitute for exceptions.*
 
-#misconception[
-  "A race condition is a probabilistic performance problem where the value is
-  occasionally off"
+#qa[
+  Is this then C's exception handling?
 ][
-  Wrong in two layers. First, it is not that the value goes off but that *the
-  contract breaks*. The standard from C11 onward settles it thus — if two strands
-  touch the same memory at once, at least one of them writing, and it is neither
-  atomic nor ordered, that is a *data race* and the whole program is undefined
-  behaviour (chapter 49). It means there is no guarantee that it ends at the level
-  of "one value being wrong".
+  No. Three differences are decisive.
 
-  Second, the compiler optimises on this premise. Assuming there is no race, it
-  puts the variable in a register, and then however much the other side changes the
-  value this loop *sees the old value forever*. This really is the common identity
-  of the infinite loop that "works in a debug build and hangs in release"
-  (chapter 17's release-only bug is replayed here).
+  *First, nothing is cleaned up.* A C++ exception rewinds the stack calling
+  destructors (stack unwinding). `longjmp` simply jumps — open files, taken
+  memory, locked mutexes all stay as they were.
+
+  *Second, there is no type.* The only thing thrown is one `int`. To carry what
+  went wrong, that value must serve as an index into something written elsewhere.
+
+  *Third, the region is limited.* The function that called `setjmp` must *still be
+  alive*. There is no jumping into the place of a function that has already
+  returned — doing so is undefined behaviour.
+
+  So the conclusion of this chapter, stated in advance: *new code mostly does not
+  use it. But you must be able to read it* — because widely used libraries are
+  built on it.
 ]
 
-== Why `volatile` is not the answer
-
-In code that has long used C one often sees the practice of exchanging signals
-between strands with `volatile int flag;`. It is a wrong practice now. What
-`volatile` promises is one thing only — *the compiler will not remove or merge
-these accesses*. As will be seen in chapter 49, its purpose was hardware registers
-(places whose value changes from outside).
-
-There are two things `volatile` does not promise. *Atomicity* — the `x++` of a
-`volatile long x;` is still three steps and splits. And *ordering and visibility* —
-it does not prevent the CPU from changing the order of writes or from being late to
-show them to another core.
+== The two words — the exact shape
 
 #dtable(
-  columns: 4,
-  [], [*not split*], [*visibility between cores*], [*blocks reordering*],
-  [`volatile`], [no], [no], [no (against other accesses)],
-  [`_Atomic`], [yes], [yes], [yes (as much as the chosen order)],
-  [a mutex], [yes (the whole region)], [yes], [yes],
+  columns: 2,
+  keycol: false,
+  [*Declaration*], [*What it does*],
+  [`int setjmp(jmp_buf env);`], [Saves the present calling environment in `env`. *It is a macro*],
+  [`[[noreturn]] void longjmp(jmp_buf env, int val);`], [Goes back to the place saved in `env`. Does not return],
 )
 
-Summed up: *`volatile` for hardware registers, atomic types or mutexes for sharing
-between strands.* Java's and C\#'s `volatile` share only the name and differ in
-meaning (there it really does guarantee visibility), so bringing the habits of
-those languages into C is a common passage to accidents.
+=== `setjmp` — the macro that seems to return twice
 
-== Atomic types and operations
+`setjmp` is a *macro*, not a function (the standard allows a function to be
+provided as well, but suppressing the macro and calling the function directly is
+undefined behaviour).
 
-Using them is simple. Attach `_Atomic` before the type, or use the names the header
-gives (`atomic_int`, `atomic_long`, `atomic_bool`, `atomic_size_t` …).
+The rule for its return value is simple, and it is nearly the whole header.
 
-```c
-#include <stdatomic.h>
-atomic_int  counter = 0;      /* = _Atomic int */
-_Atomic long total;
-```
+#dtable(
+  columns: 2,
+  [*How it was reached*], [*What `setjmp` returns*],
+  [Called directly (the moment the place is saved)], [0],
+  [Returned to by `longjmp(env, val)`], [`val` — except that 0 becomes 1],
+)
 
-The operations are called as functions (or macros of those names). Using the
-ordinary operators (`++`, `+=`) also behaves atomically, but *the fact of being
-atomic is not visible in the code* and so is easy for a reader to miss, which is
-why the explicit functions are recommended.
+That is why `longjmp(env, 0)` cannot produce 0. Zero already means *"saving right
+now"*, so the standard turns it into 1.
+
+#demo("examples-en/ch74/jmp_basic.c")
+
+The demonstration follows that flow exactly. The first time it yields 0 and goes
+down into `deep`; at depth 3 the `longjmp(env, 42)` brings us *straight back to
+`main`'s `setjmp`* and 42 appears. The intervening `deep(2)` and `deep(1)` never
+get to print their "leaving normally" line — those frames simply vanished.
+
+The last test is `longjmp(env, 0)`. We gave 0, and 1 came back.
+
+=== Where `setjmp` may appear — four contexts only
+
+The standard (§7.13.1.1) restricts the context *by enumeration*. Using it outside
+these four is undefined behaviour.
+
+#dtable(
+  columns: 2,
+  keycol: false,
+  [*Permitted context*], [*Example*],
+  [The *entire* controlling expression of `if`, `switch`, `while`, …], [`if (setjmp(env)) { ... }`],
+  [One operand of a comparison with an integer constant expression (the whole being a controlling expression)], [`if (setjmp(env) == 0)`],
+  [The operand of a single `!` (likewise)], [`if (!setjmp(env))`],
+  [An entire expression statement (a cast to `void` is allowed)], [`setjmp(env);`],
+)
+
+So `int rc = setjmp(env);` is *not one of the standard's contexts.* It does work
+on many implementations and this book's demonstration writes it that way, but
+where portability matters, `switch (setjmp(env))` or `if (setjmp(env) == 0)` is
+the safer form.
+
+#qa[
+  Why does such an odd restriction exist?
+][
+  Because `setjmp` is a thing *called once and returned from twice*. To a
+  compiler this is not an ordinary call — if its return value sat in the middle of
+  a complicated expression, there would be no way to decide how to revive the
+  half-computed state (temporaries spread across registers).
+
+  So the standard narrowed the context down to *places where no temporary can be
+  alive*: one controlling expression, one comparison against a constant, and an
+  expression statement that discards the value. The restriction looks strange, but
+  it comes from implementability.
+]
+
+=== `longjmp` — three things to check before jumping
+
+`longjmp(env, val)` does not return (C23 marks it `[[noreturn]]`). Three
+conditions must hold before jumping, and breaking any one is undefined behaviour.
+
+#dtable(
+  columns: 2,
+  [*Condition*], [*If broken*],
+  [There really was a `setjmp` on that `env`], [Jumping to a place never saved],
+  [The function that called `setjmp` is *still alive*], [Jumping into a vanished frame — usually instant death],
+  [It is the same thread], [Jumping into another thread's stack],
+)
+
+The second is the accident that happens most often. Thinking "I will make an error
+handler and call it from anywhere", one calls `longjmp` after the function that
+called `setjmp` has already returned — and by then another function's frame has
+moved into that place.
+
+== What `jmp_buf` really is
+
+`jmp_buf` is *an array type*. The standard nails that down for a practical reason
+— being an array, passing it to a function decays it to the address of its first
+element (chapter 37), so `setjmp(env)` can *modify the original* without writing
+`&env`.
+
+What is inside? The standard says only "information sufficient for `longjmp` to
+restore the calling environment". In practice it is roughly these.
+
+#dtable(
+  columns: 2,
+  [*What is saved*], [*Why*],
+  [The stack pointer], [The place to rewind to must be known],
+  [The program counter (return address)], [Where to go back to],
+  [Callee-saved registers], [The values the calling convention promised to preserve],
+  [(Sometimes) the signal mask], [POSIX's `sigsetjmp`, optionally],
+)
+
+The size the demonstration printed (200 bytes on this implementation) is the sum
+of those contents. But *looking inside or editing it by hand is outside the
+contract* — treat it as opaque data.
+
+The standard is also explicit about what is *not* saved: *the state of the
+floating-point environment, of open files, or of any other component of the
+abstract machine.* That one sentence produces every pitfall in the next section.
+
+=== Looking inside the eight slots
+
+On this implementation (glibc, x86-64) the 200 bytes of a `jmp_buf` divide thus.
+
+#dtable(
+  columns: 2,
+  [*Part*], [*Size*],
+  [Eight register slots (`long [8]`)], [64 bytes],
+  [Whether the signal mask was saved (`int` + padding)], [8 bytes],
+  [Room for the signal mask], [128 bytes],
+)
+
+Print the eight slots and their order appears — RBX, RBP, R12, R13, R14, R15, the
+stack pointer, the return address. That is exactly the list the x86-64 SysV
+calling convention marks *callee-saved* (chapter 39's calling convention).
+
+Two things stand out.
+
+*First, three of the slots hold scrambled values.* Print the slots for RBP, the
+stack pointer and the return address and they do not look like stack addresses.
+glibc stores them mixed with a per-thread guard value — a device against
+overwriting a `jmp_buf` to jump to an address of the attacker's choosing. It
+confirms the rule that the inside of a `jmp_buf` is not to be edited by hand.
+
+*Second, registers not on that list are not saved.* RAX, RCX, RDX, RSI, RDI and
+R8--R11 are the ones the convention marks "the caller's business" (caller-saved),
+so `setjmp` does not keep them.
+
+=== And that is the `volatile` rule
+
+Read those two facts from a local variable's point of view and the next section's
+rule follows by itself. A compiler puts a local in one of three places.
 
 #dtable(
   columns: 3,
-  [*operation*], [*what it does*], [*where it is used*],
-  [`atomic_load`], [read], [seeing the current value],
-  [`atomic_store`], [write], [setting a value],
-  [`atomic_fetch_add`, `_sub`], [add and return *the previous value*], [counters and statistics],
-  [`atomic_fetch_or`, `_and`, `_xor`], [bit manipulation], [sets of flags],
-  [`atomic_exchange`], [swap and return the previous value], [replacing in place],
-  [`atomic_compare_exchange_strong`], [change only if equal to the expected value (CAS)], [lock-free data structures],
-  [`atomic_compare_exchange_weak`], [the same, but it may fail in vain], [inside a loop],
-  [`atomic_flag_test_and_set`], [the most primitive test-and-set], [spinlocks],
+  [*Where the variable was*], [After `longjmp`], [*Why*],
+  [In memory on the stack], [The changed value, intact], [`longjmp` restores only the stack *pointer*. It does not touch the contents],
+  [In a callee-saved register], [The old value from `setjmp`], [That slot is restored wholesale from the `jmp_buf`],
+  [In a caller-saved register], [Anything at all], [It is neither saved nor restored],
 )
 
-That `fetch_add` returns *the previous value* is a place often confused. To obtain
-"which number this is", use the return value; to know "how much it is now", it is
-the return value plus the increment, or a separate `atomic_load` — and the latter
-may change again in the meantime.
+Turn optimisation off and the compiler mostly puts locals on the stack, so only
+the first row happens — which is why nothing *appears* wrong at `-O0`. Turn it on
+and heavily used variables move into registers, and the second and third rows
+appear.
 
-#antipattern[
-  Believing that several atomic operations make their bundle atomic too
+It is also why the standard writes *"indeterminate representation"* rather than
+"becomes the old value". The result depends on where the variable was, so the
+standard promises none of them.
+
+== What happens to values on return — the `volatile` rule
+
+The most practical rule in this chapter. The standard (§7.13.2.1) settles it thus.
+
+*All objects have the values they had at the time `longjmp` was called, with one
+exception — objects of automatic storage duration local to the function
+containing the `setjmp`, that are not `volatile` and have been changed since the
+`setjmp`, have indeterminate representations.*
+
+#demo("examples-en/ch74/jmp_volatile.c")
+
+Three variables split exactly along that rule.
+
+#dtable(
+  columns: 3,
+  [*Variable*], [*Storage and qualifier*], [After `longjmp`],
+  [`plain`], [automatic, non-`volatile`, changed in between], [*No guarantee*],
+  [`guarded`], [automatic, `volatile`], [Guaranteed],
+  [`statik`], [static], [Guaranteed],
+)
+
+*This rule really does bite.* Build with optimisation off and all three show 2;
+build the same code with `-O2` and `plain` *comes back as 1* — the compiler had
+kept that variable in a register, and `longjmp` restored the registers to their
+values at `setjmp`. This book ran both builds and confirmed the difference, and
+the example reports which build it is by looking at `__OPTIMIZE__`.
+
+#misconception[
+  "`volatile` is for hardware registers and nothing else"
 ][
+  This is `volatile`'s second legitimate use (the first was chapter 73's
+  `volatile sig_atomic_t`). Set the three side by side and the purpose is clear.
+
+  #dtable(
+    columns: 2,
+    [*Place*], [*What it prevents*],
+    [MMIO and hardware registers], [Optimisations that erase or merge reads and writes],
+    [Flags exchanged with a signal handler], [Optimisations that skip the read in a loop],
+    [Locals that cross a `longjmp`], [Optimisations that keep the value only in a register],
+  )
+
+  All three prevent "the compiler bypassing memory". Conversely, *`volatile` is
+  useless for synchronization between threads* — that place belongs to
+  `<stdatomic.h>` (chapter 76). Miss this distinction and `volatile` becomes a
+  misunderstood charm against all evils.
+]
+
+== Nobody cleans up the resources
+
+`longjmp` only rolls back the stack pointer. Whatever was taken in between stays
+taken.
+
+#antipattern("Code that leaves resources where it jumped over")[
   ```c
-  if (atomic_load(&count) < LIMIT)      /* ① read and */
-      atomic_fetch_add(&count, 1);      /* ② add — somebody cuts in between */
+  void work(void) {
+      FILE *f = fopen("data", "r");     /* opened */
+      char *buf = malloc(1024);          /* taken */
+      parse(f, buf);                     /* if a longjmp happens here… */
+      free(buf);                         /* does not run — a leak */
+      fclose(f);                         /* does not run — the file leaks too */
+  }
   ```
-  If another strand raises the value between ① and ②, the limit is exceeded.
-  *Atomicity is a property of one operation, not of a region.* To protect a region,
-  bind it with a CAS loop or use a mutex.
+  If a `longjmp` happens inside `parse`, `work`'s frame simply vanishes. Neither
+  `free` nor `fclose` runs. In a long-running program this pattern shows up as a
+  small leak per request.
+]
+
+So code that uses this device keeps one discipline without exception — *gather
+the places that take and release resources inside the function that called
+`setjmp`.* Having jumped back, that function can clean up itself.
+
+=== The quieter accident — a pointer reverts to its old value
+
+The previous counter-example was a `free` *that never ran*. There is a quieter
+one. The cleanup code runs perfectly well, but *the pointer saying what to free*
+falls foul of the previous section's rule and reverts to its old value.
+
+#demo("examples-en/ch74/jmp_leak.c")
+
+At `-O0` both survive, but build the same code at `-O1` or above and the
+non-`volatile` one reverts to the null it held at `setjmp` (we checked). Then
+`free(risky)` frees null, does nothing, and 64 bytes leak for good — clear the
+static copy and ASan reports it as "Direct leak of 64 byte(s)".
+
+*There is cleanup code, and it still leaks.* Reading the code will not show it,
+and it appears only in the optimised build that ships. Of the accidents in this
+pattern it is the hardest to diagnose.
+
+There is an opposite direction too. If the old value is not null but *an address
+already freed*, it is a double free.
+
+#antipattern("Code that reverts to an old address and frees it twice")[
   ```c
-  int cur = atomic_load(&count);
-  do {
-      if (cur >= LIMIT) break;                 /* limit check and update as one lump */
-  } while (!atomic_compare_exchange_weak(&count, &cur, cur + 1));
+  char *p = malloc(64);
+  if (setjmp(env) == 0) {
+      free(p);            /* freed once */
+      p = malloc(128);    /* and taken afresh */
+      work(p);            /* a longjmp happens here */
+  }
+  free(p);                /* if p reverted, this frees what was already freed */
   ```
-  That on failure *the current value comes back held in `cur`* is the heart of this
-  idiom. So there is no need to read again inside the loop.
+  Chapter 42's double free, reproduced exactly. The allocator's ledger is wrecked,
+  so every allocation after it is contaminated.
+]
+
+The discipline is one line — *do not keep a pointer that must survive a `longjmp`
+in an automatic local.* Give it `volatile`, or put it in a static variable or a
+context struct. The `load_image` of the next demonstration does exactly that.
+
+#demo("examples-en/ch74/jmp_error.c")
+
+The demonstration's `load_image` is that structure. The `malloc` happens *before*
+the `setjmp`, and the `free` sits once, in a place both the success and the
+failure path pass through. The deep `parse_header` and `parse_size` take no
+resources and only jump.
+
+== What is actually built on this
+
+The device is not recommended for new code, but *what is already built* is
+plentiful.
+
+#dtable(
+  columns: 3,
+  [*What*], [*How it uses it*], [*Why it did so*],
+  [libjpeg], [A `jmp_buf` inside `struct jpeg_error_mgr`; on error it jumps from `error_exit`], [Decoding is deep recursion, so a return-value chain would be far too long],
+  [libpng], [The same pattern through the `png_jmpbuf(png_ptr)` macro], [The same reason — imitating exceptions in a C API],
+  [The Lua interpreter], [`LUAI_THROW`/`LUAI_TRY` are implemented with `longjmp` in a C build], [A script's `error()` must be carried into the host language],
+  [Some coroutine implementations], [Save the context with `setjmp` and swap stacks], [The only road to imitating context switching with the standard alone],
+  [Test frameworks], [On a failed assertion, abandon that test and move to the next], [One test's failure must not stop the whole run],
+)
+
+#realcase("libjpeg's error manager — how it came to look like this")[
+  Code using libjpeg almost always begins like this.
+
+  ```c
+  struct my_error_mgr { struct jpeg_error_mgr pub; jmp_buf setjmp_buffer; };
+
+  static void my_error_exit(j_common_ptr cinfo) {
+      struct my_error_mgr *err = (struct my_error_mgr *)cinfo->err;
+      longjmp(err->setjmp_buffer, 1);
+  }
+  ```
+
+  The library's default behaviour was *to `exit` on error*. That amounts to a
+  library killing the application — one broken image and the whole editor
+  terminates. So libjpeg left open a hook for "the function to call on error", and
+  from inside that hook the only way back was `longjmp`.
+
+  What this case shows is the order of the design. *A deep call chain + a C API +
+  a library that must not kill the process* — when those three coincide, there was
+  hardly any choice besides `setjmp`/`longjmp`. Designed afresh today one would
+  take chapter 48's "failure as a value", but within the constraints of the 1990s
+  it was a reasonable decision.
+]
+
+=== How do they cope with memory — the answer is always the same
+
+Read the previous table again, this time asking only "who frees the memory taken
+before the jump?"
+
+#dtable(
+  columns: 3,
+  [*What*], [*Who frees it*], [*The device*],
+  [libjpeg], [One call to `jpeg_destroy_*`], [The library ties every allocation into pools of its own memory manager],
+  [libpng], [One `png_destroy_read_struct`], [The same way],
+  [Lua], [The garbage collector], [Every allocation is registered in the interpreter's state],
+  [PostgreSQL], [Resetting a memory context where the error is caught], [An arena per query and per transaction],
+  [Test frameworks], [Wholesale, when a test ends], [An arena per test, or separate processes altogether],
+)
+
+*The common thread is visible — they are all arenas.* The flaw that `longjmp`
+cleans up nothing was worked around by a structure in which *no individual `free`
+is needed*: tie everything taken into one bundle, and at the place you jump back
+to, throw away that one bundle.
+
+So one more conclusion attaches. *Use `setjmp` without an arena and a leak is a
+matter of time.* Part XII's arena is also the precondition that makes this
+pattern legitimate.
+
+#realcase("PostgreSQL's `PG_TRY`/`PG_CATCH`")[
+  PostgreSQL builds something very like exceptions out of this device.
+  `PG_TRY` and `PG_CATCH` are macros, and inside them are `sigsetjmp` and a global
+  exception stack. Reporting an error deep down jumps to the nearest `PG_CATCH`.
+
+  But a single query takes thousands of pieces of memory. How is that coped with?
+  *Memory contexts.* Every allocation belongs to some context, and resetting that
+  context where the error is caught makes thousands of pieces vanish at once. An
+  arena used as if it were a language feature.
+
+  And the previous section's rule is written into that source as a convention —
+  *a local variable modified inside a `PG_TRY` block and used in the `PG_CATCH`
+  must be declared `volatile`.* It is precisely the list of what a large C program
+  needs in order to use this device safely: one arena, one `volatile` convention,
+  and macros around the jump so that people never write `longjmp` themselves.
 ]
 
 #qa[
-  What differs between `compare_exchange`'s strong and weak? Why is there a
-  separate edition that "fails in vain"?
+  What happens to `alloca` and variable-length arrays?
 ][
-  Some CPUs (the ARM family and others) implement CAS as a pair of instructions,
-  "reserve and later write conditionally". If the reservation is broken in between
-  by an interrupt or by cache circumstances, it comes back as a failure even though
-  the value equalled the expectation — that is a *spurious failure*. `weak` exposes
-  this failure as it is and in exchange is faster, while `strong` retries
-  internally to guarantee "failure only when the value differed" and in exchange is
-  a little slower.
+  Those alone are cleaned up automatically. They were taken from the stack, so
+  when the stack pointer rewinds they go with it — the VLAs of the skipped frames
+  do not leak.
 
-  The rule is simple. *`weak` inside a loop, `strong` when trying only once without
-  a loop.* Since the loop will turn again anyway, a spurious failure is harmless
-  and only the gain remains.
+  The standard does nail down one thing, though. *A `longjmp` that would leave the
+  scope of an identifier with a variably modified type is undefined behaviour* —
+  the implementation loses its chance to tidy that place. So the rule becomes "do
+  not jump across a block in which a VLA is alive."
+
+  From the memory point of view it comes to this — *what was taken from the stack
+  is cleaned up for free; what was taken from the heap is cleaned up by nobody.*
+  That one line is why all the libraries above went to arenas.
 ]
 
-== Memory order — not touching it is the default
+== POSIX's `sigsetjmp`/`siglongjmp`
 
-If no order is specified, as in `atomic_fetch_add(&x, 1)`, the strongest order,
-*sequential consistency* (`memory_order_seq_cst`), is used. It means every strand
-sees the order of atomic operations as one consistent story, and it is the model
-easiest for a human to reason about. In exchange it is the most expensive.
+Unix-like systems have one more pair.
 
-C provides six orders. We learn their faces from a table — *most programs need only
-the default.*
+```c
+int  sigsetjmp(sigjmp_buf env, int savemask);
+[[noreturn]] void siglongjmp(sigjmp_buf env, int val);
+```
 
-#dtable(
-  columns: 3,
-  [*order*], [*guarantee*], [*where it is used*],
-  [`seq_cst`], [one order globally], [the default. if in doubt, this],
-  [`acquire`], [later accesses cannot rise above it], [taking a lock, reads on the consumer side],
-  [`release`], [earlier accesses cannot sink below it], [releasing a lock, writes on the producer side],
-  [`acq_rel`], [both, in a read-modify-write operation], [state transitions with CAS],
-  [`relaxed`], [atomicity only. no ordering guarantee], [pure counters and statistics],
-  [`consume`], [effectively abandoned (implementations raise it to acquire)], [not used],
-)
+The difference is whether the *signal mask* (chapter 73) is saved along with the
+rest. If `savemask` is non-zero the current mask is saved too, and `siglongjmp`
+restores it.
 
-The two most common practical uses are these. First, *the producer-consumer flag*:
-fill the data and then raise the flag with `release`, and the consumer sees the
-flag with `acquire` and then reads the data. This pair guarantees "if the flag is
-visible the data is visible too." Second, *a pure statistics counter*: only the
-final sum need be right and there is no need to order it against other data, so
-`relaxed` is exactly the right tool.
-
-#antipattern[
-  Switching to `relaxed` for performance, just to see
-][
-  ```c
-  atomic_store_explicit(&ready, 1, memory_order_relaxed);   /* the flag */
-  ```
-  `relaxed` guarantees *only the atomicity of this variable*. There is no guarantee
-  that the data filled in beforehand is visible to the other side, so the consumer
-  can see the flag raised and yet read *the data from before it was filled*. Such
-  code mostly runs fine on x86 and then appears as an unreproducible bug on an ARM
-  device — because the reordering each piece of hardware permits differs.
-
-  The rule: *when a flag and data form a pair, `release`/`acquire`.* Until you
-  understand that pair, leave the default as it is. The time lost far exceeds the
-  nanoseconds saved here.
-]
-
-== The phrase "lock-free"
-
-That is what the example's last line asked with `atomic_is_lock_free`. If an atomic
-type is handled by a single CPU instruction it is *lock-free*, and if not the
-library uses a hidden lock behind the scenes. On today's mainstream machines
-integers of pointer size or smaller are mostly lock-free. Wrap a large struct in
-`_Atomic`, on the other hand, and — the syntax passes but — a hidden lock attaches
-and performance can become unexpectedly bad.
+Why is that needed? Consider code that escapes from a signal handler with
+`longjmp`. While the handler runs that signal is blocked, and jumping out with the
+standard `longjmp` may *leave it blocked* — after which that signal never arrives
+again. `sigsetjmp` closes that hole.
 
 #misconception[
-  "Atomic operations are always faster than a mutex"
+  "Escaping from a signal handler with `longjmp` is fine"
 ][
-  Mostly right when contention is low, but it reverses when contention is heavy. If
-  several cores fight over the same cache line, that line keeps travelling between
-  the cores (chapter 11's false sharing is replayed here). A CAS loop turns again
-  on every failure, and when contention is heavy this retrying is waste entire — a
-  mutex puts the failing strand to sleep while spinning burns a core.
+  A widely used but dangerous pattern. Two things compound.
 
-  And *writing lock-free data structures yourself* is a task of another order of
-  difficulty. The ABA problem (a value going from A to B and back to A, fooling the
-  CAS), when memory may be reclaimed, progress guarantees — these are topics for a
-  paper each. The right answer in the field is usually this: *atomic types for
-  counters and flags, a verified library or a mutex for data structures.*
+  *First, the mask problem* — exactly as above. On Unix the `sigsetjmp` pair must
+  be used.
+
+  *Second, and more fundamentally, you do not know where it was cut.* A signal
+  arrives in the middle of `malloc` or `printf` too (chapter 73). Jump out from
+  there and that data structure stays half-rewritten. Call `malloc` again after
+  jumping out and it collapses then.
+
+  So the places where the pattern is even defensible are narrow — *finish
+  immediately after jumping* (`_Exit`), or take a path that uses the standard
+  library no further. In a long-running program the pattern of "set a timeout with
+  a signal and escape with `longjmp`" runs well on the surface and collapses
+  rarely.
 ]
 
-== Where to use it and where not to
+== Its place today — when to use it, what to use instead
 
 #dtable(
-  columns: 3,
-  [*situation*], [*recommended tool*], [*reason*],
-  [statistics counters], [`atomic_fetch_add` (`relaxed`)], [no ordering is needed],
-  [a shutdown-request flag], [`atomic_bool` + `release`/`acquire`], [it pairs with data],
-  [initialising exactly once], [`call_once` (`<threads.h>`) or CAS], [do not write double-checked locking by hand],
-  [invariants over several values], [a mutex], [atomicity is per single variable],
-  [sharing a large struct], [a mutex], [an `_Atomic` struct means a hidden lock],
-  [sharing with a signal handler], [`sig_atomic_t` or a lock-free atomic type], [chapter 70's restrictions],
-  [hardware registers], [`volatile`], [it is not sharing between strands],
+  columns: 2,
+  [*What you want to do*], [*The recommended way*],
+  [Carry a deep failure upward], [Return it as a value (chapter 48). Tedious for the middle layers, but safer],
+  [Tidy several failure paths inside one function], [Gather them with a single `goto cleanup` — the Linux kernel's practice],
+  [Not forget to release resources], [By *structure*, not by attributes — take and release in the same function],
+  [A deep escape in a parser or interpreter], [One of the few legitimate places for `setjmp`, if the resource discipline is kept],
+  [Escape across threads], [Impossible — `longjmp` works only within one thread],
 )
 
-#realcase[
-  Why C11 brought in a memory model
-][
-  In the standard before C11 there was *no concept at all of there being several
-  strands.* Threads were the business of a library (POSIX threads and the like),
-  and the language defined optimisation on the premise that "a program flows in one
-  stream". In that gap questions piled up which nobody could answer exactly — must
-  the compiler assume another strand sees this write, is this reordering legal, is
-  this mutex-less code wrong.
+The `goto cleanup` pattern is worth writing out again, because most of what people
+reach for `setjmp` to do is in fact covered by it.
 
-  Around 2004 Java tidied up its memory model first, and C++11 and C11 continued
-  that current by introducing *a memory model at the level of the language*. What
-  entered then was the definition of a data race, atomic types, and the six memory
-  orders. That we can today say in one line "a data race is undefined behaviour" is
-  thanks to that tidying — before it there was not even a language in which to write
-  that sentence.
-]
+```c
+int work(void) {
+    int rc = -1;
+    FILE *f = fopen("data", "r");
+    if (!f) goto out;
+    char *buf = malloc(1024);
+    if (!buf) goto close;
+    if (parse(f, buf) != 0) goto free_buf;
+    rc = 0;
+free_buf: free(buf);
+close:    fclose(f);
+out:      return rc;
+}
+```
+
+*Within one function* this is better. The flow is visible, the order of cleanup is
+written in the code, and the compiler checks it. `setjmp` is needed only when
+*several functions must be skipped over*.
 
 #recap[
   #dtable(
     columns: 2,
-    [*to remember*], [*the point*],
-    [data race], [not slowness but *outside the contract*. optimisation changes the code],
-    [`volatile`], [not a tool for sharing between strands. it is for hardware],
-    [the default order], [`seq_cst`. leaving it as it is is mostly the right answer],
-    [`fetch_add`], [it returns *the previous value*],
-    [two operations], [bundling them is not atomic — a CAS loop or a mutex],
-    [`weak`/`strong`], [`weak` if inside a loop],
-    [lock-free], [mostly yes for small integers. a hidden lock for large structs],
-    [data structures], [do not write them yourself],
+    [*What to remember*], [*The point*],
+    [What it is], [An escape hatch that rewinds the stack whole — not an exception],
+    [`setjmp`], [A macro. 0 when called directly, `val` when jumped to (0 becomes 1)],
+    [Context restriction], [Controlling expression, comparison with a constant, `!`, expression statement — four only],
+    [`longjmp`'s premises], [The saving function is still alive, and it is the same thread],
+    [`jmp_buf`], [An array type. Eight callee-saved slots plus room for a signal mask],
+    [Registers], [Only callee-saved ones are restored → stack locals live, register locals revert],
+    [Pointers], [`free` through a reverted pointer means a leak or a double free — measured],
+    [The `volatile` rule], [Automatic, non-`volatile`, changed in between → no guarantee (measured)],
+    [Resources], [Nobody cleans up — keep taking and releasing in one function],
+    [Today's choice], [Mostly return values and `goto cleanup`. Legitimate only in deep parsers],
   )
 ]
 
-We have seen operations that do not split. The next chapter is a tool in the
-opposite direction — C23's checked arithmetic, which asks according to the contract
-whether an operation *overflowed its vessel*.
+We have seen the two devices that cut a flow and jump — the signal that comes from
+outside, and the non-local jump that leaps from within. The next chapter is what
+recent standards added, and the long argument over "safe" functions.

@@ -1,286 +1,252 @@
 #import "../../book/lib.typ": *
 
-= Writing it three times — a tiny JSON
+= The outside world — files, streams, time, random numbers
 
 #prereq(
-  ([chapter 81, Errors are values], [returning failure as a value]),
-  ([chapter 82, Foundations — byte, view, checked arithmetic], [borrowed slices and overflow checks]),
-  ([chapter 83, Allocation — allocators, arenas, pools], [where memory comes from]),
-  ([chapter 84, Strings], [refuse rather than truncate]),
+  ([chapter 60, Streams in reality], [streams]),
+  ([chapter 25, Input], [input]),
 )
 
 #deepqa[
-  Part XII has walked through five contracts one at a time — errors are values,
-  a view is borrowed, the allocator is a parameter, state is not copied, refuse
-  rather than truncate. So what changes in code when all five apply *at once,
-  inside one program*?
+  Chapter 10's design had a stream be one where "the program does not know what it is
+  connected to", and chapter 58 said `fopen` reports failure with null. Then what
+  failure is most often missed in a file API?
 ][
-  What changes is not the syntax but *where things are written down*. Written in
-  plain C, container sizes, failure handling and the source of memory are
-  scattered through the code as convention; written with proven, the same things
-  come out in types, return values and parameters. Rather than describe the
-  difference, this chapter writes the same program several times and shows it.
+  *The partial write.* A failure to open is conspicuous, but the case of `write`
+  returning without writing all that was requested is easy to forget — it really
+  happens when the disk fills, when a signal cuts in, or when the other end is a pipe.
+  So this library has two editions. `proven_fs_write` returns *the number of bytes
+  actually written*, and `proven_fs_write_all` repeats until all is written and then
+  reports only success or failure. What most code wants is the latter, and the former
+  remains so as not to hide that fact.
 ]
 
 #organizer[
-#idx("JSON")  The chapter that closes Part XII — an exercise without exercises. We write a
-  very small JSON reader and writer in three editions — plain C, proven, and an
-  extended proven that takes nesting — and watch where they part company. The
-  last one shows how to handle depth without recursion. No new syntax appears.
-  What appears is *choice*.
+  From here we touch the operating system. Opening, reading and writing files,
+  buffered streams, reading and formatting time, and random numbers — those random
+  numbers that become entirely different things according to the purpose. Chapter 10's
+  story of streams and chapter 25's story of input are completed here as real APIs.
 ]
 
 #chapter-questions()
 
-== What we are building
+== The life of one file
 
-Build all of it and this becomes a parser textbook rather than this book. So the
-scope is narrowed like this.
+A file is the first resource in this part that touches *the outside world*. The
+discipline of making and giving back is the same as in the earlier chapters, but the
+kinds of failure are far more numerous.
+
+#demo("examples-en/ch89/fslife.c")
+
+The life cycle is four steps, and at each step failure comes as a value.
+
+#dtable(
+  columns: 3,
+  [*step*], [*function*], [*to know*],
+  [opening], [`proven_fs_open(scratch, path, mode)`], [*a scratch allocator* is needed (for path conversion)],
+  [writing, reading], [`_write`/`_write_all`, `_read`], [amount requested ≠ amount handled],
+  [nailing it down], [`proven_fs_sync(file)`], [closing alone does not leave it on the disk],
+  [closing], [`proven_fs_close(file)`], [it has a return value — there is something to check],
+)
+
+*The mode weaves bit flags.* Instead of a string like the standard `fopen`'s `"w+b"`,
+named values are joined with `|`.
 
 #dtable(
   columns: 2,
-  keycol: false,
-  [*In*], [*Out*],
-  [One flat object — `{ "key": value, ... }`], [Nesting (in the first two editions; the third solves it)],
-  [Four kinds of value — string, integer, boolean, null], [Reals, exponent notation],
-  [Reading and writing back (a round trip)], [`\u` escapes, comments],
-  [Where a failure happened], [Recovery, partial parses],
+  [*flag*], [*meaning*],
+  [`PROVEN_FS_READ`], [reading],
+  [`PROVEN_FS_WRITE`], [writing],
+  [`PROVEN_FS_APPEND`], [appending at the end],
+  [`PROVEN_FS_CREATE`], [create it if absent],
+  [`PROVEN_FS_TRUNC`], [empty it if present],
+  [`PROVEN_FS_CREATE_NEW`], [★ *fail if it already exists* — creating anew without a race],
 )
 
-Even narrowed, everything this part is about fits inside: the size of the
-container, pointing into someone else's memory, integer overflow, how failure is
-announced, and who provides the memory. Nesting is taken up in the last section
-by a *third edition* — without recursion, on an explicit stack.
+Two things are better than string modes. First, *the combination is visible* — there is
+no need to memorise what `"a+"` exactly is. Second, things absent from string modes,
+such as `CREATE_NEW`, can be expressed. When making a lock file or a temporary file,
+"fail if it already exists" is the only road that blocks a race condition (recall
+chapter 61's `tmpnam` story).
 
-== The plain C edition
+*Handles travel by value.* That the functions take a `proven_file_t` by value rather
+than by pointer is the mark of it, because what is inside is about one integer
+descriptor. So the discipline of not using that value again after closing is still a
+human's part.
 
-#demo("examples-en/ch89/json_plain.c")
+=== The convenience functions that read and write in one go
 
-It will read as familiar. This is *the most common shape* such a thing takes in
-C: fixed-size arrays to hold it, `char` arrays to copy strings into, `-1` plus a
-`char err[]` to report failure.
-
-This is not *bad* code. It is code that needs someone to keep it. The last line
-of the demonstration shows the price: given a value longer than the container,
-127 of 159 characters survived and the rest was *cut silently.* The single line
-`if (i + 1 < cap)` in `take_string` decided that, and the caller has no way of
-learning it happened.
+In half the cases in practice the file is small and may be handled whole. Then opening,
+reading and closing need not be woven by hand.
 
 #dtable(
   columns: 3,
-  [*Place*], [*What the code says*], [*What the code does not say*],
-  [Length of a value], [`char str[128]`], [What happens past 128 characters],
-  [Number of pairs], [`MAX_PAIRS 16`], [Who notices the seventeenth pair],
-  [Failure], [`return -1` + `err[]`], [What happens if the caller does not check],
-  [Numbers], [`strtol`], [That overflow must be read from `errno`],
-  [Memory], [A static array], [Whether the parser's usage is visible outside],
+  [*function*], [*what it does*], [*caution*],
+  [`proven_fs_read_all(alloc, path)`], [the whole file as bytes], [a large file eats memory],
+  [`proven_fs_read_all_u8str(alloc, path)`], [the whole file as a string], [the same. it does not check the encoding],
+  [`proven_fs_write_file(scratch, path, data)`], [writing it whole], [die in the middle and a half-written file is left],
+  [`proven_fs_write_file_atomic(...)`], [write to a temporary and swap], [★ no half-written file is left],
+  [`proven_fs_write_file_durable(...)`], [atomic + `sync`], [it survives a power cut. the slowest],
 )
 
-The right-hand column is this code's *oral tradition*. It lives in comments, in
-convention and in someone's memory — not in the types.
+The difference between the last three rows matters in practice. Code that overwrites a
+configuration file or saved data, *if it dies in the middle, leaves a file that is
+neither the original nor the new one*, and the standard practice that prevents it is
+"write to a temporary file and rename" (renaming is atomic within the same file system).
+`_atomic` does that work for you, and `_durable` hangs a `sync` on it as well so that it
+survives a power cut.
 
-== The proven edition
+#demo("examples-en/ch89/fileio.c")
 
-#demo("examples-en/ch89/json_proven.c")
+Several things stand out.
 
-It reads the same grammar and writes the same result. But the right-hand column
-of that table has moved to the left.
+*The path is a view too.* `proven_u8str_view_from_cstr("...")` — wherever the string
+came from, it is handled as a pointer and a length (chapter 86).
 
-*Values are not copied.* A string value is a `proven_u8str_view_t` — a borrowed
-slice pointing into the source buffer (chapter 82). With no container there is
-nothing to overflow and nothing to truncate. In exchange one contract appears:
-*it is valid only while the source lives.* That contract is written in the type's
-name.
+*Opening needs an allocator.* The signature's first argument is a `scratch` allocator,
+because temporary memory may be needed to turn the path into the form the operating
+system requires. Chapter 85's rule is honestly kept here too — *if it can allocate, it
+takes an allocator*.
 
-*Failure arrives as a value.* `jresult` returns a `proven_err_t` together with
-*where it stopped*. The last two lines of the demonstration are that in the
-flesh: when there is no room for another pair it refuses instead of trimming
-(`err 1`), and a number too large to hold is refused rather than wrapped
-(`err 9`).
+*What is read becomes a view.* Bind the buffer and the number of bytes read and from
+then on all of chapter 86's tools can be used. That is what the example used to divide
+the lines, and copying never happened once.
 
-*The source of memory is a parameter.* `json_parse` takes an arena
-(chapter 83). It does not know where the memory comes from and does not need to.
-Give it a static array and it runs without a heap; give it a heap allocator and
-it runs on the heap. Neither requires touching the parser.
-
-*Integer overflow is checked by hand.* `PROVEN_CKD_MUL` and `PROVEN_CKD_ADD`
-check at every carry. Not "return, then look at `errno`" but failure as a value
-at the moment of overflow.
-
-#dtable(
-  columns: 3,
-  [*Place*], [*Plain C*], [*proven*],
-  [String value], [Copied into `char str[128]` — cut if longer], [Borrowed as a `view` — no cut, a lifetime contract],
-  [Number of pairs], [Fixed `MAX_PAIRS`], [A `cap` the caller chooses; `NOMEM` beyond it],
-  [Failure], [`-1` plus a written reason], [`proven_err_t` plus the byte it stopped at],
-  [Number parsing], [`strtol` + `errno` (easy to forget)], [Checked arithmetic at every digit],
-  [Memory], [Static array (the parser decides)], [An arena (the caller decides)],
-  [Writing], [`snprintf` — cut if it does not fit], [A growing `u8str` — failure if it does not fit],
-)
-
-== One step further — nesting, without recursion
-
-The two editions so far read one flat object. Real JSON nests. How is that
-usually written? *Recursive descent*: when a value turns out to be an object,
-call yourself again to read what is inside. It is short and it reads well.
-
-That brevity has a price attached. *The input decides the depth.* Nest a
-thousand deep and a thousand frames pile up; nest a hundred thousand deep and
-the stack gives way. It is chapter 40 exactly — the stack is narrow (a few MiB
-usually), and when it overflows the program dies with no way to check for it.
-For a parser reading files other people wrote, that is an *attack surface*.
-
-So the extended edition uses no recursion. Both parsing and output are loops
-driven by an explicit stack. Depth becomes the length of an array, so crossing
-the limit can be *refused as a value* instead of collapsing the stack.
-
-#demo("examples-en/ch89/json_nested.c")
-
-The last two lines of the output are the point of the design. Given the same
-200-deep input, a limit of 32 refuses at the 32nd level (`err 2`), and a limit
-of 256 reads it through and builds 200 nodes. *Neither run dies* — depth is a
-setting, not an incident.
-
-=== What was used where
-
-This edition draws on the tools of Part XII across the board. Gathered in one
-place, each takes on one problem.
-
-#dtable(
-  columns: 3,
-  [*Tool*], [*What it takes on*], [*Without it*],
-  [Arena (chapter 83)], [Takes the memory of one parse in a lump and drops it in a lump], [Every node needs a matching `free`],
-  [Pool (chapter 83)], [Recycles slots of exactly one `jnode`], [Same-size allocations fragment the heap],
-  [Intrusive list (chapter 82)], [Hooks a child onto its parent — through a link inside the node], [A separate child array must be allocated and grown],
-  [Dynamic array], [Stacks the open containers — the *explicit stack*], [You end up leaning on the call stack (that is, recursion)],
-  [`view` (chapter 82)], [Borrows keys and strings from the source], [Every character needs a copy and a container],
-  [Checked arithmetic (chapter 82)], [Watches overflow at every carry], [One forgotten `errno` and it wraps],
-  [`proven_err_t` (chapter 81)], [Depth exceeded, no room, bad syntax — all as values], [Either death, or a silent trim],
-)
-
-*The intrusive list* earns its keep especially here. Rather than allocating an
-array for the children, each node carries one link (`proven_list_node_t link`)
-that threads it onto the parent's list. The link was created along with the node,
-so *adding a child costs no new allocation* — and one more place that could fail
-disappears.
-
-#qa[
-  Does dropping recursion not make the code longer and harder to read?
+#antipattern[
+  Trusting `size` and assuming that much was read
 ][
-  Longer, yes. What would be ten lines in a recursive version becomes thirty of
-  stack frames and state transitions. Recursion also reads more easily — it is
-  closer to the model in a person's head.
-
-  It is still written this way for one reason: *the input must not decide how
-  much resource is consumed.* In the recursive version depth eats the call
-  stack, an *invisible* resource that can be neither checked nor capped. With an
-  explicit stack, depth is `stack.len` — a *number you can see* — and the cap is
-  a parameter.
-
-  Out of that comes the working rule for code at a boundary (files, networks,
-  plug-ins): *do not read a format with depth using recursion.* If you do, put a
-  limit on the depth and count it.
+  ```c
+  proven_result_size_t sz = proven_fs_size(f);
+  proven_byte_t *buf = malloc(sz.value);
+  (void)proven_fs_read(f, (proven_mem_mut_t){ buf, sz.value });
+  process(buf, sz.value);      /* was that much really read? */
+  ```
+  A file's size and *the amount this read brought* are different. From pipes,
+  terminals and networks it comes a little at a time, and even a file may end in the
+  middle. The number `read` returned must be used, and that is why this library returns
+  the read result as a bundle. The fact chapter 25 stated — "input is not a keyboard
+  but a stream" — becomes a practical rule here.
 ]
 
-#realcase("Deep nesting is a real attack")[
-  "Depth bombs" are an old class of attack on JSON and XML parsers. Send a few
-  kilobytes with a hundred thousand brackets in it and a recursive parser
-  overflows the stack while reading it and the process dies — denial of service.
-  Stopping a server with a few dozen bytes of input is a good return on effort.
+== Streams — reading and writing with a buffer
 
-  That is why widely used parsers nearly all impose a depth limit. It is also why
-  this example takes `max_depth` as a parameter — and why the limit is set by the
-  *caller rather than the library*, since what counts as reasonable differs from
-  one place of use to another.
-]
+System calls are expensive. Call `write` one byte at a time and that cost accumulates
+as it stands. So standard C's `FILE*` kept a buffer (chapter 10's story of line
+buffering), and proven puts a *stream* in the same place — differing in two ways.
+
+- *The caller gives the buffer.* The stream does not allocate in secret.
+- *The failure of a flush comes as a value.* It is not quietly swallowed on closing.
+
+These two aim at the same problem. In buffered writing the real failure shows itself
+not in `write` but in the *flush*, and missing that failure creates data that "was
+believed successful but is not on the disk". It is also the place databases and file
+systems are most careful about (the reason `proven_fs_sync` exists separately).
+
+== Time — two different clocks
+
+Two different things are mixed together in time.
+
+- *Calendar time* — a time a human reads, like "5 August 2026, 09:00". It is used for
+  showing to users and leaving in records. Time zones, leap seconds and summer time are
+  entangled in it.
+- *Monotonic time* — a scale that does not go backwards. It is used for measuring
+  *elapsed time*.
+
+Mix the two and you get the famous bug. Measure elapsed time with a calendar clock and
+the moment the system adjusts the time or summer time changes, *a negative elapsed
+time* comes out. Let that value into a timeout calculation and it waits forever or
+expires at once.
+
+Date formatting uses the format syntax seen in chapter 58 as it is — named
+placeholders with width and fill specified, as in `"{year}-{month:0>2}-{day:0>2}"`.
+Unlike `strftime`'s `%Y-%m-%d`, the difference is that *there is no need to memorise
+what symbol means what*.
 
 #misconception[
-  "Removing recursion removes stack overflow"
+  "Time is just a number, so adding and subtracting is fine"
 ][
-  It does not remove it — it *moves* it. An explicit stack eats memory too. The
-  difference is that this memory sits on the heap (or in an arena), its length
-  can be counted, and a cap can be placed on it.
-
-  The point is not "recursion is bad" but *keep the resource where you can see
-  it*. If the depth is a constant you chose (as in code reading your own config
-  file), recursion is the better choice. If someone else chooses the depth, it is
-  better to hold that resource in your hand and count it.
+  Not in calendar time. A day is not always 86400 seconds (a summer-time transition
+  day is 23 or 25 hours), the lengths of months differ, and time zones change by
+  political decision. "A month later" is not arithmetic but a calendar rule. The
+  difference of *monotonic* times, on the other hand, may be handled as a plain number
+  — that is one more reason to use a monotonic clock for measuring elapsed time.
 ]
 
-== So what actually changed
+== Random numbers — the purpose settles the thing
+
+Few tools are as much "the same name, different demands" as random numbers. The
+library does not hide this but divides it into three.
+
+#demo("examples-en/ch89/rng.c")
+
+*Reproducible random numbers* (`proven_xoshiro256ss_t`) are for simulation, games and
+testing. The same seed gives the same sequence — the very reason the example's two
+lines are identical, and also the property that lets a failed test be reproduced. They
+are fast but *predictable*, so they are never used for secrets.
+
+*Random numbers for secrets* (`proven_random_bytes`) come from the operating system's
+cryptographic source of randomness. They are used for values *an attacker must not
+guess* — keys, tokens, session identifiers.
+
+The third is the compromise between the two, `proven_chacha_rng_t`, which takes a seed
+once from the OS source of randomness and then continues a cryptographically secure
+sequence quickly.
+
+#realcase[
+  The accidents predictable random numbers made
+][
+  Accidents breaking this distinction have happened repeatedly. An online card game
+  whose hands were predicted because it used the time as a seed, a case where session
+  identifiers made with a fast random generator let one into somebody else's account,
+  and, representatively, the 2008 incident in which Debian's OpenSSL patch deleted the
+  entropy-gathering code so that *the number of generable keys shrank to a few tens of
+  thousands*. The last required every key already made to be discarded. The lesson is
+  summed up in one line of the library's documentation — *random numbers for secrets
+  come only from a cryptographic source of randomness.*
+]
 
 #qa[
-  The proven edition is the longer one. Where is the gain?
+  What becomes of random numbers for secrets if there is no operating system?
 ][
-  What it is longer by is *the checking that should have been there.* The plain
-  edition's brevity was bought by not checking, and that checking did not vanish
-  — it moved onto a person.
-
-  Count the difference and it comes to this. In the plain edition there are five
-  places a person must remember to be careful: the container size, the maximum
-  pair count, checking the return value, checking `errno`, and the size of the
-  static array. In the proven edition those five moved into types, parameters and
-  return values. *What had to be remembered became what can be read* — that is
-  the gain.
-
-  And it grows with the code. Five things can be remembered in a 200-line parser.
-  They cannot be remembered in a 20,000-line program.
+  They cannot be obtained, so `proven_random_bytes` *returns a falsehood* — and this is
+  an important design decision. Many libraries slip back to the time or an address
+  value in this situation, and then you have the worst state of "believed safe but
+  predictable". This library does not fall back; it declares failure. If the board has a
+  real source of entropy (a hardware random number generator) it can be registered and
+  used. *Rather than quietly give something bad, say there is none* — another face of
+  the principle met continually in this part.
 ]
 
-#qa[
-  Is the plain edition useless, then?
-][
-  No — and this distinction is the most important thing in the chapter.
+== Memory mapping
 
-  The plain edition is excellent *when the conditions are narrow*: input you made
-  yourself, sizes you know, code that never leaves this program. There its
-  brevity is the virtue. What is dangerous is when that code *crosses a
-  boundary*. The moment it reads a file someone else wrote, or bytes off a
-  network, or runs inside a long-lived program, all five unwritten things become
-  seeds of an incident.
+There is one more way of reading a file. Hanging the file whole *in the address space*
+and accessing it with a pointer — `proven_mmap_*` is that window. It is advantageous
+when reading a large file by roaming randomly over it, and it is used when several
+processes share the same file.
 
-  That is why chapter 79's five bugs have been shipping for half a century. Not
-  because the code was bad, but because *code written for narrow conditions moved
-  somewhere wide.*
-]
-
-#misconception[
-  "Using a library stops you making these mistakes"
-][
-  A library does not *stop* mistakes. It *exposes* them. Ignore the `jresult` in
-  the proven edition and the outcome matches the plain edition — except that
-  writing it that way is more awkward, and where `[[nodiscard]]` is attached the
-  compiler speaks up (chapter 81).
-
-  What a tool can do ends at *making the correct path the easy path*. Beyond that
-  it is always the user's part — which is also why this book explained the
-  problems before it introduced the library.
-]
-
-#realcase("Where a real JSON parser gets harder")[
-  What all three editions left out is where the real difficulty lives. `\u`
-  escapes must handle UTF-16 surrogate pairs (chapter 9), and reals bring along
-  the rounding problems of chapter 8 — read `0.1` and write it back, and do the
-  same characters come out?
-
-  That is why widely used parsers run to thousands of lines, and it is worth
-  remembering that a good share of those lines are not features but *boundaries*.
-]
+The price is clear too. If the file is truncated while the mapped region is being
+touched, the program can receive a signal and die, and portability is lower than the
+file API's. So this tool is not "what is used by default" but "what is chosen when
+there is a reason".
 
 #recap[
+  The outside world in summary.
+
   #dtable(
-    columns: 2,
-    [*What to keep*], [*The point*],
-    [One program, two editions], [Not the syntax but *what gets written down* differs],
-    [Plain C], [Short. The price of that brevity is five things a person must remember],
-    [proven], [Longer. It is longer by the checks moved into types, returns and parameters],
-    [Cut versus refuse], [Failure comes back as a value instead of a silent trim],
-    [Source of memory], [The caller provides it; the parser does not decide],
-    [Boundaries], [Code written for narrow conditions gets dangerous somewhere wide],
-    [Nesting and depth], [An explicit stack instead of recursion — depth becomes a setting, not an incident],
-  )
+  columns: 3,
+    [*what it does*], [*API*], [*to beware of*],
+    [open and close], [`proven_fs_open/close`], [needs a scratch allocator],
+    [reading], [`proven_fs_read`], [amount requested ≠ amount read],
+    [writing], [`proven_fs_write` / `_write_all`], [partial writes],
+    [nailing it to the disk], [`proven_fs_sync`], [flush ≠ sync],
+    [buffered I/O], [`proven_stream_*`], [the caller gives the buffer],
+    [the current time], [`proven_time_now_datetime`], [not used for measuring elapsed time],
+    [date formatting], [`proven_time_u8_fmt`], [named placeholders such as `{year}`],
+    [reproducible random], [`proven_xoshiro256ss_*`], [not used for secrets],
+    [random for secrets], [`proven_random_bytes`], [a falsehood if absent — it does not fall back],
+    [memory mapping], [`proven_mmap_*`], [only when there is a reason],
+)
 ]
 
-Part XII ends here. We have seen the five contracts one at a time, and finally
-watched all five meet inside one program, written three times. The last part closes the
-book — C in practice, the embedded toolbox, and everything gathered up.
+What remains now is the boundaries — the way of running several things overlapped, and
+the place with no operating system at all. The last chapter closes this part.

@@ -213,7 +213,7 @@ compile, like `cond ? 1 : 2.0`, do so *after both sides are converted to the sam
 type*. The principle that an expression's value has one static type (chapter 23)
 is kept here too. If you need a choice that splits types, there are only two ways
 — make a type holding "one of several types" with chapter 45's tagged union, or
-choose the branch at compile time with chapter 53's `_Generic`.
+choose the branch at compile time with chapter 55's `_Generic`.
 
 There is one more convenience rule on the pointer side. If one side is a null
 pointer constant the result takes the other side's pointer type — the example's

@@ -1,195 +1,264 @@
 #import "../../book/lib.typ": *
 
-= Streams in reality — `<stdio.h>` ①
+= The terrain of the standard library
 
 #prereq(
-  ([chapter 10, The origin of streams], [the origin of streams]),
-  ([chapter 22, Output], [output in reality]),
+  ([chapter 40, Safe input], [the traps of the standard functions]),
+  ([chapter 16, The general shape of compilation], [a library is linked in]),
 )
 
 #deepqa[
-  Chapter 10 said a stream is "a band whose other end the program does not know",
-  and that this is why the same program serves screen, file and other programs
-  alike. Then *when* do the bytes a program wrote actually arrive at their
-  destination?
+  Chapter 16 said the linker finds `printf`'s body in the standard library and
+  joins it up, and chapter 40 said `gets` was *removed* from the standard. Who
+  settles the standard library, and how does it change?
 ][
-  Usually not at once. The standard library keeps a *buffer* per stream, gathers
-  bytes there and sends them out in one go — because system calls are expensive (we
-  meet this again in Part XII). There are three ways of deciding when to empty it.
-  *Full buffering* is when the buffer fills, *line buffering* when a newline is
-  met, *unbuffered* is immediately. Standard output connected to a terminal is
-  usually line-buffered, and when redirected to a file it turns into full
-  buffering — meaning *the moment at which the same program's output appears
-  changes with what it is connected to*, and that is this chapter's first trap.
+  The language standard settles it along with the language — the C standard
+  document pins down not only the grammar but also *the list of libraries that must
+  be provided and the contract of each function* (hence "the C standard library").
+  The speed of change is as slow as the language's, and removing something is far
+  slower still — the reason `gets`'s funeral took decades, and the key to this
+  library's character.
 ]
 
 #organizer[
-  We look at the floor beneath the header used most. How a stream is really opened
-  and closed, when the buffer is emptied, where failure shows itself — and the
-  misuse of `feof`, the place introductory books get wrong over and over. The
-  notion of a stream learned in chapter 10 becomes an API here.
+#idx("standard library")  We spread out a map of the standard library we have
+  merely been using until now — what toolboxes there are, and what to trust and
+  what to beware of. And why this library has its "thin and old" appearance, down
+  to the historical reason.
 ]
 
 #chapter-questions()
 
-== Open, write, close — failure can happen three times
+== The map — the toolboxes
 
-#demo("examples-en/ch58/streams.c")
+Group the headers you meet often into families and the terrain comes into view at
+a glance.
 
-It is worth noticing that the example checks for failure in three places.
+#dtable(
+  columns: 2,
+  [*family*], [*representative headers and content*],
+  [input and output], [`<stdio.h>` — streams, the printf/scanf families, files],
+  [strings and memory], [`<string.h>` — copying, comparing, searching; `<ctype.h>` — character classification],
+  [numbers], [`<stdlib.h>` — conversion and random numbers, `<math.h>` — mathematical functions, `<stdint.h>`, `<limits.h>`, `<float.h>` — the limits of types],
+  [memory management], [`<stdlib.h>` — the malloc/free family],
+  [time and environment], [`<time.h>`, the environment access in `<stdlib.h>`],
+  [contracts and diagnosis], [`<assert.h>`, `<errno.h>`],
+  [the modern additions], [`<stdbool.h>` (C99, made unnecessary by C23), `<stdatomic.h>` and `<threads.h>` (C11), `<stdckdint.h>` (C23 checked arithmetic)],
+)
 
-*① `fopen`* — on failure it returns null. The reason is left in `errno`, and
-`perror` prints it as a sentence a human can read (chapter 70). The file may not
-exist, permission may be lacking, or too many files may be open.
+Two things stand out in this list. First, *it is thin* — there are no data
+structures (lists, hash tables), no regular expressions, no networking, no
+graphics. Second, *it is old* — most of it was in C89, and what has newly entered
+can be counted on the fingers.
 
-*② Writing* — `fprintf` returns the number of characters printed and gives a
-negative value on failure. Code that checks it is rare, but if the disk fills or a
-pipe breaks it shows itself here.
+== Why it is thin — design and history
 
-*③ `fclose`* — here is the real trap. It is the place where what remained in the
-buffer is finally sent out, so *it is common for a write failure to show itself
-for the first time on closing*. A program that must not lose data therefore always
-checks `fclose`'s return value.
+The reason lies where C grew up. C was born as a language for making operating
+systems (chapter 4), and it had to write in the same language not only programs
+running *on top of* an operating system but the operating system *itself* and
+embedded firmware too. In such places there may be no file system, no dynamic
+allocation, not even an operating system — so the standard library was narrowed to
+"the minimum that can exist anywhere" (the reason the standard separately defines
+a freestanding environment). Abundance was given up and portability gained.
 
-#antipattern[
-  Ignoring the failure of closing
-][
-  ```c
-  fprintf(f, "%s\n", important);
-  fclose(f);                  /* nobody asked whether it failed */
-  puts("saved");              /* it may in fact not have been saved */
-  ```
-  In buffered writing, the moment at which "it succeeded" may be said is *after
-  closing has succeeded*. If it must truly be nailed to the disk, flush with
-  `fflush` before closing and call the platform's synchronisation call (`fsync` and
-  the like) as well — that is what a database does.
-]
+And the thinness came at a price — the world made what it needed in the end, and
+the result is the forest of platform-specific APIs and third-party libraries. That
+is the background of the saying "in C, choosing libraries is half the work" —
+chapter 40's five disciplines are about what to demand of that choice.
 
-== How to know the end of a file — the misuse of `feof`
+== An anatomy of the output format string
 
-The most widespread wrong answer is here.
+This is the place to take apart head on the function used most. In chapter 22 we
+learned only the minimal set (`%d`, `%s`, `%%`), but `printf`'s format is in fact
+a small language of five pieces.
 
-#demo("examples-en/ch58/feof_bad.c")
+#align(center, block(inset: (y: 4pt))[
+  `%` `[flags]` `[width]` `[.precision]` `[length]` `conversion`
+])
 
-Why is `while (!feof(f))` wrong? `feof` is *not a prophet but a recorder* — the
-mark saying "the end of the file was reached" is turned on only *after* a read has
-failed. So right after reading the last value it is still off, the loop turns once
-more, and the result of the failed read (= the previous value, unchanged) is used
-as it stands. That 30 was printed twice in the example is the evidence.
+Reading from the back is quicker to understand. The *conversion* settles "as what
+shall it be printed" — this alone is required — and the rest is decoration laid on
+top.
 
-The rule is one. *Control the loop by the reading function's return value.* `feof`
-and `ferror` are used after the loop ends, to tell "why did it end".
+- *flag*: `-` left-align, `0` fill the spare places with zeros, `+` a sign even on
+  positives, space a space before positives, `#` alternative form (`%#x` attaches
+  `0x`).
+- *width*: the minimum number of characters. If short it fills, if over it *does
+  not cut* — width is a lower bound, not an upper one.
+- *precision*: begins with `.`. For reals it is decimal places, for strings the
+  *maximum* length, for integers the minimum number of digits.
+- *length modifier*: tells the width of the argument. `l` (long), `ll` (long
+  long), `z` (`size_t`), `h` (interpret narrowed to short).
+
+Write `*` in the width or precision place and that value can be passed as an
+argument. When printing a string that travels as "pointer and length", like
+chapter 10's view, `%.*s` comes in handy.
+
+#demo("examples-en/ch58/fmtspec.c")
+
+There are several things to read here. `%06d` becoming `000042` is because the `0`
+flag fills with zeros instead of spaces, and `%.3s` stopping at `pro` is because
+for strings precision is *maximum length*. The `0x` of `%#x` was attached by the
+`#`. `%g` shortening to `3.14159` is because that conversion automatically chooses
+the shorter of `%e` and `%f`.
+
+The length modifier is not decoration but *a contract*. As chapter 55 showed, type
+information does not ride along into variadic arguments, so `printf` reads the
+stack at exactly the width the format stated. That is why code printing a `size_t`
+with `%d` quietly goes out of step on 64-bit — 8 bytes were put in and only 4 are
+taken out.
 
 #dtable(
   columns: 3,
-  [*function*], [*success*], [*end or failure*],
-  [`fgets`], [the buffer pointer], [null — tell them apart with `feof`/`ferror`],
-  [`fscanf`], [the number of items filled], [0 (format mismatch) or `EOF`],
-  [`fgetc`], [the character read (an unsigned char as an int)], [`EOF`],
-  [`fread`], [the number of *elements* read], [fewer than requested means the end or an error],
+  [*type*], [*output format*], [*note*],
+  [`int`], [`%d` `%i`], [the basic form],
+  [`unsigned int`], [`%u` `%x` `%o`], [hexadecimal when looking at bits],
+  [`short`], [`%d`], [it is promoted, so `%hd` is optional],
+  [`long`], [`%ld`], [],
+  [`long long`], [`%lld`], [],
+  [`size_t`], [`%zu`], [★ printing it with `%d` goes out of step],
+  [`ptrdiff_t`], [`%td`], [],
+  [`double`], [`%f` `%e` `%g`], [`float` is promoted and the same],
+  [`long double`], [`%Lf`], [],
+  [`char` (as a character)], [`%c`], [the argument is promoted to int],
+  [`char *`], [`%s`], [it must be NUL-terminated],
+  [`void *`], [`%p`], [the form is implementation-defined],
+  [`bool`], [`%d`], [printed as 0 or 1],
 )
 
 #misconception[
-  "The result of `fgetc` may be put in a `char`"
+  "`%f` when printing a `float`, `%lf` for a `double`"
 ][
-  It may not. `fgetc` returns an `int`, and that value is either *a character in
-  0–255* or *`EOF`* (usually −1). The moment it goes into a `char` the two can no
-  longer be told apart — on an implementation where `char` is signed, a 0xFF byte
-  becomes −1 and is identical to `EOF`, and where it is unsigned, `EOF` becomes 255
-  and it never ends. So `int c; while ((c = fgetc(f)) != EOF)` is the canonical
-  form. This one line is also the idiom most often miscopied in introductions to C.
+  Half right. In *output*, a `float` goes over as a `double` by the default
+  argument promotion (chapter 28), so both are `%f` — the standard permits `%lf`
+  too, but it means the same. The real root of the confusion is in *input*. `scanf`
+  takes addresses, so no promotion happens and `float *` and `double *` must be
+  distinguished — `%f` is `float *` and `%lf` is `double *`. It is the most famous
+  asymmetry of these two functions: the same letter meaning different things
+  depending on the direction.
 ]
 
-== Lines longer than the buffer
+== The input format string — what differs
 
-That is what the last part of the example shows. If the buffer is too small
-`fgets` reads *only that far* and stops — it is not an error. So without checking
-whether a newline is in there, what you believed to be "one line" may in fact be
-the front piece of a line.
+The formats of the `scanf` family overlap in their letters with output and so look
+like the same language, but what they do is the opposite and their rules differ.
+Five points of difference.
 
-Read `one\n` with a 4-byte buffer and it comes split in two: `one` (no newline)
-and `\n` (a newline only). When code handling long lines in the field forgets this
-fact, one line is quietly processed as two records.
+*First, the argument is not a value but the address of a place to hold it.* Leave
+out the `&` and it mistakes an integer for an address and tries to write at that
+address — the reason the `&` met in chapter 25 is compulsory here.
+
+*Second, whitespace in the format means "any number of whitespace characters (none
+is fine too)".* In output a space is simply one space, but in input it is *an
+instruction to skip*. Most conversions skip leading whitespace by themselves — the
+exceptions are `%c` and `%[`, which read whitespace as characters too.
+
+*Third, ordinary characters in the format must match the input exactly.* `"x=%d"`
+requires the input to begin with `x=`. If it does not match it stops with *a
+matching failure*.
+
+*Fourth, the return value is not the number of characters printed but the number
+of items successfully assigned.* So when three were to be read and 2 comes back,
+one was not filled, and that argument *is left untouched*. If there was no input
+at all, EOF (a negative value) comes back — it must be distinguished from 0.
+
+*Fifth, always give `%s` a maximum width.* A `%s` without a width writes without
+knowing the destination's size, the same danger as chapter 40's `gets`.
+
+#demo("examples-en/ch58/scanspec.c")
+
+Going through the output line by line makes the rules visible. `mismatch` and
+`nonnum` both have `k=0`, and what matters is that the argument remains as it was —
+use it without checking the value and you mistake *the previous value* for new
+input. `empty`'s `-1` means "the input has ended", not "the format was wrong".
+`partial` is the case where only the leading integer was read and it stopped
+after. `set`'s `%15[^,]` means "at most 15 characters that are not a comma", used
+for cutting a line with separators.
+
+#dtable(
+  columns: 3,
+  [*type*], [*input format*], [*argument*],
+  [`int`], [`%d`], [`int *`],
+  [`unsigned`], [`%u` `%x`], [`unsigned *`],
+  [`long`], [`%ld`], [`long *`],
+  [`long long`], [`%lld`], [`long long *`],
+  [`size_t`], [`%zu`], [`size_t *`],
+  [`float`], [`%f`], [★ `float *`],
+  [`double`], [`%lf`], [★ `double *`],
+  [`long double`], [`%Lf`], [`long double *`],
+  [one character], [`%c`], [`char *` (it reads whitespace too)],
+  [a word], [`%99s`], [`char[100]` — width compulsory],
+  [a set of characters], [`%15[^,]`], [`char[16]`],
+  [skipping], [`%*d`], [read but do not store],
+)
+
+#realcase[
+  What one format brought down — the format string vulnerability
+][
+  We complete here the accident chapter 22 brushed past by name only. Code that
+  puts a user-given string straight into the format position (`printf(user)`) lets
+  an attacker input `%s` or `%x` and read the stack, and in the days when the old
+  `%n` (which *writes* the number of characters printed to where the argument
+  points) was still alive it led even to arbitrary memory writes. Around 1999 this
+  class was discovered on a large scale and several servers including wu-ftpd were
+  remotely compromised. The lesson is one line — *the format string must always be
+  a constant written by the program, and user input goes in only as an argument*
+  (`printf("%s", user)`).
+]
 
 #qa[
-  What is done when the line length is unknown?
+  Then may input parsing always be done with `sscanf`?
 ][
-  There are three roads. First, *a big enough buffer plus a newline check* — if
-  there is no newline, read the rest away or treat it as an error. Second, *reading
-  while growing it yourself* — gather one character at a time with `fgetc` and
-  enlarge the buffer when needed (chapter 42's dynamic allocation). Third, *a
-  function the platform gives* — POSIX's `getline` enlarges by itself, but it is
-  not standard. To write with the standard alone the second is the right answer,
-  and using a library so as not to write that code every time is Part XII's story.
+  For simple formats it is enough. But `sscanf` does not tell you *where and why it
+  failed* — all it gives back is the number of successful items, so "the third
+  field was not a number" and "the line ended early" cannot be distinguished.
+  Moreover it does not detect integer overflow (give `99999999999` to a `%d` and it
+  is outside the contract), and you cannot know how many characters were consumed
+  up to the failing place either. When the format grows complex and the input came
+  from somebody else, a tool is needed in which failure appears as a value and the
+  remaining input can be held in the hand — Part XII's scanner is that answer.
 ]
 
-== Text mode and binary mode
+== The places to beware
 
-That is the `b` attached to `fopen`'s second argument. On the Unix family there is
-no difference, but on Windows there is — text mode turns `\n` into `\r\n` when
-writing and turns it back when reading. So opening a binary file in text mode
-quietly changes the bytes.
+Gathering the traps this book has met along the way, from the library's point of
+view, gives this.
 
-#platform[
-  Windows' line-ending conversion
+- *Functions that do not take a size* — the `strcpy`, `strcat` and `sprintf`
+  families do not know the size of the destination vessel (chapter 40's `gets` was
+  the extreme). The alternatives are the editions that take a size (`snprintf`) or
+  components that manage the boundary.
+- *Functions whose return value reports failure* — `malloc`, `fopen` and `fgets`
+  give null on failure (chapter 48's discipline: do not use without checking).
+- *The global state called `errno`* — many functions leave the reason for failure
+  in a global variable. Some do not clear it even on success, so the convention of
+  "set it to 0 just before the call and read it just after" must be kept — a
+  textbook case showing the inconvenience of global mutable state (chapter 41).
+- *Locale- and culture-dependent functions* — character functions such as
+  `toupper` and `strtod`'s interpretation of the decimal point behave differently
+  according to the locale setting. When handling a data format it is safer to use
+  locale-independent processing (the same grain as chapter 9's "do not guess the
+  encoding").
+- *Functions that return a static buffer* — the `asctime` and `strtok` families
+  reuse a fixed place inside, so the next call overwrites the previous result. It
+  is especially dangerous in a program running along several strands
+  (chapter 12's multicore).
+
+#qa[
+  Then is the standard library so old that it is better not used?
 ][
-  When handling binary data (images, compressed files, serialised structs) always
-  open with `"rb"` or `"wb"`. Open in text mode and a 0x0A byte grows into 0x0D
-  0x0A, and on reading it shrinks the other way — *the file's size and content
-  differ*. It is the place where the CR/LF story seen in chapter 9 is replayed in
-  the file API.
-
-  Conversely, opening a text file in binary mode on Windows leaves a `\r` at the
-  end of the line, so a line read with `fgets` ends with an invisible `\r` — the
-  cause of a failing comparison is often here.
+  Not at all — *that it is everywhere* is an overwhelming virtue. Components
+  existing with the same contract on every platform and every compiler are only
+  these, and most of this book's examples ran with the standard library alone. The
+  right attitude is not "do not use it" but *knowing which function has which
+  contract and choosing accordingly* — choosing the editions that take a size,
+  checking return values, and keeping the conventions when using functions that
+  lean on global state. And laying components with checking built in over the
+  repeated danger zones (string assembly, input parsing) — the next chapter is that
+  practice.
 ]
 
-#antipattern[
-  `fflush(stdin)`
-][
-  ```c
-  scanf("%d", &n);
-  fflush(stdin);      /* the intent is to empty the input buffer — it is outside the contract */
-  ```
-  `fflush` is a function for *output* streams. Using it on an input stream is
-  behaviour the standard does not define (some implementations merely support it as
-  an extension), and it cannot be used in portable code. To throw away the
-  remaining input you must read it away yourself.
-
-  ```c
-  int c;
-  while ((c = getchar()) != '\n' && c != EOF) { }
-  ```
-]
-
-== File position and size
-
-`fseek` and `ftell` handle position, but with restrictions. On a text stream the
-value `ftell` returns is *not guaranteed to be a byte offset*, and `fseek` is safe
-only with that value or with the combination of `SEEK_SET` and 0. On a large file
-`long` may be too small, so the non-standard `fseeko` and `ftello` (POSIX) or a
-platform API become necessary.
-
-The idiom "to learn a file's size, go to the end and `ftell`" is safe only in
-binary mode, and even then it is meaningless if the file is changing.
-
-#recap[
-  `<stdio.h>` streams in summary.
-
-  #dtable(
-    columns: 3,
-    [*place*], [*rule*], [*if got wrong*],
-    [`fopen`], [check for null], [null dereference],
-    [writing], [check the return value (optional), check `fclose` (compulsory)], [quiet data loss],
-    [loop control], [by the reading return value], [misuse of `feof` — the last value duplicated],
-    [`fgetc`], [put it in an `int`], [confusing `EOF` with 0xFF],
-    [`fgets`], [check for a newline], [a long line processed split],
-    [binary files], [`"rb"`/`"wb"`], [byte corruption on Windows],
-    [emptying input], [read it away yourself], [`fflush(stdin)` is outside the contract],
-    [position], [byte meaning only in binary mode], [misunderstanding in text mode],
-  )
-]
-
-We have seen the skeleton of streams. The next chapter is the functions that
-actually read and write on top of it — and the story of a function *deleted* from
-the standard.
+The map is spread out. The next part (Part XI) walks the regions of this map one
+by one and faces head on the places where accidents really happen in each header —
+streams and files, strings, conversion and allocation, characters and locales,
+numbers and time, and diagnosis and control.

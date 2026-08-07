@@ -66,12 +66,14 @@ That the word `static` is used with different meanings in chapter 41 (static
 lifetime) and here (internal linkage) is C's famous word recycling — *inside a
 function* static means duration, *at file level* it means linkage.
 
-Internal linkage is a basic weapon in practice. Chapter 40 said "C has no
-namespaces, so a prefix stands in for the fence"; attach `static` to helper
+Internal linkage is a basic weapon in practice. C gives the programmer no way to
+dig a new name space (chapter 52), so every external name meets in one yard; attach
+`static` to helper
 functions and variables used only inside a file and those names never go out into
 the yard at all — no collisions, and the compiler can optimise more aggressively
 (knowing that name cannot be called from another file — an honest signal to
-chapter 13's editor).
+chapter 13's editor). This weapon and the rest of the defences against name
+collisions are the subject of chapter 53.
 
 #misconception[
   "Putting a function definition in a header is convenient, so it is fine"

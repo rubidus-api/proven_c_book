@@ -115,7 +115,7 @@ and connecting to a truncated address.
 
 The listing's `copy_line` *does nothing and returns failure* when the text will not
 fit. That is the lesson of the long-standing problem of `strncpy` not reporting
-truncation (chapter 59).
+truncation (chapter 61).
 
 === 5. On failure, touch no output
 
@@ -149,15 +149,15 @@ speaks up when a check is forgotten.
   Does that mean the standard library is not enough?
 ][
   Less that it is not enough than that *you have to rebuild it every time.* The
-  standard library carries the practice of the 1970s and 80s intact (chapters 59
-  and 60), and it gives none of the five disciplines above as a default. So every
+  standard library carries the practice of the 1970s and 80s intact (chapters 61
+  and 62), and it gives none of the five disciplines above as a default. So every
   real codebase, without exception, lays *its own thin layer* on top — a layer that
   puts a safe shell around strings, parsing and number conversion.
 
   Make that layer a library and a whole team stands on the same discipline. This
   book has one such example ready — `proven`, written by the author, and *Part XII*
-  covers its design and use. Chapter 81, "Errors are values", takes up disciplines
-  1 and 2 at the library level; chapter 84, "Strings and text", takes up 3 and 4.
+  covers its design and use. Chapter 83, "Errors are values", takes up disciplines
+  1 and 2 at the library level; chapter 86, "Strings and text", takes up 3 and 4.
 
   What matters is not which library you use but *whether the discipline is carved
   into the component.* Choose another with the same idea, or build your own.
