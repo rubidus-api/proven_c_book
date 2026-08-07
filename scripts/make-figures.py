@@ -282,6 +282,175 @@ def fig_padding(L):
 
 
 
+# ── F9. 부호 없는 정수는 원 위를 돈다 (7장) ──────────────────
+def fig_int_wheel(L):
+    import math
+    w, h = 760, 380
+    cx, cy, r = 380, 208, 104
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+    out.append(text(w / 2, 46, L["outer"], size=11.5, weight="bold"))
+    out.append(text(w / 2, 64, L["inner"], size=11, fill="#666"))
+    out.append(f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="#111" '
+               f'stroke-width="1.6"/>')
+
+    # 눈금 8개: 0, 32, 64, ... 224 와 255
+    marks = [(0, "0"), (32, "32"), (64, "64"), (96, "96"), (128, "128"),
+             (160, "160"), (192, "192"), (224, "224")]
+    for v, label in marks:
+        a = -math.pi / 2 + 2 * math.pi * v / 256
+        x, y = cx + r * math.cos(a), cy + r * math.sin(a)
+        out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.4" fill="#111"/>')
+        lx, ly = cx + (r + 20) * math.cos(a), cy + (r + 20) * math.sin(a) + 4
+        out.append(text(lx, ly, label, size=11.5))
+        # 안쪽에 부호 있는 해석
+        sv = v if v < 128 else v - 256
+        ix, iy = cx + (r - 22) * math.cos(a), cy + (r - 22) * math.sin(a) + 4
+        out.append(text(ix, iy, str(sv), size=10.5, fill="#666"))
+
+    # 255 → 0 으로 넘어가는 자리
+    a255 = -math.pi / 2 + 2 * math.pi * 255 / 256
+    x, y = cx + r * math.cos(a255), cy + r * math.sin(a255)
+    out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="3.4" fill="#111"/>')
+    out.append(text(x - 28, y - 12, "255", size=11.5))
+    out.append(arrow(cx + 120, cy - r + 6, cx + 10, cy - r - 4, sw=2.0))
+    out.append(text(cx + 210, cy - r + 10, L["wrap"], size=11.5))
+
+    out.append(text(w / 2, 362, L["note"], size=11.5))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F10. 넓은 그릇으로 옮길 때 앞칸을 무엇으로 채우는가 (7장) ─
+def fig_sign_extend(L):
+    w, h = 760, 280
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+    bw = 15
+
+    def row(y, label, fill_bits, value_bits, note):
+        out.append(text(30, y + 26, label, size=12, weight="bold", anchor="start"))
+        x0 = 214
+        for i, b in enumerate(fill_bits + value_bits):
+            x = x0 + i * bw
+            filled = i < len(fill_bits)
+            out.append(box(x, y, bw, 34, sw=1.1))
+            out.append(text(x + bw / 2, y + 23, b, size=10,
+                            fill="#666" if filled else "#111",
+                            weight="normal" if filled else "bold"))
+        out.append(f'<line x1="{x0 + len(fill_bits) * bw}" y1="{y - 4}" '
+                   f'x2="{x0 + len(fill_bits) * bw}" y2="{y + 38}" '
+                   f'stroke="#111" stroke-width="2.2"/>')
+        out.append(text(x0 + len(fill_bits) * bw / 2, y - 10, L["filled"], size=10.5, fill="#666"))
+        out.append(text(x0 + len(fill_bits) * bw + len(value_bits) * bw / 2, y - 10,
+                        L["original"], size=10.5))
+        out.append(text(x0 + 32 * bw, y + 52, note, size=11.5, anchor="end",
+                        weight="bold"))
+
+    row(74, L["unsigned"], ["0"] * 24, list("11000000"), L["u_note"])
+    row(174, L["signed"], ["1"] * 24, list("11000000"), L["s_note"])
+    out.append(text(w / 2, 264, L["note"], size=11.5))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F11. 통상 산술 변환의 결정 흐름 (28장) ────────────────────
+def fig_conversions(L):
+    w, h = 760, 350
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+    bx, bw_, bh = 90, 380, 46
+    steps = [(L["s1"], L["e1"]), (L["s2"], L["e2"]), (L["s3"], L["e3"]), (L["s4"], L["e4"])]
+    y = 48
+    for i, (s_, e_) in enumerate(steps):
+        out.append(box(bx, y, bw_, bh, sw=1.6))
+        out.append(text(bx + 14, y + 20, f"{i + 1}. {s_}", size=12, anchor="start",
+                        weight="bold"))
+        out.append(text(bx + 14, y + 38, e_, size=11, anchor="start", fill="#444"))
+        if i < len(steps) - 1:
+            out.append(arrow(bx + bw_ / 2, y + bh, bx + bw_ / 2, y + bh + 22, sw=1.6))
+        y += bh + 22
+
+    # 오른쪽 예시
+    out.append(box(bx + bw_ + 40, 48, 200, y - 70, sw=1.2, dash="5 4"))
+    out.append(text(bx + bw_ + 140, 72, L["ex_title"], size=12, weight="bold"))
+    for k, line in enumerate(L["ex"]):
+        out.append(text(bx + bw_ + 56, 100 + k * 22, line, size=11, anchor="start"))
+    out.append(text(w / 2, 336, L["note"], size=11.5))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F12. 배열이 포인터로 무너질 때 잃는 것 (37장) ─────────────
+def fig_decay(L):
+    w, h = 760, 272
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+
+    # 왼쪽: 배열
+    x0, y0, cw = 60, 78, 52
+    out.append(text(x0, y0 - 14, L["array"], size=12, weight="bold", anchor="start"))
+    for i in range(5):
+        out.append(box(x0 + i * cw, y0, cw, 44))
+        out.append(text(x0 + i * cw + cw / 2, y0 + 28, f"a[{i}]", size=11))
+    out.append(text(x0, y0 + 108, L["a_type"], size=11, anchor="start"))
+    out.append(text(x0, y0 + 128, L["a_size"], size=11, anchor="start"))
+
+    # 오른쪽: 포인터
+    px = 470
+    out.append(text(px, y0 - 14, L["ptr"], size=12, weight="bold", anchor="start"))
+    out.append(box(px, y0, 120, 44))
+    out.append(text(px + 60, y0 + 28, L["ptr_val"], size=11))
+    out.append(text(px, y0 + 108, L["p_type"], size=11, anchor="start"))
+    out.append(text(px, y0 + 128, L["p_size"], size=11, anchor="start"))
+
+    # 같은 주소를 잇는 선 — 상자 아래로 돌아 a[0] 밑을 가리킨다
+    ly = y0 + 74
+    out.append(f'<line x1="{px + 8}" y1="{y0 + 44}" x2="{px + 8}" y2="{ly}" '
+               f'stroke="#111" stroke-width="1.8"/>')
+    out.append(f'<line x1="{px + 8}" y1="{ly}" x2="{x0 + cw / 2}" y2="{ly}" '
+               f'stroke="#111" stroke-width="1.8"/>')
+    out.append(arrow(x0 + cw / 2, ly, x0 + cw / 2, y0 + 48, sw=1.8))
+    out.append(text((px + x0) / 2 + 40, ly - 8, L["same"], size=11))
+    out.append(text(w / 2, 232, L["lost"], size=12, weight="bold"))
+    out.append(text(w / 2, 252, L["note"], size=11.5))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F13. 통째로 쓴 바이트와 필드별로 쓴 바이트 (44장) ─────────
+def fig_serialize(L):
+    w, h = 760, 290
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+    cw = 44
+
+    def row(y, label, cells, note):
+        out.append(text(46, y + 28, label, size=12, weight="bold", anchor="start"))
+        x0 = 210
+        for i, c in enumerate(cells):
+            x = x0 + i * cw
+            out.append(box(x, y, cw, 42, sw=1.5))
+            if c == ".":
+                for k in range(1, 5):
+                    dy = k * 42 / 5
+                    out.append(f'<line x1="{x + 3}" y1="{y + dy + 7}" '
+                               f'x2="{x + cw - 3}" y2="{y + dy - 7}" stroke="#111" '
+                               f'stroke-width="0.9" opacity="0.55"/>')
+            else:
+                out.append(text(x + cw / 2, y + 27, c, size=11, weight="bold"))
+        out.append(text(x0 + len(cells) * cw + 12, y + 27, note, size=11.5,
+                        anchor="start"))
+
+    row(64, L["whole"], ["k", ".", ".", ".", "i", "i", "i", "i", "f", "f", ".", "."],
+        L["whole_note"])
+    row(168, L["fields"], ["k", "i", "i", "i", "i", "f", "f"], L["fields_note"])
+    out.append(text(w / 2, 262, L["note"], size=11.5))
+    out.append(TAIL)
+    return "".join(out)
+
+
+
 FIGS = {
     "regions": (fig_regions, {
         "ko": dict(title="한 프로그램의 기억 지도", names=["코드", "정적 구역", "힙 (창고)", "스택 (작업대)"],
@@ -345,6 +514,74 @@ FIGS = {
                    loose="loose", tight="tight",
                    loose_size="12 bytes", tight_size="8 bytes",
                    note="the hatched cells are padding: an int must sit at a multiple of four, and the tail keeps the next element aligned."),
+    }),
+    "int-wheel": (fig_int_wheel, {
+        "ko": dict(title="부호 없는 정수는 원 위를 돈다 (8비트)",
+                   wrap="255 + 1 = 0 — 감아 돈다", outer="바깥: unsigned char (0~255)",
+                   inner="안쪽: 같은 비트를 signed char 로 (−128~127)",
+                   note="감아 도는 것은 부호 없는 쪽의 약속이다 — 부호 있는 쪽의 넘침은 정의되지 않은 동작이다."),
+        "en": dict(title="unsigned integers ride a wheel (8 bits)",
+                   wrap="255 + 1 = 0 — it wraps", outer="outside: unsigned char (0-255)",
+                   inner="inside: the same bits as signed char (-128 to 127)",
+                   note="wrapping is a promise on the unsigned side; signed overflow is undefined behaviour."),
+    }),
+    "sign-extend": (fig_sign_extend, {
+        "ko": dict(title="좁은 그릇에서 넓은 그릇으로 — 앞칸은 무엇으로 채우는가",
+                   unsigned="unsigned char 0xC0 → int", signed="signed char 0xC0 → int",
+                   filled="채워지는 24칸", original="원래의 8비트",
+                   u_note="= 192 (0 으로 채운다)", s_note="= −64 (부호 비트로 채운다)",
+                   note="같은 비트 0xC0 인데 원래 타입의 부호에 따라 채우는 값이 다르고, 그래서 값이 달라진다."),
+        "en": dict(title="from a narrow vessel to a wide one — what fills the front",
+                   unsigned="unsigned char 0xC0 -> int", signed="signed char 0xC0 -> int",
+                   filled="the 24 cells filled in", original="the original 8 bits",
+                   u_note="= 192 (filled with 0)", s_note="= -64 (filled with the sign bit)",
+                   note="the same bits, 0xC0: the fill depends on the source type's signedness, and so does the value."),
+    }),
+    "conversions": (fig_conversions, {
+        "ko": dict(title="통상 산술 변환 — 두 피연산자를 한 타입으로 맞추는 순서",
+                   s1="정수 승격", e1="int 보다 좁은 타입은 먼저 int(또는 unsigned int)로",
+                   s2="부호가 같은가?", e2="같으면 순위가 큰 쪽으로 맞춘다",
+                   s3="부호 없는 쪽의 순위가 크거나 같은가?", e3="그렇다면 부호 없는 쪽으로",
+                   s4="부호 있는 쪽이 상대의 모든 값을 담는가?",
+                   e4="담으면 부호 있는 쪽으로, 아니면 그 짝인 부호 없는 타입으로",
+                   ex_title="보기", ex=["int + unsigned", "→ 3번에서 멈춘다", "→ unsigned",
+                                        "", "−1 이 아주 큰 수가", "되는 사고가 여기서"],
+                   note="네 단계를 순서대로 따른다. 대부분의 사고는 3번에서 난다."),
+        "en": dict(title="the usual arithmetic conversions — the order of matching two operands",
+                   s1="integer promotion", e1="anything narrower than int becomes int (or unsigned int)",
+                   s2="same signedness?", e2="if so, take the greater rank",
+                   s3="is the unsigned rank greater or equal?", e3="if so, the unsigned type wins",
+                   s4="can the signed type hold every value of the other?",
+                   e4="if so, the signed type; otherwise its unsigned counterpart",
+                   ex_title="example", ex=["int + unsigned", "-> stops at step 3", "-> unsigned",
+                                           "", "this is where -1", "becomes a huge number"],
+                   note="follow the four in order; most accidents happen at step 3."),
+    }),
+    "decay": (fig_decay, {
+        "ko": dict(title="배열이 포인터로 무너질 때 잃는 것", array="int a[5]",
+                   ptr="int *p = a;", ptr_val="a[0] 의 주소",
+                   a_type="타입: int[5]", a_size="sizeof a = 20",
+                   p_type="타입: int *", p_size="sizeof p = 8",
+                   same="같은 주소", lost="잃은 것: 원소가 몇 개인가",
+                   note="주소는 같고 타입이 다르다. 그래서 함수 안에서는 sizeof 로 길이를 알 수 없다."),
+        "en": dict(title="what an array loses when it decays to a pointer", array="int a[5]",
+                   ptr="int *p = a;", ptr_val="the address of a[0]",
+                   a_type="type: int[5]", a_size="sizeof a = 20",
+                   p_type="type: int *", p_size="sizeof p = 8",
+                   same="the same address", lost="what is lost: how many elements there are",
+                   note="the address is the same and the type is not, which is why sizeof cannot give a length inside a function."),
+    }),
+    "serialize": (fig_serialize, {
+        "ko": dict(title="통째로 쓴 바이트와 필드별로 쓴 바이트",
+                   whole="통째로 쓰기", fields="필드별로 쓰기",
+                   whole_note="12바이트 — 빗금이 함께 나간다",
+                   fields_note="7바이트 — 내가 정한 순서",
+                   note="위쪽은 패딩이 함께 나가고 배치가 컴파일러·플랫폼에 달렸다. 아래쪽은 어느 기계에서 읽어도 같다."),
+        "en": dict(title="the bytes written whole, and the bytes written field by field",
+                   whole="written whole", fields="written field by field",
+                   whole_note="12 bytes — the hatching goes out too",
+                   fields_note="7 bytes — the order we chose",
+                   note="above, padding goes out and the layout depends on compiler and platform; below reads the same on any machine."),
     }),
     "pointer-parts": (fig_pointer_parts, {
         "ko": dict(title="포인터 값에 붙어 다니는 것", value="포인터 값", value_sub="복사·비교할 수 있다",
