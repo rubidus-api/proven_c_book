@@ -115,6 +115,62 @@ What matters is that this output belongs to *the machine that made this book*.
 Run it on another machine and different numbers may appear — and that is exactly
 this section's point: *do not assume sizes; ask.*
 
+== The type of an integer constant — the same value, typed by its notation
+
+Chapter 20 showed the four bases and the suffixes for writing an integer constant.
+What was deferred there --- *which type the compiler gives that constant* --- can be
+faced now that integers have been met.
+
+The rule is "walk a list and take the first type that fits". But *the list differs by
+base.*
+
+#dtable(
+  columns: 3,
+  [*Unsuffixed constant*], [*The candidate list, in order*], [*The point*],
+  [decimal (`4294967295`)], [`int` → `long` → `long long`], [*unsigned types are not candidates*],
+  [octal, hex, binary (`0xFFFFFFFF`)], [`int` → `unsigned int` → `long` → `unsigned long` → `long long` → `unsigned long long`], [unsigned types are *interleaved*],
+)
+
+Adding a suffix narrows the list by hand --- `u` walks only the unsigned ones, `l`
+starts at `long`, `ll` at `long long`.
+
+The difference shows up for real.
+
+#dtable(
+  columns: 3,
+  [*Written*], [*Measured `sizeof`*], [*Type*],
+  [`0xFFFFFFFF`], [4], [`unsigned int`],
+  [`4294967295`], [8], [`long`],
+)
+
+*The same number, a different type.* And once the type differs, everything downstream
+differs --- promotion and the usual arithmetic conversions (chapter 28) apply
+differently, and comparisons can come out reversed.
+
+#antipattern[
+  Writing a bit mask in decimal
+][
+  ```c
+  x & 4294967295      /* becomes an operation with a long */
+  x & 0xFFFFFFFFU     /* visibly an unsigned 32-bit mask */
+  ```
+
+  Practice writes masks in hexadecimal not only because it reads better. *The type
+  differs*, and above all *the number of bits is visible* --- `0xFFFF` is 16 bits and
+  `0xFFFFFFFF` is 32, right there in the digit count. Adding `U` to pin the signedness
+  as well is the convention (shifting a signed integer is chapter 27's grey area).
+]
+
+#qa[
+  What happens if the value fits nothing in the list?
+][
+  If it does not fit even the widest candidate, it goes into an *extended integer type
+  the implementation provides*, or, if there is none, it is a constraint violation and
+  gets diagnosed. Meeting this in practice has one answer --- *use the fixed-width
+  types and their macros* (`UINT64_C(…)`, `<stdint.h>`). "Do not leave the type to the
+  compiler" is the same discipline as the rest of this chapter.
+]
+
 == Where size is the contract — fixed-width types
 
 There are places where the width must be exactly determined: file formats,
