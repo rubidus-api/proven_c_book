@@ -63,10 +63,33 @@
 })
 
 // 인쇄를 위해 채움(fill)을 쓰지 않는다 — 선의 굵기와 모양으로만 구분한다.
+// 박스 안 본문의 첫 칸 들여쓰기.
+//
+// ★ Typst 의 함정(저자 지적 2026-08-07): 본문이 *한 문단뿐*이면 그 내용은
+//   par 요소가 되지 않고 인라인 내용 그대로 블록에 담긴다. 그러면
+//   first-line-indent 가 적용될 대상이 없어 들여쓰기가 빠진다 — 그래서 같은
+//   실제 사례 상자인데 문단이 둘 이상인 것만 들여쓰기가 되어 보였다.
+//   해결: 본문이 순수 인라인 내용일 때만 par() 로 감싼다. 코드 블록·목록·표
+//   같은 블록 요소가 섞여 있으면 감싸지 않는다(감싸면 그 요소가 사라진다).
+#let _inline-funcs = (
+  "text", "space", "strong", "emph", "linebreak", "smartquote", "link",
+  "footnote", "box", "h", "sub", "super", "highlight", "underline", "strike",
+  "overline", "symbol", "ref", "cite", "metadata",
+)
+#let _is-inline(c) = {
+  let f = repr(c.func())
+  if f in ("raw", "equation", "quote") { not c.at("block", default: false) }
+  else { f in _inline-funcs }
+}
+#let _inline-only(c) = {
+  if c == none { false }
+  else if c.has("children") { c.children.all(x => _is-inline(x)) }
+  else { _is-inline(c) }
+}
 #let _indent-body(body) = if _html { body } else {
   block(width: 100%)[
     #set par(first-line-indent: (amount: 1em, all: true))
-    #body
+    #if _inline-only(body) { par(body) } else { body }
   ]
 }
 

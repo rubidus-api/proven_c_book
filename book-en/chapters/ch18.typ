@@ -174,6 +174,55 @@ without exaggeration, the grounds are these.
   [Documentation and examples are vast, and Microsoft keeps maintaining them], [Little help from a visual designer],
 )
 
+=== What comes in the one package — the resource editor and dialog designer
+
+The real reason this tool suits Win32 work is *the editors*. The official site
+lists what is inside.
+
+#dtable(
+  columns: 2,
+  [*Kind*], [*What is included*],
+  [Build tools], [An optimizing C compiler, a macro assembler, a linker, a resource compiler, a message compiler, make, a library manager],
+  [IDE], [Project management, a debugger, a *profiler*, a source editor],
+  [Resource editors], [*Dialogs*, menus, string tables, accelerator tables, bitmaps, icons, cursors, animated cursors, AVI, version information, manifests],
+  [Shipping], [A code-signing utility, an install builder],
+  [Targets], [x64, x86 and ARM64. C99, C11, C17 and C23, OpenMP 3.1, SSE\~AVX-512 and part of NEON],
+)
+
+The *dialog editor* is what is usually meant by a GUI designer. You drag buttons
+and text boxes onto a window, the layout is saved as an `.rc` resource script, and
+the resource compiler puts it inside the executable. In code you bring the dialog
+up with `DialogBox` or `CreateDialog` and reach controls by their numeric IDs —
+the long-standing way of working in Win32.
+
+#realcase[
+  What Visual C++ 6.0 taught people to expect, and where we are now
+][
+  The standard tool of late-1990s Windows development was *Visual C++ 6.0* (1998),
+  and its strength was exactly this: editor, compiler, debugger and resource editor
+  in one package, a dialog you could draw and show at once, and nothing else to
+  prepare once it was installed. The memory of a "light integrated environment that
+  just works" comes from there.
+
+  Today's Visual Studio is incomparably more powerful, and also very much larger —
+  tens of gigabytes installed, a wait before it opens, and mostly features someone
+  writing plain C will never touch.
+
+  The place Pelles C is loved is in between: *a tool that keeps the feel of VC6's
+  small, quick integrated environment while its compiler has followed C up to C23.*
+  One download, a resource editor attached, and what comes out is an executable
+  with no runtime.
+
+  In fairness, note both directions. *What VC6 had and Pelles C does not* —
+  productivity tools built on a C++ framework, such as MFC and its class wizard;
+  this is a C-only tool by design. *What VC6 never had* is simply the difference of
+  an era — the standards after C99, 64-bit, ARM64, modern SIMD. VC6 went out of
+  support long ago and is not a tool for writing new code.
+
+  In short, for "I want to make one small Win32 app as lightly as in the VC6 days",
+  this is the closest answer available today.
+]
+
 *What Microsoft recommends for new apps is not Win32 but the current stack (the
 Windows App SDK and WinUI 3)* — let that be clear. But Windows's UI stacks have
 been torn up and replaced several times, MFC → WinForms → WPF → UWP → WinUI, and

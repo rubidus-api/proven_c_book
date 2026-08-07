@@ -185,24 +185,14 @@ Four things are gained.
 
 #demo("examples-en/ch44/layout.c")
 
-The sizes of the three members `char`, `int`, `char` sum to 6, and yet the struct
-is 12 bytes. Six bytes went in as *padding*. The reason is chapter 6's alignment —
-`int` must sit at an address that is a multiple of 4, so three bytes are left
-empty after the first `char` to push `b` to offset 4. And three bytes attach after
-the last `char` too (*trailing padding*): because when this struct is laid out as
-an array, the next element's `int` must keep its alignment as well.
+Chapter 43 gave the three rules of padding — each member at a multiple of its own
+alignment, the struct's alignment the maximum of its members', the size rounded up
+to that. This chapter's example confirms them again: `char`, `int` and `char` sum
+to six while the struct is twelve bytes, and `tight`, with the big one first, is
+eight.
 
-It comes down to three rules.
-
-+ Each member sits at *an offset that is a multiple of its own alignment*.
-+ The whole struct's alignment is *the maximum of its members' alignments*.
-+ The struct's size is *rounded up to a multiple* of that alignment (trailing
-  padding).
-
-So *merely changing the order of members shrinks the size.* The example's `tight`
-lays the large one first and reduces 12 bytes to 8. In a program laying out
-millions of structs, this one line of reordering changes both memory and cache
-hit rate (chapter 11).
+From here we go to the next question — *what does the existence of padding forbid
+in practice.*
 
 #misconception[
   "Padding bytes contain 0"
@@ -222,6 +212,114 @@ hit rate (chapter 11).
   Whether struct assignment (`b = a;`) copies the padding as well is not promised
   by the standard either. Remember that *only the members are meaningful* and it
   is all explained.
+]
+
+== Why a struct must not be stored or sent whole
+
+There is a line that looks like the shortest possible.
+
+```c
+fwrite(&record, sizeof record, 1, f);        /* the whole struct into a file */
+send(sock, &record, sizeof record, 0);       /* the whole struct onto a socket */
+```
+
+One line does it — and *this is one of the lines that causes the most accidents in
+this book.* There are four reasons, and they are independent of each other.
+
+#dtable(
+  columns: 2,
+  [*What is wrong*], [*The result*],
+  [The value of the padding is not specified], [Rubbish you never wrote goes out with it — sometimes an information leak],
+  [The layout differs per compiler, option and platform], [Two programs built from the same source exchange different bytes],
+  [Byte order (endianness) differs], [`0x01020304` becomes `0x04030201` at the other end (chapter 45)],
+  [Type sizes differ], [`long`, `size_t`, pointers and enums differ between 32- and 64-bit],
+)
+
+#demo("examples-en/ch44/serialize.c")
+
+The first part of the demonstration shows the first reason with your own eyes. The
+place the struct will occupy is dirtied with `0xAA` and only the members are
+filled in; printing the whole thing shows `AA` still sitting between them —
+*because the members were touched and the padding was not.*
+
+=== So how is it done — field by field
+
+There is one prescription. *Decide the byte order yourself and write fixed-width
+types one at a time.*
+
+The demonstration's `encode` is that shape. Four knacks belong to it.
+
++ *Use fixed-width types* — `uint8_t`, `uint16_t`, `uint32_t` (chapter 70). The
+  size of an `int` or a `long` depends on the platform.
++ *Write the byte order into the code.* The demonstration writes big endian
+  (network byte order). Written with shifts and masks, *the same bytes come out
+  regardless of the endianness of the machine running it.*
++ *Write the length first.* Strings and arrays go as "length then bytes"; the
+  reader has to know how much to read.
++ *The reading side validates.* The demonstration's `decode` looks at the length
+  first — not touching short input is the first line of defence.
+
+What this buys is plain. The byte count drops from twelve to seven (no padding),
+any machine reads the same values, and the format is written in the code where it
+can be read later.
+
+#realcase[
+  Padding that leaked — an old headache in kernels
+][
+  An operating system kernel often hands structs to user programs (the results of
+  system calls, socket information, and so on). If the kernel *fills only the
+  members and copies the whole thing*, whatever was left in the padding — a
+  fragment of kernel memory — crosses over with it.
+
+  This is the class of vulnerability called a *kernel information leak*, and fixes
+  of exactly this kind appeared in Linux and the BSDs over many years. The amount
+  leaked is a few bytes, but if an address is among them it is a thread that
+  unravels address randomisation (ASLR).
+
+  So kernel code acquired a discipline — *a struct that will cross to user space
+  is first zeroed whole* (`memset`). Put in this book's terms: the representation
+  layer is settled explicitly. Chapter 43's `{ 0 }` initialiser does the same job
+  more safely.
+
+  The lesson carries straight into applications — *where a struct goes out, you
+  must know byte by byte what goes out.*
+]
+
+#antipattern[
+  Storing a struct in a file as it stands
+][
+  ```c
+  struct config c = { .port = 8080, .timeout = 30 };
+  fwrite(&c, sizeof c, 1, f);            /* save */
+  ...
+  fread(&c, sizeof c, 1, f);             /* read in the next version */
+  ```
+  Three things go wrong. *Rebuild the program with another compiler* and the
+  layout changes, so old files cannot be read. *Read a file written on 32-bit from
+  64-bit* and the sizes disagree. And *the moment one member is added to the
+  struct*, every old file becomes unreadable.
+
+  The last hurts most — there is no room to evolve the format. Field-by-field
+  serialisation answers it: write a *version number* first, and let the reader
+  branch on it.
+]
+
+#qa[
+  Would a text format not solve it from the start?
+][
+  In many cases that is the right answer. Text formats such as JSON, INI and CSV
+  have no endianness, no padding and no type-size problem, and a person can read
+  and fix them by eye. That is also why chapter 84 writes a small JSON reader
+  three ways.
+
+  Where a binary format is needed is clear — *when the volume is large* (text
+  costs several times as much), *when speed matters* (parsing cost), or *when the
+  format is already fixed* (a protocol, a file format). Even then the rule is the
+  same: settle the byte layout yourself and write it down.
+
+  One more road, in passing: rather than designing a binary format, use one that
+  exists — Protocol Buffers, CBOR, FlatBuffers. This book only names them.
+  Whichever you choose, avoid "write it whole".
 ]
 
 == How to remove padding, how to force alignment
@@ -297,6 +395,62 @@ SIMD. It is not free, though: the struct above uses 64 bytes to hold one `int`.
   type runs into the aliasing rules (chapter 49). Field-by-field `memcpy` is longer
   but exposes all three assumptions in the code. What Part XII's library does is
   exactly to gather this tedious work into one place.
+]
+
+== Members without names, and `container_of`
+
+Two small devices to collect. Both turn up often in real code, and both are hard
+to see the point of from the syntax alone.
+
+#demo("examples-en/ch44/container_of.c")
+
+=== Anonymous structs and unions (C11)
+
+A struct may contain an unnamed struct or union, and then *its members are used
+directly from outside.*
+
+```c
+struct tagged {
+    unsigned kind;
+    union { int i; double d; };   /* no name */
+};
+struct tagged t = { .kind = 1, .i = 42 };
+t.i = 43;                         /* not t.u.i */
+```
+
+A tagged union (chapter 45) reads better for it — the `u` in `t.u.i` never meant
+anything. The price is that *an unnamed union cannot be passed on its own.*
+
+=== `container_of` — from a member back to the whole
+
+Since `offsetof` says where a member begins, the arithmetic runs the other way too.
+
+```c
+#define CONTAINER_OF(ptr, type, member) \
+    ((type *)(void *)((char *)(ptr) - offsetof(type, member)))
+```
+
+*Subtract the member's offset from the member's address and you have the struct's
+address.* The Linux kernel's `container_of` is this one line, and intrusive data
+structures come from it — a list's link does not know which struct it is embedded
+in, yet the struct can be recovered from the link.
+
+The demonstration shows it. One `struct link` lets any struct hang from a list,
+and the list code need not know the type of the data. Part XII's intrusive list
+stands on this.
+
+#platform[
+  What this macro is standing on
+][
+  `container_of` is widely used but *not a form the standard guarantees.* The
+  arithmetic of casting to `char *` and subtracting has to be understood by the
+  compiler as happening "inside that struct object", and once provenance
+  (chapter 36) is taken into account a grey area remains.
+
+  In practice every major compiler supports the pattern — kernels do not run
+  without it. But *the member really must belong to that struct.* Pass the wrong
+  type and a wrong address comes out with no check at all. That is why versions
+  that check the type with C11's `_Generic` or GCC's `typeof` are common.
 ]
 
 == Passing an array by value — can it be done, and should it?

@@ -120,6 +120,99 @@ chapter 44 — the purpose here is to confirm with our own eyes that the gap
   Swift's associated values) lifted this pattern to the level of the language.
 ]
 
+== The active member and type punning — the same bits through another eye
+
+The contract of a union comes down to one term: the *active member* — the one
+whose value was written last. So what happens if you read a member that is not
+active? The answer to that question is where C and C++ part.
+
+#demo("examples-en/ch45/punning.c")
+
+*In C it is allowed.* The standard describes reading another member of a union as
+reinterpreting the stored representation as that member's type. So putting in a
+`float` and reading a `uint32_t` to look at the bits, as in the demonstration, is
+inside the contract. The technique is called *type punning*.
+
+*In C++ it is undefined behaviour.* That language's rule is that a member which is
+not the active one may not be read. The same code therefore means different things
+in the two languages — which really does bite where a C header is included from
+C++.
+
+#dtable(
+  columns: 3,
+  [*Method*], [*In C*], [*Note*],
+  [Reading another union member], [Inside the contract], [Undefined behaviour in C++],
+  [Moving it with `memcpy`], [Inside the contract], [★ Safe in both languages; folds to one instruction],
+  [Casting a pointer and reading], [*Outside the contract*], [A strict-aliasing violation (chapter 36)],
+)
+
+The middle row is the answer. `memcpy` looks slow, but a small copy whose size is
+known at compile time folds into *a single register move* — as the union and the
+`memcpy` gave the same value in the demonstration, the machine code is usually the
+same too.
+
+#misconception[
+  "`*(uint32_t *)&f` is the most direct and the fastest"
+][
+  It is the most dangerous. This *accesses an object of one type through another*
+  and so breaks the strict aliasing rule (chapter 36). The compiler is entitled to
+  assume "the `float` that was written and the `uint32_t` that was read are
+  different objects", and to reorder the two operations on that assumption.
+
+  The result is the familiar pattern — *it works at `-O0` and is wrong at `-O2`.*
+  And if the address is not aligned, a strict machine dies on the spot.
+
+  Some codebases quiet the compiler with `-fno-strict-aliasing` (the Linux kernel
+  does), but that is *paying with a whole level of optimization*. In new code, use
+  `memcpy`.
+]
+
+#qa[
+  So does every bit pattern become a value?
+][
+  No. The reinterpreted bits may not be a *valid representation* of that type. The
+  standard calls such a thing a *trap representation*, and says that reading such a
+  value is itself outside the contract.
+
+  In practice, punning between integers and floating point is mostly harmless — on
+  today's machines the unsigned integer types have no trap representations, and any
+  bit pattern is a value in IEEE 754 (a number, an infinity or a NaN). The end of
+  the demonstration shows that NaN.
+
+  The places to be careful are elsewhere: *pointers* punned to integers and back
+  (chapter 36's provenance), a *`bool`* holding bits that are neither 0 nor 1, and
+  *enumerations*.
+]
+
+=== The size and alignment of a union, and the common initial sequence
+
+#dtable(
+  columns: 2,
+  [*What*], [*The rule*],
+  [Size], [Enough for the largest member; alignment may make it larger],
+  [Alignment], [The maximum of the members' alignments],
+  [Address], [*Every member starts at the same address* — the union's own],
+  [Initialisation], [One initialiser initialises the *first* member; designated initialisers choose],
+)
+
+One more rule matters when writing tagged unions. If several structs share a
+*common initial sequence* — leading members matching in type, one for one — then
+*wherever the union's declaration is visible, that common part may be read through
+any member.*
+
+```c
+union shape {
+    struct { int kind; double r; }        circle;   /* both start with int kind */
+    struct { int kind; double w, h; }     rect;
+};
+/* s.circle.kind and s.rect.kind name the same place */
+```
+
+That rule is what makes the "look at the kind first, then branch" pattern legal.
+The conditions are fussy, though — *the complete declaration must be visible* and
+the types of the common part must match exactly. In practice it is commoner, and
+safer, to keep the tag *outside* the union: a struct holding a `kind` beside it.
+
 == Bit fields — cutting up one word
 
 Write a colon and a number after a struct member and it becomes a *bit field* —
@@ -168,6 +261,30 @@ nonetheless is clear — you still meet them in the register definitions of embe
 SDKs, in the flag bundles of old codebases, and in kernel data structures.
 *Be able to read them, but think twice before writing new ones* is the practical
 instinct.
+
+=== What the implementation decides about bit fields
+
+Bit fields look convenient, but they are *among the least portable syntax in the
+language.* Collect what the standard leaves to the implementation and the reason
+is plain.
+
+#dtable(
+  columns: 2,
+  [*What*], [*The implementation decides*],
+  [The order bits are placed in], [From the low end of the storage unit or the high end],
+  [The boundary of a storage unit], [Whether a field may straddle one, or is pushed to the next],
+  [The signedness of an `int` bit field], [`signed` or `unsigned` — `int x : 1;` may hold −1],
+  [The permitted types], [Beyond `_Bool`, `signed int` and `unsigned int` it is implementation-defined],
+  [Padding and alignment], [Padding may appear between units],
+)
+
+One syntactic restriction goes with them — *the address of a bit field cannot be
+taken.* No `&`, and no pointer to it.
+
+So the conclusion is firm. *Do not parse a protocol or a file format with bit
+fields.* There you read bytes and pull the pieces out with shifts and masks — the
+same reason and the same prescription as chapter 44's serialisation. Bit fields
+are for *saving memory inside one program* only.
 
 == The practical pattern of mixing structs and unions
 

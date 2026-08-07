@@ -53,6 +53,53 @@ which is why it got its own notation.
 struct value on the spot" (C99). It is useful for handing a struct over
 immediately as a return value or an argument.
 
+== The first surprise of `sizeof` — not the sum of the members
+
+Make a struct, ask for its size, and the guess is usually wrong.
+
+#demo("examples-en/ch43/sizeof_first.c")
+
+`char` + `int` + `char` looks like six bytes; it is twelve. The extra six are
+*padding* — empty space between the members and at the end.
+
+#figure-svg("padding", caption: [The hatched cells are padding. Each member sits at a multiple of its alignment, and space is added at the end too.])
+
+The reason is chapter 6's alignment. An `int` must sit at an address that is a
+multiple of four, so three bytes go empty after the first `char`, and three more
+after the last one — because when this struct is laid out as an array, *the next
+element's `int`* must be aligned too.
+
+There are only three rules.
+
++ Each member sits at an *offset that is a multiple of its own alignment*.
++ The struct's alignment is the *maximum of its members' alignments*.
++ The struct's size is *rounded up* to a multiple of that alignment (tail padding).
+
+So *changing only the order can shrink it.* The demonstration's `tight` puts the
+big one first and turns twelve bytes into eight. With a million elements that is
+11 MiB against 7 MiB — and not only memory: the number of elements that fit in
+cache changes with it (chapter 11).
+
+The tool for seeing the layout is `offsetof` from `<stddef.h>`; the demonstration
+uses it to print where each member starts. "If it differs from what you thought,
+ask" is the knack here.
+
+#qa[
+  Should the biggest member always come first, then?
+][
+  It makes a fine default but a poor rule. *A readable order* often matters more
+  (keeping related members together), and where only one struct is ever made, a
+  few bytes are nothing.
+
+  The places to think about order are clear — *when very many of the same struct
+  are laid out* (arrays, pools, nodes), and *where memory is tight* (embedded).
+  Elsewhere it is enough to print the size once and not be surprised.
+
+  The devices for removing padding (`#pragma pack`, `packed`) and for raising
+  alignment (`alignas`) are in chapter 44. What to know first is that *they are
+  either non-standard or have a price.*
+]
+
 == Zeroing the whole thing — `{ 0 }` and `{ }`
 
 The previous section passed over "members you leave out are filled with zero"
@@ -192,7 +239,80 @@ the practice is to receive it as a const pointer, as in
   but worth knowing that the key that opens the door is here.
 ]
 
-We have a way of binding values together. The next chapter is how to *use* it —
-the temporary struct made and handed over on the spot, the order-free named
-arguments obtained from it, and how to deal with the empty space that gets in
-between members (padding).
+=== Why assignment works but comparison does not
+
+A struct is a value, so `b = a;` copies the whole thing in one line. Yet `a == b`
+does not exist — it is a compile error. Why does assignment work and comparison
+not?
+
+*Because of padding.* Assignment can be defined as "move the members' values",
+but comparison has to answer "are they equal", and *the value of the padding is
+not specified.* Two structs holding the same values may hold different rubbish in
+their padding, and comparing bit by bit then says "different".
+
+#misconception[
+  "Then compare them with `memcmp`"
+][
+  The commonest substitute, and quietly wrong. `memcmp` compares
+  *representations* — it looks at the padding as well as the members.
+
+  Chapter 44's demonstration shows this in the flesh: two structs whose members
+  are all equal, and `memcmp` reports "different". The opposite accident exists
+  too — if the padding happens to match, it says "equal", but that is luck, not a
+  contract.
+
+  For the same reason *a struct must not be hashed whole* (equal values give
+  different hashes) and *must not be written whole to a file or a socket*
+  (chapter 44 goes into it).
+
+  There is one prescription — *write a function that compares member by member.*
+
+  ```c
+  bool point_eq(struct point a, struct point b)
+  { return a.x == b.x && a.y == b.y; }
+  ```
+]
+
+== Header and data in one block — the flexible array member
+
+A struct followed by data of no fixed length is a very common shape — messages,
+packets, nodes holding a string. C99 made the pattern official.
+
+#idx("flexible array member")A *flexible array member* is the *last* member of a struct: an array with its
+size left empty.
+
+#demo("examples-en/ch43/flexible.c")
+
+Three things are the contract.
+
+- *It must be last, and at least one other member must precede it.*
+- *It is not included in `sizeof`.* That `sizeof(struct msg)` and
+  `offsetof(struct msg, data)` printed the same value says exactly that.
+- *The size is decided when allocating.* `malloc(offsetof(…, data) + length)` is
+  the standard form.
+
+There is a reason for using `offsetof` rather than `sizeof`: `sizeof` includes the
+tail padding, so it is counted twice — not wrong, merely a little more than
+needed. And the length arithmetic *must be checked for overflow* (chapter 70) — a
+large length that wraps around means writing large data into a small vessel, which
+is precisely a heap overflow.
+
+#realcase[
+  From "the struct hack" to official syntax
+][
+  Before C99, people who wanted this wrote the last member as `char data[1]` and
+  balanced the arithmetic when allocating, as in
+  `malloc(sizeof(struct msg) + len - 1)`. This practice was known as *the struct
+  hack*.
+
+  It worked, but it was *outside the contract* — it touched the second element of
+  an array with only one. A compiler optimising on that fact could break it.
+
+  C99 removed the grey area by making `char data[]` official. Read `[1]` in old
+  code as a trace of that era, and write `[]` in new code.
+]
+
+We have both a way of binding values together and the shape those values take in
+memory. The next chapter is how to *use* them — the temporary struct made and
+handed over on the spot, order-free named arguments, the devices for dealing with
+padding, and *why a struct must not be stored or sent whole*.
