@@ -1,15 +1,31 @@
 #!/bin/sh
 # 수록 예제 전수 검증 (R15, T001).
-# examples/ 아래 모든 .c 를 C23으로 빌드·실행하고, 표준 출력을
-# build/examples-out/<장>/<이름>.c.out 으로 캡처한다 (책의 #demo 가 읽는다).
+# 예제 트리 아래 모든 .c 를 C23으로 빌드·실행하고, 표준 출력을
+# build/<캡처디렉터리>/<장>/<이름>.c.out 으로 캡처한다 (책의 #demo 가 읽는다).
 # 하나라도 실패하면 비영 종료한다.
+#
+# 트리는 판마다 하나다 — 한국어판은 examples/, 영어판은 examples-en/.
+# 예제의 주석과 출력 문자열이 판마다 다르므로 캡처도 따로 남긴다.
+#   verify-examples.sh            → examples/    → build/examples-out/
+#   verify-examples.sh examples-en → examples-en/ → build/examples-out-en/
 set -u
 
 root=$(cd "$(dirname "$0")/.." && pwd)
 cc=${CC:-gcc}
 cflags="-std=c23 -Wall -Wextra -Werror"
-outdir="$root/build/examples-out"
-bindir="$root/build/examples-bin"
+
+# 로케일 예제(63~67장)는 ko_KR·de_DE 같은 로케일이 있으면 그 값을, 없으면
+# "없음"을 인쇄한다 — 어느 쪽이든 통과한다. 저장소 밖에 로케일을 만들어 두었다면
+# 여기서 잡아 준다. 직접 만들려면:
+#     localedef -i ko_KR -f UTF-8 <경로>/ko_KR.UTF-8
+[ -z "${LOCPATH:-}" ] && [ -d "$root/../usr/locale" ] && \
+    LOCPATH=$(cd "$root/../usr/locale" && pwd) && export LOCPATH
+tree=${1:-examples}
+case "$tree" in
+  examples)    outdir="$root/build/examples-out";    bindir="$root/build/examples-bin" ;;
+  examples-en) outdir="$root/build/examples-out-en"; bindir="$root/build/examples-bin-en" ;;
+  *) echo "verify-examples: 알 수 없는 예제 트리 '$tree'" >&2; exit 2 ;;
+esac
 fail=0
 total=0
 
@@ -38,11 +54,9 @@ build_vendor() {
     vendor_built=1
 }
 
-find "$root/examples" -name '*.c' | sort | while IFS= read -r src; do :; done
-
-for src in $(find "$root/examples" -name '*.c' | sort); do
+for src in $(find "$root/$tree" -name '*.c' | sort); do
     total=$((total + 1))
-    rel=${src#"$root/examples/"}
+    rel=${src#"$root/$tree/"}
     out="$outdir/$rel.out"
     bin="$bindir/${rel%.c}"
     mkdir -p "$(dirname "$out")" "$(dirname "$bin")"
@@ -97,4 +111,4 @@ if [ "$fail" -ne 0 ]; then
     echo "verify-examples: FAILED"
     exit 1
 fi
-echo "verify-examples: all examples green"
+echo "verify-examples: $tree — all examples green"

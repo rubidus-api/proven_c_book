@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>75 Formatting and parsing — not writing the type twice — Proven C Book</title><style>
+<title>75 How to ask about overflow — &lt;stdckdint.h&gt; — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,217 +259,86 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch74.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch76.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch75.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>75 Formatting and parsing — not writing the type twice</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The answer to chapter 69′s third bug — the mismatch of format and argument. How the typeless placeholder <code>{}</code> obtains type safety, what <code>_Generic</code> does beneath it, and how failure appears as a value in the opposite direction, parsing. It is the alternative to the <code>printf</code> and <code>scanf</code> taken apart in chapter 53.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 50 said type information does not ride along into variadic arguments, and chapter 53 said that is why the format string alone settles “how the stack is to be read”. Then what is needed to take the type from the argument?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Catch the type <strong>at the call site</strong> and send it along with the value. That is, do not pass the argument as it is but wrap it into a <code>{type tag, value}</code> bundle. The remaining problem is “how is the type tag attached automatically”, and the answer is C11′s <code>_Generic</code> — the device that chooses different code at compile time according to an expression’s type. The run-time cost is zero, and unlike the implicit <span id="idx-entry-107"></span>conversion rules learned in chapter 28, here the type is <strong>preserved</strong>.</p></div></div><h3>75.1 <code>{}</code> — the placeholder with no type</h3><p>The rules are only three.</p><ul><li><code>{}</code> — put the next argument here. The type is not written.</li><li><code>{:...}</code> — after the colon write the format specification (width, alignment, digits).</li><li><code>{{</code> <code>}}</code> — the brace characters themselves.</li></ul><p>There being no <code>%d</code>, there is no place for a <code>%d</code> and a <code>double</code> to go out of step. The possibility of mismatch seen in chapter 53 is removed at the level of syntax.</p><h4>75.1.1 The whole grammar after the colon</h4><p>The order of the specifiers is fixed, and every one may be omitted.</p><table><tr><th><strong>place</strong></th><th><strong>what may be written</strong></th><th><strong>meaning</strong></th></tr><tr><td>fill</td><td>any character</td><td>the character filling the spare places. it comes <strong>before</strong> the alignment symbol</td></tr><tr><td>align</td><td><code>&lt;</code> <code>></code> <code>^</code></td><td>left, right, centre. the default is right for numbers, left otherwise</td></tr><tr><td>sign</td><td><code>+</code></td><td>attach a sign to positives too</td></tr><tr><td>alternative form</td><td><code>#</code></td><td>attach the <code>0x</code>, <code>0b</code>, <code>0</code> prefix</td></tr><tr><td>zero fill</td><td><code>0</code></td><td>put before the width to fill with zeros (it goes after the sign)</td></tr><tr><td>width</td><td>a number</td><td>the minimum number of characters. it does not cut if over</td></tr><tr><td>precision</td><td><code>.number</code></td><td>decimal places for reals</td></tr><tr><td>type</td><td><code>x X o b f e g</code></td><td>hexadecimal (lower, upper), octal, binary, fixed, exponential, shortest</td></tr></table><p>They correspond to chapter 53′s <code>printf</code> formats but differ in three ways. <strong>The alignment symbol comes first</strong> (<code>{:&lt;10}</code> instead of <code>%-10s</code>), <strong>the fill character can be chosen</strong> (<code>{:*>8}</code>), and <strong>there is no type letter</strong> (<code>%d</code>’s <code>d</code> has gone — the type comes from the argument).</p><div><div><p><code>examples/ch75/spec.c</code></p><pre><code data-lang="c">/* 자리표시자 문법 전부 — 채움·정렬·폭·정밀도·꼴, 그리고 사용자 타입.
-   {} 하나로 시작해 표 하나를 그리는 데까지 간다. */
-#include &lt;proven.h>
+<h2 id="loc-75">75 How to ask about overflow — <code>&lt;stdckdint.h></code></h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 26, Integers · the finiteness of integers</div><div>chapter 49, Undefined behaviour · overflow is outside the contract</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 7 said unsigned overflow is defined wrap-round while signed overflow is outside the contract, and chapter 61 said <code>calloc</code> checks the product of the element count and the size. Then how do we write the check for whether a multiplication overflows ourselves?</p><div class="qa-a"><p><span class="dev-label">A.</span> That very “checking ourselves” is the code that has been written wrongly for half a century. With signed values, <strong>checking after it has overflowed is itself already outside the contract</strong>, so the compiler may erase the checking code (chapter 13′s editor), and with unsigned values the idiom that inserts a division is hard to read and easy to get wrong. C23 tidied this place up at the level of the language.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-110"></span>We learn the checked arithmetic C23 brought in. Why hand-written code that “checks after calculating whether it overflowed” is dangerous, exactly what <code>ckd_add</code>, <code>ckd_sub</code> and <code>ckd_mul</code> promise, and how to move the size calculations of existing code onto this tool.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Are the <code>ckd_*</code> functions or macros? Do they not evaluate arguments several times?</li></ol></div></div><div></div><h3>75.1 The trap of checking afterwards</h3><p>We start from the most common hand-written check.</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Adding and then seeing whether it overflowed</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> sum <strong><span class="tok-x">=</span></strong> a <strong><span class="tok-x">+</span></strong> b<span class="tok-x">;</span>
+<strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>sum <strong><span class="tok-x">&lt;</span></strong> a<span class="tok-x">)</span> <span class="tok-x">{</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> it overflowed </span></em><em><span class="tok-c">*/</span></em> <span class="tok-x">}</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ← this check can vanish </span></em><em><span class="tok-c">*/</span></em></code></pre><p>If <code>a</code> and <code>b</code> are signed integers, the moment <code>a + b</code> overflows it is already undefined behaviour. The check after it has meaning only on the premise “if it did not overflow”, so the compiler judges that <code>sum &lt; a</code> can never be true and <strong>erases the conditional entirely.</strong> This pattern really did make checks vanish quietly in several projects, and among them were security checks.</p><p>For unsigned values, wrap-round being defined, the check above <strong>does work</strong>. But going to multiplication makes even that awkward.</p><pre><code data-lang="c"><strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>n <strong><span class="tok-x">!=</span></strong> <span class="tok-n">0</span> <strong><span class="tok-x">&amp;&amp;</span></strong> bytes <strong><span class="tok-x">/</span></strong> n <strong><span class="tok-x">!=</span></strong> sz<span class="tok-x">)</span> <span class="tok-x">{</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> it overflowed </span></em><em><span class="tok-c">*/</span></em> <span class="tok-x">}</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> correct but hard to read </span></em><em><span class="tok-c">*/</span></em></code></pre></div><p>So compilers each put out extensions — GCC’s and Clang’s <code>__builtin_add_overflow</code> family, MSVC’s <code>SafeInt</code>, the home-made macros of many projects. They worked well but <strong>were not portable</strong>, and to secure portability every project had to write the same shell again. It is the same pattern as chapter 60′s <code>strlcpy</code> story — reality finds the answer first and the standard ratifies it belatedly.</p><h3>75.2 C23′s answer — <code>ckd_add</code>, <code>ckd_sub</code>, <code>ckd_mul</code></h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch75/ckdint.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Overflow received not as a value but as "did it happen" — C23 &lt;stdckdint.h> </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">limits.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdckdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
 
-/* 라이브러리가 모르는 타입을 찍는 법: 그리는 함수를 하나 주면 된다 */
-typedef struct { int num; int den; } frac_t;
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> The common allocation sum: n elements x size sz. If the multiplication overflows, the vessel comes out too small. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong><strong>alloc_array</strong><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> sz<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">size_t</span></strong> bytes<span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>ckd_mul</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>bytes</strong><strong><span class="tok-x">,</span></strong><strong> n</strong><strong><span class="tok-x">,</span></strong><strong> sz</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> true means it overflowed </span></em><em><span class="tok-c">*/</span></em>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  the size computation overflowed - nothing is allocated</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong> <span class="tok-n">NULL</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">return</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>bytes</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-static proven_err_t render_frac(proven_fmt_sink_t out, const void *obj)
-{
-    const frac_t *f = (const frac_t *)obj;
-    proven_byte_t buf[32];
-    proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
-    proven_fmt_result_t r = proven_u8str_append_fmt(&amp;s, "{}/{}",
-                                                    PROVEN_ARG(f->num),
-                                                    PROVEN_ARG(f->den));
-    if (!proven_is_ok(r.err)) return r.err;
-    return proven_fmt_put(out, proven_u8str_as_view(&amp;s));
-}
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the test and the reading of the result are written apart (mixed in one expression there is no order) </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> r<span class="tok-x">;</span>
+    <strong><span class="tok-t">bool</span></strong> over <strong><span class="tok-x">=</span></strong> <strong>ckd_add</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>r</strong><strong><span class="tok-x">,</span></strong><strong> INT_MAX</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">INT_MAX = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> INT_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ckd_add(INT_MAX, 1)  overflow? </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">   r = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (the wrapped value)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> over </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-int main(void)
-{
-    proven_byte_t buf[256];
+    over <strong><span class="tok-x">=</span></strong> <strong>ckd_add</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>r</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ckd_add(1, 2)        overflow? </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">   r = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> over </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ── ① 정렬과 채움 ───────────────────────────────────────── */
-    proven_println("|{:>8}|{:&lt;8}|{:^8}|  (오른쪽·왼쪽·가운데)",
-                   PROVEN_ARG("ab"), PROVEN_ARG("ab"), PROVEN_ARG("ab"));
-    proven_println("|{:*>8}|{:-&lt;8}|{:.^8}|  (채움 문자를 앞에 적는다)",
-                   PROVEN_ARG("ab"), PROVEN_ARG("ab"), PROVEN_ARG("ab"));
-    proven_println("|{:08}|{:+}|{:+}|      (0 채움, 부호 강제)",
-                   PROVEN_ARG(42), PROVEN_ARG(42), PROVEN_ARG(-42));
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> even with mixed types the judgement is made on the mathematical value </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">signed</span></strong> <strong><span class="tok-t">char</span></strong> c<span class="tok-x">;</span>
+    over <strong><span class="tok-x">=</span></strong> <strong>ckd_add</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>c</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">200</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">100</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">signed char &lt;- 300   overflow? </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">   c = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> over </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> c</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ── ② 진법과 대체 형식 ──────────────────────────────────── */
-    proven_println("{:x} {:X} {:#x} {:o} {:b} {:#b}",
-                   PROVEN_ARG(255), PROVEN_ARG(255), PROVEN_ARG(255),
-                   PROVEN_ARG(8), PROVEN_ARG(5), PROVEN_ARG(5));
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> unsigned subtraction: wrapping is defined behaviour, yet this still reports "it overflowed" </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">unsigned</span></strong> u<span class="tok-x">;</span>
+    over <strong><span class="tok-x">=</span></strong> <strong>ckd_sub</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>u</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">5</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">unsigned  &lt;- 3 - 5   overflow? </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">   u = </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> over </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> u</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ── ③ 실수 — 자릿수와 꼴 ────────────────────────────────── */
-    proven_println("{} {:.2} {:.0} {:f} {:e} {:g}",
-                   PROVEN_ARG(3.14159), PROVEN_ARG(3.14159), PROVEN_ARG(3.14159),
-                   PROVEN_ARG(3.14159), PROVEN_ARG(3.14159), PROVEN_ARG(3.14159));
-    proven_println("아주 큰 수/작은 수: {} {}",
-                   PROVEN_ARG(1e20), PROVEN_ARG(5e-7));
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">allocation sums</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>ok <strong><span class="tok-x">=</span></strong> <strong>alloc_array</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">1000</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  1000 x </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> -> </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> ok </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">allocated</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">refused</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>ok</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>bad <strong><span class="tok-x">=</span></strong> <strong>alloc_array</strong><strong><span class="tok-x">(</span></strong><strong>SIZE_MAX </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  SIZE_MAX/2 x </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> -> </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> bad </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">allocated</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">refused</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>bad</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>INT_MAX = 2147483647
+ckd_add(INT_MAX, 1)  overflow? yes   r = -2147483648 (the wrapped value)
+ckd_add(1, 2)        overflow? no   r = 3
+signed char &lt;- 300   overflow? yes   c = 44
+unsigned  &lt;- 3 - 5   overflow? yes   u = 4294967294
 
-    /* ── ④ 중괄호 자체 ───────────────────────────────────────── */
-    proven_println("중괄호는 {{ 와 }} 로 적는다");
+allocation sums
+  1000 x 4 -> allocated
+  the size computation overflowed - nothing is allocated
+  SIZE_MAX/2 x 4 -> refused
+</code></pre></div></div><p>The way to read it is this. All three macros have the same shape.</p><pre><code data-lang="c"><strong><span class="tok-t">bool</span></strong> overflowed <strong><span class="tok-x">=</span></strong> <strong>ckd_add</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>result</strong><strong><span class="tok-x">,</span></strong><strong> left</strong><strong><span class="tok-x">,</span></strong><strong> right</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p>There are four promises.</p><ol><li><strong>It calculates in infinite precision and then puts it in the vessel.</strong> The judgement is “does the mathematical result fit in the result type”, and there is no overflow in the intermediate calculation. So it judges exactly even when the arguments’ types differ from each other, and even when the result type is narrower than the arguments — the example’s <code>signed char &lt;- 300</code> confirms it.</li><li><strong>The result type is settled by the first argument (the pointer).</strong> It means the arguments’ promotion rules (chapter 27) do not sway the result, so there is no need to fret over “in which type is it calculated”.</li><li><strong>Even on overflow the result is stored.</strong> That value is the value wrapped round into the result type. The example’s <code>INT_MAX + 1</code> remaining as <code>-2147483648</code> is that — and it matters that even for a signed value <strong>it is defined behaviour in this place</strong>.</li><li><strong>Unsigned wrap-round is reported as “overflowed” too.</strong> The example’s <code>3u - 5u</code> confirms it. The value itself is a defined result (<code>4294967294</code>), but checked arithmetic reports that <strong>it differs from the mathematical value</strong>. In size calculations this is the property needed.</li></ol><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Are the <code>ckd_*</code> functions or macros? Do they not evaluate arguments several times?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> What the standard settles are macros, but they are pinned down not to evaluate their arguments several times (implementations mostly expand them into compiler builtins). So code such as <code>ckd_add(&amp;r, i++, j)</code> is safe too.</p><p>But there is <strong>another</strong> trap. The judgement and the result must not be mixed inside one expression.</p><pre><code data-lang="c"><strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>ckd_add</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>r</strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">overflow</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">fine</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> dangerous </span></em><em><span class="tok-c">*/</span></em></code></pre><p>There is no settled order between the moment <code>r</code> is read and the moment <code>ckd_add</code> writes to <code>r</code>, so the old value may be printed (chapter 20′s story of ordering). This mistake really did print a wrong value when this chapter’s example was first written. <strong>Take the judgement into a variable, and use the result on the next line</strong> — that one line of discipline is the whole of it.</p></p></div></div><h3>75.3 Where it is used — size calculation comes first</h3><p>The <code>alloc_array</code> in the latter part of the example is the type. Calculating an allocation size is the place where checked arithmetic is most sorely needed. If <code>n * sz</code> overflows you end up <strong>obtaining a small vessel and using it believing it big</strong>, which leads straight to a buffer overflow accident. Several famous vulnerabilities took exactly this route.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>place</strong></th><th><strong>the old idiom</strong></th><th><strong>now</strong></th></tr><tr><td>array allocation</td><td>the check <code>n &amp;&amp; SIZE_MAX/n &lt; sz</code></td><td><code>ckd_mul(&amp;bytes, n, sz)</code></td></tr><tr><td>growing a buffer</td><td>just calculating <code>cap * 2</code></td><td><code>ckd_mul(&amp;cap2, cap, 2)</code></td></tr><tr><td>joining lengths</td><td><code>len1 + len2 + 1</code></td><td><code>ckd_add</code> twice</td></tr><tr><td>index calculation</td><td><code>base + off</code> just so</td><td><code>ckd_add</code> (compulsory for signed values)</td></tr><tr><td>numbers from input</td><td>using it straight after <code>atoi</code></td><td><code>strtol</code> (chapter 61) + a range check</td></tr></table></div><p class="float-caption">Table 75.1</p></figure><p>The last line matters. Checked arithmetic only catches the overflow of a <strong>calculation</strong>; it does not filter out a value that was too large to begin with. The check at the input-parsing stage (chapter 61) and the check at the calculation stage do not stand in for each other.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Use <code>ckd_*</code> and worry about integer overflow ends”</strong></p><p>Three things remain. First, <strong>division</strong> is not in this header — <code>INT_MIN / -1</code> is still an outside-the-contract case you must block yourself. Second, <strong>conversions</strong> are not checked. Assigning from a wide type to a narrow one is not arithmetic but conversion (chapter 7′s truncation), so a value being wrecked there is not <code>ckd_*</code>‘s business. Third, <strong>floating point</strong> is not its subject (chapter 68).</p><p>In summary, checked arithmetic is a tool answering the narrow and clear question “did an addition, subtraction or multiplication overflow its vessel”. It is a good tool precisely because it is narrow.</p></div><h3>75.4 Where this tool is absent</h3><p>In an environment that cannot yet use the C23 header, prepare in two steps.</p><pre><code data-lang="c"><strong><span class="tok-k">#if</span></strong><span class="tok-p"> </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(__has_include)</span>
+<strong><span class="tok-k">#  if</span></strong><span class="tok-p"> __has_include(&lt;stdckdint.h>)</span>
+<strong><span class="tok-k">#    include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdckdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#    define</span></strong><span class="tok-p"> </span><span class="tok-p">HAVE_CKDINT</span><span class="tok-p"> </span><span class="tok-n">1</span>
+<strong><span class="tok-k">#  endif</span></strong>
+<strong><span class="tok-k">#endif</span></strong>
 
-    /* ── ⑤ 사용자 타입 ───────────────────────────────────────── */
-    frac_t half = { .num = 1, .den = 2 };
-    proven_arg_t a = proven_arg_custom(&amp;half, render_frac);
-    proven_println("사용자 타입: {} (폭도 먹는다: |{:>8}|)",
-                   PROVEN_ARG(a), PROVEN_ARG(a));
-
-    /* ── ⑥ 세 갈래의 형식화 — 거부 / 자름 / 성장 ─────────────── */
-    proven_u8str_t small = proven_u8str_borrow(buf, 8);   /* 내용 7바이트까지 */
-
-    proven_fmt_result_t r1 = proven_u8str_append_fmt(&amp;small, "{}", PROVEN_ARG("가나다라마바사아"));
-    proven_println("append_fmt        err={} written={} required={}",
-                   PROVEN_ARG((int)r1.err), PROVEN_ARG(r1.written), PROVEN_ARG(r1.required));
-
-    proven_fmt_result_t r2 = proven_u8str_append_fmt_trunc(&amp;small, "{}", PROVEN_ARG("abcdefghij"));
-    proven_println("append_fmt_trunc  err={} written={} required={} 내용=\"{}\"",
-                   PROVEN_ARG((int)r2.err), PROVEN_ARG(r2.written), PROVEN_ARG(r2.required),
-                   PROVEN_ARG(proven_u8str_as_view(&amp;small)));
-
-    proven_allocator_t alloc = proven_heap_allocator();
-    proven_result_u8str_t made = proven_u8str_create(alloc, 4);
-    if (proven_is_ok(made.err)) {
-        proven_u8str_t g = made.value;
-        proven_fmt_result_t r3 = proven_u8str_append_fmt_grow(alloc, &amp;g, "{} {} {}",
-                                                              PROVEN_ARG("자라난다"),
-                                                              PROVEN_ARG(2026),
-                                                              PROVEN_ARG(true));
-        proven_println("append_fmt_grow   err={} 내용=\"{}\"",
-                       PROVEN_ARG((int)r3.err), PROVEN_ARG(proven_u8str_as_view(&amp;g)));
-        proven_u8str_destroy(alloc, &amp;g);
-    }
-
-    /* ── ⑦ 표 그리기 — 폭 지정의 실제 쓸모 ───────────────────── */
-    proven_println("");
-    proven_println("{:&lt;10}{:>6}{:>9}", PROVEN_ARG("이름"), PROVEN_ARG("개수"), PROVEN_ARG("비율"));
-    proven_println("{:-&lt;25}", PROVEN_ARG(""));
-    const char *names[] = { "alpha", "beta", "gamma" };
-    int         counts[] = { 7, 128, 3 };
-    for (int i = 0; i &lt; 3; i++)
-        proven_println("{:&lt;10}{:>6}{:>9.2}", PROVEN_ARG(names[i]),
-                       PROVEN_ARG(counts[i]), PROVEN_ARG(counts[i] / 138.0 * 100));
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>|      ab|ab      |   ab   |  (오른쪽·왼쪽·가운데)
-|******ab|ab------|...ab...|  (채움 문자를 앞에 적는다)
-|00000042|+42|-42|      (0 채움, 부호 강제)
-ff FF 0xff 10 101 0b101
-3.141590 3.14 3 3.141590 3.141590e+00 3.14159
-아주 큰 수/작은 수: 1.000000e+20 5.000000e-07
-중괄호는 { 와 } 로 적는다
-사용자 타입: 1/2 (폭도 먹는다: |     1/2|)
-append_fmt        err=2 written=0 required=24
-append_fmt_trunc  err=2 written=7 required=10 내용="abcdefg"
-append_fmt_grow   err=0 내용="자라난다 2026 true"
-
-이름    개수   비율
--------------------------
-alpha          7     5.07
-beta         128    92.75
-gamma          3     2.17
-</code></pre></div></div><p>The example shows this table in the flesh, a line at a time. A few points.</p><p><strong>① The fill is written before the alignment.</strong> <code>{:*>8}</code> is “fill with asterisks, align right”. Swap the order (<code>{:>*8}</code>) and it does not mean anything.</p><p><strong>② The 0 of <code>{:08}</code> goes after the sign.</strong> Zero-fill <code>-42</code> to a width of 8 and it is <code>-0000042</code>, not <code>000000-42</code> — the same rule as <code>%08d</code> seen in chapter 53.</p><p><strong>③ The default notation for reals differs from <code>printf</code>’s.</strong> Very large and very small numbers are printed by <code>printf("%f")</code> as <code>100000000000000000000.000000</code> or <code>0.000000</code>, while this library uses exponential notation, <code>1.000000e+20</code> and <code>5.000000e-07</code>. The side that <strong>does not lose information</strong> was taken as the default, and it is a difference to know before comparing two logs. If fixed notation is needed, force it with <code>{:f}</code>.</p><p><strong>④ <code>{:g}</code> gives the shortest notation that round-trips.</strong> That <code>3.14159</code> comes out as it stands is that result — the notation keeping the “read it back and it is the same value” property seen in chapter 8.</p><h4>75.1.2 Printing a type the library has never heard of</h4><p>What can go into <code>{}</code> is only the types in the <code>_Generic</code> list. Then how is my own struct printed — <strong>give it one function that draws.</strong></p><pre><code data-lang="c">static proven_err_t render_frac(proven_fmt_sink_t out, const void *obj)
-{
-    const frac_t *f = obj;
-    /* ... make it ... */
-    return proven_fmt_put(out, view);      /* and send it out */
-}
-
-proven_arg_t a = proven_arg_custom(&amp;half, render_frac);
-proven_println("{} and |{:>8}|", PROVEN_ARG(a), PROVEN_ARG(a));</code></pre><p><code>proven_fmt_sink_t</code> is “a hole that receives bytes”, and <code>proven_fmt_put</code> sends them out. As the example’s output shows, <strong>width and alignment apply to a user type too</strong>.</p><p>There is one contract to know here. <strong>The drawing function is called twice per <code>{}</code></strong> — once with a counting sink (because the width and alignment must be calculated) and once for real. So this function must be <strong>deterministic</strong> and must not mutate its target. If the two results disagree the library returns <code>INVALID_ARG</code> rather than print a misaligned field. It is the price paid for aligning without allocating.</p><div><div><p><code>examples/ch75/fmt.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
-#include &lt;stdio.h>
-
-int main(void)
-{
-    /* 화면이 아니라 문자열로 형식화한다 — 버퍼는 스택에서 빌린다 */
-    proven_byte_t buf[64];
-    proven_u8str_t out = proven_u8str_borrow(buf, sizeof buf);
-
-    int      port = 8080;
-    double   load = 0.4237;
-    const char *host = "example.org";
-
-    proven_fmt_result_t r = proven_u8str_append_fmt(&amp;out, "{}:{} load={:.2}",
-                                                   PROVEN_ARG(host), PROVEN_ARG(port),
-                                                   PROVEN_ARG(load));
-    if (proven_is_ok(r.err)) {
-        proven_u8str_view_t v = proven_u8str_as_view(&amp;out);
-        printf("formatted : %.*s\n", (int)v.size, (const char *)v.ptr);
-    }
-
-    /* 그릇이 모자라면? 자르지 않고 거부한다 */
-    proven_byte_t small_buf[8];
-    proven_u8str_t small = proven_u8str_borrow(small_buf, sizeof small_buf);
-    proven_fmt_result_t r2 = proven_u8str_append_fmt(&amp;small, "{}:{}",
-                                                    PROVEN_ARG(host), PROVEN_ARG(port));
-    printf("into 8 bytes: %s (err=%d)\n",
-           proven_is_ok(r2.err) ? "ok" : "refused", (int)r2.err);
-
-    /* 정렬과 자릿수 — 46장의 폭/정밀도에 해당한다 */
-    proven_u8str_t line = proven_u8str_borrow(buf, sizeof buf);
-    (void)proven_u8str_reset(&amp;line);
-    proven_fmt_result_t r3 = proven_u8str_append_fmt(&amp;line, "|{:>10}|{:&lt;10}|{:.3}|",
-                                                    PROVEN_ARG(host), PROVEN_ARG(host),
-                                                    PROVEN_ARG(load));
-    if (proven_is_ok(r3.err)) {
-        proven_u8str_view_t v = proven_u8str_as_view(&amp;line);
-        printf("aligned   : %.*s\n", (int)v.size, (const char *)v.ptr);
-    }
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>formatted : example.org:8080 load=0.42
-into 8 bytes: refused (err=2)
-aligned   : |example.org|example.org|0.424|
-</code></pre></div></div><p>This example formats not to the screen but <strong>into a string</strong> — the <code>proven_println</code> seen in chapter 70 is the edition connecting this machinery to standard output. Three things can be pointed out.</p><p><strong>First, formatting too can fail.</strong> <code>example.org:8080</code> cannot go into an 8-byte vessel, so it was refused. Chapter 74′s principle stands here too — rather than truncate, it returns a failure. The opposite default from <code>snprintf</code>.</p><p><strong>Second, the format specification syntax is a little different.</strong> The <code>></code> of <code>{:>10}</code> is right alignment, <code>{:&lt;10}</code> left alignment, <code>{:.3}</code> three decimal places. They correspond to chapter 53′s <code>%10s</code>, <code>%-10s</code> and <code>%.3f</code>, differing in that <strong>there is no type letter</strong>.</p><p><strong>Third, it rounds but keeps the number of digits.</strong> <code>load=0.42</code> is what <code>{:.2}</code> made.</p><h4>75.1.3 Which formatting function to use</h4><p>Chapter 74′s three kinds are here in formatting too. Organised in a table there is nothing to choose over.</p><table><tr><th><strong>function</strong></th><th><strong>when short</strong></th><th><strong>allocator</strong></th><th><strong>where it is used</strong></th></tr><tr><td><code>proven_println(fmt, …)</code></td><td>—</td><td>not needed</td><td>one line to the screen</td></tr><tr><td><code>proven_print(fmt, …)</code></td><td>—</td><td>not needed</td><td>without a line break</td></tr><tr><td><code>proven_eprint(fmt, …)</code></td><td>—</td><td>not needed</td><td>to standard error</td></tr><tr><td><code>proven_u8str_append_fmt</code></td><td>refuses (the original stands)</td><td>not needed</td><td>a fixed buffer. the default</td></tr><tr><td><code>proven_u8str_append_fmt_trunc</code></td><td>as much as fits</td><td>not needed</td><td>places that may be cut, such as a log line</td></tr><tr><td><code>proven_u8str_append_fmt_grow</code></td><td>grows</td><td>needed</td><td>when the length is unknown</td></tr><tr><td><code>proven_u8str_append_fmt_with_scratch</code></td><td>grows</td><td>needed (+ scratch)</td><td>when the temporary memory is to be given separately</td></tr></table><p>All of them return a <code>proven_fmt_result_t</code>, and this bundle has two more numbers beside <code>err</code>.</p><pre><code data-lang="c">typedef struct {
-    proven_err_t  err;
-    proven_size_t written;    /* the number of bytes actually written */
-    proven_size_t required;   /* the number of bytes needed to write it all */
-} proven_fmt_result_t;</code></pre><p><code>required</code> is the same information as <code>snprintf</code>’s return value seen in chapter 53. The difference is <strong>that it sits in a named slot</strong> — with <code>snprintf</code> a human had to remember the convention “if the return value is at least the buffer size it was truncated”, while here <code>err</code> already says that and <code>required</code> answers “so how much was needed”. In the output of the example <code>spec.c</code>, <code>written=7 required=10</code> is that use — how much to enlarge the buffer by is known as it stands.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What exactly does <code>PROVEN_ARG</code> do?</p></div><div class="dev qa-a"><p class="dev-label">A It chooses on the argument’s type with <code>_Generic</code> and makes a small struct with a tag fitting that type attached. Carried over in concept alone it has this shape.</p><pre><code data-lang="c">#define PROVEN_ARG(x) _Generic((x),          \
-    int:          proven_arg_i32,            \
-    double:       proven_arg_f64,            \
-    const char *: proven_arg_cstr,           \
-    bool:         proven_arg_bool            \
-    /* ... */ )(x)</code></pre><p><code>_Generic</code> chooses the branch <strong>at compile time</strong>, so there is no run-time cost of determining the type. And passing a type not in the list is <strong>a compile error</strong> — the exact opposite of chapter 53′s <code>printf</code>, which accepted anything.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ Passing a value without <code>PROVEN_ARG</code></p><pre><code data-lang="c">proven_println("count={}", count);        /* it does not compile */</code></pre><p>A raw value rather than a bundle was passed, so the types do not match and the build fails. It can feel tiresome, but this is the point of the design — <strong>forget to wrap it and the program is not made.</strong> Herein lies the difference from <code>printf</code>, which compiles even when you forget and goes strange during execution.</p></div><div class="dev misconception"><p class="dev-label">⚠ “The placeholder has no type, so it must be slow”</p><p>The opposite. <code>printf</code> interprets the format string letter by letter <strong>during execution</strong> and decides what to take out next. <code>{}</code> scans the format too, but each argument’s type is already settled by its tag, so there is no guessing. Above all, there being no UB from type mismatch, no defensive code is needed either. The difference in cost is mostly negligible, and this library’s real-number formatting has rather taken more care over accuracy — reproducing exactly the rounding rules of <code>%f</code> seen in chapter 53 is the more awkward task.</p></div><h3>75.2 The opposite direction — the scanner</h3><p>Parsing is formatting’s mirror, but the character of failure differs. Formatting fails only when the vessel is too small, while parsing fails <strong>whenever the input differs from expectation</strong>. And as seen in chapter 53, <code>sscanf</code> tells only “how many succeeded” — it does not say where or why it stopped.</p><span id="idx-entry-108"></span><p>proven’s scanner is an object with a cursor. It is placed over a view and reads onward one at a time. Each read gives its result as a bundle.</p><pre><code data-lang="c">typedef struct {
-    proven_u8str_view_t view;     /* the input being read (borrowed) */
-    proven_size_t       cursor;   /* how far it has read */
-} proven_scan_t;</code></pre><p>That there are only two slots says two things. First, <strong>the scanner does not own the input</strong> — it is only a cursor laid over a view, so making it allocates nothing and there is no destroying. Second, <strong>the cursor can be saved and restored by hand</strong>. Copy the whole struct, and on failure put it back, so a parser that “looks a few characters ahead to judge” is not hard to write.</p><pre><code data-lang="c">proven_scan_t save = sc;         /* a mark to go back to */
-proven_result_i64_t n = proven_scan_i64(&amp;sc);
-if (!proven_is_ok(n.err)) sc = save;   /* it failed, so let it never have happened */</code></pre><p>There are six reading functions, and all of them push the cursor forward.</p><table><tr><th><strong>function</strong></th><th><strong>what it reads</strong></th><th><strong>what it returns</strong></th></tr><tr><td><code>proven_scan_i64(&amp;sc)</code></td><td>a signed integer</td><td><code>{err, val}</code></td></tr><tr><td><code>proven_scan_u64(&amp;sc)</code></td><td>an unsigned integer</td><td><code>{err, val}</code></td></tr><tr><td><code>proven_scan_f64(&amp;sc)</code></td><td>a real</td><td><code>{err, val}</code></td></tr><tr><td><code>proven_scan_str(&amp;sc)</code></td><td>a word up to whitespace</td><td><code>{err, view}</code> — <strong>a view into the original</strong></td></tr><tr><td><code>proven_scan_skip_whitespace(&amp;sc)</code></td><td>skips whitespace</td><td>—</td></tr><tr><td><code>proven_scan_skip_until(&amp;sc, t)</code></td><td>skips until <code>t</code> appears</td><td><code>err</code> (the cursor stands if absent)</td></tr></table><p>That <code>proven_scan_str</code> <strong>returns a view without copying</strong> matters — chapter 74′s “text handling without copying” holds in parsing too. In exchange that view is valid only while the original input is alive (chapter 72).</p><div><div><p><code>examples/ch75/lines.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
-#include &lt;stdio.h>
-
-/* 한 줄에서 "이름 나이" 꼴을 해석한다 — 실패는 값으로 드러난다. */
-static void parse_line(const char *line)
-{
-    proven_scan_t sc = proven_scan_init(proven_u8str_view_from_cstr(line));
-
-    proven_result_u8str_view_t name = proven_scan_str(&amp;sc);
-    if (!proven_is_ok(name.err)) {
-        printf("[%s] -> no name found\n", line);
-        return;
-    }
-
-    proven_result_i64_t age = proven_scan_i64(&amp;sc);
-    if (!proven_is_ok(age.err)) {
-        printf("[%s] -> age is not a number\n", line);
-        return;
-    }
-
-    printf("[%s] -> name %.*s, age %lld\n", line,
-           (int)name.val.size, (const char *)name.val.ptr, (long long)age.val);
-}
-
-int main(void)
-{
-    parse_line("alice 33");
-    parse_line("bob thirty");
-    parse_line("   ");
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>[alice 33] -> name alice, age 33
-[bob thirty] -> age is not a number
-[   ] -> no name found
-</code></pre></div></div><p>That three inputs divided into three branches is the heart of it. <code>bob thirty</code> had its name read but stopped at the age, and the line of whitespace only failed from the name. With <code>sscanf</code> both would have been lumped together as “one item succeeded” or “0”.</p><p>Having a cursor has another advantage. <strong>How far it has read</strong> can be known, so the remaining part can be handled another way or the position can be carried in an error message. It is the answer to the problem chapter 25 named when parsing a line with <code>sscanf</code>: “you cannot know how many characters were consumed.”</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Does the scanner have a format string too?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>It does — it is used as <code>proven_scan_fmt_cursor(&amp;sc, "{}:{}", PROVEN_SCAN_ARG(&amp;host),<br><span style="white-space: pre-wrap">&#x20;&#x20;</span>PROVEN_SCAN_ARG(&amp;port))</code>. It is symmetrical with formatting, and the arguments are wrapped addresses of the places to hold the results. But there is one caution the header states honestly — if it fails in the middle of the format, <strong>the values filled in up to that point have already been changed</strong>. The failure atomicity learned in chapter 71 is not guaranteed here, so if it is really needed the cursor and the destinations must be saved beforehand and restored. Writing the contract in the documentation rather than hiding it is this library’s way.</p></div></div><div class="dev realcase"><p class="dev-label">◉ What happens when a parser is lenient</p><p>There is a problem that has come to light repeatedly in the handling of HTTP requests. If a server and a proxy interpret the same request <strong>slightly differently</strong>, an attacker can slip a second request in through that gap (request smuggling). The cause was differences such as one side generously letting odd whitespace in a header pass while the other refused strictly. The lesson is exactly the same as chapter 74′s story of encodings — <strong>do not read ambiguous input as something mended; refuse it.</strong> A parser that returns failure as a value is also a parser equipped with the means to express that refusal.</p></div><div class="dev recap"><p class="dev-label">☰ Recap</p><p>Formatting and parsing in summary.</p><table><tr><th><strong>what it does</strong></th><th><strong>API</strong></th><th><strong>note</strong></th></tr><tr><td>one line to the screen</td><td><code>proven_println(fmt, ARG…)</code></td><td>returns an error but does not compel</td></tr><tr><td>format into a string</td><td><code>proven_u8str_append_fmt(&amp;s, …)</code></td><td>refuses if short</td></tr><tr><td>permitting truncation</td><td><code>…_append_fmt_trunc</code></td><td>states the intent in the name</td></tr><tr><td>growing as it goes</td><td><code>…_append_fmt_grow(alloc, …)</code></td><td>needs an allocator</td></tr><tr><td>wrapping an argument</td><td><code>PROVEN_ARG(x)</code></td><td><code>_Generic</code> — a type not listed is a compile error</td></tr><tr><td>starting a scanner</td><td><code>proven_scan_init(view)</code></td><td>an object with a cursor</td></tr><tr><td>reading one at a time</td><td><code>proven_scan_i64/f64/str</code></td><td>result and failure as a bundle</td></tr><tr><td>reading by format</td><td><code>proven_scan_fmt_cursor(…)</code></td><td>beware partial changes on mid-way failure</td></tr></table></div><p>The vocabulary for holding, making and reading back strings is equipped. Next are the tools that <strong>hold many</strong> — growing arrays, lists, ring buffers, hash maps, and the algorithms with “a guarantee even in the worst case” foretold in chapter 69.</p>
+<strong><span class="tok-k">#ifndef</span></strong><span class="tok-p"> HAVE_CKDINT                      </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> fill in with the GCC/Clang extensions </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#  define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">ckd_add</span></strong><span class="tok-x">(</span>r<span class="tok-x">,</span><span class="tok-p"> </span>a<span class="tok-x">,</span><span class="tok-p"> </span>b<span class="tok-x">)</span><span class="tok-p"> </span><strong>__builtin_add_overflow</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong>
+<strong><span class="tok-k">#  define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">ckd_sub</span></strong><span class="tok-x">(</span>r<span class="tok-x">,</span><span class="tok-p"> </span>a<span class="tok-x">,</span><span class="tok-p"> </span>b<span class="tok-x">)</span><span class="tok-p"> </span><strong>__builtin_sub_overflow</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong>
+<strong><span class="tok-k">#  define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">ckd_mul</span></strong><span class="tok-x">(</span>r<span class="tok-x">,</span><span class="tok-p"> </span>a<span class="tok-x">,</span><span class="tok-p"> </span>b<span class="tok-x">)</span><span class="tok-p"> </span><strong>__builtin_mul_overflow</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong>
+<strong><span class="tok-k">#endif</span></strong></code></pre><p>Only beware that the argument order differs — the standard puts the result pointer first, the compiler builtins put it last. Gathering such shells in one place is the real shape of the portability layer spoken of in chapter 52, and Part XII’s library does the same work.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The road of leaving the checking to tools</p>There is also a way of catching overflow without mending the code. GCC’s and Clang’s <code>-fsanitize=signed-integer-overflow</code> (UBSan) catches overflow during execution and reports it, and <code>-ftrapv</code> stops the program on overflow. Both are <strong>for testing</strong> — they show themselves only in a run in which an overflow actually happened, so they are different in character from checked arithmetic, which “blocks in code the places where it could happen”. It is the same conclusion as chapter 17′s story of debuggers: tools help observation but do not stand in for the contract.</div><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>to remember</strong></th><th><strong>the point</strong></th></tr><tr><td>checking afterwards</td><td>with signed values the check itself is outside the contract — it can be erased</td></tr><tr><td>the shape</td><td><code>bool overflowed = ckd_add(&amp;result, a, b)</code></td></tr><tr><td>the criterion</td><td>does the mathematical result fit in <strong>the result type</strong></td></tr><tr><td>the result type</td><td>settled by the first argument. not swayed by promotion rules</td></tr><tr><td>even on overflow</td><td>the wrapped value is stored (defined behaviour)</td></tr><tr><td>unsigned values</td><td>wrap-round too is reported as “overflow”</td></tr><tr><td>one expression</td><td>do not mix the judgement and the result</td></tr><tr><td>first place to apply it</td><td>allocation size calculation</td></tr><tr><td>where it is absent</td><td>make a shell with <code>__builtin_*_overflow</code></td></tr></table></div><p class="float-caption">Table 75.2</p></figure></div><p>We have learned how to ask about overflow according to the contract. The next chapter is this part’s last and the most conspicuous change C23 made to the language — the story of things that were macros becoming keywords.</p>
 <div class="nav"><a href="ch74.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch76.html">Next →</a></div>
 </div></main></body></html>

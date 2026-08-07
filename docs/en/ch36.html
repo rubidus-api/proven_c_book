@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>36 Arrays — Proven C Book</title><style>
+<title>36 The rules of pointers — alignment and provenance — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,140 +259,28 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch35.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch37.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch36.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>36 Arrays</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>Contiguous memory — the array. Declaration and traversal, the real relationship <span id="idx-entry-64"></span>between arrays and pointers (the notorious “decay”), and the life-or-death rule of the boundary. Chapter 25′s <code>char line[100]</code> credit is settled here.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 11 said a cache line carries “sixty-four neighbouring slots as one box”, and that this is why code scanning an array in order is fast. Then what exactly is an “array” through the eye of memory?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Slots of the same type lined up <strong>adjacent without gaps</strong> — that is all. <code>int<br><span style="white-space: pre-wrap">&#x20;&#x20;</span>a[5]</code> is five ints laid side by side at consecutive addresses, so knowing only the first slot’s address and the type lets every other position be calculated (element <math><mi>𝑖</mi></math> = start address + <math><mi>𝑖</mi><mo form="infix" lspace="0.2222222222222222em" rspace="0em">×</mo></math> slot size). This property of “calculable neighbours” is the root of both the array’s power (immediate access, cache friendliness) and its danger (miscalculating the boundary).</p></div></div><h3>36.1 Declaration, access, traversal</h3><div><div><p><code>examples/ch36/arr.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+<h2 id="loc-36">36 The rules of pointers — alignment and provenance</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 34, Objects, addresses, pointers · what a pointer is</div><div>chapter 6, Special knowledge about addresses · alignment and the low bits</div><div>chapter 14, And so C is an abstract language · the contract of the abstract machine</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 6 taught the alignment rule that “a four-byte load goes at a multiple of four.” But a pointer is merely a variable holding a number — why can it not hold any number at all?</p><div class="qa-a"><p><span class="dev-label">A.</span> Holding it is often not blocked at all — the accident happens <strong>when it is followed</strong>. Dereferencing through an <code>int*</code> means “read four bytes at that address through int’s eye” (chapter 34), and if that address breaks int’s alignment (a multiple of four) then chapter 6′s consequences follow — slowness, or on some machines a bus fault on the spot. In the standard’s eye, <strong>the cast to a type with stricter alignment is already outside the contract</strong>. A pointer’s type is both an eye and a contract.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">Two deep rules that bind pointers — the constraint chapter 6′s alignment places on pointer casts (and the privilege belonging to <code>char*</code> alone), and a practical feel for the provenance (the tag of origin) foreshadowed in chapter 14. Short, but the most “contract-like” of this part’s safety rules.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Is it not common for code that breaks these rules to “run fine on my computer”?</li></ol></div></div><div></div><h3>36.1 Alignment and casts — the privilege of char*</h3><p>Pointer casts (looking through a changed type) are grammatically free but narrow by contract. Reduced to a practical sentence — <strong>a cast to a type demanding stricter alignment is dangerous.</strong> Changing a <code>char*</code> (alignment 1) into an <code>int*</code> (alignment 4) and following it is the typical violation. The opposite direction is safe — and here lies a privilege C intended: <strong>a pointer to a character type (<code>char*</code>, <code>signed char*</code> and <code>unsigned char*</code>) may look at any object byte by byte.</strong> With alignment 1 it can point anywhere, and the standard explicitly permits that “the representation of any object may be read through the eye of bytes” (chapter 13′s strict aliasing has this exception carved into it too). The official channel for the perspective of chapter 5, “inside a slot it is only bits”, is <code>unsigned char*</code>.</p><p>The alignment requirement of each type can be asked with <code>alignof</code> (a C23 keyword):</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch36/align.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
-int main(void)
-{
-    int a[5] = {3, 1, 4, 1, 5};
-    int sum = 0;
-
-    for (int i = 0; i &lt; 5; i += 1) {
-        sum += a[i];
-    }
-    printf("sum: %d\n", sum);
-
-    printf("a[2] = %d, *(a + 2) = %d\n", a[2], *(a + 2));
-
-    int *p = a;                 /* 배열 이름이 첫 원소의 주소로 무너진다 */
-    printf("sizeof a = %zu, sizeof p = %zu\n", sizeof a, sizeof p);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>sum: 14
-a[2] = 4, *(a + 2) = 4
-sizeof a = 20, sizeof p = 8
-</code></pre></div></div><p><code>int a[5] = {3, 1, 4, 1, 5};</code> — type, name, slot count, and brace initialisation. Access is <code>a[i]</code> and <strong>numbering starts at 0</strong> (the first element is <code>a[0]</code>, the last <code>a[4]</code>). Why count from 0 was already answered by the opening exchange — <code>a[i]</code> really means “the place <math><mi>𝑖</mi></math> slots <strong>away</strong> from the start”, so the first element is zero away.</p><h3>36.2 Arrays and pointers — the truth about decay</h3><p>The latter part of the demonstration is this chapter’s heart. Let us set out exactly the relationship that has caused the most confusion in C — arrays and pointers.</p><p><strong>The rule: in most contexts an array’s name decays into “the address of its first element.”</strong> That is why <code>int *p = a;</code> is legal — <code>a</code> was read as the pointer value <code>&amp;a[0]</code>. And the notation <code>a[i]</code> is itself sugar for <code>*(a + i)</code> — add an integer to a pointer and you get the address “<math><mi>𝑖</mi></math> slots along, by that type’s size” (pointer arithmetic — chapter 35′s rules apply here), and dereferencing that is indexed access. The demonstration’s <code>a[2] == *(a + 2)</code> is the check.</p><div class="dev misconception"><p class="dev-label">⚠ “An array is a pointer”</p><p>This famous sentence is false — an illusion created by how often decay happens. An array is <strong>memory itself</strong>, five slots of it; a pointer is <strong>a different variable</strong> holding one address. The demonstration’s last line is the decisive evidence: <code>sizeof a</code> is 20 (the total size of five ints) and <code>sizeof p</code> is 8 (the size of one address, chapter 33). The representative context in which decay does <strong>not</strong> happen is exactly <code>sizeof</code>, which is why the difference is visible — and it is thanks to this that chapter 25′s <code>fgets(line, sizeof line, stdin)</code> measured the container correctly. One consequence matters: “pass” an array to a function and only the decayed <strong>address</strong> is copied (chapter 32), so the function side cannot learn the size with <code>sizeof</code> — which is why C functions conventionally take an array <strong>and its length as a separate argument</strong>. The concern of chapter 9′s representations that “keep the length beside the data” reappears here at C’s function boundary.</p></div><h3>36.3 An array parameter is not an array</h3><p>There is one more rule in the position of a function parameter. <strong>Declare it as an array and the compiler turns it into a pointer.</strong> So the following three are completely identical declarations to the compiler.</p><pre><code data-lang="c">void f(int *a);
-void f(int a[]);
-void f(int a[10]);   /* the 10 is documentation only; it is not checked */</code></pre><p>For a multi-dimensional array only <strong>the outermost (leftmost) dimension</strong> is stripped. The inner dimensions remain part of the type.</p><pre><code data-lang="c">void g(int m[3][4]);   /*  the real type is  int (*m)[4]  */
-void h(int c[2][3][4]);/*  the real type is  int (*c)[3][4] */</code></pre><p>There are three places where this fact becomes visible.</p><div><div><p><code>examples/ch36/param.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-
-/* 세 선언은 컴파일러에게 완전히 같은 것이다: 전부 int * 다.
-   (매개변수 이름에 직접 sizeof 를 쓰면 gcc 가 경고하므로,
-    같은 타입의 지역 변수로 한 번 받아 크기를 잰다) */
-static void by_ptr(int *a)     { int *p = a; printf("  int *a      : sizeof = %zu\n", sizeof p); }
-static void by_arr(int a[])    { int *p = a; printf("  int a[]     : sizeof = %zu\n", sizeof p); }
-static void by_size(int a[10]) { int *p = a; printf("  int a[10]   : sizeof = %zu\n", sizeof p); }
-
-/* 매개변수는 그냥 포인터 변수라서 다른 주소를 대입할 수도 있다 */
-static int second_of(int a[10])
-{
-    a = a + 1;          /* 배열이라면 불가능하다 — 배열 이름에는 대입할 수 없다 */
-    return a[0];
-}
-
-/* 2차원: 벗겨지는 것은 가장 바깥(왼쪽 첫) 차원뿐이다.
-   int m[3][4]  ->  int (*m)[4] */
-static void by_2d(int m[3][4])
-{
-    int (*p)[4] = m;    /* 매개변수의 진짜 타입이 이것이다 */
-    printf("  int m[3][4] : sizeof = %zu (포인터), sizeof p[0] = %zu (행 하나)\n",
-           sizeof p, sizeof p[0]);
-    printf("                m[1][2] = %d\n", m[1][2]);
-}
-
-int main(void)
-{
-    int arr[10] = {0,1,2,3,4,5,6,7,8,9};
-    int grid[3][4] = { {0,1,2,3}, {4,5,6,7}, {8,9,10,11} };
-
-    printf("호출자 쪽 (진짜 배열):\n");
-    printf("  int arr[10]    : sizeof = %zu\n", sizeof arr);
-    printf("  int grid[3][4] : sizeof = %zu, sizeof grid[0] = %zu\n",
-           sizeof grid, sizeof grid[0]);
-
-    printf("함수 안 (전부 포인터):\n");
-    by_ptr(arr);
-    by_arr(arr);
-    by_size(arr);
-    by_2d(grid);
-
-    printf("매개변수에 대입: second_of(arr) = %d\n", second_of(arr));
-    printf("원본은 그대로  : arr[0] = %d\n", arr[0]);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>호출자 쪽 (진짜 배열):
-  int arr[10]    : sizeof = 40
-  int grid[3][4] : sizeof = 48, sizeof grid[0] = 16
-함수 안 (전부 포인터):
-  int *a      : sizeof = 8
-  int a[]     : sizeof = 8
-  int a[10]   : sizeof = 8
-  int m[3][4] : sizeof = 8 (포인터), sizeof p[0] = 16 (행 하나)
-                m[1][2] = 6
-매개변수에 대입: second_of(arr) = 1
-원본은 그대로  : arr[0] = 0
-</code></pre></div></div><p><strong>① The value of <code>sizeof</code> differs.</strong> On the caller’s side <code>arr</code> is a real array, so 40 bytes (ten <code>int</code>s), but inside the function it is 8 — the size of one pointer. So the idiom <code>sizeof a / sizeof a[0]</code> for counting elements <strong>does not work inside a function.</strong> The count must be received separately.</p><p>gcc really does point at this mistake. Here is the diagnostic received when the example was first written.</p><pre><code data-lang="text">error: ‘sizeof’ on array function parameter ‘a’ will return size of ‘int *’
-       [-Werror=sizeof-array-argument]
-note: declared here</code></pre><p><strong>② It can be assigned to.</strong> An array’s name cannot appear on the left of an assignment, but a parameter is just a pointer variable, so <code>a = a + 1</code> works. The example’s <code>second_of</code> does that — it moves the parameter along and reads <code>a[0]</code>, yielding the original’s second element — and the caller’s <code>arr</code> was not affected at all (exactly chapter 32′s copy-by-value rule).</p><p><strong>③ In two dimensions only half remains.</strong> <code>sizeof p</code> is 8 (a pointer) while <code>sizeof p[0]</code> is 16 — that is, the size of “one row” survives. It is because the inner dimension remains in the type, and that is what makes an access like <code>m[1][2]</code> compute correctly. Put the other way round, <strong>the size of the inner dimension must be written</strong> — <code>int m[][]</code> does not compile.</p><div class="dev misconception"><p class="dev-label">⚠ “I wrote <code>int a[10]</code> for the parameter, so passing fewer than 10 will be caught”</p><p>It will not. That <code>10</code> is closer to a comment with no meaning at all to the compiler — the type simply becomes <code>int *</code>. If you really want to make the array size a contract there are two roads. One is to <strong>take the size as a separate parameter</strong> (the commonest and surest method), the other is the <code>[static 10]</code> notation of the next section. The latter pins a minimum count down as a promise so that the compiler can warn.</p></div><h3>36.4 Arrays whose size is settled at run time — VLAs</h3><p>Every array so far had its size settled at compile time. C99 added one more — the <strong>variable length array</strong> (VLA). A variable, not a constant, may be written in the size slot.</p><div><div><p><code>examples/ch36/vla.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-
-/* [static N]: "여기에 최소 N개짜리 배열이 온다"는 약속.
-   함수 매개변수의 배열 선언자에서만 쓸 수 있다. */
-static int sum3(const int a[static 3])
-{
-    return a[0] + a[1] + a[2];
-}
-
-/* 가변 길이 배열(VLA)을 매개변수로: 크기를 앞에서 받아 뒤에서 쓴다 */
-static int sum_n(size_t n, const int a[n])
-{
-    int s = 0;
-    for (size_t i = 0; i &lt; n; i++) s += a[i];
-    return s;
-}
-
-/* 2차원 VLA 매개변수 — 손으로 인덱스를 계산하지 않아도 된다 */
-static int trace(size_t n, const int m[n][n])
-{
-    int s = 0;
-    for (size_t i = 0; i &lt; n; i++) s += m[i][i];
-    return s;
-}
-
-int main(void)
-{
-    int fixed[3] = {1, 2, 3};
-    printf("sum3        = %d\n", sum3(fixed));
-
-    size_t n = 4;
-    int local[n];                    /* 지역 VLA: 크기가 실행 중에 정해진다 */
-    for (size_t i = 0; i &lt; n; i++) local[i] = (int)(i * i);
-
-    printf("sizeof local = %zu bytes (= %zu ints)\n", sizeof local, sizeof local / sizeof local[0]);
-    printf("sum_n       = %d\n", sum_n(n, local));
-
-    int grid[3][3] = { {1,2,3}, {4,5,6}, {7,8,9} };
-    printf("trace       = %d\n", trace(3, grid));
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>sum3        = 6
-sizeof local = 16 bytes (= 4 ints)
-sum_n       = 14
-trace       = 15
-</code></pre></div></div><p>There are two uses. The first is <strong>the VLA as a local variable</strong> (<code>int local[n];</code>), where an array whose size is settled at run time is taken on the stack. That is also the only time <code>sizeof</code> is computed at run time — the example’s <code>sizeof local</code> returning 16 is the evidence. The second is <strong>the VLA as a parameter</strong> (<code>const int a[n]</code>, <code>const int m[n][n]</code>), and this side is far more useful. Its value is greatest in two dimensions and above — you can write <code>m[i][j]</code> directly instead of computing <code>m[i * n + j]</code> by hand.</p><p>Local VLAs, however, have hardened into something <strong>not recommended</strong> in practice.</p><ul><li><strong>Fail to control the size and the stack overflows.</strong> Use a number that came from input directly as a size and an attacker can bring down the stack, and there is no way to check for that collapse.</li><li><strong>There is no way to report failure.</strong> <code>malloc</code> at least returns null (chapter 40); a VLA simply collapses when there is no room.</li><li><strong>Its standing in the standard wavered too.</strong> Mandatory in C99, it became an <strong>optional</strong> feature in C11 (if <code>__STDC_NO_VLA__</code> is defined, the implementation lacks it). MSVC does not support it.</li><li>The Linux kernel removed VLAs from its entire codebase in 2018 — predictability of stack usage and performance were the reasons.</li></ul><p>In summary: <strong>the VLA notation in a parameter is usable; avoid local VLAs.</strong> If you need an array whose size is settled at run time, chapter 40′s dynamic allocation is the proper method.</p><h3>36.5 <code>[static N]</code> in a parameter — “at least this many will arrive”</h3><p>There is one more peculiar syntax used only in array parameters.</p><pre><code data-lang="c">int sum3(const int a[static 3]);   /* a points at three or more elements */</code></pre><p>Here <code>static</code> has nothing to do with storage duration (chapter 39). It means the contract <strong>“the pointer passed in this argument points at an array of at least N elements.”</strong> Two things are gained — the compiler may optimise on that premise (prefetching and the like), and it can point out with a warning code that passes null or a shorter array.</p><p>Two things to remember.</p><ul><li><strong>The only place it may be written is an array declarator in a function parameter.</strong> It cannot go on a local variable or a struct member declaration. And for a multi-dimensional array it attaches only to the outermost dimension.</li><li><strong>Break the contract and you are outside it.</strong> <code>sum3(nullptr)</code> or passing a two-element array is undefined behaviour — meaning it is a <strong>promise</strong>, not a check.</li></ul><p>Qualifiers such as <code>const</code> or <code>restrict</code> may go in the same place (<code>void f(int a[const 8])</code>). It is not syntax you see often, but on meeting it in someone else’s code, recognise it as “a promise of a minimum count, not storage duration.”</p><h3>36.6 The boundary — the life-or-death rule</h3><p>An array’s safety rule is one and admits no compromise — <strong>valid numbers run from 0 to the slot count minus one.</strong> Reading or writing <code>a[5]</code> (in a five-slot array) is outside the contract, and that slot is <strong>someone else’s memory</strong> — perhaps a neighbouring variable, perhaps the ledger of a function call seen in chapter 38. Read it and you get rubbish; write it and someone else’s data is quietly broken — the buffer overrun is the single cause of more accidents and security vulnerabilities than anything else in C’s history (the next two chapters are those true stories).</p><p>There is exactly one place the standard specially permits at the boundary — as foreshadowed in chapter 35, <strong>making the address</strong> of the slot one past the end (<code>a + 5</code>) is legal (as long as you do not follow it). The traversal idiom stands on that:</p><pre><code data-lang="c">for (int *it = a; it != a + 5; it += 1) { /* use *it */ }</code></pre><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Does the compiler not catch a boundary violation?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Only some. Obvious violations with constants, like <code>a[7]</code>, are caught well by today’s compiler warnings, but when the number is the result of a calculation it cannot be known at compile time — because doing boundary checks constantly at run time is something C <strong>chose not to do</strong> for performance (the price of that choice and the ways of making up for it are the remaining subjects of this part). The run-time net is chapter 17′s ASan — run code that violates a boundary in an ASan build and it is caught at the moment of violation, with file and line number. And there is the road of using components with boundary checking built in from the start — chapter 38′s proven is that road.</p></div></div><p>We can handle contiguous memory. The next chapter is the array’s most famous application — the string. The background of chapters 6 and 9 (a character is a number; the choice of NUL termination) finally meets C’s syntax in full.</p>
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">alignof(char)   = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">alignof(int)    = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">alignof(double) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>alignof</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">double</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>alignof(char)   = 1
+alignof(int)    = 4
+alignof(double) = 8
+</code></pre></div></div><h4>36.1.1 The two privileges side by side</h4><p>Here we tidy up the two passages announced in chapter 34. They do different work.</p><figure class="tbl"><div class="tblwrap"><table><tr><th></th><th><strong><code>void *</code></strong></th><th><strong>the <code>char *</code> family</strong></th></tr><tr><td>what it forgets</td><td>it forgets the <strong>type</strong> pointed at</td><td>it forgets nothing — it sees the representation as it is</td></tr><tr><td>dereference</td><td>no (it does not know the size)</td><td>yes — one byte at a time</td></tr><tr><td>arithmetic</td><td>no (by the standard)</td><td>yes — in bytes</td></tr><tr><td>aliasing</td><td>not applicable</td><td><strong>it may read the representation of any object</strong> (the excepted passage)</td></tr><tr><td>round trip</td><td>object pointer ↔ <code>void *</code> returns the original value</td><td>reading bytes and recovering a pointer are different matters</td></tr></table></div><p class="float-caption">Table 36.1</p></figure><p>This is why <code>memcpy</code> takes <code>void *</code> in its prototype and copies bytes inside — <strong>it forgets the type on the way in and looks at bytes on the way through.</strong> That the standard requires <code>void *</code> and the character-type pointers to share a representation is for exactly this combination (chapter 34′s word-addressed machines).</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Since <code>char *</code> can pick an object apart, a pointer may be built out of the bytes”</strong></p><p>Two things are mixed up here. <strong>Reading</strong> is permitted — the representation of any object may be read byte by byte through <code>unsigned char *</code>. But assembling those bytes back into a pointer and <strong>making it point at another object</strong> is a separate matter, because the provenance attached to that pointer belongs to the original object — which is exactly the subject of the next section.</p><p>The practical conclusion is simple. To move a representation, move the <strong>value</strong> with <code>memcpy</code>; if a pointer is needed, obtain it again from the original object. An address assembled out of bytes mostly works on x86-64, but on a machine where pointers carry permissions, such as CHERI, it is stopped on the spot (chapter 34).</p></div><h3>36.2 Provenance — the same number, a different origin</h3><p>Let us collect chapter 14′s foreshadowing as practical instinct. In the naive picture a pointer is only a number, so if the number is right it should be followable however it was made — but the contract of modern C is not like that. <strong>A pointer has an origin (provenance)</strong>: an invisible tag saying which object it derived from. Reduced to three practical rules.</p><ul><li><strong>Pointer arithmetic stays inside the object it was born in.</strong> Taking a pointer that started from one object’s address and pushing it (chapter 37) onto another</li></ul><span id="idx-entry-64"></span><p>object — even if the number really does coincide with that object — is outside the contract.</p><ul><li><strong>One past the end is permitted.</strong> Pointing at the slot “after” the end of an array (one-past-the-end) is legal (as long as you do not follow it). It is so useful in a loop’s ending condition that the standard carved out this place specially (in action in chapter 37).</li><li><strong>To treat it as a number, use the official channel.</strong> Converting a pointer to an integer to store or compute with it (such as chapter 6′s tagged pointers) has a road provided by the contract: going through the dedicated type <code>uintptr_t</code>.</li></ul><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Is it not common for code that breaks these rules to “run fine on my computer”?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> It is common — and that is why these rules are dangerous. What collects the price of a violation is not the machine but <strong>the compiler’s optimisation</strong> (chapter 13): it rearranges and caches on the premise that “a pointer does not point outside its origin”, so violating code <strong>silently</strong> behaves differently when the optimisation level or the compiler version changes. That “it ran just now” is not evidence of keeping the contract — that the criterion is chapter 14′s “is it correct on the abstract machine” — is this chapter’s conclusion, and chapter 49 shows the whole of this subject.</p></div></div><p>We have the rules of pointers too. Now we take these tools to contiguous memory — the array. The credit of <code>line[100]</code>, carried since chapter 25, is settled in the next chapter.</p>
 <div class="nav"><a href="ch35.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch37.html">Next →</a></div>
 </div></main></body></html>

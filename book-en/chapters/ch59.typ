@@ -4,7 +4,7 @@
 
 #prereq(
   ([chapter 58, Streams in reality], [the state of a stream]),
-  ([chapter 40, Safe input, and the appearance of proven], [safe input]),
+  ([chapter 40, Safe input], [safe input]),
 )
 
 #deepqa[

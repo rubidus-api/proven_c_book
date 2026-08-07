@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>51 Functions as values — the function pointer — Proven C Book</title><style>
+<title>51 Several files — splitting and linking — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,138 +259,27 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch50.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch52.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch51.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>51 Functions as values — the function pointer</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>Until now a function has been “a thing you call”. In this chapter we handle a function <strong>as a value</strong> — put it in a variable, pass it as an argument, lay several out in an array. Along the way we see an old rule of C (<strong>a function name decays into a pointer</strong>), the strange syntax that rule makes, and how to build object orientation by hand with this tool.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 36 said an array name decays into the address of its first element, and chapter 50 said a variadic function loses type information. Then what does a <strong>function name</strong> evaluate to in an expression?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p><strong>To a pointer to the function</strong> — the same decay as with arrays exists for functions. The exceptions are only when it is the operand of <code>sizeof</code> or <code>&amp;</code>, and since applying <code>sizeof</code> to a function is forbidden to begin with, effectively <code>&amp;</code> alone is the exception. And <code>&amp;function</code> gives the same pointer in the end anyway. So the strange situation arises in which <code>f</code>, <code>&amp;f</code> and <code>*f</code> are all the same value — which is this chapter’s first example.</p></div></div><h3>51.1 The name decays into a pointer</h3><div><div><p><code>examples/ch51/funcptr.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdlib.h>
-#include &lt;string.h>
+<h2 id="loc-51">51 Several files — splitting and linking</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 16, The general shape of compilation · translation units and linking</div><div>chapter 24, Declaring and defining functions · declaration and definition</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 24 said “write prototypes at the top of the file and the definitions may be anywhere below — and, more importantly, they may be in another file.” Explaining the grounds for that with chapter 16′s relay?</p><div class="qa-a"><p><span class="dev-label">A.</span> Because the compilation stage works from <strong>declarations alone</strong>, and it is the linker that finds and joins the bodies (chapter 16). So when compiling one file the contents of other files are not needed at all — all that is needed is the promise that “a function of this name with this signature exists somewhere”, and the vessel that carries that promise is the header file. This chapter sees that division of labour in the flesh.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">Every program so far has been one file. Now it grows into several — <span id="idx-entry-90"></span>the division of labour between header and source, the notion of the translation unit, the linkage of names (external and internal), and how to read link errors. Chapter 16′s relay and chapter 24′s distinction between declaration and definition come together here.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>How are link error messages read?</li></ol></div></div><div></div><h3>51.1 Translation units and headers</h3><p>One source file after preprocessing — the result of all the <code>#include</code>s being spread out — is called a <strong>translation unit</strong>. The compiler always sees one translation unit at a time. A multi-file program means making several translation units into object files separately and having the linker join them into one.</p><p>We see the division of labour in a three-file example.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch51/main.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> A multi-file example — this file compiles seeing only greet's declaration. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">"</span><span class="tok-s">greet.h</span><span class="tok-s">"</span>
 
-static int add(int a, int b) { return a + b; }
-static int mul(int a, int b) { return a * b; }
-
-/* 함수 포인터를 받는 함수 — 콜백의 기본형 */
-static int apply(int (*op)(int, int), int a, int b) { return op(a, b); }
-
-int main(void)
-{
-    /* ① 함수 이름은 값으로 쓰이는 순간 포인터로 무너진다 */
-    int (*p)(int, int) = add;     /* &amp; 없이도 된다 */
-    int (*q)(int, int) = &amp;add;    /* &amp; 를 붙여도 같다 */
-    printf("add == &amp;add : %s\n", p == q ? "같다" : "다르다");
-
-    /* ② 별표를 아무리 붙여도 결과는 같다 — 역참조가 다시 무너지기 때문 */
-    printf("p(2,3)=%d  (*p)(2,3)=%d  (***p)(2,3)=%d  (*******p)(2,3)=%d\n",
-           p(2, 3), (*p)(2, 3), (***p)(2, 3), (*******p)(2, 3));
-
-    /* ③ 반면 &amp; 는 한 번만 쓸 수 있다: &amp;&amp;add 는 문법 오류다
-          (&amp;add 는 값일 뿐, 그 값의 주소를 다시 얻을 수는 없다) */
-
-    /* ④ 디스패치 표 — switch 대신 배열로 고르기 */
-    struct { const char *name; int (*fn)(int, int); } table[] = {
-        { "add", add }, { "mul", mul },
-    };
-    for (size_t i = 0; i &lt; sizeof table / sizeof table[0]; i++)
-        printf("%s(6,7) = %d\n", table[i].name, apply(table[i].fn, 6, 7));
-
-    /* ⑤ 함수 포인터의 크기는 데이터 포인터와 같다는 보장이 없다 */
-    printf("sizeof(void*)=%zu, sizeof(int(*)(int,int))=%zu\n",
-           sizeof(void *), sizeof(int (*)(int, int)));
-
-    /* ⑥ qsort 의 비교자도 함수 포인터다 */
-    int v[] = { 5, 2, 9, 1 };
-    int cmp(const void *a, const void *b);   /* 아래에 정의 */
-    qsort(v, 4, sizeof v[0], cmp);
-    printf("정렬: %d %d %d %d\n", v[0], v[1], v[2], v[3]);
-    return 0;
-}
-
-int cmp(const void *a, const void *b)
-{
-    int x = *(const int *)a, y = *(const int *)b;
-    return (x > y) - (x &lt; y);
-}
-</code></pre></div><div><p>Output</p><pre><code>add == &amp;add : 같다
-p(2,3)=5  (*p)(2,3)=5  (***p)(2,3)=5  (*******p)(2,3)=5
-add(6,7) = 13
-mul(6,7) = 42
-sizeof(void*)=8, sizeof(int(*)(int,int))=8
-정렬: 1 2 5 9
-</code></pre></div></div><p>The first two lines of the output are this chapter’s heart.</p><p><strong><code>add == &amp;add</code></strong> — the function name decays into a pointer, and attaching <code>&amp;</code> gives the same pointer. So the two are equal.</p><p><strong><code>(*******p)(2,3)</code> compiles</strong> — the reason any number of stars gives the same result is this. <code>*p</code> dereferences the pointer to obtain a <strong>function designator</strong>, and the moment that designator is used as a value it <strong>decays back into a pointer</strong>. That is, each <code>*</code> merely goes once round the loop “pointer → function → pointer” and stays where it was.</p><p>The opposite direction does not hold. <code>&amp;&amp;add</code> is a syntax error — <code>&amp;add</code> is already a <strong>value</strong> (a pointer), and in C the address of a value cannot be taken (to take an address there must be a named place, that is, an lvalue). Hence the asymmetry that <code>**add</code> works while <code>&amp;&amp;add</code> does not.</p><div class="dev misconception"><p class="dev-label">⚠ “To call a function pointer you must dereference it, as in <code>(*p)(x)</code>”</p><p>An old practice. <code>p(x)</code> and <code>(*p)(x)</code> are entirely the same and the standard permits both. The reason some codebases prefer <code>(*p)(x)</code> is the documentary purpose of <strong>telling the reader that this is a function pointer</strong>, not a requirement of the grammar. Either way, be consistent.</p></div><h3>51.2 The type is the contract</h3><p>A function pointer’s type is settled by the return type and the parameter list.</p><pre><code data-lang="c">int  (*p)(int, int);       /* pointer to a function taking two ints, giving an int */
-void (*q)(void);           /* pointer to a function with no arguments and no return */
-int  (*r[4])(int);         /* an array of four such pointers */
-int  (*(*s)(void))(int);   /* hard to read — use a typedef */</code></pre><p>As the last line shows, declarations quickly turn rough. The practice in the field is <code>typedef</code>.</p><pre><code data-lang="c">typedef int (*binop_fn)(int, int);
-binop_fn table[] = { add, mul };</code></pre><p><strong>Casting to a function pointer of a different type and calling it is outside the contract.</strong> For example, something stored as <code>void (*)(void)</code> must not be called back as <code>int (*)(int)</code>. Only storing and <strong>converting back to the original type</strong> to call is guaranteed.</p><div class="dev antipattern"><p class="dev-label">✗ Matching a comparator signature by casting</p><pre><code data-lang="c">int cmp_int(const int *a, const int *b);            /* looks convenient, but */
-qsort(v, n, sizeof v[0], (int (*)(const void *, const void *))cmp_int);</code></pre><p><code>qsort</code> passes two <code>const void *</code>, while the real function expects <code>const int *</code>. Since it is <strong>not guaranteed</strong> that the two types have the same representation, this call is outside the contract. The right way is to match the signature exactly and cast inside — as the example’s <code>cmp</code> did.</p></div><h3>51.3 <code>void *</code> and function pointers are different worlds</h3><p>Chapter 33 taught that <code>void *</code> is “a vessel that holds any data pointer”. Yet <strong>function pointers do not go into that vessel.</strong> The standard does not define conversion between data pointers and function pointers.</p><p>The reason lies in history and hardware. On a machine using a <strong>Harvard architecture</strong>, code and data are in different address spaces — the AVR microcontroller is representative, and there “address 0” exists separately in the code region and in the data region. Even the widths of the addresses may differ. On such a machine, putting the two pointers in the same vessel is impossible to begin with.</p><p>That is why the example printed the two sizes together. On this machine they happened to be equal, but <strong>there is no guarantee anywhere that they are</strong>.</p><div class="dev realcase"><p class="dev-label">◉ The place POSIX parted from the standard — <code>dlsym</code></p><p>The POSIX function <code>dlsym</code>, which finds a function in a dynamic library, returns a <code>void *</code>. But what we want is a function pointer. That is, this API demands <strong>a conversion standard C does not define</strong>.</p><p>POSIX acknowledged this contradiction and, in its 2008 edition, separately pinned down that “implementations shall support this conversion.” Compilers still warn, so the following idiom has settled in practice.</p><pre><code data-lang="c">void (*fn)(void);
-*(void **)&amp;fn = dlsym(handle, "do_work");   /* the idiom that skirts the gap in the standard */</code></pre><p>It is a rare case of “the platform demanding what the standard forbids”, and a good specimen of where C’s portability splits.</p></div><h3>51.4 Dispatch tables — an array instead of a <code>switch</code></h3><p>The example’s ④ is that. Pair names with functions and lay them out in an array, and you choose by <strong>data</strong> instead of by branching. To add an item you mend only the table, not the code, and combined with chapter 49′s X macro you can even generate the table from a single list.</p><p>Grow this pattern and it becomes a state machine, a command interpreter, a plugin structure. And grow it further — that is the next section’s story.</p><h3>51.5 The virtual function table — object orientation built in C</h3><p>C has no classes. But <strong>put, as a struct’s first member, a pointer to a table of function pointers</strong> and you obtain polymorphism, the heart of object orientation.</p><div><div><p><code>examples/ch51/vtable.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;string.h>
-
-/* C 에서 손으로 만드는 객체지향: 가상 함수 표(vtable)를 자료와 분리한다.
-   GTK 의 GObject 가 쓰는 방식과 같은 뼈대다. */
-
-struct shape;                       /* 앞선 선언 */
-
-/* ① 가상 함수 표 — 타입마다 하나만 존재한다 (인스턴스마다가 아니다) */
-struct shape_vtable {
-    const char *name;
-    double (*area)(const struct shape *self);
-    void   (*describe)(const struct shape *self);
-};
-
-/* ② 기반 "클래스": 모든 객체의 첫 멤버가 표를 가리킨다 */
-struct shape {
-    const struct shape_vtable *vt;
-};
-
-/* ③ 파생 "클래스": 기반을 첫 멤버로 두면 포인터를 서로 변환할 수 있다 */
-struct circle { struct shape base; double r; };
-struct rect   { struct shape base; double w, h; };
-
-static double circle_area(const struct shape *s)
-{
-    const struct circle *c = (const struct circle *)s;   /* 첫 멤버라 주소가 같다 */
-    return 3.14159265358979 * c->r * c->r;
-}
-static double rect_area(const struct shape *s)
-{
-    const struct rect *r = (const struct rect *)s;
-    return r->w * r->h;
-}
-static void generic_describe(const struct shape *s)
-{
-    printf("  %-6s 넓이 %.2f\n", s->vt->name, s->vt->area(s));
-}
-
-/* ④ 표는 상수이고 타입마다 하나 — 인스턴스는 포인터만 갖는다 */
-static const struct shape_vtable circle_vt = { "원",   circle_area, generic_describe };
-static const struct shape_vtable rect_vt   = { "사각", rect_area,   generic_describe };
-
-static struct circle make_circle(double r) { return (struct circle){ { &amp;circle_vt }, r }; }
-static struct rect   make_rect(double w, double h) { return (struct rect){ { &amp;rect_vt }, w, h }; }
-
-int main(void)
-{
-    struct circle c = make_circle(2.0);
-    struct rect   r = make_rect(3.0, 4.0);
-
-    /* ⑤ 같은 코드가 서로 다른 타입을 다룬다 — 다형성 */
-    const struct shape *objs[] = { &amp;c.base, &amp;r.base };
-    for (size_t i = 0; i &lt; sizeof objs / sizeof objs[0]; i++)
-        objs[i]->vt->describe(objs[i]);
-
-    /* ⑥ 비용을 눈으로 본다 */
-    printf("객체 크기: circle=%zu, rect=%zu (표 포인터 %zu 바이트 포함)\n",
-           sizeof(struct circle), sizeof(struct rect), sizeof(void *));
-    printf("표 크기  : %zu (타입마다 하나만 존재)\n", sizeof(struct shape_vtable));
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>  원    넓이 12.57
-  사각 넓이 12.00
-객체 크기: circle=16, rect=24 (표 포인터 8 바이트 포함)
-표 크기  : 24 (타입마다 하나만 존재)
-</code></pre></div></div><p>The design has four bones.</p><ol><li><strong>One table per type</strong> (<code>static const</code>). Copying the function pointers into every instance makes objects large and the cache worse — so the table is kept separately in a single copy, and the object holds only one pointer to it.</li><li><strong>The base struct is the first member.</strong> The standard guarantees that “a struct’s first member begins at the same address as the struct itself”, so <code>struct circle *</code> and <code>struct shape *</code> can be safely gone between (chapter 41).</li><li><strong>Calls go through the table</strong> — <code>s->vt->area(s)</code>. This one line does exactly what a C++ virtual function call does.</li><li><strong>The object itself is passed as the first argument.</strong> Writing by hand the <code>this</code> that C++ hides.</li></ol><p>The last two lines of the output show the cost. What grows per object is one pointer (8 bytes) only, and the table exists once per type.</p><div class="dev realcase"><p class="dev-label">◉ GTK’s GObject — a hand-built object system in real use</p><p>The proof that this approach is not a toy is GTK. GTK, the major toolkit of the Linux desktop, is written in pure C and beneath it lies an object system called <strong>GObject</strong>. Its structure stands on the same bones we have just seen.</p><ul><li>The first member of the instance struct points at the <strong>class struct</strong> (our vtable).</li><li>Function pointers are laid out in the class struct, and a derived class “overrides” some of them by writing its own functions over them.</li><li>Inheritance is expressed by putting the base struct as the first member, and type conversion is wrapped in macros with checks attached (things like <code>GTK_WIDGET(x)</code>).</li><li>On top of that ride reference counting, signals (the observer pattern) and a property system.</li></ul><p>The same design can be seen elsewhere. The Linux kernel’s <code>struct file_operations</code> — a table holding the <code>read</code> and <code>write</code> functions that differ per file system — is exactly a vtable, and Windows’ COM is this very convention pinned down at the ABI level.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then what differs from C++‘s virtual functions?</p></div><div class="dev qa-a"><p class="dev-label">A The concept is the same; <strong>the degree of automation</strong> differs. In C++ the compiler makes the table, plants the pointer, connects it in the constructor, and checks type conversions. In C all of that is handwork, so there are many places to slip — an object whose table was not connected, a struct that broke the first-member rule, code that casts a derived type wrongly.</p><p>What is gained in exchange is clear too. <strong>Everything is visible — what is where.</strong> You can count how many tables there are, how many pointers are followed per call, how many bytes an object is. It is the place where this book’s constant refrain, “a language in which cost is visible”, appears just the same in object orientation.</p><p>One thing more. C++‘s virtual table layout is <strong>not settled by the standard</strong> (the ABI settles it). That is why, when mixing C and C++, class objects are not passed across the boundary and only <code>extern "C"</code> functions and plain structs are exchanged (chapter 79).</p></div></div><div class="dev recap"><p class="dev-label">☰ Recap</p><p>Function pointers in summary.</p><table><tr><th><strong>rule</strong></th><th><strong>content</strong></th></tr><tr><td>decay</td><td>a function name used as a value becomes a pointer</td></tr><tr><td><code>f</code>, <code>&amp;f</code>, <code>*f</code></td><td>all the same pointer. <code>&amp;&amp;f</code> is a syntax error</td></tr><tr><td>call notation</td><td><code>p(x)</code> and <code>(*p)(x)</code> are identical</td></tr><tr><td>type</td><td>return type + parameters. casting to another type and calling is outside the contract</td></tr><tr><td><code>void *</code></td><td>no guarantee of conversion with function pointers (Harvard architecture)</td></tr><tr><td><code>dlsym</code></td><td>POSIX guarantees it separately. the <code>*(void **)&amp;fn</code> idiom</td></tr><tr><td>dispatch table</td><td>choosing by data instead of by branching</td></tr><tr><td>vtable</td><td>one table per type, one pointer per object. the first-member rule is the ground</td></tr><tr><td>in the flesh</td><td>GObject (GTK), the kernel’s <code>file_operations</code>, COM</td></tr></table></div><p>We are equipped even to handle functions as values. Yet several times in this chapter there were places where the declaration itself was hard to read and we fled to <code>typedef</code> — things like <code>int (*(*s)(void))(int);</code>. The next chapter pays that debt: C’s most notorious place, <strong>reading declarations</strong>, met head on with two ways of reading and with <code>typedef</code>.</p>
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>greet</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">world</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf_count</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>Hello, world!
+greet was called 1 times
+</code></pre></div></div><p><code>greet.h</code> (the header) contains only the <strong>declaration</strong> — the contract signature. <code>greet.c</code> has the <strong>definition</strong>, and <code>main.c</code> includes only the header, knows the contract and calls. Compilation happens separately for each, and the linker joins the call to <code>greet</code> with its definition.</p><p>The header’s <code>#ifndef GREET_H ... #define ... #endif</code> is an <strong>include guard</strong>. It is the idiom that makes the contents unfold only once even if the header is attached twice through different paths, preventing things that error when declared twice (struct definitions and the like). In practice it is often replaced by the single line <code>#pragma once</code> (not standard, but supported by all the major compilers).</p><h3>51.2 Linkage — does a name cross file boundaries?</h3><p>A name has one more property besides scope (chapter 24) — <strong>linkage</strong>, that is, whether that name is visible from another translation unit.</p><ul><li><strong>External linkage</strong>: visible outside the file. The default for functions and global variables.</li><li><strong>Internal linkage</strong>: visible only within this translation unit. Attach <code>static</code> to a file-level declaration — the example’s <code>static int calls</code> is the case.</li></ul><p>That the word <code>static</code> is used with different meanings in chapter 41 (static lifetime) and here (internal linkage) is C’s famous word recycling — <strong>inside a function</strong> static means duration, <strong>at file level</strong> it means linkage.</p><p>Internal linkage is a basic weapon in practice. Chapter 40 said “C has no namespaces, so a prefix stands in for the fence”; attach <code>static</code> to helper functions and variables used only inside a file and those names never go out into the yard at all — no collisions, and the compiler can optimise more aggressively (knowing that name cannot be called from another file — an honest signal to chapter 13′s editor).</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Putting a function definition in a header is convenient, so it is fine”</strong></p>The definition is copied into every file that includes it, so if two files include that header there are two definitions of the same function and the linker raises a <strong>multiple definition</strong> error (“multiple definition of …”). A header’s role is to carry the contract, not the implementation — declarations in headers, definitions in sources, is the basic form. (There are exceptions: <code>static inline</code> functions and macros are conventionally put in headers, and so are C23′s <code>constexpr</code> constants. Knowing the exception and using it differs from breaking the rule in ignorance.)</div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> How are link error messages read?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Two sentences solve most of it. <strong>“undefined reference to X”</strong> — the declaration was seen but the definition could not be found (chapter 16). A source file was left out of the build, a library was not joined, or the spelling differs. <strong>“multiple definition of X”</strong> — there are two or more definitions. Common when a definition was put in a header, or a global variable was declared and initialised in a header. That both messages come from <strong>the linker, not the compiler</strong> is the starting point of the diagnosis — it means the syntax was fine.</p></div></div><p>We have learned how to cross file boundaries. But <code>#include</code> and <code>#ifndef</code> appeared again in this chapter — the layer chapter 16 passed over with “the preprocessor is a text tool that does not know C”. The next chapter opens that layer head on, and also sees the formal stages by which source code becomes a program.</p>
 <div class="nav"><a href="ch50.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch52.html">Next →</a></div>
 </div></main></body></html>

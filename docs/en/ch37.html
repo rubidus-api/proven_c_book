@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>37 Strings — Proven C Book</title><style>
+<title>37 Arrays — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,135 +259,215 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch36.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch38.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch37.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>37 Strings</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><span id="idx-entry-65"></span><p>C’s string faced head on — its identity as a char array plus NUL termination, the special circumstances of string literals, the real cost of measuring length, and the practical matter of “character count ≠ byte count” that Hangul brings out. The last of the three nulls (the NUL character) gets its formal treatment here.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 9 said the string representation C chose is NUL termination, “planting a marker at the end”, and foreshadowed its three prices (the length must be counted, a NUL cannot be held as content, lose the marker and it runs away). Now that you have learned arrays (chapter 36) — how would you define a C string exactly, yourself?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p><strong>A char array, somewhere in which there is a byte of value 0 (the NUL character, <code>'\0'</code>), plus the agreement that “the string” means from the start to just before that marker</strong> — that is all. There is no separate string type. An array, and an agreement. This chapter treats the use and the cost of that agreement.</p></div></div><h3>37.1 The identity — an array, and an agreement</h3><p><code>char greet[] = "안녕";</code> — initialise an array with a string literal and the compiler builds the array by <strong>appending <code>'\0'</code> after</strong> the bytes of the characters. The demonstration dissects it.</p><div><div><p><code>examples/ch37/str.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;string.h>
+<h2 id="loc-37">37 Arrays</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 34, Objects, addresses, pointers · addresses and pointers</div><div>chapter 11, Memory divides · memory is a run of adjacent slots</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 11 said a cache line carries “sixty-four neighbouring slots as one box”, and that this is why code scanning an array in order is fast. Then what exactly is an “array” through the eye of memory?</p><div class="qa-a"><p><span class="dev-label">A.</span> Slots of the same type lined up <strong>adjacent without gaps</strong> — that is all. <code>int a[5]</code> is five ints laid side by side at consecutive addresses, so knowing only the first slot’s address and the type lets every other position be calculated (element <math><mi>𝑖</mi></math> = start address + <math><mi>𝑖</mi><mo form="infix" lspace="0.2222222222222222em" rspace="0em">×</mo></math> slot size). This property of “calculable neighbours” is the root of both the array’s power (immediate access, cache friendliness) and its danger (miscalculating the boundary).</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">Contiguous memory — the array. Declaration and traversal, the real relationship <span id="idx-entry-65"></span>between arrays and pointers (the notorious “decay”), and the life-or-death rule of the boundary. Chapter 25′s <code>char line[100]</code> credit is settled here.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why was it settled this way — would plain byte arithmetic not be simpler?</li><li>Should every pointer parameter then be written <code>[static 1]</code>?</li><li>Does the compiler not catch a boundary violation?</li></ol></div></div><div></div><h3>37.1 Declaration, access, traversal</h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch37/arr.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
-int main(void)
-{
-    char greet[] = "안녕";      /* 글자 2개 — 그러나 바이트는? */
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><span class="tok-n">5</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-n">3</span><span class="tok-x">,</span> <span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-n">4</span><span class="tok-x">,</span> <span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-n">5</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> sum <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 
-    printf("strlen(\"안녕\") = %zu\n", strlen(greet));
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        sum <strong><span class="tok-x">+=</span></strong> a<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sum: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    for (size_t i = 0; i &lt; strlen(greet); i += 1) {
-        printf("%02X ", (unsigned char)greet[i]);
-    }
-    printf("\n");
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">a[2] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, *(a + 2) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">(</span></strong><strong>a </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    printf("sizeof greet = %zu (NUL 종단 포함)\n", sizeof greet);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>strlen("안녕") = 6
-EC 95 88 EB 85 95 
-sizeof greet = 7 (NUL 종단 포함)
-</code></pre></div></div><p>There are layers to read. <code>strlen</code> (the length measurement of the standard <code>&lt;string.h></code>) answered 6 — “안녕” is <strong>two characters, six bytes</strong> (exactly chapter 9′s UTF-8 table: Hangul syllables live in the 3-byte range). The byte dump <code>EC 95 88 EB 85 95</code> is the bare face of those six bytes, and <code>sizeof greet</code> is 7 — the size of a container that also holds the NUL marker. This is the moment chapter 8′s misconception (“one character = one byte”) is disproved by an execution result.</p><p><code>strlen</code>’s <strong>cost</strong> can now be stated exactly too — as chapter 9 foretold, NUL termination does not write the length down, so strlen <strong>walks one slot at a time until it meets the marker</strong>. The longer the string the longer it takes (proportional to the slot count), which is why code calling strlen in a loop condition every time is a classic performance trap (the demonstration’s loop is in fact that pattern — harmless for a short string, but for a long one the practice is to take the length into a variable first).</p><h3>37.2 String literals — read-only ground</h3><p>Instead of initialising an array you may hold a literal in a pointer — and here lies an important difference:</p><pre><code data-lang="c">char buf[] = "you may change this";      /* copied into my array — modifiable */
-const char *msg = "you must not change this";  /* points at the literal itself */</code></pre><p>A string literal is itself <strong>read-only data</strong> baked into the program — attempting to modify it is outside the contract, and in a modern environment it usually collapses on the spot (literals being placed in a write-forbidden region — chapter 6′s protected zone doing another kindness). So the rule is to declare pointers to literals as <code>const char*</code> — where chapter 23′s <code>const</code> was documentation saying “I will not change this”, here it works as a lock that stops, at compile time, the mistake of trying to change what must not be changed.</p><h4>37.2.1 The type is not <code>const</code> — C’s odd place</h4><p>And here lies C’s famous contradiction. <strong>It must not be modified, and yet its type carries no <code>const</code>.</strong> The type of <code>"abcdef"</code> is not <code>const char[7]</code> but plain <code>char[7]</code>.</p><pre><code data-lang="c">char *p = "hello";     /* C: it passes without a warning */
-p[0] = 'H';            /* but this is undefined behaviour */</code></pre><p>That is, the compiler does not block it. “Not modifiable” exists <strong>only as a contract, not as a type</strong>, and breaking it is chapter 46′s undefined behaviour — mostly it dies on the spot thanks to being placed in a write-protected region, but that is the implementation’s kindness, not the language’s guarantee.</p><p><strong>C++ differs.</strong> In C++ a string literal’s type is <code>const char[N]</code>, and the first line above is <strong>a compile error</strong>. This item belongs in the list of “differences between the two languages” seen in chapter 79.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Why did C not attach <code>const</code>?</p></div><div class="dev qa-a"><p class="dev-label">A <strong>So as not to break existing code.</strong> The word <code>const</code> itself entered the standard only with C89 (chapter 23), and by then the world already had mountains of code putting string literals into a <code>char *</code>. The moment the literal’s type became <code>const char[N]</code>, all of that code would be subject to diagnosis.</p><p>It is the same circumstance as <code>gets</code>’s funeral taking twenty years (chapter 56) — <strong>the standard is an institution that must protect existing code</strong>, so when “the right type” and “code already written” collide it leans towards the latter. C++, first standardised in 1998, carried no such burden and could attach <code>const</code> from the start (chapter 79′s “siblings, not parent and child” is confirmed here too).</p><p>So discipline stands in for the language. <strong>A pointer at a literal is always declared <code>const char *</code>.</strong> Then what the type cannot do has been written in by a human, and from there the compiler keeps it. GCC’s and Clang’s <code>-Wwrite-strings</code> is an option that changes a literal’s type to <code>const char[N]</code> outright, but it is not the default because warnings pour out of old code.</p></div></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What of the newest standard and the ones to come?</p></div><div class="dev qa-a"><p class="dev-label">A <strong>It stands as it is up to C23.</strong> A string literal’s type is still <code>char[N]</code> and modifying one is still undefined behaviour. C23 changed two things while leaving this place alone — settling <code>u8"..."</code>‘s element type as <code>char8_t</code> and pinning down two’s complement are both separate from this clause.</p><p>Nor is there any sign of change in the next edition (C2y). The reason is the one above — changing the type now would make half a century of code subject to diagnosis. The way the standard tidies this place has been not to mend the type but <strong>to let the tools warn</strong>, and that is likely to remain so.</p><p>In summary, remember it like this — <strong>the type is <code>char[N]</code>, the contract is “do not modify”, and the defence is <code>const char *</code> plus compiler warnings.</strong></p></div></div><h3>37.3 A literal is an array too</h3><p>The previous section said a literal may be copied into an array or pointed at by a pointer, and one step further in there is a surprising fact — <strong>a string literal is itself already an array.</strong> Written with its type exactly, <code>"abcdef"</code> is <code>char[7]</code> (six characters + the NUL).</p><div><div><p><code>examples/ch37/literal.c</code></p><pre><code data-lang="c">/* 문자열 리터럴의 정체 — 배열이라는 것, 이어 붙는다는 것, 그리고 접두사. */
-#include &lt;stdio.h>
-#include &lt;inttypes.h>   /* PRIu64 — 이어 붙이기 규칙 위에 세워진 표준 매크로 */
-#include &lt;wchar.h>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the array name decays to the address of the first element </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof a = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, sizeof p = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> a</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>sum: 14
+a[2] = 4, *(a + 2) = 4
+sizeof a = 20, sizeof p = 8
+</code></pre></div></div><p><code>int a[5] = {3, 1, 4, 1, 5};</code> — type, name, slot count, and brace initialisation. Access is <code>a[i]</code> and <strong>numbering starts at 0</strong> (the first element is <code>a[0]</code>, the last <code>a[4]</code>). Why count from 0 was already answered by the opening exchange — <code>a[i]</code> really means “the place <math><mi>𝑖</mi></math> slots <strong>away</strong> from the start”, so the first element is zero away.</p><h3>37.2 Arrays and pointers — the truth about decay</h3><p>The latter part of the demonstration is this chapter’s heart. Let us set out exactly the relationship that has caused the most confusion in C — arrays and pointers.</p><p><strong>The rule: in most contexts an array’s name decays into “the address of its first element.”</strong> Put side by side what survives the decay and what is lost:</p><figure class="fig"><img src="figures/decay.svg" alt="decay" loading="lazy"><p class="float-caption">Figure 37.1 — The address is the same and the type is not — so how many elements there are disappears.</p></figure><p>That is why <code>int *p = a;</code> is legal — <code>a</code> was read as the pointer value <code>&amp;a[0]</code>. And the notation <code>a[i]</code> is itself sugar for <code>*(a + i)</code> — add an integer to a pointer and you get the address “<math><mi>𝑖</mi></math> slots along, by that type’s size” (pointer arithmetic — chapter 36′s rules apply here), and dereferencing that is indexed access. The demonstration’s <code>a[2] == *(a + 2)</code> is the check.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“An array is a pointer”</strong></p>This famous sentence is false — an illusion created by how often decay happens. An array is <strong>memory itself</strong>, five slots of it; a pointer is <strong>a different variable</strong> holding one address. The demonstration’s last line is the decisive evidence: <code>sizeof a</code> is 20 (the total size of five ints) and <code>sizeof p</code> is 8 (the size of one address, chapter 34). The representative context in which decay does <strong>not</strong> happen is exactly <code>sizeof</code>, which is why the difference is visible — and it is thanks to this that chapter 25′s <code>fgets(line, sizeof line, stdin)</code> measured the container correctly. One consequence matters: “pass” an array to a function and only the decayed <strong>address</strong> is copied (chapter 32), so the function side cannot learn the size with <code>sizeof</code> — which is why C functions conventionally take an array <strong>and its length as a separate argument</strong>. The concern of chapter 9′s representations that “keep the length beside the data” reappears here at C’s function boundary.</div><h3>37.3 Adding to a pointer is not ordinary addition</h3><p>We have just said that <code>a[i]</code> is <code>*(a + i)</code>. Then what value, exactly, is <code>a + 2</code>? If it were “2 added to an address” it would be two bytes along; in fact it is <strong>two <code>int</code> slots along</strong>, that is eight bytes. Pointer arithmetic moves by <strong>multiplying by the size of the type pointed at</strong>.</p><figure class="fig"><img src="figures/ptrmath.svg" alt="ptrmath" loading="lazy"><p class="float-caption">Figure 37.2 — The distance <code>+1</code> jumps is the size of the type pointed at.</p></figure><p>Set down exactly, the rule is this.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>expression</strong></th><th><strong>meaning</strong></th><th><strong>result type</strong></th></tr><tr><td><code>p + n</code>, <code>n + p</code></td><td>forward by <code>n</code> times the size of what <code>p</code> points at</td><td>the same pointer type as <code>p</code></td></tr><tr><td><code>p - n</code></td><td>backward by the same</td><td>the same</td></tr><tr><td><code>p - q</code></td><td><strong>how many elements</strong> fit between the two addresses</td><td><code>ptrdiff_t</code> (a signed integer)</td></tr><tr><td><code>p++</code>, <code>++p</code>, <code>p += n</code></td><td>moved by the same rule, then assigned</td><td>the same</td></tr></table></div><p class="float-caption">Table 37.1</p></figure><p>So adding an integer to a pointer is not “adding a number to a number that is an address” but <strong>counting in slots</strong>. Only on a <code>char *</code> is 1 one byte; on an <code>int *</code> it is four, on a <code>struct point *</code> it is one whole struct.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why was it settled this way — would plain byte arithmetic not be simpler?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Three reasons overlap.</p><p><strong>First, it gives arrays away for free.</strong> <code>a[i]</code> can be defined as <code>*(a + i)</code> only because the addition counts elements. Had it counted bytes, every array access would have had to read <code>*(a + i * sizeof *a)</code>, and changing an element type would have meant editing every access. That one rule is how C has arrays without any special machinery for them.</p><p><strong>Second, the type already knows the size.</strong> Recall chapter 5′s refrain — memory has no boundaries, and how many bytes count as one lump is decided by the <strong>reading side</strong>. A pointer’s type is exactly that decision. Letting the value that already carries the decision carry the movement too is natural.</p><p><strong>Third, the machine moves that way.</strong> Most CPUs have an addressing mode that computes “base + index × size” in one step. Element-wise arithmetic maps straight onto it — another instance of chapter 4′s “C did not hide the machine”.</p></p></div></div><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch37/ptrmath.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Pointer arithmetic moves in "slots", not in bytes. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
-/* 서식 조각을 이름으로 두는 관용구 — 아래 printf 에서 이어 붙는다 */
-#define TEMP_FMT  "%.1f"
-#define ID_FMT    "%d"
+<strong><span class="tok-t">struct</span></strong> point <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x<span class="tok-x">,</span> y<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
 
-/* 버전 문자열 조립 — 값은 한 곳에만 적는다 */
-#define MY_PROGRAM_VERSION  "v3.1.2"
-#define PROGRAM_TITLE       "my_program " MY_PROGRAM_VERSION
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">char</span></strong>          c<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong>           a<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-n">0</span><span class="tok-x">,</span> <span class="tok-n">10</span><span class="tok-x">,</span> <span class="tok-n">20</span><span class="tok-x">,</span> <span class="tok-n">30</span><span class="tok-x">,</span> <span class="tok-n">40</span><span class="tok-x">,</span> <span class="tok-n">50</span><span class="tok-x">,</span> <span class="tok-n">60</span><span class="tok-x">,</span> <span class="tok-n">70</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong>        d<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> point  s<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">;</span>
 
-/* 숫자로 관리하는 버전은 두 겹 우회로 문자열이 된다(49장) */
-#define VER_MAJOR 3
-#define VER_MINOR 1
-#define STR_RAW(x) #x
-#define STR(x)     STR_RAW(x)
-#define VERSION_FROM_NUMBERS  "v" STR(VER_MAJOR) "." STR(VER_MINOR)
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (1) the same +1, a different distance moved ─────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">type           sizeof   (p+1) - p in bytes</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char           </span></strong><strong><span class="tok-s">%2zu</span></strong><strong><span class="tok-s">       </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> c</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>c </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>c</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">int            </span></strong><strong><span class="tok-s">%2zu</span></strong><strong><span class="tok-s">       </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> a</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>a </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">double         </span></strong><strong><span class="tok-s">%2zu</span></strong><strong><span class="tok-s">       </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> d</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>d </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>d</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">struct point   </span></strong><strong><span class="tok-s">%2zu</span></strong><strong><span class="tok-s">       </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> s</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>s </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-int main(void)
-{
-    /* ── ① 리터럴은 배열이다 ─────────────────────────────────── */
-    printf("sizeof \"abcdef\" = %zu  (여섯 글자 + NUL)\n", sizeof "abcdef");
-    printf("sizeof \"\"       = %zu  (빈 문자열도 NUL 한 칸)\n", sizeof "");
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> to move by bytes, cast to a character pointer </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">p + 1        points at </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">(</span></strong><strong>p </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">(char*)p + 1 is the second byte of a[0]</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* 배열이므로 첨자를 붙일 수 있다 — 36장의 a[i] == *(a+i) 그대로 */
-    printf("\"abcdef\"[3] = %c\n", "abcdef"[3]);
-    printf("3[\"abcdef\"] = %c   ← 첨자가 교환된다(같은 뜻이다)\n", 3["abcdef"]);
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (2) pointer subtraction gives a count of elements ────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">ptrdiff_t</span></strong> gap <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">&amp;</span></strong>a<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span> <strong><span class="tok-x">-</span></strong> <strong><span class="tok-x">&amp;</span></strong>a<span class="tok-x">[</span><span class="tok-n">1</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">&amp;a[4] - &amp;a[1]        = </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-s">  (elements, not bytes)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> gap</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">counted in bytes     = </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>a</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>a</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ── ② 인접한 리터럴은 하나로 이어진다 ───────────────────── */
-    printf("%s\n", "abc" "def");                 /* -> "abcdef" */
-    printf("sizeof(\"abc\" \"def\") = %zu\n", sizeof("abc" "def"));
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (3) the subscript is sugar over the arithmetic ───────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">a[3] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, *(a + 3) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, *(3 + a) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, 3[a] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           a</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">(</span></strong><strong>a </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">[</span></strong><strong>a</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* 긴 문장을 줄 나눠 적을 때 — 역슬래시 없이도 된다 */
-    const char *help =
-        "사용법: tool [옵션] 파일\n"
-        "  -v   자세히\n"
-        "  -o   출력 파일\n";
-    printf("%s", help);
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (4) one past the end may be formed, but never followed ───── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>end <strong><span class="tok-x">=</span></strong> a <strong><span class="tok-x">+</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> one-past-the-end — legal </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">elements up to the one-past-the-end address: </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-s"> (never dereferenced)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> end </strong><strong><span class="tok-x">-</span></strong><strong> a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ── ③ 조각을 이름으로 두고 조립하기 ─────────────────────── */
-    puts(PROGRAM_TITLE);
-    printf("숫자에서 조립: %s\n", VERSION_FROM_NUMBERS);
+    <strong><span class="tok-t">int</span></strong> count <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>q <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span> q <strong><span class="tok-x">!=</span></strong> end<span class="tok-x">;</span> q<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the standard idiom: stop at != end </span></em><em><span class="tok-c">*/</span></em>
+        count <strong><span class="tok-x">+=</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>q <strong><span class="tok-x">!=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">non-zero elements: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> count</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>type           sizeof   (p+1) - p in bytes
+char            1       1
+int             4       4
+double          8       8
+struct point    8       8
 
-    int    id   = 7;
-    double temp = 36.5;
-    printf("id = " ID_FMT ", temp = " TEMP_FMT "\n", id, temp);
+p + 1        points at 10
+(char*)p + 1 is the second byte of a[0]
 
-    /* 표준 라이브러리가 같은 기법을 쓴다 — 고정 폭 정수의 서식 매크로 */
-    uint64_t total = 1234567890123ULL;
-    printf("total = %" PRIu64 "\n", total);
+&amp;a[4] - &amp;a[1]        = 3  (elements, not bytes)
+counted in bytes     = 12
 
-    /* ── ④ 접두사 — 인코딩을 정하는 글자 ─────────────────────── */
-    printf("sizeof \"AB\"  = %zu (char)\n",    sizeof "AB");
-    printf("sizeof u8\"AB\" = %zu (UTF-8)\n",  sizeof u8"AB");
-    printf("sizeof L\"AB\"  = %zu (wchar_t %zu바이트)\n",
-           sizeof L"AB", sizeof(wchar_t));
-    printf("sizeof u\"AB\"  = %zu (UTF-16)\n", sizeof u"AB");
-    printf("sizeof U\"AB\"  = %zu (UTF-32)\n", sizeof U"AB");
+a[3] = 30, *(a + 3) = 30, *(3 + a) = 30, 3[a] = 30
 
-    /* 접두사가 있는 것과 없는 것을 이어 붙이면 있는 쪽을 따른다 */
-    const wchar_t *w = L"wide" " and narrow";
-    printf("L\"wide\" \" and narrow\" -> 길이 %zu (와이드 문자열이 된다)\n",
-           wcslen(w));
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>sizeof "abcdef" = 7  (여섯 글자 + NUL)
-sizeof ""       = 1  (빈 문자열도 NUL 한 칸)
-"abcdef"[3] = d
-3["abcdef"] = d   ← 첨자가 교환된다(같은 뜻이다)
-abcdef
-sizeof("abc" "def") = 7
-사용법: tool [옵션] 파일
-  -v   자세히
-  -o   출력 파일
-my_program v3.1.2
-숫자에서 조립: v3.1
-id = 7, temp = 36.5
-total = 1234567890123
-sizeof "AB"  = 3 (char)
-sizeof u8"AB" = 3 (UTF-8)
-sizeof L"AB"  = 12 (wchar_t 4바이트)
-sizeof u"AB"  = 6 (UTF-16)
-sizeof U"AB"  = 12 (UTF-32)
-L"wide" " and narrow" -> 길이 15 (와이드 문자열이 된다)
-</code></pre></div></div><p>The output’s first two lines are that confirmation. <code>sizeof "abcdef"</code> is 7 and <code>sizeof ""</code> is 1 — not a pointer’s size (8) but <strong>the array’s size</strong>. A literal decaying into a pointer is the decay seen in chapter 36, and <code>sizeof</code> being the exception to decay is why the array’s real size shows.</p><p>Something amusing follows from its being an array. Being an array, <strong>a subscript can be attached.</strong></p><pre><code data-lang="c">"abcdef"[3]     /* 'd' */</code></pre><p>And recalling the identity <code>a[i] ≡ *(a + i)</code> learned in chapter 36, since addition commutes, <code>*(a + i) ≡ *(i + a) ≡ i[a]</code>. That is,</p><pre><code data-lang="c">3["abcdef"]     /* 'd' as well — entirely legal grammatically */</code></pre><p>That the example prints <code>d</code> for both is the evidence. There is no use for it in practice (it merely bewilders the reader) and it is notation seen only in obfuscation contests, but no example shows more clearly that <strong>the array subscript is not a decoration of the grammar but another notation for pointer arithmetic</strong>.</p><h3>37.4 Concatenation — adjacent literals become one</h3><p>Write two string literals side by side and the compiler joins them into one.</p><pre><code data-lang="c">"abc" "def"        /* -> "abcdef" — no comma, no operator */</code></pre><p>That the example’s <code>sizeof("abc" "def")</code> is 7 confirms it (3+3+NUL). This happens not in the preprocessor but in <strong>translation phase 6</strong> (chapter 49′s table) — so a string fragment produced by a macro joins with the literal beside it too.</p><p>There are two uses.</p><p><strong>① Writing a long sentence over several lines.</strong> It is cleaner than joining lines with a backslash — because the indentation does not go inside the string.</p><pre><code data-lang="c">const char *help =
-    "usage: tool [options] file\n"
-    "  -v   verbose\n"
-    "  -o   output file\n";</code></pre><p><strong>② Keeping fragments under names and assembling them.</strong> This is the use most often seen in practice, and it appears with three faces.</p><p><strong>Assembling a version string.</strong> The value is written in one place and woven in elsewhere.</p><pre><code data-lang="c">#define MY_PROGRAM_VERSION  "v3.1.2"
-#define PROGRAM_TITLE       "my_program " MY_PROGRAM_VERSION
+elements up to the one-past-the-end address: 8 (never dereferenced)
+non-zero elements: 7
+</code></pre></div></div><p>The first block of output shows the whole rule. The same <code>+ 1</code> moves a different distance for each type, and the distance is exactly <code>sizeof</code>. So <code>(char *)p + 1</code> and <code>p + 1</code> point at different places — which is where the idiom of casting to a character pointer to move by bytes comes from (chapter 82′s views do this).</p><p>The second block is <strong>subtraction</strong>. <code>&amp;a[4] - &amp;a[1]</code> is 3, not 12 — pointer subtraction gives a count of <strong>elements</strong>, not of bytes. And that is why the result has type <code>ptrdiff_t</code>: subtracting a later pointer from an earlier one can be negative, so the type must be signed.</p><h4>37.3.1 How far it may go — the contract of the arithmetic</h4><p>Chapter 36′s provenance applies to pointer arithmetic as it stands. Reduced to practical sentences:</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>what is done</strong></th><th><strong>verdict</strong></th></tr><tr><td>moving a pointer within the array it points into</td><td>fine</td></tr><tr><td>forming a pointer to the position <strong>one past the last element</strong></td><td>fine — but <strong>dereferencing it is forbidden</strong></td></tr><tr><td><strong>forming</strong> an address further out than that</td><td>outside the contract — even if it is only computed and never followed</td></tr><tr><td><code>+ 1</code> on a single object that is not an array</td><td>fine — it is treated as an array of length one</td></tr><tr><td>subtracting pointers into different arrays</td><td>outside the contract</td></tr><tr><td>ordering pointers into different arrays with <code>&lt;</code></td><td>outside the contract (equality with <code>==</code> is allowed)</td></tr><tr><td>adding an integer to a <code>void *</code></td><td>not in the standard — a gcc/clang extension (one byte per unit)</td></tr></table></div><p class="float-caption">Table 37.2</p></figure><p>“Outside the contract even when only formed” sounds strange, but it changes how loop conditions are written. <code>p &lt;= a + n</code> is safe because it goes no further than one past the end; <code>p &lt; a + n + 1</code> computes an address one further out and is outside the contract. Sweeping backwards as <code>for (p = a + n - 1; p >= a - 1; p--)</code> is dangerous for the same reason — <code>a - 1</code> is an address before the array, and it is outside the contract the moment it is computed.</p><div class="dev antipattern"><p class="dev-label">Counter-example. a backward loop that steps in front of the array</p><pre><code data-lang="c"><strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> a <strong><span class="tok-x">+</span></strong> n <strong><span class="tok-x">-</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> p <strong><span class="tok-x">>=</span></strong> a <strong><span class="tok-x">-</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> p<strong><span class="tok-x">--</span></strong><span class="tok-x">)</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> forms a - 1 — outside the contract </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-x">...</span></strong></code></pre><p>The safe shapes use an index, or keep the end condition inside the array.</p><pre><code data-lang="c"><strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">--</span></strong> <strong><span class="tok-x">></span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> <span class="tok-x">)</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> stops when i is 0 — no address is formed </span></em><em><span class="tok-c">*/</span></em>
+    <strong>use</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre></div><div class="dev realcase"><p class="dev-label">In practice. optimisers really use this rule</p>“Outside the contract even when only formed” looks excessive until you see what compilers do with the promise. If <code>p</code> is guaranteed to point within the array <code>a</code>, then <code>p >= a</code> is always true and the test may be deleted — exactly the logic of optimisation from chapter 13. Bounds checks written this way have disappeared from release builds more than once, in bugs reported in earnest.</div><h3>37.4 An array parameter is not an array</h3><p>There is one more rule in the position of a function parameter. <strong>Declare it as an array and the compiler turns it into a pointer.</strong> So the following three are completely identical declarations to the compiler.</p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>a<span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><span class="tok-n">10</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the 10 is documentation only; it is not checked </span></em><em><span class="tok-c">*/</span></em></code></pre><p>For a multi-dimensional array only <strong>the outermost (leftmost) dimension</strong> is stripped. The inner dimensions remain part of the type.</p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>g</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> m<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c">  the real type is  int (*m)[4]  </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">void</span></strong> <strong>h</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> c<span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span><em><span class="tok-c">/*</span></em><em><span class="tok-c">  the real type is  int (*c)[3][4] </span></em><em><span class="tok-c">*/</span></em></code></pre><p>There are three places where this fact becomes visible.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch37/param.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
-puts(PROGRAM_TITLE);                       /* my_program v3.1.2 */
-puts("build: " __DATE__ " " __TIME__);     /* with the compiler's own literals too */</code></pre><p>The point is that raising the version means mending <strong>one line</strong>. It weaves just as well with literals the compiler predefines (<code>__DATE__</code>, chapter 49), so many programs build their banner and <code>--version</code> output this way.</p><p><strong>Keeping format fragments under names.</strong> The same technique applied to <code>printf</code>’s format.</p><pre><code data-lang="c">#define ID_FMT    "%d"
-#define TEMP_FMT  "%.1f"
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> The three declarations are exactly the same thing to the compiler: all int *.</span></em>
+<em><span class="tok-c">   (Applying sizeof directly to a parameter name makes gcc warn, so we take it</span></em>
+<em><span class="tok-c">    into a local variable of the same type once and measure that.) </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>by_ptr</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>a<span class="tok-x">)</span>     <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  int *a      : sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>by_arr</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><span class="tok-x">]</span><span class="tok-x">)</span>    <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  int a[]     : sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>by_size</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><span class="tok-n">10</span><span class="tok-x">]</span><span class="tok-x">)</span> <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  int a[10]   : sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
 
-printf("id = " ID_FMT ", temp = " TEMP_FMT "\n", id, temp);</code></pre><p>The demand that a format string <strong>be a constant</strong> (chapter 53′s format string vulnerability, and the compiler’s format checking) is kept while the fragments are managed under names. It contrasts with passing a variable, as in <code>printf(fmt_string_variable, …)</code>, which makes all that checking vanish at once — <strong>concatenation finishes at compile time, so the result is still one literal.</strong></p><p><strong>The standard library uses the same technique.</strong> The format macros of <code>&lt;inttypes.h></code> seen in chapter 63 and appendix B stand exactly on this rule.</p><pre><code data-lang="c">printf("total = %" PRIu64 "\n", total);</code></pre><p><code>PRIu64</code> is defined as <code>"lu"</code> or <code>"llu"</code> (it differs by platform) and joins with the fragments before and after into one format string. The problem that the format for a fixed-width integer differs by platform was solved <strong>by concatenation alone</strong>.</p><p>The three cases come to the same one thing — <strong>give literal fragments names and weave them at the place of use.</strong> And all three pair with chapter 49′s <code>#</code> operator. If the version is managed as numbers, the numbers can be turned into strings and woven.</p><pre><code data-lang="c">#define VER_MAJOR 3
-#define VER_MINOR 1
-#define STR_RAW(x) #x
-#define STR(x)     STR_RAW(x)                     /* double expansion (chapter 49) */
-#define VERSION    "v" STR(VER_MAJOR) "." STR(VER_MINOR)   /* "v3.1" */</code></pre><div class="dev antipattern"><p class="dev-label">✗ Variables do not join</p><pre><code data-lang="c">const char *unit = "°C";
-printf("temp = %.1f" unit "\n", t);   /* a compile error */</code></pre><p>Concatenation is a rule <strong>between literals</strong>. <code>unit</code> is a variable and so cannot join. To insert a variable’s content the answer is one more placeholder — <code>printf("temp = %.1f%s\n", t, unit)</code>.</p><p>For the same reason, when keeping a fragment to be joined in a <code>#define</code>, <strong>that macro must expand to a string literal</strong>. Define it as something that is not a literal and it will not join.</p></div><h3>37.5 Prefixes — a literal of which encoding</h3><p>A letter may be attached before a literal to settle <strong>which character type’s array it is</strong>.</p><table><tr><th><strong>notation</strong></th><th><strong>element type</strong></th><th><strong>encoding</strong></th><th><strong><code>sizeof "AB"</code></strong></th></tr><tr><td><code>"AB"</code></td><td><code>char</code></td><td>the execution character set (mostly UTF-8)</td><td>3</td></tr><tr><td><code>u8"AB"</code></td><td><code>char8_t</code> (C23) / <code>char</code></td><td>UTF-8</td><td>3</td></tr><tr><td><code>u"AB"</code></td><td><code>char16_t</code></td><td>UTF-16</td><td>6</td></tr><tr><td><code>U"AB"</code></td><td><code>char32_t</code></td><td>UTF-32</td><td>12</td></tr><tr><td><code>L"AB"</code></td><td><code>wchar_t</code></td><td>the implementation settles it</td><td>12 on the example’s machine</td></tr></table><p>The example really prints this table. That <code>L"AB"</code> is 12 bytes is because this Linux machine’s <code>wchar_t</code> is 4 bytes — <strong>on Windows it is 2 bytes and this becomes 6.</strong> It is where chapter 59′s “the size of <code>wchar_t</code> differs by implementation” shows itself at the level of literals.</p><p>Character constants take the same prefixes (<code>L'A'</code>, <code>u'A'</code>). And where concatenation meets prefixes there is one more rule — <strong>if only one side has a prefix, the prefixed side wins</strong> (the example’s <code>L"wide" " and narrow"</code> becomes a wide string), and <strong>joining two different prefixes is outside the contract.</strong></p><div class="dev realcase"><p class="dev-label">◉ gets — the function expelled from the standard</p><p>Attached to the third price of NUL termination (lose the marker and it runs away) is the most famous funeral in the history of the C standard. <code>gets</code> in the early standard library was a function that “reads a line and puts it into an array” — and <strong>it did not take the container’s size</strong>. If the input was longer than the container it overwrote the neighbouring memory as it went: a function with the boundary violation of chapter 36 built into its design. In 1988 the internet’s first large-scale worm (the Morris worm) spread through defects of this class, and after decades of accidents the C11 standard <strong>deleted</strong> <code>gets</code> — a rare case of a standard formally burying one of its own functions. That is the reason this book taught <code>fgets</code> (the successor that takes the container’s size) from the start in chapter 25 — and the next chapter faces this whole class of accident head on.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>To handle Hangul properly — to work in units of characters — what must be done?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Distinguishing two layers is the starting point. At the <strong>byte layer</strong> (the world of C strings) you may treat UTF-8 simply as a byte sequence — copying, joining, storing and transmitting are safe without knowing character boundaries (thanks to UTF-8′s self-synchronising design, chapter 9). Work that needs the <strong>character layer</strong> (counting characters, cutting, case conversion) requires UTF-8 decoding, and since the standard library’s support is thin there, using a library is the practice — proven’s u8str family takes exactly this place (first met in the next chapter, in earnest in chapter 53). Keep one rule in mind and most accidents are prevented: <strong>do not cut a string by byte index</strong> — cut through the waist of a Hangul syllable and you get a broken byte sequence.</p></div></div><p>We know the string’s identity and cost. The next chapter is this part’s turning point — a dissection of the class of accident called the boundary violation, and the appearance of this book’s underlying technology, proven. The “safe input” seed planted in chapter 25 is finally collected.</p>
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> A parameter is just a pointer variable, so another address can be assigned to it </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>second_of</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><span class="tok-n">10</span><span class="tok-x">]</span><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    a <strong><span class="tok-x">=</span></strong> a <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> impossible for an array — an array name cannot be assigned to </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> a<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> Two dimensions: only the outermost (leftmost) dimension is stripped.</span></em>
+<em><span class="tok-c">   int m[3][4]  ->  int (*m)[4] </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>by_2d</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> m<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>p<span class="tok-x">)</span><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> m<span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> this is the parameter's real type </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  int m[3][4] : sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (a pointer), sizeof p[0] = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (one row)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> p</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> p</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">                m[1][2] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> arr<span class="tok-x">[</span><span class="tok-n">10</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-n">0</span><span class="tok-x">,</span><span class="tok-n">1</span><span class="tok-x">,</span><span class="tok-n">2</span><span class="tok-x">,</span><span class="tok-n">3</span><span class="tok-x">,</span><span class="tok-n">4</span><span class="tok-x">,</span><span class="tok-n">5</span><span class="tok-x">,</span><span class="tok-n">6</span><span class="tok-x">,</span><span class="tok-n">7</span><span class="tok-x">,</span><span class="tok-n">8</span><span class="tok-x">,</span><span class="tok-n">9</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> grid<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">{</span><span class="tok-n">0</span><span class="tok-x">,</span><span class="tok-n">1</span><span class="tok-x">,</span><span class="tok-n">2</span><span class="tok-x">,</span><span class="tok-n">3</span><span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span><span class="tok-n">4</span><span class="tok-x">,</span><span class="tok-n">5</span><span class="tok-x">,</span><span class="tok-n">6</span><span class="tok-x">,</span><span class="tok-n">7</span><span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span><span class="tok-n">8</span><span class="tok-x">,</span><span class="tok-n">9</span><span class="tok-x">,</span><span class="tok-n">10</span><span class="tok-x">,</span><span class="tok-n">11</span><span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">on the caller's side (real arrays):</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  int arr[10]    : sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  int grid[3][4] : sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, sizeof grid[0] = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> grid</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> grid</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">inside the functions (all pointers):</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>by_ptr</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>by_arr</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>by_size</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>by_2d</strong><strong><span class="tok-x">(</span></strong><strong>grid</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">assigning to a parameter: second_of(arr) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>second_of</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the original is untouched: arr[0] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> arr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>on the caller's side (real arrays):
+  int arr[10]    : sizeof = 40
+  int grid[3][4] : sizeof = 48, sizeof grid[0] = 16
+inside the functions (all pointers):
+  int *a      : sizeof = 8
+  int a[]     : sizeof = 8
+  int a[10]   : sizeof = 8
+  int m[3][4] : sizeof = 8 (a pointer), sizeof p[0] = 16 (one row)
+                m[1][2] = 6
+assigning to a parameter: second_of(arr) = 1
+the original is untouched: arr[0] = 0
+</code></pre></div></div><p><strong>① The value of <code>sizeof</code> differs.</strong> On the caller’s side <code>arr</code> is a real array, so 40 bytes (ten <code>int</code>s), but inside the function it is 8 — the size of one pointer. So the idiom <code>sizeof a / sizeof a[0]</code> for counting elements <strong>does not work inside a function.</strong> The count must be received separately.</p><p>gcc really does point at this mistake. Here is the diagnostic received when the example was first written.</p><pre><code data-lang="text">error: ‘sizeof’ on array function parameter ‘a’ will return size of ‘int *’
+       [-Werror=sizeof-array-argument]
+note: declared here</code></pre><p><strong>② It can be assigned to.</strong> An array’s name cannot appear on the left of an assignment, but a parameter is just a pointer variable, so <code>a = a + 1</code> works. The example’s <code>second_of</code> does that — it moves the parameter along and reads <code>a[0]</code>, yielding the original’s second element — and the caller’s <code>arr</code> was not affected at all (exactly chapter 32′s copy-by-value rule).</p><p><strong>③ In two dimensions only half remains.</strong> <code>sizeof p</code> is 8 (a pointer) while <code>sizeof p[0]</code> is 16 — that is, the size of “one row” survives. It is because the inner dimension remains in the type, and that is what makes an access like <code>m[1][2]</code> compute correctly. Put the other way round, <strong>the size of the inner dimension must be written</strong> — <code>int m[][]</code> does not compile.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“I wrote <code>int a[10]</code> for the parameter, so passing fewer than 10 will be caught”</strong></p>It will not. That <code>10</code> is closer to a comment with no meaning at all to the compiler — the type simply becomes <code>int *</code>. If you really want to make the array size a contract there are two roads. One is to <strong>take the size as a separate parameter</strong> (the commonest and surest method), the other is the <code>[static 10]</code> notation of the next section. The latter pins a minimum count down as a promise so that the compiler can warn.</div><h3>37.5 Arrays whose size is settled at run time — VLAs</h3><p>Every array so far had its size settled at compile time. C99 added one more — the <strong>variable length array</strong> (VLA). A variable, not a constant, may be written in the size slot.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch37/vla.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> [static N]: the promise "an array of at least N elements comes here".</span></em>
+<em><span class="tok-c">   It can be used only in an array declarator of a function parameter. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>sum3</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><strong><span class="tok-k">static</span></strong> <span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">return</span></strong> a<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">+</span></strong> a<span class="tok-x">[</span><span class="tok-n">1</span><span class="tok-x">]</span> <strong><span class="tok-x">+</span></strong> a<span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> A variable length array (VLA) as a parameter: take the size first, use it after </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>sum_n</strong><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span>n<span class="tok-x">]</span><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> s <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> s <strong><span class="tok-x">+=</span></strong> a<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> s<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> A two-dimensional VLA parameter — no computing indices by hand </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>trace</strong><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> m<span class="tok-x">[</span>n<span class="tok-x">]</span><span class="tok-x">[</span>n<span class="tok-x">]</span><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> s <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> s <strong><span class="tok-x">+=</span></strong> m<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> s<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> fixed<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-n">2</span><span class="tok-x">,</span> <span class="tok-n">3</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sum3        = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>sum3</strong><strong><span class="tok-x">(</span></strong><strong>fixed</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">size_t</span></strong> n <strong><span class="tok-x">=</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> local<span class="tok-x">[</span>n<span class="tok-x">]</span><span class="tok-x">;</span>                    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a local VLA: its size is settled while running </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> local<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>i <strong><span class="tok-x">*</span></strong> i<span class="tok-x">)</span><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof local = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes (= </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> ints)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> local</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> local </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> local</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sum_n       = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>sum_n</strong><strong><span class="tok-x">(</span></strong><strong>n</strong><strong><span class="tok-x">,</span></strong><strong> local</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">int</span></strong> grid<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">{</span><span class="tok-n">1</span><span class="tok-x">,</span><span class="tok-n">2</span><span class="tok-x">,</span><span class="tok-n">3</span><span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span><span class="tok-n">4</span><span class="tok-x">,</span><span class="tok-n">5</span><span class="tok-x">,</span><span class="tok-n">6</span><span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span><span class="tok-n">7</span><span class="tok-x">,</span><span class="tok-n">8</span><span class="tok-x">,</span><span class="tok-n">9</span><span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">trace       = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>trace</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">,</span></strong><strong> grid</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>sum3        = 6
+sizeof local = 16 bytes (= 4 ints)
+sum_n       = 14
+trace       = 15
+</code></pre></div></div><p>There are two uses. The first is <strong>the VLA as a local variable</strong> (<code>int local[n];</code>), where an array whose size is settled at run time is taken on the stack. That is also the only time <code>sizeof</code> is computed at run time — the example’s <code>sizeof local</code> returning 16 is the evidence. The second is <strong>the VLA as a parameter</strong> (<code>const int a[n]</code>, <code>const int m[n][n]</code>), and this side is far more useful. Its value is greatest in two dimensions and above — you can write <code>m[i][j]</code> directly instead of computing <code>m[i * n + j]</code> by hand.</p><p>Local VLAs, however, have hardened into something <strong>not recommended</strong> in practice.</p><ul><li><strong>Fail to control the size and the stack overflows.</strong> Use a number that came from input directly as a size and an attacker can bring down the stack, and there is no way to check for that collapse.</li><li><strong>There is no way to report failure.</strong> <code>malloc</code> at least returns null (chapter 42); a VLA simply collapses when there is no room.</li><li><strong>Its standing in the standard wavered too.</strong> Mandatory in C99, it became an <strong>optional</strong> feature in C11 (if <code>__STDC_NO_VLA__</code> is defined, the implementation lacks it). MSVC does not support it.</li><li>The Linux kernel removed VLAs from its entire codebase in 2018 — predictability of stack usage and performance were the reasons.</li></ul><p>In summary: <strong>the VLA notation in a parameter is usable; avoid local VLAs.</strong> If you need an array whose size is settled at run time, chapter 42′s dynamic allocation is the proper method.</p><h3>37.6 <code>[static N]</code> in a parameter — “at least this many will arrive”</h3><p>There is one more peculiar syntax used only in array parameters.</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> <strong>sum3</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><strong><span class="tok-k">static</span></strong> <span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a points at three or more elements </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Here <code>static</code> has nothing to do with storage duration (chapter 41). It means the contract <strong>“the pointer passed in this argument points at an array of at least N elements.”</strong> Two things are gained — the compiler may optimise on that premise (prefetching and the like), and it can point out with a warning code that passes null or a shorter array.</p><p>Two things to remember.</p><ul><li><strong>The only place it may be written is an array declarator in a function parameter.</strong> It cannot go on a local variable or a struct member declaration. And for a multi-dimensional array it attaches only to the outermost dimension.</li><li><strong>Break the contract and you are outside it.</strong> <code>sum3(nullptr)</code> or passing a two-element array is undefined behaviour — meaning it is a <strong>promise</strong>, not a check.</li></ul><h4>37.6.1 <code>[static 1]</code> — writing “not null” into the declaration</h4><p>The form you meet most often has size 1.</p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>use</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><strong><span class="tok-k">static</span></strong> <span class="tok-n">1</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a points at one valid object </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Saying “an array with <strong>at least one</strong> element” is the same as saying <strong>not a null pointer, and the object it points at is valid</strong>. Instead of a comment reading “do not pass null”, the promise sits in the declaration itself. That is why this spelling is used as the idiom for expressing non-nullness in a form a machine can read.</p><p>Tools really do read it. Here is what GCC 15 did while this book was being written.</p><pre><code data-lang="c"><strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>sum1</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><strong><span class="tok-k">static</span></strong> <span class="tok-n">1</span><span class="tok-x">]</span><span class="tok-x">)</span> <span class="tok-x">{</span> <strong><span class="tok-k">return</span></strong> a<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+<strong><span class="tok-x">...</span></strong>
+<span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>sum1</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><pre><code data-lang="text">warning: argument 1 null where non-null expected [-Wnonnull]
+note: in a call to function ‘sum1’ declared ‘nonnull’</code></pre><p>“Declared <code>nonnull</code>” is the phrase that matters — the compiler translates <code>[static 1]</code> into a no-null property. With a size above 1 it looks at the length as well. Passing a two-element array to a <code>const int a[static 3]</code> parameter gets this:</p><pre><code data-lang="text">warning: ‘sum3’ reading 12 bytes from a region of size 8 [-Wstringop-overread]</code></pre><p>Still, it is <strong>a promise, not a check</strong>. No run-time test is inserted, and the compiler can only complain where it can see the problem — a literal null, an array of known size. Once the pointer has flowed through a few functions it usually says nothing at all. A call that breaks the promise is simply undefined behaviour.</p><h4>37.6.2 A qualifier inside the same brackets qualifies the <strong>pointer</strong></h4><p>The other thing that may go inside those brackets is a qualifier.</p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><strong><span class="tok-k">const</span></strong> <span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> == void f(int *const a); </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">void</span></strong> <strong>g</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><strong><span class="tok-k">restrict</span></strong> <span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> == void g(int *restrict a); </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Here <code>const</code> attaches to the <strong>pointer itself</strong>, not to the elements it points at. It means <code>a</code> cannot be made to point elsewhere inside the function; it does not mean <code>a[0]</code> is read-only. To protect the elements, the <code>const</code> goes <strong>outside</strong> the brackets, as in <code>const int a[4]</code>.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“<code>int a[const 4]</code> means the contents of the array cannot be changed”</strong></p><p>It does not. An array parameter has already decayed to a pointer (previous section), and the qualifier inside the brackets attaches to <strong>that decayed pointer</strong>. <code>int a[const 4]</code> is <code>int *const a</code>, so <code>a[0] = 1;</code> is fine and <code>a = other;</code> is not. To protect the contents write <code>const int a[4]</code>; for both, <code>const int a[const 4]</code>.</p><p>That is exactly why the syntax exists — with array notation there is no other way to qualify the pointer. It becomes genuinely necessary when you want <code>restrict</code> on an array parameter.</p></div><p>The two can be combined. The grammar allows both <code>[static</code> qualifiers <code>N]</code> and <code>[</code>qualifiers <code>static N]</code>, so <code>int a[const static 1]</code> and <code>int a[static const 1]</code> are both valid — “points at one valid object, and the pointer itself will not move.”</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Should every pointer parameter then be written <code>[static 1]</code>?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> For a function that does <strong>not</strong> accept null, there is a real case for it: the intent stays in the declaration, tools read it, and the optimiser may drop null checks.</p><p>Two things weigh against it. First, never write it on a function that takes null as a legitimate input — <code>free</code>, or anything with an “absent is fine” argument. Second, it costs reading effort if your team does not know the syntax; it appears almost nowhere in the standard library’s own declarations. Using it selectively in internal APIs, where null means a bug, is the practical compromise.</p></p></div></div><h3>37.7 The boundary — the life-or-death rule</h3><p>An array’s safety rule is one and admits no compromise — <strong>valid numbers run from 0 to the slot count minus one.</strong> Reading or writing <code>a[5]</code> (in a five-slot array) is outside the contract, and that slot is <strong>someone else’s memory</strong> — perhaps a neighbouring variable, perhaps the ledger of a function call seen in chapter 40. Read it and you get rubbish; write it and someone else’s data is quietly broken — the buffer overrun is the single cause of more accidents and security vulnerabilities than anything else in C’s history (the next two chapters are those true stories).</p><p>There is exactly one place the standard specially permits at the boundary — as foreshadowed in chapter 36, <strong>making the address</strong> of the slot one past the end (<code>a + 5</code>) is legal (as long as you do not follow it). The traversal idiom stands on that:</p><pre><code data-lang="c"><strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>it <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span> it <strong><span class="tok-x">!=</span></strong> a <strong><span class="tok-x">+</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span> it <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> use *it </span></em><em><span class="tok-c">*/</span></em> <span class="tok-x">}</span></code></pre><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Does the compiler not catch a boundary violation?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Only some. Obvious violations with constants, like <code>a[7]</code>, are caught well by today’s compiler warnings, but when the number is the result of a calculation it cannot be known at compile time — because doing boundary checks constantly at run time is something C <strong>chose not to do</strong> for performance (the price of that choice and the ways of making up for it are the remaining subjects of this part). The run-time net is chapter 17′s ASan — run code that violates a boundary in an ASan build and it is caught at the moment of violation, with file and line number. And there is the road of using components with boundary checking built in from the start — chapter 40′s proven is that road.</p></div></div><p>We can handle contiguous memory. The next chapter <strong>stacks</strong> this rule — the case where the element is itself an array, that is, multidimensional arrays. What we learned here, “one step is one element”, applies unchanged; the element is just a whole row.</p>
 <div class="nav"><a href="ch36.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch38.html">Next →</a></div>
 </div></main></body></html>

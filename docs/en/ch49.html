@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>49 The preprocessor and the translation phases — Proven C Book</title><style>
+<title>49 Undefined behaviour — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,273 +259,44 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch48.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch50.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch49.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>49 The preprocessor and the translation phases</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We open head on the layer chapter 16 passed over as “a text tool that does not know C”. The identity of the macro, the principle and idioms of the two <span id="idx-entry-86"></span>operators <code>#</code> and <code>##</code>, their traps, and the whole of the <strong>translation phases</strong> the standard pins down for source becoming a program. It is the grammar of the “second language” living inside a C source file.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 19 said lines beginning with <code>#</code> are not statements and have no <span id="idx-entry-87"></span>semicolon, and that the reason is “the preprocessor is a text tool working by lines, not by C’s grammar.” Then what does the preprocessor know of C?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Almost nothing — it knows neither types nor scopes nor functions. What it knows is only <strong>tokens</strong> (word-pieces that cannot be split further: names, numbers, operators, strings), and what it does is delete, insert and join tokens. This ignorance is the preprocessor’s power (it can produce any fragment of code whatever) and its danger (it upholds neither grammar nor meaning). This chapter sees the power and the danger together.</p></div></div><h3>49.1 Macros — turning a name into a stream of tokens</h3><p><code>#define NAME content</code> is the directive “from now on, when you meet the token NAME, replace it with content.” There is also a form taking arguments (<code>#define MAX(a,b) ...</code>), which looks like a function but is not — it is <strong>substitution, not a call</strong>, with neither type checking nor any guarantee about evaluation order.</p><h4>49.1.1 Parentheses — the first thing anyone using macros learns</h4><p>With a function the argument arrives <strong>after being calculated into one value</strong>, but with a macro <strong>the tokens as written</strong> are planted into the body. So the operators inside the argument and the operators in the body meet in one place, and chapter 20′s precedence divides them. We see four traps together with their actual expansions.</p><div><div><p><code>examples/ch49/parens.c</code></p><pre><code data-lang="c">/* 매크로 인자를 괄호로 감싸야 하는 이유 — 의도와 전개가 갈라지는 자리들.
-   xstr() 로 "그래서 무엇으로 펼쳐졌는가"를 나란히 찍어 확인한다. */
-#include &lt;stdio.h>
+<h2 id="loc-49">49 Undefined behaviour</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 13, Compiler optimisation · the abstract machine and observable behaviour</div><div>chapter 48, Errors and contracts · what it means to break a contract</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 13 said that violating strict aliasing is “the act of telling the compiler something untrue as if it were true.” Then what has the standard permitted the implementation by leaving some behaviour “undefined”?</p><div class="qa-a"><p><span class="dev-label">A.</span> It decided <strong>to demand nothing at all.</strong> The standard’s sentence is cold — for undefined behaviour the standard “imposes no requirements”. That is, such a program has no correct execution result whatever. The common misunderstanding is “dangerous behaviour, but it mostly works as expected”, whereas in the eye of the contract the whole program <strong>loses its meaning</strong>. That difference is this chapter entire.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">We face head on the world this book has kept deferring under the name “outside the contract”. What UB exactly is and why it exists, why it is not “a little dangerous” but “anything at all is possible” — and how to avoid and catch it in practice. The contract narrative begun in Part II is completed here.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Must all the UB be memorised? I hear the standard has hundreds of them.</li></ol></div></div><div></div><h3>49.1 Three grey zones — UB, unspecified, implementation-defined</h3><span id="idx-entry-85"></span><span id="idx-entry-86"></span><span id="idx-entry-87"></span><p>Let us first separate three confusable words. Organised through the cases this book has met so far:</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>kind</strong></th><th><strong>the standard’s attitude</strong></th><th><strong>examples met in this book</strong></th></tr><tr><td>implementation-defined</td><td>the implementation decides and <strong>documents it</strong></td><td>the size of <code>int</code> (chapter 26), the signedness of <code>char</code></td></tr><tr><td>unspecified</td><td>one of a fixed set of choices, with no duty to document</td><td>the order of evaluating subexpressions in one expression (chapter 32)</td></tr><tr><td>undefined behaviour (UB)</td><td>it imposes no requirements at all</td><td>signed overflow (chapter 7), boundary violation (chapter 37), null dereference (chapter 35)</td></tr></table></div><p class="float-caption">Table 49.1</p></figure><p>The first two are worlds where “there are several answers but there is an answer.” Only UB is a world where there is no answer at all.</p><p><strong>The words again, nailed down.</strong> The three names in the table above — implementation-defined, unspecified, undefined behavior — are <strong>the standard’s own terms, written in the document itself</strong>. The phrase “grey area”, used in this chapter’s title and body, is, as chapter 12 said, <strong>a name this book adopted for convenience</strong>; it is not in the standard. When talking to anyone else, translate it into the exact word — not “that’s a grey area” but “that’s unspecified” or “that’s UB”.</p><h3>49.2 Why it exists</h3><p>There are two reasons for leaving an outside-the-contract region. First, <strong>because machines differ</strong> — chapter 7′s shift of at least the width is the representative case. x86 and older ARM respond differently, and had the standard chosen one side the other machine would have to insert correction code every time. Instead of taking sides it said “do not write that code.” Second, <strong>to obtain premises for optimisation</strong> — as chapter 7 showed, the premise that “signed integers do not overflow” is what lets the compiler analyse and reorder loops (chapter 13). These clauses are the price of C remaining the language of speed for half a century.</p><h3>49.3 The real face of “anything at all”</h3><p>UB’s result is not only a collapse. The pattern seen in chapter 13 is more frightening — <strong>the compiler reads UB as “a thing that cannot happen” and deletes code.</strong> A null check disappears entirely (if the pointer was already dereferenced, it infers “it cannot be null”), an overflow check disappears (since signed overflow is premised not to happen), a loop becomes infinite or vanishes altogether. So UB’s representative symptom is not “dying on the spot” but <strong>a bug that appears somewhere unrelated, disappears when the optimisation level changes, and is hard to reproduce.</strong></p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The vanished null check — Linux kernel CVE-2009-1897</p>There was an incident in which this pattern really went off in the kernel. The code went roughly like this — the pointer <code>tun</code> was dereferenced first to take a value out, and below that a null check <code>if (!tun) return ...;</code>. The order was a mistake, but to a human eye it looks like “the check is still there, so a null will be caught.” The compiler’s inference was different: <strong>it was already dereferenced → had it been null that would have been UB at that moment → UB is premised not to happen → therefore tun is not null → the null check below is dead code.</strong> The check was removed entirely by optimisation and, combined with an environment in which the null page could be mapped, became a privilege-escalation vulnerability. The compiler worked by the rules; what collapsed was the contract.</div><h3>49.4 Before the computation even begins — the UB of a file’s shape</h3><p>Undefined behaviour usually brings to mind an accident <strong>during execution</strong>, such as an overflow or a null dereference. Yet read the standard’s list (annex J.2) from the top and something surprising appears — <strong>the second entry is about the last character of a file</strong>.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>what the standard requires</strong></th><th><strong>break it and</strong></th></tr><tr><td>a non-empty source file must end in a new-line character</td><td>undefined behaviour</td></tr><tr><td>that new-line must not be one preceded by a backslash</td><td>undefined behaviour</td></tr><tr><td>the file must not end in a partial preprocessing token or comment</td><td>undefined behaviour</td></tr></table></div><p class="float-caption">Table 49.2</p></figure><p>That is, <strong>a file whose last line has no new-line at the end</strong> is outside the contract however perfect its grammar. This provision has been there since C89 and remains in C23 (ISO/IEC 9899:2024) — it is the second entry of annex J.2. C++, for reference, dropped the clause in 2011 (deciding that a missing new-line counts as one appended). It is a rare place where the two languages parted.</p><p>Why should such a thing be UB? Recall the <strong>translation phases</strong> seen in chapter 52 and the answer appears. The preprocessor works by lines, and one directive is complete only when a new-line ends it. If the file ends with no new-line, the last line is left <strong>unfinished</strong>, and what happens next differs by implementation. The third row’s “partial token” is the same circumstance — if the file ends with an unclosed string literal or a comment with no <code>*/</code>, the preprocessor has no ground on which to judge whether to keep reading into the next file.</p><p>Today’s compilers mostly append a new-line quietly (older GCC gave <code>warning: no newline at end of file</code>). So the place this clause makes trouble in practice is not the compiler but <strong>the other tools that handle the file</strong>.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The practical noise one new-line makes — git and the Unix tools</p><p>POSIX defines a <strong>line</strong> as “a string ending in a new-line”. So a file missing the final new-line becomes, in the eyes of the tools, “a file whose last line is unfinished”, and the following happens.</p><ul><li><strong>A mark is left in git’s diff</strong> — that famous <code>\ No newline at end of file</code> line. If somebody later adds the new-line, a line whose content did not change is <strong>caught as a changed line</strong>, making the diff dirty and making conflicts likely at that place when branches are merged. The red mark on the last line in GitHub’s web view is the same thing.</li><li><strong>Joining files runs lines together</strong> — with <code>cat a.txt b.txt</code>, <code>a</code>’s last line and <code>b</code>’s first line become one line. It is especially tiresome in builds that make source or configuration by joining fragments.</li><li><strong>Tools that count lines miss one</strong> — <code>wc -l</code> counts new-lines, so an unfinished last line is not counted.</li></ul><p>So today’s practice is one line — <strong>end a text file with a new-line.</strong> An editor setting (add a final new-line automatically), <code>.editorconfig</code>’s <code>insert_final_newline</code>, and the formatting tools seen in chapter 90 do that work for you. The C standard’s clause is, in effect, the oldest ground for that practice.</p></div><h3>49.5 Other curious pieces of UB</h3><p>As of C23, annex J.2 lists <strong>218 kinds</strong> of undefined behaviour. Most are things one will never meet in a lifetime, but among them are several entries that make one ask “even this?”. We pick out those that happen in <strong>the world of characters and names</strong>, unrelated to computation at run time.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>this code</strong></th><th><strong>what is wrong</strong></th><th><strong>the standard’s place</strong></th></tr><tr><td>a file ending with no new-line</td><td>the one seen in the previous section</td><td>5.1.1.2</td></tr><tr><td>a <code>/*</code> comment left unclosed at end of file</td><td>ending in a partial comment is the same entry</td><td>5.1.1.2</td></tr><tr><td>a string with its quote unclosed at end of file</td><td>a partial preprocessing token</td><td>5.1.1.2</td></tr><tr><td><code>#include "dir\file.h"</code></td><td>a <code>\</code> inside a header name is UB — writing a Windows path as it stands hits this</td><td>6.4.7</td></tr><tr><td><code>#include &lt;a//b.h></code></td><td><code>//</code>, <code>/*</code>, <code>'</code> and <code>"</code> likewise are UB</td><td>6.4.7</td></tr><tr><td><code>#define defined(x) …</code></td><td>using <code>defined</code> as a macro name</td><td>6.10.9</td></tr><tr><td>using <code>assert</code> after <code>#undef assert</code></td><td>erasing a standard library macro and then using it</td><td>7.1.3</td></tr><tr><td><code>int _Value;</code>, <code>int __x;</code></td><td>trespassing on the reserved name space (chapter 76)</td><td>7.1.3</td></tr><tr><td><code>memcpy(p, q, 0)</code> with <code>p</code> null</td><td>even at size 0 a null pointer is outside the contract (see below)</td><td>7.26.2</td></tr><tr><td><code>printf("%s", NULL)</code></td><td>passing null as a string</td><td>7.23.6.1</td></tr><tr><td><code>short a[10]; short *p = &amp;a[15];</code></td><td><strong>merely making</strong> an out-of-range pointer is UB, without dereferencing</td><td>6.5.7</td></tr><tr><td><code>if (p > q)</code> on unrelated objects</td><td>comparing with a relational operator (chapter 36)</td><td>6.5.9</td></tr><tr><td><code>towctrans</code> under another locale</td><td>UB if <code>LC_CTYPE</code> differs from when <code>wctrans</code> was called</td><td>7.31.3.2</td></tr></table></div><p class="float-caption">Table 49.3</p></figure><p>The first three are the other faces of the “file shape” entry seen in the previous section. A file ending with an unclosed comment or string falls under the same clause — it looks as though it would fail to compile anyway, but in the standard’s eyes it is a place where <strong>not even a diagnosis is required</strong>.</p><p>The two rows in the middle are especially practical. Writing <code>#include "utils\str.h"</code> on Windows is <strong>undefined behaviour as far as the standard goes</strong> — in reality MSVC handles it for you, but it becomes a problem the moment you port. What the standard guarantees is <code>/</code> alone, and happily the Windows compilers accept <code>/</code> too. Hence the advice always to use <code>/</code> in header paths.</p><p>The <code>short *p = &amp;a[15];</code> row surprises people too. <strong>Without reading or writing anything</strong>, merely making the pointer is outside the contract (only up to one past the array’s end is permitted). It is why “I only compute the address and never use it” does not hold, and the ground on which chapter 36 drew a boundary round pointer arithmetic.</p><p>The last row shows this list’s character well. One wide-character conversion function carries the condition that “the locale must be the same as when <code>wctrans</code> was called”, and breaking it is UB. Most of the 218 are of this grain — very narrow, very specific, and never met in a lifetime.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>UB sometimes shrinks — the story of <code>memcpy(NULL, NULL, 0)</code></p><p>The ninth row of the table was long a matter of dispute. “The size is 0 so nothing will happen — what does it matter whether the pointer is null?” one thinks, but the standard required <code>memcpy</code>’s two pointers to be <strong>valid</strong> regardless of the size. So code handling an empty array slipped outside the contract through no fault of its own.</p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>copy</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>dst<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>src<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong>dst</strong><strong><span class="tok-x">,</span></strong><strong> src</strong><strong><span class="tok-x">,</span></strong><strong> n </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>dst</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> UB if n == 0 and both are null </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span></code></pre><p>There was real damage too. The compiler gains the premise that <code>memcpy</code>’s arguments are not null, and so can <strong>erase a null check that follows</strong> — the pattern seen in chapter 13 and in this chapter. Sanitizers (chapter 17) catch it as well.</p><p>Yet this clause has been settled to <strong>go away</strong>. The committee accepted proposal N3322, so in the next edition (C2y) giving null pointers to zero-length operations becomes defined behaviour — <code>memcpy(NULL, NULL, 0)</code>, <code>memcmp(NULL, NULL, 0)</code>, <code>(int *)NULL + 0</code> and <code>(int *)NULL - (int *)NULL</code> all become legal. The committee even recommended that implementers apply the change retroactively to older standards.</p><p>This story leaves two lessons. First, <strong>the UB list is not a fixed scripture</strong> — clauses that are useless for optimisation and merely torment people do get tidied away over time. Second, even so, <strong>whether the compiler you are using now reflects that change is another matter.</strong> For the time being, code that checks <code>n == 0</code> first is still right.</p></div><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“These are theoretical quibbles; nothing actually happens”</strong></p><p>In most places nothing really does happen. But that is precisely this chapter’s theme — <strong>nothing happening is not a guarantee.</strong> A file with no new-line is quiet at the compiler and makes noise down the tool chain, and <code>memcpy(NULL, NULL, 0)</code> is fine until the day the optimisation level is raised and the null check vanishes.</p><p>The practical attitude is this. <strong>Keep the clauses that can be kept for free.</strong> Put a new-line at the end of a file, use <code>/</code> in header paths, do not begin a name with two underscores — the cost of these is zero, and in exchange you gain one thing: “in this place I need not suspect anything.”</p></div><h3>49.6 How to avoid it — discipline, tools, and components</h3><p>Defence in practice is three layers.</p><p><strong>Discipline</strong> — the rules this book has passed through are the list: initialise before use (chapter 23), keep boundaries (chapter 37), check for null (chapter 35), change one variable only once in one statement (chapter 32), do not take shortcuts outside the contract (pointer casts, assumptions about representation) (chapters 11 and 36).</p><p><strong>Tools</strong> — the nets equipped in chapter 17. Compiler warnings catch at compile time; UBSan and ASan catch at run time. The <strong>checked arithmetic</strong> brought in by C23 is a tool of this layer too — functions that report overflow as a value instead of making it UB:</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch49/checked.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdckdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
-#define str(...)   # __VA_ARGS__
-#define xstr(...)  str(__VA_ARGS__)
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> C23's checked arithmetic: on overflow it returns true, and the result holds the wrapped value. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> a <strong><span class="tok-x">=</span></strong> <span class="tok-n">2000000000</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> b <strong><span class="tok-x">=</span></strong> <span class="tok-n">2000000000</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> sum <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 
-#define SQ_BAD(x)   x * x           /* 괄호 없음 */
-#define SQ_HALF(x)  (x) * (x)       /* 인자만 감쌈 */
-#define SQ(x)       ((x) * (x))     /* 인자와 전체를 감쌈 — 정석 */
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>ckd_add</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>sum</strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> + </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> overflows int (we stayed inside the contract)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span> <strong><span class="tok-k">else</span></strong> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sum: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
 
-#define NEG_BAD(x)  -x
-#define NEG(x)      (-(x))
-
-/* 인자를 두 번 쓰는 매크로 — 부수효과가 있는 인자를 만나면 */
-#define MAX(a, b)   ((a) > (b) ? (a) : (b))
-
-int main(void)
-{
-    /* ── ① 인자를 안 감싸면 — 우선순위가 끼어든다 ─────────────── */
-    printf("SQ_BAD(1+2)  -> %-16s = %d   (의도는 9)\n",
-           xstr(SQ_BAD(1+2)), SQ_BAD(1+2));
-    printf("SQ_HALF(1+2) -> %-16s = %d\n",
-           xstr(SQ_HALF(1+2)), SQ_HALF(1+2));
-
-    /* ── ② 전체를 안 감싸면 — 바깥 연산자가 끼어든다 ──────────── */
-    printf("100/SQ_HALF(2) -> %-14s = %d   (의도는 25)\n",
-           xstr(100/SQ_HALF(2)), 100/SQ_HALF(2));
-    printf("100/SQ(2)      -> %-14s = %d\n",
-           xstr(100/SQ(2)), 100/SQ(2));
-
-    /* ── ③ 부호가 붙은 인자 ──────────────────────────────────── */
-    printf("NEG_BAD(-3)  -> %-16s  ← 컴파일 오류다(`--3`)\n", xstr(NEG_BAD(-3)));
-    printf("NEG(-3)      -> %-16s = %d\n", xstr(NEG(-3)), NEG(-3));
-
-    /* ── ④ 괄호로도 못 막는 것 — 인자를 두 번 평가한다 ────────── */
-    int i = 5, j = 3;
-    int m = MAX(i++, j);
-    printf("MAX(i++, j)  -> i 가 %d 가 되었다 (한 번만 증가할 줄 알았는데)\n", i);
-    printf("             결과 m = %d\n", m);
-    printf("             전개: %s\n", xstr(MAX(i++, j)));
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>SQ_BAD(1+2)  -> 1+2 * 1+2        = 5   (의도는 9)
-SQ_HALF(1+2) -> (1+2) * (1+2)    = 9
-100/SQ_HALF(2) -> 100/(2) * (2)  = 100   (의도는 25)
-100/SQ(2)      -> 100/((2) * (2)) = 25
-NEG_BAD(-3)  -> --3               ← 컴파일 오류다(`--3`)
-NEG(-3)      -> (-(-3))          = 3
-MAX(i++, j)  -> i 가 7 가 되었다 (한 번만 증가할 줄 알았는데)
-             결과 m = 6
-             전개: ((i++) > (j) ? (i++) : (j))
-</code></pre></div></div><p><strong>① Without wrapping the argument, the operations inside it scatter.</strong></p><pre><code data-lang="c">#define SQ_BAD(x)  x * x
-SQ_BAD(1+2)   →   1+2 * 1+2   →   1 + (2*1) + 2   =  5     /* 9 was expected */</code></pre><p><code>1+2</code> does not go in bound into one value; three tokens are planted as they are, and over them the rule that multiplication is stronger than addition applies. Wrapping the argument in parentheses solves it — <code>(1+2) * (1+2)</code> = 9.</p><p><strong>② Without wrapping the whole, the outer operator cuts in.</strong> Wrapping the argument alone is not enough.</p><pre><code data-lang="c">#define SQ_HALF(x)  (x) * (x)
-100 / SQ_HALF(2)   →   100 / (2) * (2)   =  100            /* 25 was expected */</code></pre><p>Division and multiplication have the same precedence and bind from the left (appendix A), so <code>100/2</code> happens first and is then multiplied by 2. The whole body must be wrapped for <code>100 / ((2) * (2))</code> = 25. <strong>So the canonical form wraps both.</strong></p><pre><code data-lang="c">#define SQ(x)  ((x) * (x))</code></pre><p><strong>③ With a signed argument the tokens can even fuse.</strong></p><pre><code data-lang="c">#define NEG_BAD(x)  -x
-NEG_BAD(-3)   →   --3      /* it becomes the decrement operator — a compile error */</code></pre><p>It is why the example prints this expansion <strong>as text only</strong> — written for real it does not compile. Wrapped as <code>(-(x))</code> it goes properly to <code>(-(-3))</code> = 3.</p><p><strong>④ What parentheses cannot block — the argument is evaluated twice.</strong></p><pre><code data-lang="c">#define MAX(a, b)  ((a) > (b) ? (a) : (b))
-int i = 5, j = 3;
-int m = MAX(i++, j);      →   ((i++) > (j) ? (i++) : (j))</code></pre><p>The example’s output is that result — <code>i</code> jumped from 5 <strong>to 7</strong>, and <code>m</code> is 6 rather than the expected 5. Because <code>i++</code> was planted in the body <strong>twice</strong>. Parentheses solve only the precedence problem, not this one. It is the place where chapter 32′s “one variable changed only once in one statement” is broken behind your back by a macro.</p><table><tr><th><strong>rule</strong></th><th><strong>reason</strong></th></tr><tr><td>wrap every argument in parentheses</td><td>so the operations inside an argument do not scatter</td></tr><tr><td>wrap the whole body in parentheses</td><td>so an outer operator does not cut in</td></tr><tr><td>do not use an argument twice</td><td>the side effects happen twice</td></tr><tr><td>compute values with a <code>static inline</code> function</td><td>then none of the three need be minded</td></tr></table><p>The last row is today’s answer. The reason for computing values with <code>#define</code> was to save the cost of a call, and today’s compilers inline small functions by themselves (chapter 13), so that reason has nearly vanished. <strong>The parenthesis rules are needed only where a macro must be used</strong>, and those places are what the rest of this chapter shows — assembling tokens, conditional compilation, capturing source location.</p><h3>49.2 <code>#</code> — turning a token into a string (stringize)</h3><p>Put <code>#</code> before a macro argument and that argument becomes <strong>a string literal of it literally</strong>. The key is that what becomes a string is not the value but <strong>the shape as written</strong>.</p><div><div><p><code>examples/ch49/macro.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-
-/* # : 인자를 "글자 그대로" 문자열로 만든다 (stringize) */
-#define SHOW(expr)  printf(#expr " = %d\n", (expr))
-
-/* ## : 두 토큰을 하나로 붙인다 (token paste) */
-#define MAKE_NAME(prefix, n)  prefix##n
-
-/* 한 겹으로는 매크로가 안 풀린다 — 두 겹 우회가 정석이다 */
-#define STR_RAW(x)  #x
-#define STR(x)      STR_RAW(x)
-#define WIDTH       80
-
-int MAKE_NAME(value_, 1) = 11;   /* -> int value_1 = 11; */
-int MAKE_NAME(value_, 2) = 22;
-
-int main(void)
-{
-    SHOW(2 + 3 * 4);
-    SHOW(value_1 + value_2);
-
-    printf("STR_RAW(WIDTH) = %s\n", STR_RAW(WIDTH));  /* 안 풀린다 */
-    printf("STR(WIDTH)     = %s\n", STR(WIDTH));      /* 풀린 뒤 문자열이 된다 */
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>2 + 3 * 4 = 14
-value_1 + value_2 = 33
-STR_RAW(WIDTH) = WIDTH
-STR(WIDTH)     = 80
-</code></pre></div></div><p>The demonstration’s <code>SHOW(2 + 3 * 4)</code> is that in the flesh — <code>#expr</code> becomes the string <code>"2 + 3 * 4"</code> while the <code>(expr)</code> beside it is calculated and becomes 14. One argument was used <strong>both as text and as a value</strong>. This pattern is the basic form of debugging and checking macros: printing the condition “x > 0” as it stands when <code>assert(x > 0)</code> fails works on exactly this principle (the inner workings of the assert met in chapter 45).</p><h3>49.3 <code>##</code> — joining two tokens into one (token paste)</h3><p><code>##</code> <strong>joins</strong> the tokens on either side <strong>into one new token</strong>. The demonstration’s <code>MAKE_NAME(value_, 1)</code> becoming the <strong>identifier</strong> <code>value_1</code> is the example — not a string but a real name, so it can be used in a variable declaration.</p><p>Its use is <strong>code generation that assembles names</strong>. When functions or structs of the same shape must be stamped out per type (C having no generics), joining a prefix and a type name to produce names like <code>stack_int_push</code> and <code>stack_double_push</code> from one macro is the classic technique.</p><h3>49.4 Double expansion — why one layer does not unfold</h3><p>There is a rule you must meet when using <code>#</code> and <code>##</code>. <strong>A macro argument that becomes the operand of <code>#</code> or <code>##</code> is not expanded first.</strong> The demonstration’s last two lines are the contrast — <code>STR_RAW(WIDTH)</code> becomes <code>"WIDTH"</code>, while <code>STR(WIDTH)</code> becomes <code>"80"</code>.</p><h4>49.4.1 The names first — four rules</h4><p>What happens in this section is what the standard writes down in four clauses. Knowing the names makes it far easier to put the order together in your head.</p><table><tr><th><strong>the standard’s name</strong></th><th><strong>what the rule is</strong></th></tr><tr><td>argument substitution</td><td>an argument is <strong>fully expanded first</strong> and then put into the body</td></tr><tr><td>the <code>#</code> operator (stringize)</td><td>the operand argument is <strong>not expanded</strong> and becomes a string literally</td></tr><tr><td>the <code>##</code> operator (token pasting)</td><td>the arguments on either side are pasted into one token <strong>without expansion</strong></td></tr><tr><td>rescanning and further replacement</td><td>the result of substitution is <strong>scanned again</strong> and the remaining macros expanded</td></tr></table><p>The heart of it is the <strong>collision</strong> between the first row and the middle two. Normally an argument is expanded first (argument substitution), but an argument that becomes the operand of <code>#</code> or <code>##</code> is the exception and the <strong>unexpanded original token</strong> is used. So when the value is wanted, one more layer is added so that the argument is expanded <strong>before</strong> it meets <code>#</code> or <code>##</code> — this is the idiom called <strong>double expansion</strong>, or an <strong>indirection macro</strong>.</p><p>One more rule is needed. Its name is not the standard’s but people’s — the <strong>blue paint rule</strong>. If a macro’s own name appears again while it is being expanded, <strong>that name is not expanded again but left as it is</strong> (the metaphor is that it is painted blue to mark it). It is the device that prevents infinite recursion, and the <code>LOW</code> of the standard example below turns on exactly this rule.</p><h4>49.4.2 Following the expansion by hand — a contrast of two lines</h4><p>What makes this hard to simulate in the head is that “when to expand and when not” differs from place to place. Let us put two lines side by side and follow them step by step. <code>WIDTH</code> is defined as <code>80</code>.</p><p><strong>One layer — <code>STR_RAW(WIDTH)</code></strong></p><table><tr><th><strong>step</strong></th><th><strong>what is being done</strong></th><th><strong>result</strong></th></tr><tr><td>1</td><td><code>WIDTH</code> goes into <code>STR_RAW</code>’s parameter <code>s</code></td><td><code>s</code> ← <code>WIDTH</code></td></tr><tr><td>2</td><td>the body is <code>#s</code>, so it is <strong>the exception to argument substitution</strong> — not expanded</td><td><code>WIDTH</code> (as it is)</td></tr><tr><td>3</td><td>it is stringized</td><td><code>"WIDTH"</code></td></tr><tr><td>4</td><td>rescanning — inside a string there are no tokens, so there is nothing more to see</td><td><code>"WIDTH"</code></td></tr></table><p><strong>Two layers — <code>STR(WIDTH)</code></strong></p><table><tr><th><strong>step</strong></th><th><strong>what is being done</strong></th><th><strong>result</strong></th></tr><tr><td>1</td><td><code>WIDTH</code> goes into <code>STR</code>’s parameter <code>x</code></td><td><code>x</code> ← <code>WIDTH</code></td></tr><tr><td>2</td><td>the body is <code>STR_RAW(x)</code> — neither <code>#</code> nor <code>##</code>, so <strong>argument substitution</strong> expands it first</td><td><code>x</code> ← <code>80</code></td></tr><tr><td>3</td><td>it is put into the body</td><td><code>STR_RAW(80)</code></td></tr><tr><td>4</td><td>rescanning — <code>STR_RAW</code> is a macro, so it is expanded</td><td><code>#80</code></td></tr><tr><td>5</td><td>it is stringized</td><td><code>"80"</code></td></tr></table><p>The only place a difference arises is <strong>step 2</strong>. Thanks to the extra layer outside, the argument was expanded once before meeting <code>#</code>, and so the token <code>#</code> saw was not <code>WIDTH</code> but <code>80</code>. <code>##</code> is in the same circumstance, so keeping a <code>PASTE</code>/<code>PASTE_RAW</code> pair is idiom.</p><h4>49.4.3 The standard’s own example — <code>glue</code> and <code>xglue</code></h4><p>This idiom is also one the standard document gives directly as an example (in C17 it is the EXAMPLE of §6.10.3.5, “Scope of macro definitions”; C23 pushed the number along by one as <code>#embed</code> came in at 6.10.3). We run that example as it stands.</p><div><div><p><code>examples/ch49/glue.c</code></p><pre><code data-lang="c">/* 두 겹 우회(double expansion) — C 표준이 직접 든 예제를 그대로 돌려 본다.
-   한 겹과 두 겹의 결과가 어떻게 갈리는지가 전부 여기 있다. */
-#include &lt;stdio.h>
-
-/* ── 표준 예제의 매크로들 (C17 §6.10.3.5) ─────────────────────── */
-#define str(s)       # s              /* 문자열화(stringize) */
-#define xstr(s)      str(s)           /* 한 겹 더 두른 판 */
-#define INCFILE(n)   vers ## n        /* 토큰 붙이기(token pasting) */
-#define glue(a, b)   a ## b
-#define xglue(a, b)  glue(a, b)       /* 한 겹 더 두른 판 */
-#define HIGHLOW      "hello"
-#define LOW          LOW ", world"    /* 자기 자신을 부른다 — 파란 칠 규칙의 무대 */
-
-/* 조립된 이름이 헤더 이름이 된다: xstr(INCFILE(2).h) -> "vers2.h" */
-#include xstr(INCFILE(2).h)
-
-#define WIDTH 80
-
-int main(void)
-{
-    /* ── ① 문자열화: 한 겹은 안 풀리고, 두 겹은 풀린다 ────────── */
-    printf("str(WIDTH)   = %s\n", str(WIDTH));    /* 인자가 # 의 피연산자 */
-    printf("xstr(WIDTH)  = %s\n", xstr(WIDTH));   /* 먼저 펼친 뒤 문자열로 */
-
-    /* ── ② 붙이기: 표준 예제의 그 두 줄 ──────────────────────── */
-    printf("glue(HIGH, LOW)  = %s\n", glue(HIGH, LOW));
-    printf("xglue(HIGH, LOW) = %s\n", xglue(HIGH, LOW));
-
-    /* ── ③ 조립한 이름으로 포함한 헤더가 실제로 왔는지 ───────── */
-    printf("VERS_TAG = %s\n", VERS_TAG);
-
-    /* ── ④ 표준 예제의 문자열화 두 가지 ──────────────────────── */
-    printf("%s\n", str(strncmp("abc\0d", "abc", '\4') == 0));
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>str(WIDTH)   = WIDTH
-xstr(WIDTH)  = 80
-glue(HIGH, LOW)  = hello
-xglue(HIGH, LOW) = hello, world
-VERS_TAG = vers2.h 가 실제로 포함되었다
-strncmp("abc\0d", "abc", '\4') == 0
-</code></pre></div></div><p>The third and fourth lines of the output are this section’s conclusion. Given the same arguments, <code>glue</code> produced <code>hello</code> and <code>xglue</code> produced <code>hello, world</code>. We follow why, a step at a time. Three definitions are involved.</p><pre><code data-lang="c">#define glue(a, b)   a ## b
-#define xglue(a, b)  glue(a, b)
-#define HIGHLOW      "hello"
-#define LOW          LOW ", world"</code></pre><p><strong><code>glue(HIGH, LOW)</code></strong></p><table><tr><th><strong>step</strong></th><th><strong>what is being done</strong></th><th><strong>result</strong></th></tr><tr><td>1</td><td>it takes the arguments</td><td><code>a</code> ← <code>HIGH</code>, <code>b</code> ← <code>LOW</code></td></tr><tr><td>2</td><td>the body is <code>a ## b</code> — both are operands of <code>##</code>, so they are <strong>not expanded</strong></td><td><code>HIGH</code>, <code>LOW</code> (as they are)</td></tr><tr><td>3</td><td>they are pasted</td><td><code>HIGHLOW</code> (one identifier token)</td></tr><tr><td>4</td><td>rescanning — <code>HIGHLOW</code> is a macro</td><td><code>"hello"</code></td></tr></table><p>Notice that a macro called <code>HIGH</code> was never defined. The reason no error arises is that <code>HIGH</code>, <strong>before being used on its own</strong>, was pasted with <code>LOW</code> and became a different name, <code>HIGHLOW</code>. This is what <code>##</code> does — it makes one name that exists out of two that do not.</p><p><strong><code>xglue(HIGH, LOW)</code></strong></p><table><tr><th><strong>step</strong></th><th><strong>what is being done</strong></th><th><strong>result</strong></th></tr><tr><td>1</td><td>it takes the arguments</td><td><code>a</code> ← <code>HIGH</code>, <code>b</code> ← <code>LOW</code></td></tr><tr><td>2</td><td>the body is <code>glue(a, b)</code> — no <code>#</code> or <code>##</code>, so <strong>argument substitution</strong> expands first</td><td>2a and 2b below</td></tr><tr><td>2a</td><td><code>HIGH</code> is not a macro</td><td><code>HIGH</code> (as it is)</td></tr><tr><td>2b</td><td>expanding <code>LOW</code> gives <code>LOW ", world"</code>, and the <code>LOW</code> inside is not expanded further, by the <strong>blue paint rule</strong></td><td><code>LOW ", world"</code></td></tr><tr><td>3</td><td>it is put into the body</td><td><code>glue(HIGH, LOW ", world")</code></td></tr><tr><td>4</td><td>rescanning — <code>glue</code> is expanded. This time <code>a</code> is <code>HIGH</code> and <code>b</code> is <code>LOW ", world"</code></td><td><code>HIGH ## LOW ", world"</code></td></tr><tr><td>5</td><td><code>##</code> pastes <strong>only one token on each side</strong> — <code>HIGH</code> and <code>LOW</code></td><td><code>HIGHLOW ", world"</code></td></tr><tr><td>6</td><td>rescanning — <code>HIGHLOW</code> is a macro</td><td><code>"hello" ", world"</code></td></tr><tr><td>7</td><td>in translation phase 6 adjacent string literals are joined (this chapter’s table)</td><td><code>"hello, world"</code></td></tr></table><p>Step 5 is the place that confuses most. <code>##</code> is an operator that pastes <strong>two tokens</strong>, not “the whole of the right-hand argument”. So even though <code>b</code> has expanded into several tokens (<code>LOW</code>, <code>", world"</code>), only the leading <code>LOW</code> is pasted and the rest follows after it as it stands.</p><p>And it is worth pointing out that step 7 is the business not of the preprocessor but of <strong>translation phase 6</strong>. What the preprocessor produced was, after all, the two string literals <code>"hello" ", world"</code>, and their joining into one is the next stage.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>How does <code>#include xstr(INCFILE(2).h)</code> become <code>"vers2.h"</code>?</p></div><div class="dev qa-a"><p class="dev-label">A It is the same principle used on a header name. That the example really includes that header and prints <code>VERS_TAG</code> confirms it.</p><ol><li>The argument is <code>INCFILE(2).h</code>. The outside is <code>xstr</code>, so it is <strong>expanded first</strong>.</li><li><code>INCFILE(2)</code> → <code>vers ## 2</code> → <code>vers2</code>. So the argument becomes <code>vers2 .h</code>.</li><li>Put into <code>xstr</code>’s body <code>str(s)</code> and rescanned it is <code>str(vers2 .h)</code>.</li><li>This time it is the operand of <code>#</code>, so it is stringized without further expansion → <code>"vers2.h"</code>.</li><li><code>#include</code> takes that string as the header name.</li></ol><p>Written with one layer as <code>str(INCFILE(2).h)</code> it would have become the useless name <code>"INCFILE(2).h"</code>. Code that chooses a header by version number or platform name uses this idiom.</p><p>How stringizing <strong>treats white space</strong> appears in this example too. White space between tokens inside the argument shrinks to one space and the space at either end vanishes — so there is no need to worry that <code>vers2 .h</code> might become <code>"vers2 .h"</code> rather than <code>"vers2.h"</code>. In fact both the standard’s result and this example’s are <code>vers2.h</code>.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ When you think it is two layers and it is one</p><pre><code data-lang="c">#define CONCAT(a, b) a ## b
-#define VERSION 2
-int CONCAT(api_v, VERSION)(void);   /* api_vVERSION — not what was wanted */</code></pre><p><code>CONCAT</code> itself is the macro that uses <code>##</code> directly, so <code>VERSION</code> is not expanded. One more layer must be wrapped round.</p><pre><code data-lang="c">#define CONCAT_RAW(a, b) a ## b
-#define CONCAT(a, b)     CONCAT_RAW(a, b)
-int CONCAT(api_v, VERSION)(void);   /* api_v2 */</code></pre><p>There are two naming practices — attach <code>_RAW</code> or <code>_IMPL</code> to the inner one, or attach an <code>x</code> to the outer one (the standard example’s <code>xstr</code> and <code>xglue</code> are the latter). Either way, only one rule need be kept: <strong>the macro that uses <code>#</code> or <code>##</code> directly goes on the inside, and the outside merely calls it.</strong></p></div><p>It is the preprocessor trap that catches people most often, and also a problem solved in two lines once known.</p><h3>49.5 The curious examples the standard gives</h3><p>The standard document’s macro replacement clauses hold several examples that make one ask “was even this settled?”. They are not things to use often in practice, but they show <strong>what happens when the expansion rules are pushed to their limit</strong>, so they are worth reading once. We pick three and really run them.</p><div><div><p><code>examples/ch49/odd.c</code></p><pre><code data-lang="c">/* 표준이 직접 든 기묘한 예제들 — 전개 결과를 글자로 찍어 확인한다.
-   xstr() 로 감싸면 "그래서 무엇이 되었는가"를 문자열로 볼 수 있다(두 겹 우회). */
-#include &lt;stdio.h>
-
-/* 쉼표가 든 것도 통째로 문자열로 만들려면 가변 인자로 받는다 */
-#define str(...)   # __VA_ARGS__
-#define xstr(...)  str(__VA_ARGS__)
-
-/* ── ① 자리표시자(placemarker) — 빈 인자를 ## 로 붙이면 ────────── */
-#define t(x, y, z)  x ## y ## z
-
-int j[] = { t(1,2,3), t(,4,5), t(6,,7), t(8,9,),
-            t(10,,), t(,11,), t(,,12), t(,,) };
-
-/* ── ② 표준이 "미지정"이라고 못 박은 전개 ─────────────────────── */
-#define f(a)  a*g
-#define g(a)  f(a)
-int g = 1;                     /* g 는 함수형 매크로라 홀로 쓰면 펼쳐지지 않는다 */
-
-/* ── ③ __VA_OPT__ — 인자가 "비었는지"를 언제 판정하는가 ───────── */
-#define LOG(...)          log(0 __VA_OPT__(,) __VA_ARGS__)
-#define SDEF(name, ...)   S name __VA_OPT__(= { __VA_ARGS__ })
-#define EMP
-
-int main(void)
-{
-    printf("① 자리표시자\n");
-    printf("   j[] = {");
-    for (size_t i = 0; i &lt; sizeof j / sizeof *j; i++)
-        printf(" %d", j[i]);
-    printf(" }   (원소 %zu개)\n", sizeof j / sizeof *j);
-    printf("   t(,,)  -> \"%s\"  (아무 토큰도 남지 않는다)\n", xstr(t(,,)));
-    printf("   t(6,,7)-> \"%s\"\n", xstr(t(6,,7)));
-
-    printf("\n② 미지정 전개\n");
-    printf("   f(2)(9) -> \"%s\"\n", xstr(f(2)(9)));
-    printf("   (표준은 \"2*9*g\" 또는 \"2*9*f(9)\" 중 어느 쪽인지 정하지 않는다)\n");
-
-    printf("\n③ __VA_OPT__\n");
-    printf("   LOG(1,2)  -> \"%s\"\n", xstr(LOG(1,2)));
-    printf("   LOG()     -> \"%s\"\n", xstr(LOG()));
-    printf("   LOG(EMP)  -> \"%s\"   ← 인자를 넘겼는데도 쉼표가 없다\n", xstr(LOG(EMP)));
-    printf("   SDEF(foo)      -> \"%s\"\n", xstr(SDEF(foo)));
-    printf("   SDEF(bar,1,2)  -> \"%s\"\n", xstr(SDEF(bar, 1, 2)));
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>① 자리표시자
-   j[] = { 123 45 67 89 10 11 12 }   (원소 7개)
-   t(,,)  -> ""  (아무 토큰도 남지 않는다)
-   t(6,,7)-> "67"
-
-② 미지정 전개
-   f(2)(9) -> "2*9*g"
-   (표준은 "2*9*g" 또는 "2*9*f(9)" 중 어느 쪽인지 정하지 않는다)
-
-③ __VA_OPT__
-   LOG(1,2)  -> "log(0 , 1,2)"
-   LOG()     -> "log(0 )"
-   LOG(EMP)  -> "log(0 )"   ← 인자를 넘겼는데도 쉼표가 없다
-   SDEF(foo)      -> "S foo"
-   SDEF(bar,1,2)  -> "S bar = { 1, 2 }"
-</code></pre></div></div><p>The knack the example uses of printing the expansion as text is worth noticing too — wrap something in <code>xstr(…)</code> and “so what did it become” can be seen as a string. The double expansion just learned is, in effect, used as <strong>a tool for debugging the preprocessor</strong>.</p><h4>49.5.1 ① Placemarkers — pasting an empty argument</h4><pre><code data-lang="c">#define t(x, y, z)  x ## y ## z
-int j[] = { t(1,2,3), t(,4,5), t(6,,7), t(8,9,),
-            t(10,,), t(,11,), t(,,12), t(,,) };</code></pre><p>What happens if an argument is left empty and <code>##</code> is used? There being nothing to paste, it looks like an error, but the standard settles that in an empty argument’s place there is an invisible token called a <strong>placemarker</strong>. This token leaves whatever it is pasted with as it is, and vanishes when the expansion ends.</p><p>So <code>t(6,,7)</code> pastes <code>6</code> and <code>7</code> into <code>67</code>, and <code>t(,,)</code> <strong>leaves no token at all</strong>. It is why the example’s array ends with seven elements — the eighth <code>t(,,)</code> vanished whole and left only a trailing comma (that comma being legal thanks to chapter 41′s initialiser syntax).</p><p>Where this rule pays in practice is in <strong>a macro whose argument may or may not be there</strong>. A code-generating macro that chooses with one argument whether to attach a prefix leans on this property.</p><h4>49.5.2 ② The expansion the standard declares “unspecified”</h4><pre><code data-lang="c">#define f(a)  a*g
-#define g(a)  f(a)
-f(2)(9)</code></pre><p>These two lines call each other. <code>f(2)</code> becomes <code>2*g</code>, and with <code>(9)</code> following it it could be read as <code>g(9)</code> — and expanding <code>g</code> gives <code>f(9)</code> again, whose <code>f</code> is already being expanded and so is caught by the <strong>blue paint rule</strong>.</p><p>Here the standard did not settle on one answer. It writes into the example itself that <strong>“the result is either <code>2*9*g</code> or <code>2*9*f(9)</code>, and which it is is unspecified”</strong>. It is a textbook case of <strong>unspecified behaviour</strong>, one of the grey zones learned in chapter 46 — it is one of two, but which is settled by the implementation.</p><p>The GCC on the machine that ran this example chose <code>2*9*g</code>. Another answer on another implementation would not be a bug. The practical lesson is one — <strong>do not make macros call each other.</strong></p><h4>49.5.3 ③ <code>__VA_OPT__</code> — when is “empty” judged?</h4><p>The <code>__VA_OPT__</code> C23 brought in (chapter 66) puts something in “only when the variadic arguments are not empty”. But <strong>when</strong> it looks to see whether they are empty is subtle.</p><pre><code data-lang="c">#define LOG(...)  log(0 __VA_OPT__(,) __VA_ARGS__)
-#define EMP                       /* a macro that expands to nothing */
-
-LOG(1,2)   →  log(0 , 1,2)
-LOG()      →  log(0 )
-LOG(EMP)   →  log(0 )             ← an argument was passed and yet there is no comma</code></pre><p><code>LOG(EMP)</code> is the heart of it. One argument was plainly passed, but <code>EMP</code> expands to no token at all. Because the judgement is made on the tokens <strong>after</strong> expansion rather than before, it counts as “empty” and no comma attaches.</p><p>The <code>SDEF</code> side shows this property’s practical use.</p><pre><code data-lang="c">#define SDEF(name, ...)  S name __VA_OPT__(= { __VA_ARGS__ })
-
-SDEF(foo)         →  S foo                 /* without initialisation */
-SDEF(bar, 1, 2)   →  S bar = { 1, 2 }      /* with it */</code></pre><p>That a macro whose <strong>very syntax changes</strong> with the presence of arguments can be written with standard syntax alone is C23′s contribution. Before it one had to lean on a GCC extension (<code>, ##__VA_ARGS__</code>).</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>I hear the standard has a worse example than these.</p></div><div class="dev qa-a"><p class="dev-label">A It does. The last example of the clause on rescanning is the one — it puts down some nine lines of definitions (including things like <code>#define z z[0]</code> and <code>#define h g(~</code>, where <strong>the parentheses do not even match</strong>) and asks what the single line <code>f(y+1) + f(f(z)) % t(t(g)(0) + t)(1);</code> becomes. The answer is <code>f(2 * (y+1)) + f(2 * (f(2 * (z[0])))) % f(2 * (0)) + t(1);</code>.</p><p>That example’s purpose is not to test people but <strong>to test implementations</strong>. It is put together so that whoever writes a preprocessor and gets one rule wrong will have it show up in this single line. We have no reason to memorise it; it serves only to confirm where the boundary of the defined world lies.</p></div></div><div class="dev realcase"><p class="dev-label">◉ A language made by one macro — the X macro</p><p>There is a classic technique showing the power of <code>#</code> and <code>##</code>. It writes a list in one place and unfolds it in several forms — the <strong>X macro</strong>. The name comes from the conventionally used parameter <code>X</code>. We see it in the flesh in the next section.</p></div><h3>49.6 The X macro — several sets of code from one list</h3><p>C has no code generation. So the problem arises of “having to write the same list repeatedly in several forms” — take error codes: once in an enumeration, once in a table of name strings, once in a <code>switch</code> returning messages. Miss one place when adding an item and the tables are out of step from then on.</p><p>The X macro solves this by <strong>writing the list only once</strong>. The knack is two steps.</p><ol><li>Write the list in the form of “calls to a macro <code>X</code> that is not yet defined.”</li><li>Define <code>X</code> differently each time and unfold the list. The same list comes out as different code every time.</li></ol><div><div><p><code>examples/ch49/xmacro.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-
-/* 하나의 목록에서 열거형·이름표·검사 코드를 함께 만들어 낸다.
-   목록을 고칠 때 한 곳만 고치면 나머지가 따라온다. */
-#define ERROR_LIST(X)                       \
-    X(OK,        0, "no error")             \
-    X(NOT_FOUND, 2, "resource not found")   \
-    X(DENIED,    5, "permission denied")    \
-    X(TIMEOUT,   9, "operation timed out")
-
-/* ① 열거형 만들기 — 이름과 값만 쓴다 */
-#define AS_ENUM(name, code, text) ERR_##name = code,
-enum error_code { ERROR_LIST(AS_ENUM) };
-#undef AS_ENUM
-
-/* ② 이름 문자열 표 만들기 — 이름을 문자열로 바꾼다(#) */
-#define AS_NAME(name, code, text) [code] = #name,
-static const char *const error_name[] = { ERROR_LIST(AS_NAME) };
-#undef AS_NAME
-
-/* ③ 설명 문자열을 돌려주는 함수 만들기 — switch 를 통째로 생성한다 */
-#define AS_CASE(name, code, text) case ERR_##name: return text;
-static const char *error_text(enum error_code e)
-{
-    switch (e) {
-        ERROR_LIST(AS_CASE)
-        default: return "unknown error";
-    }
-}
-#undef AS_CASE
-
-/* ④ 개수 세기 — 목록의 길이도 자동으로 얻는다 */
-#define AS_COUNT(name, code, text) + 1
-enum { ERROR_COUNT = 0 ERROR_LIST(AS_COUNT) };
-#undef AS_COUNT
-
-int main(void)
-{
-    printf("%d error codes defined\n", ERROR_COUNT);
-
-#define AS_ROW(name, code, text) \
-    printf("  %-10s code=%d name=%-9s text=%s\n", #name, (int)ERR_##name, \
-           error_name[code], error_text(ERR_##name));
-    ERROR_LIST(AS_ROW)
-#undef AS_ROW
-
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>4 error codes defined
-  OK         code=0 name=OK        text=no error
-  NOT_FOUND  code=2 name=NOT_FOUND text=resource not found
-  DENIED     code=5 name=DENIED    text=permission denied
-  TIMEOUT    code=9 name=TIMEOUT   text=operation timed out
-</code></pre></div></div><p>Four sets came out of one list. Taking them one at a time.</p><p><strong>① The enumeration</strong> — <code>AS_ENUM</code> unfolds to <code>ERR_##name = code,</code>. <code>##</code> joins <code>ERR_</code> with the name and produces <code>ERR_NOT_FOUND = 2,</code>.</p><p><strong>② The table of name strings</strong> — <code>#name</code> turns the name straight into a string. Moreover it uses the <strong>designated initialiser</strong> <code>[code] = #name</code> (chapter 41) so that the code value is itself the array index. Even with sparse values (0, 2, 5, 9) the table lines up by itself.</p><p><strong>③ Generating the <code>switch</code></strong> — <code>case ERR_##name: return text;</code> unfolds as many times as there are items. The whole body of the function was made from the list.</p><p><strong>④ Counting</strong> — the knack of making it unfold to <code>0 + 1 + 1 + 1 + 1</code>. Add items to the list and <code>ERROR_COUNT</code> follows by itself.</p><p><strong>⑤ And in the body</strong> — inside <code>main</code> the same list is unfolded once more to print a table. Erasing the macro with <code>#undef</code> after use is the convention, because a lingering name collides with the next use.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>I hear there is a version that keeps the list in a separate file. What is different?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>It is the same idea in different packaging. Write the list in a file such as <code>errors.def</code>, and on the using side define <code>X</code> and unfold it with <code>#include "errors.def"</code> — using directly the fact that <code>#include</code> is text pasting (chapter 48). The macro line continuations (<code>\\</code>) disappear and the list reads better, at the cost of one more file and the inconvenience that an IDE does not recognise that file as code. The Linux kernel’s system call table long used this approach.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ Where it is better not to use an X macro</p><pre><code data-lang="c">/* when there are only three items and only one derived form */
-#define COLOR_LIST(X) X(RED) X(GREEN) X(BLUE)</code></pre><p>At this size it reads better simply to write the enumeration and the string array side by side. The X macro’s value appears when <strong>the list is long, several sets of code derive from it, and items keep being added</strong>. Use it on a short list and what is lost (the unfolded code being invisible in the debugger and in error messages, a first-time reader being unable to read it) outweighs what is gained (removing duplication).</p></div><div class="dev realcase"><p class="dev-label">◉ X macros as met in practice</p><p>This technique is everywhere; only the name is unfamiliar. The Linux kernel’s system call table and error code definitions, the register and pin definitions of many embedded SDKs, the asset-kind lists of game engines, and the state lists of state machines are representative. What they share is the same — places where <strong>one list is used simultaneously as an enumeration, strings, checking code and serialisation code</strong>. It is an invention created by the pressure to remove duplication in a language with no tooling for it, and so it is also a technique that shows C’s character well.</p></div><div class="dev misconception"><p class="dev-label">⚠ “A macro is the fast version of a function”</p><p>In the old days it was half true — short functions were written as macros to save the cost of a call. But today’s compilers inline small functions by themselves (chapter 14′s editor), so reasons to use a macro for speed have almost vanished. What remains is only the price — no type checking, multiple evaluation of arguments, invisibility in the debugger, and error messages given against the unfolded code and thus hard to read. The modern guidance is clear: <strong>compute values with functions (with <code>static inline</code> if needed), make constants with <code>enum</code> or C23′s <code>constexpr</code>, and use macros only for what a function cannot do — conditional compilation, token assembly, capturing source location.</strong></p></div><h3>49.7 The translation phases — the eight steps the standard pins down</h3><p>We knew preprocessing happens “first”, but exactly what happens in what order? The standard pins this down as eight steps under the name <strong>translation phases</strong>. A real compiler need not perform these steps physically separately, but must behave <strong>as if it had done them in this order</strong> (chapter 14′s “as long as it looks the same” applies here too).</p><table><tr><th><strong>phase</strong></th><th><strong>what it does</strong></th></tr><tr><td>1</td><td>read the source characters and map them into the internal character set (chapter 9′s world of encodings). trigraph replacement used to be here — C23 removed it</td></tr><tr><td>2</td><td>join lines continued by a backslash at the end of a line</td></tr><tr><td>3</td><td>turn comments into a single space, and split the source into <strong>tokens</strong></td></tr><tr><td>4</td><td>execute preprocessing directives — <code>#include</code> (repeating phases 1~4 recursively), <code>#define</code> substitution, conditional compilation</td></tr><tr><td>5</td><td>convert the characters of character and string literals into the execution character set</td></tr><tr><td>6</td><td>join adjacent string literals into one (<code>"a" "b"</code> → <code>"ab"</code>)</td></tr><tr><td>7</td><td>interpret the tokens by C’s grammar and translate — this is “compiling”</td></tr><tr><td>8</td><td>join the needed definitions and make the executable image — linking</td></tr></table><p>This table unravels several riddles at once. <strong>Because comments become a space in phase 3</strong>, <code>a/**/b</code> is <code>a b</code>, not <code>ab</code>. <strong>Because <code>#include</code> is processed recursively in phase 4</strong>, headers within headers unfold naturally. <strong>Because string joining is in phase 6</strong>, the idiom of writing a long string over several lines works, and string fragments made by a macro (the result of the <code>#</code> operator) also join with a literal beside them. And <strong>that grammatical interpretation is phase 7</strong> restates this chapter’s core — when the preprocessor works, C’s grammar does not yet exist.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then where is a syntax error inside a macro caught?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>In phase 7, against <strong>the code after unfolding</strong> — which is why the error message looks remote from the line you wrote. The standard diagnosis is the <code>-E</code> (preprocess only) learned in chapter 16: preprocess the file in question and look at how it really unfolded, and a riddling error usually resolves at once. Modern compilers help with this too by showing trace information such as “expanded from macro NAME”.</p></div></div><p>We now know layer by layer the whole process of source becoming a program. The next chapter is the secret of how <code>printf</code> takes any number of arguments — the variadic function.</p>
+    <strong><span class="tok-t">int</span></strong> small <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>ckd_add</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>small</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">20</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">22</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">overflow</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span> <strong><span class="tok-k">else</span></strong> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">20 + 22 = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> small</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>2000000000 + 2000000000 overflows int (we stayed inside the contract)
+20 + 22 = 42
+</code></pre></div></div><p><code>ckd_add</code> returns “did it overflow?” as its return value — the standard’s answer to the trap learned in chapter 7 (“signed overflow is outside the contract”), governed by the discipline learned in chapter 48 (“errors are values”).</p><p><strong>Components</strong> — using an API in which violating the contract is difficult to begin with (chapter 40′s proven is that layer). Chapter 17′s metaphor — tools are nets, good components are footholds — is completed here.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Must all the UB be memorised? I hear the standard has hundreds of them.</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Memorising is not the goal — the list is vast and continually refined. What works in practice is <strong>an instinct</strong>: the habit of asking “are my grounds for saying this code is correct in the contract, or is it that it ran on my computer?” And backing that instinct with tools — turning warnings on, running tests under sanitizers, cross-checking with two compilers (chapter 17). The reason this book has repeated “is it correct on the abstract machine” since Part II is precisely to plant that instinct.</p></div></div><h3>49.7 Closing Part IX</h3><p>The part of precision is over — how to handle approximation (chapter 47), how to handle failure (chapter 48), and how to know the world outside the contract (chapter 49). The three chapters share one theme: <strong>C is a language that entrusts much to the programmer, and the person who knows what has been entrusted writes safe code.</strong></p><p>The last parts remain. Every program so far has been a single file — now it grows into several files (chapter 51), we face the layer of preprocessing and translation (chapter 52), we learn the terrain of the standard library (chapter 56), we treat proven head on (Part XII), and we close the book with the practices of modern C (chapter 92).</p><p>The next part is the story of <strong>composing</strong> a program. Its first chapter is the place we have used only as a six-line convention until now — <code>main</code> itself. We see its three forms, and where the value it returns goes.</p>
 <div class="nav"><a href="ch48.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch50.html">Next →</a></div>
 </div></main></body></html>

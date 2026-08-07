@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>80 The embedded toolbox — compilers and the tools beside them — Proven C Book</title><style>
+<title>80 Getting started — there is nothing to install — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,12 +259,131 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch79.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch81.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch80.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>80 The embedded toolbox — compilers and the tools beside them</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><span id="idx-entry-113"></span><p>What people who write C that runs on chips carry with them. The compilers that differ by vendor (IAR, Arm, TI, Microchip, Renesas, SDCC and others), and the tools that sit beside make and git — build tools, debug probes and on-chip debugging, how to see a log on a machine with no screen, simulators, static analysis and unit testing, and the tools that measure size. There is no need to install any of it now. The point is <strong>to know the names and what they are for.</strong></p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 18 said that numerically the largest branch of the world’s C compilers is embedded. Why is that — cannot gcc alone target them all?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Three reasons. First, <strong>there are chips gcc does not know</strong> — when a company invents its own instruction set, the compiler that knows that chip is made by that company. Second, <strong>certification</strong>. The safety standards of automotive, aerospace and medical devices demand evidence that “this compiler has been qualified against the standard”, and selling that qualification together with the responsibility is the business of specialist firms. Third, <strong>code size</strong>. On a chip with tens of KiB of memory, a few per cent of size decides whether a product exists.</p></div></div><h3>80.1 The embedded compilers</h3><p>Only those currently in service. Since the point is recognising names, a table will do.</p><table><tr><th><strong>compiler</strong></th><th><strong>chips targeted</strong></th><th><strong>character</strong></th></tr><tr><td>IAR Embedded Workbench</td><td>Arm, RISC-V, 8051, MSP430, AVR, RX, RL78, RH850 and many more</td><td>commercial. known for certification (automotive, medical) and code size</td></tr><tr><td>Arm Compiler for Embedded (<code>armclang</code>)</td><td>the Arm Cortex family</td><td>commercial (included in Keil MDK). Clang-based</td></tr><tr><td>TI Arm Clang (<code>tiarmclang</code>)</td><td>TI’s Arm cores</td><td>free. Clang-based, with TI extensions</td></tr><tr><td>MPLAB XC8 / XC-DSC / XC32</td><td>Microchip PIC, AVR, SAM</td><td>usable free of charge. XC32 covers Arm and MIPS</td></tr><tr><td>Renesas CC-RX / CC-RL</td><td>Renesas RX, RL78</td><td>commercial. Renesas chips only</td></tr><tr><td>Green Hills Optimizing Compilers</td><td>Arm, PowerPC, RISC-V and others</td><td>commercial. a long-standing power in the safety market</td></tr><tr><td>Wind River Diab</td><td>Arm, PowerPC and others</td><td>commercial. aerospace and automotive certification</td></tr><tr><td>SDCC</td><td>8051, STM8, Z80, 6502, PDK and other 8-bit</td><td>free software. the standard for small chips</td></tr><tr><td><code>arm-none-eabi-gcc</code> and other GCC ports</td><td>Arm, RISC-V, AVR, MSP430 …</td><td>free software. the default inside vendor SDKs</td></tr><tr><td>Clang/LLVM embedded builds</td><td>Arm, RISC-V</td><td>the common base of the vendor compilers</td></tr></table><p>Two currents show. One is the same as in chapter 18 — <strong>nearly every new compiler is LLVM-based</strong> (Arm’s <code>armclang</code>, TI’s <code>tiarmclang</code>, Microchip’s new XC32). The other is <strong>becoming free</strong>. Compilers that required a paid key to enable optimisation used to be common; Microchip removed that restriction in recent editions.</p><div class="dev platform"><p class="dev-label">⊞ Platform note — Look at the chip vendor’s SDK first</p><p>In practice the starting point is often not choosing a compiler but getting <strong>the development bundle the chip company provides</strong> (its SDK) — ST’s STM32Cube, NXP’s MCUXpresso, Espressif’s ESP-IDF, Nordic’s nRF Connect SDK and the like. Inside them a compiler (usually GCC or Clang), a linker script, startup code, peripheral libraries and debugging configuration already come paired. Choosing tools one by one from scratch is something you do after learning why that bundle looks the way it does.</p></div><h3>80.2 The tools beside make and git</h3><p>Now for the tools. On an embedded developer’s desk there are several beyond make and git. Grouped by what they do:</p><p><strong>① Assembling the build.</strong> <code>make</code> is still the base, but today’s practice puts a <strong>generator</strong> on top. <code>CMake</code> is the de facto standard (it produces build files and is commonly paired with <code>Ninja</code>, a fast executor, behind it), and <code>Meson</code> is used too. Higher-level tools that manage libraries, boards and toolchains wholesale include <code>PlatformIO</code> (many boards with one command), the Zephyr project’s <code>west</code>, and Espressif’s <code>idf.py</code>. Projects with many configuration options, like a kernel, switch features on and off with <code>Kconfig</code> and describe the hardware layout in a <strong>device tree</strong>.</p><p><strong>② Burning it onto the chip and stopping it.</strong> To flash a program onto a chip and halt it mid-execution to look inside, you need a small piece of hardware called a <strong>debug probe</strong>. SEGGER’s <code>J-Link</code>, ST’s <code>ST-Link</code> and the standard <code>CMSIS-DAP</code> family are common. The software joining probe to computer is <code>OpenOCD</code>, <code>pyOCD</code> or the vendor’s own server, and on top of that chapter 17′s <code>gdb</code> works just as before — except that this is remote debugging, with the program running <strong>on another machine</strong>. Chip and probe are connected by a few wires called JTAG or SWD.</p><p><strong>③ Seeing a log on a machine with no screen.</strong> Embedded boards usually have no screen, so where <code>printf</code> output goes becomes a question. The traditional answer is to send it out of a <strong>serial port</strong> (UART) and receive it on a computer with a terminal program (<code>picocom</code>, <code>minicom</code>, <code>screen</code>, <code>PuTTY</code>). The Arm family has two faster routes — <code>ITM</code>/<code>SWO</code>, which floats characters out over the debug line, and SEGGER’s <code>RTT</code>, in which the probe peeks at a memory buffer. There is also <strong>semihosting</strong>, where the debugger performs host I/O on the target’s behalf, but it is slow and used only for testing.</p><div class="dev antipattern"><p class="dev-label">✗ Using <code>printf</code> anywhere in embedded code</p><p>The <code>printf</code> debugging habit formed on a host (chapter 17) brings three problems in embedded work. <strong>Size</strong> — the whole format interpreter is linked in and eats tens of KiB. <strong>Speed</strong> — pushing one character at a time over a UART costs milliseconds. <strong>Timing</strong> — that delay changes the real-time behaviour, so the bug disappears the moment you print: the classic situation.</p><p>So practice uses lighter alternatives: a reduced <code>printf</code> handling integers only, a scheme that sends <strong>only a number</strong> instead of putting the format string on the chip, or a nearly free channel such as the RTT above. It is also why chapter 17′s “learn the debugger” is especially valuable in embedded work.</p></div><p><strong>④ Running it without the machine.</strong> When the hardware does not exist yet, or many boards must be tested automatically, you use a <strong>simulator</strong>. <code>QEMU</code> imitates various boards, and <code>Renode</code> can imitate several devices and even a network together, which makes it common in test automation (CI). Vendor IDEs often ship an instruction-level simulator too.</p><p><strong>⑤ Having the code read for you.</strong> Embedded software is hard to fix once shipped (the product leaves your hands), so <strong>static analysis</strong> has great value. Free tools include <code>cppcheck</code> and <code>clang-tidy</code> (and the compiler’s own <code>-Wall -Wextra</code>); commercial ones commonly used are <code>PC-lint Plus</code>, <code>PVS-Studio</code>, <code>Polyspace</code> and <code>Coverity</code>. In the automotive industry the ability to check conformance to a set of coding rules called <code>MISRA C</code> is especially important — an approach of “using only the subset of C that has been decided as allowed.”</p><p><strong>⑥ Testing.</strong> Code that runs on a chip is unit-tested too. For C, <code>Unity</code> (with its build tool <code>Ceedling</code>) and <code>CppUTest</code> are widely used, and it is the practice to compile logic that does not touch hardware <strong>on the host</strong> and test it there — where you can turn on checkers like <code>-fsanitize=address,undefined</code> (chapter 17), receiving in place of the chip the checks it cannot give you.</p><p><strong>⑦ Measuring size and layout.</strong> Memory is small, so “how much went in” is measured constantly. Binary tools such as <code>size</code>, <code>nm</code>, <code>objdump</code> and <code>readelf</code> are the basics, and you read the <strong>map file</strong> the linker leaves to see what occupies the space. Tools such as <code>bloaty</code> and <code>puncover</code> present that analysis nicely. To convert into a format for the chip you use <code>objcopy</code> (ELF → bin/hex) or <code>srec_cat</code>.</p><p><strong>⑧ Seeing the signals with your eyes.</strong> A moment comes when software tools alone will not do. When you must see what signal is leaving a pin, out come the <strong>logic analyser</strong> (the free software <code>sigrok</code>/PulseView supports inexpensive hardware) and the oscilloscope. That half of the “the code is right but it does not work” problems are wiring and power is an old proverb of this world.</p><div class="dev realcase"><p class="dev-label">◉ Compiler Explorer — a museum of compilers opened in a browser</p><p>One tool that needs no installation. The website <code>godbolt.org</code> (Compiler Explorer) lets you write C on the left and shows, immediately on the right, <strong>what machine code that code becomes</strong>. You can compare across compilers and versions (from gcc 4 to the newest, clang, MSVC, embedded arm targets — hundreds of them) and optimisation options.</p><p>It is the easiest way to <strong>see with your own eyes</strong> what chapter 13 (compiler optimisation) called “the editor rewriting the code” — <code>x * 2</code> becoming a shift, the outputs of <code>-O0</code> and <code>-O2</code> being utterly different, a loop disappearing entirely, all visible in seconds. In embedded work it is also used to check “how many bytes of instruction does this code become.”</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Must all of this be learned before starting embedded work?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>No. The minimum bundle to start is four things — <strong>the chip company’s SDK</strong>, <strong>a compiler</strong> (usually inside the SDK), <strong>one debug probe</strong>, and <strong>a serial terminal</strong>. The rest grows one at a time as the need arises. The purpose of this chapter is not to make you memorise a list but to let you recognise, when you later meet those names, <strong>which slot the tool sits in</strong>.</p></div></div><div class="dev recap"><p class="dev-label">☰ Recap</p><table><tr><th><strong>what it does</strong></th><th><strong>tools</strong></th></tr><tr><td>assembling the build</td><td>CMake, Ninja, Meson; PlatformIO, west, idf.py; Kconfig</td></tr><tr><td>burning and halting</td><td>J-Link, ST-Link, CMSIS-DAP + OpenOCD, pyOCD + gdb</td></tr><tr><td>seeing logs</td><td>UART + terminal, ITM/SWO, RTT, (slow) semihosting</td></tr><tr><td>running without hardware</td><td>QEMU, Renode, vendor simulators</td></tr><tr><td>having code read</td><td>cppcheck, clang-tidy; PC-lint Plus, PVS-Studio; MISRA</td></tr><tr><td>testing</td><td>Unity, Ceedling, CppUTest; sanitizers on the host</td></tr><tr><td>measuring size</td><td>size, nm, objdump, readelf; map files; bloaty, puncover</td></tr><tr><td>seeing signals</td><td>logic analyser (sigrok), oscilloscope</td></tr><tr><td>inspecting machine code</td><td>Compiler Explorer (godbolt.org)</td></tr></table></div><p>We have looked round the embedded desk. After chapter 18′s map of compilers and chapter 79′s toolbox, the tools of the place where C is rooted most deeply have their names too.</p><p>Now the last chapter. It retraces the road this book has travelled, gathers the practices of modern C into a single page of guidance, and closes.</p>
+<h2 id="loc-80">80 Getting started — there is nothing to install</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 51, Several files · several files and linking</div><div>chapter 79, The five bugs shipped for fifty years · the five bugs</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 51 made a multi-file program and learned about headers, object files and <span id="idx-entry-116"></span>linking, and chapter 16 saw the four runners of the compilation relay. Then what exactly is “using a library” in that picture?</p><div class="qa-a"><p><span class="dev-label">A.</span> One of two things. <strong>Compiling it together</strong>, or <strong>linking something compiled separately</strong>. The former road is handing somebody else’s source to the compiler along with mine; the latter is handing the linker a lump that has already become object code (a static <code>.a</code> or a shared <code>.so</code>/<code>.dll</code>). Either way the compiler makes the call from the <strong>declaration</strong> (the header) and the linker finds and joins the <strong>definition</strong> — exactly chapter 51′s picture. proven took the former road, and the next section is why.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">The first chapter that actually uses proven. We first see why this library has no <code>configure</code>, no package manager and no shared library to link — and what that choice gives and takes away — and then run a first program. The third bug seen in chapter 79 (format mismatch) already disappears in this first program. Then we follow <strong>the whole life of one object</strong> (make it, use it, give it back) and set up the three rules needed to read the rest of this part.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why not distribute it as a package? Installing would be more convenient.</li><li>Must an object be made with <code>_create</code>? What about where there is no heap?</li><li>How does <code>PROVEN_ARG</code> find out the type? Does C not lack function overloading?</li></ol></div></div><div></div><h3>80.1 The choice of having nothing to install</h3><p>proven has no installation procedure. Compile the source you have obtained together with your program and that is all. There are only two directories that matter.</p><ul><li><code>src/proven/</code> — the portable body. The operating system is not called here.</li><li><code>platform/</code> — a thin layer that makes system calls. It is the only part that must be changed when moving to a new machine.</li></ul><p>In an environment with no operating system (embedded) it is built without <code>platform/</code>. This separation settled the shape of the whole library — the demand “it must run anywhere” becomes the discipline “keep neither hidden allocation nor hidden global state”.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why not distribute it as a package? Installing would be more convenient.</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> It is a trade of price for gain. What is lost is convenience — it cannot be got through a system package, and updating becomes not “raising a version” but “fetching new source”. What is gained is control. The library cannot differ from the source you are looking at now, compilation options you did not choose do not come attached, and links do not break because a distribution built it with different settings. Above all, it is <strong>the only model that works both in a hosted environment and on bare metal</strong> — embedded work has no package manager to begin with.</p></div></div><h3>80.2 How this book’s examples are built</h3><p>To state it honestly, this book’s proven examples are compiled as follows. The library’s source is made into object files once and linked with the example.</p><pre><code data-lang="text">$ cc -std=c23 -O1 -Ivendor/proven/include -c vendor/proven/src/proven/*.c
+$ cc -std=c23 -Wall -Wextra -Werror -Ivendor/proven/include \
+     hello.c vendor-obj/*.o -lm -o hello</code></pre><p>The first line handles the body, the second my program. <code>-I</code> tells it where to find headers (chapter 51), <code>-lm</code> joins the mathematical functions. These two lines are what this book’s verification script really runs every time, and every execution result printed on these pages is the output of a program made that way.</p><h3>80.3 The first program</h3><p>One <code>#include &lt;proven.h></code> opens the whole library.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch80/hello.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>name <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">world</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong>         count <strong><span class="tok-x">=</span></strong> <span class="tok-n">3</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong>      ratio <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">75</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">bool</span></strong>        ready <strong><span class="tok-x">=</span></strong> <span class="tok-n">true</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">char</span></strong>        grade <strong><span class="tok-x">=</span></strong> <span class="tok-s">'</span><span class="tok-s">A</span><span class="tok-s">'</span><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> {} is only a placeholder and has no type. The type comes from the argument </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">Hello, {}! You have {} messages.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>name</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>count</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> whatever the type, it goes through the same placeholder </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ratio={} ready={} grade={}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>ratio</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>ready</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>grade</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the format specification goes after the colon — width, alignment, digits </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">|{:>8}|{:&lt;8}|{:.3}|</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>name</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>name</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>ratio</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>Hello, world! You have 3 messages.
+ratio=0.750000 ready=true grade=A
+|   world|world   |0.750|
+</code></pre></div></div><p>We read it line by line. <code>proven_println</code> takes a format and arguments and prints one line to standard output — so far the same as <code>printf</code>. What differs is the <strong>placeholder</strong>.</p><ul><li><code>{}</code> has no type in it. It is neither <code>%d</code> nor <code>%s</code> but simply <code>{}</code>.</li><li>The type comes <strong>from the argument</strong>. <code>PROVEN_ARG(x)</code> looks at <code>x</code>’s type and wraps the value with a fitting tag attached.</li><li>So chapter 79′s third bug — the mismatch of format and argument — <strong>structurally</strong> cannot happen. The type is not written twice, so there is no place for them to go out of step.</li></ul><p>What is written after the colon, as in <code>{:>8}</code>, corresponds to the width, alignment and precision seen in chapter 56. <code>></code> is right alignment, <code>&lt;</code> left alignment, <code>.3</code> is to three decimal places. That the alignment symbol comes first is what differs from <code>printf</code>.</p><h3>80.4 Three rules — the key to this whole part</h3><p>The functions ahead number more than a hundred, but the rules for reading their signatures are only three. Get these three into your hand and you can read half of any function you have never seen, without the documentation.</p><ol><li><strong>Only a function that takes an allocator as an argument takes memory.</strong> If <code>proven_allocator_t</code> appears in the signature it means “this function may allocate”, and if it does not, it takes <strong>not one byte</strong>. So which functions are usable in embedded work and which are not divide before your eyes (chapter 83).</li><li><strong>Failure comes as a value.</strong> If there is no result to return it gives a single <code>proven_err_t</code>; if there is, an <code>{err, value}</code> bundle. Before checking <code>err</code> you do not look at <code>value</code> (chapter 81).</li><li><strong>Give a thing back with the allocator you made it with.</strong> What was obtained with <code>_create</code> is let go with <code>_destroy</code>, and what has <code>view</code> in its name is borrowed and is not destroyed (chapters 82 and 83).</li></ol><p>The naming rules have almost no exceptions either.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>shape of the name</strong></th><th><strong>meaning</strong></th><th><strong>example</strong></th></tr><tr><td><code>_create</code></td><td>obtain a new object from an allocator — returns a bundle</td><td><code>proven_u8str_create</code></td></tr><tr><td><code>_borrow</code></td><td>lay an object over somebody’s memory — no allocation</td><td><code>proven_u8str_borrow</code></td></tr><tr><td><code>_destroy</code></td><td>give it back with the allocator it was made with</td><td><code>proven_u8str_destroy</code></td></tr><tr><td><code>_as_</code></td><td>see the same thing through another eye — no copying</td><td><code>proven_u8str_as_view</code></td></tr><tr><td><code>_view</code></td><td>borrowed. it is not destroyed</td><td><code>proven_u8str_view_t</code></td></tr><tr><td><code>_checked</code></td><td>check the boundary and error if it is broken</td><td><code>..._slice_checked</code></td></tr><tr><td><code>_unchecked</code></td><td>skip the check — for places the caller has already confirmed</td><td><code>..._slice_unchecked</code></td></tr><tr><td><code>_grow</code></td><td>enlarge if short — which is why it takes an allocator</td><td><code>proven_u8str_append_grow</code></td></tr><tr><td><code>_or_panic</code></td><td>panic on failure. for places with nobody to return to</td><td><code>proven_arena_alloc_or_panic</code></td></tr></table></div><p class="float-caption">Table 80.1</p></figure><h3>80.5 The life of one object</h3><p>Rather than reading three lines of rules, it is quicker to follow one real thing to the end. The program below holds the whole course of <strong>making, using and giving back</strong> a string object on one screen.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch80/first.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The first real program — the whole course of making an object, using it and</span></em>
+<em><span class="tok-c">   giving it back. The skeleton of a proven program is all in this one file. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> (1) Where does the memory come from — the caller decides (the allocator parameter).</span></em>
+<em><span class="tok-c">   (2) Failure arrives as a value — value is not looked at before err is checked.</span></em>
+<em><span class="tok-c">   (3) What was made is given back through the allocator it was made with. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> proven_err_t <strong>build_line</strong><span class="tok-x">(</span>proven_allocator_t alloc<span class="tok-x">,</span>
+                               proven_u8str_view_t who<span class="tok-x">,</span>
+                               <strong><span class="tok-t">int</span></strong> count<span class="tok-x">,</span>
+                               proven_u8str_t <strong><span class="tok-x">*</span></strong>out<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a string with room for 64 bytes, obtained from alloc </span></em><em><span class="tok-c">*/</span></em>
+    proven_result_u8str_t made <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_create</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">64</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>made</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span>
+        <strong><span class="tok-k">return</span></strong> made<span class="tok-x">.</span>err<span class="tok-x">;</span>
+
+    proven_u8str_t line <strong><span class="tok-x">=</span></strong> made<span class="tok-x">.</span>value<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> taken out only after the check </span></em><em><span class="tok-c">*/</span></em>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> Appended through a format. On failure the original is left untouched.</span></em>
+<em><span class="tok-c">       Formatting returns, along with err, "bytes written / bytes needed" </span></em><em><span class="tok-c">*/</span></em>
+    proven_fmt_result_t r <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_append_fmt</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>line</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{} has {} message(s)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                                                    </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>who</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>count</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">.</span></strong><strong>err</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>proven_u8str_destroy</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>line</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> returned on the failure path too </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-k">return</span></strong> r<span class="tok-x">.</span>err<span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <strong><span class="tok-x">*</span></strong>out <strong><span class="tok-x">=</span></strong> line<span class="tok-x">;</span>                            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ownership passes to the caller </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> PROVEN_OK<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the heap allocator — standard malloc wrapped in the library's interface </span></em><em><span class="tok-c">*/</span></em>
+    proven_allocator_t alloc <strong><span class="tok-x">=</span></strong> <strong>proven_heap_allocator</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    proven_u8str_t line<span class="tok-x">;</span>
+    proven_err_t e <strong><span class="tok-x">=</span></strong> <strong>build_line</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_LIT</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">alice</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>line</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>proven_is_ok</strong><strong><span class="tok-x">(</span></strong><strong>e</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">build failed: {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>e</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> an owned string -> a borrowed view. A view is valid only while the original lives </span></em><em><span class="tok-c">*/</span></em>
+    proven_u8str_view_t v <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_as_view</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>line</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">line   = {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>v</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">length = {} bytes</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>v</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the meeting point with old APIs that need NUL termination (no copy, no allocation) </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">as C string = {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>proven_u8str_as_cstr</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>line</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>proven_u8str_destroy</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>line</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> through the very allocator it was made with </span></em><em><span class="tok-c">*/</span></em>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> Destroying empties the struct to zero — so it cannot point at the returned</span></em>
+<em><span class="tok-c">       buffer again. Hence the length after destroying is 0, and the contract is</span></em>
+<em><span class="tok-c">       that this object is not used any further. </span></em><em><span class="tok-c">*/</span></em>
+    <strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">after destroy, length = {}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                   </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>proven_u8str_as_view</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>line</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>line   = alice has 3 message(s)
+length = 22 bytes
+as C string = alice has 3 message(s)
+after destroy, length = 0
+</code></pre></div></div><p>Six places to point at.</p><p><strong>① It took an allocator as an argument.</strong> That <code>build_line</code>’s first argument is an allocator is the declaration that “this function may take memory”. The caller settles whether to give it the heap or an arena (chapter 83).</p><p><strong>② Making returns a bundle.</strong> <code>proven_u8str_create</code> gives a <code>proven_result_u8str_t</code> (that is, <code>{err, value}</code>). Before checking <code>err</code> you do not take <code>value</code> out — that order is the whole of chapter 81.</p><p><strong>③ The capacity is “by content”.</strong> The 64 of <code>create(alloc, 64)</code> is <strong>the number of bytes of content to hold</strong>, and the library internally takes one more byte for the NUL. That is how <code>as_cstr</code> can hand out a C string without copying.</p><p><strong>④ The failure path gives back too.</strong> If formatting fails, the string taken so far is returned with <code>destroy</code> before the error is raised. Grow this pattern and it becomes chapter 81′s <code>goto</code> cleanup idiom.</p><p><strong>⑤ The place where ownership passes is explicit.</strong> <code>*out = line;</code> is that place. After this line the string’s owner is the caller, and the responsibility to destroy it is the caller’s too.</p><p><strong>⑥ Destroying empties the struct.</strong> That the length prints as 0 after <code>destroy</code> is the evidence. It is so that the returned buffer is not still pointed at, and the contract that <strong>a destroyed object is not used again</strong> stands as it is.</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The four mistakes a beginner meets on the first day</p><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> ① taking value out without checking </span></em><em><span class="tok-c">*/</span></em>
+proven_u8str_t s <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_create</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">64</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">.</span>value<span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> rubbish on failure </span></em><em><span class="tok-c">*/</span></em>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ② destroying with a different allocator </span></em><em><span class="tok-c">*/</span></em>
+<strong>proven_u8str_destroy</strong><strong><span class="tok-x">(</span></strong><strong>other_alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> contract violation </span></em><em><span class="tok-c">*/</span></em>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ③ holding a view longer than its original </span></em><em><span class="tok-c">*/</span></em>
+proven_u8str_view_t v <strong><span class="tok-x">=</span></strong> <strong>proven_u8str_as_view</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong>proven_u8str_destroy</strong><strong><span class="tok-x">(</span></strong><strong>alloc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">{}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>PROVEN_ARG</strong><strong><span class="tok-x">(</span></strong><strong>v</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> reads a dead place </span></em><em><span class="tok-c">*/</span></em>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ④ forgetting PROVEN_ARG </span></em><em><span class="tok-c">*/</span></em>
+<strong>proven_println</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">count={}</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> count</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                         <em><span class="tok-c">/*</span></em><em><span class="tok-c"> does not compile </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Of the four only ④ is caught by the compiler. The other three are blocked <strong>by a human keeping the rules</strong>, which is why the previous section said to get the three rules into your hand. ③ in particular is met again in chapter 84, and once more when an arena is reset.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Must an object be made with <code>_create</code>? What about where there is no heap?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> No. Most objects come with <strong>a borrowing edition</strong> as well. <code>proven_u8str_borrow(buf, sizeof buf)</code> lays a string over a stack or static array — it takes no allocator, so it takes not one byte, and therefore needs no <code>destroy</code> either (the caller is already the owner). Embedded code handles strings this way (chapter 84), and several of this book’s examples run so.</p><p>There is a middle form too. Take the memory once in a large piece, lay an arena over it and hand out from there (chapter 83) — then <code>malloc</code> is never called once while the <code>_create</code> family can be used as it is.</p></p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> How does <code>PROVEN_ARG</code> find out the type? Does C not lack function overloading?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> It uses a device that came in with C11, <code>_Generic</code> — the syntax that chooses one of several things <strong>at compile time</strong> according to an expression’s type. <code>PROVEN_ARG(x)</code> makes a small struct with an integer tag attached if <code>x</code> is an <code>int</code>, a real tag if a <code>double</code>, a string tag if a <code>const char *</code>. It is not determining the type at run time but <strong>using as it stands what the compiler already knows</strong>, so there is no cost. The syntax and the whole formatting rules are treated head on in chapter 85.</p></div></div><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Using a library makes the program heavy”</strong></p>A frequently heard worry, and it depends on the character of the language and the library. In C, a library compiled together as source leaves <strong>what is not used out of the executable</strong> — because the linker does not put in an object file that is not referenced (chapter 16′s linking stage). Moreover proven has no initialisation code running at startup, no global state being registered, and no thread quietly rising. Becoming heavy is not the price of using a library but what happens when a framework takes over the program’s structure.</div><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The practice of distributing as source — SQLite in one file</p>This distribution model is not a peculiar choice of proven’s alone. SQLite, the most widely used database engine in the world, provides as its official distribution form an <strong>amalgamation</strong> joining dozens of source files into one huge <code>.c</code> file — fetch it, compile it with your program, and that is all. The <code>stb</code> family of libraries, famous for image and font handling, is a single header file entire. The reason is the same in every case. In a world where build environments are all different, <strong>the most portable unit of distribution is source</strong>.</div><h3>80.6 Attaching it to your own project — a minimal Makefile</h3><p>To avoid typing the two lines above every time, use chapter 90′s <code>make</code>. Supposing the library has been put whole into <code>vendor/proven</code>, this much suffices.</p><pre><code data-lang="make">CC      <strong><span class="tok-x">=</span></strong> <span class="tok-s">cc</span>
+CFLAGS  <strong><span class="tok-x">=</span></strong> <span class="tok-s">-std=c23 -Wall -Wextra -Werror -O2 -Ivendor/proven/include</span>
+VSRC    <strong><span class="tok-x">=</span></strong> <strong><span class="tok-k">$(</span></strong><strong>wildcard</strong><strong> </strong><strong>vendor/proven/src/proven/</strong><strong>*</strong><strong>.c</strong><strong><span class="tok-k">)</span></strong><span class="tok-s"> </span><span class="tok-x">\</span>
+<span class="tok-s">          </span><strong><span class="tok-k">$(</span></strong><strong>wildcard</strong><strong> </strong><strong>vendor/proven/platform/</strong><strong>*</strong><strong>.c</strong><strong><span class="tok-k">)</span></strong>
+VOBJ    <strong><span class="tok-x">=</span></strong> <strong><span class="tok-k">$(</span></strong>VSRC<span class="tok-x">:</span>.c<span class="tok-x">=</span>.o<strong><span class="tok-k">)</span></strong>
+
+<strong>app</strong><strong><span class="tok-x">:</span></strong> <span class="tok-s">app.o </span><strong><span class="tok-k">$(</span></strong>VOBJ<strong><span class="tok-k">)</span></strong>
+  <strong><span class="tok-k">$(</span></strong>CC<strong><span class="tok-k">)</span></strong> $^ <strong>-lm</strong><strong><span class="tok-x"> -</span></strong><strong>o</strong><strong> </strong><strong>$@</strong>
+
+<strong>clean</strong><strong><span class="tok-x">:</span></strong>
+  <strong>rm</strong><strong><span class="tok-x"> -</span></strong><strong>f</strong><strong> app app.o </strong><strong><span class="tok-k">$(</span></strong><strong>VOBJ</strong><strong><span class="tok-k">)</span></strong></code></pre><p>Only three things need be known. <strong><code>-I</code></strong> tells it where to find <code>&lt;proven.h></code> (chapter 51). <strong><code>platform/</code></strong> is the thin layer that calls the operating system, so when going to bare metal only this line is removed (chapter 88). <strong><code>-lm</code></strong> joins the mathematical functions that real-number formatting uses — take reals out of the formatter (chapter 88′s <code>PROVEN_FMT_NO_FLOAT</code>) and this is not needed either.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>On Windows and in embedded work</p><p><strong>MSVC</strong> — this library requires C23. Recent updates of Visual Studio 2022 support a good deal of it with <code>/std:clatest</code>, but the surest road is to use <code>clang-cl</code> or MinGW-w64 (GCC) on Windows too (chapter 18′s terrain).</p><p><strong>Embedded</strong> — leave out <code>platform/</code> and compile only <code>src/proven/*.c</code>. There being no heap, <code>proven_heap_allocator()</code> returns an unusable value (all zeros), and an arena laid over a static array is used instead (chapter 83). The detailed procedure is chapter 88.</p></div><div class="dev recap"><p class="dev-label">Recap</p><p>This chapter in summary.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>what</strong></th><th><strong>how</strong></th></tr><tr><td>header</td><td>one <code>#include &lt;proven.h></code></td></tr><tr><td>build</td><td>compile <code>src/proven/*.c</code> with the program (<code>-I</code> for the header path, <code>-lm</code>)</td></tr><tr><td>OS dependence</td><td>only in <code>platform/</code> (build without it if absent)</td></tr><tr><td>rule ①</td><td>only a function that takes an allocator takes memory</td></tr><tr><td>rule ②</td><td>failure comes as a value — check <code>err</code>, then <code>value</code></td></tr><tr><td>rule ③</td><td>destroy with the allocator it was made with. a <code>view</code> is not destroyed</td></tr><tr><td>making</td><td><code>_create</code> (allocates) / <code>_borrow</code> (over somebody’s buffer, no allocation)</td></tr><tr><td>output</td><td><code>proven_println("... {} ...", PROVEN_ARG(x))</code></td></tr><tr><td>format specification</td><td><code>{:>8}</code> <code>{:&lt;8}</code> <code>{:.3}</code> — after the colon</td></tr><tr><td>the price</td><td>a <code>PROVEN_ARG</code> per argument, a syntax unlike the familiar <code>%d</code></td></tr></table></div><p class="float-caption">Table 80.2</p></figure></div><p>The first program has run. Yet the <code>proven_println</code> just used can in fact fail too — because the band going to the screen may break (chapter 10). This function returns an error but <strong>does not compel a check</strong>, and that choice itself is a good entrance to understanding this library’s error model. The next chapter is that.</p>
 <div class="nav"><a href="ch79.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch81.html">Next →</a></div>
 </div></main></body></html>

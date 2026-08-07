@@ -160,11 +160,42 @@ everywhere), *the implementation decides* (it varies, but must be documented), a
 *it says nothing at all*. The proper names for the three and the exact
 distinctions are chapter 49's business.
 
-But practice has a fourth place. This book calls it a *grey area*.
+And practice holds one more place that has no name at all — *not guaranteed by
+the standard's words, yet working on every major implementation, and so widely
+used that it became the practice.* This book calls that place, together with the
+three above, a *grey area*.
+
+#misconception[
+  "Grey area" is not a term of the C standard
+][
+  *Let this be nailed down: "grey area" is a name this book adopted for
+  convenience.* Search the standard as long as you like and the phrase is not
+  there. The standard uses three words, and each has an exact definition —
+  *implementation-defined*, *unspecified*, and *undefined behavior*. Chapter 49
+  treats those three properly.
+
+  Why have another name, then? Because the standard's three leave one place in
+  practice with nothing to call it — the place where *the standard promised
+  nothing and yet every implementation does effectively the same thing.* This book
+  wants one word that covers that too.
+
+  A note on the phrase itself. In ordinary English *a grey area* means "a case the
+  rules do not clearly settle" — which is close, but slightly wider than what is
+  meant here. This book uses it in one narrow sense: *the standard promises
+  nothing, and yet every implementation behaves the same way.* Where the standard
+  is merely ambiguous, or where implementations genuinely differ, the exact word is
+  used instead.
+
+  So *be careful using the phrase outside this book.* Talking to the standard, or
+  to a compiler developer, you must translate it into the exact word — is it
+  undefined, unspecified, implementation-defined, or something the standard does
+  not address at all? That is also why the text distinguishes "outside the
+  contract" (undefined behaviour) from "a grey area".
+]
 
 #dtable(
   columns: 2,
-  [*What a grey area is*], [*What it is not*],
+  [*What this book calls a grey area*], [*What it is not*],
   [Not guaranteed by the standard's words alone], [Not forbidden either — nothing says "do not"],
   [Yet it really works on the major implementations], [Not luck — there is usually a reason],
   [So widely used that it became the practice], [Still not a contract],
@@ -187,6 +218,7 @@ names are enough.
   [Subtracting an `offsetof` to recover the enclosing struct (`container_of`)], [Chapter 44],
   [Writing `int rc = setjmp(env);` outside the four contexts the standard fixes], [Chapter 67],
   [Forcing a layout with `#pragma pack`], [Chapter 44],
+  [Converting a function pointer to `void *` to print or pass it], [Chapter 54 — where POSIX requires it],
 )
 
 #qa[
@@ -208,16 +240,91 @@ names are enough.
   *Whichever you choose, one thing must be done — prepare for both outcomes.* A
   grey area is "what works now", not "what will keep working".
 
-  - *If you use it* — mark the place in the code (one comment will do). Check it
-    regularly with another compiler and with sanitizers (chapter 17). And *know in
-    advance what you would switch to if it broke.*
+  - *If you use it* — make the place *visible*. How much to wrap around it follows
+    the ladder below: scale it to the stakes.
   - *If you avoid it* — you usually pay in longer and slower code. Paying that
     price knowingly is not the same as avoiding it blindly.
+
+  #dtable(
+    columns: 3,
+    [*Rung*], [*What you put around it*], [*Where this much is enough*],
+    [1], [One comment — what it leans on, and why it is safe here], [A tool you alone use; code soon thrown away],
+    [2], [Documentation — "this module assumes X", where the team reads], [Code several people edit],
+    [3], [Let the build say so — `static_assert`, feature-test macros, a compile error], [Where a broken premise goes quietly wrong],
+    [4], [A test — one that checks the premise still holds], [Code that will live long, or run on several platforms],
+    [5], [Isolation — confine it to one file or function and prepare an alternative], [A port is planned, or a break would bring down something large],
+  )
+
+  What decides how far up you climb is the four questions above — *where it is
+  compiled, how long it lives, what breaks if it breaks, and what the alternative
+  costs.* Adding a test to a script you alone run is too much; leaving one comment
+  in a library that ships to several platforms is too little. *Weighing that is
+  part of the job.*
 
   The worst is the third attitude — *using a grey area without knowing it is
   one.* Then you do not even know there is something to prepare for. That is why
   this book takes care to say "outside the contract" and "a grey area" as two
   different things.
+]
+
+=== When a standard outside C promises instead
+
+Among the grey areas, some have a different character: *C says nothing, and
+another standard makes the promise in its place.*
+
+#dtable(
+  columns: 3,
+  [*What C leaves open*], [*What promises instead*], [*Example*],
+  [The format and rounding of floating point], [IEEE 754 (= ISO/IEC 60559)], [That a `float` is 32 bits and how it rounds (chapters 8, 47)],
+  [Conversion between function pointers and `void *`], [POSIX (ISO/IEC 9945)], [`dlsym` returning a function's address as `void *` (chapter 54)],
+  [File names, paths, processes], [POSIX], [`open`, `fork`, the path separator (chapter 87)],
+  [The grammar of locale names], [POSIX], [The spelling `ko_KR.UTF-8` (chapter 63)],
+  [The character set], [Unicode (ISO/IEC 10646)], [When `__STDC_ISO_10646__` is defined (chapter 65)],
+)
+
+Do not read this as "C did not settle it, so anything goes". *Another contract is
+lying in that place*, and it too was written with care.
+
+#qa[
+  How should one think about such places, then?
+][
+  This book's position, in three sentences.
+
+  *First, where the standard left something open, there is usually a good reason.*
+  It is not a gap left by laziness — wanting only promises that hold on any
+  machine at all, the committee had to leave out what is true on particular
+  machines only. Floating point was not nailed to IEEE 754, and function pointers
+  were not equated with data pointers, because machines existed on which that
+  would not have worked (chapter 54's platform note is the list).
+
+  *Second, the standard that fills the gap has its own reasons, and the two can
+  collide.* POSIX required the conversion between function pointers and `void *`
+  so that dynamic libraries could work at all — without it `dlsym` cannot exist. C's
+  caution and POSIX's practicality gave different answers in the same place, and
+  neither is wrong. What differs is *which contract you are working under.*
+
+  *Third, the programmer's job is therefore not to choose but to make the choice
+  plain.* However fiddly it is, you must know which contract you are standing on,
+  and once you have chosen you must make that choice *visible*.
+
+  #dtable(
+    columns: 2,
+    [*How to make it visible*], [*What to write*],
+    [Documentation and comments], [One line saying *which contract this code leans on* — "this file assumes POSIX"],
+    [Build settings and warnings], [Make a broken premise fail the build or raise a warning (`static_assert`, feature-test macros)],
+    [Tests], [One test that checks the premise still holds (a round trip, a size)],
+  )
+
+  With those three, *a change of circumstances changes things safely.* When the
+  compiler is upgraded, when the code is ported, when a new architecture arrives —
+  what has to be re-checked is already written in the code. Without them, you learn
+  that a premise broke *after* the accident.
+
+  ```c
+  /* This file assumes POSIX: conversion between function pointers and void * (dlsym). */
+  static_assert(sizeof(void (*)(void)) == sizeof(void *),
+                "a platform where function and data pointers differ in size");
+  ```
 ]
 
 Why does this notion of a contract matter more and more? Because machines, as

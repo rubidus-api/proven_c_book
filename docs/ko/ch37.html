@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>37 문자열 — Proven C Book</title><style>
+<title>37 배열 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,135 +259,215 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../en/">English</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch36.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch38.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch37.html">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>37 문자열</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-65"></span><p>C의 문자열을 정면으로 다룬다 — char 배열 + NUL 종단이라는 정체, 문자열 리터럴의 특별한 사정, 길이 재기의 진짜 비용, 그리고 한글이 드러내는 “글자 수 ≠ 바이트 수”의 실전까지. 널 삼형제의 마지막(NUL 문자)이 여기서 정식 취급된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>9장에서 C가 택한 문자열 표현은 “끝에 표지를 세우는” NUL 종단이라 했고, 그 대가 세 가지(길이는 세어야 안다, NUL을 내용에 못 담는다, 표지를 잃으면 폭주)를 예고했다. 이제 배열(36장)을 배웠으니 — C 문자열의 정확한 정체를 스스로 정의해 보면?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>char 배열인데, 어딘가에 값 0인 바이트(NUL 문자, <code>'\0'</code>)가 있고, “문자열”이란 시작부터 그 표지 직전까지를 뜻한다는 약속</strong> — 이것이 전부다. 별도의 문자열 타입은 없다. 배열, 그리고 약속. 이 장은 그 약속의 사용법과 비용을 다룬다.</p></div></div><h3>37.1 정체 — 배열, 그리고 약속</h3><p><code>char greet[] = "안녕";</code> — 문자열 리터럴로 배열을 초기화하면, 컴파일러가 글자들의 바이트 <strong>뒤에 <code>'\0'</code>을 붙여</strong> 배열을 만든다. 시연으로 해부한다.</p><div><div><p><code>examples/ch37/str.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;string.h>
+<h2 id="loc-37">37 배열</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>34장 객체, 주소, 포인터 · 주소와 포인터</div><div>11장 기억의 분화 · 기억은 이어진 칸들이다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>11장에서 캐시 라인은 “이웃 예순네 칸을 상자째” 나른다고 했고, 배열을 차례로 훑는 코드가 빠른 이유가 그것이라 했다. 그러면 “배열”이란 기억의 눈으로 정확히 무엇인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 같은 타입의 칸들이 <strong>빈틈없이 이웃하여</strong> 늘어선 것 — 그것이 전부다. <code>int a[5]</code>는 int 다섯 개가 연속된 주소에 나란히 놓인 것이고, 그래서 첫 칸의 주소와 타입만 알면 나머지 위치가 전부 계산된다(<math><mi>𝑖</mi></math>번 원소 = 시작 주소 + <math><mi>𝑖</mi><mo form="infix" lspace="0.2222222222222222em" rspace="0em">×</mo></math> 칸 크기). 이 “계산 가능한 이웃”이라는 성질이 배열의 힘(즉시 접근, 캐시 친화)이자 위험(경계 계산 착오)의 뿌리다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">연속된 기억 — 배열이다. 선언과 순회, 배열과 포인터의 진짜 관계 <span id="idx-entry-65"></span>(악명 높은 “무너짐”), 그리고 경계라는 생사의 규칙까지. 25장의 <code>char line[100]</code> 외상이 여기서 청산된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>왜 이렇게 정했는가 — 그냥 바이트 단위로 더하게 두면 더 단순하지 않은가?</li><li>그러면 포인터 매개변수는 전부 <code>[static 1]</code>로 적는 편이 좋은가?</li><li>경계를 어기면 컴파일러가 잡아 주지 않는가?</li></ol></div></div><div></div><h3>37.1 선언, 접근, 순회</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch37/arr.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
-int main(void)
-{
-    char greet[] = "안녕";      /* 글자 2개 — 그러나 바이트는? */
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><span class="tok-n">5</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-n">3</span><span class="tok-x">,</span> <span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-n">4</span><span class="tok-x">,</span> <span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-n">5</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> sum <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 
-    printf("strlen(\"안녕\") = %zu\n", strlen(greet));
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        sum <strong><span class="tok-x">+=</span></strong> a<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sum: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    for (size_t i = 0; i &lt; strlen(greet); i += 1) {
-        printf("%02X ", (unsigned char)greet[i]);
-    }
-    printf("\n");
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">a[2] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, *(a + 2) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">(</span></strong><strong>a </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    printf("sizeof greet = %zu (NUL 종단 포함)\n", sizeof greet);
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>strlen("안녕") = 6
-EC 95 88 EB 85 95 
-sizeof greet = 7 (NUL 종단 포함)
-</code></pre></div></div><p>읽을거리가 겹겹이다. <code>strlen</code>(표준 <code>&lt;string.h></code>의 길이 재기)이 6을 답했다 — “안녕”은 <strong>글자 둘, 바이트 여섯</strong>이다(9장 UTF-8 표의 그대로: 한글 음절은 3바이트 구간). 바이트 덤프 <code>EC 95 88 EB 85 95</code>가 그 여섯 바이트의 민낯이고, <code>sizeof greet</code>는 7 — NUL 표지까지 담은 그릇의 크기다. 8장의 오개념(“한 글자=1바이트”)이 실행 결과로 반증되는 순간 이다.</p><p><code>strlen</code>의 <strong>비용</strong>도 이제 정확히 말할 수 있다 — 9장의 예고대로, NUL 종단에는 길이가 적혀 있지 않으므로 strlen은 <strong>표지를 만날 때까지 한 칸씩 산책</strong>한다. 문자열이 길수록 오래 걸리고(칸 수에 비례), 루프 조건 에서 매번 strlen을 부르는 코드가 고전적인 성능 함정이 되는 이유다 (시연의 루프가 사실 그 무늬다 — 짧은 문자열이라 무해하지만, 긴 문자열이라면 길이를 변수에 받아 두는 것이 관행이다).</p><h3>37.2 문자열 리터럴 — 읽기 전용의 땅</h3><p>배열 초기화가 아니라 포인터에 리터럴을 담을 수도 있다 — 그리고 여기에 중요한 차이가 있다:</p><pre><code data-lang="c">char buf[] = "고칠 수 있다";   /* 내 배열로 복사됨 — 수정 가능 */
-const char *msg = "고치면 안 된다";  /* 리터럴 원본을 가리킴 */</code></pre><p>문자열 리터럴 자체는 프로그램에 구워진 <strong>읽기 전용 데이터</strong>다 — 수정을 시도하는 것은 계약 밖이고, 현대 환경에서는 대개 그 자리에서 붕괴한다 (리터럴이 쓰기 금지 구역에 배치되므로 — 6장의 보호 구역이 또 하나의 친절을 베푸는 셈이다). 그래서 리터럴을 가리키는 포인터는 <code>const char*</code> 로 선언하는 것이 규칙이다 — 23장의 <code>const</code>가 “바꾸지 않겠다”는 문서 였다면, 여기서는 “바꾸면 안 되는 것을 바꾸려는 실수”를 컴파일 시점에 막아 주는 자물쇠로 일한다.</p><h4>37.2.1 타입은 <code>const</code>가 아니다 — C의 이상한 자리</h4><p>그런데 여기에 C의 유명한 모순이 있다. <strong>수정하면 안 되는데, 타입에는 <code>const</code>가 붙어 있지 않다.</strong> <code>"abcdef"</code>의 타입은 <code>const char[7]</code>이 아니라 그냥 <code>char[7]</code>이다.</p><pre><code data-lang="c">char *p = "hello";     /* C: 경고 없이 통과한다 */
-p[0] = 'H';            /* 그러나 이것은 정의되지 않은 동작 */</code></pre><p>컴파일러가 막아 주지 않는다는 뜻이다. “수정 불가”는 <strong>타입이 아니라 계약 으로만</strong> 존재하고, 어기면 46장의 정의되지 않은 동작이 된다 — 대개는 쓰기 금지 구역에 배치된 덕에 그 자리에서 죽지만, 그것은 구현의 친절이지 언어의 보장이 아니다.</p><p><strong>C++는 다르다.</strong> C++에서 문자열 리터럴의 타입은 <code>const char[N]</code>이고, 위 코드의 첫 줄이 <strong>컴파일 오류</strong>다. 79장에서 본 “두 언어의 차이” 목록에 이 항목이 들어간다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>왜 C는 <code>const</code>를 붙이지 않았는가?</p></div><div class="dev qa-a"><p class="dev-label">답 <strong>기존 코드를 깨뜨리지 않기 위해서다.</strong> <code>const</code>라는 낱말 자체가 C89에 와서야 표준에 들어왔는데(23장), 그 시점에 세상에는 이미 문자열 리터럴을 <code>char *</code>에 담아 쓰는 코드가 산더미처럼 쌓여 있었다. 리터럴의 타입을 <code>const char[N]</code>으로 바꾸는 순간 그 코드가 전부 진단 대상이 된다.</p><p>56장에서 본 <code>gets</code>의 장례가 20년 걸린 것과 같은 사정이다 — <strong>표준은 기존 코드를 지켜야 하는 기관</strong>이라, “옳은 타입”과 “이미 쓰인 코드”가 충돌하면 후자를 택하는 쪽으로 기운다. C++은 1998년에 처음 표준을 만들며 그런 짐이 없었기에 처음부터 <code>const</code>를 붙일 수 있었다(79장의 “형제이지 부모와 자식이 아니다”가 여기서도 확인된다).</p><p>그래서 실무의 규율이 언어를 대신한다. <strong>리터럴을 가리키는 포인터는 언제나 <code>const char *</code>로 선언한다.</strong> 그러면 타입이 못 하는 일을 사람이 적어 넣은 셈이 되고, 그 뒤로는 컴파일러가 지켜 준다. GCC·Clang의 <code>-Wwrite-strings</code>는 아예 리터럴의 타입을 <code>const char[N]</code>으로 바꿔 주는 선택지인데, 옛 코드에서 경고가 쏟아지는 탓에 기본값은 아니다.</p></div></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>최신 표준과 앞으로의 표준에서는 어떤가?</p></div><div class="dev qa-a"><p class="dev-label">답 <strong>C23까지 그대로다.</strong> 문자열 리터럴의 타입은 여전히 <code>char[N]</code>이고, 수정은 여전히 정의되지 않은 동작이다. C23은 두 가지를 바꾸면서도 이 자리는 건드리지 않았다 — <code>u8"..."</code>의 원소 타입을 <code>char8_t</code>로 정한 것과, 2의 보수를 못박은 것 모두 이 조항과는 별개다.</p><p>다음 판(C2y)에서도 바뀔 조짐은 보이지 않는다. 이유는 위와 같다 — 이제 와서 타입을 바꾸면 반세기 치 코드가 진단 대상이 되기 때문이다. 표준이 이 자리를 정리하는 방식은 타입을 고치는 것이 아니라 <strong>도구가 경고하게 하는</strong> 쪽이었고, 앞으로도 그럴 가능성이 높다.</p><p>요약하면 이렇게 기억하면 된다 — <strong>타입은 <code>char[N]</code>, 계약은 “수정 금지”, 방어는 <code>const char *</code>와 컴파일러 경고.</strong></p></div></div><h3>37.3 리터럴도 배열이다</h3><p>앞 절에서 “리터럴을 배열에 복사할 수도, 포인터로 가리킬 수도 있다”고 했는데, 한 걸음 더 들어가면 놀라운 사실이 있다 — <strong>문자열 리터럴 자체가 이미 배열이다.</strong> 타입까지 정확히 적으면 <code>"abcdef"</code>는 <code>char[7]</code>이다(여섯 글자 + NUL).</p><div><div><p><code>examples/ch37/literal.c</code></p><pre><code data-lang="c">/* 문자열 리터럴의 정체 — 배열이라는 것, 이어 붙는다는 것, 그리고 접두사. */
-#include &lt;stdio.h>
-#include &lt;inttypes.h>   /* PRIu64 — 이어 붙이기 규칙 위에 세워진 표준 매크로 */
-#include &lt;wchar.h>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 배열 이름이 첫 원소의 주소로 무너진다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof a = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, sizeof p = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> a</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>sum: 14
+a[2] = 4, *(a + 2) = 4
+sizeof a = 20, sizeof p = 8
+</code></pre></div></div><p><code>int a[5] = {3, 1, 4, 1, 5};</code> — 타입, 이름, 칸 수, 그리고 중괄호 초기화. 접근은 <code>a[i]</code>이고 <strong>번호는 0부터</strong>다(첫 원소가 <code>a[0]</code>, 마지막이 <code>a[4]</code>). 0부터 세는 이유는 위의 deepqa가 이미 답했다 — <code>a[i]</code>의 정체가 “시작에서 <math><mi>𝑖</mi></math>칸 <strong>떨어진</strong> 곳”이라서, 첫 원소는 떨어진 거리가 0이다.</p><h3>37.2 배열과 포인터 — 무너짐의 진실</h3><p>시연의 뒷부분이 이 장의 심장이다. C에서 가장 많은 혼란을 낳은 관계 — 배열과 포인터 — 를 정확히 정리한다.</p><p><strong>규칙: 배열의 이름은 대부분의 문맥에서 “첫 원소의 주소”로 무너진다 (decay).</strong> 무너진 뒤에 남는 것과 잃는 것을 나란히 놓으면 이렇다.</p><figure class="fig"><img src="figures/decay.svg" alt="decay" loading="lazy"><p class="float-caption">그림 37.1 — 주소는 같고 타입이 다르다 — 그래서 원소가 몇 개인지가 사라진다.</p></figure><p><code>int *p = a;</code>가 합법인 이유다 — <code>a</code>가 <code>&amp;a[0]</code>이라는 포인터 값으로 읽힌 것이다. 그리고 <code>a[i]</code>라는 표기 자체가 사실 <code>*(a + i)</code>의 당의정이다 — 포인터에 정수를 더하면 “그 타입 크기만큼 <math><mi>𝑖</mi></math>칸 옆”의 주소가 되고(포인터 산술 — 36장의 규칙들이 여기 걸린다), 그것을 역참조한 것이 인덱스 접근이다. 시연의 <code>a[2] == *(a + 2)</code>가 그 확인이다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“배열은 포인터다”</strong></p>이 유명한 문장은 틀렸다 — 무너짐이 하도 자주 일어나서 생긴 착시다. 배열은 칸 다섯 개짜리 <strong>기억 그 자체</strong>이고, 포인터는 주소 하나를 담는 <strong>다른 변수</strong>다. 시연의 마지막 줄이 결정적 증거다: <code>sizeof a</code>는 20 (int 5칸의 총 크기), <code>sizeof p</code>는 8(주소 하나의 크기, 34장). 무너짐이 일어나지 않는 대표 문맥이 바로 <code>sizeof</code>라서 이 차이가 보인다 — 25장의 <code>fgets(line, sizeof line, stdin)</code>이 그릇 크기를 옳게 잰 것도 이 덕분 이다. 한 가지 파급이 중요하다: 배열을 함수에 “넘기면” 무너진 <strong>주소만</strong> 복사되므로(32장), 함수 쪽에서는 <code>sizeof</code>로 크기를 알 수 없다 — 그래서 C 함수는 배열과 <strong>길이를 별도 인자로</strong> 함께 받는 것이 관행이다. 9장에서 본 “길이를 데이터 곁에 두는” 표현 방식들의 문제의식이, C 함수 경계에서 이렇게 재현된다.</div><h3>37.3 포인터의 덧셈은 보통의 덧셈이 아니다</h3><p>방금 <code>a[i]</code>가 <code>*(a + i)</code>라고 했다. 그러면 <code>a + 2</code>는 정확히 무슨 값인가? 주소에 2를 더한 것이라면 “2바이트 옆”이어야 할 텐데, 실제로는 <strong><code>int</code> 두 칸 옆</strong>, 곧 8바이트 옆이다. 포인터 산술은 <strong>가리키는 타입의 크기를 곱해서</strong> 움직인다.</p><figure class="fig"><img src="figures/ptrmath.svg" alt="ptrmath" loading="lazy"><p class="float-caption">그림 37.2 — <code>+1</code> 이 건너뛰는 폭은 가리키는 타입의 크기다.</p></figure><p>이 규칙을 정확히 적으면 이렇다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>수식</strong></th><th><strong>뜻</strong></th><th><strong>결과 타입</strong></th></tr><tr><td><code>p + n</code>, <code>n + p</code></td><td><code>p</code>가 가리키는 타입 크기의 <code>n</code>배만큼 앞으로</td><td><code>p</code>와 같은 포인터 타입</td></tr><tr><td><code>p - n</code></td><td>같은 크기만큼 뒤로</td><td>같음</td></tr><tr><td><code>p - q</code></td><td>두 주소 사이에 <strong>원소가 몇 개</strong> 들어가는가</td><td><code>ptrdiff_t</code>(부호 있는 정수)</td></tr><tr><td><code>p++</code>, <code>++p</code>, <code>p += n</code></td><td>위와 같은 규칙으로 옮긴 뒤 대입</td><td>같음</td></tr></table></div><p class="float-caption">표 37.1</p></figure><p>즉 포인터에 정수를 더하는 일은 “주소라는 수에 그 수를 더하기”가 아니라 <strong>“칸 단위로 세기”</strong>다. <code>char *</code>에서만 1이 1바이트이고, <code>int *</code>에서 1은 4바이트, <code>struct point *</code>에서 1은 그 구조체 하나의 크기다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 왜 이렇게 정했는가 — 그냥 바이트 단위로 더하게 두면 더 단순하지 않은가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 세 가지 이유가 겹친다.</p><p><strong>첫째, 이것이 배열을 문법 없이 만들어 준다.</strong> <code>a[i]</code>를 <code>*(a + i)</code>로 정의할 수 있는 것은 덧셈이 원소 단위이기 때문이다. 만약 바이트 단위였다면 배열 접근을 쓸 때마다 <code>*(a + i * sizeof *a)</code>라고 적어야 했을 것이고, 원소 타입을 바꿀 때마다 모든 접근을 고쳐야 했을 것이다. C가 배열 접근을 위한 특별한 기계장치를 두지 않고도 배열을 갖는 비결이 이 규칙 하나다.</p><p><strong>둘째, 타입이 이미 크기를 알고 있다.</strong> 5장의 후렴구를 기억하자 — 기억에는 경계가 없고, 몇 바이트를 한 덩어리로 볼지는 <strong>읽는 쪽</strong>이 정한다. 포인터의 타입이 바로 그 “읽는 쪽의 결정”이다. 그 결정을 이미 들고 있는 값에게 이동까지 맡기는 것이 자연스럽다.</p><p><strong>셋째, 기계도 그렇게 움직인다.</strong> 대부분의 CPU에 “기준 주소 + 인덱스 × 크기”를 한 번에 계산하는 주소 지정 방식이 있다. 원소 단위 산술은 그 명령에 그대로 대응한다 — 4장에서 본 “C는 기계를 감추지 않았다”의 또 다른 사례다.</p></p></div></div><div class="demo demo-src"><p class="demo-head"><code>examples/ch37/ptrmath.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 포인터 산술은 바이트가 아니라 "칸" 단위로 움직인다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
-/* 서식 조각을 이름으로 두는 관용구 — 아래 printf 에서 이어 붙는다 */
-#define TEMP_FMT  "%.1f"
-#define ID_FMT    "%d"
+<strong><span class="tok-t">struct</span></strong> point <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x<span class="tok-x">,</span> y<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
 
-/* 버전 문자열 조립 — 값은 한 곳에만 적는다 */
-#define MY_PROGRAM_VERSION  "v3.1.2"
-#define PROGRAM_TITLE       "my_program " MY_PROGRAM_VERSION
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">char</span></strong>          c<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong>           a<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-n">0</span><span class="tok-x">,</span> <span class="tok-n">10</span><span class="tok-x">,</span> <span class="tok-n">20</span><span class="tok-x">,</span> <span class="tok-n">30</span><span class="tok-x">,</span> <span class="tok-n">40</span><span class="tok-x">,</span> <span class="tok-n">50</span><span class="tok-x">,</span> <span class="tok-n">60</span><span class="tok-x">,</span> <span class="tok-n">70</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong>        d<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> point  s<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">;</span>
 
-/* 숫자로 관리하는 버전은 두 겹 우회로 문자열이 된다(49장) */
-#define VER_MAJOR 3
-#define VER_MINOR 1
-#define STR_RAW(x) #x
-#define STR(x)     STR_RAW(x)
-#define VERSION_FROM_NUMBERS  "v" STR(VER_MAJOR) "." STR(VER_MINOR)
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ① 같은 +1 인데 움직인 폭이 다르다 ─────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">타입          sizeof   (p+1) - p 바이트</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char           </span></strong><strong><span class="tok-s">%2zu</span></strong><strong><span class="tok-s">       </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> c</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>c </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>c</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">int            </span></strong><strong><span class="tok-s">%2zu</span></strong><strong><span class="tok-s">       </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> a</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>a </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">double         </span></strong><strong><span class="tok-s">%2zu</span></strong><strong><span class="tok-s">       </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> d</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>d </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>d</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">struct point   </span></strong><strong><span class="tok-s">%2zu</span></strong><strong><span class="tok-s">       </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> s</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>s </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>s</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-int main(void)
-{
-    /* ── ① 리터럴은 배열이다 ─────────────────────────────────── */
-    printf("sizeof \"abcdef\" = %zu  (여섯 글자 + NUL)\n", sizeof "abcdef");
-    printf("sizeof \"\"       = %zu  (빈 문자열도 NUL 한 칸)\n", sizeof "");
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 바이트 단위로 움직이려면 문자 포인터로 캐스트한다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">p + 1        은 </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> 을 가리킨다</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">(</span></strong><strong>p </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">(char*)p + 1 은 a[0] 의 두 번째 바이트다 (역참조하면 값이 아니라 표현의 조각)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* 배열이므로 첨자를 붙일 수 있다 — 36장의 a[i] == *(a+i) 그대로 */
-    printf("\"abcdef\"[3] = %c\n", "abcdef"[3]);
-    printf("3[\"abcdef\"] = %c   ← 첨자가 교환된다(같은 뜻이다)\n", 3["abcdef"]);
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ② 포인터 뺄셈은 원소 개수를 준다 ──────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">ptrdiff_t</span></strong> gap <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">&amp;</span></strong>a<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span> <strong><span class="tok-x">-</span></strong> <strong><span class="tok-x">&amp;</span></strong>a<span class="tok-x">[</span><span class="tok-n">1</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">&amp;a[4] - &amp;a[1]        = </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-s">  (바이트가 아니라 원소 수)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> gap</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">바이트로 세면        = </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>a</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>a</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ── ② 인접한 리터럴은 하나로 이어진다 ───────────────────── */
-    printf("%s\n", "abc" "def");                 /* -> "abcdef" */
-    printf("sizeof(\"abc\" \"def\") = %zu\n", sizeof("abc" "def"));
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ③ 첨자는 산술의 당의정이다 ────────────────────────────── </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">a[3] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, *(a + 3) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, *(3 + a) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, 3[a] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           a</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">(</span></strong><strong>a </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> a</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">[</span></strong><strong>a</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* 긴 문장을 줄 나눠 적을 때 — 역슬래시 없이도 된다 */
-    const char *help =
-        "사용법: tool [옵션] 파일\n"
-        "  -v   자세히\n"
-        "  -o   출력 파일\n";
-    printf("%s", help);
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── ④ 마지막 다음 자리는 만들어도 되지만 따라가면 안 된다 ─── </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>end <strong><span class="tok-x">=</span></strong> a <strong><span class="tok-x">+</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> one-past-the-end — 합법 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">끝 다음 주소까지의 원소 수: </span></strong><strong><span class="tok-s">%td</span></strong><strong><span class="tok-s"> (역참조는 하지 않는다)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> end </strong><strong><span class="tok-x">-</span></strong><strong> a</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ── ③ 조각을 이름으로 두고 조립하기 ─────────────────────── */
-    puts(PROGRAM_TITLE);
-    printf("숫자에서 조립: %s\n", VERSION_FROM_NUMBERS);
+    <strong><span class="tok-t">int</span></strong> count <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>q <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span> q <strong><span class="tok-x">!=</span></strong> end<span class="tok-x">;</span> q<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 표준 관용구: != end 로 멈춘다 </span></em><em><span class="tok-c">*/</span></em>
+        count <strong><span class="tok-x">+=</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>q <strong><span class="tok-x">!=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0 이 아닌 원소: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> 개</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> count</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>타입          sizeof   (p+1) - p 바이트
+char            1       1
+int             4       4
+double          8       8
+struct point    8       8
 
-    int    id   = 7;
-    double temp = 36.5;
-    printf("id = " ID_FMT ", temp = " TEMP_FMT "\n", id, temp);
+p + 1        은 10 을 가리킨다
+(char*)p + 1 은 a[0] 의 두 번째 바이트다 (역참조하면 값이 아니라 표현의 조각)
 
-    /* 표준 라이브러리가 같은 기법을 쓴다 — 고정 폭 정수의 서식 매크로 */
-    uint64_t total = 1234567890123ULL;
-    printf("total = %" PRIu64 "\n", total);
+&amp;a[4] - &amp;a[1]        = 3  (바이트가 아니라 원소 수)
+바이트로 세면        = 12
 
-    /* ── ④ 접두사 — 인코딩을 정하는 글자 ─────────────────────── */
-    printf("sizeof \"AB\"  = %zu (char)\n",    sizeof "AB");
-    printf("sizeof u8\"AB\" = %zu (UTF-8)\n",  sizeof u8"AB");
-    printf("sizeof L\"AB\"  = %zu (wchar_t %zu바이트)\n",
-           sizeof L"AB", sizeof(wchar_t));
-    printf("sizeof u\"AB\"  = %zu (UTF-16)\n", sizeof u"AB");
-    printf("sizeof U\"AB\"  = %zu (UTF-32)\n", sizeof U"AB");
+a[3] = 30, *(a + 3) = 30, *(3 + a) = 30, 3[a] = 30
 
-    /* 접두사가 있는 것과 없는 것을 이어 붙이면 있는 쪽을 따른다 */
-    const wchar_t *w = L"wide" " and narrow";
-    printf("L\"wide\" \" and narrow\" -> 길이 %zu (와이드 문자열이 된다)\n",
-           wcslen(w));
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>sizeof "abcdef" = 7  (여섯 글자 + NUL)
-sizeof ""       = 1  (빈 문자열도 NUL 한 칸)
-"abcdef"[3] = d
-3["abcdef"] = d   ← 첨자가 교환된다(같은 뜻이다)
-abcdef
-sizeof("abc" "def") = 7
-사용법: tool [옵션] 파일
-  -v   자세히
-  -o   출력 파일
-my_program v3.1.2
-숫자에서 조립: v3.1
-id = 7, temp = 36.5
-total = 1234567890123
-sizeof "AB"  = 3 (char)
-sizeof u8"AB" = 3 (UTF-8)
-sizeof L"AB"  = 12 (wchar_t 4바이트)
-sizeof u"AB"  = 6 (UTF-16)
-sizeof U"AB"  = 12 (UTF-32)
-L"wide" " and narrow" -> 길이 15 (와이드 문자열이 된다)
-</code></pre></div></div><p>출력의 첫 두 줄이 그 확인이다. <code>sizeof "abcdef"</code>가 7이고 <code>sizeof ""</code>도 1이다 — 포인터의 크기(8)가 아니라 <strong>배열의 크기</strong>가 나온다. 리터럴이 포인터로 무너지는 것은 36장에서 본 그 무너짐(decay)이고, <code>sizeof</code>는 무너짐의 예외라 배열의 진짜 크기가 보이는 것이다.</p><p>배열이라는 사실에서 재미있는 것이 따라 나온다. 배열이니 <strong>첨자를 붙일 수 있다.</strong></p><pre><code data-lang="c">"abcdef"[3]     /* 'd' */</code></pre><p>그리고 36장에서 배운 항등식 <code>a[i] ≡ *(a + i)</code>를 떠올리면, 덧셈이 교환법칙을 따르므로 <code>*(a + i) ≡ *(i + a) ≡ i[a]</code>가 된다. 즉</p><pre><code data-lang="c">3["abcdef"]     /* 역시 'd' — 문법적으로 완전히 합법이다 */</code></pre><p>예제가 둘 다 <code>d</code>를 찍는 것이 그 증거다. 실무에서 쓸 일은 없고(읽는 사람을 당황시킬 뿐이다) 난독화 대회에서나 보이는 표기지만, <strong>배열 첨자가 문법의 장식이 아니라 포인터 산술의 다른 표기일 뿐</strong>이라는 사실을 이보다 분명하게 보여 주는 예도 없다.</p><h3>37.4 이어 붙이기 — 인접한 리터럴은 하나가 된다</h3><p>문자열 리터럴 둘을 나란히 적으면 컴파일러가 하나로 이어 붙인다.</p><pre><code data-lang="c">"abc" "def"        /* -> "abcdef" — 쉼표도 연산자도 없다 */</code></pre><p>예제의 <code>sizeof("abc" "def")</code>가 7인 것이 그 확인이다(3+3+NUL). 이 일은 전처리기가 아니라 <strong>번역 단계 6</strong>에서 일어난다(49장의 표) — 그래서 매크로가 만들어 낸 문자열 조각도 옆의 리터럴과 이어진다.</p><p>쓸모가 둘이다.</p><p><strong>① 긴 문장을 줄 나눠 적기.</strong> 역슬래시로 줄을 잇는 것보다 깔끔하다 — 들여쓰기가 문자열 안으로 들어가지 않기 때문이다.</p><pre><code data-lang="c">const char *help =
-    "사용법: tool [옵션] 파일\n"
-    "  -v   자세히\n"
-    "  -o   출력 파일\n";</code></pre><p><strong>② 조각을 이름으로 두고 조립하기.</strong> 이것이 실무에서 가장 자주 보는 용법이고, 세 가지 얼굴로 나타난다.</p><p><strong>버전 문자열 조립.</strong> 값을 한 곳에만 적고 여기저기서 엮는다.</p><pre><code data-lang="c">#define MY_PROGRAM_VERSION  "v3.1.2"
-#define PROGRAM_TITLE       "my_program " MY_PROGRAM_VERSION
+끝 다음 주소까지의 원소 수: 8 (역참조는 하지 않는다)
+0 이 아닌 원소: 7 개
+</code></pre></div></div><p>출력의 첫 묶음이 규칙의 전부를 보여 준다. 같은 <code>+ 1</code>인데 주소가 움직인 폭이 타입마다 다르고, 그 폭은 정확히 <code>sizeof</code>와 같다. 그래서 <code>(char *)p + 1</code>과 <code>p + 1</code>은 서로 다른 자리를 가리킨다 — 바이트 단위로 움직이고 싶을 때 문자 포인터로 캐스트하는 관용구(82장의 뷰가 그렇게 한다)가 여기서 나온다.</p><p>두 번째 묶음은 <strong>뺄셈</strong>이다. <code>&amp;a[4] - &amp;a[1]</code>이 3이지 12가 아니라는 것 — 포인터 뺄셈은 바이트가 아니라 <strong>원소 개수</strong>를 준다. 그리고 그 결과의 타입이 <code>ptrdiff_t</code>인 이유도 여기 있다: 뒤에서 앞을 빼면 음수가 나올 수 있으므로 부호 있는 타입이어야 한다.</p><h4>37.3.1 어디까지 허용되는가 — 산술의 계약</h4><p>포인터 산술에는 36장의 프로버넌스가 그대로 걸린다. 규칙을 실무 문장으로 줄이면 이렇다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>하는 일</strong></th><th><strong>판정</strong></th></tr><tr><td>배열 안의 원소를 가리키는 포인터를 배열 안에서 움직이기</td><td>정상</td></tr><tr><td>배열의 <strong>마지막 다음</strong> 자리(one-past-the-end)를 가리키기</td><td>정상 — 다만 <strong>역참조는 금지</strong></td></tr><tr><td>그보다 더 밖으로 나간 주소를 <strong>만들기</strong></td><td>계약 밖 — 따라가지 않고 계산만 해도 그렇다</td></tr><tr><td>배열이 아닌 단일 객체에 <code>+ 1</code></td><td>정상 — 길이 1짜리 배열로 취급된다</td></tr><tr><td>서로 다른 배열의 포인터끼리 빼기</td><td>계약 밖</td></tr><tr><td>서로 다른 배열의 포인터끼리 <code>&lt;</code>로 크기 비교</td><td>계약 밖(상등 비교 <code>==</code>는 허용)</td></tr><tr><td><code>void *</code>에 정수 더하기</td><td>표준에는 없다 — gcc·clang의 확장(1바이트 단위)</td></tr></table></div><p class="float-caption">표 37.2</p></figure><p>“만들기만 해도 계약 밖”이 낯설게 들리지만, 이것이 루프의 끝 조건을 쓰는 법을 바꾼다. <code>p &lt;= a + n</code>은 마지막 다음까지만 가므로 안전하지만, <code>p &lt; a + n + 1</code>은 그보다 한 칸 더 나간 주소를 계산하므로 계약 밖이다. 뒤에서 앞으로 훑는 루프를 <code>for (p = a + n - 1; p >= a - 1; p--)</code>처럼 쓰는 것도 같은 이유로 위험하다 — <code>a - 1</code>은 배열 앞의 주소이고, 그것을 계산하는 순간 이미 계약 밖이다.</p><div class="dev antipattern"><p class="dev-label">반례. 배열 앞으로 한 칸 나가는 역방향 루프</p><pre><code data-lang="c"><strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> a <strong><span class="tok-x">+</span></strong> n <strong><span class="tok-x">-</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> p <strong><span class="tok-x">>=</span></strong> a <strong><span class="tok-x">-</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> p<strong><span class="tok-x">--</span></strong><span class="tok-x">)</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a - 1 을 만든다 — 계약 밖 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-x">...</span></strong></code></pre><p>같은 일을 하는 안전한 형태는 인덱스를 쓰거나, 끝 조건을 배열 안에 두는 것이다.</p><pre><code data-lang="c"><strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">--</span></strong> <strong><span class="tok-x">></span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> <span class="tok-x">)</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> i 가 0 일 때 종료 — 주소를 만들지 않는다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>use</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre></div><div class="dev realcase"><p class="dev-label">실제 사례. 최적화가 이 규칙을 실제로 쓴다</p>“만들기만 해도 계약 밖”이라는 규칙이 지나쳐 보이지만, 컴파일러는 이 약속을 근거로 코드를 줄인다. <code>p</code>가 배열 <code>a</code> 안을 가리킨다는 것이 보장되면 <code>p >= a</code>는 언제나 참이므로 검사 자체를 지워도 된다 — 13장에서 본 최적화의 논리 그대로다. 실제로 이런 검사를 지우는 최적화 때문에 “내 컴퓨터에서는 잘 돌던” 경계 검사가 배포판에서 사라지는 사고가 여러 번 보고됐다.</div><h3>37.4 매개변수의 배열은 배열이 아니다</h3><p>함수 매개변수 자리에서는 규칙이 하나 더 있다. <strong>배열로 선언해도 컴파일러가 포인터로 바꿔 버린다.</strong> 그래서 다음 셋은 컴파일러에게 완전히 같은 선언이다.</p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>a<span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>
+<strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><span class="tok-n">10</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 10 은 문서일 뿐, 검사하지 않는다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>여러 겹 배열이라면 <strong>가장 바깥(왼쪽 첫) 차원만</strong> 벗겨진다. 안쪽 차원은 타입의 일부로 남는다.</p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>g</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> m<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c">  실제 타입은  int (*m)[4]  </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">void</span></strong> <strong>h</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> c<span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span><em><span class="tok-c">/*</span></em><em><span class="tok-c">  실제 타입은  int (*c)[3][4] </span></em><em><span class="tok-c">*/</span></em></code></pre><p>이 사실이 눈에 보이는 자리가 셋이다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch37/param.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
-puts(PROGRAM_TITLE);                       /* my_program v3.1.2 */
-puts("build: " __DATE__ " " __TIME__);     /* 컴파일러가 주는 리터럴과도 */</code></pre><p>버전을 올릴 때 고칠 자리가 <strong>한 줄</strong>이라는 것이 요점이다. <code>__DATE__</code>처럼 컴파일러가 미리 정의해 둔 리터럴(49장)과도 그대로 엮이므로, 배너와 <code>--version</code> 출력을 이 방식으로 만드는 프로그램이 많다.</p><p><strong>서식 조각을 이름으로.</strong> 같은 기법을 <code>printf</code>의 서식에 쓴 것이다.</p><pre><code data-lang="c">#define ID_FMT    "%d"
-#define TEMP_FMT  "%.1f"
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 세 선언은 컴파일러에게 완전히 같은 것이다: 전부 int * 다.</span></em>
+<em><span class="tok-c">   (매개변수 이름에 직접 sizeof 를 쓰면 gcc 가 경고하므로,</span></em>
+<em><span class="tok-c">    같은 타입의 지역 변수로 한 번 받아 크기를 잰다) </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>by_ptr</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>a<span class="tok-x">)</span>     <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  int *a      : sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>by_arr</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><span class="tok-x">]</span><span class="tok-x">)</span>    <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  int a[]     : sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>by_size</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><span class="tok-n">10</span><span class="tok-x">]</span><span class="tok-x">)</span> <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  int a[10]   : sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>
 
-printf("id = " ID_FMT ", temp = " TEMP_FMT "\n", id, temp);</code></pre><p>서식 문자열이 <strong>상수여야 한다</strong>는 요구(53장의 형식 문자열 취약점, 그리고 컴파일러의 서식 검사)를 지키면서도 조각을 이름으로 관리할 수 있다. <code>printf(fmt_string_variable, …)</code>처럼 변수를 넘기는 순간 그 검사가 전부 사라지는 것과 대조적이다 — <strong>이어 붙이기는 컴파일 시간에 끝나므로 결과는 여전히 하나의 리터럴이다.</strong></p><p><strong>표준 라이브러리도 같은 기법을 쓴다.</strong> 63장과 부록 B에서 본 <code>&lt;inttypes.h></code>의 서식 매크로가 정확히 이 규칙 위에 서 있다.</p><pre><code data-lang="c">printf("total = %" PRIu64 "\n", total);</code></pre><p><code>PRIu64</code>가 <code>"lu"</code>나 <code>"llu"</code>(플랫폼마다 다르다)로 정의되어 있고, 앞뒤 조각과 이어 붙어 하나의 서식 문자열이 된다. 고정 폭 정수의 서식이 플랫폼마다 다르다는 문제를 <strong>이어 붙이기 하나로</strong> 푼 것이다.</p><p>세 사례가 결국 같은 한 가지다 — <strong>리터럴 조각에 이름을 붙여 두고 쓰는 자리에서 엮는다.</strong> 그리고 셋 다 49장의 <code>#</code> 연산자와 짝을 이룬다. 숫자로 관리하는 버전이라면 숫자를 문자열로 바꿔 엮을 수 있다.</p><pre><code data-lang="c">#define VER_MAJOR 3
-#define VER_MINOR 1
-#define STR_RAW(x) #x
-#define STR(x)     STR_RAW(x)                     /* 두 겹 우회(49장) */
-#define VERSION    "v" STR(VER_MAJOR) "." STR(VER_MINOR)   /* "v3.1" */</code></pre><div class="dev antipattern"><p class="dev-label">✗ 변수는 이어 붙지 않는다</p><pre><code data-lang="c">const char *unit = "℃";
-printf("temp = %.1f" unit "\n", t);   /* 컴파일 오류 */</code></pre><p>이어 붙이기는 <strong>리터럴끼리</strong>의 규칙이다. <code>unit</code>은 변수이므로 이어 붙을 수 없다. 변수 내용을 끼우려면 자리표시자를 하나 더 쓰는 것이 정답이다 — <code>printf("temp = %.1f%s\n", t, unit)</code>.</p><p>같은 이유로, 이어 붙일 조각을 <code>#define</code>으로 둘 때는 <strong>그 매크로가 문자열 리터럴로 펼쳐져야</strong> 한다. <code>#define UNIT ℃</code>처럼 리터럴이 아닌 것으로 정의해 두면 이어 붙지 않는다.</p></div><h3>37.5 접두사 — 어떤 인코딩의 리터럴인가</h3><p>리터럴 앞에는 글자를 하나 붙여 <strong>어떤 문자 타입의 배열인가</strong>를 정할 수 있다.</p><table><tr><th><strong>표기</strong></th><th><strong>원소 타입</strong></th><th><strong>인코딩</strong></th><th><strong><code>sizeof "AB"</code></strong></th></tr><tr><td><code>"AB"</code></td><td><code>char</code></td><td>실행 문자 집합(대개 UTF-8)</td><td>3</td></tr><tr><td><code>u8"AB"</code></td><td><code>char8_t</code>(C23) / <code>char</code></td><td>UTF-8</td><td>3</td></tr><tr><td><code>u"AB"</code></td><td><code>char16_t</code></td><td>UTF-16</td><td>6</td></tr><tr><td><code>U"AB"</code></td><td><code>char32_t</code></td><td>UTF-32</td><td>12</td></tr><tr><td><code>L"AB"</code></td><td><code>wchar_t</code></td><td>구현이 정한다</td><td>예제의 기계에서 12</td></tr></table><p>예제가 이 표를 실제로 찍는다. <code>L"AB"</code>가 12바이트인 것은 이 리눅스 기계의 <code>wchar_t</code>가 4바이트이기 때문이고 — <strong>윈도우에서는 2바이트라 6이 된다.</strong> 59장에서 “<code>wchar_t</code>의 크기가 구현마다 다르다”고 한 것이 리터럴 차원에서 드러나는 자리다.</p><p>문자 상수도 같은 접두사를 쓴다(<code>L'A'</code>, <code>u'A'</code>). 그리고 이어 붙이기와 접두사가 만나면 규칙이 하나 더 있다 — <strong>한쪽에만 접두사가 있으면 있는 쪽을 따르고</strong>(예제의 <code>L"wide" " and narrow"</code>가 와이드 문자열이 된다), <strong>서로 다른 접두사끼리 이어 붙이는 것은 계약 밖이다.</strong></p><div class="dev realcase"><p class="dev-label">◉ gets — 표준에서 퇴출당한 함수</p><p>NUL 종단의 세 번째 대가(표지를 잃으면 폭주)에 얽힌, C 표준 역사상 가장 유명한 장례식이 있다. 초창기 표준 라이브러리의 <code>gets</code>는 “한 줄을 읽어 배열에 담는” 함수였는데 — <strong>그릇의 크기를 받지 않았다</strong>. 입력이 그릇보다 길면 그대로 이웃 기억을 덮어쓰는, 경계 침범(36장)이 설계에 내장된 함수였던 것이다. 1988년 인터넷 최초의 대규모 웜(Morris worm)이 이 부류의 결함을 뚫고 퍼졌고, 수십 년의 사고 끝에 C11 표준이 <code>gets</code>를 <strong>삭제</strong>했다 — 표준이 자기 함수를 공식적으로 장례 치른 드문 사례다. 25장에서 이 책이 처음부터 <code>fgets</code>(그릇 크기를 받는 후계자)를 가르친 사연이 이것이고 — 다음 장에서 이 사고 부류 전체를 정면으로 본다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>한글 처리를 제대로 하려면 — 글자 단위로 다루려면 — 어떻게 해야 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>두 층을 구별하는 것이 출발점이다. <strong>바이트 층</strong>(C 문자열의 세계)에서는 UTF-8을 그냥 바이트 열로 다루면 되고 — 복사·연결·저장·전송은 글자 경계를 몰라도 안전하다(UTF-8의 자기 동기화 설계 덕이다, 9장). <strong>글자 층</strong>이 필요한 일(글자 수 세기, 자르기, 대소문자)은 UTF-8 해독이 필요 하고, 표준 라이브러리의 지원이 빈약한 지점이라 라이브러리를 쓰는 것이 실무다 — proven의 u8str 계열이 정확히 이 자리를 맡는다(다음 장에서 첫 만남, 53장에서 본격). 수칙 하나만 명심하면 사고의 대부분이 예방된다: <strong>바이트 번호로 문자열을 자르지 말 것</strong> — 한글 음절의 허리를 자르면 깨진 바이트 열이 된다.</p></div></div><p>문자열의 정체와 비용을 알았다. 다음 장은 이 부의 전환점이다 — 경계 침범이라는 사고 부류의 해부, 그리고 이 책의 기반 기술 proven의 등장 이다. 25장에서 심은 “안전한 입력” 씨앗이 드디어 회수된다.</p>
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 매개변수는 그냥 포인터 변수라서 다른 주소를 대입할 수도 있다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>second_of</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><span class="tok-n">10</span><span class="tok-x">]</span><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    a <strong><span class="tok-x">=</span></strong> a <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 배열이라면 불가능하다 — 배열 이름에는 대입할 수 없다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> a<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 2차원: 벗겨지는 것은 가장 바깥(왼쪽 첫) 차원뿐이다.</span></em>
+<em><span class="tok-c">   int m[3][4]  ->  int (*m)[4] </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>by_2d</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> m<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>p<span class="tok-x">)</span><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> m<span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 매개변수의 진짜 타입이 이것이다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  int m[3][4] : sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (포인터), sizeof p[0] = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (행 하나)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> p</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> p</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">                m[1][2] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> arr<span class="tok-x">[</span><span class="tok-n">10</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-n">0</span><span class="tok-x">,</span><span class="tok-n">1</span><span class="tok-x">,</span><span class="tok-n">2</span><span class="tok-x">,</span><span class="tok-n">3</span><span class="tok-x">,</span><span class="tok-n">4</span><span class="tok-x">,</span><span class="tok-n">5</span><span class="tok-x">,</span><span class="tok-n">6</span><span class="tok-x">,</span><span class="tok-n">7</span><span class="tok-x">,</span><span class="tok-n">8</span><span class="tok-x">,</span><span class="tok-n">9</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> grid<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">{</span><span class="tok-n">0</span><span class="tok-x">,</span><span class="tok-n">1</span><span class="tok-x">,</span><span class="tok-n">2</span><span class="tok-x">,</span><span class="tok-n">3</span><span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span><span class="tok-n">4</span><span class="tok-x">,</span><span class="tok-n">5</span><span class="tok-x">,</span><span class="tok-n">6</span><span class="tok-x">,</span><span class="tok-n">7</span><span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span><span class="tok-n">8</span><span class="tok-x">,</span><span class="tok-n">9</span><span class="tok-x">,</span><span class="tok-n">10</span><span class="tok-x">,</span><span class="tok-n">11</span><span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">호출자 쪽 (진짜 배열):</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  int arr[10]    : sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  int grid[3][4] : sizeof = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, sizeof grid[0] = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong> grid</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> grid</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">함수 안 (전부 포인터):</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>by_ptr</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>by_arr</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>by_size</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>by_2d</strong><strong><span class="tok-x">(</span></strong><strong>grid</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">매개변수에 대입: second_of(arr) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>second_of</strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">원본은 그대로  : arr[0] = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> arr</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>호출자 쪽 (진짜 배열):
+  int arr[10]    : sizeof = 40
+  int grid[3][4] : sizeof = 48, sizeof grid[0] = 16
+함수 안 (전부 포인터):
+  int *a      : sizeof = 8
+  int a[]     : sizeof = 8
+  int a[10]   : sizeof = 8
+  int m[3][4] : sizeof = 8 (포인터), sizeof p[0] = 16 (행 하나)
+                m[1][2] = 6
+매개변수에 대입: second_of(arr) = 1
+원본은 그대로  : arr[0] = 0
+</code></pre></div></div><p><strong>① <code>sizeof</code>의 값이 다르다.</strong> 호출자 쪽 <code>arr</code>는 진짜 배열이라 40바이트 (<code>int</code> 10개)이지만, 함수 안에서는 8바이트 — 포인터 하나의 크기다. 그래서 <code>sizeof a / sizeof a[0]</code>으로 원소 개수를 세는 관용구는 <strong>함수 안에서 통하지 않는다.</strong> 개수는 따로 받아야 한다.</p><p>gcc는 이 실수를 실제로 짚어 준다. 예제를 처음 쓸 때 받은 진단이다.</p><pre><code data-lang="text">error: ‘sizeof’ on array function parameter ‘a’ will return size of ‘int *’
+       [-Werror=sizeof-array-argument]
+note: declared here</code></pre><p><strong>② 대입할 수 있다.</strong> 배열 이름은 대입의 왼쪽에 올 수 없지만, 매개변수는 그냥 포인터 변수라 <code>a = a + 1</code>이 된다. 예제의 <code>second_of</code>가 그것으로, 매개변수를 옮겨 놓고 <code>a[0]</code>을 읽으니 원본의 둘째 원소가 나왔다 — 그리고 호출자의 <code>arr</code>는 아무 영향도 받지 않았다(32장의 값 복사 규칙 그대로다).</p><p><strong>③ 2차원에서 절반만 남는다.</strong> <code>sizeof p</code>는 8(포인터)인데 <code>sizeof p[0]</code>은 16 — 즉 “행 하나”의 크기는 살아 있다. 안쪽 차원이 타입에 남아 있기 때문이고, 그래서 <code>m[1][2]</code> 같은 접근이 제대로 계산된다. 반대로 말하면 <strong>안쪽 차원의 크기는 반드시 적어야 한다</strong> — <code>int m[][]</code>는 컴파일되지 않는다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“매개변수에 <code>int a[10]</code>이라 적었으니 10개 미만을 넘기면 걸린다”</strong></p>걸리지 않는다. 그 <code>10</code>은 컴파일러에게 아무 의미도 없는 주석에 가깝다 — 타입은 그냥 <code>int *</code>가 된다. 실제로 배열 크기를 계약으로 만들고 싶다면 두 가지 길이 있다. 하나는 크기를 <strong>따로 매개변수로 받는 것</strong>(가장 흔하고 확실한 방법), 다른 하나는 다음 절의 <code>[static 10]</code> 표기다. 후자는 최소 개수를 약속으로 못박아 컴파일러가 경고할 수 있게 해 준다.</div><h3>37.5 크기가 실행 중에 정해지는 배열 — VLA</h3><p>지금까지의 배열은 크기가 컴파일 시간에 정해졌다. C99는 여기에 하나를 보탰다 — <strong>가변 길이 배열</strong>(variable length array, VLA)이다. 크기 자리에 상수가 아닌 변수를 쓸 수 있다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch37/vla.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> [static N]: "여기에 최소 N개짜리 배열이 온다"는 약속.</span></em>
+<em><span class="tok-c">   함수 매개변수의 배열 선언자에서만 쓸 수 있다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>sum3</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><strong><span class="tok-k">static</span></strong> <span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">return</span></strong> a<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">+</span></strong> a<span class="tok-x">[</span><span class="tok-n">1</span><span class="tok-x">]</span> <strong><span class="tok-x">+</span></strong> a<span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 가변 길이 배열(VLA)을 매개변수로: 크기를 앞에서 받아 뒤에서 쓴다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>sum_n</strong><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span>n<span class="tok-x">]</span><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> s <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> s <strong><span class="tok-x">+=</span></strong> a<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> s<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 2차원 VLA 매개변수 — 손으로 인덱스를 계산하지 않아도 된다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>trace</strong><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> m<span class="tok-x">[</span>n<span class="tok-x">]</span><span class="tok-x">[</span>n<span class="tok-x">]</span><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> s <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> s <strong><span class="tok-x">+=</span></strong> m<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> s<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> fixed<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-n">1</span><span class="tok-x">,</span> <span class="tok-n">2</span><span class="tok-x">,</span> <span class="tok-n">3</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sum3        = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>sum3</strong><strong><span class="tok-x">(</span></strong><strong>fixed</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">size_t</span></strong> n <strong><span class="tok-x">=</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> local<span class="tok-x">[</span>n<span class="tok-x">]</span><span class="tok-x">;</span>                    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 지역 VLA: 크기가 실행 중에 정해진다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> local<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>i <strong><span class="tok-x">*</span></strong> i<span class="tok-x">)</span><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sizeof local = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes (= </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> ints)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> local</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> local </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> local</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">sum_n       = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>sum_n</strong><strong><span class="tok-x">(</span></strong><strong>n</strong><strong><span class="tok-x">,</span></strong><strong> local</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">int</span></strong> grid<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">{</span><span class="tok-n">1</span><span class="tok-x">,</span><span class="tok-n">2</span><span class="tok-x">,</span><span class="tok-n">3</span><span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span><span class="tok-n">4</span><span class="tok-x">,</span><span class="tok-n">5</span><span class="tok-x">,</span><span class="tok-n">6</span><span class="tok-x">}</span><span class="tok-x">,</span> <span class="tok-x">{</span><span class="tok-n">7</span><span class="tok-x">,</span><span class="tok-n">8</span><span class="tok-x">,</span><span class="tok-n">9</span><span class="tok-x">}</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">trace       = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>trace</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">,</span></strong><strong> grid</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>sum3        = 6
+sizeof local = 16 bytes (= 4 ints)
+sum_n       = 14
+trace       = 15
+</code></pre></div></div><p>두 가지 쓰임이 있다. 첫째는 <strong>지역 변수로서의 VLA</strong>(<code>int local[n];</code>)로, 크기가 실행 중에 정해지는 배열이 스택 위에 잡힌다. <code>sizeof</code>가 실행 중에 계산되는 것도 이때가 유일하다 — 예제에서 <code>sizeof local</code>이 16을 돌려준 것이 그 증거다. 둘째는 <strong>매개변수로서의 VLA</strong>(<code>const int a[n]</code>, <code>const int m[n][n]</code>)로, 이쪽이 훨씬 유용하다. 특히 2차원 이상에서 값이 크다 — <code>m[i][j]</code>를 그대로 쓸 수 있어, 손으로 <code>m[i * n + j]</code>를 계산하지 않아도 된다.</p><p>다만 지역 VLA는 실무에서 <strong>권하지 않는</strong> 쪽으로 굳어졌다.</p><ul><li><strong>크기를 통제하지 못하면 스택이 넘친다.</strong> 입력에서 온 수를 그대로 크기로 쓰면 공격자가 스택을 무너뜨릴 수 있고, 이 붕괴는 검사할 방법도 없다.</li><li><strong>실패를 알릴 방법이 없다.</strong> <code>malloc</code>은 널을 돌려주기라도 하지만(42장), VLA는 자리가 없으면 그냥 무너진다.</li><li><strong>표준에서도 지위가 흔들렸다.</strong> C99에서 필수였다가 C11에서 <strong>선택 기능</strong>이 되었다(<code>__STDC_NO_VLA__</code>가 정의되어 있으면 없는 구현이다). MSVC는 지원하지 않는다.</li><li>리눅스 커널은 2018년에 VLA를 코드베이스에서 전부 걷어냈다 — 스택 사용량 예측과 성능이 이유였다.</li></ul><p>정리하면 <strong>매개변수 자리의 VLA 표기는 쓸 만하고, 지역 VLA는 피한다.</strong> 크기가 실행 중에 정해지는 배열이 필요하면 42장의 동적 할당이 정공법이다.</p><h3>37.6 매개변수의 <code>[static N]</code> — “최소 이만큼은 온다”</h3><p>배열 매개변수에만 쓰는 특이한 문법이 하나 더 있다.</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> <strong>sum3</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><strong><span class="tok-k">static</span></strong> <span class="tok-n">3</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a 는 원소 3개 이상을 가리킨다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>여기서 <code>static</code>은 저장 기간(41장)과 아무 관계가 없다. 뜻은 <strong>“이 인자로 넘어오는 포인터는 적어도 N개의 원소를 가진 배열을 가리킨다”</strong>는 계약이다. 얻는 것은 둘이다 — 컴파일러가 그 전제로 최적화할 수 있고(미리 읽어 두기 같은), 널이나 짧은 배열을 넘기는 코드를 경고로 짚어 줄 수 있다.</p><p>두 가지를 기억하면 된다.</p><ul><li><strong>쓸 수 있는 자리는 함수 매개변수의 배열 선언자뿐이다.</strong> 지역 변수나 구조체 멤버 선언에는 쓸 수 없다. 그리고 여러 겹 배열이라면 가장 바깥 차원에만 붙는다.</li><li><strong>계약을 어기면 계약 밖이다.</strong> <code>sum3(nullptr)</code>이나 원소 2개짜리를 넘기는 것은 정의되지 않은 동작이다 — 검사가 아니라 <strong>약속</strong>이라는 뜻이다.</li></ul><h4>37.6.1 <code>[static 1]</code> — “널이 아니다”를 문법으로 적는 법</h4><p>가장 자주 쓰이는 꼴은 크기 1이다.</p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>use</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><strong><span class="tok-k">static</span></strong> <span class="tok-n">1</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a 는 유효한 객체 하나를 가리킨다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>원소가 <strong>적어도 하나</strong> 있는 배열을 가리킨다는 말은, 곧 <strong>널 포인터가 아니고 가리키는 객체가 유효하다</strong>는 말이다. 주석으로 “널을 넘기지 마시오”라고 적는 대신 선언 자체에 적는 셈이다. 그래서 이 표기는 “널이 아님”을 기계가 읽을 수 있는 형태로 옮기는 관용구로 쓰인다.</p><p>실제로 도구가 이것을 읽는다. 이 책을 쓰며 확인한 GCC 15의 동작이다.</p><pre><code data-lang="c"><strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>sum1</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><strong><span class="tok-k">static</span></strong> <span class="tok-n">1</span><span class="tok-x">]</span><span class="tok-x">)</span> <span class="tok-x">{</span> <strong><span class="tok-k">return</span></strong> a<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+<strong><span class="tok-x">...</span></strong>
+<span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>sum1</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><pre><code data-lang="text">warning: argument 1 null where non-null expected [-Wnonnull]
+note: in a call to function ‘sum1’ declared ‘nonnull’</code></pre><p>“<code>nonnull</code>로 선언된”이라는 말이 핵심이다 — 컴파일러는 <code>[static 1]</code>을 널 금지 속성으로 번역해 이해한다. 크기가 1보다 크면 길이까지 본다. 원소 2개짜리를 <code>const int a[static 3]</code> 매개변수에 넘기면 GCC는 이렇게 말한다.</p><pre><code data-lang="text">warning: ‘sum3’ reading 12 bytes from a region of size 8 [-Wstringop-overread]</code></pre><p>다만 <strong>검사가 아니라 약속</strong>이다. 널인지 실행 중에 확인해 주는 코드가 끼어드는 것이 아니고, 컴파일러가 눈으로 볼 수 있는 자리(상수 널, 크기가 알려진 배열) 에서만 짚어 준다. 포인터가 여러 함수를 거쳐 흘러온 경우에는 대개 아무 말도 못 한다. 계약을 어긴 호출은 그냥 정의되지 않은 동작이다.</p><h4>37.6.2 같은 대괄호 안의 한정자 — 그것은 <strong>포인터</strong>의 한정자다</h4><p><code>static</code>이 아니라 한정자를 넣는 꼴도 있다.</p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><strong><span class="tok-k">const</span></strong> <span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> == void f(int *const a); </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">void</span></strong> <strong>g</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> a<span class="tok-x">[</span><strong><span class="tok-k">restrict</span></strong> <span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> == void g(int *restrict a); </span></em><em><span class="tok-c">*/</span></em></code></pre><p>여기서 <code>const</code>는 <strong>가리키는 원소</strong>가 아니라 <strong>포인터 자신</strong>에 붙는다. <code>a</code>는 함수 안에서 다른 곳을 가리키도록 바꿀 수 없다는 뜻이지, <code>a[0]</code>을 못 쓴다는 뜻이 아니다. 원소를 보호하려면 <code>const int a[4]</code>처럼 대괄호 <strong>밖에</strong> 적어야 한다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>int a[const 4]</code>는 배열의 내용을 못 바꾼다는 뜻이다”</strong></p><p>아니다. 매개변수의 배열은 이미 포인터로 무너져 있고(앞 절), 대괄호 안의 한정자는 그 <strong>무너진 포인터</strong>에 붙는다. <code>int a[const 4]</code>는 <code>int *const a</code>와 같으므로 <code>a[0] = 1;</code>은 되고 <code>a = other;</code>가 안 된다. 내용을 지키려면 <code>const int a[4]</code>, 둘 다면 <code>const int a[const 4]</code>다.</p><p>이 문법이 존재하는 이유가 여기 있다 — 배열 표기를 쓰면서 포인터에 한정자를 붙일 다른 방법이 없기 때문이다. <code>restrict</code>를 배열 매개변수에 적고 싶을 때 실제로 필요해진다.</p></div><p>둘을 함께 쓸 수도 있다. 표준 문법은 <code>[static</code> 한정자들 <code>N]</code>과 <code>[</code>한정자들 <code>static N]</code>을 모두 허용하므로 <code>int a[const static 1]</code>과 <code>int a[static const 1]</code>이 둘 다 유효하다 — “널이 아닌 유효한 객체를 가리키며, 그 포인터는 바뀌지 않는다”는 뜻이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 포인터 매개변수는 전부 <code>[static 1]</code>로 적는 편이 좋은가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 널을 받아들이지 <strong>않는</strong> 함수라면 그렇게 적을 이유가 있다. 의도가 선언에 남고, 도구가 읽고, 최적화기가 널 검사를 지울 수 있다.</p><p>다만 두 가지를 저울질해야 한다. 첫째, 널을 <strong>정상 입력으로 받는</strong> 함수에는 쓰면 안 된다 — <code>free</code>나 “없으면 없는 대로”인 함수가 그렇다. 둘째, 팀이 이 문법을 모르면 읽는 비용이 든다. 실제로 표준 라이브러리 선언에도 거의 쓰이지 않는다. 새 코드의 내부 API에서, 널이 곧 버그인 자리에 골라 쓰는 것이 현실적인 절충이다.</p></p></div></div><h3>37.7 경계 — 생사의 규칙</h3><p>배열의 안전 수칙은 단 하나이고, 타협이 없다 — <strong>유효한 번호는 0부터 칸수−1까지다.</strong> <code>a[5]</code>(다섯 칸짜리에서)를 읽거나 쓰는 것은 계약 밖이고, 그 칸은 <strong>남의 기억</strong>이다 — 이웃 변수일 수도, 40장에서 볼 함수 호출의 장부일 수도 있다. 읽으면 쓰레기이고, 쓰면 남의 데이터가 조용히 부서진다 — 배열 경계 침범(buffer overrun)은 C 역사상 가장 많은 사고와 보안 취약점을 낳은 단일 원인이다(다음 두 장이 그 실화들이다).</p><p>경계에 관해 표준이 특별히 허락한 자리가 딱 하나 있다 — 36장에서 예고한 <strong>한 칸 지난 자리</strong>(<code>a + 5</code>)의 “주소를 만드는 것”까지는 합법이다(따라 가지만 않으면). 순회 관용구가 그 위에 서 있다:</p><pre><code data-lang="c"><strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>it <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span> it <strong><span class="tok-x">!=</span></strong> a <strong><span class="tok-x">+</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span> it <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> *it 사용 </span></em><em><span class="tok-c">*/</span></em> <span class="tok-x">}</span></code></pre><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 경계를 어기면 컴파일러가 잡아 주지 않는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 일부만이다. <code>a[7]</code>처럼 상수로 뻔한 위반은 요즘 컴파일러 경고가 잘 잡지만, 번호가 계산 결과일 때는 컴파일 시점에 알 수 없다 — 경계 검사를 실행 중에 상시로 하는 것은 C가 성능을 위해 <strong>하지 않기로 한</strong> 일이기 때문이다(이 선택의 대가와 보완이 이 부의 남은 주제다). 실행 중 그물은 17장의 ASan이다 — 경계 침범을 일으키는 코드를 ASan 빌드로 돌리면 침범의 순간 파일·줄 번호와 함께 잡아 준다. 그리고 애초에 경계 검사가 내장된 부품을 쓰는 길이 있다 — 40장의 proven이 그 길이다.</p></div></div><p>연속된 기억을 다루게 됐다. 다음 장은 이 규칙을 <strong>겹쳐 쌓는다</strong> — 원소가 다시 배열인 경우, 곧 다차원 배열이다. 여기서 배운 “한 걸음은 원소 하나”가 그대로 적용되는데, 그 원소가 행 전체인 것이다.</p>
 <div class="nav"><a href="ch36.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch38.html">다음 →</a></div>
 </div></main></body></html>

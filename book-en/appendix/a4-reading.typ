@@ -131,7 +131,7 @@ the most accurate.
 #dtable(
   columns: 3,
   [*Name*], [*What it gives*], [*Especially good for*],
-  [Compiler Explorer (`godbolt.org`)], [Source and assembly side by side. Over a thousand C compiler builds, several comparable at once], [Seeing what optimization deleted (chapter 13), checking version-dependent behaviour (chapter 16)],
+  [Compiler Explorer (`godbolt.org`)], [Source and assembly side by side. Over a thousand C compiler builds, several comparable at once], [Seeing what optimisation deleted (chapter 13), checking version-dependent behaviour (chapter 16)],
   [OnlineGDB (`onlinegdb.com`)], [Editing, running and debugging. Breakpoints and variable views in the browser], [Learning a debugger before installing one (chapter 17)],
   [Wandbox (`wandbox.org`)], [Pick a compiler build and run. Several files too], [Finding code that only works on your own compiler],
   [Coliru (`coliru.stacked-crooked.com`)], [Write the command line yourself. No frills], [Watching warnings change as options change],
@@ -145,7 +145,7 @@ the most accurate.
   columns: 3,
   [*Name*], [*What it shows*], [*Chapters it connects to*],
   [Python Tutor's C mode (`pythontutor.com/c.html`)], [Steps through execution and draws the stack, the heap and pointers], [Chapters 34–42 (pointers, arrays, lifetime, dynamic memory)],
-  [Compiler Explorer], [Which machine-code lines a source line became], [Chapter 13 (optimization), chapter 46 (what an operator becomes)],
+  [Compiler Explorer], [Which machine-code lines a source line became], [Chapter 13 (optimisation), chapter 46 (what an operator becomes)],
   [`cdecl.org`], [A complicated declaration, put into words], [Chapter 55 (reading declarations)],
   [Godbolt's execution pane], [The output and exit status of the same code], [Chapter 50 (exit status)],
 )

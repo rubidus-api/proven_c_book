@@ -3,9 +3,13 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>26 정수 — 유한한 수의 세계 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,51 +259,55 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../en/">English</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch25.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch27.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch26.html">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>26 정수 — 유한한 수의 세계</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-49"></span><p>제6부는 값을 벼리고 흐름을 다스리는 부다. 첫 장은 C의 정수를 정면으로 다룬다 — 7장에서 배운 표현의 세계가 C의 타입 가족으로 어떻게 나타나는지, 오버플로가 실무에서 어떤 얼굴인지, 그리고 현대 C의 관행 (<code>&lt;stdint.h></code>)까지.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>7장에서 부호 없는 정수의 넘침은 “정의된 감아 돌기”이고 부호 있는 넘침은 계약 밖이라 했다. 그런데 23장에서 만든 <code>int</code>는 부호가 있는가 없는가 — 우리가 여태 쓴 변수들은 어느 세계에 있었던 것인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><code>int</code>는 부호 <strong>있는</strong> 정수다 — 즉 여태 우리의 변수들은 “넘치면 계약 밖”의 세계에 있었다. 다행히 지금까지의 예제는 ±21억의 그릇을 넘볼 일이 없었지만, 이제 그 경계선을 정확히 그어 둘 때가 됐다. 그릇의 종류와 크기, 경계의 위치, 넘었을 때의 규칙 — 이 장의 내용이다.</p></div></div><h3>26.1 정수 타입 가족</h3><p>C의 정수 타입은 <code>int</code> 하나가 아니라 가족이다. 부호 있는 쪽의 기본 구성원은 크기 순으로 <code>char</code>(1바이트 — 4장의 그 “바이트=문자” 사연이 이름에 남았다), <code>short</code>, <code>int</code>, <code>long</code>, <code>long long</code>이고, 각각의 앞에 <code>unsigned</code>를 붙이면 부호 없는 짝이 된다(<code>unsigned int</code> 등). 표준은 각 타입의 <strong>최소</strong> 크기만 정한다 — <code>int</code>는 최소 16비트, <code>long</code>은 최소 32비트라는 식이라, 정확한 크기는 플랫폼의 몫이다(주류 환경에서 <code>int</code>는 32비트).</p><p>“기계마다 다르다”가 불안하게 들린다면 정확한 직감이다 — 그래서 현대 C의 관행은 크기가 이름에 박힌 타입을 쓰는 것이다. <code>&lt;stdint.h></code> 도구 상자의 <code>int32_t</code>(정확히 32비트, 부호 있음), <code>uint8_t</code>, <code>int64_t</code> 같은 타입들이다. 크기가 계약의 일부인 자리 — 파일 형식, 통신, 5장의 엔디안이 문제 되는 모든 곳 — 에서는 이쪽이 표준 관행이다. C23은 여기에 <code>_BitInt(N)</code> — 원하는 비트 폭을 직접 적는 정수 — 까지 보탰다. 이 책의 예제는 지면의 단순함을 위해 <code>int</code>를 기본으로 쓰되, 크기가 중요한 장면에서는 <code>&lt;stdint.h></code> 가족으로 갈아탄다.</p><h3>26.2 기본 자료형의 지도 — 최소 범위와 실제 범위</h3><p>C의 기본 자료형이 정확히 무엇무엇인지, 그리고 각자 얼마나 큰지를 한자리에 정리한다. 이 절은 찾아보는 자리다.</p><p><strong>정수형</strong>은 다섯 층이고 각 층에 부호 있는 판과 없는 판이 있다 — <code>char</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>long long</code>. 여기에 <code>bool</code>(C99)과 문자 전용 타입들(<code>char16_t</code>·<code>char32_t</code>·<code>wchar_t</code>)이 딸린다. <strong>실수형</strong>은 셋이다 — <code>float</code>, <code>double</code>, <code>long double</code>.</p><p>표준이 못박는 것은 <strong>크기가 아니라 최소 범위</strong>다. “int는 4바이트”라는 흔한 말은 표준의 문장이 아니라 오늘날 대부분의 플랫폼이 그렇다는 관찰일 뿐이다.</p><table><tr><th><strong>타입</strong></th><th><strong>표준이 보장하는 최소 범위</strong></th><th><strong>최소 폭</strong></th><th><strong>한계 매크로</strong></th></tr><tr><td><code>signed char</code></td><td>−127   +127</td><td>8비트</td><td><code>SCHAR_MIN</code> <code>SCHAR_MAX</code></td></tr><tr><td><code>unsigned char</code></td><td>0   255</td><td>8비트</td><td><code>UCHAR_MAX</code></td></tr><tr><td><code>char</code></td><td>위 둘 중 하나(구현 정의)</td><td>8비트</td><td><code>CHAR_MIN</code> <code>CHAR_MAX</code></td></tr><tr><td><code>short</code></td><td>−32767   +32767</td><td>16비트</td><td><code>SHRT_MIN</code> <code>SHRT_MAX</code></td></tr><tr><td><code>unsigned short</code></td><td>0   65535</td><td>16비트</td><td><code>USHRT_MAX</code></td></tr><tr><td><code>int</code></td><td>−32767   +32767</td><td>16비트</td><td><code>INT_MIN</code> <code>INT_MAX</code></td></tr><tr><td><code>unsigned int</code></td><td>0   65535</td><td>16비트</td><td><code>UINT_MAX</code></td></tr><tr><td><code>long</code></td><td>−2147483647   +2147483647</td><td>32비트</td><td><code>LONG_MIN</code> <code>LONG_MAX</code></td></tr><tr><td><code>unsigned long</code></td><td>0   4294967295</td><td>32비트</td><td><code>ULONG_MAX</code></td></tr><tr><td><code>long long</code></td><td>약 ±9.2×10<sup>18</sup></td><td>64비트</td><td><code>LLONG_MIN</code> <code>LLONG_MAX</code></td></tr><tr><td><code>unsigned long long</code></td><td>0   약 1.8×10<sup>19</sup></td><td>64비트</td><td><code>ULLONG_MAX</code></td></tr></table><p>최소 범위가 −127(−128이 아니라)인 것에 눈이 갈 것이다. 옛 표준이 세 가지 부호 표현을 모두 허용했기 때문이고(7장), C23이 2의 보수를 못박은 지금은 실질적으로 −128이다.</p><p><strong>크기의 순서</strong>도 표준이 정한다. 폭은 이 순서를 거스를 수 없다.</p><pre><code data-lang="text">char  ≤  short  ≤  int  ≤  long  ≤  long long</code></pre><p>그리고 <code>sizeof(char)</code>는 언제나 1이다 — 바이트가 곧 <code>char</code>의 크기라는 정의(4장) 때문이다. 다만 <strong>한 바이트가 몇 비트인지</strong>는 <code>CHAR_BIT</code>이 말해 주고, 표준은 8 이상만 보장한다.</p><p><strong>실수형</strong>의 한계는 <code>&lt;float.h></code>가 담당한다. 자주 쓰는 것만 추리면 이렇다.</p><table><tr><th><strong>매크로</strong></th><th><strong>뜻</strong></th><th><strong>IEEE 754 double 기준</strong></th></tr><tr><td><code>FLT_DIG</code> <code>DBL_DIG</code></td><td>믿을 수 있는 십진 자릿수</td><td>6 / 15</td></tr><tr><td><code>FLT_MAX</code> <code>DBL_MAX</code></td><td>표현 가능한 최댓값</td><td>약 1.8×10<sup>308</sup></td></tr><tr><td><code>FLT_MIN</code> <code>DBL_MIN</code></td><td>정규화된 최솟값</td><td>약 2.2×10<sup>−308</sup></td></tr><tr><td><code>FLT_EPSILON</code> <code>DBL_EPSILON</code></td><td>1.0과 구분되는 최소 차이</td><td>약 2.2×10<sup>−16</sup></td></tr><tr><td><code>FLT_RADIX</code></td><td>지수의 밑</td><td>2</td></tr></table><p><code>DBL_EPSILON</code>은 44장에서 실수를 비교할 때 다시 만난다 — “같다”를 판단하는 기준을 세울 때 쓰는 값이다.</p><div><div><p><code>examples/ch26/limits.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;limits.h>
-#include &lt;stdint.h>
-#include &lt;float.h>
-#include &lt;stddef.h>
+<h2 id="loc-26">26 정수 — 유한한 수의 세계</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>7장 정수의 표현 · 부호와 넘침</div><div>23장 변수 선언 · 타입은 그릇의 모양이다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>7장에서 부호 없는 정수의 넘침은 “정의된 감아 돌기”이고 부호 있는 넘침은 계약 밖이라 했다. 그런데 23장에서 만든 <code>int</code>는 부호가 있는가 없는가 — 우리가 여태 쓴 변수들은 어느 세계에 있었던 것인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <code>int</code>는 부호 <strong>있는</strong> 정수다 — 즉 여태 우리의 변수들은 “넘치면 계약 밖”의 세계에 있었다. 다행히 지금까지의 예제는 ±21억의 그릇을 넘볼 일이 없었지만, 이제 그 경계선을 정확히 그어 둘 때가 됐다. 그릇의 종류와 크기, 경계의 위치, 넘었을 때의 규칙 — 이 장의 내용이다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-49"></span>제6부는 값을 벼리고 흐름을 다스리는 부다. 첫 장은 C의 정수를 정면으로 다룬다 — 7장에서 배운 표현의 세계가 C의 타입 가족으로 어떻게 나타나는지, 오버플로가 실무에서 어떤 얼굴인지, 그리고 현대 C의 관행 (<code>&lt;stdint.h></code>)까지.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>char</code>가 정수 타입 가족이라는 것이 이상하다 — 문자 아닌가?</li></ol></div></div><div></div><h3>26.1 정수 타입 가족</h3><p>C의 정수 타입은 <code>int</code> 하나가 아니라 가족이다. 부호 있는 쪽의 기본 구성원은 크기 순으로 <code>char</code>(1바이트 — 4장의 그 “바이트=문자” 사연이 이름에 남았다), <code>short</code>, <code>int</code>, <code>long</code>, <code>long long</code>이고, 각각의 앞에 <code>unsigned</code>를 붙이면 부호 없는 짝이 된다(<code>unsigned int</code> 등). 표준은 각 타입의 <strong>최소</strong> 크기만 정한다 — <code>int</code>는 최소 16비트, <code>long</code>은 최소 32비트라는 식이라, 정확한 크기는 플랫폼의 몫이다(주류 환경에서 <code>int</code>는 32비트).</p><p>“기계마다 다르다”가 불안하게 들린다면 정확한 직감이다 — 그래서 현대 C의 관행은 크기가 이름에 박힌 타입을 쓰는 것이다. <code>&lt;stdint.h></code> 도구 상자의 <code>int32_t</code>(정확히 32비트, 부호 있음), <code>uint8_t</code>, <code>int64_t</code> 같은 타입들이다. 크기가 계약의 일부인 자리 — 파일 형식, 통신, 5장의 엔디안이 문제 되는 모든 곳 — 에서는 이쪽이 표준 관행이다. C23은 여기에 <code>_BitInt(N)</code> — 원하는 비트 폭을 직접 적는 정수 — 까지 보탰다. 이 책의 예제는 지면의 단순함을 위해 <code>int</code>를 기본으로 쓰되, 크기가 중요한 장면에서는 <code>&lt;stdint.h></code> 가족으로 갈아탄다.</p><h3>26.2 기본 자료형의 지도 — 최소 범위와 실제 범위</h3><p>C의 기본 자료형이 정확히 무엇무엇인지, 그리고 각자 얼마나 큰지를 한자리에 정리한다. 이 절은 찾아보는 자리다.</p><p><strong>정수형</strong>은 다섯 층이고 각 층에 부호 있는 판과 없는 판이 있다 — <code>char</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>long long</code>. 여기에 <code>bool</code>(C99)과 문자 전용 타입들(<code>char16_t</code>·<code>char32_t</code>·<code>wchar_t</code>)이 딸린다. <strong>실수형</strong>은 셋이다 — <code>float</code>, <code>double</code>, <code>long double</code>.</p><p>표준이 못박는 것은 <strong>크기가 아니라 최소 범위</strong>다. “int는 4바이트”라는 흔한 말은 표준의 문장이 아니라 오늘날 대부분의 플랫폼이 그렇다는 관찰일 뿐이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>타입</strong></th><th><strong>표준이 보장하는 최소 범위</strong></th><th><strong>최소 폭</strong></th><th><strong>한계 매크로</strong></th></tr><tr><td><code>signed char</code></td><td>−127   +127</td><td>8비트</td><td><code>SCHAR_MIN</code> <code>SCHAR_MAX</code></td></tr><tr><td><code>unsigned char</code></td><td>0   255</td><td>8비트</td><td><code>UCHAR_MAX</code></td></tr><tr><td><code>char</code></td><td>위 둘 중 하나(구현 정의)</td><td>8비트</td><td><code>CHAR_MIN</code> <code>CHAR_MAX</code></td></tr><tr><td><code>short</code></td><td>−32767   +32767</td><td>16비트</td><td><code>SHRT_MIN</code> <code>SHRT_MAX</code></td></tr><tr><td><code>unsigned short</code></td><td>0   65535</td><td>16비트</td><td><code>USHRT_MAX</code></td></tr><tr><td><code>int</code></td><td>−32767   +32767</td><td>16비트</td><td><code>INT_MIN</code> <code>INT_MAX</code></td></tr><tr><td><code>unsigned int</code></td><td>0   65535</td><td>16비트</td><td><code>UINT_MAX</code></td></tr><tr><td><code>long</code></td><td>−2147483647   +2147483647</td><td>32비트</td><td><code>LONG_MIN</code> <code>LONG_MAX</code></td></tr><tr><td><code>unsigned long</code></td><td>0   4294967295</td><td>32비트</td><td><code>ULONG_MAX</code></td></tr><tr><td><code>long long</code></td><td>약 ±9.2×10<sup>18</sup></td><td>64비트</td><td><code>LLONG_MIN</code> <code>LLONG_MAX</code></td></tr><tr><td><code>unsigned long long</code></td><td>0   약 1.8×10<sup>19</sup></td><td>64비트</td><td><code>ULLONG_MAX</code></td></tr></table></div><p class="float-caption">표 26.1</p></figure><p>최소 범위가 −127(−128이 아니라)인 것에 눈이 갈 것이다. 옛 표준이 세 가지 부호 표현을 모두 허용했기 때문이고(7장), C23이 2의 보수를 못박은 지금은 실질적으로 −128이다.</p><p><strong>크기의 순서</strong>도 표준이 정한다. 폭은 이 순서를 거스를 수 없다.</p><pre><code data-lang="text">char  ≤  short  ≤  int  ≤  long  ≤  long long</code></pre><p>그리고 <code>sizeof(char)</code>는 언제나 1이다 — 바이트가 곧 <code>char</code>의 크기라는 정의(4장) 때문이다. 다만 <strong>한 바이트가 몇 비트인지</strong>는 <code>CHAR_BIT</code>이 말해 주고, 표준은 8 이상만 보장한다.</p><p><strong>실수형</strong>의 한계는 <code>&lt;float.h></code>가 담당한다. 자주 쓰는 것만 추리면 이렇다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>매크로</strong></th><th><strong>뜻</strong></th><th><strong>IEEE 754 double 기준</strong></th></tr><tr><td><code>FLT_DIG</code> <code>DBL_DIG</code></td><td>믿을 수 있는 십진 자릿수</td><td>6 / 15</td></tr><tr><td><code>FLT_MAX</code> <code>DBL_MAX</code></td><td>표현 가능한 최댓값</td><td>약 1.8×10<sup>308</sup></td></tr><tr><td><code>FLT_MIN</code> <code>DBL_MIN</code></td><td>정규화된 최솟값</td><td>약 2.2×10<sup>−308</sup></td></tr><tr><td><code>FLT_EPSILON</code> <code>DBL_EPSILON</code></td><td>1.0과 구분되는 최소 차이</td><td>약 2.2×10<sup>−16</sup></td></tr><tr><td><code>FLT_RADIX</code></td><td>지수의 밑</td><td>2</td></tr></table></div><p class="float-caption">표 26.2</p></figure><p><code>DBL_EPSILON</code>은 47장에서 실수를 비교할 때 다시 만난다 — “같다”를 판단하는 기준을 세울 때 쓰는 값이다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch26/limits.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">limits.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">float.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>
 
-int main(void)
-{
-    printf("--- 기본 정수형의 크기(이 기계에서) ---\n");
-    printf("char=%zu short=%zu int=%zu long=%zu long long=%zu\n",
-           sizeof(char), sizeof(short), sizeof(int), sizeof(long), sizeof(long long));
-    printf("size_t=%zu ptrdiff_t=%zu void*=%zu\n",
-           sizeof(size_t), sizeof(ptrdiff_t), sizeof(void *));
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">--- 기본 정수형의 크기(이 기계에서) ---</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> short=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> int=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> long=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> long long=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">short</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">size_t=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> ptrdiff_t=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> void*=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">size_t</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">ptrdiff_t</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">void</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    printf("\n--- 실제 범위(&lt;limits.h> 매크로) ---\n");
-    printf("CHAR_BIT  = %d\n", CHAR_BIT);
-    printf("SCHAR_MIN = %d, SCHAR_MAX = %d, UCHAR_MAX = %u\n",
-           SCHAR_MIN, SCHAR_MAX, (unsigned)UCHAR_MAX);
-    printf("SHRT_MIN  = %d, SHRT_MAX  = %d, USHRT_MAX = %u\n",
-           SHRT_MIN, SHRT_MAX, (unsigned)USHRT_MAX);
-    printf("INT_MIN   = %d, INT_MAX   = %d, UINT_MAX  = %u\n",
-           INT_MIN, INT_MAX, UINT_MAX);
-    printf("LONG_MIN  = %ld, LONG_MAX = %ld\n", LONG_MIN, LONG_MAX);
-    printf("LLONG_MAX = %lld, ULLONG_MAX = %llu\n", LLONG_MAX, ULLONG_MAX);
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">--- 실제 범위(&lt;limits.h> 매크로) ---</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">CHAR_BIT  = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> CHAR_BIT</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">SCHAR_MIN = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, SCHAR_MAX = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, UCHAR_MAX = </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           SCHAR_MIN</strong><strong><span class="tok-x">,</span></strong><strong> SCHAR_MAX</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong>UCHAR_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">SHRT_MIN  = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, SHRT_MAX  = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, USHRT_MAX = </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           SHRT_MIN</strong><strong><span class="tok-x">,</span></strong><strong> SHRT_MAX</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong>USHRT_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">INT_MIN   = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, INT_MAX   = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, UINT_MAX  = </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           INT_MIN</strong><strong><span class="tok-x">,</span></strong><strong> INT_MAX</strong><strong><span class="tok-x">,</span></strong><strong> UINT_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">LONG_MIN  = </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">, LONG_MAX = </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> LONG_MIN</strong><strong><span class="tok-x">,</span></strong><strong> LONG_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">LLONG_MAX = </span></strong><strong><span class="tok-s">%lld</span></strong><strong><span class="tok-s">, ULLONG_MAX = </span></strong><strong><span class="tok-s">%llu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> LLONG_MAX</strong><strong><span class="tok-x">,</span></strong><strong> ULLONG_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    printf("\n--- 고정 폭 타입(&lt;stdint.h>) ---\n");
-    printf("INT8_MAX=%d INT16_MAX=%d INT32_MAX=%d\n",
-           (int)INT8_MAX, (int)INT16_MAX, (int)INT32_MAX);
-    printf("INT64_MAX=%lld UINT64_MAX=%llu\n",
-           (long long)INT64_MAX, (unsigned long long)UINT64_MAX);
-    printf("SIZE_MAX=%zu\n", SIZE_MAX);
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">--- 고정 폭 타입(&lt;stdint.h>) ---</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">INT8_MAX=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> INT16_MAX=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> INT32_MAX=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>INT8_MAX</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>INT16_MAX</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>INT32_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">INT64_MAX=</span></strong><strong><span class="tok-s">%lld</span></strong><strong><span class="tok-s"> UINT64_MAX=</span></strong><strong><span class="tok-s">%llu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>INT64_MAX</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>UINT64_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">SIZE_MAX=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> SIZE_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    printf("\n--- 실수형(&lt;float.h>) ---\n");
-    printf("float : %zu bytes, %d digits, max %g\n", sizeof(float), FLT_DIG, (double)FLT_MAX);
-    printf("double: %zu bytes, %d digits, max %g\n", sizeof(double), DBL_DIG, DBL_MAX);
-    printf("DBL_EPSILON = %g (1.0 과 구분되는 가장 작은 차이)\n", DBL_EPSILON);
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>--- 기본 정수형의 크기(이 기계에서) ---
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">--- 실수형(&lt;float.h>) ---</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">float : </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes, </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> digits, max </span></strong><strong><span class="tok-s">%g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">float</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> FLT_DIG</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">double</span></strong><strong><span class="tok-x">)</span></strong><strong>FLT_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">double: </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes, </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> digits, max </span></strong><strong><span class="tok-s">%g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">double</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> DBL_DIG</strong><strong><span class="tok-x">,</span></strong><strong> DBL_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">DBL_EPSILON = </span></strong><strong><span class="tok-s">%g</span></strong><strong><span class="tok-s"> (1.0 과 구분되는 가장 작은 차이)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> DBL_EPSILON</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>--- 기본 정수형의 크기(이 기계에서) ---
 char=1 short=2 int=4 long=8 long long=8
 size_t=8 ptrdiff_t=8 void*=8
 
@@ -128,19 +328,19 @@ SIZE_MAX=18446744073709551615
 float : 4 bytes, 6 digits, max 3.40282e+38
 double: 8 bytes, 15 digits, max 1.79769e+308
 DBL_EPSILON = 2.22045e-16 (1.0 과 구분되는 가장 작은 차이)
-</code></pre></div></div><p>이 출력은 <strong>이 책을 만든 기계의 것</strong>이라는 점이 중요하다. 다른 기계에서 돌리면 다른 수가 나올 수 있고, 그것이 바로 이 절의 요점이다 — <strong>크기를 가정하지 말고 물어보라.</strong></p><h3>26.3 크기가 계약인 자리 — 고정 폭 타입</h3><p>폭이 정확히 정해져야 하는 곳이 있다. 파일 형식, 네트워크 프로토콜, 하드웨어 레지스터가 그렇다. 이런 자리에는 <code>&lt;stdint.h></code>의 고정 폭 타입을 쓴다.</p><table><tr><th><strong>갈래</strong></th><th><strong>예</strong></th><th><strong>뜻</strong></th></tr><tr><td>정확한 폭</td><td><code>int8_t</code> <code>uint16_t</code> <code>int32_t</code> <code>uint64_t</code></td><td>정확히 그 비트 수. 없으면 제공되지 않는다</td></tr><tr><td>최소 폭</td><td><code>int_least16_t</code></td><td>적어도 그만큼인 것 중 가장 작은 타입</td></tr><tr><td>가장 빠른</td><td><code>int_fast32_t</code></td><td>적어도 그만큼이면서 기계가 가장 빨리 다루는 타입</td></tr><tr><td>포인터 크기</td><td><code>intptr_t</code> <code>uintptr_t</code></td><td>포인터를 담을 수 있는 정수(14장의 출처 주의)</td></tr><tr><td>최대</td><td><code>intmax_t</code> <code>uintmax_t</code></td><td>가장 넓은 정수</td></tr><tr><td>크기·차이</td><td><code>size_t</code> <code>ptrdiff_t</code></td><td>크기와 포인터 차이의 타입</td></tr></table><p>각각의 한계도 매크로로 있다 — <code>INT32_MAX</code>, <code>UINT64_MAX</code>, <code>SIZE_MAX</code>, <code>PTRDIFF_MAX</code>처럼. 서식 지정자는 <code>&lt;inttypes.h></code>의 <code>PRId32</code> 계열을 쓴다(부록 B).</p><p>수칙은 단순하다. <strong>의미가 “이 기계의 자연스러운 정수”라면 <code>int</code>, “크기·인덱스”라면 <code>size_t</code>, “형식이 정한 폭”이라면 고정 폭 타입.</strong></p><h3>26.4 경계를 눈으로 본다</h3><p>그릇의 가장자리는 <code>&lt;limits.h></code> 도구 상자가 알려 준다. 그리고 부호 없는 세계의 감아 돌기는 — 7장에서 지면으로 배운 그것 — 이제 직접 실행해 보일 수 있다.</p><div><div><p><code>examples/ch26/wrap.c</code></p><pre><code data-lang="c">#include &lt;limits.h>
-#include &lt;stdio.h>
+</code></pre></div></div><p>이 출력은 <strong>이 책을 만든 기계의 것</strong>이라는 점이 중요하다. 다른 기계에서 돌리면 다른 수가 나올 수 있고, 그것이 바로 이 절의 요점이다 — <strong>크기를 가정하지 말고 물어보라.</strong></p><h3>26.3 크기가 계약인 자리 — 고정 폭 타입</h3><p>폭이 정확히 정해져야 하는 곳이 있다. 파일 형식, 네트워크 프로토콜, 하드웨어 레지스터가 그렇다. 이런 자리에는 <code>&lt;stdint.h></code>의 고정 폭 타입을 쓴다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>갈래</strong></th><th><strong>예</strong></th><th><strong>뜻</strong></th></tr><tr><td>정확한 폭</td><td><code>int8_t</code> <code>uint16_t</code> <code>int32_t</code> <code>uint64_t</code></td><td>정확히 그 비트 수. 없으면 제공되지 않는다</td></tr><tr><td>최소 폭</td><td><code>int_least16_t</code></td><td>적어도 그만큼인 것 중 가장 작은 타입</td></tr><tr><td>가장 빠른</td><td><code>int_fast32_t</code></td><td>적어도 그만큼이면서 기계가 가장 빨리 다루는 타입</td></tr><tr><td>포인터 크기</td><td><code>intptr_t</code> <code>uintptr_t</code></td><td>포인터를 담을 수 있는 정수(14장의 출처 주의)</td></tr><tr><td>최대</td><td><code>intmax_t</code> <code>uintmax_t</code></td><td>가장 넓은 정수</td></tr><tr><td>크기·차이</td><td><code>size_t</code> <code>ptrdiff_t</code></td><td>크기와 포인터 차이의 타입</td></tr></table></div><p class="float-caption">표 26.3</p></figure><p>각각의 한계도 매크로로 있다 — <code>INT32_MAX</code>, <code>UINT64_MAX</code>, <code>SIZE_MAX</code>, <code>PTRDIFF_MAX</code>처럼. 서식 지정자는 <code>&lt;inttypes.h></code>의 <code>PRId32</code> 계열을 쓴다(부록 B).</p><p>수칙은 단순하다. <strong>의미가 “이 기계의 자연스러운 정수”라면 <code>int</code>, “크기·인덱스”라면 <code>size_t</code>, “형식이 정한 폭”이라면 고정 폭 타입.</strong></p><h3>26.4 경계를 눈으로 본다</h3><p>그릇의 가장자리는 <code>&lt;limits.h></code> 도구 상자가 알려 준다. 그리고 부호 없는 세계의 감아 돌기는 — 7장에서 지면으로 배운 그것 — 이제 직접 실행해 보일 수 있다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch26/wrap.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">limits.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
-int main(void)
-{
-    printf("INT_MAX  = %d\n", INT_MAX);
-    printf("UINT_MAX = %u\n", UINT_MAX);
-    printf("UINT_MAX + 1 = %u\n", UINT_MAX + 1u);  /* 정의된 감아 돌기 */
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>INT_MAX  = 2147483647
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">INT_MAX  = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> INT_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">UINT_MAX = </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> UINT_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">UINT_MAX + 1 = </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> UINT_MAX </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 정의된 감아 돌기 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>INT_MAX  = 2147483647
 UINT_MAX = 4294967295
 UINT_MAX + 1 = 0
-</code></pre></div></div><p>서식 하나가 새로 합류했다 — 부호 없는 정수는 <code>%d</code>가 아니라 <code>%u</code>로 찍는다(22장의 서식 계약이 타입 가족을 따라 늘어나는 것이다). 그리고 셋째 줄이 7장의 약속 그대로다: 최댓값에 1을 더하니 0 — 시계가 한 바퀴 돈 것이고, 이것은 <strong>정의된</strong> 동작이다.</p><p>부호 있는 쪽은 사정이 다르다. <code>INT_MAX + 1</code>을 계산하는 코드는 계약 밖(정의되지 않은 동작)이라서, <strong>이 책의 검증 파이프라인에 넣을 수조차 없다</strong> — 17장에서 장만한 UBSan이 정확히 이런 코드를 실행 중에 잡아 낸다. 같은 “+1”인데 한쪽은 시연 가능하고 한쪽은 불가능하다는 것 자체가, 두 세계의 차이를 웅변한다.</p><div class="dev misconception"><p class="dev-label">⚠ “오버플로는 큰 수를 다루는 특수한 프로그램의 문제다”</p><p>그럴듯하지만, 실제 사고 목록은 반대를 말한다. 가장 흔한 오버플로는 평범한 곳에서 난다 — 두 인덱스의 평균을 <code>(a + b) / 2</code>로 구하다가 <strong>더하는 중간 결과</strong>가 넘치고(유명한 이진 탐색 버그: 표준 라이브러리 들에 20년 가까이 숨어 있었다), 밀리초 타이머가 49일 만에 감아 돌고 (Windows 95의 49.7일 멈춤 사고), 크기 계산 <code>개수 * 크기</code>가 넘쳐 터무니없이 작은 메모리를 잡는다(보안 사고의 고전). 공통점은 <strong>최종 값이 아니라 중간 계산</strong>이 넘친다는 것이다 — 그릇 걱정은 결과가 아니라 수식의 모든 중간 단계에 대해 하는 것이고, 이것이 proven류의 검사 산술이 존재하는 이유다(38장).</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>char</code>가 정수 타입 가족이라는 것이 이상하다 — 문자 아닌가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>C에서 문자와 작은 정수는 같은 것이다 — 8장에서 배운 대로 문자는 번호이고, <code>char</code>는 그 번호를 담는 1바이트 정수 그릇일 뿐이다. <code>'A'</code>라는 문자 리터럴의 값은 그냥 65다. 한 가지 함정만 미리 — <code>char</code>가 부호 있는지 없는지는 <strong>플랫폼마다 다르다</strong>(둘 다 아닌 제3의 타입이다). 그래서 수치 계산에는 <code>char</code>를 쓰지 않고, 바이트가 필요하면 <code>uint8_t</code>를 쓰는 것이 현대 관행이다. 문자열과 <code>char</code>의 본격적인 이야기는 37장에 있다.</p></div></div><p>정수의 그릇들을 정리했다. 다음 장은 그 그릇 위의 연산 — 20장에서 미뤄 둔 나눗셈의 진실과, 7장에서 배운 비트 세계의 연산자들이 C 문법으로 합류한다.</p>
+</code></pre></div></div><p>서식 하나가 새로 합류했다 — 부호 없는 정수는 <code>%d</code>가 아니라 <code>%u</code>로 찍는다(22장의 서식 계약이 타입 가족을 따라 늘어나는 것이다). 그리고 셋째 줄이 7장의 약속 그대로다: 최댓값에 1을 더하니 0 — 시계가 한 바퀴 돈 것이고, 이것은 <strong>정의된</strong> 동작이다.</p><p>부호 있는 쪽은 사정이 다르다. <code>INT_MAX + 1</code>을 계산하는 코드는 계약 밖(정의되지 않은 동작)이라서, <strong>이 책의 검증 파이프라인에 넣을 수조차 없다</strong> — 17장에서 장만한 UBSan이 정확히 이런 코드를 실행 중에 잡아 낸다. 같은 “+1”인데 한쪽은 시연 가능하고 한쪽은 불가능하다는 것 자체가, 두 세계의 차이를 웅변한다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“오버플로는 큰 수를 다루는 특수한 프로그램의 문제다”</strong></p>그럴듯하지만, 실제 사고 목록은 반대를 말한다. 가장 흔한 오버플로는 평범한 곳에서 난다 — 두 인덱스의 평균을 <code>(a + b) / 2</code>로 구하다가 <strong>더하는 중간 결과</strong>가 넘치고(유명한 이진 탐색 버그: 표준 라이브러리 들에 20년 가까이 숨어 있었다), 밀리초 타이머가 49일 만에 감아 돌고 (Windows 95의 49.7일 멈춤 사고), 크기 계산 <code>개수 * 크기</code>가 넘쳐 터무니없이 작은 메모리를 잡는다(보안 사고의 고전). 공통점은 <strong>최종 값이 아니라 중간 계산</strong>이 넘친다는 것이다 — 그릇 걱정은 결과가 아니라 수식의 모든 중간 단계에 대해 하는 것이고, 이것이 proven류의 검사 산술이 존재하는 이유다(40장).</div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>char</code>가 정수 타입 가족이라는 것이 이상하다 — 문자 아닌가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> C에서 문자와 작은 정수는 같은 것이다 — 8장에서 배운 대로 문자는 번호이고, <code>char</code>는 그 번호를 담는 1바이트 정수 그릇일 뿐이다. <code>'A'</code>라는 문자 리터럴의 값은 그냥 65다. 한 가지 함정만 미리 — <code>char</code>가 부호 있는지 없는지는 <strong>플랫폼마다 다르다</strong>(둘 다 아닌 제3의 타입이다). 그래서 수치 계산에는 <code>char</code>를 쓰지 않고, 바이트가 필요하면 <code>uint8_t</code>를 쓰는 것이 현대 관행이다. 문자열과 <code>char</code>의 본격적인 이야기는 39장에 있다.</p></div></div><p>정수의 그릇들을 정리했다. 다음 장은 그 그릇 위의 연산 — 20장에서 미뤄 둔 나눗셈의 진실과, 7장에서 배운 비트 세계의 연산자들이 C 문법으로 합류한다.</p>
 <div class="nav"><a href="ch25.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch27.html">다음 →</a></div>
 </div></main></body></html>

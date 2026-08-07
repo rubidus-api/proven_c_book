@@ -10,13 +10,13 @@
   ko: (q: "문", a: "답", back: "돌아보기", recap: "복습 정리",
        stdin: "표준 입력으로 준 것", output: "실행 결과",
        platform: "플랫폼 노트", organizer: "이 장이 끝나면",
-       prereq: "이 장이 기대는 것", questions: "이 장에서 답할 질문",
+       prereq: "먼저 알아야 할 것", questions: "이 장에서 답할 질문",
        misc: "흔한 오해", tbl: "표", fig: "그림",
        real: "실제 사례", anti: "반례", math: "수학"),
   en: (q: "Q", a: "A", back: "Looking back", recap: "Recap",
        stdin: "Given on standard input", output: "Output",
        platform: "Platform note", organizer: "By the end of this chapter",
-       prereq: "What this chapter builds on", questions: "The questions this chapter answers",
+       prereq: "What to know first", questions: "The questions this chapter answers",
        misc: "A common misconception", tbl: "Table", fig: "Figure",
        real: "In practice", anti: "Counter-example", math: "The mathematics"),
 ).at(_lang)
@@ -427,7 +427,7 @@
 
 // 3.7 기댄 것 (RFC-0006 §3.1) — 이 장이 어느 장의 무슨 개념 위에 서는가.
 // 번호만 쓰지 않고 개념 이름을 함께 적는다. 항목은 (참조, 개념) 쌍이다.
-// ① 이 장이 기대는 것 — 항목당 한 줄로 압축한다(재평가 §7.3: 서두가 길다)
+// ① 먼저 알아야 할 것 — 항목당 한 줄로 압축한다(재평가 §7.3: 서두가 길다)
 #let prereq(..items) = _open-block(_L.prereq, first: true)[
   #set par(first-line-indent: 0em)
   #for (where, what) in items.pos() {

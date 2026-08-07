@@ -4,7 +4,7 @@
 
 #prereq(
   ([chapter 32, The meaning of a function], [how a function reports failure]),
-  ([chapter 40, Safe input, and the appearance of proven], [the idiom of safe input]),
+  ([chapter 40, Safe input], [five disciplines for handling failure]),
 )
 
 #deepqa[
@@ -24,7 +24,7 @@
 #idx("contract")  The seed of the contract planted in chapter 32 grows — what a
   function demands and what it promises (preconditions and postconditions), how
   failure is reported (C's way: errors are values), and the devices that force
-  that value to be checked. The design idea of proven, seen in chapter 40, is
+  that value to be checked. The five disciplines set out in chapter 40 are
   organised here into principles.
 ]
 
@@ -54,7 +54,7 @@ stands beside the code. *On failure the output argument is not touched* —
 *`[[nodiscard]]`* — the C23 notation by which the compiler warns if a call
 discards this return value. It is a brake on the freedom of chapter 21's "it is
 legal to discard a return value", saying "this one value must not be discarded."
-That is exactly why chapter 40's proven functions wear this notation.
+That is exactly why chapter 40's parsing function wears this notation.
 
 #misconception[
   "Error handling is an incidental chore that makes code untidy"
@@ -132,17 +132,18 @@ So modern practice is simple — *make const the default and release only what m
 change.* Widening a contract costs; narrowing it takes one word.
 
 #qa[
-  How does chapter 40's proven implement this principle?
+  How do chapter 40's five disciplines connect to this principle?
 ][
-  Three things follow this chapter's principles exactly. First, *failure appears
-  in the type* — it returns an `{err, val}` bundle, so writing code that "takes the
-  value out without asking whether it succeeded" becomes awkward instead. Second,
-  *it forces the check with `[[nodiscard]]`* — discard it and the compiler warns.
-  Third, *it takes boundaries and sizes as part of the contract* — blocking, at
-  the API level, the root of the boundary violations seen in chapters 36–39.
-  In summary: a design that writes the contract not in documentation but in
-  *types and signatures*. Regard it as implementing, as a component inside C, the
-  same direction as the concerns of Rust and Zig seen in chapter 1.
+  Three of them follow this chapter's principles exactly. First, *failure appears
+  in the type* — a bundle that keeps success and value apart is returned, so
+  writing code that "takes the value out without asking whether it succeeded"
+  becomes awkward instead. Second, *it forces the check with `[[nodiscard]]`* —
+  discard it and the compiler warns. Third, *it takes boundaries and sizes as part
+  of the contract* — blocking, at the API level, the root of the boundary
+  violations seen in chapters 36–39. In summary: a design that writes the contract
+  not in documentation but in *types and signatures*, implementing inside C the
+  same direction as the concerns of Rust and Zig seen in chapter 1. Part XII pushes
+  that design all the way through in a single library.
 ]
 
 We can handle contracts and errors. But there remains a world this book has kept

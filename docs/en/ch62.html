@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>62 Diagnosis and control — &lt;errno.h&gt;, &lt;assert.h&gt;, &lt;signal.h&gt;, &lt;setjmp.h&gt; — Proven C Book</title><style>
+<title>62 Character classification — &lt;ctype.h&gt; — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,60 +259,62 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch61.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch63.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch62.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>62 Diagnosis and control — <code>&lt;errno.h></code>, <code>&lt;assert.h></code>, <code>&lt;signal.h></code>, <code>&lt;setjmp.h></code></h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We look in one place at the four headers used when a program <strong>has gone wrong</strong>. The global holding an error number, the assertion that catches contract violations, signals flying in from outside, and the jump that skips over the stack. Why the discipline set up in chapter 45, “errors are values”, matters so much becomes clear on seeing the real shape of the alternatives.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 45 said C’s ways of reporting an error are only three — the return value, global state, and stopping the program. Then exactly when can the global called <code>errno</code> be believed?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>It can be believed <strong>only right after a failure has been confirmed.</strong> The standard’s rule is two-layered. First, a successful call may also put a value in <code>errno</code> — so the order must not be “nonzero means failure” but “read the reason after the function has reported failure”. Second, the value may be overwritten by the next library call at any time — so once read it is stored at once. These two rules are the price of the design that carries errors in global state.</p></div></div><h3>62.1 <code>errno</code> — the price of carrying errors in a global</h3><div><div><p><code>examples/ch62/errno_demo.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;errno.h>
-#include &lt;string.h>
-#include &lt;stdlib.h>
+<h2 id="loc-62">62 Character classification — <code>&lt;ctype.h></code></h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 9, Characters and text · letters and encodings</div><div>chapter 26, Integers · the signedness of <code>char</code></div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 9 said a character is a number in a code table and an encoding is a way of writing that number in bytes. What, then, is a call like <code>isalpha('가')</code> asking?</p><div class="qa-a"><p><p><span class="dev-label">A.</span> It is the wrong question. The functions of <code>&lt;ctype.h></code> judge <strong>one byte</strong>. In UTF-8 “가” is three bytes, so it cannot even be passed as the argument, and if it were, each byte would be looked at separately. This header is a tool from the ASCII era.</p><p>So this chapter is short. The contract of twelve functions, and the rule broken most often in all of C — <strong>passing a <code>char</code> straight in is outside the contract</strong> — is all of it. The two large subjects waiting behind it, locales and multibyte characters, belong to the next five chapters.</p></p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-97"></span>The functions that judge a single byte. A map of the twelve, the exact range of values allowed as the argument, why <code>EOF</code> is mixed in among them, and the fact that even this judgement is changed by the locale.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>If a program only ever sees ASCII, may the conversion be skipped?</li></ol></div></div><div></div><h3>62.1 A map of the twelve functions</h3><p><code>&lt;ctype.h></code> fixes eleven predicates and two conversions. The naming rule is simple — <code>is</code> asks a true-or-false question, <code>to</code> changes something.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Function</strong></th><th><strong>True for</strong></th><th><strong>In the “C” locale</strong></th></tr><tr><td><code>isalpha</code></td><td>Letters</td><td><code>A</code>~<code>Z</code>, <code>a</code>~<code>z</code></td></tr><tr><td><code>isdigit</code></td><td>Digits</td><td><code>0</code>~<code>9</code> — <strong>these ten, regardless of locale</strong></td></tr><tr><td><code>isalnum</code></td><td>Letters or digits</td><td>The two above together</td></tr><tr><td><code>isspace</code></td><td>Whitespace</td><td>space, <code>\t</code>, <code>\n</code>, <code>\v</code>, <code>\f</code>, <code>\r</code></td></tr><tr><td><code>isblank</code></td><td>Whitespace within a line</td><td>space, <code>\t</code></td></tr><tr><td><code>isupper</code>·<code>islower</code></td><td>Upper- and lower-case</td><td><code>A</code>~<code>Z</code> / <code>a</code>~<code>z</code></td></tr><tr><td><code>ispunct</code></td><td>Printing, and neither alphanumeric nor space</td><td><code>!</code>, <code>,</code>, <code>\#</code>, …</td></tr><tr><td><code>isprint</code></td><td>Printing characters (space included)</td><td>0x20~0x7E</td></tr><tr><td><code>isgraph</code></td><td>Printing and not a space</td><td>0x21~0x7E</td></tr><tr><td><code>iscntrl</code></td><td>Control characters</td><td>0x00~0x1F, 0x7F</td></tr><tr><td><code>isxdigit</code></td><td>Hexadecimal digits</td><td><code>0</code>~<code>9</code>, <code>A</code>~<code>F</code>, <code>a</code>~<code>f</code></td></tr><tr><td><code>toupper</code>·<code>tolower</code></td><td>(conversion) to upper or lower case</td><td>Returned unchanged if it does not apply</td></tr></table></div><p class="float-caption">Table 62.1</p></figure><p><code>isdigit</code> is special. The standard nails the set of characters for which it is true to the ten from <code>0</code> to <code>9</code>, <strong>regardless of the locale</strong>. That contrasts with the other predicates, which may widen. It is the one thing code that parses numbers can lean on.</p><h3>62.2 The first trap — never pass a <code>char</code> straight in</h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch62/ctype.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">ctype.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">limits.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 
-int main(void)
-{
-    /* ① 성공한 호출도 errno 를 건드릴 수 있다 — 그래서 직전에 0 으로 놓는다 */
-    errno = 0;
-    FILE *ok = fopen("errno_demo_tmp.txt", "w");
-    printf("성공 후 errno = %d\n", errno);
-    if (ok) { fputs("x", ok); fclose(ok); }
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> The ctype functions take an int — but that int is not a char </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">CHAR_MIN = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (char on this machine is </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           CHAR_MIN</strong><strong><span class="tok-x">,</span></strong><strong> CHAR_MIN </strong><strong><span class="tok-x">&lt;</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">signed</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">unsigned</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ② 실패하면 errno 에 이유가 남는다 */
-    errno = 0;
-    FILE *f = fopen("/definitely/not/here.txt", "r");
-    if (!f) {
-        printf("실패: errno=%d, strerror=[%s]\n", errno, strerror(errno));
-        perror("perror 출력");     /* 앞에 문맥을 붙여 stderr 로 */
-    }
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the ASCII range gives no trouble </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">isalpha('A') = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, isdigit('7') = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, isspace(' ') = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>isalpha</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">!=</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>isdigit</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">7</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">!=</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>isspace</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">!=</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ③ 중간에 다른 호출이 끼면 errno 가 덮인다 */
-    errno = 0;
-    f = fopen("/definitely/not/here.txt", "r");
-    int saved = errno;                    /* 곧바로 저장해 둔다 */
-    printf("정리 작업 중...\n");           /* printf 가 errno 를 바꿀 수 있다 */
-    printf("저장해 둔 errno=%d (%s)\n", saved, strerror(saved));
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> bytes of 128 and above are the trouble: passed as a char they go negative </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">char</span></strong> bytes<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><span class="tok-x">0x</span><span class="tok-n">C7</span><span class="tok-x">,</span> <span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><span class="tok-x">0x</span><span class="tok-n">41</span><span class="tok-x">,</span> <span class="tok-s">'</span><span class="tok-s">A</span><span class="tok-s">'</span><span class="tok-x">,</span> <span class="tok-s">'</span><span class="tok-n">\0</span><span class="tok-s">'</span> <span class="tok-x">}</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the first byte of the Korean syllable 가 in CP949 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">byte 0xC7 held in a char: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ④ strtol 은 errno 로 범위 초과를 알린다 */
-    errno = 0;
-    long v = strtol("999999999999999999999", NULL, 10);
-    printf("strtol 범위 초과: errno==ERANGE? %s (값=%ld)\n",
-           errno == ERANGE ? "예" : "아니오", v);
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the right idiom: convert to unsigned char before passing </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the right call: isalpha((unsigned char)b) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>isalpha</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong>bytes</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">!=</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    remove("errno_demo_tmp.txt");
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>perror 출력: No such file or directory
-성공 후 errno = 0
-실패: errno=2, strerror=[No such file or directory]
-정리 작업 중...
-저장해 둔 errno=2 (No such file or directory)
-strtol 범위 초과: errno==ERANGE? 예 (값=9223372036854775807)
-</code></pre></div></div><p>The output shows the rules exactly. Set it to 0 just before the call, read it after confirming failure, and store it before doing anything else. Merely slipping one line of <code>printf</code> in between can change the value.</p><p><code>errno</code> looks like a variable but is <strong>a macro</strong>. In a program running along several strands each strand must see a different value, so the implementation defines it as a macro pointing at thread-local storage.</p><table><tr><th><strong>function</strong></th><th><strong>what it does</strong></th><th><strong>note</strong></th></tr><tr><td><code>strerror(n)</code></td><td>error number → a sentence</td><td>★ a static buffer. not thread-safe</td></tr><tr><td><code>perror(s)</code></td><td><code>s: reason</code> to <code>stderr</code></td><td>the habit of attaching a context string</td></tr><tr><td><code>strerror_r</code></td><td>fills a caller’s buffer</td><td>POSIX. there are two editions, hence confusion</td></tr><tr><td><code>strerror_s</code></td><td>the same intent</td><td>annex K (chapter 63)</td></tr></table><p>The error numbers the standard names are only three — <code>EDOM</code> (domain), <code>ERANGE</code> (range), <code>EILSEQ</code> (encoding). The rest, such as <code>ENOENT</code> and <code>EACCES</code>, are settled by POSIX or the platform. That is, <strong>code comparing <code>errno</code> values is that much less portable</strong>.</p><h3>62.2 <code>assert</code> — the cheapest way to write a contract as code</h3><p>The macro learned in chapter 45. Pinning down the rules again:</p><ul><li><code>assert</code> confirms <strong>an invariant internal to the program</strong>. Things like “if we got this far, p is not null”.</li><li><strong>It is not used to check values that came from outside.</strong> User input, file contents and network data are checked with <code>if</code> and handled as errors.</li><li>If <code>NDEBUG</code> is defined it <strong>vanishes entirely</strong> (chapter 17). So an expression with side effects must not be put in it.</li></ul><div class="dev antipattern"><p class="dev-label">✗ Making <code>assert</code> do work</p><pre><code data-lang="c">assert(fclose(f) == 0);      /* in a release build the fclose itself vanishes */
-assert(i++ &lt; n);             /* there arises a build in which i is not incremented */</code></pre><p>Separate the check from the side effect.</p><pre><code data-lang="c">int rc = fclose(f);
-assert(rc == 0);
-(void)rc;                    /* prevents an unused warning in release */</code></pre></div><p>C11 brought in <code>static_assert</code> (in C23 it can be used without <code>_Static_assert</code>). It confirms at compile time, so the run-time cost is zero, and it is used on <code>sizeof</code> and constant conditions.</p><pre><code data-lang="c">static_assert(sizeof(int) >= 4, "this code assumes a 32-bit int");</code></pre><h3>62.3 Signals — interference flying in from outside</h3><p><code>&lt;signal.h></code> handles events coming from outside the program (Ctrl+C, a wrong memory access, an arithmetic error). The signals the standard settles are only six (<code>SIGINT</code>, <code>SIGSEGV</code>, <code>SIGFPE</code>, <code>SIGILL</code>, <code>SIGABRT</code>, <code>SIGTERM</code>); the rest are the platform’s.</p><p>The heart of it is the fact that <strong>there is almost nothing that can be done inside a handler.</strong> What the standard permits is about this much.</p><ul><li>assigning a value to a variable of type <code>volatile sig_atomic_t</code></li><li>calling <code>_Exit</code> or <code>abort</code></li><li>setting the handler for the same signal again</li></ul><p>Neither <code>printf</code> nor <code>malloc</code> may be called — because the signal can cut in while those functions are halfway through executing (they are not <strong>async-signal-safe</strong>). The idiom in the field is “the handler only raises a flag; the real handling happens in the main flow.”</p><pre><code data-lang="c">static volatile sig_atomic_t stop = 0;
-static void on_int(int sig) { (void)sig; stop = 1; }
-/* in the main loop: while (!stop) { ... } */</code></pre><div class="dev misconception"><p class="dev-label">⚠ “<code>SIGSEGV</code> can be caught and the program kept running”</p><p>It can be caught but it cannot be kept running. <code>SIGSEGV</code> is a signal that comes <strong>after the contract has already been broken</strong> (chapter 46′s undefined behaviour). Return normally from the handler and the same instruction is executed again and repeats endlessly, or it runs on over a damaged state. Leaving a stack trace for debugging and ending with <code>_Exit</code> is the realistic best, and “recovery” is mending the code so that the access is not made in the first place.</p></div><h3>62.4 Non-local jumps — <code>setjmp</code>/<code>longjmp</code></h3><p>A device that remembers the present place with <code>setjmp</code> and comes back later from somewhere deep with <code>longjmp</code>. It is an attempt to make something like exceptions in a language that has none, and the price is correspondingly large.</p><ul><li>The only local variables whose values can be believed after a <code>longjmp</code> are those declared <code>volatile</code>. The rest may have been in registers, so their values are undetermined.</li><li><strong>Cleanup code does not run.</strong> The resources (files, memory) held by the functions skipped over leak as they are. Because there is no device like C++‘s destructors.</li><li>If the function that called <code>setjmp</code> has already returned, <code>longjmp</code> is outside the contract.</li><li>Escaping from a signal handler with <code>longjmp</code> is especially dangerous.</li></ul><p>So the conclusion in the field is usually “do not use it”. If there is a place for it, it is confined to structures such as an interpreter’s error recovery or a parser’s deep failure, where <strong>the resources to clean up are bound into a single arena</strong> (Part XII’s arena makes that condition).</p><div class="dev realcase"><p class="dev-label">◉ The shape of code made by the way of handling errors</p><p>Write the same program three ways and its shape splits like this.</p><ul><li><strong>Return value + <code>errno</code></strong>: an <code>if</code> attaches to every call and the error paths are visible. Cumbersome, but the flow is honest.</li><li><strong><code>setjmp</code>/<code>longjmp</code></strong>: the body becomes clean but a human must remember all the resource cleanup, and where control jumps to is not visible in the code.</li><li><strong><code>goto cleanup</code></strong>: the compromise most widely settled in C codebases. On failure everything gathers at one place and cleans up in reverse order. The Linux kernel pinned this pattern down as a convention, and it is exactly the disciplined use meant by chapter 29′s “use goto with restraint”.</li></ul><p>All three solve the same problem of “handling failure as a value and not forgetting the cleanup”. Part XII’s library lays a fourth answer on top — <strong>making failure into a type</strong>.</p></div><div class="dev recap"><p class="dev-label">☰ Recap</p><p>Diagnosis and control in summary.</p><table><tr><th><strong>tool</strong></th><th><strong>where it is used</strong></th><th><strong>rule</strong></th></tr><tr><td><code>errno</code></td><td>the reason a library call failed</td><td>0 just before, read after confirming failure, store at once</td></tr><tr><td><code>assert</code></td><td>internal invariants</td><td>no side effects, not used for checking input</td></tr><tr><td><code>static_assert</code></td><td>compile-time assumptions</td><td>zero cost</td></tr><tr><td><code>signal</code></td><td>external events such as Ctrl+C</td><td>only a flag in the handler</td></tr><tr><td><code>SIGSEGV</code></td><td>—</td><td>catching it does not allow recovery</td></tr><tr><td><code>setjmp</code>/<code>longjmp</code></td><td>special recovery</td><td>values undetermined unless <code>volatile</code>, no cleanup</td></tr><tr><td>the practical idiom</td><td>cleanup on failure</td><td>gather at one place with <code>goto cleanup</code></td></tr></table></div><p>That is as far as the headers that existed from the C89 days. The next chapter is what the standard has added since — and the story of what became of the attempt to make “safe functions”.</p>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> toupper and tolower follow the same rule </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>s <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">Hello, World!</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">char</span></strong> up<span class="tok-x">[</span><span class="tok-n">32</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><span class="tok-x">;</span> s<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">&amp;&amp;</span></strong> i <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span> <strong><span class="tok-x">&lt;</span></strong> <strong><span class="tok-k">sizeof</span></strong> up<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        up<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">char</span></strong><span class="tok-x">)</span><strong>toupper</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong>s</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    up<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">'</span><span class="tok-n">\0</span><span class="tok-s">'</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">toupper applied: [</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">]</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> up</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> EOF is a valid argument too — which is why the parameter type is int </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">isalpha(EOF) = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (EOF is an allowed argument)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>isalpha</strong><strong><span class="tok-x">(</span></strong><strong>EOF</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">!=</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>CHAR_MIN = -128 (char on this machine is signed)
+isalpha('A') = 1, isdigit('7') = 1, isspace(' ') = 1
+byte 0xC7 held in a char: -57
+the right call: isalpha((unsigned char)b) = 0
+toupper applied: [HELLO, WORLD!]
+isalpha(EOF) = 0 (EOF is an allowed argument)
+</code></pre></div></div><p>Every function in <code>&lt;ctype.h></code> takes an <code>int</code>. And the value the standard requires of that argument is <strong>one representable as an <code>unsigned char</code>, or <code>EOF</code></strong>.</p><p>The trouble is that <code>char</code> is signed on many implementations (chapter 26). As the example prints, the byte 0xC7 held in a <code>char</code> becomes −57, and passing that straight into <code>isalpha</code> passes <strong>a value that is not allowed</strong> — outside the contract. Real implementations are usually built as array lookups, so it becomes a read from before the start of an array.</p><p>There is one idiom.</p><pre><code data-lang="c"><strong>isalpha</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong>c</strong><strong><span class="tok-x">)</span></strong>
+<strong>toupper</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong>c</strong><strong><span class="tok-x">)</span></strong></code></pre><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Passing a <code>char</code> straight in</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> line<span class="tok-x">;</span>
+<strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>p<span class="tok-x">)</span> <span class="tok-x">{</span> <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>isspace</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">...</span></strong> <span class="tok-x">;</span> p<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> outside the contract past 0x80 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Unless ASCII is guaranteed, always convert.</p><pre><code data-lang="c"><strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>p<span class="tok-x">)</span> <span class="tok-x">{</span> <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>isspace</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">*</span></strong><strong>p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">...</span></strong> <span class="tok-x">;</span> p<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span></code></pre><p>In a program that handles Korean, Japanese or European text, this one line is the difference between an accident and none.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> If a program only ever sees ASCII, may the conversion be skipped?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Programs in which “only ASCII arrives” actually holds are rarer than they look. A program mostly takes <strong>someone else’s input</strong> — file names, user names, pasted strings, and there is no way to stop Korean or an emoji from being among them. One command-line argument is enough to bring in a byte above 0x80.</p><p>And it costs nothing. An <code>(unsigned char)</code> conversion usually generates no instruction at all — one of the few places where staying inside the contract is free.</p></p></div></div><h3>62.3 The second trap — <code>EOF</code> is mixed in</h3><p>There is a reason the argument type is <code>int</code> and not <code>char</code>. <strong><code>EOF</code> is a valid argument too.</strong> What <code>fgetc</code> returns must be passable straight in (chapter 58), and that value may be a byte or may be <code>EOF</code>.</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> c<span class="tok-x">;</span>
+<strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><span class="tok-x">(</span>c <strong><span class="tok-x">=</span></strong> <strong>fgetc</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">!=</span></strong> EOF<span class="tok-x">)</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>isalpha</strong><strong><span class="tok-x">(</span></strong><strong>c</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">...</span></strong>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> what fgetc gave is already unsigned char or EOF </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Receive <code>c</code> as a <code>char</code> here and two things break at once — <code>EOF</code> becomes indistinguishable from the byte 0xFF, and the value can go negative and fall into the first trap. Chapter 58′s rule, “always receive what <code>fgetc</code> returns in an <code>int</code>”, comes back here.</p><h3>62.4 The judgement depends on the locale</h3><p>The set of bytes for which <code>isalpha</code> is true is not fixed. <strong>The current locale</strong> (precisely, the <code>LC_CTYPE</code> category) settles it. A program starts in the <code>"C"</code> locale, so at first the basis is ASCII — but it can change the moment <code>setlocale</code> is called.</p><p>And it is not only the predicates. <code>toupper('i')</code> becoming the dotted capital <code>İ</code> in a Turkish locale is the famous case, and in a locale whose decimal point is a comma even the output of <code>printf("%f")</code> changes.</p><p><strong>The locale is a subject in its own right.</strong> By what rule its names are made, which standards fix them, and how much it changes are the next two chapters (chapters 63 and 64).</p><h3>62.5 It means nothing for multibyte characters</h3><p>One thing remains. The functions of this header look at <strong>one byte</strong>. “한” in UTF-8 is three bytes, so no byte of it means anything on its own — passing 0xED to <code>isalpha</code> asks “is this fragment a letter?”, and that question has no answer.</p><p>To judge a character made of several bytes, there are two roads. Convert to <strong>wide characters</strong> and use <code>&lt;wctype.h></code>‘s <code>iswalpha</code> (chapters 65 and 66), or <strong>work on the byte string as it is</strong> and do only the judgements you need yourself (chapter 67). This book recommends the latter, and chapter 67 says why.</p><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Situation</strong></th><th><strong>Rule</strong></th><th><strong>If you get it wrong</strong></th></tr><tr><td>Calling <code>&lt;ctype.h></code></td><td>Convert with <code>(unsigned char)</code></td><td>A negative argument — outside the contract</td></tr><tr><td>Handling <code>fgetc</code>’s result</td><td>Receive it in an <code>int</code></td><td><code>EOF</code> confused with 0xFF</td></tr><tr><td><code>isdigit</code></td><td><code>0</code>~<code>9</code> regardless of locale</td><td>—</td></tr><tr><td>The other predicates</td><td>They depend on <code>LC_CTYPE</code></td><td>Change the locale, change the answer</td></tr><tr><td>Multibyte characters</td><td>Per-byte judgement is meaningless</td><td>Judging a fragment of a letter</td></tr></table></div><p class="float-caption">Table 62.2</p></figure></div><p>The judgement of a single byte is done. Now for the thing that governed it — <strong>the locale</strong>. The next chapter starts from what a locale is and by what rule a name like <code>ko_KR.UTF-8</code> is made.</p>
 <div class="nav"><a href="ch61.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch63.html">Next →</a></div>
 </div></main></body></html>

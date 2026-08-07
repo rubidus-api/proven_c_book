@@ -1,6 +1,6 @@
 #import "../../book/lib.typ": *
 
-= Safe input, and the appearance of proven
+= Safe input — blocking overflow, handling failure
 
 #prereq(
   ([chapter 25, Input], [the danger of input]),
@@ -8,24 +8,26 @@
 )
 
 #deepqa[
-  Chapter 39's gets was expelled for not taking the container's size, and
-  chapter 25's fgets is safe because it takes one. Then does "taking the size"
+  Chapter 39's `gets` was expelled for not taking the container's size, and
+  chapter 25's `fgets` is safe because it takes one. Then does "taking the size"
   alone solve the whole safety problem of input?
 ][
   Only half of it. Passing the size blocks *overflow*, but input has a second
   problem — *the content cannot be trusted* (chapter 25). You expect a number and
   letters arrive; you expect a short line and a long one arrives; and a malicious
   counterpart deliberately crafts input aimed at the boundary (chapter 22's
-  format-string attack was a taste). Safe input is the sum of [blocking overflow +
-  handling failure explicitly], and this chapter's two pillars are those two.
+  format-string attack was a taste).
+
+  Safe input is the sum of [blocking overflow + *handling failure explicitly*].
+  Chapters 25 and 39 built the first half, so this chapter builds the second.
 ]
 
 #organizer[
   Chapter 25 foreshadowed "why safe input is difficult", and chapters 34 and 39
   taught the roots of that danger (the boundary, NUL termination). This chapter
-  completes the dissection of the accident — and the guest promised in chapter 1,
-  this book's underlying library *proven*, finally appears. Exactly as promised:
-  "at the point where the need has proved itself."
+#idx("parsing input")  finishes the dissection of the accident and gathers *how to handle a failed parse*
+  into five disciplines. They can be built in standard C alone, and the libraries
+  met later stand on them.
 ]
 
 #chapter-questions()
@@ -37,73 +39,129 @@ expensive accident pattern in C's history assembles itself. Input longer than th
 container overwrites neighbouring memory (a boundary violation) — and if what was
 overwritten happens to be *the return ledger of a function call* (whose identity
 we see in the next chapter), an attacker seizes the program's flow of execution
-with input alone. That is the substance of the buffer overflow attack, an
-epidemic running unbroken from the Morris worm (1988, chapter 39) to today's
-security advisories. It is overwhelming statistically too — in the "most
-dangerous software weaknesses" lists of major security bodies, the
-boundary-violation family has been a top fixture for decades.
+with input alone. That is the substance of the buffer overflow attack, an epidemic
+running unbroken from the Morris worm (1988, chapter 39) to today's security
+advisories. The statistics are lopsided too — in the major security bodies' lists
+of "most dangerous software weaknesses", the boundary-violation family has been a
+fixture at the top for decades.
 
-Because C chose *not* to do run-time boundary checking (chapter 37), defence must
-be stacked in layers — functions that take a size (fgets), warnings and
-sanitizers (chapter 17), and *components with checking built in from the start*.
-That last layer is this chapter's guest.
+Because C decided *not* to check bounds at run time (chapter 37), the defence has
+to be built in layers — functions that take a size (`fgets`), warnings and
+sanitizers (chapter 17), and *the discipline of the parsing code itself.* That
+last layer is this chapter's subject.
 
-== proven — fundamentals, verified, as a component
+== How do the standard tools report failure
 
-proven is a C library made by this book's author (exactly as disclosed in
-chapter 1), and its design idea is one sentence — *provide the fundamentals where
-accidents are commonest (strings, interpreting input, converting numbers) in a
-form where failure shows up as a value and boundaries are always checked.* In the
-language of chapter 9's representations, it builds a safe layer of the
-length-and-capacity family on top of the NUL-terminated world.
+First, gather how the tools already in hand announce a failure. That they are all
+different is itself this chapter's starting point.
 
-For a first demonstration, chapter 25's homework — handling the failure of
-interpreting input — solved with proven. *Both* the success path and the failure
-path are shown:
+#dtable(
+  columns: 3,
+  [*Function*], [*How you know it succeeded*], [*Where it catches you*],
+  [`fgets`], [It returns a non-null pointer], [*Whether the line was cut* must be checked separately — by looking for `\n` at the end],
+  [`scanf`, `sscanf`], [It returns *how many conversions succeeded*], [You do not know where it stopped. Code that ignores the count is common],
+  [The `strtol` family], [You look at `endptr` and `errno` together], [Three things must be read together — the return value, `endptr` and `errno`],
+  [`atoi`], [There is no way to know], [Failure is indistinguishable from "read a zero". Not used],
+)
 
-#demo("examples-en/ch40/scan.c")
+The `strtol` family has the soundest contract of these, but using it correctly
+means checking *three things at once* — which is why practice does not call it
+directly but *wraps* it. That wrapping is this chapter's five disciplines.
 
-How to read it — `proven_scan_init` sets a scanner over a sequence of characters,
-and `proven_scan_i64` interprets one integer. The return value is the heart of
-this design: it returns *not a value but an `{err, val}` bundle*, and the caller
-takes the value out only after confirming success with `proven_is_ok`. Compared
-with sscanf (chapter 25) — instead of the conventional signal "the number of
-successes", *failure is stated in the type*, and the function carries
-`[[nodiscard]]` (C23 — the notation "warn if this return value is discarded"), so
-*the compiler catches the mistake of forgetting to check for failure*. It is the
-flesh of the "errors are values" discipline treated formally in chapter 48.
+== Five disciplines for handling a failed parse
 
-#qa[
-  Why add a library for work the standard library can do — more components means
-  more to learn.
+#demo("examples/ch40/parse.c")
+
+The listing's `parse_int` puts all five into one function. One at a time.
+
+=== 1. Return failure as a value
+
+Return "did it succeed" and "what is the value" *kept apart*. Return only a value,
+as `atoi` does, and there is no room to express failure; report a count, as `scanf`
+does, and *what* failed is not preserved.
+
+```c
+struct parse_i64 { bool ok; long long value; const char *rest; const char *why; };
+```
+
+Returning a struct by value may look costly, but a struct this size usually rides
+in a couple of registers (chapter 44). *Writing failure into the type* is worth far
+more than that.
+
+=== 2. Let the compiler speak when a check is forgotten
+
+Attach C23's `[[nodiscard]]` and *code that throws the return value away gets a
+warning.*
+
+```c
+[[nodiscard]] static struct parse_i64 parse_int(const char *text);
+```
+
+This moves "you must check" out of the documentation and into *the compiler's job.*
+A rule a person has to remember is eventually forgotten, and the place it is
+forgotten is exactly the place the accident happens.
+
+=== 3. Say how far it read
+
+`strtol`'s `endptr` is the good precedent. Return *where parsing stopped* as well
+and two things become possible — carrying on (the listing's `10,20,30` sum), and
+pointing a person at where it went wrong ("it stopped at the third character").
+
+=== 4. Do not count truncation as success
+
+This is the most frequently broken discipline. Return "it did not fit, so I cut it
+to size" as a success and what follows is looking up a file under a truncated name
+and connecting to a truncated address.
+
+The listing's `copy_line` *does nothing and returns failure* when the text will not
+fit. That is the lesson of the long-standing problem of `strncpy` not reporting
+truncation (chapter 59).
+
+=== 5. On failure, touch no output
+
+If a half-filled value is left in the result on failure, code will end up using it.
+Make *change nothing on failure* the contract and write it in the documentation —
+the last part of the listing checks exactly that.
+
+#misconception[
+  "Checking `scanf`'s return value is enough to be safe"
 ][
-  This book's answer is the distinction of layers. *The concepts were learned
-  fully in standard C* — coming this far, through chapters 33–37, without proven is
-  the evidence, and take proven away and this book's C knowledge still stands
-  (chapter 1's promise). On top of that, when choosing *the fundamentals for real
-  work*, choosing while knowing the standard library's historical traps (gets's
-  funeral, scanf's tangles, unchecked string functions) is the modern choice —
-  the safety Rust and Zig build into the language (chapter 1) is obtained in C by
-  choosing components. proven is one of those options and this book's
-  demonstration material; choose another library of the same philosophy and the
-  principle is the same.
+  Half right. Checking the count tells you *how many conversions succeeded*, and
+  nothing more; it does not substitute for disciplines 3, 4 and 5 above.
+
+  - You cannot tell *where it stopped* — there is no good way to re-read the rest.
+  - Give `%s` *no width* and it writes without knowing the container's size
+    (overflow). Always write the width, as in `%9s`.
+  - On failure the contract for *which arguments were already filled* is vague.
+
+  So the practice in the field is "read a line (`fgets`) and parse that line
+  yourself". This chapter's five disciplines are the skeleton of that "yourself".
 ]
 
-#qa[
-  proven's function names are long — `proven_scan_i64` and the like. Why name them
-  this way?
-][
-  Because C has no namespaces (chapter 24's scope belongs to blocks, and names
-  that cross file boundaries live in one yard — chapter 51). If libraries use the
-  same name they collide at the linking stage (chapter 16), so the practice of C
-  libraries is for *a prefix to stand in for a namespace* — `proven_` is that
-  fence. Long, but with the practical benefit that the name alone reveals which
-  component it belongs to.
-]
+== Casting the discipline into a component
 
-(This chapter, being a first meeting, writes only as much as is needed — the
-library's whole design and use are treated across three chapters in Part XII.
-That is why this book is at once an introduction to C and a guide to proven.)
+Build the same discipline by hand in every function and something is eventually
+left out. So practice's next step is *to cast the discipline into a component* —
+one where failure surfaces as a value, bounds are always checked, and the compiler
+speaks up when a check is forgotten.
+
+#qa[
+  Does that mean the standard library is not enough?
+][
+  Less that it is not enough than that *you have to rebuild it every time.* The
+  standard library carries the practice of the 1970s and 80s intact (chapters 59
+  and 60), and it gives none of the five disciplines above as a default. So every
+  real codebase, without exception, lays *its own thin layer* on top — a layer that
+  puts a safe shell around strings, parsing and number conversion.
+
+  Make that layer a library and a whole team stands on the same discipline. This
+  book has one such example ready — `proven`, written by the author, and *Part XII*
+  covers its design and use. Chapter 81, "Errors are values", takes up disciplines
+  1 and 2 at the library level; chapter 84, "Strings and text", takes up 3 and 4.
+
+  What matters is not which library you use but *whether the discipline is carved
+  into the component.* Choose another with the same idea, or build your own.
+]
 
 We have safe input. But a phrase went past in this chapter without explanation —
 "the return ledger of a function call". Where in memory does what live, and when

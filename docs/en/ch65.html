@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>65 How to ask about overflow — &lt;stdckdint.h&gt; — Proven C Book</title><style>
+<title>65 Wide characters ① — wchar_t and multibyte conversion — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,82 +259,225 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch64.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch66.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch65.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>65 How to ask about overflow — <code>&lt;stdckdint.h></code></h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><span id="idx-entry-94"></span><p>We learn the checked arithmetic C23 brought in. Why hand-written code that “checks after calculating whether it overflowed” is dangerous, exactly what <code>ckd_add</code>, <code>ckd_sub</code> and <code>ckd_mul</code> promise, and how to move the size calculations of existing code onto this tool.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 7 said unsigned overflow is defined wrap-round while signed overflow is outside the contract, and chapter 58 said <code>calloc</code> checks the product of the element count and the size. Then how do we write the check for whether a multiplication overflows ourselves?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>That very “checking ourselves” is the code that has been written wrongly for half a century. With signed values, <strong>checking after it has overflowed is itself already outside the contract</strong>, so the compiler may erase the checking code (chapter 13′s editor), and with unsigned values the idiom that inserts a division is hard to read and easy to get wrong. C23 tidied this place up at the level of the language.</p></div></div><h3>65.1 The trap of checking afterwards</h3><p>We start from the most common hand-written check.</p><div class="dev antipattern"><p class="dev-label">✗ Adding and then seeing whether it overflowed</p><pre><code data-lang="c">int sum = a + b;
-if (sum &lt; a) { /* it overflowed */ }        /* ← this check can vanish */</code></pre><p>If <code>a</code> and <code>b</code> are signed integers, the moment <code>a + b</code> overflows it is already undefined behaviour. The check after it has meaning only on the premise “if it did not overflow”, so the compiler judges that <code>sum &lt; a</code> can never be true and <strong>erases the conditional entirely.</strong> This pattern really did make checks vanish quietly in several projects, and among them were security checks.</p><p>For unsigned values, wrap-round being defined, the check above <strong>does work</strong>. But going to multiplication makes even that awkward.</p><pre><code data-lang="c">if (n != 0 &amp;&amp; bytes / n != sz) { /* it overflowed */ }   /* correct but hard to read */</code></pre></div><p>So compilers each put out extensions — GCC’s and Clang’s <code>__builtin_add_overflow</code> family, MSVC’s <code>SafeInt</code>, the home-made macros of many projects. They worked well but <strong>were not portable</strong>, and to secure portability every project had to write the same shell again. It is the same pattern as chapter 57′s <code>strlcpy</code> story — reality finds the answer first and the standard ratifies it belatedly.</p><h3>65.2 C23′s answer — <code>ckd_add</code>, <code>ckd_sub</code>, <code>ckd_mul</code></h3><div><div><p><code>examples/ch65/ckdint.c</code></p><pre><code data-lang="c">/* 넘침을 값이 아니라 "일어났는가"로 받는다 — C23 &lt;stdckdint.h> */
-#include &lt;limits.h>
-#include &lt;stdckdint.h>
-#include &lt;stdint.h>
-#include &lt;stdio.h>
-#include &lt;stdlib.h>
+<h2 id="loc-65">65 Wide characters ① — <code>wchar_t</code> and multibyte conversion</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 9, Characters and text · code points and encodings</div><div>chapter 63, Locales ① · <code>LC_CTYPE</code></div><div>chapter 62, Character classification · the limit of per-byte judgement</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 9 said one character in UTF-8 is one to four bytes. Then why not make a type that holds one whole character? Does C have one?</p><div class="qa-a"><p><p><span class="dev-label">A.</span> It does. It is <code>wchar_t</code>, and C95 brought it in on exactly that thought — <strong>hold one character in one unit.</strong> The trouble is that the thought did not survive the next thirty years.</p><p>The standard fixed <strong>neither the size nor the encoding.</strong> It said only “an integer type whose range of values can represent distinct codes for all members of the largest extended character set specified among the supported locales.” The result: 4-byte UTF-32 on Linux, 2-byte UTF-16 on Windows — and on the latter, “one character = one unit” does not hold.</p><p>This chapter takes the exact contract of the type, and the process by which bytes unfold into characters, one step at a time. The consequences of the mismatch are the next chapter.</p></p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-104"></span>What <code>wchar_t</code> really is. The standard’s definition and the macros an implementation uses to declare itself, the five kinds of character constant and string with their types, sizes and bytes, the difference between <code>MB_CUR_MAX</code> and <code>MB_LEN_MAX</code>, why <code>mbstate_t</code> has to exist, and a measured, step-by-step walk through <code>mbrtowc</code> eating bytes and producing characters.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>What bytes does writing <code>"한"</code> in the source produce?</li><li>UTF-8 is at most four bytes; why is <code>MB_CUR_MAX</code> six?</li></ol></div></div><div></div><h3>65.1 What the standard fixes, and what it does not</h3><p><code>wchar_t</code> is an integer type defined in <code>&lt;stddef.h></code>. The standard’s definition, verbatim, is <strong>“an integer type whose range of values can represent distinct codes for all members of the largest extended character set specified among the supported locales.”</strong></p><p>Look at what is missing from it.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>The standard fixes</strong></th><th><strong>It does not fix</strong></th></tr><tr><td>That it is an integer type</td><td>How many bytes</td></tr><tr><td>That each character has a distinct value</td><td>Whether it is signed</td></tr><tr><td>That basic characters are non-negative</td><td>Which encoding (not even that it is Unicode)</td></tr></table></div><p class="float-caption">Table 65.1</p></figure><p>So portable code <strong>cannot assume</strong> a <code>wchar_t</code> value is a Unicode code point. Instead there are macros by which an implementation declares the fact.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Macro</strong></th><th><strong>If it is defined</strong></th></tr><tr><td><code>__STDC_ISO_10646__</code></td><td><code>wchar_t</code> values equal ISO/IEC 10646 (Unicode) code points. Its value has the form <code>yyyymmL</code></td></tr><tr><td><code>__STDC_UTF_16__</code></td><td><code>char16_t</code> is UTF-16</td></tr><tr><td><code>__STDC_UTF_32__</code></td><td><code>char32_t</code> is UTF-32</td></tr><tr><td><code>__STDC_MB_MIGHT_NEQ_WC__</code></td><td>Even for a basic character, <code>'x'</code> and <code>L'x'</code> may differ in value</td></tr></table></div><p class="float-caption">Table 65.2</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch65/wide_lit.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Five kinds of character constant and string — type, element size, bytes. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">uchar.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">wchar.h</span><span class="tok-s">></span>
 
-/* 흔한 할당 계산: 원소 n 개 x 크기 sz. 곱셈이 넘치면 그릇이 작아진다. */
-static void *alloc_array(size_t n, size_t sz)
-{
-    size_t bytes;
-    if (ckd_mul(&amp;bytes, n, sz)) {       /* 참이면 넘쳤다 */
-        printf("  크기 계산이 넘쳤다 - 할당하지 않는다\n");
-        return NULL;
-    }
-    return malloc(bytes);
-}
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> Lay out any array, one element at a time, in hex.</span></em>
+<em><span class="tok-c">   char is signed on many implementations (chapter 26), so mask to the element</span></em>
+<em><span class="tok-c">   width — otherwise 0xED shows up as FFFFFFED. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">DUMP</span></strong><span class="tok-x">(</span>label<span class="tok-x">,</span><span class="tok-p"> </span>arr<span class="tok-x">)</span><span class="tok-p">                                                     </span><span class="tok-x">\</span>
+    <strong><span class="tok-k">do</span></strong> <span class="tok-x">{</span>                                                                     \
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-10s</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">-byte elements x </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>label</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong>                  \</strong>
+<strong>               </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>             \
+        <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <strong><span class="tok-k">sizeof</span></strong> <span class="tok-x">(</span>arr<span class="tok-x">)</span> <strong><span class="tok-x">/</span></strong> <strong><span class="tok-k">sizeof</span></strong> <span class="tok-x">(</span>arr<span class="tok-x">)</span><span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>          \
+            <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%0*llX</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong>                    \</strong>
+<strong>                   </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong>                              \</strong>
+<strong>                   </strong><strong><span class="tok-x">&amp;</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-t">ULL</span></strong><strong> </strong><strong><span class="tok-x">&lt;&lt;</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">8</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                 \
+        <strong>putchar</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                                                       \
+    <span class="tok-x">}</span> <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><span class="tok-n">0</span><span class="tok-x">)</span>
 
-int main(void)
-{
-    /* 판정과 결과 읽기를 반드시 갈라 적는다 (한 표현식에 섞으면 순서가 없다) */
-    int r;
-    bool over = ckd_add(&amp;r, INT_MAX, 1);
-    printf("INT_MAX = %d\n", INT_MAX);
-    printf("ckd_add(INT_MAX, 1)  넘침? %s   r = %d (감아 돈 값)\n", over ? "예" : "아니오", r);
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[character constants] the same 'A' written five ways</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-14s</span></strong><strong><span class="tok-s"> type size </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, value </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">'A'</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>   </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-14s</span></strong><strong><span class="tok-s"> type size </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, value </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">L'A'</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">L</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-t">L</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-14s</span></strong><strong><span class="tok-s"> type size </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, value </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">u'A'</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-14s</span></strong><strong><span class="tok-s"> type size </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, value </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">U'A'</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">U</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-t">U</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-14s</span></strong><strong><span class="tok-s"> type size </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, value </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">u8'A'</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">u8</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-t">u8</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  ('A' is an int — in C a character constant is not a char)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    over = ckd_add(&amp;r, 1, 2);
-    printf("ckd_add(1, 2)        넘침? %s   r = %d\n", over ? "예" : "아니오", r);
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[strings] the single letter </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">한</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> written five ways</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong>     s_plain<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong>   <span class="tok-s">"</span><span class="tok-s">한</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> char8_t  s_u8<span class="tok-x">[</span><span class="tok-x">]</span>    <strong><span class="tok-x">=</span></strong> <strong><span class="tok-t">u8</span></strong><span class="tok-s">"</span><span class="tok-s">한</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> char16_t s_u16<span class="tok-x">[</span><span class="tok-x">]</span>   <strong><span class="tok-x">=</span></strong>  <strong><span class="tok-t">u</span></strong><span class="tok-s">"</span><span class="tok-s">한</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> char32_t s_u32<span class="tok-x">[</span><span class="tok-x">]</span>   <strong><span class="tok-x">=</span></strong>  <strong><span class="tok-t">U</span></strong><span class="tok-s">"</span><span class="tok-s">한</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> wchar_t  s_wide<span class="tok-x">[</span><span class="tok-x">]</span>  <strong><span class="tok-x">=</span></strong>  <strong><span class="tok-t">L</span></strong><span class="tok-s">"</span><span class="tok-s">한</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>     s_plain</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char8_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  s_u8</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char16_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> s_u16</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char32_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> s_u32</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">wchar_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  s_wide</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* 타입이 섞여도 수학적 값으로 판정한다 */
-    signed char c;
-    over = ckd_add(&amp;c, 200, 100);
-    printf("signed char &lt;- 300   넘침? %s   c = %d\n", over ? "예" : "아니오", c);
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[a character beyond the BMP] U+1F600 (grinning face)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong>     e_plain<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong>   <span class="tok-s">"</span><span class="tok-n">\U0001F600</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> char16_t e_u16<span class="tok-x">[</span><span class="tok-x">]</span>   <strong><span class="tok-x">=</span></strong>  <strong><span class="tok-t">u</span></strong><span class="tok-s">"</span><span class="tok-n">\U0001F600</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> char32_t e_u32<span class="tok-x">[</span><span class="tok-x">]</span>   <strong><span class="tok-x">=</span></strong>  <strong><span class="tok-t">U</span></strong><span class="tok-s">"</span><span class="tok-n">\U0001F600</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> wchar_t  e_wide<span class="tok-x">[</span><span class="tok-x">]</span>  <strong><span class="tok-x">=</span></strong>  <strong><span class="tok-t">L</span></strong><span class="tok-s">"</span><span class="tok-n">\U0001F600</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>     e_plain</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char16_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> e_u16</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> &lt;- two elements: a surrogate pair </span></em><em><span class="tok-c">*/</span></em>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char32_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> e_u32</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">wchar_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  e_wide</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  Only char16_t needs two — 16 bits cannot hold it, so it splits.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* 부호 없는 뺄셈: 감아 도는 것은 정의된 동작이지만, 여기서도 "넘쳤다"고 알린다 */
-    unsigned u;
-    over = ckd_sub(&amp;u, 3u, 5u);
-    printf("unsigned  &lt;- 3 - 5   넘침? %s   u = %u\n", over ? "예" : "아니오", u);
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[what the implementation declares]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#ifdef</span></strong><span class="tok-p"> __STDC_ISO_10646__</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  __STDC_ISO_10646__ = </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">L — wchar_t values are Unicode code points</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>__STDC_ISO_10646__</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#else</span></strong>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  no __STDC_ISO_10646__ — the wchar_t encoding is implementation-defined (Windows)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#endif</span></strong>
+<strong><span class="tok-k">#ifdef</span></strong><span class="tok-p"> __STDC_UTF_16__</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  __STDC_UTF_16__  = 1 — char16_t is UTF-16</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#endif</span></strong>
+<strong><span class="tok-k">#ifdef</span></strong><span class="tok-p"> __STDC_UTF_32__</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  __STDC_UTF_32__  = 1 — char32_t is UTF-32</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#endif</span></strong>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  sizeof(wchar_t) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, WCHAR_MIN = </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">, WCHAR_MAX = </span></strong><strong><span class="tok-s">%lld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong>wchar_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>WCHAR_MIN</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>WCHAR_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>[character constants] the same 'A' written five ways
+  'A'            type size 4, value 65
+  L'A'           type size 4, value 65
+  u'A'           type size 2, value 65
+  U'A'           type size 4, value 65
+  u8'A'          type size 1, value 65
+  ('A' is an int — in C a character constant is not a char)
 
-    printf("\n할당 계산\n");
-    void *ok = alloc_array(1000, sizeof(int));
-    printf("  1000 x %zu -> %s\n", sizeof(int), ok ? "할당됨" : "거부됨");
-    free(ok);
-    void *bad = alloc_array(SIZE_MAX / 2, sizeof(int));
-    printf("  SIZE_MAX/2 x %zu -> %s\n", sizeof(int), bad ? "할당됨" : "거부됨");
-    free(bad);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>INT_MAX = 2147483647
-ckd_add(INT_MAX, 1)  넘침? 예   r = -2147483648 (감아 돈 값)
-ckd_add(1, 2)        넘침? 아니오   r = 3
-signed char &lt;- 300   넘침? 예   c = 44
-unsigned  &lt;- 3 - 5   넘침? 예   u = 4294967294
+[strings] the single letter "한" written five ways
+  char       1-byte elements x 4: ED 95 9C 00
+  char8_t    1-byte elements x 4: ED 95 9C 00
+  char16_t   2-byte elements x 2: D55C 0000
+  char32_t   4-byte elements x 2: 0000D55C 00000000
+  wchar_t    4-byte elements x 2: 0000D55C 00000000
 
-할당 계산
-  1000 x 4 -> 할당됨
-  크기 계산이 넘쳤다 - 할당하지 않는다
-  SIZE_MAX/2 x 4 -> 거부됨
-</code></pre></div></div><p>The way to read it is this. All three macros have the same shape.</p><pre><code data-lang="c">bool overflowed = ckd_add(&amp;result, left, right);</code></pre><p>There are four promises.</p><ol><li><strong>It calculates in infinite precision and then puts it in the vessel.</strong> The judgement is “does the mathematical result fit in the result type”, and there is no overflow in the intermediate calculation. So it judges exactly even when the arguments’ types differ from each other, and even when the result type is narrower than the arguments — the example’s <code>signed char &lt;- 300</code> confirms it.</li><li><strong>The result type is settled by the first argument (the pointer).</strong> It means the arguments’ promotion rules (chapter 27) do not sway the result, so there is no need to fret over “in which type is it calculated”.</li><li><strong>Even on overflow the result is stored.</strong> That value is the value wrapped round into the result type. The example’s <code>INT_MAX + 1</code> remaining as <code>-2147483648</code> is that — and it matters that even for a signed value <strong>it is defined behaviour in this place</strong>.</li><li><strong>Unsigned wrap-round is reported as “overflowed” too.</strong> The example’s <code>3u - 5u</code> confirms it. The value itself is a defined result (<code>4294967294</code>), but checked arithmetic reports that <strong>it differs from the mathematical value</strong>. In size calculations this is the property needed.</li></ol><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Are the <code>ckd_*</code> functions or macros? Do they not evaluate arguments several times?</p></div><div class="dev qa-a"><p class="dev-label">A What the standard settles are macros, but they are pinned down not to evaluate their arguments several times (implementations mostly expand them into compiler builtins). So code such as <code>ckd_add(&amp;r, i++, j)</code> is safe too.</p><p>But there is <strong>another</strong> trap. The judgement and the result must not be mixed inside one expression.</p><pre><code data-lang="c">printf("%s %d", ckd_add(&amp;r, a, b) ? "overflow" : "fine", r);   /* dangerous */</code></pre><p>There is no settled order between the moment <code>r</code> is read and the moment <code>ckd_add</code> writes to <code>r</code>, so the old value may be printed (chapter 20′s story of ordering). This mistake really did print a wrong value when this chapter’s example was first written. <strong>Take the judgement into a variable, and use the result on the next line</strong> — that one line of discipline is the whole of it.</p></div></div><h3>65.3 Where it is used — size calculation comes first</h3><p>The <code>alloc_array</code> in the latter part of the example is the type. Calculating an allocation size is the place where checked arithmetic is most sorely needed. If <code>n * sz</code> overflows you end up <strong>obtaining a small vessel and using it believing it big</strong>, which leads straight to a buffer overflow accident. Several famous vulnerabilities took exactly this route.</p><table><tr><th><strong>place</strong></th><th><strong>the old idiom</strong></th><th><strong>now</strong></th></tr><tr><td>array allocation</td><td>the check <code>n &amp;&amp; SIZE_MAX/n &lt; sz</code></td><td><code>ckd_mul(&amp;bytes, n, sz)</code></td></tr><tr><td>growing a buffer</td><td>just calculating <code>cap * 2</code></td><td><code>ckd_mul(&amp;cap2, cap, 2)</code></td></tr><tr><td>joining lengths</td><td><code>len1 + len2 + 1</code></td><td><code>ckd_add</code> twice</td></tr><tr><td>index calculation</td><td><code>base + off</code> just so</td><td><code>ckd_add</code> (compulsory for signed values)</td></tr><tr><td>numbers from input</td><td>using it straight after <code>atoi</code></td><td><code>strtol</code> (chapter 58) + a range check</td></tr></table><p>The last line matters. Checked arithmetic only catches the overflow of a <strong>calculation</strong>; it does not filter out a value that was too large to begin with. The check at the input-parsing stage (chapter 58) and the check at the calculation stage do not stand in for each other.</p><div class="dev misconception"><p class="dev-label">⚠ “Use <code>ckd_*</code> and worry about integer overflow ends”</p><p>Three things remain. First, <strong>division</strong> is not in this header — <code>INT_MIN / -1</code> is still an outside-the-contract case you must block yourself. Second, <strong>conversions</strong> are not checked. Assigning from a wide type to a narrow one is not arithmetic but conversion (chapter 7′s truncation), so a value being wrecked there is not <code>ckd_*</code>‘s business. Third, <strong>floating point</strong> is not its subject (chapter 60).</p><p>In summary, checked arithmetic is a tool answering the narrow and clear question “did an addition, subtraction or multiplication overflow its vessel”. It is a good tool precisely because it is narrow.</p></div><h3>65.4 Where this tool is absent</h3><p>In an environment that cannot yet use the C23 header, prepare in two steps.</p><pre><code data-lang="c">#if defined(__has_include)
-#  if __has_include(&lt;stdckdint.h>)
-#    include &lt;stdckdint.h>
-#    define HAVE_CKDINT 1
-#  endif
-#endif
+[a character beyond the BMP] U+1F600 (grinning face)
+  char       1-byte elements x 5: F0 9F 98 80 00
+  char16_t   2-byte elements x 3: D83D DE00 0000
+  char32_t   4-byte elements x 2: 0001F600 00000000
+  wchar_t    4-byte elements x 2: 0001F600 00000000
+  Only char16_t needs two — 16 bits cannot hold it, so it splits.
 
-#ifndef HAVE_CKDINT                      /* fill in with the GCC/Clang extensions */
-#  define ckd_add(r, a, b) __builtin_add_overflow((a), (b), (r))
-#  define ckd_sub(r, a, b) __builtin_sub_overflow((a), (b), (r))
-#  define ckd_mul(r, a, b) __builtin_mul_overflow((a), (b), (r))
-#endif</code></pre><p>Only beware that the argument order differs — the standard puts the result pointer first, the compiler builtins put it last. Gathering such shells in one place is the real shape of the portability layer spoken of in chapter 49, and Part XII’s library does the same work.</p><div class="dev platform"><p class="dev-label">⊞ Platform note — The road of leaving the checking to tools</p><p>There is also a way of catching overflow without mending the code. GCC’s and Clang’s <code>-fsanitize=signed-integer-overflow</code> (UBSan) catches overflow during execution and reports it, and <code>-ftrapv</code> stops the program on overflow. Both are <strong>for testing</strong> — they show themselves only in a run in which an overflow actually happened, so they are different in character from checked arithmetic, which “blocks in code the places where it could happen”. It is the same conclusion as chapter 17′s story of debuggers: tools help observation but do not stand in for the contract.</p></div><div class="dev recap"><p class="dev-label">☰ Recap</p><table><tr><th><strong>to remember</strong></th><th><strong>the point</strong></th></tr><tr><td>checking afterwards</td><td>with signed values the check itself is outside the contract — it can be erased</td></tr><tr><td>the shape</td><td><code>bool overflowed = ckd_add(&amp;result, a, b)</code></td></tr><tr><td>the criterion</td><td>does the mathematical result fit in <strong>the result type</strong></td></tr><tr><td>the result type</td><td>settled by the first argument. not swayed by promotion rules</td></tr><tr><td>even on overflow</td><td>the wrapped value is stored (defined behaviour)</td></tr><tr><td>unsigned values</td><td>wrap-round too is reported as “overflow”</td></tr><tr><td>one expression</td><td>do not mix the judgement and the result</td></tr><tr><td>first place to apply it</td><td>allocation size calculation</td></tr><tr><td>where it is absent</td><td>make a shell with <code>__builtin_*_overflow</code></td></tr></table></div><p>We have learned how to ask about overflow according to the contract. The next chapter is this part’s last and the most conspicuous change C23 made to the language — the story of things that were macros becoming keywords.</p>
+[what the implementation declares]
+  __STDC_ISO_10646__ = 201706L — wchar_t values are Unicode code points
+  __STDC_UTF_16__  = 1 — char16_t is UTF-16
+  __STDC_UTF_32__  = 1 — char32_t is UTF-32
+  sizeof(wchar_t) = 4, WCHAR_MIN = -2147483648, WCHAR_MAX = 2147483647
+</code></pre></div></div><p>The last part of the demonstration is this machine’s answer — <code>__STDC_ISO_10646__</code> is defined, and <code>wchar_t</code> is four bytes. <strong>On Windows that macro is not defined.</strong> Two bytes cannot hold every Unicode character as one distinct value, so the condition is not met. That one line is the seed of the whole of chapter 66.</p><h3>65.2 Five kinds of character constant and string</h3><p>C23 has five ways to write a character. Each has its own type and encoding.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Notation</strong></th><th><strong>Type of the constant</strong></th><th><strong>String element</strong></th><th><strong>Encoding</strong></th></tr><tr><td><code>'A'</code></td><td><code>int</code></td><td><code>char</code></td><td>The execution character set (usually UTF-8 bytes)</td></tr><tr><td><code>u8'A'</code> / <code>u8"…"</code></td><td><code>unsigned char</code></td><td><code>char8_t</code></td><td>UTF-8</td></tr><tr><td><code>u'A'</code> / <code>u"…"</code></td><td><code>char16_t</code></td><td><code>char16_t</code></td><td>UTF-16</td></tr><tr><td><code>U'A'</code> / <code>U"…"</code></td><td><code>char32_t</code></td><td><code>char32_t</code></td><td>UTF-32</td></tr><tr><td><code>L'A'</code> / <code>L"…"</code></td><td><code>wchar_t</code></td><td><code>wchar_t</code></td><td>Implementation-defined</td></tr></table></div><p class="float-caption">Table 65.3</p></figure><p>The first part of the demonstration puts this table in the flesh. Three things stand out.</p><p><strong>First, the type of <code>'A'</code> is <code>int</code>, not <code>char</code>.</strong> In C a character constant is an <code>int</code>, so <code>sizeof('A')</code> is 4 (a place where C and C++ differ).</p><p><strong>Second, the <code>u8</code> prefix applies to character constants too in C23</strong> — but only for characters representable as a single UTF-8 code unit, that is, ASCII.</p><p><strong>Third, the same “한” becomes entirely different bytes in each notation.</strong> As <code>char</code> it is the three bytes <code>ED 95 9C</code>; as <code>char16_t</code>, the single unit <code>D55C</code>; as <code>char32_t</code> and <code>wchar_t</code>, the single unit <code>0000D55C</code>.</p><p>And with a character beyond the BMP the decisive difference appears. Holding U+1F600, only <code>char16_t</code> needs <strong>two elements</strong> — <code>D83D DE00</code>. It does not fit in 16 bits, so it is split into a pair, and that pair is called a surrogate (chapter 66).</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> What bytes does writing <code>"한"</code> in the source produce?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> It passes through two stages — <strong>the source file’s encoding</strong> and <strong>the execution character set</strong> (chapter 17′s chain of encodings). The compiler decides in which encoding to read the source (GCC defaults to UTF-8; <code>-finput-charset</code> changes it), then converts to the execution character set to make the bytes of the literal (<code>-fexec-charset</code>).</p><p>If those two disagree, the code compiles and only the strings are broken. So code that must be portable writes non-ASCII characters as <strong>universal character names</strong> rather than directly in the source.</p><pre><code data-lang="c"><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>s <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">한</span><span class="tok-s">"</span><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> U+D55C into the execution character set </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">const</span></strong> char32_t <strong><span class="tok-x">*</span></strong>t <strong><span class="tok-x">=</span></strong> <strong><span class="tok-t">U</span></strong><span class="tok-s">"</span><span class="tok-n">\U0001F600</span><span class="tok-s">"</span><span class="tok-x">;</span></code></pre><p><code>\u</code> takes four digits, <code>\U</code> eight. The demonstration writes its emoji that way — that is how this book’s examples produce the same bytes under any editor and any build setting.</p></p></div></div><h3>65.3 <code>MB_CUR_MAX</code> and <code>MB_LEN_MAX</code></h3><p>Two macros with similar names mean quite different things.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Macro</strong></th><th><strong>Header</strong></th><th><strong>What</strong></th></tr><tr><td><code>MB_CUR_MAX</code></td><td><code>&lt;stdlib.h></code></td><td>The maximum bytes per character <strong>in the current locale</strong> — it changes at run time</td></tr><tr><td><code>MB_LEN_MAX</code></td><td><code>&lt;limits.h></code></td><td>An upper bound over any supported locale — a compile-time constant</td></tr></table></div><p class="float-caption">Table 65.4</p></figure><p>Chapter 63′s demonstration showed <code>MB_CUR_MAX</code> changing with the locale: 1 (C), 2 (EUC-KR), 6 (UTF-8). Which to use when sizing a buffer splits here — <strong>size the array with <code>MB_LEN_MAX</code>, and judge inside the loop with <code>MB_CUR_MAX</code>.</strong></p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> UTF-8 is at most four bytes; why is <code>MB_CUR_MAX</code> six?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> It is a scar from history. UTF-8′s original definition (RFC 2279) allowed up to six bytes and could write codes of 31 bits. When Unicode stopped at U+10FFFF, RFC 3629 cut it to four — but glibc left <code>MB_CUR_MAX</code> at the roomier old value.</p><p>The practical conclusion does not change — <strong>size buffers by <code>MB_CUR_MAX</code> (or <code>MB_LEN_MAX</code>).</strong> Sizing by 4 because UTF-8 never exceeds it will overflow under a locale with another encoding.</p></p></div></div><h3>65.4 Three layers of conversion function</h3><p>Several functions move between byte strings and wide characters; they sort into three layers.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Layer</strong></th><th><strong>Functions</strong></th><th><strong>Character</strong></th></tr><tr><td>The old layer (C89)</td><td><code>mbtowc</code>, <code>wctomb</code>, <code>mbstowcs</code>, <code>wcstombs</code></td><td>Hide the conversion state <strong>inside the function</strong> — not reentrant</td></tr><tr><td>The state-exposed layer (C95)</td><td><code>mbrtowc</code>, <code>wcrtomb</code>, <code>mbsrtowcs</code>, <code>wcsrtombs</code></td><td>Take an <code>mbstate_t *</code>. The <code>r</code> is for restartable</td></tr><tr><td>The Unicode layer (C11)</td><td><code>mbrtoc16</code>, <code>c16rtomb</code>, <code>mbrtoc32</code>, <code>c32rtomb</code></td><td><code>&lt;uchar.h></code>. Between the locale’s encoding and UTF-16/32</td></tr></table></div><p class="float-caption">Table 65.5</p></figure><p>New code uses the middle layer. The <code>r</code> in the name means restartable, and what makes restarting possible is <code>mbstate_t</code>.</p><h4>65.4.1 Why <code>mbstate_t</code> has to exist</h4><p>Why does conversion need state? Two reasons.</p><p><strong>First, characters arrive cut in half.</strong> Reading from a network or a file puts buffer boundaries in the middle of characters. With two of “한”‘s three bytes in hand, the function must answer “not enough yet” rather than “wrong”, and must <strong>carry on</strong> when the next piece arrives.</p><p><strong>Second, some encodings have state.</strong> Encodings such as ISO-2022-JP switch between “kanji from here” and “ASCII from here” with escape sequences. Without remembering which mode you are in, the same byte is a different character.</p><p><code>mbstate_t</code> is the opaque object holding those two. Three rules: <strong>filled with zeroes it is the initial state</strong>, <strong>each conversion uses its own object</strong>, and <strong>you do not look inside.</strong></p><pre><code data-lang="c">mbstate_t st<span class="tok-x">;</span>
+<strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> to the initial state </span></em><em><span class="tok-c">*/</span></em></code></pre><h3>65.5 <code>mbrtowc</code> — taken apart one step at a time</h3><p>The key function of the chapter. The contract is dense, and reading the return value exactly is the whole of it.</p><pre><code data-lang="c"><strong><span class="tok-t">size_t</span></strong> <strong>mbrtowc</strong><span class="tok-x">(</span>wchar_t <strong><span class="tok-x">*</span></strong> <strong><span class="tok-k">restrict</span></strong> pwc<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong> <strong><span class="tok-k">restrict</span></strong> s<span class="tok-x">,</span>
+               <strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">,</span> mbstate_t <strong><span class="tok-x">*</span></strong> <strong><span class="tok-k">restrict</span></strong> ps<span class="tok-x">)</span><span class="tok-x">;</span></code></pre><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Return value</strong></th><th><strong>Meaning</strong></th></tr><tr><td><code>0</code></td><td>A null character was completed (the result is the null wide character)</td></tr><tr><td>1~<code>n</code></td><td>This many bytes were consumed and one character was completed</td></tr><tr><td><code>(size_t)-2</code></td><td>All <code>n</code> bytes were examined and no character is complete yet — the state is updated</td></tr><tr><td><code>(size_t)-1</code></td><td>An invalid sequence. <code>errno</code> holds <code>EILSEQ</code> and the state is unspecified</td></tr></table></div><p class="float-caption">Table 65.6</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch65/mbrtowc_step.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> mbrtowc — bytes turning into wchar_t, one step at a time. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">errno.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">locale.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span><span class="tok-p">          </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> MB_CUR_MAX </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">wchar.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> The four kinds of return value, in words </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong>explain</strong><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> r<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span>           <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">hit the null character (returns 0)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">1</span><span class="tok-x">)</span>  <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">invalid sequence (errno=EILSEQ)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">2</span><span class="tok-x">)</span>  <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">not a whole character yet — needs more</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">consumed this many bytes and produced one character</span><span class="tok-s">"</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>walk</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>label<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>s<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> len<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    mbstate_t st<span class="tok-x">;</span>
+    <strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the initial conversion state </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">] </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> label</strong><strong><span class="tok-x">,</span></strong><strong> len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> len<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong>s</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">size_t</span></strong> pos <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span>pos <strong><span class="tok-x">&lt;</span></strong> len<span class="tok-x">)</span> <span class="tok-x">{</span>
+        wchar_t wc <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+        errno <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">size_t</span></strong> r <strong><span class="tok-x">=</span></strong> <strong>mbrtowc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>wc</strong><strong><span class="tok-x">,</span></strong><strong> s </strong><strong><span class="tok-x">+</span></strong><strong> pos</strong><strong><span class="tok-x">,</span></strong><strong> len </strong><strong><span class="tok-x">-</span></strong><strong> pos</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  at </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">: mbrtowc -> </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> pos</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">1</span><span class="tok-x">)</span>      <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">(size_t)-1   </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">else</span></strong> <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">2</span><span class="tok-x">)</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">(size_t)-2   </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">else</span></strong>                      <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%-12zu</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>explain</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">!=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">1</span> <strong><span class="tok-x">&amp;&amp;</span></strong> r <strong><span class="tok-x">!=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">2</span><span class="tok-x">)</span>
+            <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  -> U+</span></strong><strong><span class="tok-s">%04lX</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>wc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">1</span> <strong><span class="tok-x">||</span></strong> r <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">2</span><span class="tok-x">)</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+        pos <strong><span class="tok-x">+=</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> <strong><span class="tok-x">?</span></strong> <span class="tok-n">1</span> <strong><span class="tok-x">:</span></strong> r<span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> This one needs a UTF-8 locale — if there is none, say so and stop </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>loc <strong><span class="tok-x">=</span></strong> <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_CTYPE</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">C.UTF-8</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>loc<span class="tok-x">)</span> loc <strong><span class="tok-x">=</span></strong> <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_CTYPE</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">en_US.UTF-8</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>loc<span class="tok-x">)</span> <span class="tok-x">{</span> <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no UTF-8 locale — skipping this demonstration</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">LC_CTYPE=</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">, MB_CUR_MAX=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> loc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">size_t</span></strong><strong><span class="tok-x">)</span></strong><strong>MB_CUR_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>walk</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">two ASCII letters</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">Hi</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>walk</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">one Hangul syllable</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">한</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>walk</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">an emoji beyond the BMP</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\xF0</span></strong><strong><span class="tok-n">\x9F</span></strong><strong><span class="tok-n">\x98</span></strong><strong><span class="tok-n">\x80</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> A truncated character: two of three bytes -> (size_t)-2 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>walk</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">a truncated character</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\xED</span></strong><strong><span class="tok-n">\x95</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> An invalid sequence: starting on a trail byte -> (size_t)-1 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>walk</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">an invalid sequence</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\x9C</span></strong><strong><span class="tok-n">\x41</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> The state carries over: feed the pieces in two calls and they join </span></em><em><span class="tok-c">*/</span></em>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[arriving in pieces, as from a stream] </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">한</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> fed as 2+1 bytes</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    mbstate_t st<span class="tok-x">;</span>
+    <strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    wchar_t wc <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">size_t</span></strong> r1 <strong><span class="tok-x">=</span></strong> <strong>mbrtowc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>wc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\xED</span></strong><strong><span class="tok-n">\x95</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  first call (2 bytes): </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>explain</strong><strong><span class="tok-x">(</span></strong><strong>r1</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">size_t</span></strong> r2 <strong><span class="tok-x">=</span></strong> <strong>mbrtowc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>wc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\x9C</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  second call (1 byte): </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> -> U+</span></strong><strong><span class="tok-s">%04lX</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>explain</strong><strong><span class="tok-x">(</span></strong><strong>r2</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>wc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  mbstate_t remembers how far it got, so the pieces join up.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>LC_CTYPE=C.UTF-8, MB_CUR_MAX=6
+
+[two ASCII letters] 2 bytes: 48 69
+  at 0: mbrtowc -> 1           consumed this many bytes and produced one character  -> U+0048
+  at 1: mbrtowc -> 1           consumed this many bytes and produced one character  -> U+0069
+
+[one Hangul syllable] 3 bytes: ED 95 9C
+  at 0: mbrtowc -> 3           consumed this many bytes and produced one character  -> U+D55C
+
+[an emoji beyond the BMP] 4 bytes: F0 9F 98 80
+  at 0: mbrtowc -> 4           consumed this many bytes and produced one character  -> U+1F600
+
+[a truncated character] 2 bytes: ED 95
+  at 0: mbrtowc -> (size_t)-2   not a whole character yet — needs more
+
+[an invalid sequence] 2 bytes: 9C 41
+  at 0: mbrtowc -> (size_t)-1   invalid sequence (errno=EILSEQ)
+
+[arriving in pieces, as from a stream] "한" fed as 2+1 bytes
+  first call (2 bytes): not a whole character yet — needs more
+  second call (1 byte): consumed this many bytes and produced one character -> U+D55C
+  mbstate_t remembers how far it got, so the pieces join up.
+</code></pre></div></div><p>The demonstration shows those four in turn. ASCII goes one byte at a time, Hangul takes three at once, an emoji beyond the BMP takes four. A truncated piece gives <code>(size_t)-2</code>, and a piece starting on a trail byte gives <code>(size_t)-1</code>.</p><p><strong>The final part shows exactly why <code>mbstate_t</code> exists.</strong> Feeding “한”‘s three bytes as 2+1, the first call returned <code>(size_t)-2</code> and the second completed U+D55C. The state object was holding “I have seen two bytes so far.”</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“<code>(size_t)-2</code> is an error”</strong></p><p>It is not. It is <strong>a normal intermediate state.</strong> The only error is <code>(size_t)-1</code>.</p><p>Lump the two together and a stream processor throws away perfectly good characters from fragmented input. Code reading 4096 bytes at a time from a network meets <code>(size_t)-2</code> at nearly every buffer’s end — and what to do then is <strong>to prepend the leftover bytes to the next buffer and read on</strong>, not to stop with an error.</p><p>That both values are large <code>size_t</code> numbers is a trap of its own. Received into an <code>int</code> and compared with <code>&lt; 0</code>, the result is implementation-dependent nonsense. <strong>Always receive them in a <code>size_t</code> and compare directly with <code>(size_t)-1</code> and <code>(size_t)-2</code>.</strong></p></div><h4>65.5.1 A whole string at once — <code>mbsrtowcs</code></h4><p>To move a whole string rather than one character at a time, use <code>mbsrtowcs</code>. Two knacks belong to its contract.</p><pre><code data-lang="c">mbstate_t st<span class="tok-x">;</span>
+<strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> utf8<span class="tok-x">;</span>                       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a pointer holding the position </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">size_t</span></strong> need <strong><span class="tok-x">=</span></strong> <strong>mbsrtowcs</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>p</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (1) ask the length first </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>need <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> EILSEQ </span></em><em><span class="tok-c">*/</span></em> <span class="tok-x">}</span>
+
+wchar_t <strong><span class="tok-x">*</span></strong>buf <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong>need </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>buf</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+p <strong><span class="tok-x">=</span></strong> utf8<span class="tok-x">;</span>                                   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (2) reset pointer and state </span></em><em><span class="tok-c">*/</span></em>
+<strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong>mbsrtowcs</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>p</strong><strong><span class="tok-x">,</span></strong><strong> need </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (3) and convert for real </span></em><em><span class="tok-c">*/</span></em></code></pre><p><strong>A null first argument counts only the length</strong> — so the buffer size can be known in advance. And the reason <code>s</code> is a <code>const char **</code> is to hand back <strong>how far it read</strong> when the conversion stopped partway. The old <code>mbstowcs</code> lacked that, which is why it could not be used for stream processing.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Conversion is tied to the locale</p><p>One fact easily missed here. <code>mbrtowc</code> understands UTF-8 only <strong>because the current locale is UTF-8.</strong> With <code>LC_CTYPE</code> set to <code>"C"</code>, the same bytes are an invalid sequence.</p><p>So a program using wide characters must call <code>setlocale(LC_ALL, "")</code> at once, and must cope with the fact that <strong>the locale might not be UTF-8.</strong> That is why the demonstration explicitly looks for a UTF-8 locale and skips if there is none.</p><p>The constraint “these functions cannot choose the encoding” is a large part of why wide characters are avoided in practice. The premise that the program’s encoding and the user’s locale must agree is especially hard to keep in a server.</p></div><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>What to remember</strong></th><th><strong>The point</strong></th></tr><tr><td><code>wchar_t</code></td><td>An integer type. The standard fixes neither size nor encoding</td></tr><tr><td>Unicode guarantee</td><td>Only if <code>__STDC_ISO_10646__</code> is defined</td></tr><tr><td>Character constants</td><td><code>'A'</code> is an <code>int</code>. Four prefixes: <code>u8</code>, <code>u</code>, <code>U</code>, <code>L</code></td></tr><tr><td>Beyond the BMP</td><td>Only <code>char16_t</code> takes two elements (a surrogate pair)</td></tr><tr><td><code>MB_CUR_MAX</code></td><td>Changes with the locale. The bound is <code>MB_LEN_MAX</code></td></tr><tr><td>Conversion</td><td>Use the ones with <code>r</code> (<code>mbrtowc</code>)</td></tr><tr><td><code>mbstate_t</code></td><td>Zero it to start. For cut characters and stateful encodings</td></tr><tr><td>Return values</td><td><code>-2</code> is not an error but “more needed”</td></tr><tr><td>The premise</td><td><code>LC_CTYPE</code> must be that encoding</td></tr></table></div><p class="float-caption">Table 65.7</p></figure></div><p>We have seen <code>wchar_t</code>’s contract and the process of conversion. The next chapter is how that contract split across real platforms — Windows’s two bytes, Linux’s four, and what happened when UTF-16 could not hold all of Unicode.</p>
 <div class="nav"><a href="ch64.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch66.html">Next →</a></div>
 </div></main></body></html>

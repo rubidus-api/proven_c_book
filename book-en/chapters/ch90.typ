@@ -197,6 +197,139 @@ turning it on with one line in CMake is today's practice.
   problem call for the tool* is the order of the field.
 ]
 
+== The industry's rulebooks — MISRA C and its neighbours
+
+Where lives or large sums are at stake, "let us write C well" is not enough. So
+industries have *written down the subset of C that may be used.* How chapter 12's
+grey areas and chapter 49's undefined behaviour are handled in practice is written
+into these rulebooks.
+
+=== MISRA C — out of the car industry and into everything
+
+The most widely used is *MISRA C*. The name comes from its origin: the Motor
+Industry Software Reliability Association, a British automotive body.
+
+#dtable(
+  columns: 2,
+  [*What*], [*Detail*],
+  [Origin], [The 1994 "Development guidelines for vehicle based software" called for a *"restricted subset of a standardized programming language"*],
+  [First editions], [MISRA C:1998, then MISRA C:2004, "Guidelines for the use of the C language in critical systems"],
+  [Today], [MISRA C:2012 (third edition) and its revisions — *MISRA C:2023* is the third edition's second revision and covers C11 and C18],
+  [Stewardship], [Since 2021, an independent not-for-profit (The MISRA Consortium)],
+  [Standing], [Beyond automotive into medical, rail, aerospace and defence — the de facto standard for C where safety and security are at stake],
+)
+
+The rules look like a list of prohibitions, but the structure matters more.
+
+*First, rules have categories.*
+
+#dtable(
+  columns: 2,
+  [*Category*], [*Meaning*],
+  [Mandatory], [May not be broken],
+  [Required], [May be broken only through a *documented deviation procedure*],
+  [Advisory], [Recommended; not following it is allowed, better with a reason written down],
+)
+
+*Second, there is a formal procedure called a deviation.* Because places that must
+break a rule always arise in practice, MISRA settled not on *do not break it* but
+on *if you break it, record it this way* — which rule, where, why, and what was
+done instead.
+
+Notice that this structure carries exactly the discipline of chapter 12: *not
+forbidding the choice, but making the choice visible.*
+
+=== The neighbours — safety standards and coding rules
+
+MISRA C is not alone. They divide into two kinds: **safety standards**, which
+settle *how to build*, and **coding rules**, which settle *how to write*.
+
+#dtable(
+  columns: 3,
+  [*Name*], [*Where*], [*What it settles*],
+  [IEC 61508], [Industry at large (the base standard)], [The frame of functional safety; risk levels SIL 1\~4],
+  [ISO 26262], [Automotive], [IEC 61508 fitted to vehicles; risk levels ASIL A\~D],
+  [DO-178C], [Airborne software], [Development and verification for certification; levels DAL A\~E],
+  [IEC 62304], [Medical devices], [The software life cycle; classes A\~C],
+  [EN 50128 / EN 50657], [Railway], [Signalling and on-board software],
+  [MISRA C], [(industry-independent)], [A safe subset of C — cited by the standards above],
+  [SEI CERT C], [(security-centred)], [Rules and recommendations, each with a risk assessment and CWE mapping],
+  [ISO/IEC TS 17961], [(tool-centred)], [C secure coding rules — what *an analyser* must catch],
+  [JPL Power of Ten], [Aerospace (NASA/JPL)], [Ten short rules: no recursion, no dynamic allocation, and so on],
+  [BARR-C], [Embedded in general], [Weighted towards readable code; designed to sit alongside MISRA],
+)
+
+Safety standards mostly say only *use a subset of the language* without defining
+that subset. So "we use MISRA C in order to satisfy ISO 26262" is the standard
+combination.
+
+=== What gets forbidden — a common pattern
+
+The items differ from rulebook to rulebook, yet the faces of what is forbidden or
+tightly limited are remarkably alike. And that list *overlaps with what this book
+has been calling dangerous.*
+
+#dtable(
+  columns: 2,
+  [*Frequently forbidden or limited*], [*Which of this book's stories*],
+  [Dynamic allocation (`malloc`/`free`)], [Fragmentation and unpredictable timing (chapters 42, 78); arenas and pools instead],
+  [Recursion], [You cannot know how much stack it will take (chapter 77)],
+  [Code that relies on undefined behaviour], [The whole of chapter 49],
+  [Expressions that lean on implicit conversion], [Chapter 28 — explicit casts are demanded],
+  [`goto`, multiple `return`, multiple `break`], [Making the flow readable at a glance (chapter 30)],
+  [Variadic functions], [No type checking (chapter 53)],
+  [Type punning through a union], [Code that leans on representation (chapter 45)],
+  [Overuse of `#define` macros], [The preprocessor knows no types (chapter 52)],
+  [Parts of the standard library], [Things like `gets`, `atoi`, `strcpy` (chapters 59, 60)],
+)
+
+Read that table backwards and it summarises this book — *stay inside the contract,
+keep the lifetime and size of resources predictable, and write so that a person can
+read and check it.*
+
+#qa[
+  So must I follow MISRA C too?
+][
+  No — you follow it *if you work where it is required*, and otherwise you do not.
+  A rulebook is not a definition of "good code" but *a contract about the price of
+  a particular risk.* Forbidding dynamic allocation is the right rule in a car's
+  braking system and pointless in a text editor.
+
+  Reading one is worth it anywhere, though. Each rule carries a "why is this
+  forbidden", so it reads as a list of where practice has been hurt. A good number
+  of this book's traps are named there.
+
+  Three things are worth stealing even for a project under no rulebook.
+
+  - *Write down what you have decided not to use* — the team's "we do not use
+    these" list.
+  - *When you break it, leave the reason* — MISRA's deviation procedure in
+    miniature. How much to leave follows chapter 12's ladder: *scale it to the
+    stakes.*
+  - *Let a tool do the checking* — rules a person must remember are not kept
+    (the static analysers seen earlier in this chapter).
+]
+
+#realcase[
+  What a rulebook really costs
+][
+  Adopting something like MISRA shows its cost in three ways.
+
+  *Tools and time.* Rule checking is not done by people — commercial static
+  analysers (PC-lint Plus, Polyspace, Coverity and others) or open-source tools do
+  it. Run one over a large codebase for the first time and thousands of warnings is
+  ordinary; triaging them alone can take months.
+
+  *The code gets longer.* Forbid implicit conversions and casts multiply; forbid
+  dynamic allocation and buffers must be reserved up front. The room for "short and
+  clever" shrinks.
+
+  *And what is bought with that is an invisible result — that no accident
+  happened.* This asymmetry is the real reason such rules are hard to keep: the
+  benefit is unseen while the cost is visible daily. Which is why a rulebook is
+  sustained by *an organisation's procedures*, not by an individual's willpower.
+]
+
 == What runs in C even today — and why
 
 Chapter 1 said "C is everywhere". Now the concrete names and reasons can be written

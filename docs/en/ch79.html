@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>79 C in practice — tools, projects, and territories — Proven C Book</title><style>
+<title>79 The five bugs shipped for fifty years — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,79 +259,136 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch78.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch80.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch79.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>79 C in practice — tools, projects, and territories</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>Before closing the book we look round the world beyond these pages. The two essential tools of the field (make and git), the representative projects that run in pure C even today and why they chose C, what C does in embedded work, and how C’s limits are crossed in practice. It is a map of where the language this book has taught actually stands.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 48 said that for a multi-file program the practice is to make each file into an object file and then only link again. In a project with hundreds of files a person cannot do that work by hand — what does it instead?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p><strong>A build tool.</strong> Write down the dependencies between files and it looks at what has changed and makes only what needs remaking. The classic of the C world and still its standard is <code>make</code>, and this chapter begins with that tool.</p></div></div><h3>79.1 make — what is to be remade</h3><p><code>make</code>’s idea is one line — <strong>if the product is older than its materials, make it again.</strong> The syntax for writing rules is that idea as it stands:</p><pre><code data-lang="text">hello: hello.c greet.c greet.h      # target: materials
-  cc -Wall -Wextra -o hello hello.c greet.c    # how to make it (begins with a tab)</code></pre><p>Call <code>make hello</code> and it compares the files’ times and runs the command only when needed. Not recompiling everything when one file has been mended — this is how chapter 16′s relay and chapter 48′s division save time in practice.</p><p>make was made in 1976 and is used still. Even the eccentricities of its syntax remain (a command line must begin with a tab — a mistake its maker himself looked back on with “at the time there were only twelve users”), but the idea that “write down the dependencies and only what is needed is remade” became the root of every later build tool. Today’s large projects lay tools such as CMake, Meson and Ninja on top, but what those tools produce in the end is mostly make-like rules too.</p><h3>79.2 git — what changed and when</h3><p>The second essential tool is <strong>version control</strong>. A tool that records every change to the code, lets you go back at any time, and lets several people mend the same code and merge it — today’s de facto standard is <code>git</code>.</p><p>Everyday commands can be started with five.</p><pre><code data-lang="text">$ git init                 # make this folder a repository
-$ git add hello.c          # choose the change to record
-$ git commit -m "first program"   # record it with a reason
-$ git log                  # see the record travelled
-$ git diff                 # what has changed now</code></pre><p>There is one place where git connects with this book’s theme — <strong>git itself is a program written in pure C.</strong> In 2005 Linus Torvalds made the first version in a few days for the development of the Linux kernel, and it is now the most widely used development tool in the world. That tool giving the CRLF warning seen in chapter 10 is itself made in the language this book has taught.</p><h3>79.3 The rest of the toolbox — building, observing, checking</h3><p>make and git are only the beginning. A C project in the field mostly layers several tools, and grouping them by <strong>what question each answers</strong> leaves nothing to memorise.</p><h4>79.3.1 ① What to make and how — building and dependencies</h4><table><tr><th><strong>tool</strong></th><th><strong>what it does</strong></th><th><strong>note</strong></th></tr><tr><td><code>make</code></td><td>looks at dependencies and remakes</td><td>the classic and the ground</td></tr><tr><td><code>CMake</code></td><td><strong>generates</strong> build files</td><td>the de facto standard. exports to several platforms and IDEs</td></tr><tr><td><code>Ninja</code></td><td>runs generated rules very fast</td><td>the back end of CMake and Meson</td></tr><tr><td><code>Meson</code></td><td>a readable generator</td><td>paired with Ninja. popular in Linux projects</td></tr><tr><td>Autotools</td><td>the <code>./configure</code> family</td><td>still met in old Unix projects</td></tr><tr><td><code>Bazel</code>, <code>xmake</code></td><td>large-scale, reproducible builds</td><td>big organisations, monorepos</td></tr><tr><td><code>ccache</code></td><td>does not redo the same compilation</td><td>the effect is keenly felt in large projects</td></tr><tr><td><code>pkg-config</code></td><td>tells the compile and link options of a library</td><td>the Unix family</td></tr><tr><td><code>vcpkg</code>, <code>Conan</code></td><td>fetching external libraries</td><td>C has no standard package manager</td></tr></table><p>The last row is C’s long-standing weakness — there being no official package manager attached to the language, how dependencies are brought in differs by project (system packages, putting the source in whole (vendoring), submodules, tools such as vcpkg and Conan). That this book’s examples use proven by <strong>putting it into the repository whole</strong> is because of that reality too.</p><h4>79.3.2 ② What has gone wrong — debuggers and record-replay</h4><p>Chapter 17 learned <code>gdb</code> and <code>lldb</code>. In practice there are two more families beside them.</p><ul><li><strong>Platform debuggers</strong> — Windows’ <code>WinDbg</code> and the Visual Studio debugger. WinDbg’s <strong>time travel debugging</strong> (TTD) in particular records the execution whole and lets you turn it <strong>backwards</strong> as you look.</li><li><strong>Record and replay</strong> — Linux’s <code>rr</code> does the same. Record a bug once reproduced and that execution can be turned back identically as many times as you like, which is especially strong against bugs that “reproduce only sometimes”. It is the frontal method against the heisenbug seen in chapter 17.</li><li><strong>Post-mortem crash analysis</strong> — open a core dump (Linux) or a minidump (Windows) in a debugger and retrace the scene. The practice of building release builds with <code>-g</code> too and keeping the debug information separately (chapter 17) pays here.</li></ul><h4>79.3.3 ③ Where is it slow — profilers</h4><p>“Do not guess, measure” is the first rule of performance work.</p><table><tr><th><strong>tool</strong></th><th><strong>what it measures</strong></th><th><strong>where</strong></th></tr><tr><td><code>perf</code></td><td>CPU time, cache misses and branch failures by sampling</td><td>Linux. effectively the default</td></tr><tr><td>Valgrind <code>callgrind</code></td><td>counts instructions exactly (slow but precise)</td><td>Linux, macOS</td></tr><tr><td>Valgrind <code>cachegrind</code></td><td>simulates cache behaviour</td><td>chapter 11′s ladder before your eyes</td></tr><tr><td><code>massif</code>, <code>heaptrack</code></td><td>heap usage over time</td><td>leaks and over-allocation (chapter 40)</td></tr><tr><td>Intel VTune, AMD uProf</td><td>microarchitecture-level analysis</td><td>vendor tools</td></tr><tr><td>the Visual Studio profiler, WPA</td><td>CPU, memory, ETW tracing</td><td>Windows</td></tr><tr><td><code>uftrace</code>, <code>Tracy</code></td><td>function tracing, per-frame visualisation</td><td>games, real-time code</td></tr></table><p>Use a profiler and the stories of chapters 11 and 12 are confirmed in numbers — loops with many cache misses, conditionals where branch prediction misses, and where expensive allocations (chapter 40) are crowded, all become visible as they are.</p><h4>79.3.4 ④ Is the code right — checking and testing</h4><ul><li><strong>Static analysis</strong> — <code>clang-tidy</code>, <code>cppcheck</code>, and the compiler’s own <code>-fanalyzer</code> (GCC). Commercially, <code>PC-lint Plus</code>, <code>PVS-Studio</code>, <code>Coverity</code>.</li><li><strong>Dynamic checking</strong> — chapter 17′s sanitizers (ASan, UBSan, TSan) and <code>valgrind --tool=memcheck</code>. The former must be recompiled and is fast, the latter can be run as it stands and is slow.</li><li><strong>Coverage</strong> — <code>gcov</code>/<code>lcov</code> (GCC), <code>llvm-cov</code> (Clang). They show “which lines the tests actually passed through”.</li><li><strong>Fuzzing</strong> — <code>libFuzzer</code>, <code>AFL++</code>, <code>honggfuzz</code>. Pour in random input and find the places it dies. The effect is great in code that <strong>eats outside input</strong>, such as parsers and decoders.</li><li><strong>Unit testing</strong> — C having no standard test framework, libraries such as <code>Unity</code>, <code>CppUTest</code> and <code>Criterion</code> are used.</li></ul><h4>79.3.5 ⑤ Is it good for people to read — formatting and documentation</h4><p><code>clang-format</code> (automatic formatting), <code>uncrustify</code>, <code>Doxygen</code> (generating documentation from comments), and <code>compile_commands.json</code> (a list of the build commands). The last is the file an editor’s autocompletion (<code>clangd</code>) and static analysis tools read in order to know “with what options is this file compiled”, so turning it on with one line in CMake is today’s practice.</p><div class="dev platform"><p class="dev-label">⊞ Platform note — Observation tools of embedded work — how to measure a machine with no screen</p><p>Over the tools seen in chapter 18 (probes, OpenOCD, RTT, static analysis) there is one more layer that <strong>measures performance and behaviour</strong>.</p><ul><li><strong>Cycle counters</strong> — read a counter inside the chip, such as the DWT cycle counter of Arm Cortex-M, and count the clocks of a stretch directly. The most accurate and the cheapest.</li><li><strong>GPIO toggling</strong> — raise and lower one pin before and after the stretch you want to measure and look at it with chapter 18′s logic analyser. It is the frontal method still widely used on chips with no software profiler.</li><li><strong>RTOS tracing</strong> — tools such as SEGGER <code>SystemView</code> and Percepio <code>Tracealyzer</code> draw task switches, interrupts and queue waits on a time axis. It is the way to see with your eyes “why is this task late”.</li><li><strong>Measuring stack usage</strong> — the stack painting seen in chapter 67, and static analysis tools’ worst-case depth calculation.</li><li><strong>Tracking code size</strong> — it is common practice to hang chapter 18′s map files and <code>bloaty</code> on CI and watch how much the size has grown with each commit.</li><li><strong>Hardware in the loop (HIL)</strong> — attaching a real board to test equipment and running it automatically. With simulators (QEMU, Renode) it is one of the two axes of embedded CI.</li></ul></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>When should all these tools be brought in?</p></div><div class="dev qa-a"><p class="dev-label">A There is an order. Only three are put in place <strong>from the start</strong> — version control (git), a build tool (make or CMake), and warnings at maximum (<code>-Wall -Wextra</code>). After that it is one at a time as the need arises.</p><ul><li>bugs are frequent → sanitizers and unit tests</li><li>it is slow → a profiler (no guessing)</li><li>people have multiplied → formatting tools and CI</li><li>it eats outside input → fuzzing</li><li>it reproduces only sometimes → record and replay (rr, TTD)</li></ul><p>Install a heap of tools first and you mostly end up not using them. <strong>Letting the problem call for the tool</strong> is the order of the field.</p></div></div><h3>79.4 What runs in C even today — and why</h3><p>Chapter 1 said “C is everywhere”. Now the concrete names and reasons can be written down.</p><table><tr><th><strong>project</strong></th><th><strong>what</strong></th><th><strong>why C</strong></th></tr><tr><td>the Linux kernel</td><td>the heart of an operating system</td><td>it must handle hardware directly, must have no runtime dependency, and every architecture has a compiler</td></tr><tr><td>SQLite</td><td>the most widely deployed database in the world</td><td>it must be ported everywhere (phones, aircraft, browsers) and needed the extreme simplicity of distributing as a single source file</td></tr><tr><td>FFmpeg</td><td>the standard tool of video and audio processing</td><td>codec work where performance is everything, direct connection with hardware acceleration APIs</td></tr><tr><td>Redis</td><td>an in-memory data store</td><td>predictable latency and control of memory — it manages chapter 11′s ladder itself</td></tr><tr><td>curl</td><td>the universal tool of internet transfer</td><td>it must go onto every platform and every device (cars, TVs, even spacecraft)</td></tr><tr><td>CPython, Ruby and others</td><td>implementations of other languages</td><td>a language runtime needs the lowest layer in the end, and the C interface is the ecosystem’s common tongue</td></tr><tr><td>OpenSSL, zlib</td><td>cryptography and compression libraries</td><td>because they must be called from every language — the C ABI is the de facto universal interface</td></tr></table><p>Draw out the common threads and the reasons for choosing C organise into four.</p><ul><li><strong>When you must stand at the lowest layer</strong> — operating systems, drivers, runtimes.</li><li><strong>When it must be moved everywhere</strong> — when a new chip appears, a C compiler is made first (chapter 4′s portability revolution has held for half a century).</li><li><strong>When performance and resources must be controlled by hand</strong> — memory layout, latency, executable size.</li><li><strong>When it must speak with every other language</strong> — from Python, Java or Rust alike, a C function can be called. The C ABI is the international common tongue between languages.</li></ul><h3>79.5 C and C++ — siblings, not parent and child</h3><p>We settle the most common misunderstanding here. <strong>C is not a subset of C++.</strong> C++ is not “C with object orientation and templates added” but <strong>a different language</strong> that split off from C and grew separately.</p><p>A short look at the history makes the relation clear. In 1979 Bjarne Stroustrup made “C with Classes”, laying classes on C, and in 1983 the name changed to C++. Up to here it is indeed an extension. But after that the two languages diverged, <strong>each making its own standard in its own committee</strong> — C obtained its first standard as C89 in 1989, C++ as C++98 in 1998, and afterwards they referred to each other without being subordinate to each other.</p><p>So today each has things the other does not.</p><table><tr><th><strong>in C and not in C++</strong></th><th><strong>in C++ and not in C</strong></th></tr><tr><td>the <code>restrict</code> qualifier</td><td>classes, inheritance, virtual functions</td></tr><tr><td>variable-length arrays (chapter 36)</td><td>templates and the standard library upon them</td></tr><tr><td>flexible array members</td><td>references (<code>&amp;</code>) and operator overloading</td></tr><tr><td><code>_Generic</code> (chapter 50)</td><td>exceptions and RAII</td></tr><tr><td>order-independent designated initialisers</td><td>namespaces</td></tr><tr><td>compound literals (chapter 42)</td><td><code>auto</code> type deduction, lambdas</td></tr></table><h3>79.6 Put C code into a C++ compiler</h3><p>It is seen not in words but in the flesh. Below is <strong>entirely correct C code</strong>.</p><div><div><p><code>examples/ch79/ccompat.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdlib.h>
+<h2 id="loc-79">79 The five bugs shipped for fifty years</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 48, Errors and contracts · errors and contracts</div><div>chapter 39, Strings · the danger of strings</div><div>chapter 56, The terrain of the standard library · the traps of the standard library</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 39 said the functions handling strings “do not know the size of the vessel”, and chapter 48 said “a failure not confirmed becomes a thing that never happened”. Then why do such problems still remain — is half a century not more than enough time to mend them?</p><div class="qa-a"><p><span class="dev-label">A.</span> Not because they cannot be mended but because mending them <strong>breaks all the code already written</strong>. The moment one more size parameter is put into <code>strcpy</code>’s signature, every C program in the world stops compiling. The standard is an institution that must protect existing code (chapter 56′s reason for “thin and old” appears here too), so instead of removing dangerous functions it has taken the road of <strong>placing better functions beside them</strong>. So the choice comes over to the programmer — it is, in effect, a language in which knowing what is dangerous and choosing accordingly is itself skill.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">This part’s statement of the problem. We confirm with actually running code why C has kept shipping the same five classes of bug for half a century — that it is not the programmer’s carelessness but <strong>the shape of the API</strong>. Only after all five have been seen does the name proven appear again. Not introducing the tool first is this part’s principle.</div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Then are these five a list of mistakes beginners make?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> No. These are mistakes <strong>the skilled keep making too</strong>, and that point matters. If people who know the whole grammar still slip in the same places, the cause is not the person but <strong>the shape of the tool</strong>. A function that does not take a size has no way of checking a size, and a function whose return value may be thrown away with nothing happening will one day be thrown away. This chapter takes that “shape” apart one at a time.</p></div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Would it not be better to use another language entirely to avoid such problems?</li></ol></div></div><div></div><h3>79.1 One — string functions do not know the size of the vessel</h3><p>The oldest and most exploited class. Exactly as seen in chapter 39.</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> buf<span class="tok-x">[</span><span class="tok-n">64</span><span class="tok-x">]</span><span class="tok-x">;</span>
+<strong>strcpy</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> name</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> how long is name? strcpy does not ask </span></em><em><span class="tok-c">*/</span></em>
+<strong>strcat</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">, welcome!</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> and how much room is left now? </span></em><em><span class="tok-c">*/</span></em></code></pre><p><code>strcpy</code>’s signature has no destination size. What is not there cannot be checked, so this function will happily write to the 200th byte of a 64-byte vessel. What gets wrecked depends on what the compiler placed after it, and commonly that is the function’s return address (recall chapter 41′s picture of the stack).</p><p>The modern prescription is to use the editions that take a size — <code>snprintf</code> is representative. And here is a second trap. Functions that take a size <strong>quietly truncate</strong> when it overflows.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch79/truncate.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 
-/* 아래는 전부 올바른 C 코드다. 그런데 C++ 컴파일러에 그대로 넣으면
-   상당수가 컴파일되지 않는다. 이 예제는 C 로만 빌드된다. */
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> The common way: a path assembled into a fixed buffer.</span></em>
+<em><span class="tok-c">   Inside this function the compiler cannot know the length of dir or name. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>build_path</strong><span class="tok-x">(</span><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>out<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> cap<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>dir<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>name<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-k">return</span></strong> <strong>snprintf</strong><strong><span class="tok-x">(</span></strong><strong>out</strong><strong><span class="tok-x">,</span></strong><strong> cap</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">/</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> dir</strong><strong><span class="tok-x">,</span></strong><strong> name</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> if it does not fit, it cuts quietly </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span>
 
-struct point { int x, y; };
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-t">char</span></strong> path<span class="tok-x">[</span><span class="tok-n">24</span><span class="tok-x">]</span><span class="tok-x">;</span>
 
-/* ① C++ 의 예약어가 C 에서는 평범한 이름이다 */
-static int class_of(int n) { return n / 10; }
+    <strong>build_path</strong><strong><span class="tok-x">(</span></strong><strong>path</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> path</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">/var/log</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">app.log</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">fits      : </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> path</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-int main(void)
-{
-    /* ② void* 에서 다른 포인터로의 암묵 변환 — C 는 허용, C++ 는 거부 */
-    int *buf = malloc(4 * sizeof *buf);
-    if (!buf) return 1;
-    for (int i = 0; i &lt; 4; i++) buf[i] = i * i;
+    <strong>build_path</strong><strong><span class="tok-x">(</span></strong><strong>path</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> path</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">/var/log/service/http</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">access.log</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">truncated : </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> path</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">            length=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, buffer=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>strlen</strong><strong><span class="tok-x">(</span></strong><strong>path</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> path</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ③ 문자 상수의 타입: C 에서는 int 다 */
-    printf("sizeof('a') = %zu  (C++ 에서는 1 이 나온다)\n", sizeof('a'));
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> to find out whether it was truncated, the return value must be looked at </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">int</span></strong> need <strong><span class="tok-x">=</span></strong> <strong>build_path</strong><strong><span class="tok-x">(</span></strong><strong>path</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> path</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">/var/log/service/http</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">access.log</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>need <strong><span class="tok-x">>=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span><strong><span class="tok-k">sizeof</span></strong> path<span class="tok-x">)</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">detected  : needed </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> bytes, had </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> need </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> path</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>fits      : /var/log/app.log
+truncated : /var/log/service/http/a
+            length=23, buffer=24
+detected  : needed 33 bytes, had 24
+</code></pre></div></div><p>Look at the third line. What was to be made was <code>/var/log/service/http/access.log</code>, and what remained in hand is <code>/var/log/service/http/a</code>. The program neither stopped nor warned. If this string is a file path it opens the wrong file, if a command it becomes a different command, if a log the record of an accident is cut without a sound. <strong>A truncated path is not a short path but a wrong path.</strong></p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Treating truncation as success</p><pre><code data-lang="c"><strong>snprintf</strong><strong><span class="tok-x">(</span></strong><strong>path</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> path</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">/</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> dir</strong><strong><span class="tok-x">,</span></strong><strong> name</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong>open_file</strong><strong><span class="tok-x">(</span></strong><strong>path</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> nobody asked whether it was truncated </span></em><em><span class="tok-c">*/</span></em></code></pre><p><code>snprintf</code> in fact gives the answer — it returns <strong>the length that would have been needed</strong>. If that value is at least the vessel’s size it was truncated (the example’s last line is that check). The problem is that this check is <strong>optional</strong>. Throw the return value away and the compiler says nothing. That leads straight into the second bug.</p></div><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The compiler catches only what it can see</p><p>Something that really happened while making this example. At first <code>snprintf</code> was called directly inside <code>main</code> with literal arguments, and gcc caught it.</p><pre><code data-lang="text">error: ‘%s’ directive output truncated writing 10 bytes
+       into a region of size 2 [-Werror=format-truncation=]
+note: ‘snprintf’ output 33 bytes into a destination of size 24</code></pre><p>An excellent diagnosis. Yet moving the same call inside a function called <code>build_path</code> made the warning <strong>vanish</strong>. The moment a function boundary is crossed the compiler cannot know the real lengths of <code>dir</code> and <code>name</code>. In a real program strings come from files or from the network, so cases where the compiler can help are rather rare. A warning is a free review, not a guarantee (chapter 17).</p></div><h3>79.2 Two — there is no device that makes you confirm failure</h3><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong>n</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+p<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">'</span><span class="tok-s">x</span><span class="tok-s">'</span><span class="tok-x">;</span>                   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> malloc gives null on failure </span></em><em><span class="tok-c">*/</span></em></code></pre><p>C’s ways of reporting failure are two. Return a <strong>sentinel value</strong> (null, <code>-1</code>, <code>EOF</code>), or leave the reason in the global variable <code>errno</code>. Neither can compel a check. Code that throws the return value away is perfectly legal, and <code>errno</code> is global state that must be read at exactly the right moment, before the next call overwrites it (chapter 56).</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch79/unchecked.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
 
-    /* ④ 순서를 바꾼 지정 초기화 — C99 는 허용 */
-    struct point p = { .y = 2, .x = 1 };
-    printf("point = (%d, %d)\n", p.x, p.y);
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> Reading a port number out of a configuration line — the version that does not check for failure </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>read_port_careless</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>line<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> port <strong><span class="tok-x">=</span></strong> <span class="tok-n">8080</span><span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the default </span></em><em><span class="tok-c">*/</span></em>
+    <strong>sscanf</strong><strong><span class="tok-x">(</span></strong><strong>line</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">port=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>port</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the return value is not looked at </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> port<span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-    /* ⑤ 구조체 태그는 별도 이름 공간이라 struct 를 붙여야 한다 */
-    struct point q = p;
-    printf("copy  = (%d, %d)\n", q.x, q.y);
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> the same work — the version that checks for failure </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>read_port_checked</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>line<span class="tok-x">,</span> <strong><span class="tok-t">int</span></strong> fallback<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> port<span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>sscanf</strong><strong><span class="tok-x">(</span></strong><strong>line</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">port=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>port</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">!=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  (parse failed, keeping </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> fallback</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">return</span></strong> fallback<span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">return</span></strong> port<span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-    printf("class_of(37) = %d\n", class_of(37));
-    printf("buf = %d %d %d %d\n", buf[0], buf[1], buf[2], buf[3]);
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>good <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">port=9000</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>typo <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">prot=9000</span><span class="tok-s">"</span><span class="tok-x">;</span>     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a typo </span></em><em><span class="tok-c">*/</span></em>
 
-    free(buf);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>sizeof('a') = 4  (C++ 에서는 1 이 나온다)
-point = (1, 2)
-copy  = (1, 2)
-class_of(37) = 3
-buf = 0 1 4 9
-</code></pre></div></div><p>Compile the same file with <code>g++ -std=c++20</code> and this happens.</p><pre><code data-lang="text">error: invalid conversion from ‘void*’ to ‘int*’ [-fpermissive]
-   15 |     int *buf = malloc(4 * sizeof *buf);
-      |                ~~~~~~^~~~~~~~~~~~~~~~~
-      |                      void*
-error: designator order for field ‘point::x’ does not match
-       declaration order in ‘point’
-   23 |     struct point p = { .y = 2, .x = 1 };</code></pre><p>C++ refuses the implicit conversion of <code>void *</code> that C permits — so in C++ a cast is always attached to <code>malloc</code>’s result (and that is a practice <strong>not recommended</strong> in C. That is where the “must malloc’s return value be cast” debate divides). Designated initialisers too, though C++20 accepted them, <strong>cannot have their order changed</strong>.</p><p>There are places besides where the meaning quietly differs. The representative is the character constant.</p><pre><code data-lang="text">C  : sizeof('a') = 4      (the type of a character constant is int)
-C++: sizeof('a') = 1      (the type is char)</code></pre><p>It compiles on both sides and the result differs — such places are the most dangerous. Code that used C++ reserved words such as <code>class</code>, <code>new</code>, <code>template</code> and <code>this</code> as variable names in C does not pass over as it is either.</p><div class="dev realcase"><p class="dev-label">◉ The standard writes the differences down separately</p><p>The C++ standard treats this problem formally too. The C++ standard document has a section called <strong>annex C (Compatibility)</strong> that lists “the points differing from C” clause by clause — the type of character constants, <code>void *</code> conversion, tag name spaces, the type of string literals and so on. If you want to know the differences, opening that annex is more accurate than guessing. That the annex exists at all proves this section’s argument — <strong>the two languages are different enough that compatibility must be cared about.</strong></p></div><h3>79.7 Time flows faster on the C++ side</h3><p>We write a little more here of the circumstance mentioned briefly in chapter 1. Since 2011 C++ has put out a standard on a <strong>three-year cycle</strong> — C++11, 14, 17, 20, 23, 26. Each edition brings large features into the language and the standard library, and the look of “modern C++” changes correspondingly fast. C’s revision cycle, by contrast, is far longer (C89 → C99 → C11 → C17 → C23), and what enters is mostly small and conservative.</p><p>This difference of speed is not a matter of taste but comes from <strong>a difference of role</strong>. C is the language of operating systems and firmware, of the floor layer other languages lean on, so not changing is itself a feature. That thirty-year-old code compiles today, and that every platform has a C compiler, are the assets obtained in exchange.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then with what attitude should a learner look at this difference?</p></div><div class="dev qa-a"><p class="dev-label">A Three things are recommended.</p><p><strong>First, abandon the thought that “learn C++ and you know C automatically”.</strong> The reverse likewise. It is true that much overlapping syntax lets you pick each up quickly, but the idioms and ways of thinking are quite different. Bring C++‘s habits (exceptions, RAII, templates) into C as they are and the code becomes awkward; bring C’s habits (manual management, macros) into C++ and the code becomes dangerous.</p><p><strong>Second, always be conscious of which language it is being compiled as.</strong> <code>.c</code> and <code>.cpp</code> differ not in extension but in <strong>language</strong>. Merely knowing that the same file can mean different things in the two languages prevents half the accidents.</p><p><strong>Third, most of what was learned in this book holds on either side.</strong> The ladder of memory, the distinction of representation and abstraction, contracts and undefined behaviour, ownership and lifetime — these are not syntax but <strong>the realities of machines and of language design</strong>. Go off to learn C++ and that eye is used just the same.</p></div></div><h3>79.8 How to mix them — <code>extern "C"</code></h3><p>Mixing the two languages is very common in practice. The representative case is a C++ program calling a library written in C. The problem is <strong>name mangling</strong> — a C++ compiler, in order to support overloading, mixes parameter type information into the function name it plants in the object file (recall chapter 48′s linking), while a C compiler leaves the name as it is. So joining them just so leaves the linker unable to find the pair.</p><p>The solution is to mark the declarations “handle this by the C convention”.</p><pre><code data-lang="c">/* mylib.h — the header of a library made in C */
-#ifndef MYLIB_H
-#define MYLIB_H
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">careless good: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>read_port_careless</strong><strong><span class="tok-x">(</span></strong><strong>good</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">careless typo: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>read_port_careless</strong><strong><span class="tok-x">(</span></strong><strong>typo</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">checked  typo: </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>read_port_checked</strong><strong><span class="tok-x">(</span></strong><strong>typo</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">8080</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> strtol is the same: it reports failure as a value, but nobody forces you to look </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">long</span></strong> n <strong><span class="tok-x">=</span></strong> <strong>strtol</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">abc</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> nullptr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">10</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">strtol(</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">abc</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">) = </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> n</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>careless good: 9000
+careless typo: 8080
+  (parse failed, keeping 8080)
+checked  typo: 8080
+strtol("abc") = 0
+</code></pre></div></div><p>That <code>careless typo</code> returned 8080 is this section’s heart. There was a typo in the configuration and the program <strong>quietly fell back to the default</strong>. On the surface nothing happened, and months later only the question “why is the setting not taking effect?” remains. That <code>strtol("abc")</code> gives 0 is the same pattern — failure and “a real 0” come back as the same value.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Failure is exceptional, so it can be handled later”</strong></p>The premise that failure is rare is wrong to begin with. A file may not exist, input carries typos, disks fill, networks break — every place where the program touches the outside world is a point of failure. And the real reason “later” is dangerous lies elsewhere. Code that ignored a failure <strong>does not stop but keeps running</strong>. A wrong value flows into the next calculation, into the function after that, and by the time the problem finally shows itself it blows up far from its cause. Chapter 48′s “fail early” returns here.</div><h3>79.3 Three — <code>printf</code> believes exactly what you tell it</h3><p>Chapter 56 took the grammar of the format string apart. That grammar has one structural weakness — <strong>the type is written twice</strong>. Once in the format (<code>%d</code>) and once in the argument (the variable’s type). If the two go out of step the language cannot prevent it, because as seen in chapter 53 type information does not ride along into variadic arguments.</p><p>Today’s compilers catch this. The real message is like this.</p><pre><code data-lang="text">warning: format ‘%d’ expects argument of type ‘int’,
+         but argument 2 has type ‘double’ [-Wformat=]
+    3 |     printf("%d\n", 3.0);
+      |             ~^     ~~~
+      |              |     |
+      |              int   double</code></pre><p>But only this far. The moment the format becomes a <strong>variable</strong> — the moment a multilingual message is taken from a table or a log format is received from a configuration — the compiler has nothing left to look at.</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Code that takes the format as a variable</p><pre><code data-lang="c"><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>fmt <strong><span class="tok-x">=</span></strong> <strong>load_message</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">greeting</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a format taken from a table </span></em><em><span class="tok-c">*/</span></em>
+<strong>printf</strong><strong><span class="tok-x">(</span></strong><strong>fmt</strong><strong><span class="tok-x">,</span></strong><strong> count</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> no warning. no check either </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Not a single warning comes from this code. Because a way of knowing whether format and arguments match does not exist at compile time. Worst is when the format is <strong>user input</strong>, which becomes the format string vulnerability seen in chapter 56.</p></div><h3>79.4 Four — who frees this</h3><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>s <strong><span class="tok-x">=</span></strong> <strong>build_message</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> must this be freed? the type says nothing </span></em><em><span class="tok-c">*/</span></em></code></pre><p>As learned in chapter 42, dynamically taken memory must be released by somebody exactly once. Yet a <code>char *</code> a function returned may be any of four things.</p><ul><li>Just allocated — it must be freed.</li><li>Pointing at a buffer the caller gave — it must not be freed.</li><li>A string literal in a read-only place — freeing it is an accident.</li><li>A static buffer the next call will overwrite — it must neither be freed nor held for long (chapter 56′s <code>strtok</code> was such).</li></ul><p>The types of the four cases are <strong>all the same</strong>. The answer is in the documentation, and documentation goes out of step with code as a matter of course. Here arise chapter 42′s three accidents — a leak (nobody frees), a double free (both free), and use after free (somebody still points at it after freeing).</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>An API whose type does not state ownership</p><pre><code data-lang="c"><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong>lookup</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> code<span class="tok-x">)</span><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a literal? an allocation? a static buffer? </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">char</span></strong>       <strong><span class="tok-x">*</span></strong><strong>format_time</strong><span class="tok-x">(</span><strong><span class="tok-t">time_t</span></strong> t<span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> must this be freed? </span></em><em><span class="tok-c">*/</span></em></code></pre><p>It cannot be known from the name and type alone. <strong>Every place</strong> that uses this API must remember the documentation, and if even one forgets it becomes one of the three accidents above. That the discipline is entrusted to human memory is the essence of the problem.</p></div><h3>79.5 Five — a callback nobody can type-check for you</h3><pre><code data-lang="c"><strong>qsort</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">,</span></strong><strong> n</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>a</strong><strong><span class="tok-x">,</span></strong><strong> cmp</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> cmp takes const void* </span></em><em><span class="tok-c">*/</span></em></code></pre><p><code>qsort</code> takes a comparison function through a <code>void *</code> interface in order to sort any type. In a language with no generics this is nearly the only way, but the price is <strong>the complete abandonment of type checking</strong>. Whatever you cast to inside the comparator, the compiler believes you.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch79/cmp_bad.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 
-int mylib_add(int a, int b);
-void mylib_reset(void);
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> Counterexample: it compares only the first character. The types match perfectly and there is no warning </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>cmp_first_char</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>a<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>b<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">const</span></strong> <strong><span class="tok-x">*</span></strong>x <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">const</span></strong> <strong><span class="tok-x">*</span></strong>y <strong><span class="tok-x">=</span></strong> b<span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>x<span class="tok-x">)</span><span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span> <strong><span class="tok-x">-</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>y<span class="tok-x">)</span><span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-#ifdef __cplusplus
-}
-#endif
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> The right version: it compares the whole string </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>cmp_full</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>a<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>b<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">const</span></strong> <strong><span class="tok-x">*</span></strong>x <strong><span class="tok-x">=</span></strong> a<span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-k">const</span></strong> <strong><span class="tok-x">*</span></strong>y <strong><span class="tok-x">=</span></strong> b<span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <strong>strcmp</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">*</span></strong><strong>x</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>y</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-#endif</code></pre><p><code>__cplusplus</code> is a macro only a C++ compiler defines. So this header, read in C, is two ordinary declarations, and read in C++ becomes declarations wrapped in <code>extern "C" { ... }</code> — the standard idiom for <strong>satisfying both languages with one header</strong>, and nearly every C library header in the world has this shape.</p><p>A few rules are worth remembering with it.</p><ul><li><code>extern "C"</code> concerns <strong>the name and the calling convention</strong> only. It has nothing to do with the function’s contents or with type checking.</li><li>Overloaded functions cannot be bound in <code>extern "C"</code> — because there must be only one name.</li><li>When using a C header from C++ it is courteous not to use C++ reserved words (<code>class</code>, <code>new</code>, <code>template</code>, <code>namespace</code>, <code>this</code>) as parameter names.</li><li>Data crossing the boundary is kept in <strong>a shape both languages understand</strong> — plain structs and pointers, and explicit sizes. Do not throw C++ classes or exceptions across the boundary.</li></ul><h3>79.9 Embedded — C’s home ground</h3><p>Unnoticed in daily life but, by volume, C’s largest territory is embedded work. The control panels of washing machines and air conditioners, the dozens of control units in a car, medical devices, the low-level control of drones and robots, the firmware of communication modules — most of it is written in C.</p><p>The reason lies in that environment’s constraints. Memory is in kilobytes, there may be no operating system (that world of chapter 6 where address 0 is the interrupt vector), execution time must be predictable (unpredictable pauses such as garbage collection are not permitted), and power is limited. C fits naturally in such an environment because it is a language that <strong>charges no cost for what is not executed</strong> — it can be used without the standard library (chapter 53′s freestanding) and the code generated is predictable.</p><p>In embedded C the knowledge of this book is used unusually directly — handling a particular address as a device register (chapter 6), blocking optimisation with <code>volatile</code> (chapter 13), manipulating hardware flags with bit operations (chapters 5 and 27), not using dynamic allocation at all (chapter 40), handling communication protocols conscious of alignment and representation (chapters 6 and 43).</p><h3>79.10 How to cross the limits — the knack of practice</h3><p>C’s lacks are clear — there are no namespaces, no generics, resource cleanup is not automatic, and safety is not enforced. Practice fills these with discipline and tools outside the language. Gathering what this book has passed through into practical guidance gives this.</p><ul><li><strong>No namespaces</strong> → the prefix convention (chapter 38′s <code>proven_</code>) and file-level <code>static</code> (chapter 48′s internal linkage).</li><li><strong>No generics</strong> → code generation with macros (chapter 49′s <code>##</code>, the X macro), or generalisation taking <code>void *</code> with a size and a comparison function (the standard’s <code>qsort</code> is that way), or C11′s <code>_Generic</code> selection.</li><li><strong>Resource cleanup is not automatic</strong> → state the ownership convention in names and documentation (chapter 40), and gather one function’s cleanup points into one place (the pattern of <code>goto</code> to a cleanup label is standard practice in the kernel).</li><li><strong>Safety is not enforced</strong> → layer the nets (chapter 17): maximum warnings, sanitizers, cross-checking with two compilers, static analysis tools, and components with checking built in (Part XII).</li><li><strong>The standard library is thin</strong> → choose or make the layer you need. Bringing it in as a vendored copy to keep the build simple is the canonical way for a small project.</li><li><strong>The complexity of large projects</strong> → divide the translation units small and reveal the contracts through headers (chapter 48), and automate the tests and the build (this chapter’s make and git).</li></ul><div class="dev realcase"><p class="dev-label">◉ The reality of mixing — C does not vanish but becomes a layer</p><p>Today’s large systems are mostly not written in one language. It is common to have a layered structure with the core needing performance in C (or C++ or Rust) and the logic above it in Python or JavaScript. The reason Python’s numerical libraries are fast is that beneath them is C and Fortran, and the reason a browser plays video is that beneath it is a C codec. Chapter 1 said Rust and Zig are encroaching on C’s territory, but what actually happens is closer to <strong>coexistence</strong> than to replacement — the new languages too must speak with existing C assets, so they are born equipped with a C interface. To be able to read and write C means, therefore, that whatever layer you work at, you can look into the layer below.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What is worth making next for someone who has read this book through?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Something small and finite is good. A tool that reads a text file and produces statistics, a simple configuration-file parser (chapter 75′s scanner is used as it stands), implementing one data structure yourself (chapter 41′s linked structures), reading the source of a small C project you like and mending one place. The last is especially recommended — the ability to read somebody else’s code takes up most of the time spent in practice, and this book spent a good deal of itself on growing the eye for that reading.</p></div></div><p>We have looked round the terrain beyond these pages too. The next chapter enlarges one region of it — in embedded work, where C is most deeply rooted, what compilers and what tools one works with. Then in the last chapter we retrace the road this book has travelled and close it.</p>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>show</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>label<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong><span class="tok-x">*</span></strong>v<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> label</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> n<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> v</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>src<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-s">"</span><span class="tok-s">pear</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">apple</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">peach</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">apricot</span><span class="tok-s">"</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>v<span class="tok-x">[</span><span class="tok-n">4</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">size_t</span></strong> n <strong><span class="tok-x">=</span></strong> <strong><span class="tok-k">sizeof</span></strong> src <strong><span class="tok-x">/</span></strong> <strong><span class="tok-k">sizeof</span></strong> src<span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span>
+
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong>v</strong><strong><span class="tok-x">,</span></strong><strong> src</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> src</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>qsort</strong><strong><span class="tok-x">(</span></strong><strong>v</strong><strong><span class="tok-x">,</span></strong><strong> n</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> v</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> cmp_first_char</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">first-char</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> v</strong><strong><span class="tok-x">,</span></strong><strong> n</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong>v</strong><strong><span class="tok-x">,</span></strong><strong> src</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> src</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>qsort</strong><strong><span class="tok-x">(</span></strong><strong>v</strong><strong><span class="tok-x">,</span></strong><strong> n</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> v</strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> cmp_full</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">full      </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> v</strong><strong><span class="tok-x">,</span></strong><strong> n</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>first-char: apple apricot pear peach
+full      : apple apricot peach pear
+</code></pre></div></div><p>The <code>first-char</code> comparator’s types match perfectly, it compiles without a single warning, and it does not die. It is only that <code>peach</code> and <code>pear</code> are in the wrong order — seeing only the first letter, the two were judged “equal” and the rest was left to chance. This class of bug is found last of all, because it gives <strong>a quietly wrong answer</strong>.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Attacks aiming at a data structure’s worst case</p>There is a performance trap in the same place. Widely used sorting and hashing implementations are fast on average but slow down sharply on particular inputs, and the technique of an attacker deliberately making such inputs to paralyse a server (an algorithmic complexity attack) was organised in a 2003 paper and used in real attacks. Attacks of the same family aiming at hash collisions brought down several web frameworks at once in 2011. They were events showing that a data structure’s <strong>worst case</strong> is itself a security problem, and so today’s libraries take as their defaults sorting with a guarantee even in the worst case (introsort) and hashes using a random seed — we see them in the flesh in chapter 86.</div><h3>79.6 And a sixth — bytes have types</h3><p>We said five, but one more must be added to be fair. It is the strict aliasing seen in chapter 13. A hand-written parser that peers into a byte buffer through pointers of different widths runs perfectly at <code>-O0</code> and quietly gives a different answer at <code>-O2</code>. It is the representative of the “bug that appears only in release” seen in chapter 17, and the clause to which the Linux kernel surrendered with a single flag.</p><p>Gathering the six into one table gives this part’s map.</p><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>problem</strong></th><th><strong>what C gives</strong></th><th><strong>what is needed</strong></th></tr><tr><td>buffer overflow and truncation</td><td>string functions that do not know the size</td><td>strings that carry their length, writes that do not truncate</td></tr><tr><td>unconfirmed failure</td><td>sentinel values and <code>errno</code></td><td>errors that come as values, a compile refusal if discarded</td></tr><tr><td>format mismatch</td><td>a <code>printf</code> that believes the format string</td><td>placeholders that take the type from the argument</td></tr><tr><td>unclear ownership</td><td>a <code>char *</code> that means four things</td><td>different types for owning and borrowing</td></tr><tr><td>unchecked callbacks</td><td>the <code>void *</code> interface</td><td>documented contracts and worst-case-guaranteed algorithms</td></tr><tr><td>the hidden type of bytes</td><td>UB on breaking the aliasing rule</td><td>a byte type the rule exempts</td></tr></table></div><p class="float-caption">Table 79.1</p></figure></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Would it not be better to use another language entirely to avoid such problems?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> That too is an answer, and many places really went that road (chapter 1). But the places where C must be used still remain — operating systems, firmware, the floor layer other languages lean on, and projects where decades of code have already piled up. What can be done in such places is <strong>not to change the language but to change the shape of the API</strong>. The right-hand column of the table above is not a list of items requiring a new language but things that can be made by design within C. From the next chapter we see that design.</p></div></div><p>The library that implements that right-hand column as it stands is the proven this book has leaned on. We first met it in chapter 40 and its name has come up a few times since, but treating it head on begins now. The next chapter is installation and a first program — and why this library has the shape of “nothing to install”.</p>
 <div class="nav"><a href="ch78.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch80.html">Next →</a></div>
 </div></main></body></html>

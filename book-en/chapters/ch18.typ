@@ -135,7 +135,7 @@ Its lineage is interesting too. Pelles C did not appear from nowhere; it is a
 heavily reworked *LCC* (the small, portable teaching compiler of Fraser and
 Hanson). Wikipedia carries it not as an article of its own but as a section of
 "LCC (compiler)", describing it there as a heavily modified LCC with C11, C17 and
-C23 support, amd64 support, optimizations such as inline expansion, and an IDE.
+C23 support, amd64 support, optimisations such as inline expansion, and an IDE.
 Knowing this saves effort when hunting for material — *searching Wikipedia for a
 "Pelles C" article finds nothing.*
 
@@ -182,7 +182,7 @@ lists what is inside.
 #dtable(
   columns: 2,
   [*Kind*], [*What is included*],
-  [Build tools], [An optimizing C compiler, a macro assembler, a linker, a resource compiler, a message compiler, make, a library manager],
+  [Build tools], [An optimising C compiler, a macro assembler, a linker, a resource compiler, a message compiler, make, a library manager],
   [IDE], [Project management, a debugger, a *profiler*, a source editor],
   [Resource editors], [*Dialogs*, menus, string tables, accelerator tables, bitmaps, icons, cursors, animated cursors, AVI, version information, manifests],
   [Shipping], [A code-signing utility, an install builder],

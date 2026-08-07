@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>46 정의되지 않은 동작 — Proven C Book</title><style>
+<title>46 수식과 연산자 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,40 +259,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../en/">English</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch45.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch47.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch46.html">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>46 정의되지 않은 동작</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>이 책이 곳곳에서 “계약 밖”이라 부르며 미뤄 온 세계를 정면으로 다룬다. UB란 정확히 무엇이고 왜 존재하며, 왜 “조금 위험함”이 아니라 “무엇이든 가능함”인지 — 그리고 실무에서 어떻게 피하고 잡아내는지까지. 제2부의 계약 서사가 여기서 완결된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>13장에서 엄격한 앨리어싱 위반이 “컴파일러에게 사실이 아닌 것을 사실 이라고 알리는 행위”라 했다. 그러면 표준이 어떤 동작을 “정의되지 않음” 으로 두었다는 것은 — 구현에게 무엇을 허락한 것인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p><strong>아무것도 요구하지 않기로</strong> 한 것이다. 표준의 문장은 냉정하다 — 정의 되지 않은 동작에 대해 표준은 “어떤 요구도 부과하지 않는다”. 즉 그런 프로그램에는 옳은 실행 결과라는 것이 아예 없다. 흔한 오해가 “위험한 동작이지만 대개 예상대로 돌아간다”인데, 계약의 눈으로는 그 프로그램 전체가 <strong>의미를 잃는다</strong>. 이 차이가 이 장의 전부다.</p></div></div><h3>46.1 세 가지 회색지대 — UB, 미지정, 구현 정의</h3><span id="idx-entry-80"></span><span id="idx-entry-81"></span><span id="idx-entry-82"></span><p>혼동되는 세 낱말을 먼저 갈라 둔다. 이 책이 여기까지 만난 사례들로 정리하면 이렇다.</p><table><tr><th><strong>종류</strong></th><th><strong>표준의 태도</strong></th><th><strong>이 책에서 만난 예</strong></th></tr><tr><td>구현 정의 (implementation-defined)</td><td>구현이 정하고 <strong>문서화한다</strong></td><td><code>int</code>의 크기(26장), <code>char</code>의 부호</td></tr><tr><td>미지정(unspecified)</td><td>정해진 선택지 중 하나이나 문서화 의무 없음</td><td>한 수식 안 부분식의 평가 순서(32장)</td></tr><tr><td>정의되지 않음 (undefined behavior, UB)</td><td>아무 요구도 하지 않는다</td><td>부호 있는 오버플로(7장), 경계 침범(36장), 널 역참조(34장)</td></tr></table><p>앞의 둘은 “답이 여럿이지만 어쨌든 답은 있는” 세계다. UB만이 답 자체가 없는 세계다.</p><h3>46.2 왜 존재하는가</h3><p>계약 밖을 남겨 둔 이유는 두 가지다. 첫째, <strong>기계들이 서로 다르기 때문이다</strong> — 7장의 폭 이상 시프트가 대표다. x86과 옛 ARM이 다르게 대응하는데 표준이 한쪽을 택하면 다른 쪽 기계는 매번 보정 코드를 넣어야 한다. 어느 편도 들지 않는 대신 “그 코드를 쓰지 말라”고 한 것이다. 둘째, <strong>최적화의 전제를 얻기 위해서다</strong> — 7장에서 본 대로 “부호 있는 정수는 넘치지 않는다”는 전제가 있어야 컴파일러가 루프를 분석하고 재배열할 수 있다(13장). C가 반세기 동안 속도의 언어로 남은 대가가 이 조항들이다.</p><h3>46.3 “무엇이든 가능함”의 실제 얼굴</h3><p>UB의 결과는 붕괴만이 아니다. 13장에서 본 무늬가 더 무섭다 — <strong>컴파일러가 UB를 “일어날 리 없는 일”로 읽고 코드를 지워 버리는</strong> 것이다. 널 검사가 통째로 사라지거나(포인터를 이미 역참조한 뒤라면 “널일 리 없다”고 추론한다), 오버플로 검사가 사라지거나(부호 있는 넘침은 없다고 전제 하므로), 루프가 무한이 되거나 아예 없어진다. 그래서 UB의 대표적 증상은 “그 자리에서 죽는 것”이 아니라 <strong>엉뚱한 곳에서, 최적화 수준을 바꾸면 사라지는, 재현이 어려운 버그</strong>다.</p><div class="dev realcase"><p class="dev-label">◉ 사라진 널 검사 — 리눅스 커널 CVE-2009-1897</p><p>이 무늬가 커널에서 실제로 터진 사건이 있다. 코드는 대략 이랬다 — 포인터 <code>tun</code>을 먼저 역참조해 값을 꺼내고, 그 아래에서 <code>if (!tun)<br><span style="white-space: pre-wrap">&#x20;&#x20;</span>return ...;</code>으로 널을 검사했다. 순서가 뒤집힌 실수이지만, 사람 눈에는 “그래도 검사는 있으니 널이면 걸리겠지”로 보인다. 컴파일러의 추론은 달랐다: <strong>이미 역참조했다 → 널이었다면 그 순간 UB → UB는 일어나지 않는다고 전제 → 따라서 tun은 널이 아니다 → 아래의 널 검사는 죽은 코드다.</strong> 검사가 통째로 최적화로 제거됐고, 널 페이지를 매핑할 수 있던 당시 환경과 결합해 권한 상승 취약점이 됐다. 컴파일러는 규칙대로 일했고, 무너진 것은 계약이었다.</p></div><h3>46.4 계산이 시작되기도 전에 — 파일 모양의 UB</h3><p>정의되지 않은 동작이라 하면 대개 넘침이나 널 역참조처럼 <strong>실행 중</strong>의 사고를 떠올린다. 그런데 표준의 목록(부속서 J.2)을 앞에서부터 읽으면 놀라운 것이 나온다 — <strong>두 번째 항목이 파일의 마지막 글자에 대한 것</strong>이다.</p><table><tr><th><strong>표준이 요구하는 것</strong></th><th><strong>어기면</strong></th></tr><tr><td>비어 있지 않은 소스 파일은 개행 문자로 끝나야 한다</td><td>정의되지 않은 동작</td></tr><tr><td>그 개행이 역슬래시로 이어진 것이면 안 된다</td><td>정의되지 않은 동작</td></tr><tr><td>파일이 토막 난 전처리 토큰이나 주석으로 끝나면 안 된다</td><td>정의되지 않은 동작</td></tr></table><p>즉 <strong>마지막 줄 끝에 개행이 없는 파일</strong>은, 문법이 아무리 완벽해도 계약 밖이다. 이 규정은 C89부터 있었고 C23(ISO/IEC 9899:2024)에도 그대로 남아 있다 — 부속서 J.2의 두 번째 항목이 그것이다. 참고로 C++는 2011년에 이 조항을 버렸다(없으면 개행을 붙인 것으로 친다고 정했다). 두 언어가 갈라선 드문 자리다.</p><p>왜 이런 것이 UB인가. 49장에서 본 <strong>번역 단계</strong>를 떠올리면 답이 나온다. 전처리기는 줄 단위로 일하고, 지시문 하나는 개행으로 끝나야 완성된다. 파일이 개행 없이 끝나면 마지막 줄이 <strong>미완성</strong>인 채로 남고, 그다음에 무슨 일이 벌어질지는 구현마다 다르다. 세 번째 줄의 “토막 난 토큰”도 같은 사정이다 — 따옴표가 닫히지 않은 문자열이나 <code>*/</code>가 없는 주석으로 파일이 끝나면 전처리기는 다음 파일을 계속 읽어야 할지 판단할 근거가 없다.</p><p>오늘의 컴파일러는 대부분 조용히 개행을 붙여 준다(옛 GCC는 <code>warning: no newline at end of file</code>을 냈다). 그래서 실무에서 이 조항이 문제를 일으키는 자리는 컴파일러가 아니라 <strong>그 파일을 다루는 다른 도구들</strong> 이다.</p><div class="dev realcase"><p class="dev-label">◉ 개행 하나가 만든 실무의 소음 — 깃과 유닉스 도구</p><p>POSIX는 <strong>줄</strong>을 “개행으로 끝나는 문자열”로 정의한다. 그래서 마지막 개행이 없는 파일은 도구들 눈에 “마지막 줄이 미완성인 파일”이 되고, 다음 일들이 벌어진다.</p><ul><li><strong>깃의 차이(diff)에 표시가 남는다</strong> — 그 유명한 <code>\ No newline at end of file</code> 줄이다. 나중에 누군가 개행을 더하면 내용이 그대로인 줄이 <strong>바뀐 줄로 잡혀</strong> 차이가 지저분해지고, 여러 갈래를 합칠 때 그 자리에서 충돌이 나기 쉽다. 깃허브의 웹 화면에서 마지막 줄에 붉은 표시가 붙는 것도 같은 이유다.</li><li><strong>파일을 이어 붙이면 줄이 붙어 버린다</strong> — <code>cat a.txt b.txt</code>에서 <code>a</code>의 마지막 줄과 <code>b</code>의 첫 줄이 한 줄이 된다. 조각 파일을 이어 붙여 소스나 설정을 만드는 빌드에서 특히 성가시다.</li><li><strong>줄 수를 세는 도구가 하나를 빠뜨린다</strong> — <code>wc -l</code>은 개행의 개수를 세므로 미완성 마지막 줄은 세지 않는다.</li></ul><p>그래서 오늘의 관행은 한 줄이다 — <strong>텍스트 파일은 개행으로 끝낸다.</strong> 편집기 설정(마지막 줄 개행 자동 추가)이나 <code>.editorconfig</code>의 <code>insert_final_newline</code>, 그리고 79장에서 본 서식 도구들이 이 일을 대신해 준다. C 표준의 조항은 그 관행의 가장 오래된 근거인 셈이다.</p></div><h3>46.5 그 밖의 기묘한 UB들</h3><p>C23 기준으로 부속서 J.2는 정의되지 않은 동작을 <strong>218가지</strong> 나열한다. 대부분은 평생 만날 일이 없는 것들이지만, 그중에는 “이런 것까지?” 싶은 항목이 여럿 있다. 실행 중의 계산과는 무관한, <strong>글자와 이름의 세계</strong>에서 벌어지는 것들을 골라 둔다.</p><table><tr><th><strong>이런 코드</strong></th><th><strong>무엇이 문제인가</strong></th><th><strong>표준의 자리</strong></th></tr><tr><td>파일이 개행 없이 끝남</td><td>앞 절에서 본 그것</td><td>5.1.1.2</td></tr><tr><td>주석 <code>/*</code>를 안 닫고 파일 끝</td><td>토막 난 주석으로 끝나는 것도 같은 항목</td><td>5.1.1.2</td></tr><tr><td>따옴표를 안 닫은 문자열로 파일 끝</td><td>토막 난 전처리 토큰</td><td>5.1.1.2</td></tr><tr><td><code>#include "dir\file.h"</code></td><td>헤더 이름 안의 <code>\</code>는 UB — 윈도우 경로를 그대로 적으면 걸린다</td><td>6.4.7</td></tr><tr><td><code>#include &lt;a//b.h></code></td><td><code>//</code>, <code>/*</code>, <code>'</code>, <code>"</code>도 마찬가지로 UB</td><td>6.4.7</td></tr><tr><td><code>#define defined(x) …</code></td><td><code>defined</code>를 매크로 이름으로 쓰는 것</td><td>6.10.9</td></tr><tr><td><code>#undef assert</code> 뒤 사용</td><td>표준 라이브러리 매크로를 지우고 쓰는 것</td><td>7.1.3</td></tr><tr><td><code>int _Value;</code>, <code>int __x;</code></td><td>예약된 이름 공간을 침범하는 것(66장)</td><td>7.1.3</td></tr><tr><td><code>memcpy(p, q, 0)</code> — <code>p</code>가 널</td><td>크기가 0이어도 널 포인터는 계약 밖(아래 참고)</td><td>7.26.2</td></tr><tr><td><code>printf("%s", NULL)</code></td><td>널을 문자열로 넘기는 것</td><td>7.23.6.1</td></tr><tr><td><code>short a[10]; short *p = &amp;a[15];</code></td><td><strong>역참조하지 않아도</strong> 범위 밖 포인터를 만드는 것만으로 UB</td><td>6.5.7</td></tr><tr><td><code>if (p > q)</code> — 서로 다른 객체</td><td>관계 연산자로 비교하는 것(35장)</td><td>6.5.9</td></tr><tr><td><code>towctrans</code>를 다른 로케일에서</td><td><code>wctrans</code>를 부를 때와 <code>LC_CTYPE</code>이 다르면 UB</td><td>7.31.3.2</td></tr></table><p>앞의 셋은 앞 절에서 본 “파일 모양” 항목의 나머지 얼굴이다. 주석이나 문자열을 닫지 않은 채 파일이 끝나는 것도 같은 조항에 걸린다 — 어차피 컴파일이 안 될 것 같지만, 표준의 눈으로는 <strong>진단조차 요구되지 않는</strong> 자리다.</p><p>가운데 두 줄이 특히 실용적이다. 윈도우에서 <code>#include "utils\str.h"</code>라고 적는 것은 <strong>표준으로는 정의되지 않은 동작</strong>이다 — 실제로는 MSVC가 알아서 처리해 주지만, 이식하는 순간 문제가 된다. 표준이 보장하는 것은 <code>/</code>뿐이고, 다행히 윈도우 컴파일러들도 <code>/</code>를 받아들인다. 그래서 헤더 경로에는 언제나 <code>/</code>를 쓰라는 조언이 나온다.</p><p><code>short *p = &amp;a[15];</code> 줄도 놀라는 자리다. <strong>읽지도 쓰지도 않았는데</strong> 포인터를 만든 것만으로 계약 밖이다(배열의 끝 바로 다음 자리까지만 허용된다). “주소만 계산해 두고 안 쓰면 되겠지”가 통하지 않는 이유이고, 35장에서 포인터 산술에 경계를 그은 근거이기도 하다.</p><p>마지막 줄은 이 목록의 성격을 잘 보여 준다. 와이드 문자 변환 함수 하나가 “<code>wctrans</code>를 불렀을 때와 지금의 로케일이 같아야 한다”는 조건을 달고 있고, 어기면 UB다. 218가지 중 대부분이 이런 결이다 — 아주 좁고, 아주 구체적이고, 평생 만날 일이 없는.</p><div class="dev realcase"><p class="dev-label">◉ UB가 줄어들기도 한다 — <code>memcpy(NULL, NULL, 0)</code>의 사연</p><p>표 아홉째 줄은 오랫동안 논쟁거리였다. “크기가 0이니 아무 일도 안 할 텐데 포인터가 널이든 무슨 상관인가” 싶지만, 표준은 <code>memcpy</code>의 두 포인터가 <strong>유효할 것</strong>을 크기와 무관하게 요구했다. 그래서 빈 배열을 다루는 코드가 아무 잘못 없이 계약 밖으로 미끄러지곤 했다.</p><pre><code data-lang="c">void copy(int *dst, const int *src, size_t n) {
-    memcpy(dst, src, n * sizeof *dst);   /* n == 0 이고 둘 다 널이면 UB */
-}</code></pre><p>실제 피해도 있었다. 컴파일러는 <code>memcpy</code>의 인자가 널이 아니라는 전제를 얻으므로, <strong>그 뒤에 오는 널 검사를 지워</strong> 버릴 수 있다 — 13장과 이 장에서 본 그 무늬다. 새니타이저(17장)도 이것을 잡아낸다.</p><p>그런데 이 조항은 <strong>없어지는 쪽으로 정해졌다.</strong> 표준 위원회가 제안 N3322를 받아들여, 다음 판(C2y)에서는 길이가 0인 연산에 널 포인터를 주는 것이 정의된 동작이 된다 — <code>memcpy(NULL, NULL, 0)</code>, <code>memcmp(NULL, NULL, 0)</code>, <code>(int *)NULL + 0</code>, <code>(int *)NULL - (int *)NULL</code>이 전부 합법이 된다. 위원회는 구현자들에게 <strong>옛 표준에도 소급 적용하라</strong>고 권고까지 했다.</p><p>이 사연이 남기는 교훈이 둘이다. 첫째, <strong>UB 목록은 고정된 성경이 아니다</strong> — 최적화에 쓸모가 없고 사람만 괴롭히는 조항은 시간이 지나며 정리된다. 둘째, 그럼에도 <strong>지금 쓰는 컴파일러가 그 변화를 반영했는지는 별개</strong>다. 당분간은 <code>n == 0</code>을 먼저 확인하는 코드가 여전히 옳다.</p></div><div class="dev misconception"><p class="dev-label">⚠ “이런 것들은 이론적인 트집이지 실제로는 아무 일도 안 일어난다”</p><p>대부분의 자리에서는 정말 아무 일도 일어나지 않는다. 그러나 이 장의 주제가 바로 그 점이다 — <strong>아무 일도 일어나지 않는 것은 보장이 아니다.</strong> 개행 없는 파일은 컴파일러에서는 조용하지만 도구 사슬에서 소음을 만들고, <code>memcpy(NULL, NULL, 0)</code>은 어제까지 멀쩡하다가 최적화 수준을 올린 날 널 검사가 사라지며 터진다.</p><p>실용적인 태도는 이렇다. <strong>공짜로 지킬 수 있는 조항은 그냥 지킨다.</strong> 파일 끝에 개행을 넣고, 헤더 경로에 <code>/</code>를 쓰고, 이름 앞에 밑줄 두 개를 붙이지 않는 것 — 여기에 드는 비용은 0이고, 그 대가로 “이 자리에서는 의심하지 않아도 된다”는 것 하나를 얻는다.</p></div><h3>46.6 피하는 법 — 규율, 도구, 그리고 부품</h3><p>실무의 방어는 세 겹이다.</p><p><strong>규율</strong> — 이 책이 지나온 수칙들이 그 목록이다: 초기화하고 쓴다(23장), 경계를 지킨다(36장), 널을 확인한다(34장), 한 문장에서 한 변수는 한 번만 바꾼다(32장), 계약 밖의 지름길(포인터 캐스트, 표현 가정)을 쓰지 않는다(11·35장).</p><p><strong>도구</strong> — 17장에서 장만한 그물이다. 컴파일러 경고는 컴파일 시점에, UBSan·ASan은 실행 시점에 잡는다. C23이 들여온 <strong>검사 산술</strong>도 이 층의 도구다 — 넘침을 UB로 만들지 않고 값으로 알려 주는 함수들이다:</p><div><div><p><code>examples/ch46/checked.c</code></p><pre><code data-lang="c">#include &lt;stdckdint.h>
-#include &lt;stdio.h>
-
-/* C23의 검사 산술: 넘치면 true를 돌려주고, 결과는 감아 돈 값이 담긴다. */
-int main(void)
-{
-    int a = 2000000000;
-    int b = 2000000000;
-    int sum = 0;
-
-    if (ckd_add(&amp;sum, a, b)) {
-        printf("%d + %d overflows int (we stayed inside the contract)\n", a, b);
-    } else {
-        printf("sum: %d\n", sum);
-    }
-
-    int small = 0;
-    if (ckd_add(&amp;small, 20, 22)) {
-        printf("overflow\n");
-    } else {
-        printf("20 + 22 = %d\n", small);
-    }
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>2000000000 + 2000000000 overflows int (we stayed inside the contract)
-20 + 22 = 42
-</code></pre></div></div><p><code>ckd_add</code>는 “넘쳤는가”를 반환값으로 돌려준다 — 7장에서 배운 “부호 있는 넘침은 계약 밖”이라는 함정을, 45장에서 배운 “오류는 값이다”라는 규율로 다스리는 표준의 답이다.</p><p><strong>부품</strong> — 애초에 계약 위반이 어려운 API를 쓰는 것이다(38장의 proven이 그 층이다). 도구가 그물이라면 좋은 부품은 발판이라는 17장의 비유가 여기서 완성된다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>UB를 전부 외워야 하는가? 표준에 수백 가지가 있다고 들었는데.</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>외우는 것이 목표가 아니다 — 목록은 방대하고 계속 다듬어진다. 실무에서 통하는 것은 <strong>감각</strong>이다: “이 코드가 옳다고 말하는 근거가 계약서에 있는가, 아니면 ‘내 컴퓨터에서 돌아서’인가”를 묻는 습관. 그리고 그 감각을 도구로 뒷받침하는 것 — 경고를 켜고, 새니타이저로 시험 실행 하고, 두 컴파일러로 교차 검증하는 것(17장). 이 책이 제2부부터 “추상 기계 위에서 옳은가”를 되풀이한 이유가 바로 이 감각을 심기 위해서다.</p></div></div><h3>46.7 제9부를 닫으며</h3><p>정밀의 부가 끝났다 — 근사를 다루는 법(44장), 실패를 다루는 법(45장), 그리고 계약 밖의 세계를 아는 법(46장). 세 장의 공통 주제는 하나다: <strong>C는 프로그래머에게 많은 것을 맡기는 언어이고, 맡겨진 것을 아는 사람이 안전한 코드를 쓴다.</strong></p><p>마지막 부가 남았다. 지금까지의 프로그램은 파일 하나짜리였다 — 이제 여러 파일로 자라고(48장), 전처리와 번역의 층을 정면으로 보고(49장), 표준 라이브러리의 지형을 익히고(53장), proven을 정면으로 다루며(제12부), 모던 C의 관행으로 책을 닫는다(81장).</p><p>다음 부는 프로그램을 <strong>구성하는</strong> 이야기다. 그 첫 장은 지금까지 여섯 줄짜리 관례로만 써 온 자리 — <code>main</code> 자신이다. 세 가지 형태와, 돌려주는 값이 어디로 가는지를 본다.</p>
+<h2 id="loc-46">46 수식과 연산자</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>20장 수식 · 값이 되는 것과 우선순위</div><div>33장 대입과 부수효과 · 평가 순서와 시퀀스 포인트</div><div>37장 배열 · 첨자와 포인터 산술</div><div>43장 구조체 · 멤버 접근</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>20장에서 “표를 외우지 말고 괄호를 쓰라”고 했고, 그 뒤로 연산자를 필요한 자리마다 조금씩 꺼내 썼다 — 27장의 시프트, 29장의 비교, 33장의 대입, 37장의 포인터 산술처럼. 그러면 지금 이 장에서 무엇을 새로 배우는가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> <strong>같은 것을 다른 눈으로</strong> 본다. 지금까지는 “이 자리에서 필요한 만큼”이었다면, 이제는 연산자 하나하나를 <strong>계약</strong>으로 읽는다 — 무엇을 받고(피연산자 제약), 무엇을 돌려주며(결과의 타입과 값 범주), 어디서부터 계약 밖인가(회색지대).</p><p>이 눈이 필요한 이유는 실무에 있다. 남의 코드를 읽다 막히는 자리, 컴파일러가 왜 그렇게 최적화했는지 알아야 하는 자리, 그리고 “왜 여기서만 이상하게 도는가”를 추적하는 자리 — 전부 연산자의 계약을 봐야 풀린다.</p></p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-80"></span>흩어져 배운 연산자를 한자리에 모아 다시 본다. 수식이란 무엇인가(값·타입· 값 범주·부수효과)에서 시작해, 우선순위와 결합의 전체 표, 연산자별 계약, 평가 순서와 시퀀스 포인트, 그리고 회색지대 총람까지. 이 장을 지나면 부록 A는 조회표로만 쓰면 된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>“좌변값”이라는 이름은 왼쪽에 있다는 뜻인가?</li></ol></div></div><div></div><h3>46.1 수식이 가진 네 가지</h3><p>C의 수식은 언제나 네 가지를 함께 가진다. 이 넷을 갈라 놓고 보는 습관이 이 장의 전부라 해도 좋다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>가진 것</strong></th><th><strong>무엇인가</strong></th></tr><tr><td>값</td><td>계산의 결과. <code>2 + 3</code>의 값은 5</td></tr><tr><td>타입</td><td>그 값이 어떤 그릇에 담기는가. 컴파일 시간에 정해진다(23장)</td></tr><tr><td>값 범주</td><td><strong>좌변값</strong>(자리를 가리킴)인가 아닌가. <code>x</code>는 좌변값, <code>x + 1</code>은 아니다</td></tr><tr><td>부수효과</td><td>객체를 바꾸거나 바깥 세계에 영향을 주는가(33장)</td></tr></table></div><p class="float-caption">표 46.1</p></figure><p><strong>값 범주</strong>라는 낱말이 낯설 텐데, 실은 이미 쓰고 있었다. 대입의 왼쪽에 올 수 있는 것이 좌변값이고(33장), <code>&amp;</code>를 붙일 수 있는 것도 좌변값이다(34장). 배열 이름은 좌변값이지만 대입의 왼쪽에는 올 수 없는 특수한 경우다(37장).</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> “좌변값”이라는 이름은 왼쪽에 있다는 뜻인가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 역사적으로는 그랬다(left value). 그러나 지금은 <strong>위치를 가리키는 수식</strong>이라는 뜻으로 쓰는 편이 정확하다 — 대입의 왼쪽에 올 수 있는 것이 그 성질의 한 가지 귀결일 뿐이다. <code>*p</code>는 대입의 오른쪽에 있어도 좌변값이고, <code>const int c</code>는 좌변값이지만 <strong>수정 가능한</strong> 좌변값은 아니라서 대입의 왼쪽에 올 수 없다.</p><p>그래서 표준은 “수정 가능한 좌변값(modifiable lvalue)”이라는 말을 따로 쓴다. 이 장의 표에서 대입과 증감의 피연산자 칸에 그 말이 나오는 이유다.</p></p></div></div><h3>46.2 우선순위와 결합</h3><p>위쪽이 더 강하게 묶는다. <strong>결합 방향</strong>은 같은 세기의 연산자가 나란히 있을 때 어느 쪽부터 묶느냐다 — <code>a - b - c</code>가 <code>(a - b) - c</code>인 것은 왼쪽 결합이기 때문이고, <code>a = b = 0</code>이 <code>a = (b = 0)</code>인 것은 오른쪽 결합이기 때문이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>묶음</strong></th><th><strong>연산자</strong></th><th><strong>결합</strong></th><th><strong>결합이 그런 이유</strong></th></tr><tr><td>후위</td><td><code>() [] . -> ++(후위) --(후위)</code>, 복합 리터럴</td><td>왼→오</td><td><code>a.b.c</code>처럼 왼쪽부터 파고들어야 뜻이 선다</td></tr><tr><td>단항</td><td><code>++ -- + - ! ~ (타입) * &amp; sizeof alignof</code></td><td>오→왼</td><td>피연산자에 가장 가까운 것부터 붙는다: <code>- -x</code>, <code>*&amp;x</code></td></tr><tr><td>곱셈류</td><td><code>* / %</code></td><td>왼→오</td><td>산수의 관례</td></tr><tr><td>덧셈류</td><td><code>+ -</code></td><td>왼→오</td><td>뺄셈은 왼쪽 결합이라야 뜻이 맞는다</td></tr><tr><td>시프트</td><td><code>&lt;&lt; >></code></td><td>왼→오</td><td><code>a &lt;&lt; 1 &lt;&lt; 2</code>는 차례로 민다</td></tr><tr><td>관계</td><td><code>&lt; &lt;= > >=</code></td><td>왼→오</td><td>그래서 <code>x &lt; y &lt; z</code>가 수학과 달라진다</td></tr><tr><td>상등</td><td><code>== !=</code></td><td>왼→오</td><td></td></tr><tr><td>비트 AND</td><td><code>&amp;</code></td><td>왼→오</td><td></td></tr><tr><td>비트 XOR</td><td><code>^</code></td><td>왼→오</td><td></td></tr><tr><td>비트 OR</td><td><code>|</code></td><td>왼→오</td><td></td></tr><tr><td>논리 AND</td><td><code>&amp;&amp;</code></td><td>왼→오</td><td>단락 평가가 왼쪽부터라야 뜻이 산다</td></tr><tr><td>논리 OR</td><td><code>||</code></td><td>왼→오</td><td>같은 이유</td></tr><tr><td>조건</td><td><code>?:</code></td><td>오→왼</td><td><code>a ? b : c ? d : e</code>가 사다리로 읽힌다</td></tr><tr><td>대입</td><td><code>= += -= *= /= %= &amp;= ^= |= &lt;&lt;= >>=</code></td><td>오→왼</td><td><code>a = b = 0</code>이 “둘 다 0”이 되려면</td></tr><tr><td>쉼표</td><td><code>,</code></td><td>왼→오</td><td>왼쪽을 먼저 하고 버린다</td></tr></table></div><p class="float-caption">표 46.2</p></figure><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“우선순위가 높으면 먼저 계산된다”</strong></p><p>우선순위는 <strong>묶는 규칙</strong>이지 <strong>계산의 시간 순서</strong>가 아니다. <code>f() * g() + h()</code>에서 곱셈이 덧셈보다 강하게 묶이는 것은 맞지만, <code>h()</code>가 <code>f()</code>보다 먼저 불려도 아무 문제가 없다. 세 호출의 순서는 <strong>미지정</strong>이다.</p><p>이 구별은 33장에서 이미 만났다 — 우선순위는 “무엇과 무엇이 한 덩어리인가”를 정하고, 시퀀스 포인트는 “무엇이 무엇보다 먼저 끝나는가”를 정한다. 둘은 다른 질문이고, 뒤의 절에서 후자를 따로 다룬다.</p></div><h3>46.3 자주 미끄러지는 자리들</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>쓴 것</strong></th><th><strong>실제로 묶이는 방식</strong></th><th><strong>의도한 것이라면</strong></th></tr><tr><td><code>a &amp; b == c</code></td><td><code>a &amp; (b == c)</code></td><td><code>(a &amp; b) == c</code></td></tr><tr><td><code>a &lt;&lt; 1 + 2</code></td><td><code>a &lt;&lt; (1 + 2)</code></td><td><code>(a &lt;&lt; 1) + 2</code></td></tr><tr><td><code>*p++</code></td><td><code>*(p++)</code></td><td><code>(*p)++</code></td></tr><tr><td><code>*p.x</code></td><td><code>*(p.x)</code></td><td><code>(*p).x</code> 또는 <code>p->x</code></td></tr><tr><td><code>(int)x + y</code></td><td><code>((int)x) + y</code></td><td><code>(int)(x + y)</code></td></tr><tr><td><code>a = b = 0</code></td><td><code>a = (b = 0)</code></td><td>(그대로다 — 오른쪽 결합)</td></tr><tr><td><code>x &lt; y &lt; z</code></td><td><code>(x &lt; y) &lt; z</code></td><td><code>x &lt; y &amp;&amp; y &lt; z</code></td></tr><tr><td><code>!x &amp; y</code></td><td><code>(!x) &amp; y</code></td><td><code>!(x &amp; y)</code></td></tr><tr><td><code>sizeof a + 1</code></td><td><code>(sizeof a) + 1</code></td><td><code>sizeof(a + 1)</code></td></tr><tr><td><code>a ? b : c = d</code></td><td><code>(a ? b : c) = d</code>(대개 오류)</td><td><code>a ? b : (c = d)</code></td></tr></table></div><p class="float-caption">표 46.3</p></figure><p>특히 첫 두 줄은 C의 유명한 설계 흠으로 꼽힌다 — 비트 연산자가 비교 연산자보다 <strong>약하게</strong> 묶이는 것은 초기 C가 <code>&amp;&amp;</code>·<code>||</code>를 갖기 전의 흔적이다. 그래서 비트 검사에는 괄호가 사실상 필수다. 표준도 각주에서 <code>a&lt;b&lt;c</code>가 수학과 다르게 읽힌다는 것을 따로 짚어 둔다.</p><h3>46.4 연산자별 계약</h3><p>이제 갈래별로 하나씩 본다. 각 표는 다섯 칸이다.</p><ul><li><strong>피연산자</strong> — 표준이 요구하는 것. 어기면 컴파일러가 진단해야 한다(제약 위반).</li><li><strong>결과</strong> — 값의 타입, 그리고 좌변값인지.</li><li><strong>회색지대</strong> — 49장의 세 낱말로 구분한다. <strong>UB</strong>는 정의되지 않은 동작, <strong>미지정</strong>은 몇 갈래 중 하나이되 어느 쪽인지 정해지지 않은 것, <strong>구현 정의</strong>는 구현이 정해 문서로 밝히는 것.</li><li><strong>자세히</strong> — 그 연산자를 서사로 다룬 장.</li></ul><div class="dev platform"><p class="dev-label">플랫폼 노트. 이 절의 근거</p>규칙은 ISO/IEC 9899:2024(C23)의 수식 조항(§6.5)과 대조해 적었다. 판마다 달라진 자리는 그 사실을 함께 적었다. 인용이 필요하면 부록 D의 안내대로 발행된 표준을 근거로 삼아야 한다.</div><h3>46.5 후위 연산자</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>연산자</strong></th><th><strong>피연산자</strong></th><th><strong>결과</strong></th><th><strong>회색지대</strong></th><th><strong>자세히</strong></th></tr><tr><td><code>a[i]</code> 첨자</td><td>한쪽은 완전한 객체 타입을 가리키는 포인터, 다른 쪽은 정수</td><td>가리키는 타입의 좌변값. <code>a[i]</code>는 <code>*(a+i)</code>와 같다</td><td><strong>UB</strong>: 배열의 경계 밖 접근(한 칸 지난 자리를 따라가는 것 포함)</td><td>37장</td></tr><tr><td><code>f(...)</code> 호출</td><td>함수 또는 함수를 가리키는 포인터</td><td>함수의 반환 타입. 좌변값이 아니다</td><td><strong>미지정</strong>: 인자들의 평가 순서. <strong>UB</strong>: 원형과 어긋난 인자</td><td>21·24·53장</td></tr><tr><td><code>s.m</code> 멤버</td><td>구조체·공용체 값과 그 멤버 이름</td><td>멤버의 타입. 왼쪽이 좌변값이면 좌변값</td><td><strong>UB</strong>: 공용체에서 마지막에 쓴 것이 아닌 멤버 읽기(공통 초기 순서는 예외)</td><td>43·45장</td></tr><tr><td><code>p->m</code> 멤버</td><td>구조체·공용체를 가리키는 포인터와 멤버 이름</td><td>멤버의 타입, 좌변값</td><td><strong>UB</strong>: 널이거나 유효하지 않은 포인터</td><td>43장</td></tr><tr><td><code>x++</code> 후위 증가</td><td>수정 가능한 좌변값 — 실수형 또는 포인터형</td><td><strong>바꾸기 전의 값</strong>. 좌변값이 아니다</td><td><strong>UB</strong>: 한 시퀀스 포인트 안 이중 수정, 부호 있는 정수의 넘침</td><td>31장</td></tr><tr><td><code>x--</code> 후위 감소</td><td>같음</td><td>바꾸기 전의 값</td><td>같음</td><td>31장</td></tr></table></div><p class="float-caption">표 46.4</p></figure><h3>46.6 단항 연산자</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>연산자</strong></th><th><strong>피연산자</strong></th><th><strong>결과</strong></th><th><strong>회색지대</strong></th><th><strong>자세히</strong></th></tr><tr><td><code>++x</code> <code>--x</code></td><td>수정 가능한 좌변값(실수형 또는 포인터형)</td><td><strong>바꾼 뒤의 값</strong></td><td><code>++E</code>는 <code>(E += 1)</code>과 같다 — 넘침 규칙도 같다</td><td>31장</td></tr><tr><td><code>&amp;x</code> 주소</td><td>함수 지시자, <code>[]</code>·<code>*</code>의 결과, 또는 <strong>비트필드가 아니고 <code>register</code>로 선언되지 않은</strong> 객체의 좌변값</td><td>그것을 가리키는 포인터</td><td>제약을 어기면 컴파일 오류다</td><td>34장</td></tr><tr><td><code>*p</code> 역참조</td><td>포인터 타입</td><td>가리키는 타입의 좌변값</td><td><strong>UB</strong>: 널·수명이 끝난 객체·정렬을 어긴 주소·출처 밖</td><td>34·36·41장</td></tr><tr><td><code>+x</code></td><td>산술 타입</td><td>승격된 값</td><td></td><td>20·28장</td></tr><tr><td><code>-x</code></td><td>산술 타입</td><td>승격된 값</td><td><strong>UB</strong>: 부호 있는 정수의 넘침(<code>-INT_MIN</code>)</td><td>26장</td></tr><tr><td><code>~x</code></td><td>정수 타입</td><td>승격 뒤의 비트 반전</td><td>승격된 폭에서 일어난다 — 좁은 타입에 담을 때 주의</td><td>27장</td></tr><tr><td><code>!x</code></td><td>스칼라(산술 또는 포인터)</td><td><code>0</code> 또는 <code>1</code>, 타입은 <code>int</code></td><td></td><td>29장</td></tr><tr><td><code>(타입)x</code> 캐스트</td><td>스칼라끼리</td><td>그 타입의 값. 좌변값이 아니다</td><td><strong>구현 정의</strong>: 포인터↔정수 변환. <strong>UB</strong>: 정렬을 어긴 포인터를 따라가기, 함수 포인터와 객체 포인터의 상호 변환</td><td>28·36장</td></tr><tr><td><code>sizeof</code></td><td>완전한 객체 타입이나 수식. <strong>함수 타입·불완전 타입·비트필드에는 쓸 수 없다</strong></td><td><code>size_t</code> 값</td><td>가변 길이 배열이면 실행 중에 평가된다 — 그 밖에는 피연산자가 평가되지 않는다</td><td>34·37장</td></tr><tr><td><code>alignof</code></td><td>완전한 객체 타입의 <strong>이름</strong>(수식이 아니다)</td><td><code>size_t</code> 값</td><td></td><td>36장</td></tr></table></div><p class="float-caption">표 46.5</p></figure><h3>46.7 산술 연산자</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>연산자</strong></th><th><strong>피연산자</strong></th><th><strong>결과</strong></th><th><strong>회색지대</strong></th><th><strong>자세히</strong></th></tr><tr><td><code>*</code> 곱셈</td><td>산술 타입</td><td>통상 산술 변환의 공통 타입</td><td><strong>UB</strong>: 부호 있는 정수의 넘침</td><td>26·28장</td></tr><tr><td><code>/</code> 나눗셈</td><td>산술 타입</td><td>같음</td><td><strong>UB</strong>: 제수가 0, <code>INT_MIN / -1</code></td><td>27·47장</td></tr><tr><td><code>%</code> 나머지</td><td><strong>정수 타입만</strong></td><td>같음</td><td><strong>UB</strong>: 제수가 0, <code>INT_MIN % -1</code></td><td>27장</td></tr><tr><td><code>+</code> 덧셈</td><td>둘 다 산술, 또는 완전한 객체 타입 포인터와 정수</td><td>산술이면 공통 타입, 포인터면 포인터</td><td><strong>UB</strong>: 정수 넘침, 배열 범위를 벗어난 포인터 산술</td><td>26·37장</td></tr><tr><td><code>-</code> 뺄셈</td><td>둘 다 산술, 포인터와 정수, 또는 <strong>같은 배열 안의</strong> 두 포인터</td><td>포인터끼리면 <code>ptrdiff_t</code></td><td><strong>UB</strong>: 다른 배열의 포인터끼리 빼기, 결과가 <code>ptrdiff_t</code>에 안 담기는 경우</td><td>26·37장</td></tr></table></div><p class="float-caption">표 46.6</p></figure><p>정수 나눗셈은 0을 향해 버린다(C99 이후 확정). 그래서 몫이 표현 가능한 한 <code>(a/b)*b + a%b == a</code>가 성립한다.</p><h3>46.8 시프트 연산자</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>연산자</strong></th><th><strong>피연산자</strong></th><th><strong>결과</strong></th><th><strong>회색지대</strong></th><th><strong>자세히</strong></th></tr><tr><td><code>E1 &lt;&lt; E2</code></td><td>둘 다 <strong>정수 타입</strong></td><td>승격된 <strong>왼쪽</strong> 피연산자의 타입</td><td><strong>UB</strong>: <code>E2</code>가 음수이거나 승격된 <code>E1</code>의 폭 이상. <strong>UB</strong>: <code>E1</code>이 부호 있는 음수이거나, 부호 있는 양수인데 <code>E1 × 2^E2</code>가 결과 타입에 안 담기는 경우</td><td>7·27장</td></tr><tr><td><code>E1 >> E2</code></td><td>둘 다 정수 타입</td><td>같음</td><td><strong>UB</strong>: <code>E2</code>가 음수이거나 폭 이상. <strong>구현 정의</strong>: <code>E1</code>이 부호 있는 음수일 때의 결과</td><td>7·27장</td></tr></table></div><p class="float-caption">표 46.7</p></figure><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“C23이 두 보수를 강제했으니 음수 시프트도 이제 정의됐다”</strong></p><p>두 보수 표현이 강제된 것은 맞다(C23). 그러나 시프트 조항은 그대로다 — <strong>부호 있는 음수의 좌시프트는 C23에서도 UB</strong>이고, <strong>음수의 우시프트는 구현 정의</strong>다. 대부분의 컴파일러가 산술 시프트로 동작하지만 그것은 표준의 약속이 아니라 그 구현의 약속이다.</p><p>실무의 규칙은 하나다 — <strong>시프트는 부호 없는 타입 위에서 한다.</strong> 부호 있는 값을 밀어야 하면 무부호로 옮겨 밀고 되돌린다. 횟수는 언제나 <code>0 &lt;= n &lt; 폭</code>인지 확인한다.</p></div><h3>46.9 관계·상등 연산자</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>연산자</strong></th><th><strong>피연산자</strong></th><th><strong>결과</strong></th><th><strong>회색지대</strong></th><th><strong>자세히</strong></th></tr><tr><td><code>&lt; &lt;= > >=</code></td><td>둘 다 실수 타입, 또는 <strong>호환되는 객체 타입을 가리키는 두 포인터</strong></td><td><code>0</code> 또는 <code>1</code>, 타입은 <code>int</code></td><td><strong>UB</strong>: 같은 배열(또는 같은 객체)에 속하지 않는 두 포인터의 크기 비교</td><td>29·36장</td></tr><tr><td><code>== !=</code></td><td>둘 다 산술, 호환되는 포인터끼리, 한쪽이 <code>void*</code>, 한쪽이 널 포인터 상수·<code>nullptr_t</code> 등</td><td><code>0</code> 또는 <code>1</code>, <code>int</code></td><td><strong>미지정</strong>: 어떤 객체의 “한 칸 지난” 포인터와 바로 뒤 객체의 포인터가 같게 비교될 수 있다</td><td>29·35장</td></tr></table></div><p class="float-caption">표 46.8</p></figure><p>두 연산자군은 계약이 다르다. <strong>상등 비교는 서로 다른 객체 사이에도 허용</strong>되지만 <strong>크기 비교는 같은 배열 안에서만</strong> 뜻이 있다. 배열이 아닌 객체는 “길이 1짜리 배열”처럼 취급된다. 실수에서 <code>+0.0</code>과 <code>-0.0</code>은 같다고 비교된다(47장).</p><h3>46.10 비트·논리 연산자</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>연산자</strong></th><th><strong>피연산자</strong></th><th><strong>결과</strong></th><th><strong>회색지대</strong></th><th><strong>자세히</strong></th></tr><tr><td><code>&amp;</code> <code>^</code> <code>|</code></td><td>둘 다 정수 타입</td><td>통상 산술 변환의 공통 타입</td><td>부호 비트까지 다루게 되므로 무부호 위에서 쓴다</td><td>27장</td></tr><tr><td><code>&amp;&amp;</code></td><td>둘 다 스칼라</td><td><code>0</code> 또는 <code>1</code>, <code>int</code></td><td><strong>보장</strong>: 왼쪽이 0이면 오른쪽은 평가되지 않고, 그 사이에 시퀀스 포인트가 있다</td><td>29장</td></tr><tr><td><code>||</code></td><td>둘 다 스칼라</td><td><code>0</code> 또는 <code>1</code>, <code>int</code></td><td><strong>보장</strong>: 왼쪽이 0이 아니면 오른쪽은 평가되지 않는다</td><td>29장</td></tr></table></div><p class="float-caption">표 46.9</p></figure><h3>46.11 조건·대입·쉼표</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>연산자</strong></th><th><strong>피연산자</strong></th><th><strong>결과</strong></th><th><strong>회색지대</strong></th><th><strong>자세히</strong></th></tr><tr><td><code>c ? a : b</code></td><td><code>c</code>는 스칼라. <code>a</code>·<code>b</code>는 둘 다 산술이거나, 호환되는 구조체·공용체이거나, 둘 다 <code>void</code>이거나, 호환되는 포인터이거나, 한쪽이 널 포인터 상수</td><td>두 갈래의 <strong>공통 타입 하나</strong></td><td><strong>보장</strong>: 조건 평가 뒤 시퀀스 포인트가 있고, 고르지 않은 쪽은 평가되지 않는다</td><td>32장</td></tr><tr><td><code>=</code></td><td>왼쪽은 수정 가능한 좌변값</td><td>왼쪽 타입으로 변환된 값. <strong>좌변값이 아니다</strong></td><td><strong>UB</strong>: 겹치는 객체 사이의 대입(정확히 겹치고 호환되는 타입이면 허용), 한 시퀀스 포인트 안 이중 수정</td><td>23장</td></tr><tr><td>복합 대입 <code>op=</code></td><td><code>E1 op= E2</code></td><td><code>E1 = E1 op E2</code>와 같되 <strong><code>E1</code>을 한 번만 평가한다</strong></td><td>연산 자체의 회색지대(넘침·0 나누기)는 그대로 적용된다</td><td>32장</td></tr><tr><td><code>,</code> 쉼표</td><td>아무 수식 둘</td><td>오른쪽의 타입과 값</td><td><strong>보장</strong>: 왼쪽을 평가해 버린 뒤 시퀀스 포인트. 함수 인자 목록의 쉼표는 <strong>연산자가 아니다</strong></td><td>32장</td></tr></table></div><p class="float-caption">표 46.10</p></figure><h3>46.12 평가 순서와 시퀀스 포인트</h3><p>우선순위는 <strong>묶는 규칙</strong>이지 <strong>평가의 시간 순서</strong>가 아니다(13·32장). 순서가 보장되는 자리는 다음 다섯뿐이다.</p><ul><li><code>&amp;&amp;</code>의 왼쪽과 오른쪽 사이</li><li><code>||</code>의 왼쪽과 오른쪽 사이</li><li><code>?:</code>의 조건과 고른 가지 사이</li><li>쉼표 <strong>연산자</strong>의 왼쪽과 오른쪽 사이</li><li>함수 호출에서 인자들의 평가와 본체 실행 사이(<strong>인자들끼리의 순서는 미지정</strong>)</li></ul><p>그 밖에는 아무 순서도 보장되지 않는다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>수식</strong></th><th><strong>판정</strong></th></tr><tr><td><code>f() + g()</code></td><td><strong>미지정</strong> — 어느 쪽이 먼저 불릴지 정해지지 않는다</td></tr><tr><td><code>h(f(), g())</code></td><td><strong>미지정</strong> — 인자 평가 순서</td></tr><tr><td><code>i = i++</code></td><td><strong>UB</strong> — 한 시퀀스 포인트 안에서 <code>i</code>를 두 번 바꾼다</td></tr><tr><td><code>a[i] = i++</code></td><td><strong>UB</strong> — 같은 이유</td></tr><tr><td><code>i++ + i++</code></td><td><strong>UB</strong></td></tr><tr><td><code>f(i++, i++)</code></td><td><strong>UB</strong> — 인자 사이에는 시퀀스 포인트가 없다</td></tr><tr><td><code>i++, i++</code></td><td>정상 — 쉼표 <strong>연산자</strong> 사이에는 시퀀스 포인트가 있다</td></tr><tr><td><code>(i++) &amp;&amp; (i++)</code></td><td>정상 — <code>&amp;&amp;</code> 사이에 시퀀스 포인트가 있다</td></tr></table></div><p class="float-caption">표 46.11</p></figure><p>C11 이후 표준은 이 규칙을 “시퀀스 포인트” 대신 <strong>sequenced-before</strong>라는 관계로 다시 적었지만, 실무의 결론은 같다 — <strong>한 수식 안에서 같은 객체를 두 번 건드리지 않는다.</strong> gcc의 <code>-Wsequence-point</code>가 흔한 경우를 잡아 주지만 전부는 아니다.</p><h3>46.13 회색지대 총람</h3><p>49장의 세 낱말로 연산자 관련 항목만 모았다. 전체 목록은 표준의 부속서 J에 있다.</p><h4>46.13.1 정의되지 않은 동작(UB)</h4><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>자리</strong></th><th><strong>조건</strong></th></tr><tr><td><code>/</code> <code>%</code></td><td>제수가 0. <code>INT_MIN / -1</code>, <code>INT_MIN % -1</code></td></tr><tr><td><code>+ - *</code> <code>++ --</code></td><td>부호 있는 정수의 넘침</td></tr><tr><td><code>&lt;&lt;</code></td><td>횟수가 음수이거나 폭 이상. 부호 있는 음수의 좌시프트. 부호 있는 양수라도 결과가 안 담기는 경우</td></tr><tr><td><code>>></code></td><td>횟수가 음수이거나 폭 이상</td></tr><tr><td><code>*</code> 역참조</td><td>널·수명이 끝난 객체·정렬 위반·출처 밖 포인터</td></tr><tr><td><code>[]</code></td><td>배열 경계 밖 접근</td></tr><tr><td><code>+ -</code> 포인터 산술</td><td>배열의 범위(한 칸 지난 자리까지)를 벗어난 결과</td></tr><tr><td><code>-</code> 포인터끼리</td><td>서로 다른 배열의 포인터</td></tr><tr><td><code>&lt; &lt;= > >=</code></td><td>같은 배열·객체에 속하지 않는 포인터끼리의 크기 비교</td></tr><tr><td><code>.</code> <code>-></code> 공용체</td><td>마지막에 쓴 멤버가 아닌 멤버 읽기(공통 초기 순서는 예외)</td></tr><tr><td>수식 일반</td><td>한 시퀀스 포인트 안에서 같은 객체를 두 번 바꾸거나, 바꾸면서 그 값을 다른 목적으로 읽는 것</td></tr></table></div><p class="float-caption">표 46.12</p></figure><h4>46.13.2 미지정(unspecified)</h4><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>자리</strong></th><th><strong>무엇이 정해지지 않았나</strong></th></tr><tr><td>부분식</td><td><code>f() + g()</code>의 평가 순서</td></tr><tr><td>함수 인자</td><td>인자들끼리의 평가 순서</td></tr><tr><td><code>==</code> <code>!=</code></td><td>한 객체의 “한 칸 지난” 포인터가 이웃 객체의 포인터와 같게 비교될 수 있는지</td></tr><tr><td>채움 바이트</td><td>구조체의 채움(padding) 값 — 비교에 <code>memcmp</code>를 쓰면 안 되는 이유(44장)</td></tr></table></div><p class="float-caption">표 46.13</p></figure><h4>46.13.3 구현 정의(implementation-defined)</h4><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>자리</strong></th><th><strong>구현이 정하는 것</strong></th></tr><tr><td><code>>></code></td><td>부호 있는 음수를 밀 때의 결과(대개 산술 시프트)</td></tr><tr><td>정수 변환</td><td>부호 있는 타입에 담기지 않는 값을 변환한 결과(C23에서도 그렇다)</td></tr><tr><td>포인터 ↔ 정수</td><td>변환 결과와 왕복 가능성(<code>uintptr_t</code>가 있을 때의 왕복만 표준이 보장한다)</td></tr><tr><td><code>char</code></td><td>부호 있음/없음 — <code>>></code>와 비교에서 갈린다(9장)</td></tr><tr><td>비트필드</td><td>배치 순서와 채움</td></tr></table></div><p class="float-caption">표 46.14</p></figure><h3>46.14 연산자가 아닌 것들</h3><p>문법에서 같은 글자를 쓰지만 연산자가 아닌 것들이 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>모양</strong></th><th><strong>정체</strong></th><th><strong>자세히</strong></th></tr><tr><td><code>f(a, b)</code>의 쉼표</td><td>함수 호출 문법의 구분자 — 시퀀스 포인트가 없다</td><td>32장</td></tr><tr><td><code>int a, b;</code>의 쉼표</td><td>선언 문법의 구분자</td><td>23장</td></tr><tr><td><code>{1, 2}</code>의 쉼표</td><td>초기화 목록의 구분자</td><td>37·43장</td></tr><tr><td><code>(타입){...}</code></td><td>복합 리터럴 — 캐스트가 아니라 <strong>객체를 만드는 문법</strong></td><td>44장</td></tr><tr><td><code>sizeof(int)</code>의 괄호</td><td>타입 이름을 감싸는 문법 — 함수 호출이 아니다</td><td>34장</td></tr><tr><td><code>#</code> <code>##</code></td><td>전처리기 연산자 — 번역의 다른 단계에서 동작한다</td><td>52장</td></tr><tr><td><code>{.x = 1}</code>의 점</td><td>지정 초기화 문법 — 멤버 접근이 아니다</td><td>43장</td></tr><tr><td><code>int *p;</code>의 별표</td><td>선언자 문법 — 역참조가 아니다</td><td>55장</td></tr></table></div><p class="float-caption">표 46.15</p></figure><div class="dev recap"><p class="dev-label">복습 정리</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요점</strong></th></tr><tr><td>수식이 가진 것</td><td>값·타입·값 범주·부수효과 넷</td></tr><tr><td>우선순위</td><td>묶는 규칙일 뿐, 계산 순서가 아니다</td></tr><tr><td>결합</td><td>같은 세기끼리 어느 쪽부터 묶는가</td></tr><tr><td>순서가 보장되는 곳</td><td><code>&amp;&amp;</code>·<code>||</code>·<code>?:</code>·쉼표 연산자·함수 호출 다섯 자리뿐</td></tr><tr><td>회색지대</td><td>UB·미지정·구현 정의를 낱말로 구별해 읽는다</td></tr><tr><td>실무 수칙</td><td>괄호를 쓰고, 한 수식에서 같은 객체를 두 번 건드리지 않는다</td></tr></table></div><p class="float-caption">표 46.16</p></figure></div><p>연산자를 계약으로 읽는 눈이 갖춰졌다. 다음 장부터는 그 계약이 가장 미묘해지는 자리들로 들어간다 — 근사의 수학(47장), 실패를 다루는 법(48장), 그리고 계약을 어겼을 때 무슨 일이 일어나는가(49장)다.</p>
 <div class="nav"><a href="ch45.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch47.html">다음 →</a></div>
 </div></main></body></html>

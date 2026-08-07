@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>47 main의 세 얼굴 — 진입점과 종료 상태 — Proven C Book</title><style>
+<title>47 실수 — 근사의 수학 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,52 +259,168 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../en/">English</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch46.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch48.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch47.html">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>47 <code>main</code>의 세 얼굴 — 진입점과 종료 상태</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-83"></span><p>14장에서 “약속된 출발점”이라고만 하고 지나간 <code>main</code>을 정면으로 다룬다. 표준이 허용하는 <strong>세 가지 형태</strong>, 명령줄 인자 <code>argc</code>·<code>argv</code>의 정확한 계약, <span id="idx-entry-84"></span>그리고 돌려주는 값이 어디로 가서 무엇이 되는지 — 리눅스·윈도우·임베디드의 관례까지. <code>void main()</code>이 왜 틀린 표기인지도 여기서 매듭짓는다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>3장에서 프로세스가 끝나며 <strong>종료 상태</strong>라는 숫자 하나를 남긴다고 했고, 14장의 헬로 월드는 <code>return 0;</code>으로 끝났다. 그러면 그 0은 누가 받고, 0이 아닌 값을 돌려주면 무슨 일이 일어나는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>받는 쪽은 <strong>이 프로그램을 실행한 쪽</strong>이다 — 터미널의 셸, 빌드 도구, 스크립트, 또는 이 프로그램을 자식으로 띄운 다른 프로그램. 그들은 그 숫자 하나로 “잘 끝났는가”를 판단하고 다음 행동을 정한다. 그래서 <code>main</code>의 반환값은 장식이 아니라 <strong>프로그램이 바깥세상과 나누는 마지막 대화</strong>다.</p></div></div><h3>47.1 표준이 허용하는 세 가지 형태</h3><p>C 표준은 <code>main</code>의 정의를 이렇게 못박는다 — 반환 타입은 <code>int</code>여야 하고, 매개변수는 <strong>없거나</strong>, <strong>둘이거나</strong>, 아니면 <strong>구현이 정한 다른 방식</strong>이어야 한다. 그래서 세 얼굴이다.</p><table><tr><th><strong>형태</strong></th><th><strong>언제 쓰나</strong></th><th><strong>지위</strong></th></tr><tr><td><code>int main(void)</code></td><td>명령줄 인자를 쓰지 않을 때</td><td>표준</td></tr><tr><td><code>int main(int argc, char *argv[])</code></td><td>인자를 받을 때</td><td>표준</td></tr><tr><td>그 밖의 형태</td><td><code>envp</code> 같은 확장 인자</td><td><strong>구현 정의</strong></td></tr></table><p>두 번째 형태의 <code>char *argv[]</code>는 <code>char **argv</code>라고 적어도 같다(37장의 배열 매개변수가 포인터로 무너지는 규칙 그대로다). 이름도 자유다 — <code>argc</code>·<code>argv</code>는 관례일 뿐이다.</p><p>세 번째 형태의 대표가 <code>int main(int argc, char *argv[], char *envp[])</code>다. 유닉스 계열과 윈도우가 흔히 지원하지만 <strong>표준이 아니고</strong>, 환경 변수를 읽는 이식성 있는 길은 <code>getenv</code>(55장)다.</p><div class="dev antipattern"><p class="dev-label">✗ <code>void main()</code></p><pre><code data-lang="c">void main(void) { … }        /* 표준이 아니다 */</code></pre><p>옛 교재와 Turbo C 시절 코드에서 흔히 보이는 표기다. 표준은 반환 타입을 <code>int</code>로 못박았으므로, 이 표기는 <strong>호스트 환경에서는 계약 밖</strong>이다. 실제로 많은 컴파일러가 경고를 내고, 일부는 오류로 처리한다.</p><p>두 가지 예외적 사정만 알아 두면 된다. 첫째, <strong>자유 사용 구현</strong>(53장)에서는 시작 함수의 이름과 형태가 구현이 정하는 것이라 <code>void main(void)</code>를 공식 지원하는 임베디드 컴파일러가 실제로 있다 — 반환값을 받을 곳이 없으니 그 코드를 없애 크기를 아끼려는 것이다. 둘째, 그것은 <strong>그 컴파일러의 약속</strong>이지 표준의 약속이 아니다. 호스트 환경의 코드에서는 언제나 <code>int</code>다.</p></div><h3>47.2 <code>argc</code>와 <code>argv</code>의 계약</h3><div><div><p><code>examples/ch47/entry.c</code></p><pre><code data-lang="c">/* main 이 받는 것과 남기는 것 */
-#include &lt;stdio.h>
-#include &lt;stdlib.h>
+<h2 id="loc-47">47 실수 — 근사의 수학</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>8장 수의 표현 · IEEE 754 라는 계약</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>8장에서 <code>0.1 + 0.2</code>와 <code>0.3</code>은 마지막 비트 하나(1 ulp) 차이의 이웃이라 했고, 비교는 “충분히 가까운가”로 바꿔야 한다고 했다. 그러면 그 “충분히”의 기준 — 엡실론 — 은 어떻게 정하는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 값의 크기에 따라 달라져야 한다는 것이 8장 셋째 사건의 교훈이다. 0 근처에서는 눈금이 촘촘하니 작은 고정값이면 되지만, <math><msup><mn>10</mn><mn>16</mn></msup></math>쯤에서는 눈금 간격 자체가 1을 넘으므로 같은 기준이 무의미해진다. 그래서 실무는 두 가지를 갖춘다 — <strong>절대 오차</strong>(0 근처용)와 <strong>상대 오차</strong>(크기에 비례). 이 장의 시연이 둘을 나란히 보인다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">8장에서 지면으로 배운 근사의 세계가 드디어 C 코드로 내려온다. <code>float</code> <span id="idx-entry-81"></span>와 <code>double</code>의 선택, 비교의 올바른 방법(엡실론 — 절대와 상대), 그리고 특수값(무한대·NaN)까지. 8장의 세 사건이 실행 결과로 확인된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 돈 계산 같은 곳에는 실수를 쓰면 안 되는가?</li></ol></div></div><div></div><h3>47.1 타입 선택과 비교</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch47/eps.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">math.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
-/* 프로그램이 끝날 때 불러 달라고 등록해 두는 함수 */
-static void farewell(void)
-{
-    puts("  atexit: 등록해 둔 마무리가 여기서 돈다");
-}
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 절대 오차: 0 근처의 비교에 쓴다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">bool</span></strong> <strong>near_abs</strong><span class="tok-x">(</span><strong><span class="tok-t">double</span></strong> a<span class="tok-x">,</span> <strong><span class="tok-t">double</span></strong> b<span class="tok-x">,</span> <strong><span class="tok-t">double</span></strong> eps<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">return</span></strong> <strong>fabs</strong><strong><span class="tok-x">(</span></strong><strong>a </strong><strong><span class="tok-x">-</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">&lt;</span></strong> eps<span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-int main(int argc, char *argv[])
-{
-    atexit(farewell);
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 상대 오차: 값이 커지면 눈금도 커지므로 크기에 비례한 허용치를 쓴다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">bool</span></strong> <strong>near_rel</strong><span class="tok-x">(</span><strong><span class="tok-t">double</span></strong> a<span class="tok-x">,</span> <strong><span class="tok-t">double</span></strong> b<span class="tok-x">,</span> <strong><span class="tok-t">double</span></strong> rel<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">double</span></strong> scale <strong><span class="tok-x">=</span></strong> <strong>fabs</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">></span></strong> <strong>fabs</strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">?</span></strong> <strong>fabs</strong><strong><span class="tok-x">(</span></strong><strong>a</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">:</span></strong> <strong>fabs</strong><strong><span class="tok-x">(</span></strong><strong>b</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <strong>fabs</strong><strong><span class="tok-x">(</span></strong><strong>a </strong><strong><span class="tok-x">-</span></strong><strong> b</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">&lt;=</span></strong> rel <strong><span class="tok-x">*</span></strong> scale<span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-    printf("argc = %d\n", argc);
-    for (int i = 0; i &lt; argc; i++)
-        printf("  argv[%d] = \"%s\"\n", i, argv[i]);
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">double</span></strong> sum <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">1</span> <strong><span class="tok-x">+</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">2</span><span class="tok-x">;</span>
 
-    /* 표준이 약속한다: argv[argc] 는 반드시 널 포인터다 */
-    printf("argv[argc] 는 널인가? %s\n", argv[argc] == nullptr ? "예" : "아니오");
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1 + 0.2 == 0.3 ?      </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">compare with absolute eps? </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>near_abs</strong><strong><span class="tok-x">(</span></strong><strong>sum</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1e-9</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%.20f</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> sum</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%.20f</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    printf("EXIT_SUCCESS = %d, EXIT_FAILURE = %d\n", EXIT_SUCCESS, EXIT_FAILURE);
+    <strong><span class="tok-t">double</span></strong> big <strong><span class="tok-x">=</span></strong> <span class="tok-n">1e16</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">1e16 + 1 == 1e16 ?      </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">  (gap wider than 1)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> big </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> big</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">compare with relative eps? </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>near_rel</strong><strong><span class="tok-x">(</span></strong><strong>big </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> big</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1e-12</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>0.1 + 0.2 == 0.3 ?      0
+compare with absolute eps? 1
+0.30000000000000004441
+0.29999999999999998890
+1e16 + 1 == 1e16 ?      1  (gap wider than 1)
+compare with relative eps? 1
+</code></pre></div></div><p>첫 세 줄이 8장 첫 사건의 실행 확인이다 — <code>==</code>는 거짓이고, 20자리까지 찍어 보면 두 수가 마지막에서 갈린다. <code>near_abs</code>(절대 오차)를 쓰면 참이 된다.</p><p>뒷부분이 셋째 사건(흡수)의 확인이다 — <math><msup><mn>10</mn><mn>16</mn></msup></math>에 1을 더해도 값이 그대로 다. 그 크기에서는 표현 가능한 이웃 사이의 간격이 이미 1보다 넓기 때문이다(8장의 눈금 계산). 여기서는 절대 오차가 아니라 <code>near_rel</code>(상대 오차)이 옳은 도구다.</p><p>실무 수칙으로 줄이면 셋이다. <strong>기본은 <code>double</code></strong> — 8장에서 본 대로 정밀도의 여유가 다르고, <code>float</code>는 메모리·대역폭이 아쉬운 곳에서만 고른다. <strong><code>==</code>는 쓰지 않는다</strong> — 두 실수가 같은지 묻는 코드는 거의 언제나 의심 대상이다(정수와 비교할 때, 0과 비교할 때 등 예외는 있지만 의식 적으로 판단해야 한다). <strong>허용치는 문제에서 나온다</strong> — 계산의 성격과 값의 크기를 보고 정하는 것이지 마법 상수가 있는 것이 아니다.</p><h3>47.2 특수값 — 무한대와 NaN</h3><p>IEEE 754(8장)는 평범한 수 말고도 특별한 값을 정의해 두었다. <strong>무한대</strong> (양·음)는 넘침이나 0으로 나누기의 결과로 나오고, <strong>NaN</strong>(Not a Number)은 “수가 아님” — <math><mfrac><mn>0</mn><mn>0</mn></mfrac></math>이나 음수의 제곱근 같은 정의 불가 연산의 결과다. 여기서 한 가지를 정확히 짚어야 한다. 정수의 0 나누기는 계약 밖(27장)이고, 부동소수점의 0 나누기는 흔히 “정의되어 무한대가 된다”고들 말한다. 그러나 <strong>그것은 C 언어 자체의 약속이 아니다.</strong> C 표준의 나눗셈 규칙은 제수가 0이면 동작을 정의하지 않는다 — 정수든 실수든 마찬가지다. 무한대가 나오는 것은 IEC 60559(즉 IEEE 754) 의미를 지원하는 구현에서다. 그런 구현에서는 유한한 0 아닌 값을 0으로 나누면 부호 있는 무한대가 나오고 “0 나누기” 예외가 서며, <math><mfrac><mn>0</mn><mn>0</mn></mfrac></math>은 NaN 쪽이다. 오늘의 주류 컴파일러와 x86-64·AArch64 에서는 그렇게 동작하지만, 표준이 모든 구현에 강제하는 바는 아니다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트. 이 구별이 실무에서 갈리는 자리</p><p>구현이 이진 부동소수점에 대해 IEC 60559 를 따른다고 선언하는 표시는 <code>__STDC_IEC_60559_BFP__</code> 다(BFP = binary floating point). 이 매크로가 정의돼 있으면 부속서 F 의 의미가 계약이 되고, 위의 동작을 기대할 수 있다. 십진 부동소수점 쪽은 <code>__STDC_IEC_60559_DFP__</code> 로 따로 표시한다.</p><p>이름이 비슷한 <code>__STDC_IEC_60559_BF16_TYPES__</code> 와 헷갈리지 않아야 한다 — 그것은 bfloat16 타입을 제공하는지에 관한 <strong>별개의</strong> 기능 표시이지, 일반 이진 부동소수점의 연산 의미와는 상관이 없다. 덧붙여, <strong>타입의 형식이 IEC 60559 와 같다는 것과 연산 의미까지 부속서 F 를 따른다는 것은 서로 다른 질문이다</strong> — 앞은 <code>__STDC_IEC_60559_TYPES__</code> 쪽 이야기이고, 여기서 필요한 것은 뒤쪽이다. 그렇지 않은 환경 — 일부 임베디드 툴체인, 그리고 <code>-ffast-math</code> 같이 부속서 F 의미를 일부러 끄는 빌드 — 에서는 무한대·NaN 이 나온다는 보장이 사라진다. <strong>이식 가능한 코드는 0 제수를 먼저 걸러 낸다.</strong></p></div><h4>47.2.1 비트를 직접 열어 본다</h4><p>8장에서 배치를 보았으니, 이제 실제 값의 비트를 찍어 확인한다. 표현을 옮길 때는 공용체가 아니라 <code>memcpy</code>를 쓴다 — 45장의 규칙대로 “값을 옮기는” 것이 가장 안전한 통로이고, 컴파일러는 이 복사를 대개 없애 버린다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch47/bits.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 실수의 속을 열어 본다 — 부호·지수·가수가 실제로 어떻게 들어 있는가.</span></em>
+<em><span class="tok-c">   타입 퍼닝은 공용체가 아니라 memcpy 로 한다(36·45장의 규칙). </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">inttypes.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">math.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 
-    /* 성공을 알리는 세 가지 표기는 모두 같은 뜻이다 */
-    return EXIT_SUCCESS;        /* == return 0; == (C99 부터) 그냥 끝내기 */
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>argc = 1
-  argv[0] = "/opt/data/ai-share/proven_c_book/build/examples-bin/ch47/entry"
-argv[argc] 는 널인가? 예
-EXIT_SUCCESS = 0, EXIT_FAILURE = 1
-  atexit: 등록해 둔 마무리가 여기서 돈다
-</code></pre></div></div><p>표준이 약속하는 것은 다음과 같고, 이 약속이 인자 처리 코드의 뼈대가 된다.</p><ol><li><code>argc</code>는 <strong>0 이상</strong>이다. 인자가 하나도 없을 수 있다.</li><li><code>argv[0]</code>은 <strong>프로그램 이름</strong>이다 — 다만 이름을 알 수 없으면 빈 문자열일 수 있다. 그래서 <code>argv[0]</code>을 무조건 믿고 경로를 계산하는 코드는 위험하다.</li><li><code>argv[1]</code>부터 <code>argv[argc-1]</code>까지가 실제 인자다.</li><li><strong><code>argv[argc]</code>는 반드시 널 포인터다.</strong> 예제가 그것을 확인했다. 그래서 <code>for (char **p = argv; *p; p++)</code>처럼 널을 끝 표시로 삼는 순회가 성립한다.</li><li>이 문자열들은 <strong>수정할 수 있고</strong>, 프로그램이 도는 동안 유효하다.</li></ol><div><div class="dev qa-q"><p class="dev-label">문</p><p>인자를 해석하는 코드를 직접 짜야 하는가? <code>-v</code>나 <code>--help</code> 같은 것들 말이다.</p></div><div class="dev qa-a"><p class="dev-label">답 먼저 두 가지를 갈라야 한다 — <strong>인자를 받는 것</strong>과 <strong>인자를 해석하는 것</strong>은 다른 일이다.</p><p><strong>받는 것은 표준에 있다.</strong> 방금 본 <code>argc</code>·<code>argv</code>가 그것이고, 어느 플랫폼 에서든 이 두 매개변수로 인자가 들어온다. 이 자리에 부족한 것은 없다.</p><p><strong>해석기가 없는 것이다.</strong> “<code>-v</code>는 자세히 보기, <code>--out FILE</code>은 값이 붙는 옵션, 나머지는 파일 이름”처럼 <strong>해석하는</strong> 규칙을 표준 C는 하나도 제공하지 않는다. <code>getopt</code> 같은 함수가 <code>&lt;stdlib.h></code>에 없다는 뜻이다. 그래서 그 일은 세 갈래로 나뉜다.</p><p><strong>직접 짜기</strong> — 짧은 프로그램이면 이것으로 충분하다. <code>argv</code>를 훑으며 <code>strcmp</code>로 가르고, 값이 붙는 인자는 다음 칸을 읽는다. 숫자로 바꿀 때는 <code>atoi</code>가 아니라 <code>strtol</code>을 쓴다(55장).</p><p><strong>플랫폼 도구</strong> — 유닉스 계열에는 POSIX의 <code>getopt</code>(<code>&lt;unistd.h></code>)와 GNU의 <code>getopt_long</code>(<code>--이름</code> 형태를 다룬다)이 있고, glibc에는 도움말까지 만들어 주는 <code>argp</code>가 있다. 전부 표준이 아니라 플랫폼의 것이다. 윈도우의 C 런타임에는 <code>getopt</code>가 없어서, 이식 프로젝트는 대개 <code>getopt</code> 구현 하나를 저장소에 넣어 두거나 자체 해석기를 쓴다.</p><p><strong>라이브러리</strong> — 규모가 커지면(하위 명령, 도움말 생성, 설정 파일과의 병합) 인자 해석 전용 라이브러리를 쓴다.</p><p>어느 쪽이든 규칙 하나는 지킨다: <strong>인자는 바깥에서 온 입력이다.</strong> 39장의 입력 처리 수칙 — 길이를 믿지 않고, 숫자 변환의 실패를 확인하고, 경로를 그대로 이어 붙이지 않는 것 — 이 그대로 적용된다.</p></div></div><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — 인자는 어떻게 프로그램까지 오는가 — 유닉스와 윈도우</p><p><code>argv</code>가 표준이라고 해서 <strong>만들어지는 방식</strong>까지 같은 것은 아니다. 두 세계가 정반대다.</p><p><strong>유닉스 계열</strong> — 프로그램을 띄우는 쪽이 애초에 <strong>문자열의 배열</strong>을 넘긴다 (3장의 <code>execve</code>가 그렇다). 셸이 따옴표와 와일드카드를 먼저 처리해 조각내 주므로, 프로그램이 받는 <code>argv</code>는 이미 나뉘어 있다. 커널은 그 배열을 그대로 새 프로세스에 실어 준다.</p><p><strong>윈도우</strong> — <code>CreateProcess</code>는 <strong>문자열 하나</strong>를 넘긴다(3장). 즉 나누는 일이 받는 쪽 몫이다. 그래서 C 런타임이 시작 코드에서 그 한 줄을 규칙에 따라 쪼개 <code>argv</code>를 만들어 <code>main</code>에 넘긴다 — <code>argc</code>·<code>argv</code>가 표준대로 오는 것은 런타임이 그 일을 대신해 주기 때문이다.</p><p>이 차이가 실무에 두 가지를 남긴다. 첫째, 윈도우에서는 <strong>원본 명령줄</strong>을 직접 볼 수 있고 필요하면 직접 쪼갤 수도 있다 — <code>GetCommandLineW</code>가 그 한 줄을 돌려주고, <code>CommandLineToArgvW</code>가 표준 규칙으로 쪼개 준다. 유니코드 인자를 온전히 받으려면 <code>wmain</code>(또는 이 두 함수)을 쓰는 것이 관행이다. 둘째, <strong>쪼개는 규칙이 플랫폼마다 다르다</strong> — 따옴표와 역슬래시의 처리가 특히 그렇다. 그래서 다른 프로그램을 띄우며 인자를 만들 때는 “문자열을 손으로 이어 붙이지 말고 인자를 배열로 넘기는” API(<code>posix_spawn</code>, <code>CreateProcess</code>의 인자 조립 규칙)를 쓰라는 조언이 나온다(58장의 <code>system</code> 반례와 같은 결이다).</p></div><h3>47.3 돌려주는 값 — 세 가지 표기와 하나의 뜻</h3><p><code>main</code>을 끝내는 방법은 셋이고, 셋 다 같은 뜻이다.</p><pre><code data-lang="c">return 0;              /* 명시적 */
-return EXIT_SUCCESS;   /* &lt;stdlib.h> 의 이름. 값은 0 */
-}                      /* 그냥 끝내기 — C99 부터 return 0; 과 같다 */</code></pre><p>마지막 것이 C99에서 들어온 특례다. <strong><code>main</code>에 한해</strong> 반환값 없이 끝나면 0을 돌려준 것으로 친다(다른 함수에서는 값을 안 돌려주고 그 값을 쓰면 계약 밖이다). C89 시절 코드가 값 없이 끝나는 일이 흔했던 것을 표준이 뒤늦게 추인한 셈이다.</p><p>실패를 알릴 때는 <code>EXIT_FAILURE</code>를 쓴다. 예제가 확인한 대로 흔한 값은 1이지만 <strong>표준이 1이라고 약속하지는 않는다</strong> — “0이 아닌, 실패를 뜻하는 값”일 뿐이다. 그 밖의 숫자를 돌려주는 것은 <strong>구현 정의</strong>다.</p><table><tr><th><strong>끝내는 방법</strong></th><th><strong>하는 일</strong></th><th><strong>주의</strong></th></tr><tr><td><code>return n;</code> (main 에서)</td><td><code>exit(n)</code>과 같다</td><td>정리 절차가 모두 돈다</td></tr><tr><td><code>exit(n)</code></td><td>어디서든 프로그램 종료</td><td><code>atexit</code> 등록 함수 실행, 스트림 비움</td></tr><tr><td><code>quick_exit(n)</code></td><td>빠른 종료(C11)</td><td><code>at_quick_exit</code> 만 돈다</td></tr><tr><td><code>_Exit(n)</code></td><td>즉시 종료</td><td>정리를 <strong>하지 않는다</strong></td></tr><tr><td><code>abort()</code></td><td>비정상 종료</td><td>정리 없음. 코어 덤프가 남을 수 있다</td></tr></table><p>예제의 <code>atexit</code>가 그 정리 절차를 보여 준다 — 등록해 둔 함수가 <code>main</code>이 끝난 뒤에 돌았다. 여기에 열린 스트림을 비우는 일(55장의 버퍼)도 포함된다. 그래서 <strong><code>_Exit</code>나 <code>abort</code>로 끝내면 출력이 사라질 수 있다.</strong></p><div class="dev misconception"><p class="dev-label">⚠ “종료 상태로 아무 숫자나 돌려줄 수 있다”</p><p>돌려줄 수는 있지만 <strong>받는 쪽이 그대로 보리라는 보장은 없다.</strong> 유닉스 계열은 자식의 종료 상태를 전할 때 <strong>하위 8비트만</strong> 쓴다. 그래서 <code>return 300;</code>으로 끝낸 프로그램의 상태를 셸에서 보면 300이 아니라 44다(300 − 256).</p><pre><code data-lang="text">$ ./ex ; echo $?
-44</code></pre><p>윈도우는 32비트 종료 코드를 그대로 전하므로 이 잘림이 없다. 이식성 있는 규칙은 하나다 — <strong>0은 성공, 1은 실패, 그 밖에는 0–125 범위의 작은 수만 쓴다.</strong> 큰 수나 음수를 상태로 흘려보내지 않는다.</p></div><h3>47.4 관례 — 그 숫자를 누가 어떻게 읽는가</h3><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — 리눅스·유닉스 계열</p><p>셸이 마지막 명령의 상태를 <code>$?</code>에 담아 둔다. 관례는 이렇다.</p><table><tr><th><strong>값</strong></th><th><strong>뜻</strong></th></tr><tr><td>0</td><td>성공</td></tr><tr><td>1</td><td>일반적인 실패</td></tr><tr><td>2</td><td>사용법 오류(많은 도구의 관례)</td></tr><tr><td>126</td><td>실행할 수는 있으나 권한 등으로 실행 실패(셸)</td></tr><tr><td>127</td><td>명령을 찾을 수 없음(셸)</td></tr><tr><td>128 + N</td><td>N번 신호로 죽었다(셸의 표기)</td></tr></table><p>이 관례 덕에 스크립트가 <code>if ./프로그램; then …</code>처럼 상태만으로 흐름을 정할 수 있고, <code>make</code>와 CI가 실패를 알아챈다. BSD 계열에는 <code>&lt;sysexits.h></code>에 더 세분한 관례(<code>EX_USAGE</code> 64 등)가 있지만 널리 쓰이지는 않는다.</p><p>주의: 128 이상은 신호로 죽은 것과 헷갈리므로, 프로그램이 스스로 돌려주는 값으로는 피하는 편이 좋다.</p></div><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — 윈도우</p><p>같은 숫자가 <strong>종료 코드</strong>(exit code)라 불리고, 배치 파일에서 <code>%ERRORLEVEL%</code>로, PowerShell 에서 <code>$LASTEXITCODE</code>로 읽는다. 프로그램에서 자식의 코드를 받을 때는 <code>GetExitCodeProcess</code>를 쓴다.</p><p>차이는 둘이다. <strong>하위 8비트로 잘리지 않는다</strong>(32비트 그대로), 그리고 특정 값들이 시스템 오류 코드와 겹쳐 읽힐 수 있다. 일반 프로그램은 여전히 0과 1을 쓰는 것이 안전하다.</p></div><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — 임베디드 — 돌아갈 곳이 없다</p><p>운영체제가 없는 기계에서는 <code>main</code>이 끝나도 상태를 받을 상대가 없다. 그래서 이 세계의 <code>main</code>은 대개 <strong>끝나지 않는다</strong>.</p><pre><code data-lang="c">int main(void)
-{
-    init();
-    for (;;) {            /* 영원히 돈다 */
-        poll();
-    }
-}</code></pre><p>만약 끝나면 무슨 일이 벌어지는가 — 그것도 구현이 정한다. 시작 코드가 무한 루프로 붙잡아 두거나, 칩을 리셋하거나, 아무 데로나 흘러갈 수 있다. 그래서 임베디드 코딩 규약들은 “<code>main</code>은 반환하지 않는다”를 명시적으로 요구하는 경우가 많다. 진입점의 이름조차 <code>main</code>이 아닐 수 있다는 것은 53장에서 본 그대로다 — 리셋 벡터가 가리키는 함수가 시작점이고, 그 함수가 <code>.data</code>를 옮기고 <code>.bss</code>를 0으로 채운 뒤 <code>main</code>을 부른다(67장).</p></div><div class="dev realcase"><p class="dev-label">◉ 종료 상태 하나가 만든 도구 생태계</p><p>“0은 성공”이라는 한 줄의 관례가 얼마나 큰 것을 지탱하는지 보면 재미있다. 셸의 <code>&amp;&amp;</code>와 <code>||</code>, <code>make</code>가 규칙 하나가 실패하면 멈추는 것, CI가 빌드 실패를 판정하는 것, 컨테이너가 프로세스의 종료 코드로 재시작을 결정하는 것, 테스트 러너가 통과·실패를 세는 것 — 전부 이 숫자 하나를 읽는다.</p><p>9장에서 본 “작은 프로그램을 텍스트 스트림으로 잇는다”는 유닉스 철학에는 사실 통로가 하나 더 있었던 셈이다. 데이터는 스트림으로 흐르고, <strong>성공과 실패는 종료 상태로 흐른다.</strong> 그래서 도구다운 프로그램을 만들려면 두 가지를 지켜야 한다: 결과는 표준 출력으로, 오류 메시지는 표준 오류로, 그리고 <strong>성패는 반드시 종료 상태에 담을 것.</strong></p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>main</code>이 특별한 함수라면, 재귀로 부르거나 주소를 얻어도 되는가?</p></div><div class="dev qa-a"><p class="dev-label">답 호스트 환경의 C에서 <code>main</code>은 문법적으로 평범한 함수라, 부르는 것도 주소를 얻는 것도 문법상 가능하다. 그러나 <strong>하지 않는 것이 규범이다</strong> — C++은 아예 금지하고, C에서도 시작 코드와 라이브러리 초기화가 얽힌 자리라 얻을 것이 없다. 프로그램의 시작은 한 번뿐이라고 두는 편이 읽는 사람에게도 낫다.</p><p>대신 알아 둘 것이 있다. <code>main</code>이 시작점이라는 말은 <strong>C 프로그램 관점</strong>의 이야기다. 실제로는 그 앞에 시작 코드(<code>crt0</code> 같은 것)가 돌면서 정적 구역을 준비하고 인자를 챙겨 <code>main</code>을 부른다(67장). <code>main</code>은 “가장 먼저 도는 코드”가 아니라 “우리가 쓰는 코드 중 가장 먼저 도는 것”이다.</p></div></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>세 형태</td><td><code>int main(void)</code>, <code>int main(int, char *[])</code>, 구현 정의</td></tr><tr><td><code>void main()</code></td><td>표준이 아니다(임베디드 확장은 별개)</td></tr><tr><td><code>argv[0]</code></td><td>프로그램 이름 — 비어 있을 수 있다</td></tr><tr><td><code>argv[argc]</code></td><td>반드시 널. 순회의 끝 표시</td></tr><tr><td>끝내는 법</td><td><code>return</code>·<code>exit</code>(정리함) / <code>_Exit</code>·<code>abort</code>(정리 안 함)</td></tr><tr><td>C99 특례</td><td><code>main</code>은 값 없이 끝나도 0</td></tr><tr><td>값의 범위</td><td>0–125 의 작은 수. 유닉스는 하위 8비트만 전한다</td></tr><tr><td>관례</td><td>0 성공, 1 실패, 2 사용법 오류(유닉스)</td></tr><tr><td>임베디드</td><td><code>main</code>은 대개 반환하지 않는다</td></tr></table></div><p>프로그램의 시작과 끝을 보았다. 이제 프로그램이 <strong>여러 파일로 나뉘는</strong> 이야기로 넘어간다 — 16장의 링커가 다시 등장하는 자리다.</p>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">uint64_t</span></strong> <strong>bits_of</strong><span class="tok-x">(</span><strong><span class="tok-t">double</span></strong> d<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">uint64_t</span></strong> u<span class="tok-x">;</span>
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>u</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>d</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> u</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 표현을 그대로 옮긴다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> u<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">uint32_t</span></strong> <strong>bits_of_f</strong><span class="tok-x">(</span><strong><span class="tok-t">float</span></strong> f<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">uint32_t</span></strong> u<span class="tok-x">;</span>
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>u</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>f</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> u</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> u<span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> double: 부호 1 + 지수 11 + 가수 52 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>dump</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>label<span class="tok-x">,</span> <strong><span class="tok-t">double</span></strong> d<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">uint64_t</span></strong> u <strong><span class="tok-x">=</span></strong> <strong>bits_of</strong><strong><span class="tok-x">(</span></strong><strong>d</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">unsigned</span></strong> sign <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong><span class="tok-x">)</span><span class="tok-x">(</span>u <strong><span class="tok-x">>></span></strong> <span class="tok-n">63</span><span class="tok-x">)</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">unsigned</span></strong> expo <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">unsigned</span></strong><span class="tok-x">)</span><span class="tok-x">(</span><span class="tok-x">(</span>u <strong><span class="tok-x">>></span></strong> <span class="tok-n">52</span><span class="tok-x">)</span> <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">7FF</span><strong><span class="tok-t">u</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">uint64_t</span></strong> frac <strong><span class="tok-x">=</span></strong> u <strong><span class="tok-x">&amp;</span></strong> <span class="tok-x">0x</span><span class="tok-n">FFFFFFFFFFFFF</span><strong><span class="tok-t">u</span></strong><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%-12s</span></strong><strong><span class="tok-s"> %016</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  부호 </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s">  지수 </span></strong><strong><span class="tok-s">%4u</span></strong><strong><span class="tok-s">(=</span></strong><strong><span class="tok-s">%+5d</span></strong><strong><span class="tok-s">)  가수 %013</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx64</strong><strong><span class="tok-x">,</span></strong>
+<strong>           label</strong><strong><span class="tok-x">,</span></strong><strong> u</strong><strong><span class="tok-x">,</span></strong><strong> sign</strong><strong><span class="tok-x">,</span></strong><strong> expo</strong><strong><span class="tok-x">,</span></strong>
+<strong>           expo </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">1022</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>expo </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-n">1023</span></strong><strong><span class="tok-x">,</span></strong><strong> frac</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>expo <strong><span class="tok-x">==</span></strong> <span class="tok-x">0x</span><span class="tok-n">7FF</span><span class="tok-x">)</span>      <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  &lt;- </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> frac </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">NaN</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">무한대</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">else</span></strong> <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>expo <strong><span class="tok-x">==</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span>     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  &lt;- </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> frac </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">비정규수</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">영</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">── double 의 비트 (부호 1 + 지수 11 + 가수 52) ──</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">1.0</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">-1.0</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.5</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">5</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">2.0</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.3</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1+0.2</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.0</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">-0.0</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">inf</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> INFINITY</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">NaN</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> NAN</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">── 0.1 + 0.2 와 0.3 은 비트가 다르다 ──</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1+0.2 = </span></strong><strong><span class="tok-s">%.20f</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.3     = </span></strong><strong><span class="tok-s">%.20f</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">차이의 비트: %016</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> vs %016</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  (마지막 1비트)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>bits_of</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>bits_of</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">── 1.0 에서 한 눈금(ULP) 움직이면 가수의 끝자리가 1 오른다 ──</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong> one <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">.</span><span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong> next <strong><span class="tok-x">=</span></strong> <strong>nextafter</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">1.0        %016</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>bits_of</strong><strong><span class="tok-x">(</span></strong><strong>one</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">다음 값    %016</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx64 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  차이 </span></strong><strong><span class="tok-s">%.17g</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>bits_of</strong><strong><span class="tok-x">(</span></strong><strong>next</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> next </strong><strong><span class="tok-x">-</span></strong><strong> one</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">DBL_EPSILON 과 같은가? </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong>next </strong><strong><span class="tok-x">-</span></strong><strong> one</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1p-52</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">그렇다</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">아니다</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">── float 은 같은 구조를 좁게 쓴다 (부호 1 + 지수 8 + 가수 23) ──</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">float</span></strong> f <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">.</span><span class="tok-n">1</span><strong><span class="tok-t">f</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">uint32_t</span></strong> fu <strong><span class="tok-x">=</span></strong> <strong>bits_of_f</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">0.1f       %08</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx32 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  부호 </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-s">  지수 </span></strong><strong><span class="tok-s">%3u</span></strong><strong><span class="tok-s">(=</span></strong><strong><span class="tok-s">%+4d</span></strong><strong><span class="tok-s">)  가수 %06</span></strong><strong><span class="tok-s">"</span></strong><strong> PRIx32 </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           fu</strong><strong><span class="tok-x">,</span></strong><strong> fu </strong><strong><span class="tok-x">>></span></strong><strong> </strong><strong><span class="tok-n">31</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>fu </strong><strong><span class="tok-x">>></span></strong><strong> </strong><strong><span class="tok-n">23</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">FF</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong>fu </strong><strong><span class="tok-x">>></span></strong><strong> </strong><strong><span class="tok-n">23</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">FF</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-n">127</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           fu </strong><strong><span class="tok-x">&amp;</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">7FFFFF</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">(double)0.1f 를 다시 찍으면 </span></strong><strong><span class="tok-s">%.17g</span></strong><strong><span class="tok-s"> — float 로 좁힌 흔적이 남는다</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">double</span></strong><strong><span class="tok-x">)</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">── 정규수의 바닥을 지나면 비정규수가 된다 ──</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">double</span></strong> small <strong><span class="tok-x">=</span></strong> <span class="tok-x">0x</span><span class="tok-n">1p-1022</span><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 가장 작은 정규수 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">2^-1022</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> small</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">half</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> small </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 비정규수 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">2^-1074</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1p-1074</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 가장 작은 비정규수 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>dump</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">half again</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">0x</span></strong><strong><span class="tok-n">1p-1074</span></strong><strong> </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 0 으로 가라앉는다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>── double 의 비트 (부호 1 + 지수 11 + 가수 52) ──
+1.0          3ff0000000000000  부호 0  지수 1023(=   +0)  가수 0000000000000
+-1.0         bff0000000000000  부호 1  지수 1023(=   +0)  가수 0000000000000
+0.5          3fe0000000000000  부호 0  지수 1022(=   -1)  가수 0000000000000
+2.0          4000000000000000  부호 0  지수 1024(=   +1)  가수 0000000000000
+0.1          3fb999999999999a  부호 0  지수 1019(=   -4)  가수 999999999999a
+0.3          3fd3333333333333  부호 0  지수 1021(=   -2)  가수 3333333333333
+0.1+0.2      3fd3333333333334  부호 0  지수 1021(=   -2)  가수 3333333333334
+0.0          0000000000000000  부호 0  지수    0(=-1022)  가수 0000000000000  &lt;- 영
+-0.0         8000000000000000  부호 1  지수    0(=-1022)  가수 0000000000000  &lt;- 영
+inf          7ff0000000000000  부호 0  지수 2047(=+1024)  가수 0000000000000  &lt;- 무한대
+NaN          7ff8000000000000  부호 0  지수 2047(=+1024)  가수 8000000000000  &lt;- NaN
+
+── 0.1 + 0.2 와 0.3 은 비트가 다르다 ──
+0.1+0.2 = 0.30000000000000004441
+0.3     = 0.29999999999999998890
+차이의 비트: 3fd3333333333334 vs 3fd3333333333333  (마지막 1비트)
+
+── 1.0 에서 한 눈금(ULP) 움직이면 가수의 끝자리가 1 오른다 ──
+1.0        3ff0000000000000
+다음 값    3ff0000000000001  차이 2.2204460492503131e-16
+DBL_EPSILON 과 같은가? 그렇다
+
+── float 은 같은 구조를 좁게 쓴다 (부호 1 + 지수 8 + 가수 23) ──
+0.1f       3dcccccd  부호 0  지수 123(=  -4)  가수 4ccccd
+(double)0.1f 를 다시 찍으면 0.10000000149011612 — float 로 좁힌 흔적이 남는다
+
+── 정규수의 바닥을 지나면 비정규수가 된다 ──
+2^-1022      0010000000000000  부호 0  지수    1(=-1022)  가수 0000000000000
+half         0008000000000000  부호 0  지수    0(=-1022)  가수 8000000000000  &lt;- 비정규수
+2^-1074      0000000000000001  부호 0  지수    0(=-1022)  가수 0000000000001  &lt;- 비정규수
+half again   0000000000000000  부호 0  지수    0(=-1022)  가수 0000000000000  &lt;- 영
+</code></pre></div></div><p>출력에서 다섯 가지를 짚어 둔다.</p><p><strong>첫째, <code>1.0</code>은 놀랍도록 단정하다.</strong> 지수 자리가 1023(바이어스 그대로라 실제 지수 0)이고 가수는 전부 0이다 — 숨은 비트 1만으로 <math><mn>1.0</mn><mo lspace="0.2222222222222222em" rspace="0.2222222222222222em">×</mo><msup><mn>2</mn><mn>0</mn></msup></math>이 된다. <code>2.0</code>은 지수만 하나 오르고, <code>0.5</code>는 하나 내린다. 부호 비트만 뒤집으면 <code>-1.0</code>이 된다.</p><p><strong>둘째, <code>0.1</code>은 무한소수의 잘린 자국을 그대로 보여 준다.</strong> 가수가 <code>999999999999a</code>로 끝나는데, 마지막 자리의 <code>a</code>가 바로 <strong>반올림</strong>의 흔적이다. 8장 수학 박스의 “2진법으로 안 떨어진다”가 비트로 드러난 자리다.</p><p><strong>셋째, <code>0.1 + 0.2</code>와 <code>0.3</code>은 마지막 한 비트가 다르다.</strong> 두 값의 비트열은 <code>...3334</code>와 <code>...3333</code> — 정확히 1만큼 어긋나 있다. 그래서 <code>==</code> 비교가 거짓이 되고, 그래서 이 장이 허용치를 이야기한다.</p><p><strong>넷째, 한 눈금(ULP)의 정체가 보인다.</strong> <code>1.0</code>의 비트에 정수 1을 더한 것이 바로 다음 실수이고, 그 차이가 <code>DBL_EPSILON</code>(<math><msup><mn>2</mn><mrow><mo>{</mo><mrow><mo>−</mo><mn>52</mn></mrow><mo>}</mo></mrow></msup></math>)이다. “1.0 근처에서 구분 가능한 가장 작은 차이”라는 말이 비트 하나라는 사실로 확인된다.</p><p><strong>다섯째, 바닥에서 비정규수가 나타난다.</strong> 가장 작은 정규수를 반으로 나누면 지수가 더 내려갈 수 없어 대신 <strong>가수의 앞자리부터 0이 채워진다</strong> — 지수 자리가 전부 0인 그 상태가 비정규수다. 정밀도를 조금씩 잃으면서 0까지 촘촘히 내려가고, 마지막 한 비트마저 사라지면 0이 된다. 갑자기 0으로 떨어지지 않고 서서히 잦아드는 이 설계를 <strong>점진적 언더플로</strong>(gradual underflow)라 부른다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트. 비정규수는 느릴 수 있다</p>비정규수 연산은 하드웨어에 따라 정규수보다 훨씬 느리다(수십 배가 되는 기계도 있다). 그래서 신호 처리나 게임 엔진에서는 비정규수를 0으로 밀어 버리는 모드(flush-to-zero)를 켜기도 한다 — 정확성을 조금 포기하고 최악의 지연을 없애는 거래다. 표준 C에는 이 모드를 켜는 이식 가능한 방법이 없다(컴파일러 옵션이나 플랫폼 API를 쓴다).</div><p>NaN에는 유명한 성질이 하나 있다 — <strong>자기 자신과도 같지 않다.</strong> <code>x != x</code>가 참이면 x는 NaN이라는 뜻이고, 이것이 NaN을 판별하는 고전적 관용구다(오늘은 <code>isnan()</code>을 쓴다). “같음”이라는 관계의 기본 성질이 깨지는 값이라, 정렬이나 검색 알고리즘에 NaN이 섞여 들면 기묘한 일이 벌어진다 — 실수 데이터를 다룰 때 NaN 검사를 경계에 두는 것이 관행인 이유다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>0.1초의 누적 — 패트리어트 미사일 사고</p>8장에서 배운 “작은 어긋남이 쌓인다”가 실제로 사람의 목숨과 이어진 사건이 있다. 1991년 걸프전에서 패트리어트 방공 시스템이 날아오는 미사일을 요격하지 못해 28명이 사망한 사고인데, 원인 분석의 핵심이 부동소수점 오차였다. 시스템은 시간을 0.1초 단위로 세었는데 — 8장에서 본 대로 0.1은 2진법으로 무한소수라 담을 때마다 미세한 오차가 생긴다. 그 시스템이 24비트 그릇을 쓴 탓에 오차가 상대적으로 컸고, 재부팅 없이 100시간을 연속 가동하자 누적 오차가 약 0.34초에 이르렀다. 그 0.34초 동안 목표는 500미터 넘게 이동하고, 추적 창은 엉뚱한 하늘을 보게 된 것이다. “근사는 성실하지만 무해하지는 않다” — 8장의 교훈이 가장 무겁게 확인된 사례다.</div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 돈 계산 같은 곳에는 실수를 쓰면 안 되는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 쓰지 않는 것이 정석이다 — 8장에서 배운 고정소수점의 자리가 바로 여기다. 금액을 원 단위 실수로 다루면 0.1원 단위의 어긋남이 쌓여 장부가 맞지 않게 되므로, <strong>전 단위 정수</strong>로 계산하고 표시할 때만 소수점을 찍는 것이 금융 소프트웨어의 관행이다. 규칙으로 줄이면 — <strong>정확한 십진 값이 중요한 곳에는 정수(고정소수점), 물리량과 과학 계산에는 부동 소수점.</strong> 도구를 문제에 맞추는 것이고, 그 판단의 근거가 8장과 이 장에서 배운 표현의 성격이다.</p></div></div><p>근사의 세계를 C에서 다루는 법을 익혔다. 다음 장은 이 부의 중심 주제 — 계산이 실패할 수 있다는 사실을 프로그램이 어떻게 다루는가, 오류와 계약의 이야기다.</p>
 <div class="nav"><a href="ch46.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch48.html">다음 →</a></div>
 </div></main></body></html>

@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>77 The outside world — files, streams, time, random numbers — Proven C Book</title><style>
+<title>77 A program’s map of memory — operating systems and embedded — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,234 +259,50 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch76.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch78.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch77.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>77 The outside world — files, streams, time, random numbers</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>From here we touch the operating system. Opening, reading and writing files, buffered streams, reading and formatting time, and random numbers — those random numbers that become entirely different things according to the purpose. Chapter 10′s story of streams and chapter 25′s story of input are completed here as real APIs.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 10′s design had a stream be one where “the program does not know what it is connected to”, and chapter 53 said <code>fopen</code> reports failure with null. Then what failure is most often missed in a file API?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p><strong>The partial write.</strong> A failure to open is conspicuous, but the case of <code>write</code> returning without writing all that was requested is easy to forget — it really happens when the disk fills, when a signal cuts in, or when the other end is a pipe. So this library has two editions. <code>proven_fs_write</code> returns <strong>the number of bytes actually written</strong>, and <code>proven_fs_write_all</code> repeats until all is written and then reports only success or failure. What most code wants is the latter, and the former remains so as not to hide that fact.</p></div></div><h3>77.1 The life of one file</h3><p>A file is the first resource in this part that touches <strong>the outside world</strong>. The discipline of making and giving back is the same as in the earlier chapters, but the kinds of failure are far more numerous.</p><div><div><p><code>examples/ch77/fslife.c</code></p><pre><code data-lang="c">/* 파일 하나의 한살이 — 열기 모드, 부분 쓰기, 위치, 그리고 안전한 저장.
-   바깥 세계와 닿는 자리에서 실패가 어떻게 값으로 오는지 본다. */
-#include &lt;proven.h>
-
-/* 읽은 바이트를 글자로 보기 위한 도우미 (매크로 인자에 쉼표를 넣지 않으려고) */
-static proven_u8str_view_t as_text(const proven_byte_t *p, proven_size_t n)
-{
-    return (proven_u8str_view_t){ .ptr = p, .size = n };
-}
-
-static const char *codename(proven_err_t e)
-{
-    switch (e) {
-    case PROVEN_OK:               return "OK";
-    case PROVEN_ERR_NOT_FOUND:    return "NOT_FOUND";
-    case PROVEN_ERR_PERMISSION:   return "PERMISSION";
-    case PROVEN_ERR_IO:           return "IO";
-    case PROVEN_ERR_EOF:          return "EOF";
-    case PROVEN_ERR_INVALID_ARG:  return "INVALID_ARG";
-    default:                      return "(그 밖)";
-    }
-}
-
-int main(void)
-{
-    proven_allocator_t scratch = proven_heap_allocator();
-    proven_u8str_view_t path = PROVEN_LIT("build/ch77-demo.txt");
-
-    /* ── ① 열기 — 모드는 비트 깃발을 엮는다 ──────────────────── */
-    proven_result_file_t opened = proven_fs_open(
-        scratch, path,
-        PROVEN_FS_WRITE | PROVEN_FS_CREATE | PROVEN_FS_TRUNC);
-    if (!proven_is_ok(opened.err)) {
-        proven_println("열기 실패: {}", PROVEN_ARG(codename(opened.err)));
-        return 1;
-    }
-    proven_file_t f = opened.value;
-    proven_println("열기            -> OK (쓰기·생성·비우기)");
-
-    /* ── ② 쓰기의 두 판 ──────────────────────────────────────── */
-    proven_u8str_view_t line = PROVEN_LIT("first line\nsecond line\n");
-
-    /* _write 는 "실제로 쓴 양"을 돌려준다 — 부분 쓰기가 있을 수 있다 */
-    proven_result_size_t w = proven_fs_write(f, proven_mem_view_from_u8(line));
-    proven_println("write           -> err={} 쓴 바이트={} (요청 {})",
-                   PROVEN_ARG(codename(w.err)), PROVEN_ARG(w.value),
-                   PROVEN_ARG(line.size));
-
-    /* _write_all 은 다 쓸 때까지 되풀이한 뒤 성공/실패만 알려 준다 */
-    proven_err_t e = proven_fs_write_all(f, proven_mem_view_from_u8(PROVEN_LIT("third\n")));
-    proven_println("write_all       -> {} (대부분의 코드가 원하는 쪽)",
-                   PROVEN_ARG(codename(e)));
-
-    /* ── ③ 디스크에 못박기 — flush 와 sync 는 다르다 ──────────── */
-    e = proven_fs_sync(f);
-    proven_println("sync            -> {} (여기까지 해야 정전에도 남는다)",
-                   PROVEN_ARG(codename(e)));
-
-    proven_result_size_t sz = proven_fs_size(f);
-    proven_result_u64_t at = proven_fs_tell(f);
-    proven_println("size={} tell={}", PROVEN_ARG(sz.value), PROVEN_ARG(at.val));
-    (void)proven_fs_close(f);
-
-    /* ── ④ 읽기 — 요청량과 읽은 양은 다르다 ──────────────────── */
-    proven_result_file_t ro = proven_fs_open(scratch, path, PROVEN_FS_READ);
-    if (proven_is_ok(ro.err)) {
-        proven_file_t r = ro.value;
-        proven_byte_t buf[16];
-        proven_result_size_t got = proven_fs_read(r, (proven_mem_mut_t){ buf, sizeof buf });
-        proven_println("read(16)        -> 읽은 바이트={} \"{}\"",
-                       PROVEN_ARG(got.value),
-                       PROVEN_ARG(as_text(buf, got.value)));
-
-        /* 위치를 되돌리고 다시 읽는다 */
-        (void)proven_fs_seek(r, 0, PROVEN_FS_SEEK_SET);
-        proven_result_size_t again = proven_fs_read(r, (proven_mem_mut_t){ buf, 5 });
-        proven_println("seek(0)+read(5) -> {} 바이트", PROVEN_ARG(again.value));
-        (void)proven_fs_close(r);
-    }
-
-    /* ── ⑤ 한 번에 읽기 — 파일 크기를 모를 때 ────────────────── */
-    proven_result_u8str_t all = proven_fs_read_all_u8str(scratch, path);
-    if (proven_is_ok(all.err)) {
-        proven_u8str_t s = all.value;
-        proven_println("read_all        -> {} 바이트 (파일 전체를 한 번에)",
-                       PROVEN_ARG(proven_u8str_as_view(&amp;s).size));
-        proven_u8str_destroy(scratch, &amp;s);
-    }
-
-    /* ── ⑥ 없는 파일 — 실패는 값으로 온다 ────────────────────── */
-    proven_result_file_t missing =
-        proven_fs_open(scratch, PROVEN_LIT("build/없는파일.txt"), PROVEN_FS_READ);
-    proven_println("없는 파일 열기  -> {} (플랫폼 층이 어떤 코드로 옮기는지 확인할 것)",
-                   PROVEN_ARG(codename(missing.err)));
-
-    /* ── ⑦ 원자적 저장 — 임시 파일에 쓰고 바꿔치기 ───────────── */
-    e = proven_fs_write_file_atomic(scratch, PROVEN_LIT("build/ch77-atomic.txt"),
-                                    proven_mem_view_from_u8(PROVEN_LIT("all or nothing\n")));
-    proven_println("write_file_atomic -> {} (반쯤 쓰인 파일이 남지 않는다)",
-                   PROVEN_ARG(codename(e)));
-
-    (void)proven_fs_remove(scratch, path);
-    (void)proven_fs_remove(scratch, PROVEN_LIT("build/ch77-atomic.txt"));
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>열기            -> OK (쓰기·생성·비우기)
-write           -> err=OK 쓴 바이트=23 (요청 23)
-write_all       -> OK (대부분의 코드가 원하는 쪽)
-sync            -> OK (여기까지 해야 정전에도 남는다)
-size=29 tell=29
-read(16)        -> 읽은 바이트=16 "first line
-secon"
-seek(0)+read(5) -> 5 바이트
-read_all        -> 29 바이트 (파일 전체를 한 번에)
-없는 파일 열기  -> IO (플랫폼 층이 어떤 코드로 옮기는지 확인할 것)
-write_file_atomic -> OK (반쯤 쓰인 파일이 남지 않는다)
-</code></pre></div></div><p>The life cycle is four steps, and at each step failure comes as a value.</p><table><tr><th><strong>step</strong></th><th><strong>function</strong></th><th><strong>to know</strong></th></tr><tr><td>opening</td><td><code>proven_fs_open(scratch, path, mode)</code></td><td><strong>a scratch allocator</strong> is needed (for path conversion)</td></tr><tr><td>writing, reading</td><td><code>_write</code>/<code>_write_all</code>, <code>_read</code></td><td>amount requested ≠ amount handled</td></tr><tr><td>nailing it down</td><td><code>proven_fs_sync(file)</code></td><td>closing alone does not leave it on the disk</td></tr><tr><td>closing</td><td><code>proven_fs_close(file)</code></td><td>it has a return value — there is something to check</td></tr></table><p><strong>The mode weaves bit flags.</strong> Instead of a string like the standard <code>fopen</code>’s <code>"w+b"</code>, named values are joined with <code>|</code>.</p><table><tr><th><strong>flag</strong></th><th><strong>meaning</strong></th></tr><tr><td><code>PROVEN_FS_READ</code></td><td>reading</td></tr><tr><td><code>PROVEN_FS_WRITE</code></td><td>writing</td></tr><tr><td><code>PROVEN_FS_APPEND</code></td><td>appending at the end</td></tr><tr><td><code>PROVEN_FS_CREATE</code></td><td>create it if absent</td></tr><tr><td><code>PROVEN_FS_TRUNC</code></td><td>empty it if present</td></tr><tr><td><code>PROVEN_FS_CREATE_NEW</code></td><td>★ <strong>fail if it already exists</strong> — creating anew without a race</td></tr></table><p>Two things are better than string modes. First, <strong>the combination is visible</strong> — there is no need to memorise what <code>"a+"</code> exactly is. Second, things absent from string modes, such as <code>CREATE_NEW</code>, can be expressed. When making a lock file or a temporary file, “fail if it already exists” is the only road that blocks a race condition (recall chapter 56′s <code>tmpnam</code> story).</p><p><strong>Handles travel by value.</strong> That the functions take a <code>proven_file_t</code> by value rather than by pointer is the mark of it, because what is inside is about one integer descriptor. So the discipline of not using that value again after closing is still a human’s part.</p><h4>77.1.1 The convenience functions that read and write in one go</h4><p>In half the cases in practice the file is small and may be handled whole. Then opening, reading and closing need not be woven by hand.</p><table><tr><th><strong>function</strong></th><th><strong>what it does</strong></th><th><strong>caution</strong></th></tr><tr><td><code>proven_fs_read_all(alloc, path)</code></td><td>the whole file as bytes</td><td>a large file eats memory</td></tr><tr><td><code>proven_fs_read_all_u8str(alloc, path)</code></td><td>the whole file as a string</td><td>the same. it does not check the encoding</td></tr><tr><td><code>proven_fs_write_file(scratch, path, data)</code></td><td>writing it whole</td><td>die in the middle and a half-written file is left</td></tr><tr><td><code>proven_fs_write_file_atomic(...)</code></td><td>write to a temporary and swap</td><td>★ no half-written file is left</td></tr><tr><td><code>proven_fs_write_file_durable(...)</code></td><td>atomic + <code>sync</code></td><td>it survives a power cut. the slowest</td></tr></table><p>The difference between the last three rows matters in practice. Code that overwrites a configuration file or saved data, <strong>if it dies in the middle, leaves a file that is neither the original nor the new one</strong>, and the standard practice that prevents it is “write to a temporary file and rename” (renaming is atomic within the same file system). <code>_atomic</code> does that work for you, and <code>_durable</code> hangs a <code>sync</code> on it as well so that it survives a power cut.</p><div><div><p><code>examples/ch77/fileio.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
-#include &lt;stdio.h>
-
-int main(void)
-{
-    proven_allocator_t alloc = proven_heap_allocator();
-    proven_u8str_view_t path = proven_u8str_view_from_cstr("proven_demo.txt");
-    const char *text = "one\ntwo\nthree\n";
-
-    /* 쓰기: 없으면 만들고, 있으면 비운다 */
-    proven_result_file_t opened = proven_fs_open(
-        alloc, path, PROVEN_FS_WRITE | PROVEN_FS_CREATE | PROVEN_FS_TRUNC);
-    if (!proven_is_ok(opened.err)) {
-        printf("open for write failed (err=%d)\n", (int)opened.err);
-        return 1;
-    }
-    proven_file_t f = opened.value;
-
-    proven_mem_view_t src = {
-        .ptr = (const proven_byte_t *)text,
-        .size = proven_cstr_len(text)
-    };
-    proven_err_t e = proven_fs_write_all(f, src);   /* 부분 쓰기를 되풀이해 준다 */
-    printf("write_all  : %s (%zu bytes)\n", proven_is_ok(e) ? "ok" : "failed", src.size);
-    (void)proven_fs_close(f);
-
-    /* 읽기 */
-    opened = proven_fs_open(alloc, path, PROVEN_FS_READ);
-    if (!proven_is_ok(opened.err)) return 1;
-    f = opened.value;
-
-    proven_result_size_t sz = proven_fs_size(f);
-    printf("size       : %zu bytes\n", sz.value);
-
-    proven_byte_t buf[64];
-    proven_result_size_t got = proven_fs_read(f, (proven_mem_mut_t){ .ptr = buf, .size = sizeof buf });
-    printf("read       : %zu bytes\n", got.value);
-
-    /* 읽은 것은 뷰로 다룬다 — 줄 단위로 자른다 */
-    proven_u8str_view_t all = { .ptr = buf, .size = got.value };
-    proven_u8str_view_t nl = proven_u8str_view_from_cstr("\n");
-    proven_size_t start = 0;
-    int line = 0;
-    while (start &lt; all.size) {
-        proven_size_t hit = proven_u8str_view_find(all, start, nl);
-        proven_size_t end = (hit == PROVEN_INDEX_NOT_FOUND) ? all.size : hit;
-        proven_u8str_view_t v = proven_u8str_view_slice(all, start, end - start);
-        printf("  line %d   : %.*s\n", ++line, (int)v.size, (const char *)v.ptr);
-        if (hit == PROVEN_INDEX_NOT_FOUND) break;
-        start = hit + 1;
-    }
-    (void)proven_fs_close(f);
-
-    /* 없는 파일을 열면 실패가 값으로 온다 */
-    proven_result_file_t missing = proven_fs_open(
-        alloc, proven_u8str_view_from_cstr("no_such_file.txt"), PROVEN_FS_READ);
-    printf("missing    : %s\n", proven_is_ok(missing.err) ? "opened" : "refused with an error code");
-
-    (void)proven_fs_remove(alloc, path);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>write_all  : ok (14 bytes)
-size       : 14 bytes
-read       : 14 bytes
-  line 1   : one
-  line 2   : two
-  line 3   : three
-missing    : refused with an error code
-</code></pre></div></div><p>Several things stand out.</p><p><strong>The path is a view too.</strong> <code>proven_u8str_view_from_cstr("...")</code> — wherever the string came from, it is handled as a pointer and a length (chapter 74).</p><p><strong>Opening needs an allocator.</strong> The signature’s first argument is a <code>scratch</code> allocator, because temporary memory may be needed to turn the path into the form the operating system requires. Chapter 73′s rule is honestly kept here too — <strong>if it can allocate, it takes an allocator</strong>.</p><p><strong>What is read becomes a view.</strong> Bind the buffer and the number of bytes read and from then on all of chapter 74′s tools can be used. That is what the example used to divide the lines, and copying never happened once.</p><div class="dev antipattern"><p class="dev-label">✗ Trusting <code>size</code> and assuming that much was read</p><pre><code data-lang="c">proven_result_size_t sz = proven_fs_size(f);
-proven_byte_t *buf = malloc(sz.value);
-(void)proven_fs_read(f, (proven_mem_mut_t){ buf, sz.value });
-process(buf, sz.value);      /* was that much really read? */</code></pre><p>A file’s size and <strong>the amount this read brought</strong> are different. From pipes, terminals and networks it comes a little at a time, and even a file may end in the middle. The number <code>read</code> returned must be used, and that is why this library returns the read result as a bundle. The fact chapter 25 stated — “input is not a keyboard but a stream” — becomes a practical rule here.</p></div><h3>77.2 Streams — reading and writing with a buffer</h3><p>System calls are expensive. Call <code>write</code> one byte at a time and that cost accumulates as it stands. So standard C’s <code>FILE*</code> kept a buffer (chapter 10′s story of line buffering), and proven puts a <strong>stream</strong> in the same place — differing in two ways.</p><ul><li><strong>The caller gives the buffer.</strong> The stream does not allocate in secret.</li><li><strong>The failure of a flush comes as a value.</strong> It is not quietly swallowed on closing.</li></ul><p>These two aim at the same problem. In buffered writing the real failure shows itself not in <code>write</code> but in the <strong>flush</strong>, and missing that failure creates data that “was believed successful but is not on the disk”. It is also the place databases and file systems are most careful about (the reason <code>proven_fs_sync</code> exists separately).</p><h3>77.3 Time — two different clocks</h3><p>Two different things are mixed together in time.</p><ul><li><strong>Calendar time</strong> — a time a human reads, like “5 August 2026, 09:00”. It is used for showing to users and leaving in records. Time zones, leap seconds and summer time are entangled in it.</li><li><strong>Monotonic time</strong> — a scale that does not go backwards. It is used for measuring <strong>elapsed time</strong>.</li></ul><p>Mix the two and you get the famous bug. Measure elapsed time with a calendar clock and the moment the system adjusts the time or summer time changes, <strong>a negative elapsed time</strong> comes out. Let that value into a timeout calculation and it waits forever or expires at once.</p><p>Date formatting uses the format syntax seen in chapter 53 as it is — named placeholders with width and fill specified, as in <code>"{year}-{month:0>2}-{day:0>2}"</code>. Unlike <code>strftime</code>’s <code>%Y-%m-%d</code>, the difference is that <strong>there is no need to memorise what symbol means what</strong>.</p><div class="dev misconception"><p class="dev-label">⚠ “Time is just a number, so adding and subtracting is fine”</p><p>Not in calendar time. A day is not always 86400 seconds (a summer-time transition day is 23 or 25 hours), the lengths of months differ, and time zones change by political decision. “A month later” is not arithmetic but a calendar rule. The difference of <strong>monotonic</strong> times, on the other hand, may be handled as a plain number — that is one more reason to use a monotonic clock for measuring elapsed time.</p></div><h3>77.4 Random numbers — the purpose settles the thing</h3><p>Few tools are as much “the same name, different demands” as random numbers. The library does not hide this but divides it into three.</p><div><div><p><code>examples/ch77/rng.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
-#include &lt;stdio.h>
-
-int main(void)
-{
-    /* 재현 가능한 난수: 같은 씨앗 = 같은 수열. 시험과 시뮬레이션용이다 */
-    proven_xoshiro256ss_t g;
-    proven_xoshiro256ss_seed(&amp;g, 12345);
-    proven_rng_t rng = proven_xoshiro256ss_rng(&amp;g);
-
-    printf("seeded run 1:");
-    for (int i = 0; i &lt; 5; i++) printf(" %llu", (unsigned long long)proven_rng_below(rng, 100));
-    printf("\n");
-
-    proven_xoshiro256ss_seed(&amp;g, 12345);          /* 같은 씨앗으로 되감는다 */
-    printf("seeded run 2:");
-    for (int i = 0; i &lt; 5; i++) printf(" %llu", (unsigned long long)proven_rng_below(rng, 100));
-    printf("\n");
-
-    /* 범위 난수: 경계를 포함한다 */
-    proven_xoshiro256ss_seed(&amp;g, 7);
-    printf("dice        :");
-    for (int i = 0; i &lt; 8; i++) printf(" %lld", (long long)proven_rng_range(rng, 1, 6));
-    printf("\n");
-
-    /* 비밀에 쓸 난수는 여기서 얻지 않는다 — OS 난수원이 따로 있다 */
-    proven_byte_t key[16];
-    bool ok = proven_random_bytes(key, sizeof key);
-    printf("os entropy  : %s (%zu bytes requested)\n", ok ? "available" : "unavailable", sizeof key);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>seeded run 1: 74 13 96 4 55
-seeded run 2: 74 13 96 4 55
-dice        : 5 2 6 6 6 6 1 1
-os entropy  : available (16 bytes requested)
-</code></pre></div></div><p><strong>Reproducible random numbers</strong> (<code>proven_xoshiro256ss_t</code>) are for simulation, games and testing. The same seed gives the same sequence — the very reason the example’s two lines are identical, and also the property that lets a failed test be reproduced. They are fast but <strong>predictable</strong>, so they are never used for secrets.</p><p><strong>Random numbers for secrets</strong> (<code>proven_random_bytes</code>) come from the operating system’s cryptographic source of randomness. They are used for values <strong>an attacker must not guess</strong> — keys, tokens, session identifiers.</p><p>The third is the compromise between the two, <code>proven_chacha_rng_t</code>, which takes a seed once from the OS source of randomness and then continues a cryptographically secure sequence quickly.</p><div class="dev realcase"><p class="dev-label">◉ The accidents predictable random numbers made</p><p>Accidents breaking this distinction have happened repeatedly. An online card game whose hands were predicted because it used the time as a seed, a case where session identifiers made with a fast random generator let one into somebody else’s account, and, representatively, the 2008 incident in which Debian’s OpenSSL patch deleted the entropy-gathering code so that <strong>the number of generable keys shrank to a few tens of thousands</strong>. The last required every key already made to be discarded. The lesson is summed up in one line of the library’s documentation — <strong>random numbers for secrets come only from a cryptographic source of randomness.</strong></p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What becomes of random numbers for secrets if there is no operating system?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>They cannot be obtained, so <code>proven_random_bytes</code> <strong>returns a falsehood</strong> — and this is an important design decision. Many libraries slip back to the time or an address value in this situation, and then you have the worst state of “believed safe but predictable”. This library does not fall back; it declares failure. If the board has a real source of entropy (a hardware random number generator) it can be registered and used. <strong>Rather than quietly give something bad, say there is none</strong> — another face of the principle met continually in this part.</p></div></div><h3>77.5 Memory mapping</h3><p>There is one more way of reading a file. Hanging the file whole <strong>in the address space</strong> and accessing it with a pointer — <code>proven_mmap_*</code> is that window. It is advantageous when reading a large file by roaming randomly over it, and it is used when several processes share the same file.</p><p>The price is clear too. If the file is truncated while the mapped region is being touched, the program can receive a signal and die, and portability is lower than the file API’s. So this tool is not “what is used by default” but “what is chosen when there is a reason”.</p><div class="dev recap"><p class="dev-label">☰ Recap</p><p>The outside world in summary.</p><table><tr><th><strong>what it does</strong></th><th><strong>API</strong></th><th><strong>to beware of</strong></th></tr><tr><td>open and close</td><td><code>proven_fs_open/close</code></td><td>needs a scratch allocator</td></tr><tr><td>reading</td><td><code>proven_fs_read</code></td><td>amount requested ≠ amount read</td></tr><tr><td>writing</td><td><code>proven_fs_write</code> / <code>_write_all</code></td><td>partial writes</td></tr><tr><td>nailing it to the disk</td><td><code>proven_fs_sync</code></td><td>flush ≠ sync</td></tr><tr><td>buffered I/O</td><td><code>proven_stream_*</code></td><td>the caller gives the buffer</td></tr><tr><td>the current time</td><td><code>proven_time_now_datetime</code></td><td>not used for measuring elapsed time</td></tr><tr><td>date formatting</td><td><code>proven_time_u8_fmt</code></td><td>named placeholders such as <code>{year}</code></td></tr><tr><td>reproducible random</td><td><code>proven_xoshiro256ss_*</code></td><td>not used for secrets</td></tr><tr><td>random for secrets</td><td><code>proven_random_bytes</code></td><td>a falsehood if absent — it does not fall back</td></tr><tr><td>memory mapping</td><td><code>proven_mmap_*</code></td><td>only when there is a reason</td></tr></table></div><p>What remains now is the boundaries — the way of running several things overlapped, and the place with no operating system at all. The last chapter closes this part.</p>
+<h2 id="loc-77">77 A program’s map of memory — operating systems and embedded</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 41, Lifetime and storage duration · storage duration</div><div>chapter 2, The regions of memory · the regions of memory</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 41 said “in the C standard there is neither the word stack nor any promise about its size”, and that it settles only the automatic storage duration and leaves the rest to the implementation. Then in a real program, who settles that place?</p><div class="qa-a"><p><span class="dev-label">A.</span> Three layers settle it between them. <strong>The compiler and linker</strong> divide the regions inside the executable file (which variable goes to which region), <strong>the operating system</strong> reads that file and spreads it into an address space, preparing the places for stack and heap, and <strong>the startup code</strong> does the remaining trimming. With no operating system the startup code takes on the last two entirely — that is the embedded world, and the latter half of this chapter is that story.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-113"></span>We redraw at a larger scale the map of memory sketched in chapter 41. What is absent from the C standard and present only in the operating system — the stack and its limit — is confirmed on Linux and on Windows, and we see what relation <code>data</code>, <code>bss</code> and the read-only region have to the executable file. Then we go down into the world with no operating system and see in detail how memory is laid out on Arm Cortex-M, AVR and PIC — and what the startup code does.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>How is the stack size settled in embedded work? Can it not be taken generously as on Linux?</li></ol></div></div><div></div><h3>77.1 Regions in the executable file, regions in the address space</h3><p>Writing out again the order chapter 41′s example showed, but this time separating <strong>what is contained in the executable file</strong> from <strong>what arises when it runs</strong>.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>region</strong></th><th><strong>is it in the file</strong></th><th><strong>what lives there</strong></th><th><strong>permissions</strong></th></tr><tr><td><code>.text</code></td><td>yes</td><td>machine instructions</td><td>read, execute</td></tr><tr><td><code>.rodata</code></td><td>yes</td><td>string literals, <code>const</code> data</td><td>read</td></tr><tr><td><code>.data</code></td><td>yes (values too)</td><td>globals and <code>static</code>s with a nonzero initial value</td><td>read, write</td></tr><tr><td><code>.bss</code></td><td><strong>only the size</strong></td><td>globals and <code>static</code>s with a zero or no initial value</td><td>read, write</td></tr><tr><td>heap</td><td>no</td><td>what <code>malloc</code> gave</td><td>read, write</td></tr><tr><td>stack</td><td>no</td><td>local variables, return addresses</td><td>read, write</td></tr></table></div><p class="float-caption">Table 77.1</p></figure><p>That <strong><code>.bss</code> has only its size in the file</strong> is the heart of this table (chapter 41 showed the origin of the name). Filling with zeros happens at run time — with an operating system the kernel gives pages already filled with zeros, and without one the startup code turns the loop itself.</p><p>One practical misunderstanding is resolved here. If you declared a big global array and the executable’s size did not grow, that is normal (<code>.bss</code>). Conversely, give that array even one nonzero initial value — <code>int t[1000000] = {1};</code>, say — and the whole array goes to <code>.data</code> and the file grows by 4 MB.</p><h3>77.2 Linux’s map</h3><p>On Linux, one program’s address space is laid out roughly like this (on 64-bit).</p><pre><code data-lang="text">high address  ┌──────────────────────────┐
+              │ kernel region (no access)│
+              ├──────────────────────────┤
+              │ stack     ↓ (grows down)  │  default limit 8 MiB
+              │   ...  (a very wide gap)  │
+              │ mmap region ↓             │  shared libraries, big mallocs
+              │   ...                     │
+              │ heap      ↑ (grows up)    │  enlarged with brk
+              ├──────────────────────────┤
+              │ .bss / .data / .rodata    │
+              │ .text                     │
+low address   └──────────────────────────┘  around address 0 access is forbidden (chapter 6)</code></pre><p>There are four things to take away.</p><p><strong>① The stack limit is 8 MiB by default.</strong> It is seen and changed with <code>ulimit -s</code> (chapter 41). This limit is not a <strong>reservation</strong> but an upper bound, so in reality pages attach as much as is used.</p><p><strong>② Overflow dies at once — the guard page.</strong> Below the stack there is a page marked as forbidden. The moment the stack touches that place a signal (SIGSEGV) arises and the program stops. It is the device that prevents the worst accident, “quietly overwriting somebody else’s place”.</p><p><strong>③ Large allocations go not to the heap but through <code>mmap</code>.</strong> The allocator cuts small requests out of the heap and, for large requests (glibc’s default threshold is around 128 KiB), receives a whole new region from the kernel. So large blocks are sometimes really returned to the operating system on <code>free</code> — the exception to chapter 42′s “<code>free</code> mostly does not return to the OS”.</p><p><strong>④ Addresses change on every run — ASLR.</strong> Run chapter 41′s example twice and the addresses differ. It is a security device (address space layout randomisation) to keep an attacker from knowing addresses in advance. So code that <strong>records an address value and uses it on the next run</strong> does not hold.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Each thread has its own stack</p>Make a strand (a thread) and one more stack arises with it. On Linux the default size mostly follows the main thread’s limit at 8 MiB, and it is settled with <code>pthread_attr_setstacksize</code>. This fact leaves two things in practice — a design making thousands of strands reserves that much <strong>address space</strong> (bearable on 64-bit but soon exhausted on 32-bit), and deep recursion inside a strand overflows sooner than in the main thread.</div><h3>77.3 Windows’ map</h3><p>The big picture is similar but the numbers and names differ.</p><figure class="tbl"><div class="tblwrap"><table><tr><th></th><th><strong>Linux</strong></th><th><strong>Windows</strong></th></tr><tr><td>default stack</td><td>8 MiB (a limit)</td><td><strong>1 MiB</strong> (reserved), the first commit is 4 KiB</td></tr><tr><td>specifying the stack size</td><td><code>ulimit -s</code>, <code>pthread_attr_setstacksize</code></td><td>the linker’s <code>/STACK:reserve[,commit]</code>, a <code>CreateThread</code> argument</td></tr><tr><td>executable format</td><td>ELF</td><td>PE</td></tr><tr><td>large allocations</td><td><code>mmap</code></td><td><code>VirtualAlloc</code> (called by the heap manager)</td></tr><tr><td>heap API</td><td><code>malloc</code> → <code>brk</code>/<code>mmap</code></td><td><code>malloc</code> → <code>HeapAlloc</code> → <code>VirtualAlloc</code></td></tr><tr><td>address randomisation</td><td>ASLR</td><td>ASLR (the same concept)</td></tr></table></div><p class="float-caption">Table 77.2</p></figure><p><strong>Windows’ 1 MiB often makes trouble in practice.</strong> There are three typical cases in which code that was fine on Linux dies of stack overflow on Windows — a large local array, deep recursion, and calls passing a large struct by value (chapter 44). The structure separating reservation from commitment is worth knowing too: the 1 MiB is merely <strong>addresses held aside</strong>, and physical memory attaches as much as is used. So reserving a large stack does not cost much if the actual usage is small.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>“It works on Linux but dies on Windows”</p><p>An accident that comes up repeatedly in porting work. The cause is usually within two lines.</p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>process</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-t">char</span></strong> buffer<span class="tok-x">[</span><span class="tok-n">4</span> <strong><span class="tok-x">*</span></strong> <span class="tok-n">1024</span> <strong><span class="tok-x">*</span></strong> <span class="tok-n">1024</span><span class="tok-x">]</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 4 MiB — passes within Linux's 8 MiB </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-x">...</span></strong>                             <em><span class="tok-c">/*</span></em><em><span class="tok-c"> instant death in Windows' 1 MiB </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span></code></pre><p>There are three roads to mending it. Enlarge the stack with a linker option (<code>/STACK:8388608</code>), turn the buffer <code>static</code> (though re-entrancy and thread safety are lost), or move it to <code>malloc</code>. Which of the three is right is settled by that buffer’s character — if it is large and outlives the function, the heap; if it is large but finished within the function, the heap or a larger stack; if it is small and hot, the stack as it is.</p></div><h3>77.4 The world with no operating system — freestanding implementations</h3><p>Now we go down to the side with no kernel, no virtual memory and no ASLR. It is the world of the <strong>freestanding implementation</strong> seen in chapter 56. Here most of the earlier picture vanishes and instead <strong>physical addresses appear bare</strong>.</p><p>The common skeleton is this. A chip mostly has two kinds of memory — <strong>flash</strong>, which remains when the power is off (code and constants), and <strong>RAM</strong>, which vanishes when it is off (variables and the stack). And when the program starts, the <strong>startup code</strong> (often <code>crt0</code> or <code>Reset_Handler</code>) does three things.</p><ol><li><strong>Copies <code>.data</code> from flash to RAM.</strong> The initial values must survive the power being off, so they are stored in flash, and the variables must be in RAM, so they are moved at startup.</li><li><strong>Fills <code>.bss</code> with zeros.</strong> The work the kernel did for us on Linux.</li><li><strong>Sets up the stack pointer and calls <code>main</code>.</strong></li></ol><p>These three lines show that C’s promise of “an uninitialised global is 0” is <strong>not free but work somebody does</strong>. And this code mostly pairs with a linker script — a file in which a human writes down which region is placed at which address.</p><h4>77.4.1 Arm Cortex-M — the first word of the vector table is the stack</h4><p>The family most widely used in microcontrollers. The layout is mostly this.</p><pre><code data-lang="text">0x0800_0000  flash  ┌──────────────┐
+                    │ vector table │  [0] the initial stack pointer value
+                    │              │  [1] the address of Reset_Handler
+                    │ .text        │
+                    │ .rodata      │
+                    │ .data source │ → copied to RAM at startup
+                    └──────────────┘
+0x2000_0000  RAM    ┌──────────────┐
+                    │ .data        │
+                    │ .bss         │
+                    │ heap    ↑    │ (if used)
+                    │   ...        │
+                    │ stack   ↓    │ ← initial SP = the end of RAM
+                    └──────────────┘</code></pre><p>Three characteristics to take away.</p><p><strong>① The stack’s starting address is embedded in the vector table.</strong> On reset, a Cortex-M reads the first word at address 0 and takes it as the stack pointer, then reads the second word and jumps there. The stack’s place is, in effect, <strong>set up by the hardware reading it from the file</strong>.</p><p><strong>② There are two stack pointers.</strong> MSP (main) and PSP (process). Used without an operating system (an RTOS) only MSP is used, but lay an RTOS on top and it divides them so that the kernel uses MSP and each task uses PSP. Each task has its own stack, and its size is <strong>written as a number by a human when creating the task</strong> — there is no such generosity as Linux’s 8 MiB; it is usually a few hundred bytes to a few KiB.</p><p><strong>③ There is a device to report overflow, or there is not.</strong> Higher chips have a stack limit register (MSPLIM/PSPLIM) or an MPU and can catch overflow as an exception. On chips without them the stack quietly overwrites <code>.bss</code> — so a practice arose: painting the stack region beforehand with a particular value (<code>0xAA</code>, say) and later counting how much has been erased to measure the <strong>maximum usage</strong> (<strong>stack painting</strong>). Static analysis tools also calculate the worst-case depth from the call graph.</p><h4>77.4.2 AVR — Harvard architecture, so even constants are copied</h4><p>The 8-bit family widely known through the Arduino. The <strong>Harvard architecture</strong> seen in chapter 54 — where the address spaces of code and data are entirely different — becomes flesh here.</p><pre><code data-lang="text">flash (program space)         RAM (data space)
+┌───────────────────┐        ┌──────────────────┐
+│ vector table      │        │ .data            │ ← copied from flash
+│ .text             │        │ .bss             │
+│ .data's initial   │──────▶ │ heap ↑ (if used) │
+│ values (and       │        │  ...             │
+│ constants)        │        │ stack ↓          │ ← starts at RAMEND
+└───────────────────┘        └──────────────────┘</code></pre><p>Two characteristics dominate practice.</p><p><strong>① String constants eat RAM.</strong> The address spaces being divided, flash cannot be read with an ordinary pointer. So the compiler takes the safe side — it copies even string literals into RAM. On a chip with only 2 KiB of RAM, this is where the situation arises of a few lines of log strings eating half the RAM. The solutions are <code>PROGMEM</code> and <code>pgm_read_byte</code>, and macros such as <code>F("...")</code> — instructions saying <strong>“leave this constant in flash and read it with a special instruction”</strong>. These are not standard C but extensions of the AVR tools.</p><p><strong>② The stack and the heap grow facing each other in the same RAM.</strong> The stack grows down from the end of RAM, the heap grows up from after <code>.bss</code>. When the two meet — they overwrite each other with no warning. There is nothing like a guard page. So the long-standing practice of the AVR world is <strong>not to use dynamic allocation at all</strong>.</p><h4>77.4.3 PIC — banks and the “compiled stack”</h4><p>Microchip’s 8-bit family (PIC10/12/16/18) is different again in structure.</p><p><strong>① The data memory is divided into banks.</strong> The window that can be seen at once is small, so to touch a variable in another bank the bank-select register must be changed. The compiler inserts this for you, but if the variable layout is bad the bank-switching instructions multiply and the code grows larger and slower.</p><p><strong>② There is no data stack in the hardware.</strong> PIC10/12/16 have only a <strong>call stack</strong> (a hardware stack piling up return addresses) and its depth is fixed (eight levels, say; PIC18 has thirty-one). There is no stack to hold local variables. So the XC8 compiler uses a method called the <strong>compiled stack</strong> — it allocates a place for each function’s local variables <strong>statically</strong>, and functions that cannot be alive at the same time overlap in that place.</p><p><strong>③ So recursion is forbidden by default.</strong> If the place for local variables is static, the same function cannot be called overlapping itself. The call depth cannot exceed the hardware limit either. Since the compiler calculates “can this function call that one” from the call graph in order to divide the places, scattering function pointers about (chapter 54) leaves the compiler unable to know the graph and the layout worsens. PIC24, dsPIC and PIC32 are different — they have a real data stack and are closer to ordinary C.</p><figure class="tbl"><div class="tblwrap"><table><tr><th></th><th><strong>Arm Cortex-M</strong></th><th><strong>AVR</strong></th><th><strong>PIC (8-bit)</strong></th></tr><tr><td>architecture</td><td>von Neumann (unified addresses)</td><td>Harvard</td><td>Harvard + banks</td></tr><tr><td>stack</td><td>down from the end of RAM, two SPs</td><td>down from RAMEND</td><td>only a hardware call stack</td></tr><tr><td>local variables</td><td>the stack</td><td>the stack</td><td><strong>laid out statically</strong> (a compiled stack)</td></tr><tr><td>recursion</td><td>possible</td><td>possible (dangerous)</td><td>effectively impossible</td></tr><tr><td>constants</td><td>read ordinarily</td><td><code>PROGMEM</code> needed</td><td>special access needed</td></tr><tr><td>heap</td><td>usable (not recommended)</td><td>barely used</td><td>barely used</td></tr><tr><td>overflow detection</td><td>MPU, SPLIM (if present)</td><td>none</td><td>none</td></tr></table></div><p class="float-caption">Table 77.3</p></figure><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Can <code>malloc</code> not just be used in embedded work too?”</strong></p><p>It can be used, but here chapter 42′s reasons weigh far more. First, <strong>there is nowhere to go on failure.</strong> On a desktop you can take the null and terminate, but for a brake system or a pacemaker “terminate” is not an answer. Second, <strong>fragmentation does not recover.</strong> In a device running for months or years without a reboot, a fragmented heap leads in the end to allocation failure. Third, <strong>the time is not constant.</strong> Allocation time varies with the request and the heap’s state, so it does not fit real-time control that must finish within a settled time.</p><p>So the norm of this world is <strong>static allocation</strong>. Take as much as is needed at compile time and reuse it. Next most common are <strong>pools</strong> (making pieces of the same size in advance and lending them out) and <strong>arenas</strong> (cutting from one lump and throwing the whole away) — both are constant in time and free of fragmentation. It is why MISRA and the safety standards forbid or strongly restrict dynamic allocation, and the next chapter and Part XII treat those alternatives.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> How is the stack size settled in embedded work? Can it not be taken generously as on Linux?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> In a world where the whole RAM is a few KiB there is no “generously”. The method in the field overlaps three things. <strong>Calculation</strong> — a static analysis tool obtains the worst-case stack depth from the call graph (with recursion and function pointers the calculation becomes impossible). <strong>Measurement</strong> — measure the real maximum usage by the stack painting seen above and add a margin. <strong>Protection</strong> — catch overflow as an exception with an MPU or a stack limit register.</p><p>And one design rule follows: <strong>do not use deep recursion or large local arrays.</strong> The fact seen in chapter 44 that “passing a struct by value makes the stack jump by that much” leads here straight to the product’s failure.</p></p></div></div><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>to remember</strong></th><th><strong>the point</strong></th></tr><tr><td><code>.bss</code></td><td><strong>only the size</strong> in the file. filling with zeros happens at run time</td></tr><tr><td>Linux’s stack</td><td>8 MiB by default, <code>ulimit -s</code>. caught at once by the guard page</td></tr><tr><td>Windows’ stack</td><td><strong>1 MiB</strong> by default (4 KiB committed), the linker’s <code>/STACK</code></td></tr><tr><td>porting accidents</td><td>large local arrays and deep recursion die on Windows first</td></tr><tr><td>large allocations</td><td>go separately through <code>mmap</code>/<code>VirtualAlloc</code></td></tr><tr><td>freestanding</td><td>the startup code copies <code>.data</code> + zeroes <code>.bss</code> + sets the SP</td></tr><tr><td>Cortex-M</td><td>the vector table’s first word is the initial SP. MSP/PSP</td></tr><tr><td>AVR</td><td>Harvard — even constants eat RAM (<code>PROGMEM</code>). stack↔heap collision</td></tr><tr><td>8-bit PIC</td><td>a compiled stack. recursion effectively impossible</td></tr><tr><td>embedded allocation</td><td>static > pool > arena. <code>malloc</code> last</td></tr></table></div><p class="float-caption">Table 77.4</p></figure></div><p>The map is drawn. The next chapter opens one region of that map — the heap — to see what an allocator actually does, and what choices there are besides the standard <code>malloc</code>.</p>
 <div class="nav"><a href="ch76.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch78.html">Next →</a></div>
 </div></main></body></html>

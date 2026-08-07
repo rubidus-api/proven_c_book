@@ -278,14 +278,14 @@ and proven's string handling, which we meet later, thinks in the same family by
 treating length explicitly (chapter 40).
 
 #realcase[
-  The magic of fifteen characters — small string optimization in the MS STL
+  The magic of fifteen characters — small string optimisation in the MS STL
 ][
   Real implementations of method 3 have a clever double mechanism. In the
   Microsoft standard library implementation (MS STL) of neighbouring C++,
   `std::string` does not borrow a big warehouse (dynamic memory) for a short
   string — specifically *15 characters or fewer* (15 bytes plus the terminator) —
   but *simply holds it inside the body of the string object itself*. The
-  technique is called SSO, small string optimization. Why 15 — because reusing,
+  technique is called SSO, small string optimisation. Why 15 — because reusing,
   as a content buffer for short strings, the space of the pointer, length and
   capacity fields that must be in the object anyway comes out to exactly that
   size. The effect is explained by chapter 11's knowledge: most real-world

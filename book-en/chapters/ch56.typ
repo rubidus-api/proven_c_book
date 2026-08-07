@@ -3,7 +3,7 @@
 = The terrain of the standard library
 
 #prereq(
-  ([chapter 40, Safe input, and the appearance of proven], [the traps of the standard functions]),
+  ([chapter 40, Safe input], [the traps of the standard functions]),
   ([chapter 16, The general shape of compilation], [a library is linked in]),
 )
 
@@ -63,8 +63,8 @@ a freestanding environment). Abundance was given up and portability gained.
 
 And the thinness came at a price — the world made what it needed in the end, and
 the result is the forest of platform-specific APIs and third-party libraries. That
-is the background of the saying "in C, choosing libraries is half the work", and
-this book's choosing proven in chapter 40 is one instance of that choice.
+is the background of the saying "in C, choosing libraries is half the work" —
+chapter 40's five disciplines are about what to demand of that choice.
 
 == An anatomy of the output format string
 

@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>57 Strings and memory — &lt;string.h&gt; — Proven C Book</title><style>
+<title>57 The whole map of the standard library — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,117 +259,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch56.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch58.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch57.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>57 Strings and memory — <code>&lt;string.h></code></h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The header in which the most accidents have happened in C. Functions that do not take a size, <code>strncpy</code> which is not safe despite its name, copying that touches overlapping regions, <code>strtok</code> which destroys the original and hides state — the dangers of strings learned in chapter 37 take concrete shape here function by function. We also see the real portability of the non-standard alternatives (the <code>strlcpy</code> family).</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 37 said a C string is “up to the NUL”, so its length must be counted every time, and chapter 54 said functions that do not take a size are the first chronic illness. Then does using <code>strncpy</code> instead of <code>strcpy</code> cure that illness?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>It does not. Contrary to the impression the name gives, <code>strncpy</code> <strong>was not designed as a safe copying function.</strong> Its original purpose was filling the fixed-length fields of old Unix (a 14-byte directory entry name, say) — so it fills all the spare places with zeros, and if there is not enough room it does not attach a NUL. Both properties go against the expectations of “string copying”. This chapter’s first example shows it before your eyes.</p></div></div><h3>57.1 The truth about <code>strncpy</code></h3><div><div><p><code>examples/ch57/strncpy.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;string.h>
-
-static void dump(const char *label, const char *buf, size_t n)
-{
-    printf("%-14s", label);
-    for (size_t i = 0; i &lt; n; i++) {
-        unsigned char c = (unsigned char)buf[i];
-        if (c == 0)       printf(" \\0");
-        else if (c >= 32) printf("  %c", c);
-        else              printf(" %02x", c);
-    }
-    printf("\n");
-}
-
-/* 컴파일러가 원본 길이를 보지 못하도록 함수 경계 뒤에 둔다.
-   (그러지 않으면 gcc 가 -Wstringop-truncation 으로 잡아 준다) */
-static void copy_into(char *dst, size_t cap, const char *src)
-{
-    strncpy(dst, src, cap);
-}
-
-int main(void)
-{
-    /* ① 남는 자리를 전부 0 으로 채운다 — 큰 버퍼에서는 비싸다 */
-    char pad[10];
-    memset(pad, 'X', sizeof pad);
-    copy_into(pad, sizeof pad, "abc");
-    dump("짧은 원본:", pad, sizeof pad);
-
-    /* ② 딱 맞거나 넘치면 NUL 을 붙이지 않는다 — 문자열이 아니게 된다 */
-    char tight[4];
-    memset(tight, 'X', sizeof tight);
-    copy_into(tight, sizeof tight, "abcd");
-    dump("딱 맞을 때:", tight, sizeof tight);
-    printf("               NUL 이 없다 — 이대로 %%s 로 찍으면 계약 밖이다\n");
-
-    /* ③ 안전하게 쓰려면 마지막 칸을 손으로 닫는다 */
-    char safe[4];
-    copy_into(safe, sizeof safe - 1, "abcd");
-    safe[sizeof safe - 1] = '\0';
-    printf("직접 닫기    : [%s]\n", safe);
-
-    /* ④ 잘렸는지 알려면 결국 길이를 따로 재야 한다 */
-    const char *src = "abcd";
-    printf("잘림 여부    : %s\n", strlen(src) >= sizeof safe ? "잘렸다" : "온전하다");
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>짧은 원본:  a  b  c \0 \0 \0 \0 \0 \0 \0
-딱 맞을 때:  a  b  c  d
-               NUL 이 없다 — 이대로 %s 로 찍으면 계약 밖이다
-직접 닫기    : [abc]
-잘림 여부    : 잘렸다
-</code></pre></div></div><p>Two things come out.</p><p><strong>First, it fills all the spare places with zeros.</strong> Put 3 characters into a 10-byte buffer and it writes zeros over the remaining seven. The bigger the buffer, the bigger the waste.</p><p><strong>Second, when it fits exactly or overflows it does not attach a NUL.</strong> Put <code>abcd</code> into a 4-byte buffer and there is no room for the NUL, so what remains is <strong>a byte array, not a string</strong>. Print that with <code>%s</code> or pass it to <code>strlen</code> and it reads outside the buffer — the typical route of “I used the safe function and it blew up.”</p><p>gcc really does catch this mistake. Here is the diagnosis received when first writing the example.</p><pre><code data-lang="text">error: ‘strncpy’ output truncated before terminating nul copying 4 bytes
-       from a string of the same length [-Werror=stringop-truncation]</code></pre><p>But as seen in chapter 54, the compiler catches <strong>only what it can see</strong>. If the source’s length is settled during execution, this warning does not appear.</p><div class="dev antipattern"><p class="dev-label">✗ Copying “safely” with <code>strncpy</code></p><pre><code data-lang="c">char dst[32];
-strncpy(dst, src, sizeof dst);      /* there may be no NUL */
-printf("%s\n", dst);                 /* it reads outside the buffer */</code></pre><p>It must be mended at least like this.</p><pre><code data-lang="c">strncpy(dst, src, sizeof dst - 1);
-dst[sizeof dst - 1] = '\0';          /* close it by hand */
-if (strlen(src) >= sizeof dst) { /* truncated — handle it */ }</code></pre><p>Three lines are needed, and leaving out even one of them is an accident. That is why this function is assessed as “a safety device that is hard to use.”</p></div><h3>57.2 Then what is used</h3><p>Within the standard, the most practical tool for safely joining strings is in fact in <code>&lt;stdio.h></code>.</p><pre><code data-lang="c">int need = snprintf(dst, sizeof dst, "%s", src);
-if (need &lt; 0 || (size_t)need >= sizeof dst) { /* truncated */ }</code></pre><p>There is the criticism that it is slow (the cost of interpreting the format), but it is the only standard function that keeps the boundary while letting you <strong>know about truncation</strong>.</p><table><tr><th><strong>function</strong></th><th><strong>status</strong></th><th><strong>boundary</strong></th><th><strong>can truncation be known</strong></th></tr><tr><td><code>strcpy</code>, <code>strcat</code></td><td>standard</td><td>none</td><td>—</td></tr><tr><td><code>strncpy</code></td><td>standard</td><td>yes</td><td>no (must be measured by hand)</td></tr><tr><td><code>strncat</code></td><td>standard</td><td>yes (but the argument is the <strong>remaining room</strong>)</td><td>no</td></tr><tr><td><code>snprintf</code></td><td>standard</td><td>yes</td><td>yes (the return value)</td></tr><tr><td><code>strlcpy</code>, <code>strlcat</code></td><td>the BSD family, a C23 annex</td><td>yes</td><td>yes (the return value)</td></tr><tr><td><code>strcpy_s</code>, <code>strcat_s</code></td><td>C11 annex K (optional)</td><td>yes</td><td>yes (an error return)</td></tr></table><p><code>strncat</code>’s argument is a particular trap — the second argument is not <strong>the destination’s size</strong> but <strong>the number of bytes that may additionally be written</strong>. <code>strncat(dst, src, sizeof dst)</code> is almost always wrong, and <code>sizeof dst - strlen(dst) - 1</code> is right.</p><div class="dev realcase"><p class="dev-label">◉ Why <code>strlcpy</code> was not standard</p><p>OpenBSD put out <code>strlcpy</code> and <code>strlcat</code> in 1998. They take the destination’s size, always close with a NUL, and return <strong>the length of the source</strong> so that truncation can be known. They spread through the BSD family and several libraries, but glibc long refused to adopt them — the counter-argument being that “an API that quietly permits truncation only moves the problem.”</p><p>So code using <code>strlcpy</code> was long unportable on Linux, and every project came to have its own edition. In 2023 glibc 2.38 finally added them and C23 brought in functions of similar intent as an annex, but <strong>the state in which you must check the target platform’s edition before saying “it can be used”</strong> persists. It is a representative case showing the gap between the standard and reality.</p></div><h3>57.3 Overlapping regions — <code>memcpy</code> and <code>memmove</code></h3><div><div><p><code>examples/ch57/overlap.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;string.h>
-
-/* memcpy 는 겹치는 영역을 허용하지 않는다. memmove 는 허용한다. */
-static void show(const char *label, const char *s)
-{
-    printf("%-22s [%s]\n", label, s);
-}
-
-int main(void)
-{
-    char buf[32];
-
-    /* 겹치지 않는 복사 — memcpy 가 맞는 자리 */
-    strcpy(buf, "abcdefgh");
-    char other[32];
-    memcpy(other, buf, strlen(buf) + 1);
-    show("겹치지 않음(memcpy):", other);
-
-    /* 한 칸 밀기 — 원본과 목적지가 겹친다. memmove 를 쓴다 */
-    strcpy(buf, "abcdefgh");
-    memmove(buf + 1, buf, 7);       /* 뒤로 한 칸 밀기 */
-    buf[8] = '\0';
-    show("한 칸 밀기(memmove):", buf);
-
-    /* 앞으로 당기기도 겹친다 */
-    strcpy(buf, "abcdefgh");
-    memmove(buf, buf + 2, 6 + 1);   /* 두 칸 당기기 */
-    show("두 칸 당기기(memmove):", buf);
-
-    /* strtok 은 원본을 부순다 — 그리고 상태를 함수 안에 숨긴다 */
-    char line[] = "name,age,city";
-    printf("strtok 전  : [%s]\n", line);
-    for (char *t = strtok(line, ","); t; t = strtok(NULL, ","))
-        printf("  토큰: [%s]\n", t);
-    printf("strtok 후  : [%s]  &lt;- 원본이 잘렸다\n", line);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>겹치지 않음(memcpy): [abcdefgh]
-한 칸 밀기(memmove): [aabcdefg]
-두 칸 당기기(memmove): [cdefgh]
-strtok 전  : [name,age,city]
-  토큰: [name]
-  토큰: [age]
-  토큰: [city]
-strtok 후  : [name]  &lt;- 원본이 잘렸다
-</code></pre></div></div><p><code>memcpy</code>’s contract includes “the two regions must not overlap”. Calling it with them overlapping is undefined behaviour, and in an optimised implementation values really do get scrambled — because there is no guarantee that bytes are moved in order (several bytes may be moved at once with SIMD, or moved from the back).</p><p>If they may overlap, it is <code>memmove</code>. Contrary to the impression its name gives, it does not mean “moving” but <strong>copying that is safe even when overlapping</strong>.</p><div class="dev misconception"><p class="dev-label">⚠ “<code>memcpy</code> is always faster than <code>memmove</code>”</p><p>An old saying. Today the performance difference between the two is mostly negligible, and in some implementations they converge on the same code. The reason <code>memcpy</code> can be faster is that it can use the premise “they do not overlap” in optimisation, and if that premise is set wrongly, what is lost (a bug that is hard to find) is far greater than what is gained (a few nanoseconds). <strong>If there is the slightest possibility of overlap, <code>memmove</code></strong> — that is the modern default.</p></div><h3>57.4 <code>strtok</code> — it destroys the original and hides state</h3><p>The last part of the example. <code>strtok</code> has two sins.</p><p><strong>First, it destroys the original.</strong> It makes tokens by overwriting the separators with NUL. So it cannot be used on a read-only string (a string literal) — using it there is outside the contract — and if the original is needed it must be copied first.</p><p><strong>Second, it hides state inside the function.</strong> That is why <code>NULL</code> is passed from the second call onward. That state is <strong>singular</strong>, so if another function calls <code>strtok</code> in the middle of cutting tokens the two wreck each other’s traversal. In a program running along several strands it gets worse.</p><p>There are three alternatives. Use an edition in which the caller holds the state, such as <code>strtok_r</code> (POSIX) or <code>strtok_s</code> (annex K); cut it yourself with <code>strcspn</code> and <code>strchr</code>; or use a tool that <strong>does not touch the original</strong>, like Part XII’s view-based splitting.</p><h3>57.5 The traps of the remaining functions</h3><table><tr><th><strong>function</strong></th><th><strong>what it does</strong></th><th><strong>to beware of</strong></th></tr><tr><td><code>strlen</code></td><td>length</td><td>with no NUL it runs away. <math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math> every time</td></tr><tr><td><code>strcmp</code></td><td>comparison in dictionary order</td><td>only the sign of the return value means anything. 0 is “equal”</td></tr><tr><td><code>strncmp</code></td><td>compare the first n bytes</td><td>if n exceeds the length it stops at the NUL</td></tr><tr><td><code>strchr</code>, <code>strrchr</code></td><td>find a character</td><td>if the sought character is <code>'\0'</code> it points at the end</td></tr><tr><td><code>strstr</code></td><td>substring</td><td>worst-case performance differs by implementation</td></tr><tr><td><code>strspn</code>, <code>strcspn</code></td><td>length by a set of characters</td><td>the heart of the cutting idiom</td></tr><tr><td><code>memset</code></td><td>fill with a byte</td><td>★ for erasing secrets it may vanish under optimisation</td></tr><tr><td><code>memcmp</code></td><td>compare bytes</td><td>★ it compares padding too. it must not be used to compare structs</td></tr></table><p>The two starred entries are especially dangerous in practice.</p><p><strong>Erasing a secret with <code>memset</code></strong> — the <code>memset(key, 0, len)</code> that erases after use may, if <code>key</code> is not read afterwards, be seen by the compiler as a “useless write” and deleted (chapter 13′s optimisation story). C11 put <code>memset_s</code> in annex K for this, and each platform has a function such as <code>explicit_bzero</code> or <code>SecureZeroMemory</code>.</p><p><strong>Comparing structs with <code>memcmp</code></strong> — because of the padding seen in chapter 41. Even for two structs holding the same values, if the padding bytes differ <code>memcmp</code> answers “different”. The members must be compared one by one.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>I hear <code>memcmp</code> is dangerous for comparing passwords too?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Correct, for a different reason. <code>memcmp</code> returns the instant it meets a differing byte, so <strong>the time the comparison took leaks how much of the front matched.</strong> That means an attacker can measure time and get it right one byte at a time (a timing attack). When comparing a secret, use a constant-time comparison function that always takes the same time regardless of length — it is not in the standard; cryptographic libraries provide it.</p></div></div><div class="dev recap"><p class="dev-label">☰ Recap</p><p><code>&lt;string.h></code> in summary.</p><table><tr><th><strong>what you want to do</strong></th><th><strong>what to use</strong></th><th><strong>what not to use</strong></th></tr><tr><td>copy a string</td><td><code>snprintf</code> (or the platform’s <code>strlcpy</code>)</td><td><code>strcpy</code>, a careless <code>strncpy</code></td></tr><tr><td>join</td><td><code>snprintf</code> in one go</td><td><code>strcat</code>, <code>strncat</code> with its confusing argument</td></tr><tr><td>copy that may overlap</td><td><code>memmove</code></td><td><code>memcpy</code></td></tr><tr><td>cut tokens</td><td><code>strcspn</code>/<code>strchr</code> or <code>strtok_r</code></td><td><code>strtok</code></td></tr><tr><td>compare structs</td><td>compare member by member</td><td><code>memcmp</code> (padding)</td></tr><tr><td>compare secrets</td><td>constant-time comparison</td><td><code>memcmp</code> (time leak)</td></tr><tr><td>erase secrets</td><td>the platform’s explicit function</td><td><code>memset</code> (vanishes under optimisation)</td></tr></table></div><p>We have passed the strings. The next chapter is the drawer of odds and ends and a treasury of accidents — <code>&lt;stdlib.h></code>.</p>
+<h2 id="loc-57">57 The whole map of the standard library</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 56, The terrain of the standard library · the character of the standard library</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 56 said the standard library is “thin and old”, and that the standard pins down not only the grammar but the list of libraries and the contract of each function. Then exactly how many headers are there, and how has that list grown?</p><div class="qa-a"><p><span class="dev-label">A.</span> Thirty-one as of C23. C89 began with fifteen, C95 added two concerning wide characters, C99 nine, C11 five, and C23 a few more. That the speed of growth is almost the same as the language’s speed of change tells the character of this list — <strong>once something enters it stays effectively forever, and so it takes long to let anything in</strong>. It is the other side of the story of <code>gets</code>’s funeral taking decades (chapter 40).</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">We spread into a table every header the C standard settles, without missing one. Which header entered in which edition, what can be used even without an operating system, and in what order the remaining chapters of this part walk those regions. It is the chapter that redraws chapter 56′s terrain map at a larger scale.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>How many of these are actually used often?</li></ol></div></div><div></div><h3>57.1 Freestanding and hosted — two worlds</h3><p>The standard divides implementations in two. A <strong>hosted implementation</strong> is the ordinary environment running on top of an operating system, and a <strong>freestanding implementation</strong> is an environment with no operating system — firmware, a kernel, a bootloader.</p><p>The difference between the two is exactly the difference in the header list. The headers a freestanding implementation must provide are only the following; the rest may or may not be there.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>header</strong></th><th><strong>what</strong></th><th><strong>note</strong></th></tr><tr><td><code>&lt;float.h></code></td><td>the limits of real types</td><td>defines values only</td></tr><tr><td><code>&lt;limits.h></code></td><td>the limits of integer types</td><td>defines values only</td></tr><tr><td><code>&lt;stdarg.h></code></td><td>variadic arguments</td><td>chapter 53</td></tr><tr><td><code>&lt;stdbool.h></code></td><td><code>bool</code></td><td>C99. effectively unnecessary in C23</td></tr><tr><td><code>&lt;stddef.h></code></td><td><code>size_t</code>, <code>NULL</code>, <code>offsetof</code></td><td>the most basic of the basics</td></tr><tr><td><code>&lt;stdint.h></code></td><td>fixed-width integers</td><td>C99</td></tr><tr><td><code>&lt;stdalign.h></code></td><td><code>alignas</code>, <code>alignof</code></td><td>C11. keywords in C23</td></tr><tr><td><code>&lt;stdnoreturn.h></code></td><td><code>noreturn</code></td><td>C11. to be retired in C23</td></tr><tr><td><code>&lt;iso646.h></code></td><td>alternative spellings such as <code>and</code>, <code>or</code></td><td>C95</td></tr><tr><td><code>&lt;stdbit.h></code></td><td>bit manipulation</td><td>added in C23</td></tr><tr><td><code>&lt;stdckdint.h></code></td><td>checked arithmetic</td><td>added in C23</td></tr></table></div><p class="float-caption">Table 57.1</p></figure><p>That C23 lengthened this list is worth noticing. The two that newly entered are <strong>pure computation needing no operating system</strong>, so they can be provided in a freestanding environment too, and what they do (counting bits and checking overflow) is especially handy in embedded work. That the list grows in the direction of “what works without an OS” shows this division’s character too.</p><p>And a whole header being required differs from only some of its declarations being required — <code>&lt;string.h></code>, for example, is not freestanding-required, but if an implementation provides it the contracts inside must follow the standard.</p><p>That this list is short is the background of this whole book — in embedded work neither <code>printf</code> nor <code>malloc</code> is a given (Part XII’s freestanding story begins here).</p><h3>57.2 The whole list</h3><p>Every header the standard settles. “Edition” is the edition in which that header entered the standard, and the chapter of this part that treats it is written alongside.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>header</strong></th><th><strong>edition</strong></th><th><strong>what it holds</strong></th><th><strong>in this part</strong></th></tr><tr><td><code>&lt;assert.h></code></td><td>C89</td><td><code>assert</code> — the diagnosis that catches contract violations</td><td>chapter 70</td></tr><tr><td><code>&lt;complex.h></code></td><td>C99</td><td>complex arithmetic</td><td>chapter 68</td></tr><tr><td><code>&lt;ctype.h></code></td><td>C89</td><td>character classification and conversion</td><td>chapter 62</td></tr><tr><td><code>&lt;errno.h></code></td><td>C89</td><td>the error-number global</td><td>chapter 70</td></tr><tr><td><code>&lt;fenv.h></code></td><td>C99</td><td>the floating-point environment (rounding, exceptions)</td><td>chapter 68</td></tr><tr><td><code>&lt;float.h></code></td><td>C89</td><td>the limits of real types</td><td>chapters 26, 68</td></tr><tr><td><code>&lt;inttypes.h></code></td><td>C99</td><td>formats and conversions for fixed-width integers</td><td>appendix B, chapter 73</td></tr><tr><td><code>&lt;iso646.h></code></td><td>C95</td><td>alternative spellings of operators</td><td>chapter 73</td></tr><tr><td><code>&lt;limits.h></code></td><td>C89</td><td>the limits of integer types</td><td>chapter 26</td></tr><tr><td><code>&lt;locale.h></code></td><td>C89</td><td>locale settings</td><td>chapter 62</td></tr><tr><td><code>&lt;math.h></code></td><td>C89</td><td>mathematical functions</td><td>chapter 68</td></tr><tr><td><code>&lt;setjmp.h></code></td><td>C89</td><td>non-local jumps</td><td>chapter 70</td></tr><tr><td><code>&lt;signal.h></code></td><td>C89</td><td>signal handling</td><td>chapter 70</td></tr><tr><td><code>&lt;stdalign.h></code></td><td>C11</td><td>specifying and querying alignment</td><td>chapter 73</td></tr><tr><td><code>&lt;stdarg.h></code></td><td>C89</td><td>variadic arguments</td><td>chapter 53</td></tr><tr><td><code>&lt;stdatomic.h></code></td><td>C11</td><td>atomic operations</td><td>chapter 74</td></tr><tr><td><code>&lt;stdbit.h></code></td><td>C23</td><td>bit manipulation (counting, rotating and so on)</td><td>chapter 73</td></tr><tr><td><code>&lt;stdbool.h></code></td><td>C99</td><td><code>bool</code>, <code>true</code>, <code>false</code></td><td>chapter 73</td></tr><tr><td><code>&lt;stdckdint.h></code></td><td>C23</td><td>arithmetic that checks for overflow</td><td>chapters 49, 75</td></tr><tr><td><code>&lt;stddef.h></code></td><td>C89</td><td><code>size_t</code>, <code>ptrdiff_t</code>, <code>NULL</code>, <code>offsetof</code></td><td>chapter 73</td></tr><tr><td><code>&lt;stdint.h></code></td><td>C99</td><td>fixed-width integer types</td><td>chapters 26, 73</td></tr><tr><td><code>&lt;stdio.h></code></td><td>C89</td><td>stream input and output, files</td><td>chapters 51, 59</td></tr><tr><td><code>&lt;stdlib.h></code></td><td>C89</td><td>conversion, random numbers, allocation, sorting, program termination</td><td>chapter 61</td></tr><tr><td><code>&lt;stdnoreturn.h></code></td><td>C11</td><td><code>noreturn</code></td><td>chapter 73</td></tr><tr><td><code>&lt;string.h></code></td><td>C89</td><td>strings and memory blocks</td><td>chapter 60</td></tr><tr><td><code>&lt;tgmath.h></code></td><td>C99</td><td>type-generic mathematical functions</td><td>chapter 68</td></tr><tr><td><code>&lt;threads.h></code></td><td>C11</td><td>threads, mutexes, condition variables</td><td>chapter 73</td></tr><tr><td><code>&lt;time.h></code></td><td>C89</td><td>time and the calendar</td><td>chapter 69</td></tr><tr><td><code>&lt;uchar.h></code></td><td>C11</td><td>UTF-16 and UTF-32 character types</td><td>chapter 62</td></tr><tr><td><code>&lt;wchar.h></code></td><td>C95</td><td>wide-character input, output and strings</td><td>chapter 62</td></tr><tr><td><code>&lt;wctype.h></code></td><td>C95</td><td>wide-character classification</td><td>chapter 62</td></tr></table></div><p class="float-caption">Table 57.2</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> How many of these are actually used often?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Most programs live on about five — <code>&lt;stdio.h></code>, <code>&lt;stdlib.h></code>, <code>&lt;string.h></code>, <code>&lt;stdint.h></code>, and as needed <code>&lt;math.h></code> or <code>&lt;time.h></code>. The rest are things you “know exist and look up when needed”. So this part’s aim too is not memorising but <strong>keeping the map in your head</strong> — roughly where what is, and which regions are slippery.</p></div></div><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“If it is in the standard library it is a safe and portable function”</strong></p>Being in the standard means <strong>it is everywhere</strong>, not <strong>it is safe</strong>. <code>gets</code> was in the 1989 standard and was deleted only in 2011 (chapter 59). <code>strncpy</code>, contrary to its name, is not a safe copying function (chapter 60), and <code>atoi</code> has no way at all to report failure (chapter 61). Some functions of <strong>the same name even behave differently according to the locale</strong> (chapter 62). Using the standard library means not “using what has been verified” but <strong>“using what has a stated contract”</strong>, and reading that contract is still our part.</div><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The accident one header called down — <code>&lt;strings.h></code> is not standard</p>There is a place confusable by similarity of name. <code>&lt;string.h></code> is standard but <code>&lt;strings.h></code> (plural) is POSIX. Functions such as <code>strcasecmp</code> and <code>bzero</code> are in there, so code using it does not compile on Windows. Conversely <code>strlcpy</code> and <code>strlcat</code> came out of OpenBSD and spread to several Unixes but <strong>were not standard</strong> — only in C23 were functions of similar intent so much as discussed. The guess “it is used a lot, so it must be standard” is a common beginning of portability accidents.</div><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>to remember</strong></th><th><strong>the point</strong></th></tr><tr><td>number of headers</td><td>thirty-one as of C23. grown from C89′s fifteen</td></tr><tr><td>freestanding</td><td>only eleven are guaranteed without an operating system (C23 added two)</td></tr><tr><td>speed of entering</td><td>slow. the speed of leaving is slower</td></tr><tr><td>standard = safe</td><td>no. standard = <strong>the contract is written down</strong></td></tr><tr><td><code>&lt;strings.h></code></td><td>not standard (POSIX). do not be fooled by the name</td></tr></table></div><p class="float-caption">Table 57.3</p></figure></div><p>The map is spread out, so we walk. The next two chapters are the region used the most and slipped in the most — stream input and output.</p>
 <div class="nav"><a href="ch56.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch58.html">Next →</a></div>
 </div></main></body></html>

@@ -3,9 +3,13 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>머리말 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,12 +259,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../en/">English</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="index.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch01.html" title="다음" aria-label="다음">→</a></span><a href="../en/">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>머리말</h2><p>이 책은 내가 만든 C 라이브러리 proven의 입문서이자, 그 홍보물이다.</p><p>그러나 무엇을 쓰라고 권하려면 먼저 그것이 왜 필요한지를 보여야 한다. proven이 다루는 문제들은 C의 미묘한 자리에 있다 — 표현의 한계, 변환의 규칙, 기억의 수명, 표준이 약속하지 않은 영역. 이 자리들을 모르는 사람에게 proven은 불필요한 물건으로 보인다. 그래서 라이브러리를 소개하기 전에, 그 문제들을 먼저 설명하기로 했다. 이 책의 대부분이 표준 C만으로 쓰인 이유이고, proven이 뒤늦게(제12부) 등장하는 이유다. 앞의 이야기를 읽고 나면 proven이 필요 없다고 판단할 수도 있다. 그것도 좋은 결말이다.</p><p>다른 한편으로 이 책에는 C를 좋아하는 사람의 마음도 얼마간 들어가 있다. 쉰 해를 넘긴 언어가 왜 아직 남아 있는지, 그 설계가 무엇을 포기하고 무엇을 얻었는지를 설명하다 보면 자연히 그렇게 된다. 그 부분은 감추지 않았다.</p><p>이 책에 실린 모든 코드는 실제로 컴파일되고 실행된 것이다. 인쇄된 실행 결과는 사람이 옮겨 적은 것이 아니라 책을 만들 때마다 기계가 예제를 돌려 얻은 출력이며, 두 컴파일러(gcc와 clang)로 교차 검증했다.</p><p>밝혀 둘 것이 하나 더 있다. <strong>이 책은 AI를 보조 도구로 삼아 집필했다.</strong> 무엇을 어떤 순서로 다룰지, 어떤 원칙으로 서술할지, 무엇을 싣고 무엇을 뺄지는 전부 내가 정했고, 원고는 그 지시에 따라 쓰인 뒤 내 검토를 거쳤다. 기술적 서술은 표준 문서와 1차 자료로 확인했으며, 앞 문단에서 말한 대로 예제는 사람이 아니라 기계가 매번 실제로 돌려 검증한다 — AI가 썼든 사람이 썼든 <strong>돌지 않는 코드는 이 책에 실리지 않는다</strong>는 뜻이다.</p><p>그럼에도 오류는 남아 있을 것이다. 그것은 도구의 몫이 아니라 내 몫이다. 발견하면 알려 주시기 바란다.</p><h3>저작권과 연락</h3><p>본문(이 책의 글과 그림)은 <strong>CC BY-NC-SA 4.0</strong>을 따른다. 출처를 밝히면 자유롭게 공유하고 고칠 수 있으나, 영리 목적으로는 이용할 수 없고, 고친 결과물에도 같은 라이선스를 적용해야 한다.</p><p>예제 코드는 <strong>MIT 라이선스</strong>를 따른다. 이 책에서 배운 코드는 아무 제약 없이 자기 프로그램에 가져다 쓸 수 있다.</p><p>연락은 이메일로 받는다. 오류 신고와 수정 요청은 GitHub 저장소를 통해 하는 편이 낫다 — 기록이 남고, 다른 독자에게도 보인다.</p><p>받는 것은 <strong>오류 신고뿐이다.</strong> 틀린 서술, 어긋난 예제, 오탈자, 낡은 정보를 알려 주시면 고맙게 반영한다. 반면 새 장이나 새 절을 써 보내는 식의 원고 기여는 받지 않는다 — 이 책의 구성과 서술은 한 사람의 판단으로 유지하는 편이 낫다고 보았고, 저작권 관계를 단순하게 두려는 뜻도 있다.</p><p><a href="mailto:rubidus@gmail.com">rubidus@gmail.com</a><br><a href="https://github.com/rubidus-api/proven_c_book">github.com/rubidus-api/proven_c_book</a></p>
+<h2>머리말</h2><p>이 책은 내가 만든 C 라이브러리 proven의 입문서이자, C 언어 입문서이다. 이렇게 애매한 입장을 취하게 된 데에는 이유가 있다.</p><p>무엇을 쓰라고 권하려면 먼저 그것이 왜 필요한지를 보여야 한다. proven이 다루는 문제들은 C의 미묘한 자리에 있다 — 표현의 한계, 변환의 규칙, 기억의 수명, 표준이 약속하지 않은 영역들. 이 자리들을 모르는 사람들에게 proven은 불필요한 물건으로 보인다. 한편 이미 잘 알고 있는 사람들에게는 이것들을 다루는 자신만의 방법이 있어서, proven을 쓸 이유가 마땅치 않다.</p><p>그래서 라이브러리를 소개하기 전에, 그 문제들을 먼저 설명하기로 했다. C를 처음 배우는 사람을 염두에 두고 썼으므로 컴퓨터가 어떻게 생겼는지에서 시작해, 자료형과 흐름, 포인터와 배열, 기억의 수명, 표준 라이브러리를 차례로 지난다. proven이 독자에게 필요하지 않더라도, 앞부분의 내용은 충분히 쓸모가 있을 것이다. 앞의 내용을 읽고 나서 proven이 필요 없다고 판단할 수도 있지만, 그것 또한 좋은 결말이다. 어쨌거나 C의 문제 해결에는 도움이 될 테니까.</p><p>오랜 역사를 가진 C 언어에는 각 시대의 현실적인 한계와 어려움을 극복하려는 과정에서 생긴 다양한 상처와 뒤틀림, 그리고 진지한 고민의 흔적이 남아 있다. 그것들을 어루만지고 따라가 보는 일은 무척이나 흥미롭고 즐거운 경험이었으니, 거기에 내 나름의 노력과 흔적을 더해 보고 싶어진 것은 당연한 흐름이리라. proven을 만든 것도 이 책을 쓴 것도 필요보다는 결국 C를 좋아하는 사람으로서의 마음이 시킨 일임을 부정하지는 않겠다. 그 마음이 다소 과한 범위의 설명과 분량으로 흘러넘친 데 대해서는 독자들에게 미리 사과드린다.</p><p>이 책을 읽는 이들에게 미리 감사의 뜻을 표하고자 한다. 누군가가 시간을 들여 내 저작물을 함께 나누고 의견을 보태 준다는 것은 언제나 기쁜 일이다.</p><h3>이 책의 의도와 이용 방법</h3><p>먼저 분명히 해 둘 것이 있다. <strong>읽기만 해서는 프로그래밍 능력이 자라지 않는다.</strong> 이 책은 연습문제도, 과제도, “직접 해 보라”도 두지 않는다. 단지 상황을 설명하고, 질문을 던지고, 그에 대해 답을 제공할 뿐이다. 의도한 것은 독자에게 C 언어의 든든한 기초 지식을 갖추게 하고, 그 안에 내재된 함정과 위험을 알아보는 감각과 안목을 길러 주는 것이었다. 이것은 빈 파일 앞에서 문제를 잘게 쪼개고, 떠오르지 않는 함수 이름을 찾아내고, 컴파일러가 쏟아 낸 오류를 하나씩 지우고, 예상과 다른 출력 앞에서 원인을 좁혀 가는, 실제로 코드를 만들어 내는 능력과는 다소 다르다. 그것은 <strong>직접 써 보는 일로만</strong> 자란다. 이 책은 그 일을 대신 하지 않으며, 대신 할 수 있다고 말하지도 않겠다. 그 부분은 다른 실습 과정이나 자신의 작은 프로그램으로 이어 가야 한다.</p><p>그것은 이 책의 결함이지만 의도적 선택이기도 하다. 연습과 과제를 넣으면 분량이 불고 독자의 부담도 함께 커진다. 나는 부담 없이 끝까지 읽히는 쪽을 택했고, 그 대가로 수행 훈련을 포기했다. <strong>이 책은 이해를 위한 책이지, 무엇인가를 빨리 만들어 내기 위한 책은 아니다.</strong></p><p>첫 프로그램이 늦다는 것도 미리 말해 둔다. 헬로 월드는 제3부에서야 나온다. 그전까지는 컴퓨터가 어떻게 생겼는지, 기억이 어떻게 나뉘는지, 수와 글자가 어떻게 표현되는지와 같은 기초를 세운다. C 언어를 문법이 아니라 개념으로 만나게 하려고 일부러 그렇게 놓았다. 빨리 무언가를 만들고 싶은 독자에게는 이 순서가 답답할 수 있다. 그런 독자는 15장 헬로 월드를 먼저 읽고 1장으로 돌아와도 좋다. 순서는 중요하지 않다.</p><p>이 책이 의도한 것은 <strong>단단한 기반</strong>이다. 빠른 결과가 아니라 오래 가는 이해다. 다른 책과 강좌에서 익힌 기술은 이 기반 위에 놓일 때 훨씬 덜 흔들린다. 정수가 왜 감아 돌고, 포인터가 왜 그냥 숫자가 아니며, 컴파일러가 무엇을 약속하고 무엇을 약속하지 않는지를 알고 쓰는 사람과 모르고 쓰는 사람의 차이는 시간이 갈수록 벌어진다.</p><p>이 책에 실린 모든 코드는 실제로 컴파일되고 실행된 것이다. 인쇄된 실행 결과는 사람이 옮겨 적은 것이 아니라 책을 만들 때마다 기계가 예제를 돌려 얻은 출력이며, 두 컴파일러(gcc와 clang)로 교차 검증했다.</p><p>밝혀 둘 것이 하나 더 있다. <strong>이 책은 AI를 보조 도구로 삼아 집필했다.</strong> 무엇을 어떤 순서로 다룰지, 어떤 원칙으로 서술할지, 무엇을 싣고 무엇을 뺄지는 전부 내가 정했고, 원고는 그 지시에 따라 쓰인 뒤 내 검토를 거쳤다. 기술적 서술은 표준 문서와 1차 자료로 확인했으며, 앞 문단에서 말한 대로 예제는 사람이 아니라 기계가 매번 실제로 돌려 검증한다 — AI가 썼든 사람이 썼든 <strong>돌지 않는 코드는 이 책에 실리지 않는다</strong>는 뜻이다.</p><p>그럼에도 오류는 남아 있을 것이다. 그것은 도구의 몫이 아니라 내 몫이다. 발견하면 알려 주시기 바란다.</p><h3>저작권과 연락처</h3><dl class="metalist"><dt>지은이</dt><dd>rubidus</dd><dt>연락</dt><dd><a href="mailto:rubidus@gmail.com">rubidus@gmail.com</a></dd><dt>저장소</dt><dd><a href="https://github.com/rubidus-api/proven_c_book">github.com/rubidus-api/proven_c_book</a></dd><dt>판</dt><dd>v0.22.0 — 초안(draft)</dd><dt>최종 수정</dt><dd>2026-08-07</dd></dl><p><strong>본문</strong> — 크리에이티브 커먼즈 저작자표시-비영리-동일조건변경허락 4.0 국제 라이선스(CC BY-NC-SA 4.0). 출처를 밝히면 자유롭게 공유하고 고칠 수 있으나, 영리 목적 이용은 허용되지 않으며, 고친 결과물에는 같은 라이선스를 적용해야 합니다.<br><a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">https://creativecommons.org/licenses/by-nc-sa/4.0/</a></p><p><strong>예제 코드</strong> — MIT 라이선스. 자유롭게 가져다 쓰실 수 있습니다. 예제에서 사용한 proven 라이브러리는 그 자체의 라이선스(현재는 MIT 라이선스)를 따릅니다.</p><p>이 책의 모든 코드 시연은 실제로 컴파일·실행해 얻은 출력을 그대로 인쇄한 것입니다. 조판은 Typst로 했습니다.</p><p>이 책은 계속 고쳐집니다. 지금 읽고 계신 것은 위 번호의 판이고, 그 뒤로도 오류 수정과 내용 보강이 이어집니다. 가장 새로운 판과 그동안의 변경 내역은 저자의 GitHub에 있습니다. 오래된 사본을 들고 계시다면 그쪽을 먼저 확인하시는 편이 좋습니다. 오류 신고와 수정 제안도 같은 자리에서 받습니다.</p>
 <div class="nav"><a href="index.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch01.html">다음 →</a></div>
 </div></main></body></html>

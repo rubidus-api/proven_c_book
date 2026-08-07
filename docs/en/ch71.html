@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>71 Errors are values — Proven C Book</title><style>
+<title>71 Signals — &lt;signal.h&gt; — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,269 +259,370 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch70.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch72.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch71.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>71 Errors are values</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We see the answer to chapter 69′s second bug — unconfirmed failure. The way of returning failure as a value, the bundle holding a value and an error together, and the device that makes the compiler protest if an error is thrown away. The discipline set up in chapter 45, “errors are values”, hardens here into a type.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 45 said C’s ways of reporting an error are only three — the return value, global state, and stopping the program — and that of these the return value is the most honest. Then how does one say both “it failed” and “here is the result” with a single return value?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>There are three ways. Mix an <strong>impossible value</strong> into the result’s place (null, <code>-1</code> — that trap seen in chapter 69), take the result out as an <strong>output parameter</strong> and use the return value for status alone, or <strong>hold both in one struct</strong> and return them together. proven uses the second and third together — and the third is possible because, as learned in chapter 41, a C struct can be returned by value.</p></div></div><h3>71.1 Two shapes of return</h3><p>The rule is simple. <strong>A function that can fail must return the failure as a value.</strong></p><ul><li>If there is no result to return, it returns a single <code>proven_err_t</code>.</li><li>If there is a result to return, it returns an <code>{err, value}</code> bundle — with a name per type, such as <code>proven_result_u8str_t</code> or <code>proven_result_size_t</code>.</li></ul><p><code>proven_err_t</code> is an enumeration and success is <code>PROVEN_OK</code> (0). The check is always the single <code>proven_is_ok(err)</code> — writing <code>err == 0</code> would work too, but using the name lets the code survive a later change of representation.</p><h4>71.1.1 Every error code</h4><p>Failures have a name per kind, and there are sixteen in all. They are not to be memorised; it is enough to know <strong>what branches exist</strong> — most code divides only success from failure, and looks at the branch only when attempting recovery.</p><table><tr><th><strong>code</strong></th><th><strong>what happened</strong></th><th><strong>mainly where</strong></th></tr><tr><td><code>PROVEN_OK</code></td><td>success (0)</td><td>—</td></tr><tr><td><code>ERR_NOMEM</code></td><td>the allocator could not hand out memory</td><td><code>_create</code>, <code>_grow</code></td></tr><tr><td><code>ERR_OUT_OF_BOUNDS</code></td><td>outside the vessel — refused rather than truncated</td><td><code>append</code>, <code>slice</code>, array indexing</td></tr><tr><td><code>ERR_INVALID_ENCODING</code></td><td>the UTF-8/UTF-16 was broken</td><td>string conversion, <code>hex</code>/<code>base64</code></td></tr><tr><td><code>ERR_INVALID_ARG</code></td><td>an argument is outside the contract (null, 0, an unusable allocator)</td><td>almost every entry point</td></tr><tr><td><code>ERR_IO</code></td><td>the outside world failed</td><td>files and streams</td></tr><tr><td><code>ERR_NOT_FOUND</code></td><td>what was sought is not there</td><td>map lookup, opening a file</td></tr><tr><td><code>ERR_INVALID_STATE</code></td><td>it cannot be done in the present state</td><td>a closed stream, a destroyed object</td></tr><tr><td><code>ERR_NEED_MORE</code></td><td>more input is needed before judging</td><td>parsers and decoders</td></tr><tr><td><code>ERR_OVERFLOW</code></td><td>a size calculation overflowed</td><td><code>create</code>, container growth</td></tr><tr><td><code>ERR_UNSUPPORTED</code></td><td>this environment does not have that facility</td><td>OS features under freestanding</td></tr><tr><td><code>ERR_AGAIN</code></td><td>not now — try again</td><td>non-blocking I/O</td></tr><tr><td><code>ERR_EOF</code></td><td>the end was reached</td><td>reading</td></tr><tr><td><code>ERR_BUSY</code></td><td>somebody else is using it</td><td>locks, the job queue</td></tr><tr><td><code>ERR_PERMISSION</code></td><td>there is no permission</td><td>files</td></tr><tr><td><code>ERR_INVALID_FORMAT</code></td><td>the format was wrong</td><td>parsing, format strings</td></tr></table><div><div><p><code>examples/ch71/codes.c</code></p><pre><code data-lang="c">/* 에러는 값이다 — 그 값이 실제로 어떤 것들인지 눈으로 본다. */
-#include &lt;proven.h>
+<h2 id="loc-71">71 Signals — <code>&lt;signal.h></code></h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 70, Diagnostics and control · <code>errno</code> and the handler’s restrictions</div><div>chapter 50, The three faces of <code>main</code> · a program’s start and end</div><div>chapter 3, Programs and processes · the process as a container</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 70 said a signal handler may not call <code>printf</code> or <code>malloc</code>, and that about all it may do is assign to a <code>volatile sig_atomic_t</code>. But a signal ultimately calls <strong>a function inside my own program</strong> — why are the restrictions so severe?</p><div class="qa-a"><p><p><span class="dev-label">A.</span> <strong>Because there is no telling when it will cut in.</strong> A signal does not respect the boundaries of functions. It can arrive while <code>malloc</code> has half-rewritten its free list, or while <code>printf</code> has written half of a buffer. Call the same function again from a handler in that state and the data structure breaks.</p><p>A signal, in other words, is <strong>a third thing</strong> — neither a thread nor a function call. It stops the current flow, cuts in, and returns, so there is no way to know “what is half-done right now”. Every rule in this chapter follows from that one sentence.</p></p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-106"></span>A close reading of one header, <code>&lt;signal.h></code>. Where it came from (a Unix inheritance), the exact shape of its two functions with their arguments and return values, what <code>sig_atomic_t</code> really is, the list of what a handler may do, why memory cannot be allocated inside one, how the kernel saves and restores registers, POSIX’s <code>sigaction</code> and the inside of its structures, and how servers, the JVM and garbage collectors actually use signals.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why did the standard not take the better <code>sigaction</code>?</li><li>Then what do you do when a handler really must record something?</li><li>Does <code>setjmp</code>/<code>longjmp</code> not do the same thing?</li><li>In a program with several threads, where does a signal go?</li></ol></div></div><div></div><h3>71.1 Where it came from — a Unix inheritance</h3><p>C did not invent signals. Unix made them in the 1970s as “the cheapest way to tell a process something”, and the C standard took only <strong>the minimum that would hold anywhere</strong>.</p><p>Early Unix signals had a famous flaw. Once a handler ran, the disposition immediately reverted to the default (so the first line of a handler had to re-install itself), and if the same signal arrived in that gap the program died. Because of that window, the signals of the time were called <strong>unreliable signals</strong>.</p><p>4.2BSD produced a new interface that fixed this (the <code>sigvec</code> family), and that design was tidied into POSIX’s <code>sigaction</code>. What the 1989 C standard took, however, was not the fixed one but <strong>the common denominator</strong> — which is why the old window is still in the standard’s <code>signal</code> today.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why did the standard not take the better <code>sigaction</code>?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Because of C’s long-standing principle: <strong>take only what holds where there is no operating system</strong> (chapter 57). <code>sigaction</code> stands on operating-system notions — processes, signal masks, restarting system calls. C must run on embedded chips that have none of those, so the standard fixed only “if there is such a thing as a signal, this much exists.”</p><p>So this chapter is in two layers. <strong>The standard layer</strong> (works anywhere, with gaps) and <strong>the POSIX layer</strong> (no gaps, but only on Unix-like systems). Practical Unix code uses the latter almost without exception.</p></p></div></div><h3>71.2 Two functions — the exact shape</h3><p>The standard defines only two.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Declaration</strong></th><th><strong>What it does</strong></th></tr><tr><td><code>void (*signal(int sig, void (*func)(int)))(int);</code></td><td>Sets the disposition of signal <code>sig</code> to <code>func</code>, and returns <strong>the previous one</strong></td></tr><tr><td><code>int raise(int sig);</code></td><td>Sends signal <code>sig</code> to the caller itself</td></tr></table></div><p class="float-caption">Table 71.1</p></figure><p>Why <code>signal</code>’s declaration is rough was read by procedure in chapter 55 — <strong>“a function taking a signal number and a handler, returning the previous handler.”</strong></p><h4>71.2.1 <code>signal</code>’s arguments and return value</h4><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Place</strong></th><th><strong>What you give</strong></th><th><strong>Meaning</strong></th></tr><tr><td><code>sig</code></td><td>A signal number</td><td>One of the standard six, or a value the implementation defines</td></tr><tr><td><code>func</code></td><td><code>SIG_DFL</code></td><td>Back to default handling (mostly termination)</td></tr><tr><td><code>func</code></td><td><code>SIG_IGN</code></td><td>Ignore — the signal arrives and nothing happens</td></tr><tr><td><code>func</code></td><td>A function pointer</td><td>Use that function as the handler</td></tr><tr><td>return</td><td>The previous disposition</td><td><code>SIG_DFL</code>, <code>SIG_IGN</code> or the previous handler</td></tr><tr><td>return</td><td><code>SIG_ERR</code></td><td>Setting failed; <code>errno</code> then holds the reason</td></tr></table></div><p class="float-caption">Table 71.2</p></figure><p><strong>Not discarding the return value</strong> is the first discipline. Miss a failure and the program dies quietly when the signal finally arrives.</p><h4>71.2.2 <code>raise</code>’s argument and return value</h4><p><code>raise(sig)</code> sends the signal to the caller. It returns 0 on success and non-zero on failure. If a handler is installed it runs <strong>before <code>raise</code> returns</strong> — that is, synchronously.</p><p>That is exactly what <code>abort</code> does: it raises <code>SIGABRT</code>, and terminates abnormally if there is no handler or the handler returns (chapter 62).</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch71/sig_basic.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The standard part of &lt;signal.h> — three dispositions and raise. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">signal.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 
-static const char *name_of(proven_err_t e)
-{
-    switch (e) {
-    case PROVEN_OK:                   return "PROVEN_OK";
-    case PROVEN_ERR_NOMEM:            return "NOMEM (기억이 모자람)";
-    case PROVEN_ERR_OUT_OF_BOUNDS:    return "OUT_OF_BOUNDS (그릇 밖)";
-    case PROVEN_ERR_INVALID_ENCODING: return "INVALID_ENCODING (인코딩이 깨짐)";
-    case PROVEN_ERR_INVALID_ARG:      return "INVALID_ARG (인자가 계약 밖)";
-    case PROVEN_ERR_IO:               return "IO (바깥 세계의 실패)";
-    case PROVEN_ERR_NOT_FOUND:        return "NOT_FOUND (없음)";
-    case PROVEN_ERR_INVALID_STATE:    return "INVALID_STATE (지금 할 수 없음)";
-    case PROVEN_ERR_NEED_MORE:        return "NEED_MORE (입력이 더 필요)";
-    case PROVEN_ERR_OVERFLOW:         return "OVERFLOW (계산이 넘침)";
-    case PROVEN_ERR_UNSUPPORTED:      return "UNSUPPORTED (이 환경엔 없음)";
-    case PROVEN_ERR_AGAIN:            return "AGAIN (지금은 말고 다시)";
-    case PROVEN_ERR_EOF:              return "EOF (끝에 닿음)";
-    case PROVEN_ERR_BUSY:             return "BUSY (남이 쓰는 중)";
-    case PROVEN_ERR_PERMISSION:       return "PERMISSION (권한 없음)";
-    case PROVEN_ERR_INVALID_FORMAT:   return "INVALID_FORMAT (형식이 틀림)";
-    }
-    return "(알 수 없음)";
-}
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> This is all the standard permits in a handler's body: assigning to a</span></em>
+<em><span class="tok-c">   volatile sig_atomic_t. Anything else is outside the contract. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> sig_atomic_t got_int<span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> sig_atomic_t got_term<span class="tok-x">;</span>
 
-int main(void)
-{
-    proven_println("― 에러 코드 전수 ―");
-    for (int i = PROVEN_OK; i &lt;= PROVEN_ERR_INVALID_FORMAT; i++)
-        proven_println("{:>2}  {}", PROVEN_ARG(i), PROVEN_ARG(name_of((proven_err_t)i)));
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>on_signal</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> sig<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>sig <strong><span class="tok-x">==</span></strong> SIGINT<span class="tok-x">)</span>  got_int  <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>sig <strong><span class="tok-x">==</span></strong> SIGTERM<span class="tok-x">)</span> got_term <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> no printf here — the text explains why </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span>
 
-    proven_println("");
-    proven_println("― 실제로 어떤 코드가 돌아오는가 ―");
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong>disposition</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>h<span class="tok-x">)</span><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>h <strong><span class="tok-x">==</span></strong> SIG_DFL<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">SIG_DFL (default handling)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>h <strong><span class="tok-x">==</span></strong> SIG_IGN<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">SIG_IGN (ignore)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>h <strong><span class="tok-x">==</span></strong> SIG_ERR<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">SIG_ERR (setting failed)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">my handler</span><span class="tok-s">"</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-    /* ① 그릇이 모자라다 → OUT_OF_BOUNDS */
-    proven_byte_t small[8];
-    proven_u8str_t s = proven_u8str_borrow(small, sizeof small);
-    proven_err_t e1 = proven_u8str_append(&amp;s, PROVEN_LIT("Hello, world"));
-    proven_println("append 12 bytes into 8   -> {}", PROVEN_ARG(name_of(e1)));
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> -- (1) install — what comes back is the *previous* disposition ---- </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">void</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>prev<span class="tok-x">)</span><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">=</span></strong> <strong>signal</strong><strong><span class="tok-x">(</span></strong><strong>SIGINT</strong><strong><span class="tok-x">,</span></strong><strong> on_signal</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">signal(SIGINT, on_signal) returned </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>disposition</strong><strong><span class="tok-x">(</span></strong><strong>prev</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* 실패 원자성: 거부된 뒤에도 원본은 손대지 않은 상태다 */
-    proven_println("  after failure, len = {}",
-                   PROVEN_ARG(proven_u8str_as_view(&amp;s).size));
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> -- (2) raise — send a signal to yourself -------------------------- </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">before raise(SIGINT): got_int = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>got_int</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> r <strong><span class="tok-x">=</span></strong> <strong>raise</strong><strong><span class="tok-x">(</span></strong><strong>SIGINT</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">raise returned </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (0 means success), got_int = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>got_int</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ② 계약을 어긴 인자 → INVALID_ARG.
-          쓸 수 없는 할당자(전부 0인 값)를 주면 만들기 전에 걸러낸다. */
-    proven_allocator_t nothing = (proven_allocator_t){0};
-    proven_result_u8str_t bad = proven_u8str_create(nothing, 16);
-    proven_println("create with a null allocator -> {}", PROVEN_ARG(name_of(bad.err)));
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> -- (3) ignore — with SIG_IGN the signal simply vanishes ----------- </span></em><em><span class="tok-c">*/</span></em>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>signal</strong><strong><span class="tok-x">(</span></strong><strong>SIGTERM</strong><strong><span class="tok-x">,</span></strong><strong> SIG_IGN</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>raise</strong><strong><span class="tok-x">(</span></strong><strong>SIGTERM</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">after SIG_IGN, raise(SIGTERM): got_term = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (still 0)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>got_term</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ③ 범위 밖 자르기 → OUT_OF_BOUNDS (있는 만큼 주지 않는다) */
-    proven_u8str_view_t v = PROVEN_LIT("abcdefgh");
-    proven_result_mem_view_t sl =
-        proven_mem_view_slice_checked(proven_mem_view_from_u8(v), 6, 4);
-    proven_println("slice 4 bytes from 6/8   -> {}", PROVEN_ARG(name_of(sl.err)));
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> -- (4) does the handler survive? — implementation-defined (§7.14.1.1) </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">void</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>was<span class="tok-x">)</span><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span> <strong><span class="tok-x">=</span></strong> <strong>signal</strong><strong><span class="tok-x">(</span></strong><strong>SIGINT</strong><strong><span class="tok-x">,</span></strong><strong> prev</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">after handling one signal, what was installed: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>disposition</strong><strong><span class="tok-x">(</span></strong><strong>was</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  -> this implementation resets to SIG_DFL (the old System V way).</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  -> the standard allows either, so portable code re-installs in</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">     the handler, or uses POSIX sigaction.</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ④ 성공은 언제나 0이고, 확인은 언제나 같은 한 줄이다 */
-    proven_err_t ok = proven_u8str_append(&amp;s, PROVEN_LIT("hi"));
-    proven_println("append 2 bytes into 8    -> {} (is_ok={})",
-                   PROVEN_ARG(name_of(ok)), PROVEN_ARG(proven_is_ok(ok)));
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>― 에러 코드 전수 ―
- 0  PROVEN_OK
- 1  NOMEM (기억이 모자람)
- 2  OUT_OF_BOUNDS (그릇 밖)
- 3  INVALID_ENCODING (인코딩이 깨짐)
- 4  INVALID_ARG (인자가 계약 밖)
- 5  IO (바깥 세계의 실패)
- 6  NOT_FOUND (없음)
- 7  INVALID_STATE (지금 할 수 없음)
- 8  NEED_MORE (입력이 더 필요)
- 9  OVERFLOW (계산이 넘침)
-10  UNSUPPORTED (이 환경엔 없음)
-11  AGAIN (지금은 말고 다시)
-12  EOF (끝에 닿음)
-13  BUSY (남이 쓰는 중)
-14  PERMISSION (권한 없음)
-15  INVALID_FORMAT (형식이 틀림)
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> -- (5) the standard defines only six signals ---------------------- </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> num<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>name<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>meaning<span class="tok-x">;</span> <span class="tok-x">}</span> table<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span>
+        <span class="tok-x">{</span> SIGABRT<span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">SIGABRT</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">abnormal termination (abort)</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">,</span>
+        <span class="tok-x">{</span> SIGFPE<span class="tok-x">,</span>  <span class="tok-s">"</span><span class="tok-s">SIGFPE</span><span class="tok-s">"</span><span class="tok-x">,</span>  <span class="tok-s">"</span><span class="tok-s">arithmetic error (divide by zero, ...)</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">,</span>
+        <span class="tok-x">{</span> SIGILL<span class="tok-x">,</span>  <span class="tok-s">"</span><span class="tok-s">SIGILL</span><span class="tok-s">"</span><span class="tok-x">,</span>  <span class="tok-s">"</span><span class="tok-s">invalid instruction</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">,</span>
+        <span class="tok-x">{</span> SIGINT<span class="tok-x">,</span>  <span class="tok-s">"</span><span class="tok-s">SIGINT</span><span class="tok-s">"</span><span class="tok-x">,</span>  <span class="tok-s">"</span><span class="tok-s">interactive attention (Ctrl+C)</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">,</span>
+        <span class="tok-x">{</span> SIGSEGV<span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">SIGSEGV</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">invalid memory access</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">,</span>
+        <span class="tok-x">{</span> SIGTERM<span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">SIGTERM</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">termination request</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">,</span>
+    <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">the </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> signals the standard defines:</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> table </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>table</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <strong><span class="tok-k">sizeof</span></strong> table <strong><span class="tok-x">/</span></strong> <strong><span class="tok-k">sizeof</span></strong> <strong><span class="tok-x">*</span></strong>table<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-8s</span></strong><strong><span class="tok-s"> = </span></strong><strong><span class="tok-s">%2d</span></strong><strong><span class="tok-s">   </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> table</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">.</span></strong><strong>name</strong><strong><span class="tok-x">,</span></strong><strong> table</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">.</span></strong><strong>num</strong><strong><span class="tok-x">,</span></strong><strong> table</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">.</span></strong><strong>meaning</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-― 실제로 어떤 코드가 돌아오는가 ―
-append 12 bytes into 8   -> OUT_OF_BOUNDS (그릇 밖)
-  after failure, len = 0
-create with a null allocator -> INVALID_ARG (인자가 계약 밖)
-slice 4 bytes from 6/8   -> OUT_OF_BOUNDS (그릇 밖)
-append 2 bytes into 8    -> PROVEN_OK (is_ok=1)
-</code></pre></div></div><p>The latter part of the example shows this table in the flesh. Try to put twelve bytes into an eight-byte vessel and <code>OUT_OF_BOUNDS</code> comes — <strong>and the original is left untouched</strong> (the length is still 0). Give an unusable allocator and it is caught as <code>INVALID_ARG</code> before anything is made. Slicing outside the range too is a refusal, not “as much as there is”.</p><p>Two things are worth taking from here. First, <strong><code>ERR_INVALID_ARG</code> is usually a bug in my own code</strong> — not a failure of the outside world but a contract violation, so it is to be mended rather than recovered from. Second, <code>ERR_EOF</code> and <code>ERR_AGAIN</code> are <strong>part of the normal flow</strong>. In a reading loop EOF is not an error but the ending condition (chapter 77).</p><h4>71.1.2 The kinds of result bundle</h4><p>A function with a value to return has one bundle per type. The naming rule being the same, the list need not be memorised — inside a <code>proven_result_XXX_t</code> there are always just <code>err</code> and <code>value</code>.</p><table><tr><th><strong>bundle</strong></th><th><strong>the type of <code>value</code></strong></th><th><strong>where it is returned</strong></th></tr><tr><td><code>proven_result_size_t</code></td><td><code>proven_size_t</code></td><td>lengths, counts, bytes written</td></tr><tr><td><code>proven_result_mem_mut_t</code></td><td><code>proven_mem_mut_t</code></td><td>allocators (chapters 72 and 73)</td></tr><tr><td><code>proven_result_mem_view_t</code></td><td><code>proven_mem_view_t</code></td><td>slicing (chapter 72)</td></tr><tr><td><code>proven_result_u8str_t</code></td><td><code>proven_u8str_t</code></td><td>making a string (chapter 74)</td></tr><tr><td><code>proven_result_buf_t</code></td><td><code>proven_buf_t</code></td><td>making a buffer</td></tr><tr><td><code>proven_result_cstr_t</code></td><td><code>const char *</code></td><td>exporting as a C string (chapter 74)</td></tr><tr><td><code>proven_fmt_result_t</code></td><td>(amount written and amount needed)</td><td>formatting (chapter 75)</td></tr></table><p>Only the last row is of a different grain. For formatting, “success or failure” is not enough — if it was truncated you must know <strong>how much more was needed</strong> — so beside <code>err</code> it carries two numbers as well (we look at it closely in chapter 75).</p><div><div><p><code>examples/ch71/errval.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
-#include &lt;stdio.h>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">sizeof(sig_atomic_t) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong>sig_atomic_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>signal(SIGINT, on_signal) returned SIG_DFL (default handling)
+before raise(SIGINT): got_int = 0
+raise returned 0 (0 means success), got_int = 1
+after SIG_IGN, raise(SIGTERM): got_term = 0 (still 0)
 
-/* 실패할 수 있는 일을 한다: 정해진 용량의 문자열에 두 조각을 붙인다.
-   에러는 값으로 돌아오고, 호출자는 그것을 그대로 위로 전달한다. */
-static proven_err_t make_greeting(proven_allocator_t alloc,
-                                  const char *who,
-                                  proven_size_t cap,
-                                  proven_u8str_t *out)
-{
-    proven_result_u8str_t made = proven_u8str_create(alloc, cap);
-    if (!proven_is_ok(made.err))
-        return made.err;                 /* 실패를 위로 넘긴다 */
+after handling one signal, what was installed: SIG_DFL (default handling)
+  -> this implementation resets to SIG_DFL (the old System V way).
+  -> the standard allows either, so portable code re-installs in
+     the handler, or uses POSIX sigaction.
 
-    proven_u8str_t s = made.value;       /* 확인한 뒤에야 value 를 쓴다 */
+the 6 signals the standard defines:
+  SIGABRT  =  6   abnormal termination (abort)
+  SIGFPE   =  8   arithmetic error (divide by zero, ...)
+  SIGILL   =  4   invalid instruction
+  SIGINT   =  2   interactive attention (Ctrl+C)
+  SIGSEGV  = 11   invalid memory access
+  SIGTERM  = 15   termination request
 
-    proven_err_t e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("Hello, "));
-    if (proven_is_ok(e))
-        e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr(who));
-    if (!proven_is_ok(e)) {
-        proven_u8str_destroy(alloc, &amp;s); /* 실패했으면 뒷정리도 우리 몫 */
-        return e;
-    }
+sizeof(sig_atomic_t) = 4 bytes
+</code></pre></div></div><p>The demonstration shows four things in the flesh. <strong>The previous value comes back</strong> (first line), <strong><code>raise</code> calls the handler on the spot</strong> (second), <strong><code>SIG_IGN</code> makes the signal vanish</strong> (third), and the last one matters — <strong>this implementation resets to <code>SIG_DFL</code> right after handling.</strong></p><h4>71.2.3 The six signals the standard defines</h4><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Name</strong></th><th><strong>When it arrives</strong></th><th><strong>Default action</strong></th></tr><tr><td><code>SIGABRT</code></td><td>A call to <code>abort()</code></td><td>Abnormal termination</td></tr><tr><td><code>SIGFPE</code></td><td>An arithmetic error (divide by zero, overflow, …)</td><td>Abnormal termination</td></tr><tr><td><code>SIGILL</code></td><td>Executing an invalid instruction</td><td>Abnormal termination</td></tr><tr><td><code>SIGINT</code></td><td>Interactive attention (usually Ctrl+C)</td><td>Termination</td></tr><tr><td><code>SIGSEGV</code></td><td>An invalid memory access</td><td>Abnormal termination</td></tr><tr><td><code>SIGTERM</code></td><td>A termination request</td><td>Termination</td></tr></table></div><p class="float-caption">Table 71.3</p></figure><p>The standard does not fix the numeric values — the 2 and 15 the demonstration printed belong to this implementation. The rule is <strong>use the names, never the numbers</strong>.</p><h3>71.3 What a handler may do</h3><p>The most important section in this chapter. The standard (§7.14.1.1) settles what is permitted inside a handler <strong>by enumeration</strong>. Outside that list is undefined behaviour.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>What is permitted</strong></th><th><strong>Condition</strong></th></tr><tr><td><strong>Assigning a value</strong> to a <code>volatile sig_atomic_t</code> object</td><td>Assigning, not reading</td></tr><tr><td>Handling lock-free atomic objects</td><td><code>&lt;stdatomic.h></code>, when lock-free (chapter 74)</td></tr><tr><td>Calling <code>abort</code></td><td>—</td></tr><tr><td>Calling <code>_Exit</code></td><td>—</td></tr><tr><td>Calling <code>quick_exit</code></td><td>—</td></tr><tr><td>Calling <code>signal</code></td><td>Only with <strong>the signal number that invoked it</strong></td></tr></table></div><p class="float-caption">Table 71.4</p></figure><p>Every other standard library function is forbidden — <code>printf</code>, <code>malloc</code>, <code>strlen</code>, even <code>exit</code>. And touching objects with static or thread storage duration is forbidden too unless it falls under the first row.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Logging with <code>printf</code> in a handler is convenient”</strong></p><p>The most common and longest-lived accident. <code>printf</code> is a function with internal buffers and locks, so cutting into its <strong>intermediate state</strong> breaks its data structures. On a good day the output interleaves; on a bad one it deadlocks — a signal arrives while <code>printf</code> holds a lock, the handler calls <code>printf</code> again, and it waits for a lock it holds itself.</p><p>Worse, <strong>it mostly works</strong>. So the bug passes the tests, ships, and shows up as an occasional freeze under load.</p><p>If something really must be printed from a handler on Unix, use <code>write</code> — a function POSIX separately guarantees to be <strong>async-signal-safe</strong>. The second demonstration does exactly that.</p></div><h4>71.3.1 What <code>sig_atomic_t</code> really is</h4><p><code>sig_atomic_t</code> is an integer type whose value <strong>never appears half-written</strong> even when a signal cuts in. Why does such a type need to exist? Because a large integer may be stored in two steps on some machines, and a signal arriving in between would see a half-changed value.</p><p><code>volatile</code> is there for a different reason. The compiler may decide “nothing in this loop changes <code>stop</code>” and delete the test altogether (chapter 14′s optimisation). <code>volatile</code> says <strong>really read it every time</strong>. The two do different jobs, so <strong>both</strong> are needed — <code>volatile sig_atomic_t</code>.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>What</strong></th><th><strong>What it prevents</strong></th><th><strong>Without it</strong></th></tr><tr><td><code>sig_atomic_t</code></td><td>Seeing a half-written value</td><td>A partially updated value can be read</td></tr><tr><td><code>volatile</code></td><td>The compiler eliding the read</td><td>The loop never sees the flag</td></tr></table></div><p class="float-caption">Table 71.5</p></figure><p>Since C11, lock-free atomic types such as <code>atomic_int</code> may also be used in a handler (chapter 74). In a program with several threads that is the more accurate choice — <code>sig_atomic_t</code> guarantees only <strong>signal versus main flow</strong>, not thread against thread.</p><h3>71.4 Handlers and memory — why <code>malloc</code> is not on the list</h3><p>The most keenly felt absence from the permitted list is memory allocation. To record anything inside a handler you need a vessel, and neither <code>malloc</code> nor <code>free</code> may be called. Seeing why at the machine level makes the rule stick.</p><p>An allocator manages a data structure called the <strong>free list</strong> (chapter 42). One <code>malloc</code> is a multi-step update that detaches a piece from that list and rewrites the links of its neighbours. There is necessarily a moment when the update is half done, and a signal can cut in <strong>at exactly that moment</strong>.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>The moment it cuts in</strong></th><th><strong>If the handler calls <code>malloc</code></strong></th></tr><tr><td>The free-list links are half rewritten</td><td>It follows a half-rewritten list and hands out the wrong piece</td></tr><tr><td>Just before the block’s size is written</td><td>A later <code>free</code> returns it with the wrong size</td></tr><tr><td>While the allocator’s lock is held</td><td>It waits for a lock it holds itself — deadlock</td></tr></table></div><p class="float-caption">Table 71.6</p></figure><p>The third row is the nastiest. Modern allocators keep an internal lock against being called from several threads at once. Let the thread holding that lock take a signal, and let the handler call <code>malloc</code> again, and the lock is never released. <strong>The program does not die; it stops</strong> — the hardest kind of accident to diagnose.</p><p>There is one worse combination. Escaping from a handler with <code>longjmp</code> (chapter 72). Here the trouble comes without calling <code>malloc</code> again — because you <strong>jump out still holding the lock</strong>. From then on the main flow’s first <code>malloc</code> hangs. Half the reason chapter 72 calls jumping from a handler dangerous is this.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Then what do you do when a handler really must record something?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> <strong>Take it in advance.</strong> Allocate the vessel you need <strong>before</strong> installing the handler, and let the handler only write into it. A static array is better still — there is no allocation at all.</p><pre><code data-lang="c"><strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">char</span></strong> report<span class="tok-x">[</span><span class="tok-n">4096</span><span class="tok-x">]</span><span class="tok-x">;</span>               <em><span class="tok-c">/*</span></em><em><span class="tok-c"> obtained up front </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> sig_atomic_t report_len<span class="tok-x">;</span></code></pre><p>If the amount to record is not bounded, it was never a job for a handler. Raise a flag and hand it to the main flow. If something truly must be recorded now — a crash report, where the next moment is certain death — put it in a pre-allocated buffer and push it out with <code>write</code>. That is what Redis’s crash report, seen later, does.</p></p></div></div><h3>71.5 What a signal saves and restores — the register context and <code>errno</code></h3><p>A handler cuts in halfway through a function and <strong>returns to exactly that place</strong>, even though half-computed values are scattered across the registers. How?</p><p><strong>Because the operating system saves every register and restores them.</strong> When delivering a signal the kernel builds a signal frame on the stack and puts the whole current register set into it (on Linux, <code>ucontext_t</code> is that vessel). When the handler returns, <code>sigreturn</code> puts those values back. So <strong>whichever instruction boundary it cut in at, the computation carries on.</strong></p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch71/sig_context.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> what a signal saves and restores — the register context, and errno. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">_POSIX_C_SOURCE</span><span class="tok-p"> </span><span class="tok-n">200809</span><strong><span class="tok-t">L</span></strong>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">errno.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">signal.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">unistd.h</span><span class="tok-s">></span>
 
-    *out = s;
-    return PROVEN_OK;
-}
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> sig_atomic_t hits<span class="tok-x">;</span>
 
-static void try(proven_allocator_t alloc, const char *who, proven_size_t cap)
-{
-    proven_u8str_t s;
-    proven_err_t e = make_greeting(alloc, who, cap, &amp;s);
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (1) a handler that does not look after errno ──────────────────</span></em>
+<em><span class="tok-c">   write is one of the few functions a handler may call, but on failure it</span></em>
+<em><span class="tok-c">   changes errno. If the main flow was about to read that value, the whole</span></em>
+<em><span class="tok-c">   diagnosis is turned upside down. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>careless</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> sig<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>sig<span class="tok-x">;</span>
+    hits<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">ssize_t</span></strong> n <strong><span class="tok-x">=</span></strong> <strong>write</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> always fails — errno = EBADF </span></em><em><span class="tok-c">*/</span></em>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>n<span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-    if (!proven_is_ok(e)) {
-        printf("cap=%2zu who=%-8s -> failed with error code %d\n",
-               cap, who, (int)e);
-        return;
-    }
-    proven_u8str_view_t v = proven_u8str_as_view(&amp;s);
-    printf("cap=%2zu who=%-8s -> \"%.*s\"\n",
-           cap, who, (int)v.size, (const char *)v.ptr);
-    proven_u8str_destroy(alloc, &amp;s);
-}
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── (2) a handler that saves and restores errno ─────────────────── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>careful</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> sig<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> saved <strong><span class="tok-x">=</span></strong> errno<span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> saved on the way in </span></em><em><span class="tok-c">*/</span></em>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>sig<span class="tok-x">;</span>
+    hits<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">ssize_t</span></strong> n <strong><span class="tok-x">=</span></strong> <strong>write</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>n<span class="tok-x">;</span>
+    errno <strong><span class="tok-x">=</span></strong> saved<span class="tok-x">;</span>                  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> restored on the way out </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span>
 
-int main(void)
-{
-    proven_allocator_t alloc = proven_heap_allocator();
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> ── a computation living in registers. same result if a signal cuts in? ── </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">long</span></strong> <strong>compute</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> interrupt_at<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">long</span></strong> acc <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;=</span></strong> <span class="tok-n">1000</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        acc <strong><span class="tok-x">+=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">long</span></strong><span class="tok-x">)</span>i <strong><span class="tok-x">*</span></strong> i <strong><span class="tok-x">%</span></strong> <span class="tok-n">7</span><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>i <strong><span class="tok-x">==</span></strong> interrupt_at<span class="tok-x">)</span> <strong>raise</strong><strong><span class="tok-x">(</span></strong><strong>SIGUSR1</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">return</span></strong> acc<span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-    try(alloc, "world", 32);   /* 넉넉하다 */
-    try(alloc, "world", 8);    /* 자리가 모자란다 — 자르지 않고 거부한다 */
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>fails</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a failure that leaves errno as ENOENT </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">{</span>
+    errno <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <strong>access</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">/no/such/file/here</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> F_OK</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-    printf("PROVEN_OK is %d, and every failure is non-zero\n", (int)PROVEN_OK);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>cap=32 who=world    -> "Hello, world"
-cap= 8 who=world    -> failed with error code 2
-PROVEN_OK is 0, and every failure is non-zero
-</code></pre></div></div><p>This example contains all of this chapter’s syntax. <code>make_greeting</code> sends the result out through an output parameter (<code>out</code>) and used the return value for status alone — on failure it passes it up as it is. And <code>proven_u8str_create</code> returns a bundle, so <code>made.value</code> is taken out <strong>only after checking</strong>. The order must not be reversed.</p><div class="dev antipattern"><p class="dev-label">✗ Taking out <code>value</code> before checking</p><pre><code data-lang="c">proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* dangerous */</code></pre><p>It finishes in one line and looks clean, but what comes into your hand on failure is <strong>a meaningless value</strong>. The bundle’s contract is “<code>value</code> has meaning only when <code>err</code> is <code>PROVEN_OK</code>”, so this code has skipped the contract. That on failure a struct filled with zeros usually arrives and it does not die immediately is rather the danger — the accident is put off until much later (that pattern from chapter 69).</p></div><p>The output of the second call compresses this part’s theme. On trying to put <code>"Hello, world"</code> into a capacity of 8 bytes, the library, <strong>instead of putting in as much as fits and declaring success</strong>, wrote nothing and returned a failure. It is the exact opposite choice from <code>snprintf</code>’s quiet truncation seen in chapter 69.</p><h3>71.2 Throw it away and the compiler protests</h3><p>Returning the error as a value is not enough by itself. As seen in chapter 69, a return value <strong>can be thrown away</strong>. So functions for which failure is meaningful have C23′s <span id="idx-entry-101"></span><code>[[nodiscard]]</code> attached (we saw the name in chapter 45). Throw the result away and the compiler really says this.</p><pre><code data-lang="text">warning: ignoring return value of ‘proven_u8str_append’,
-         declared with attribute ‘nodiscard’ [-Wunused-result]
-    5 |     proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hi"));
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-note: declared here
-  123 | [[nodiscard]] proven_err_t proven_u8str_append(...);</code></pre><p>If the <code>-Werror</code> recommended in chapter 17 is turned on, this is not a warning but a <strong>build failure</strong>. What was “checking is optional” has become “it does not compile unless you check”.</p><p>Of course there are times when you really do want to ignore it. Then <code>(void)</code> is put in front.</p><pre><code data-lang="c">(void)proven_u8str_append(&amp;s, view);   /* ignored knowingly */</code></pre><div><div class="dev qa-q"><p class="dev-label">Q</p><p>If it can be ignored with <code>(void)</code>, is it not compulsory after all?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because the purpose of the compulsion is not “to prevent ignoring” but <strong>“to make ignoring visible”</strong>. An error thrown away with no mark is invisible in code review, while a line with <code>(void)</code> attached becomes a declaration that “this failure is deliberately ignored”. The very fact that it must be typed is the heart of it — it cannot be done by accident, only on purpose.</p></div></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>But chapter 70′s <code>proven_println</code> had no such mark. Why is screen output alone an exception?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because contracts have grades too. The failure of a write going to the console has conventionally been ignored (have you ever seen code that checks <code>printf</code>’s return value?), and making every line of output carry a <code>(void)</code> would bury the code in noise. So this library placed output in the grade that <strong>returns the error but does not compel a check</strong>. Conversely, the functions on the <strong>input</strong> side do have the mark — ignore the failure of a read and you treat “data not read” as though it had been read, replaying chapter 69′s second bug exactly. Where to attach the mark is itself a design judgement.</p></div></div><h3>71.3 What remains after a failure — failure atomicity</h3><p>There is a question that naturally arises after receiving an error. <strong>What state is the object the failed function was touching in now?</strong></p><span id="idx-entry-102"></span><p>The library’s answer is <strong>failure atomicity</strong> — unless the documentation says otherwise, a failed operation leaves the target in the state it was in before being touched. If memory runs short while growing an array the existing elements are still alive, and if there is not enough room while appending to a string the original content stands. The second call of the example just now is that case — it failed, but no half-written string was left.</p><p>Why does this matter? Without failure atomicity a caller can do nothing after a failure <strong>but throw the object away</strong>. With it, “give up this addition and carry on with what has been gathered so far” becomes possible.</p><div class="dev misconception"><p class="dev-label">⚠ “If it fails we will end the program anyway, so what does the state matter”</p><p>For a short-running command-line tool that may be so. But long-running programs — servers, editors, games, firmware — must not die on one failure. If the whole server went down because handling one request failed for lack of memory, that would be the greater accident. Failure atomicity is the minimal condition that makes possible the recovery of “throw away only this request and take the next”.</p></div><h3>71.4 Raising a failure upward — together with the cleanup</h3><p>Receiving errors as values raises one practical problem at once. <strong>If it fails in the middle, who gives back what has been taken so far?</strong> In a language with exceptions the stack unwinds and destructors handle it, but C has no such device (chapter 62). So an idiom is needed.</p><div><div><p><code>examples/ch71/cleanup.c</code></p><pre><code data-lang="c">/* 실패 경로에서 자원을 흘리지 않는 법 — 한 곳에 모아 역순으로 정리한다.
-   62장에서 본 `goto cleanup` 관용구가 proven 의 에러 값과 만나는 자리다. */
-#include &lt;proven.h>
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (1) errno gets clobbered </span></em><em><span class="tok-c">*/</span></em>
+    <strong>signal</strong><strong><span class="tok-x">(</span></strong><strong>SIGUSR1</strong><strong><span class="tok-x">,</span></strong><strong> careless</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>fails</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">int</span></strong> before <strong><span class="tok-x">=</span></strong> errno<span class="tok-x">;</span>
+    <strong>raise</strong><strong><span class="tok-x">(</span></strong><strong>SIGUSR1</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">handler that ignores errno: before </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">(</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">) -> after </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">(</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           before</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>strerror</strong><strong><span class="tok-x">(</span></strong><strong>before</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> errno</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>strerror</strong><strong><span class="tok-x">(</span></strong><strong>errno</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-/* 실패를 흉내 내기 위한 할당자: n 번째 할당부터는 반드시 실패한다. */
-typedef struct {
-    proven_allocator_t base;
-    int                budget;   /* 남은 성공 횟수 */
-} failing_ctx_t;
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (2) saved and restored </span></em><em><span class="tok-c">*/</span></em>
+    <strong>signal</strong><strong><span class="tok-x">(</span></strong><strong>SIGUSR1</strong><strong><span class="tok-x">,</span></strong><strong> careful</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>fails</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    before <strong><span class="tok-x">=</span></strong> errno<span class="tok-x">;</span>
+    <strong>raise</strong><strong><span class="tok-x">(</span></strong><strong>SIGUSR1</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">handler that saves errno:   before </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">(</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">) -> after </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">(</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           before</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>strerror</strong><strong><span class="tok-x">(</span></strong><strong>before</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> errno</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>strerror</strong><strong><span class="tok-x">(</span></strong><strong>errno</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-static proven_result_mem_mut_t failing_alloc(void *ctx, proven_size_t size,
-                                             proven_size_t align)
-{
-    failing_ctx_t *f = (failing_ctx_t *)ctx;
-    if (f->budget &lt;= 0)
-        return (proven_result_mem_mut_t){ .err = PROVEN_ERR_NOMEM };
-    f->budget--;
-    return f->base.alloc_fn(f->base.ctx, size, align);
-}
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (3) the result is the same even when a signal cuts in.</span></em>
+<em><span class="tok-c">       This implementation reverts to SIG_DFL after handling (chapter 71),</span></em>
+<em><span class="tok-c">       so the handler is installed again. </span></em><em><span class="tok-c">*/</span></em>
+    <strong>signal</strong><strong><span class="tok-x">(</span></strong><strong>SIGUSR1</strong><strong><span class="tok-x">,</span></strong><strong> careful</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    hits <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">long</span></strong> quiet <strong><span class="tok-x">=</span></strong> <strong>compute</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> without a signal </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">long</span></strong> hit   <strong><span class="tok-x">=</span></strong> <strong>compute</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">500</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> hit once, right in the middle </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">computed quietly            = </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> quiet</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">computed with a signal at 500 = </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">  (handler ran </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> time)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           hit</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>hits</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong>quiet </strong><strong><span class="tok-x">==</span></strong><strong> hit </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the same - the kernel saved and restored every register</span></strong><strong><span class="tok-s">"</span></strong>
+<strong>                      </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">different - this should not happen</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-static proven_result_mem_mut_t failing_realloc(void *ctx, void *old_ptr,
-                                               proven_size_t old_size,
-                                               proven_size_t new_size,
-                                               proven_size_t align)
-{
-    failing_ctx_t *f = (failing_ctx_t *)ctx;
-    if (f->budget &lt;= 0)
-        return (proven_result_mem_mut_t){ .err = PROVEN_ERR_NOMEM };
-    f->budget--;
-    return f->base.realloc_fn(f->base.ctx, old_ptr, old_size, new_size, align);
-}
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">Here is the difference from setjmp/longjmp (chapter 72):</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  signal:  the kernel saves and restores the *whole* register set -></span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">           returning into the middle of an expression just works.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  longjmp: jmp_buf holds only the *callee-saved* registers -></span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">           locals living in the others revert to their old values.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>handler that ignores errno: before 2(No such file or directory) -> after 9(Bad file descriptor)
+handler that saves errno:   before 2(No such file or directory) -> after 2(No such file or directory)
 
-static void failing_free(void *ctx, void *ptr)
-{
-    failing_ctx_t *f = (failing_ctx_t *)ctx;
-    f->base.free_fn(f->base.ctx, ptr);
-}
+computed quietly            = 2002
+computed with a signal at 500 = 2002  (handler ran 1 time)
+the same - the kernel saved and restored every register
 
-/* 자원 둘을 잡고 일하는 함수. 어디서 실패하든 잡은 것만 정확히 되돌린다. */
-static proven_err_t join_two(proven_allocator_t alloc,
-                             proven_u8str_view_t a,
-                             proven_u8str_view_t b,
-                             proven_u8str_t *out)
-{
-    proven_err_t   err   = PROVEN_OK;
-    bool           has_x = false;
-    proven_u8str_t x;                       /* 첫 번째 자원 */
-    proven_u8str_t y;                       /* 두 번째 자원 */
+Here is the difference from setjmp/longjmp (chapter 72):
+  signal:  the kernel saves and restores the *whole* register set ->
+           returning into the middle of an expression just works.
+  longjmp: jmp_buf holds only the *callee-saved* registers ->
+           locals living in the others revert to their old values.
+</code></pre></div></div><p>The third part of the demonstration confirms it. A signal taken in the middle of a thousand-round computation (at round 500) leaves the result equal to the one computed undisturbed.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Does <code>setjmp</code>/<code>longjmp</code> not do the same thing?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> No. This is the decisive difference between the two devices.</p><figure class="tbl"><div class="tblwrap"><table><tr><th></th><th><strong>A signal</strong></th><th><strong><code>longjmp</code> (chapter 72)</strong></th></tr><tr><td>Who saves</td><td>The kernel</td><td>The <code>setjmp</code> macro</td></tr><tr><td>What is saved</td><td><strong>Every</strong> register</td><td>Only the callee-saved ones (eight slots)</td></tr><tr><td>Where it returns</td><td>The very instruction interrupted</td><td>The place that called <code>setjmp</code></td></tr><tr><td>Local variables</td><td>All intact</td><td><strong>No guarantee unless <code>volatile</code></strong></td></tr></table></div><p class="float-caption">Table 71.7</p></figure><p>A signal, then, is <strong>a complete context switch</strong>, and <code>longjmp</code> is <strong>a partial restoration</strong>. That is why a handler may return into the middle of an expression while <code>longjmp</code> may only be used in the four contexts the standard fixes (chapter 72).</p></p></div></div><h4>71.5.1 <code>errno</code> is the exception — you must look after it yourself</h4><p>If the kernel looks after the registers, what is left? <strong>State at the C level.</strong> The one most often hit is <code>errno</code>.</p><p>A handler that calls nothing but <code>write</code> still changes <code>errno</code> when that call fails. If the main flow was about to read the reason for a failed call, the value it reads is the one the signal left behind.</p><p>The first part of the demonstration shows it in the flesh — <code>errno</code>, which was <code>ENOENT</code> (2) before the signal, came back as <code>EBADF</code> (9) after the handler. An attempt to open a missing file was turned into a bad-file-descriptor error.</p><p>The prescription is two lines. <strong>Save on the way in, restore on the way out.</strong></p><pre><code data-lang="c"><strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>on_signal</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> sig<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> saved <strong><span class="tok-x">=</span></strong> errno<span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> first line </span></em><em><span class="tok-c">*/</span></em>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> … raise a flag, write, … </span></em><em><span class="tok-c">*/</span></em>
+    errno <strong><span class="tok-x">=</span></strong> saved<span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> last line </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span></code></pre><p>Code that omits it <strong>mostly works</strong> — the fault shows only when a signal happens to arrive at that moment. So it is better kept as a discipline.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Where the stack goes — the red zone and an alternate stack</p><p>The kernel builds the signal frame <strong>on the current stack</strong>. Two pieces of practical knowledge follow.</p><p>First, the x86-64 SysV convention has a 128-byte <strong>red zone</strong> below the stack pointer that a function may use without growing the stack. The kernel skips that zone when building a signal frame — otherwise it would overwrite the interrupted function’s temporaries. The practice of building kernel code with <code>-mno-red-zone</code> comes from here.</p><p>Second, if the <code>SIGSEGV</code> came from <strong>the stack overflowing</strong>, there is no stack on which to build the handler either. So POSIX provides <code>sigaltstack</code> to register a separate stack for handlers, used by passing <code>SA_ONSTACK</code>. Tools that diagnose stack overflow stand on this device.</p></div><h3>71.6 The working pattern — raise a flag and return at once</h3><p>Given so short a permitted list, handlers in practice converge on one shape.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch71/sig_flag.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> A handler has one job — raise a flag and return at once. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">signal.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">unistd.h</span><span class="tok-s">></span><span class="tok-p">          </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> write — one of the few things a handler may call </span></em><em><span class="tok-c">*/</span></em>
 
-    proven_result_u8str_t rx = proven_u8str_create_from_view(alloc, a);
-    if (!proven_is_ok(rx.err)) { err = rx.err; goto done; }
-    x = rx.value; has_x = true;
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> sig_atomic_t stop_requested<span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> sig_atomic_t reload_requested<span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> sig_atomic_t last_signal<span class="tok-x">;</span>
 
-    proven_result_u8str_t ry = proven_u8str_create_from_view(alloc, b);
-    if (!proven_is_ok(ry.err)) { err = ry.err; goto done; }
-    y = ry.value;
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>on_signal</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> sig<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    last_signal <strong><span class="tok-x">=</span></strong> sig<span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>sig <strong><span class="tok-x">==</span></strong> SIGTERM <strong><span class="tok-x">||</span></strong> sig <strong><span class="tok-x">==</span></strong> SIGINT<span class="tok-x">)</span> stop_requested <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>sig <strong><span class="tok-x">==</span></strong> SIGUSR1<span class="tok-x">)</span>                  reload_requested <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
 
-    /* 두 조각을 이어 붙인다 — 모자라면 늘린다(할당자가 필요한 이유) */
-    err = proven_u8str_append_grow(alloc, &amp;y, proven_u8str_as_view(&amp;x));
-    if (!proven_is_ok(err)) { proven_u8str_destroy(alloc, &amp;y); goto done; }
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> That is as far as the standard permits. The write below is allowed only</span></em>
+<em><span class="tok-c">       because POSIX separately guarantees it async-signal-safe (see the text). </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> note<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">  [handler] flag set</span><span class="tok-n">\n</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">ssize_t</span></strong> n <strong><span class="tok-x">=</span></strong> <strong>write</strong><strong><span class="tok-x">(</span></strong><strong>STDOUT_FILENO</strong><strong><span class="tok-x">,</span></strong><strong> note</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> note </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>n<span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-    *out = y;                               /* 성공: y 의 소유권을 넘긴다 */
-                                            /* x 는 아래에서 반납된다 */
-done:
-    if (has_x) proven_u8str_destroy(alloc, &amp;x);   /* 잡았으면 반드시 되돌린다 */
-    return err;
-}
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> The skeleton of a server — work, look at the flags, decide </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>serve</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">int</span></strong> served <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><span class="tok-x">;</span><span class="tok-x">;</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>reload_requested<span class="tok-x">)</span> <span class="tok-x">{</span>
+            reload_requested <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+            <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  reloading configuration (SIGUSR1)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+            <strong>fflush</strong><strong><span class="tok-x">(</span></strong><strong>stdout</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <span class="tok-x">}</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>stop_requested<span class="tok-x">)</span> <span class="tok-x">{</span>
+            <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  cleaning up and going down (after serving </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> served</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+            <strong><span class="tok-k">return</span></strong><span class="tok-x">;</span>
+        <span class="tok-x">}</span>
+        served<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>served <strong><span class="tok-x">==</span></strong> <span class="tok-n">2</span><span class="tok-x">)</span> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>raise</strong><strong><span class="tok-x">(</span></strong><strong>SIGUSR1</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> simulate a reload request </span></em><em><span class="tok-c">*/</span></em>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>served <strong><span class="tok-x">==</span></strong> <span class="tok-n">4</span><span class="tok-x">)</span> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>raise</strong><strong><span class="tok-x">(</span></strong><strong>SIGTERM</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> simulate a shutdown request </span></em><em><span class="tok-c">*/</span></em>
+    <span class="tok-x">}</span>
+<span class="tok-x">}</span>
 
-static void run(int budget)
-{
-    proven_allocator_t heap = proven_heap_allocator();
-    failing_ctx_t      ctx  = { .base = heap, .budget = budget };
-    proven_allocator_t alloc = {
-        .ctx = &amp;ctx, .alloc_fn = failing_alloc,
-        .realloc_fn = failing_realloc, .free_fn = failing_free,
-    };
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> This implementation resets to SIG_DFL after handling, so we re-install.</span></em>
+<em><span class="tok-c">       (Which is why POSIX code uses sigaction — the next example.) </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>signal</strong><strong><span class="tok-x">(</span></strong><strong>SIGUSR1</strong><strong><span class="tok-x">,</span></strong><strong> on_signal</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">==</span></strong> SIG_ERR<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>signal</strong><strong><span class="tok-x">(</span></strong><strong>SIGTERM</strong><strong><span class="tok-x">,</span></strong><strong> on_signal</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">==</span></strong> SIG_ERR<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
 
-    proven_u8str_t out;
-    proven_err_t e = join_two(alloc, PROVEN_LIT("world"), PROVEN_LIT("hello, "), &amp;out);
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">server loop starting</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>fflush</strong><strong><span class="tok-x">(</span></strong><strong>stdout</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the handler's write bypasses the buffer — keep the order </span></em><em><span class="tok-c">*/</span></em>
+    <strong>serve</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">last signal received = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>last_signal</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    if (proven_is_ok(e)) {
-        proven_println("budget={} -> ok: \"{}\"  (남은 예산 {})",
-                       PROVEN_ARG(budget), PROVEN_ARG(proven_u8str_as_view(&amp;out)),
-                       PROVEN_ARG(ctx.budget));
-        proven_u8str_destroy(alloc, &amp;out);
-    } else {
-        proven_println("budget={} -> 실패(코드 {}) — 잡았던 것은 전부 반납됐다",
-                       PROVEN_ARG(budget), PROVEN_ARG((int)e));
-    }
-}
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> What the handler left behind is one flag — the work happens out here.</span></em>
+<em><span class="tok-c">       Printing, closing files and freeing all belong in this place. </span></em><em><span class="tok-c">*/</span></em>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">cleanup done outside the loop</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>server loop starting
+  [handler] flag set
+  reloading configuration (SIGUSR1)
+  [handler] flag set
+  cleaning up and going down (after serving 4)
+last signal received = 15
+cleanup done outside the loop
+</code></pre></div></div><p><strong>The handler only raises a flag. Judgement and cleanup belong to the main flow.</strong> The demonstration’s <code>serve</code> is that structure — it loops, sees the flags, and either reloads its configuration or cleans up and goes down. Printing, closing files and freeing all happen inside the loop.</p><p>Three things make the pattern good. <strong>It is safe</strong> — the handler does one assignment, so it cannot leave the permitted list. <strong>The moment is yours</strong> — the main flow decides whether to finish the current request first. <strong>It is testable</strong> — raise the flag directly and the same path can be exercised without any signal.</p><div class="dev realcase"><p class="dev-label">In practice. Why the output order looked reversed</p><p>The first run of the demonstration printed the handler’s output <strong>before</strong> the <code>puts</code>. Not a bug but buffering — <code>printf</code> and <code>puts</code> accumulate in the stdout buffer and flush later, while the handler’s <code>write</code> goes straight out, bypassing it (chapter 59′s buffering).</p><p>That small observation re-explains the misconception above. The handler and the main flow share a buffer but <strong>do not write by the same rules</strong>. So the demonstration used <code>fflush</code> to line the order up, and practice avoids printing from handlers altogether.</p></div><h3>71.7 POSIX’s <code>sigaction</code> — filling the standard’s gaps</h3><p>What Unix-like systems actually use is <code>sigaction</code>. It fills exactly three gaps in the standard <code>signal</code>.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Gap</strong></th><th><strong>Standard <code>signal</code></strong></th><th><strong><code>sigaction</code></strong></th></tr><tr><td>Does the handler survive?</td><td>Implementation-defined (it vanished in the demonstration)</td><td>It stays, unless <code>SA_RESETHAND</code> is given</td></tr><tr><td>If the same signal arrives while handling</td><td>Implementation-defined</td><td>Blocked by default; <code>sa_mask</code> blocks more</td></tr><tr><td>Interrupted system calls</td><td>Not settled</td><td>Restarted automatically with <code>SA_RESTART</code></td></tr></table></div><p class="float-caption">Table 71.8</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch71/sig_action.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> POSIX sigaction — filling the gaps the standard signal left. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">_POSIX_C_SOURCE</span><span class="tok-p"> </span><span class="tok-n">200809</span><strong><span class="tok-t">L</span></strong>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">signal.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">unistd.h</span><span class="tok-s">></span>
 
-int main(void)
-{
-    run(0);   /* 첫 할당부터 실패 */
-    run(1);   /* 첫 자원은 잡고 두 번째에서 실패 → x 를 흘리면 누수다 */
-    run(9);   /* 전부 성공 */
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>budget=0 -> 실패(코드 1) — 잡았던 것은 전부 반납됐다
-budget=1 -> 실패(코드 1) — 잡았던 것은 전부 반납됐다
-budget=9 -> ok: "hello, world"  (남은 예산 6)
-</code></pre></div></div><p>This example deliberately inserts a failing allocator (once the <strong>budget</strong> runs out it necessarily gives <code>NOMEM</code>) and runs all three cases — failure from the first allocation, one taken and failure at the second, and everything succeeding. The middle case is the heart of it. <code>x</code> has already been taken while <code>y</code> failed, so simply returning here is <strong>a leak</strong>.</p><p>The pattern comes to three.</p><ol><li><strong>Mark what you hold with a flag</strong> — one boolean such as <code>has_x</code>. If the resources are several, so are the flags.</li><li><strong>On failure everything gathers at one place</strong> — <code>goto done</code>. That use chapter 62 called “disciplined <code>goto</code>”.</li><li><strong>Clean up in reverse order of taking</strong> — what was taken later is given back first.</li></ol><p>It is worth noticing too that after ownership passes with <code>*out = y;</code> on the success path, <code>y</code> is not destroyed thereafter. <strong>You must be able to point at the place where ownership passes with a single line of code</strong> — a function that cannot is usually one of blurred design.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Is deliberately making a failing allocator of any use in practice too?</p></div><div class="dev qa-a"><p class="dev-label">A Of great use. The out-of-memory path is almost never executed in a real program, so in most codebases it is <strong>the least tested path</strong>. And a leak or double free there is the hardest of all to diagnose.</p><p>As chapter 73 will show, an allocator is simply a value, so a shell that “fails from the nth call” can be made in ten lines, as in the example, and inserted. Raise n from 1 and run the tests and you can pass through <strong>every failure point</strong> once, and running it with ASan or Valgrind (chapter 17) makes that path’s leaks show themselves plainly. It is the place where the decision that the library does not call <code>malloc</code> directly comes back as testability.</p></div></div><h3>71.5 When there is nobody to return to — the panic</h3><p>To return an error as a value there must be <strong>somebody to return it to</strong>. But in a place where the contract itself is broken there is no such somebody — if, for example, a null arrived in a place where there is no reason whatever to pass a null, that is not a failure but means <strong>the program’s logic is already wrong</strong>.</p><p>For such places the library has a panic path. It is the same spirit as chapter 45′s <code>assert</code>, differing in that the way it is handled can be swapped out so as to be usable in embedded work too (chapter 78).</p><p>There are only two doors.</p><pre><code data-lang="c">void proven_panic(const char *msg);                       /* raise a panic */
-void proven_set_panic_handler(proven_panic_handler_t h);  /* swap the handler */</code></pre><p>The default handler <strong>does not return</strong> — it stops the program on the spot (the implementation is <code>__builtin_trap()</code>). And this swapping is what pays in embedded work. On a board with no console there is nowhere to print a message, so a handler is registered that lights an LED, kicks the watchdog, or reboots.</p><pre><code data-lang="c">static void my_panic(const char *msg) {
-    (void)msg;
-    board_led_on(LED_FAULT);
-    for (;;) { }          /* it does not go back */
-}
-/* at the program's starting place */
-proven_set_panic_handler(my_panic);</code></pre><p><strong>A handler must not return.</strong> If it returns, the validity of what an <code>_or_panic</code> function gave back is not guaranteed — a panic is the declaration that “from here the program’s premises are broken”. The exception is test code deliberately using a returning handler to confirm the panic path, and even then the value after it is not used.</p><p>The places where the library itself calls a panic can be counted on the fingers — the functions with <code>_or_panic</code> in the name (chapter 73′s arena allocation is representative) and a few places where the contract is plainly already broken. Everything else is returned as a value.</p><p>The distinction is best remembered like this.</p><div class="dev recap"><p class="dev-label">☰ Recap</p><table><tr><th><strong>situation</strong></th><th><strong>example</strong></th><th><strong>the library’s handling</strong></th></tr><tr><td>failure of the outside world</td><td>out of memory, file not found, out of room</td><td>return the error as a value</td></tr><tr><td>the caller’s contract violation</td><td>a null that must not be, reusing a destroyed object</td><td>panic (or undefined)</td></tr><tr><td>failure that may be ignored</td><td>console output failure</td><td>return the error but do not compel</td></tr></table></div><div class="dev realcase"><p class="dev-label">◉ Other languages that chose errors as values</p><p>This design is not C’s invention alone but a current common to recent systems languages. Go has functions return a result and an error side by side, and Rust wraps success and failure in the single <code>Result</code> type and warns if it is ignored. Both are languages that decided not to use exceptions, and the reason is the same — <strong>the error paths must be visible in the shape of the code</strong>. Exceptions are convenient but erase from the signature “which failure jumps where from here”. Three different languages, in effect, found the answer to the second row of chapter 69′s table from the same direction.</p></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>What is the price of this way?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p><code>if</code>s multiply. There being no device like exceptions to sweep a deep failure up in one go, code that checks and passes upward attaches at every place a failure is met. That is half the reason the <code>make_greeting</code> of the example just now runs to some twenty lines. In exchange one thing is gained — <strong>where and what can fail is visible in the code as it stands.</strong> That there is no hidden failure is the thing this library sells.</p></div></div><p>Knowing the shape of errors, we now go down to what those errors protect — memory itself. The next chapter is bytes and views, and size calculation that does not overflow.</p>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> sig_atomic_t hits<span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> sig_atomic_t last_code<span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> sig_atomic_t from_self<span class="tok-x">;</span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> With SA_SIGINFO the handler takes three arguments — who sent it, and why </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>on_signal</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> sig<span class="tok-x">,</span> siginfo_t <strong><span class="tok-x">*</span></strong>info<span class="tok-x">,</span> <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>ctx<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>sig<span class="tok-x">;</span> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>ctx<span class="tok-x">;</span>
+    hits<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+    last_code <strong><span class="tok-x">=</span></strong> info<span class="tok-x">-></span>si_code<span class="tok-x">;</span>
+    from_self <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span>info<span class="tok-x">-></span>si_pid <strong><span class="tok-x">==</span></strong> <strong>getpid</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the value itself is not printed </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong>code_name</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> code<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">switch</span></strong> <span class="tok-x">(</span>code<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-k">case</span></strong> SI_USER<span class="tok-x">:</span>   <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">SI_USER (sent by kill/raise)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">case</span></strong> SI_QUEUE<span class="tok-x">:</span>  <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">SI_QUEUE (sigqueue)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">case</span></strong> SI_TIMER<span class="tok-x">:</span>  <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">SI_TIMER (a timer)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">case</span></strong> SI_KERNEL<span class="tok-x">:</span> <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">SI_KERNEL (sent by the kernel)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">case</span></strong> <strong><span class="tok-x">-</span></strong><span class="tok-n">6</span><span class="tok-x">:</span>        <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">SI_TKILL (raised by the same thread, Linux)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">default</span></strong><span class="tok-x">:</span>        <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">some other implementation-defined value</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">struct</span></strong> sigaction sa<span class="tok-x">;</span>
+    <strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>sa</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> sa</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> start the struct wholly zeroed </span></em><em><span class="tok-c">*/</span></em>
+    sa<span class="tok-x">.</span>sa_sigaction <strong><span class="tok-x">=</span></strong> on_signal<span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> with SA_SIGINFO, fill this one </span></em><em><span class="tok-c">*/</span></em>
+    <strong>sigemptyset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>sa</strong><strong><span class="tok-x">.</span></strong><strong>sa_mask</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> extra signals blocked while handling </span></em><em><span class="tok-c">*/</span></em>
+    <strong>sigaddset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>sa</strong><strong><span class="tok-x">.</span></strong><strong>sa_mask</strong><strong><span class="tok-x">,</span></strong><strong> SIGUSR2</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> defer USR2 while handling USR1 </span></em><em><span class="tok-c">*/</span></em>
+    sa<span class="tok-x">.</span>sa_flags <strong><span class="tok-x">=</span></strong> SA_SIGINFO <strong><span class="tok-x">|</span></strong> SA_RESTART<span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> extra info + restart syscalls </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong><span class="tok-t">struct</span></strong> sigaction old<span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>sigaction</strong><strong><span class="tok-x">(</span></strong><strong>SIGUSR1</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>sa</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>old</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">!=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">SIGUSR1 installed with sigaction. Previous handler: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           old</strong><strong><span class="tok-x">.</span></strong><strong>sa_handler</strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> SIG_DFL </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">SIG_DFL</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">present</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> raise it three times — unlike signal(), the handler *stays* </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">3</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>raise</strong><strong><span class="tok-x">(</span></strong><strong>SIGUSR1</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">after three raises, handled = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (the handler persists)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>hits</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  was the sender ourselves? </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> from_self </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  si_code = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> -> </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>last_code</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>code_name</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>last_code</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> -- blocking a signal for a while ---------------------------------- </span></em><em><span class="tok-c">*/</span></em>
+    sigset_t block<span class="tok-x">,</span> prev<span class="tok-x">;</span>
+    <strong>sigemptyset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>block</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>sigaddset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>block</strong><strong><span class="tok-x">,</span></strong><strong> SIGUSR1</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>sigprocmask</strong><strong><span class="tok-x">(</span></strong><strong>SIG_BLOCK</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>block</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>prev</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">!=</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">int</span></strong> before <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong><span class="tok-x">)</span>hits<span class="tok-x">;</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span><strong>raise</strong><strong><span class="tok-x">(</span></strong><strong>SIGUSR1</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>               <em><span class="tok-c">/*</span></em><em><span class="tok-c"> blocked, so it becomes pending </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">raised while blocked: handled </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> -> </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (not delivered yet)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           before</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>hits</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    sigset_t pending<span class="tok-x">;</span>
+    <strong>sigpending</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>pending</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  is it pending? </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>sigismember</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>pending</strong><strong><span class="tok-x">,</span></strong><strong> SIGUSR1</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">yes</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">no</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>sigprocmask</strong><strong><span class="tok-x">(</span></strong><strong>SIG_SETMASK</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>prev</strong><strong><span class="tok-x">,</span></strong><strong> nullptr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> unblock: delivered right here </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  handled just after unblocking = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>hits</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> -- a look inside the structures ----------------------------------- </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">sizeof(struct sigaction) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes, sigset_t = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> bytes</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">struct</span></strong><strong> sigaction</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong>sigset_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">SA_RESTART=0x</span></strong><strong><span class="tok-s">%x</span></strong><strong><span class="tok-s">, SA_SIGINFO=0x</span></strong><strong><span class="tok-s">%x</span></strong><strong><span class="tok-s">, SA_NOCLDWAIT=0x</span></strong><strong><span class="tok-s">%x</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong>SA_RESTART</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong>SA_SIGINFO</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong>SA_NOCLDWAIT</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>SIGUSR1 installed with sigaction. Previous handler: SIG_DFL
+after three raises, handled = 3 (the handler persists)
+  was the sender ourselves? yes
+  si_code = -6 -> SI_TKILL (raised by the same thread, Linux)
+
+raised while blocked: handled 3 -> 3 (not delivered yet)
+  is it pending? yes
+  handled just after unblocking = 4
+
+sizeof(struct sigaction) = 152 bytes, sigset_t = 128 bytes
+SA_RESTART=0x10000000, SA_SIGINFO=0x4, SA_NOCLDWAIT=0x2
+</code></pre></div></div><h4>71.7.1 Inside <code>struct sigaction</code></h4><p>This structure is this chapter’s data-type story. POSIX fixes four members and does <strong>not</strong> fix their order (so it must be started with a designated initializer or <code>memset</code>).</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Member</strong></th><th><strong>Type</strong></th><th><strong>What it is</strong></th></tr><tr><td><code>sa_handler</code></td><td><code>void (*)(int)</code></td><td>The plain handler, shaped like the standard’s</td></tr><tr><td><code>sa_sigaction</code></td><td><code>void (*)(int, siginfo_t *, void *)</code></td><td>The one used with <code>SA_SIGINFO</code>; more information arrives</td></tr><tr><td><code>sa_mask</code></td><td><code>sigset_t</code></td><td>Signals blocked <strong>while this handler runs</strong></td></tr><tr><td><code>sa_flags</code></td><td><code>int</code></td><td>Flags choosing the behaviour (below)</td></tr></table></div><p class="float-caption">Table 71.9</p></figure><p><code>sa_handler</code> and <code>sa_sigaction</code> usually <strong>overlap in a union</strong> (chapter 44). So only one is filled, and the <code>SA_SIGINFO</code> flag says which.</p><p>The four flags most often seen:</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Flag</strong></th><th><strong>Meaning</strong></th></tr><tr><td><code>SA_SIGINFO</code></td><td>Use the three-argument handler — who sent it, and why</td></tr><tr><td><code>SA_RESTART</code></td><td>Automatically restart system calls interrupted by the signal</td></tr><tr><td><code>SA_NOCLDWAIT</code></td><td>Leave no zombie when a child ends (<code>SIGCHLD</code>)</td></tr><tr><td><code>SA_RESETHAND</code></td><td>Reset to the default after one delivery, the old way</td></tr></table></div><p class="float-caption">Table 71.10</p></figure><h4>71.7.2 <code>siginfo_t</code> — who sent it, and why</h4><p>With <code>SA_SIGINFO</code> the handler receives a <code>siginfo_t *</code>. The members most used:</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Member</strong></th><th><strong>What it is</strong></th></tr><tr><td><code>si_signo</code></td><td>The signal number</td></tr><tr><td><code>si_code</code></td><td><strong>Why</strong> it came — <code>SI_USER</code> (kill), <code>SI_KERNEL</code>, <code>SI_TIMER</code>, …</td></tr><tr><td><code>si_pid</code></td><td>The sending process’s id</td></tr><tr><td><code>si_uid</code></td><td>The sending user’s id</td></tr><tr><td><code>si_addr</code></td><td>For <code>SIGSEGV</code> and <code>SIGBUS</code>, <strong>the address that faulted</strong></td></tr></table></div><p class="float-caption">Table 71.11</p></figure><p>The demonstration prints <code>si_code</code>. Raised at ourselves, Linux put <code>SI_TKILL</code> (−6) there — “sent by the same thread”. The names and meanings of these values differ per implementation, so <strong>check that platform’s documentation before branching on one.</strong></p><p><code>si_addr</code> earns its keep in debugging. Record it in a <code>SIGSEGV</code> handler and you learn “which address it died touching” — though it cannot be printed from inside that handler (the permitted list), so raw bytes are usually written with <code>write</code> and the program ended with <code>_Exit</code>.</p><h4>71.7.3 Blocking a signal for a while — the mask</h4><p><code>sigprocmask</code> declares “I will not receive this signal for now”. A signal arriving while blocked does not vanish; it stays <strong>pending</strong> and is delivered the moment the block is lifted. The demonstration’s last block is that scene — raised while blocked, the count stayed put; unblocked, it rose at once.</p><p>Where this is needed is clear. When a signal must not cut in while a data structure is being fixed, block it for that stretch. It makes a <strong>critical section</strong> against signals as well.</p><h3>71.8 Real uses</h3><p>Now to what signals actually do in practice.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Signal</strong></th><th><strong>Use</strong></th><th><strong>Representative case</strong></th></tr><tr><td><code>SIGTERM</code></td><td><strong>A graceful shutdown request</strong> — time to clean up</td><td><code>kill</code>’s default, container shutdown in Docker and Kubernetes</td></tr><tr><td><code>SIGINT</code></td><td>The user’s interruption (Ctrl+C)</td><td>A command-line tool wrapping up its work</td></tr><tr><td><code>SIGKILL</code></td><td>Kill at once — <strong>cannot be caught</strong></td><td>The last resort when graceful shutdown fails</td></tr><tr><td><code>SIGHUP</code></td><td>Re-read configuration (by convention)</td><td>nginx and Apache reloading without downtime</td></tr><tr><td><code>SIGCHLD</code></td><td>A child has ended</td><td>Shells and servers reaping zombies</td></tr><tr><td><code>SIGPIPE</code></td><td>Wrote to a pipe whose reader is gone</td><td>Servers mostly ignore it and handle <code>EPIPE</code></td></tr><tr><td><code>SIGWINCH</code></td><td>The terminal was resized</td><td><code>vim</code> and <code>top</code> redrawing the screen</td></tr><tr><td><code>SIGUSR1</code>, <code>SIGUSR2</code></td><td>The application decides the meaning</td><td>nginx’s live binary upgrade, reopening log files</td></tr></table></div><p class="float-caption">Table 71.12</p></figure><h4>71.8.1 Graceful shutdown — the most widely used pattern</h4><p>It became especially important in the container world. An orchestrator taking a container down sends <code>SIGTERM</code> first, and kills it with <code>SIGKILL</code> if it has not finished within the grace period (usually 30 seconds). So a server receiving <code>SIGTERM</code> must <strong>stop accepting new requests, finish those in flight, close its connections and go down</strong>.</p><p>The flag pattern above does exactly this work. The handler only sets <code>stop = 1</code> and the main loop sees it and walks through the cleanup.</p><h4>71.8.2 <code>SIGPIPE</code> — the signal whose right answer is to ignore it</h4><p>Write to a pipe or socket whose reader has already gone and <code>SIGPIPE</code> arrives. The default action is <strong>terminating the process</strong> — for a web server, dying because a client closed a window.</p><p>So network programs almost invariably begin like this:</p><pre><code data-lang="c"><strong>signal</strong><strong><span class="tok-x">(</span></strong><strong>SIGPIPE</strong><strong><span class="tok-x">,</span></strong><strong> SIG_IGN</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> let write return -1/EPIPE instead of a signal </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Ignored, <code>write</code> returns the failure <strong>as a value</strong> (<code>errno == EPIPE</code>). Chapter 70′s “failure as a value” is the better arrangement here too.</p><h4>71.8.3 Interrupted system calls — <code>EINTR</code></h4><p>When a signal arrives, slow system calls such as <code>read</code> and <code>write</code> are <strong>cut off</strong>, return −1 and put <code>EINTR</code> in <code>errno</code>. Not knowing this produces the ghost bug of “reads sometimes fail”.</p><p>There are two prescriptions: give <code>SA_RESTART</code> so the kernel restarts them, or retry by hand.</p><pre><code data-lang="c"><strong><span class="tok-t">ssize_t</span></strong> n<span class="tok-x">;</span>
+<strong><span class="tok-k">do</span></strong> <span class="tok-x">{</span> n <strong><span class="tok-x">=</span></strong> <strong>read</strong><strong><span class="tok-x">(</span></strong><strong>fd</strong><strong><span class="tok-x">,</span></strong><strong> buf</strong><strong><span class="tok-x">,</span></strong><strong> len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span> <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span>n <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">0</span> <strong><span class="tok-x">&amp;&amp;</span></strong> errno <strong><span class="tok-x">==</span></strong> EINTR<span class="tok-x">)</span><span class="tok-x">;</span></code></pre><p><code>SA_RESTART</code> is not a cure-all either — some calls are not restarted (notably those with timeouts), so robust code keeps the retry loop as well.</p><div class="dev realcase"><p class="dev-label">In practice. The self-pipe trick and its descendants</p><p>Mixing signals with an event loop was a long-standing nuisance. A signal arriving while waiting in <code>select</code> or <code>poll</code> breaks the loop, and almost nothing may be done inside the handler.</p><p>So in the 1990s the <strong>self-pipe trick</strong> appeared. A program makes a pipe to itself, and the handler writes a single byte into it (<code>write</code> is on the safe list). The event loop then receives that as <strong>an ordinary readable event</strong> — the signal has been turned into a file descriptor.</p><p>Today Linux offers <code>signalfd</code>, providing the idea in the kernel directly, and the BSDs have <code>kqueue</code>’s <code>EVFILT_SIGNAL</code>. Different names, same idea — <strong>turn a signal from an asynchronous interruption into an event that queues.</strong></p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> In a program with several threads, where does a signal go?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> A delicate place, and without knowing the rules it becomes a bug that is hard to reproduce.</p><p>A signal sent to the process (<code>kill</code>) is delivered to <strong>any one thread that has not blocked it</strong> — which one is not fixed. <code>pthread_kill</code>, by contrast, goes to the thread named. And while handlers are shared by the whole process, <strong>the mask is per thread</strong>.</p><p>So the standard practice is this — <strong>block the signal in every thread and let one dedicated thread wait for it with <code>sigwait</code></strong>. The signal then turns from an asynchronous interruption into an ordinary function return, and inside that thread <code>printf</code> and <code>malloc</code> are free to use. It is the same idea as <code>signalfd</code> above.</p></p></div></div><h4>71.8.4 Which software uses signals, and why</h4><p>The reason for using signals differs from program to program, and those reasons make the device’s place clear.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>What</strong></th><th><strong>What it uses them for</strong></th><th><strong>Why it had to be a signal</strong></th></tr><tr><td>nginx, Apache</td><td><code>SIGHUP</code> to reload configuration, <code>SIGUSR2</code> to swap the executable</td><td>The cheapest channel by which an operator gets <strong>from outside to inside</strong>. No port, no socket</td></tr><tr><td>PostgreSQL</td><td>Query cancellation and shutdown requests (the handler only raises a flag)</td><td>One process per connection, so a signal between processes <strong>is</strong> the means of communication</td></tr><tr><td>Redis</td><td><code>SIGSEGV</code>/<code>SIGBUS</code> handlers that print a crash report</td><td>The <strong>last chance</strong> to record the state at the moment of death — into a pre-allocated buffer, out through <code>write</code></td></tr><tr><td>The HotSpot JVM</td><td><code>SIGSEGV</code> for null checks and safepoints</td><td>Removes the check from the normal path entirely and leaves the rare case to a hardware trap</td></tr><tr><td>WebAssembly runtimes</td><td><code>SIGSEGV</code>/<code>SIGBUS</code> trap handlers for out-of-bounds access</td><td>Leaves bounds checking to guard pages, removing a compare from every access</td></tr><tr><td>The Boehm GC</td><td><code>mprotect</code> + <code>SIGSEGV</code> as a write barrier, signals to stop threads</td><td>The only way to put a collector on a C program without help from the language</td></tr><tr><td>libuv, Node.js</td><td>A dedicated thread and a pipe turn signals into events</td><td>To mix with an event loop, a signal must become a file descriptor</td></tr><tr><td>CPython</td><td>The handler only raises a flag; the bytecode loop checks it</td><td>Interpreter state cannot be touched from a handler — the permitted list again</td></tr><tr><td>libcurl</td><td>Ignores <code>SIGPIPE</code>; older versions used <code>SIGALRM</code> to time out name resolution</td><td>A legacy of days with no other way to impose a timeout. Risky enough to deserve its own off switch (<code>CURLOPT_NOSIGNAL</code>)</td></tr></table></div><p class="float-caption">Table 71.13</p></figure><p>They sort into three groups. <strong>Instructions arriving from outside</strong> (nginx, PostgreSQL — the channel of operation), <strong>lifting a hardware trap into user code</strong> (the JVM, WebAssembly, the GC, Redis — emptying the normal path and signalling only the exception), and <strong>turning signals into events</strong> (libuv, CPython — the modern prescription for getting around the permitted list).</p><p>The middle group is the interesting one. “Remove the null check and catch it with <code>SIGSEGV</code>” is the archetype of an optimisation that <strong>pushes the cost onto the rare case</strong> — one instruction is deleted from the normal path at the price of a long trip through the kernel and a handler when the accident happens. It is the same calculation as chapter 11′s “a rare branch may be expensive.”</p><div class="dev antipattern"><p class="dev-label">Counter-example. cleaning up directly in the handler</p><pre><code data-lang="c"><strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>on_term</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> sig<span class="tok-x">)</span> <span class="tok-x">{</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>sig<span class="tok-x">;</span>
+    <strong>fclose</strong><strong><span class="tok-x">(</span></strong><strong>logfile</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> standard library — forbidden </span></em><em><span class="tok-c">*/</span></em>
+    <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>buffer</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> forbidden </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">bye</span></strong><strong><span class="tok-n">\\</span></strong><strong><span class="tok-s">n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> forbidden </span></em><em><span class="tok-c">*/</span></em>
+    <strong>exit</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                <em><span class="tok-c">/*</span></em><em><span class="tok-c"> exit is forbidden too (_Exit is allowed) </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span></code></pre><p>All four are outside the permitted list. And this code is more dangerous for <strong>mostly working</strong> — the trouble only surfaces under load or when signals crowd in.</p><p>The correct form is one flag.</p><pre><code data-lang="c"><strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">volatile</span></strong> sig_atomic_t stop<span class="tok-x">;</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>on_term</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> sig<span class="tok-x">)</span> <span class="tok-x">{</span> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>sig<span class="tok-x">;</span> stop <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> <span class="tok-x">}</span></code></pre></div><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>What to keep</strong></th><th><strong>The point</strong></th></tr><tr><td>What it is</td><td>Neither a thread nor a call — a third thing that cuts in unpredictably</td></tr><tr><td>The standard’s scope</td><td>Two functions (<code>signal</code>, <code>raise</code>) and six signals</td></tr><tr><td><code>signal</code>’s return</td><td><strong>The previous</strong> disposition; <code>SIG_ERR</code> means failure</td></tr><tr><td>Inside a handler</td><td>The permitted list is all there is — in practice, one assignment</td></tr><tr><td><code>volatile sig_atomic_t</code></td><td>Both are needed: one against half values, one against optimisation</td></tr><tr><td>Allocation</td><td><code>malloc</code> is barred by the free list and the lock — obtain vessels <strong>in advance</strong></td></tr><tr><td>Context</td><td>The kernel restores every register. Only <code>errno</code> must be saved by hand</td></tr><tr><td>POSIX</td><td><code>sigaction</code> fills the three gaps (reset, re-entry, <code>EINTR</code>)</td></tr><tr><td>In practice</td><td>Handler raises a flag, the main flow cleans up; ignore <code>SIGPIPE</code></td></tr><tr><td>Modern alternatives</td><td><code>signalfd</code>, <code>kqueue</code>, a dedicated thread — turn signals into <strong>events</strong></td></tr></table></div><p class="float-caption">Table 71.14</p></figure></div><p>We have handled the interruption that arrives from outside. The next chapter is its opposite — the device with which a program cuts its own flow and leaps back up the stack, <code>setjmp</code> and <code>longjmp</code>.</p>
 <div class="nav"><a href="ch70.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch72.html">Next →</a></div>
 </div></main></body></html>

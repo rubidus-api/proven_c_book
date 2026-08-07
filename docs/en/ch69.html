@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>69 The five bugs shipped for fifty years — Proven C Book</title><style>
+<title>69 Time — &lt;time.h&gt; — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,132 +259,75 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch68.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch70.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch69.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>69 The five bugs shipped for fifty years</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>This part’s statement of the problem. We confirm with actually running code why C has kept shipping the same five classes of bug for half a century — that it is not the programmer’s carelessness but <strong>the shape of the API</strong>. Only after all five have been seen does the name proven appear again. Not introducing the tool first is this part’s principle.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 37 said the functions handling strings “do not know the size of the vessel”, and chapter 45 said “a failure not confirmed becomes a thing that never happened”. Then why do such problems still remain — is half a century not more than enough time to mend them?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Not because they cannot be mended but because mending them <strong>breaks all the code already written</strong>. The moment one more size parameter is put into <code>strcpy</code>’s signature, every C program in the world stops compiling. The standard is an institution that must protect existing code (chapter 53′s reason for “thin and old” appears here too), so instead of removing dangerous functions it has taken the road of <strong>placing better functions beside them</strong>. So the choice comes over to the programmer — it is, in effect, a language in which knowing what is dangerous and choosing accordingly is itself skill.</p></div></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then are these five a list of mistakes beginners make?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>No. These are mistakes <strong>the skilled keep making too</strong>, and that point matters. If people who know the whole grammar still slip in the same places, the cause is not the person but <strong>the shape of the tool</strong>. A function that does not take a size has no way of checking a size, and a function whose return value may be thrown away with nothing happening will one day be thrown away. This chapter takes that “shape” apart one at a time.</p></div></div><h3>69.1 One — string functions do not know the size of the vessel</h3><p>The oldest and most exploited class. Exactly as seen in chapter 37.</p><pre><code data-lang="c">char buf[64];
-strcpy(buf, name);            /* how long is name? strcpy does not ask */
-strcat(buf, ", welcome!");    /* and how much room is left now? */</code></pre><p><code>strcpy</code>’s signature has no destination size. What is not there cannot be checked, so this function will happily write to the 200th byte of a 64-byte vessel. What gets wrecked depends on what the compiler placed after it, and commonly that is the function’s return address (recall chapter 39′s picture of the stack).</p><p>The modern prescription is to use the editions that take a size — <code>snprintf</code> is representative. And here is a second trap. Functions that take a size <strong>quietly truncate</strong> when it overflows.</p><div><div><p><code>examples/ch69/truncate.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;string.h>
+<h2 id="loc-69">69 Time — <code>&lt;time.h></code></h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 43, Structs · values bundled in a struct</div><div>chapter 56, The terrain of the standard library · the contract the standard settles</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Bringing forward a story to be treated in Part XII: calendar time and elapsed time were said to be different things. Then what is used in standard C to measure exactly “whether three seconds have passed”?</p><div class="qa-a"><p><span class="dev-label">A.</span> With the standard alone there is no way to measure it exactly. <code>time</code> is in seconds and can go backwards when the system adjusts the clock, and <code>clock</code> measures not wall-clock time but <strong>the CPU time the process used</strong> (so it does not grow while waiting for input and output). C11 brought in <code>timespec_get</code> but does not require a monotonic clock. Accurate elapsed measurement is the part of POSIX’s <code>clock_gettime(CLOCK_MONOTONIC, …)</code> or Windows’ <code>QueryPerformanceCounter</code> — that is, of <strong>a platform API</strong>.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">The header the standard settled unusually little of. The standard says neither what <code>time_t</code> is nor how time zones are handled. We look at the traps that arise in those gaps — the year with 1900 subtracted, the month starting from 0, functions that return a static buffer, and the fact that <strong>there is no monotonic clock in the standard for measuring elapsed time</strong>.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why do so many types exist for time — would one count of seconds not do?</li></ol></div></div><div></div><h3>69.1 Three representations of time</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>type or function</strong></th><th><strong>what</strong></th><th><strong>to know</strong></th></tr><tr><td><code>time_t</code></td><td>calendar time (usually seconds since 1970)</td><td>★ the standard settles only “an arithmetic type”</td></tr><tr><td><code>struct tm</code></td><td>split into year, month, day, hour, minute, second</td><td>the field rules are a trap</td></tr><tr><td><code>clock_t</code></td><td>the CPU time the process used</td><td>divide by <code>CLOCKS_PER_SEC</code></td></tr><tr><td><code>struct timespec</code></td><td>seconds + nanoseconds (C11)</td><td><code>timespec_get</code></td></tr></table></div><p class="float-caption">Table 69.1</p></figure><p>That the standard did not settle what <code>time_t</code> is matters. In most implementations it is seconds since 1970-01-01 UTC, but that is <strong>a practice</strong>, not a guarantee of the standard. So portable code does not calculate with <code>time_t</code>’s internal value directly but takes the difference with <code>difftime</code>.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why do so many types exist for time — would one count of seconds not do?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Because three different jobs are involved. <code>time_t</code> is an opaque value naming <strong>one moment</strong>; <code>struct tm</code> is the <strong>calendar notation</strong> people read (year, month, day, hour, minute, second); <code>clock_t</code> is a scale for measuring <strong>elapsed time</strong>. Turning a moment into a calendar is a hard computation full of time zones, daylight saving and leap seconds, so the standard keeps the two in separate types and lets <code>localtime</code> and <code>mktime</code> bridge them.</p><p>The accidents in practice happen exactly at that border — subtracting two <code>time_t</code> values gives seconds, but adding to the fields of a <code>struct tm</code> directly produces an unnormalised date. Date arithmetic must go through <code>mktime</code>.</p></p></div></div><h3>69.2 The traps of <code>struct tm</code></h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch69/timefns.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">time.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 
-/* 흔한 방식: 고정 버퍼에 경로를 조립한다.
-   컴파일러는 이 함수 안에서 dir/name 의 길이를 알 수 없다. */
-static int build_path(char *out, size_t cap, const char *dir, const char *name) {
-    return snprintf(out, cap, "%s/%s", dir, name);   /* 넘치면 조용히 자른다 */
-}
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> A fixed moment is used so the output is the same every time (a reproducible example) </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> tm t <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-n">0</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    t<span class="tok-x">.</span>tm_year <strong><span class="tok-x">=</span></strong> <span class="tok-n">2026</span> <strong><span class="tok-x">-</span></strong> <span class="tok-n">1900</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> * 1900 subtracted </span></em><em><span class="tok-c">*/</span></em>
+    t<span class="tok-x">.</span>tm_mon  <strong><span class="tok-x">=</span></strong> <span class="tok-n">8</span> <strong><span class="tok-x">-</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>         <em><span class="tok-c">/*</span></em><em><span class="tok-c"> * counted from 0 </span></em><em><span class="tok-c">*/</span></em>
+    t<span class="tok-x">.</span>tm_mday <strong><span class="tok-x">=</span></strong> <span class="tok-n">5</span><span class="tok-x">;</span>
+    t<span class="tok-x">.</span>tm_hour <strong><span class="tok-x">=</span></strong> <span class="tok-n">13</span><span class="tok-x">;</span> t<span class="tok-x">.</span>tm_min <strong><span class="tok-x">=</span></strong> <span class="tok-n">45</span><span class="tok-x">;</span> t<span class="tok-x">.</span>tm_sec <strong><span class="tok-x">=</span></strong> <span class="tok-n">30</span><span class="tok-x">;</span>
+    t<span class="tok-x">.</span>tm_isdst <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">-</span></strong><span class="tok-n">1</span><span class="tok-x">;</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> marks that we do not know about daylight saving </span></em><em><span class="tok-c">*/</span></em>
 
-int main(void) {
-    char path[24];
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the trap in the struct fields: tm_year=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (the year 2026), tm_mon=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> (August)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           t</strong><strong><span class="tok-x">.</span></strong><strong>tm_year</strong><strong><span class="tok-x">,</span></strong><strong> t</strong><strong><span class="tok-x">.</span></strong><strong>tm_mon</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    build_path(path, sizeof path, "/var/log", "app.log");
-    printf("fits      : %s\n", path);
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> mktime normalises the values and fills in the day of the week </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> tm norm <strong><span class="tok-x">=</span></strong> t<span class="tok-x">;</span>
+    <strong><span class="tok-t">time_t</span></strong> stamp <strong><span class="tok-x">=</span></strong> <strong>mktime</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>norm</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>dow<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span><span class="tok-s">"</span><span class="tok-s">Sunday</span><span class="tok-s">"</span><span class="tok-x">,</span><span class="tok-s">"</span><span class="tok-s">Monday</span><span class="tok-s">"</span><span class="tok-x">,</span><span class="tok-s">"</span><span class="tok-s">Tuesday</span><span class="tok-s">"</span><span class="tok-x">,</span><span class="tok-s">"</span><span class="tok-s">Wednesday</span><span class="tok-s">"</span><span class="tok-x">,</span><span class="tok-s">"</span><span class="tok-s">Thursday</span><span class="tok-s">"</span><span class="tok-x">,</span><span class="tok-s">"</span><span class="tok-s">Friday</span><span class="tok-s">"</span><span class="tok-x">,</span><span class="tok-s">"</span><span class="tok-s">Saturday</span><span class="tok-s">"</span><span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the weekday mktime filled in: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> (tm_wday=</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           norm</strong><strong><span class="tok-x">.</span></strong><strong>tm_wday</strong><strong> </strong><strong><span class="tok-x">>=</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong> </strong><strong><span class="tok-x">&amp;&amp;</span></strong><strong> norm</strong><strong><span class="tok-x">.</span></strong><strong>tm_wday</strong><strong> </strong><strong><span class="tok-x">&lt;</span></strong><strong> </strong><strong><span class="tok-n">7</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> dow</strong><strong><span class="tok-x">[</span></strong><strong>norm</strong><strong><span class="tok-x">.</span></strong><strong>tm_wday</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">?</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> norm</strong><strong><span class="tok-x">.</span></strong><strong>tm_wday</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    build_path(path, sizeof path, "/var/log/service/http", "access.log");
-    printf("truncated : %s\n", path);
-    printf("            length=%zu, buffer=%zu\n", strlen(path), sizeof path);
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> strftime takes the buffer size and returns 0 if it does not fit </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">char</span></strong> buf<span class="tok-x">[</span><span class="tok-n">64</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">size_t</span></strong> n <strong><span class="tok-x">=</span></strong> <strong>strftime</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%Y-%m-</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> %H:%M:</span></strong><strong><span class="tok-s">%S</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>norm</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">strftime: [</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">] (</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> characters)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> buf</strong><strong><span class="tok-x">,</span></strong><strong> n</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* 잘렸는지 알아내려면 반환값을 보아야 한다 */
-    int need = build_path(path, sizeof path, "/var/log/service/http", "access.log");
-    if (need >= (int)sizeof path)
-        printf("detected  : needed %d bytes, had %zu\n", need + 1, sizeof path);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>fits      : /var/log/app.log
-truncated : /var/log/service/http/a
-            length=23, buffer=24
-detected  : needed 33 bytes, had 24
-</code></pre></div></div><p>Look at the third line. What was to be made was <code>/var/log/service/http/access.log</code>, and what remained in hand is <code>/var/log/service/http/a</code>. The program neither stopped nor warned. If this string is a file path it opens the wrong file, if a command it becomes a different command, if a log the record of an accident is cut without a sound. <strong>A truncated path is not a short path but a wrong path.</strong></p><div class="dev antipattern"><p class="dev-label">✗ Treating truncation as success</p><pre><code data-lang="c">snprintf(path, sizeof path, "%s/%s", dir, name);
-open_file(path);          /* nobody asked whether it was truncated */</code></pre><p><code>snprintf</code> in fact gives the answer — it returns <strong>the length that would have been needed</strong>. If that value is at least the vessel’s size it was truncated (the example’s last line is that check). The problem is that this check is <strong>optional</strong>. Throw the return value away and the compiler says nothing. That leads straight into the second bug.</p></div><div class="dev realcase"><p class="dev-label">◉ The compiler catches only what it can see</p><p>Something that really happened while making this example. At first <code>snprintf</code> was called directly inside <code>main</code> with literal arguments, and gcc caught it.</p><pre><code data-lang="text">error: ‘%s’ directive output truncated writing 10 bytes
-       into a region of size 2 [-Werror=format-truncation=]
-note: ‘snprintf’ output 33 bytes into a destination of size 24</code></pre><p>An excellent diagnosis. Yet moving the same call inside a function called <code>build_path</code> made the warning <strong>vanish</strong>. The moment a function boundary is crossed the compiler cannot know the real lengths of <code>dir</code> and <code>name</code>. In a real program strings come from files or from the network, so cases where the compiler can help are rather rare. A warning is a free review, not a guarantee (chapter 17).</p></div><h3>69.2 Two — there is no device that makes you confirm failure</h3><pre><code data-lang="c">char *p = malloc(n);
-p[0] = 'x';                   /* malloc gives null on failure */</code></pre><p>C’s ways of reporting failure are two. Return a <strong>sentinel value</strong> (null, <code>-1</code>, <code>EOF</code>), or leave the reason in the global variable <code>errno</code>. Neither can compel a check. Code that throws the return value away is perfectly legal, and <code>errno</code> is global state that must be read at exactly the right moment, before the next call overwrites it (chapter 53).</p><div><div><p><code>examples/ch69/unchecked.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdlib.h>
+    <strong><span class="tok-t">char</span></strong> tiny<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">size_t</span></strong> m <strong><span class="tok-x">=</span></strong> <strong>strftime</strong><strong><span class="tok-x">(</span></strong><strong>tiny</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> tiny</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%Y-%m-</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> %H:%M:</span></strong><strong><span class="tok-s">%S</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>norm</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">a small buffer: it returns </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s"> (0 means failure — the contents are unspecified)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> m</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-/* 설정 줄에서 포트 번호를 읽는다 — 실패를 확인하지 않는 판 */
-static int read_port_careless(const char *line) {
-    int port = 8080;              /* 기본값 */
-    sscanf(line, "port=%d", &amp;port);   /* 반환값을 보지 않는다 */
-    return port;
-}
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> date arithmetic is done with mktime, not by subtracting seconds </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">struct</span></strong> tm plus <strong><span class="tok-x">=</span></strong> norm<span class="tok-x">;</span>
+    plus<span class="tok-x">.</span>tm_mday <strong><span class="tok-x">+=</span></strong> <span class="tok-n">30</span><span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 30 days later — mktime tidies it up even across a month boundary </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">time_t</span></strong> later <strong><span class="tok-x">=</span></strong> <strong>mktime</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>plus</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>strftime</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%Y-%m-</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>plus</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">30 days later: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> buf</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">difftime: </span></strong><strong><span class="tok-s">%.0f</span></strong><strong><span class="tok-s"> seconds</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>difftime</strong><strong><span class="tok-x">(</span></strong><strong>later</strong><strong><span class="tok-x">,</span></strong><strong> stamp</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-/* 같은 일 — 실패를 확인하는 판 */
-static int read_port_checked(const char *line, int fallback) {
-    int port;
-    if (sscanf(line, "port=%d", &amp;port) != 1) {
-        printf("  (parse failed, keeping %d)\n", fallback);
-        return fallback;
-    }
-    return port;
-}
-
-int main(void) {
-    const char *good = "port=9000";
-    const char *typo = "prot=9000";     /* 오타 */
-
-    printf("careless good: %d\n", read_port_careless(good));
-    printf("careless typo: %d\n", read_port_careless(typo));
-    printf("checked  typo: %d\n", read_port_checked(typo, 8080));
-
-    /* strtol 도 마찬가지다: 실패를 값으로 알리지만 아무도 강제하지 않는다 */
-    long n = strtol("abc", nullptr, 10);
-    printf("strtol(\"abc\") = %ld\n", n);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>careless good: 9000
-careless typo: 8080
-  (parse failed, keeping 8080)
-checked  typo: 8080
-strtol("abc") = 0
-</code></pre></div></div><p>That <code>careless typo</code> returned 8080 is this section’s heart. There was a typo in the configuration and the program <strong>quietly fell back to the default</strong>. On the surface nothing happened, and months later only the question “why is the setting not taking effect?” remains. That <code>strtol("abc")</code> gives 0 is the same pattern — failure and “a real 0” come back as the same value.</p><div class="dev misconception"><p class="dev-label">⚠ “Failure is exceptional, so it can be handled later”</p><p>The premise that failure is rare is wrong to begin with. A file may not exist, input carries typos, disks fill, networks break — every place where the program touches the outside world is a point of failure. And the real reason “later” is dangerous lies elsewhere. Code that ignored a failure <strong>does not stop but keeps running</strong>. A wrong value flows into the next calculation, into the function after that, and by the time the problem finally shows itself it blows up far from its cause. Chapter 45′s “fail early” returns here.</p></div><h3>69.3 Three — <code>printf</code> believes exactly what you tell it</h3><p>Chapter 53 took the grammar of the format string apart. That grammar has one structural weakness — <strong>the type is written twice</strong>. Once in the format (<code>%d</code>) and once in the argument (the variable’s type). If the two go out of step the language cannot prevent it, because as seen in chapter 50 type information does not ride along into variadic arguments.</p><p>Today’s compilers catch this. The real message is like this.</p><pre><code data-lang="text">warning: format ‘%d’ expects argument of type ‘int’,
-         but argument 2 has type ‘double’ [-Wformat=]
-    3 |     printf("%d\n", 3.0);
-      |             ~^     ~~~
-      |              |     |
-      |              int   double</code></pre><p>But only this far. The moment the format becomes a <strong>variable</strong> — the moment a multilingual message is taken from a table or a log format is received from a configuration — the compiler has nothing left to look at.</p><div class="dev antipattern"><p class="dev-label">✗ Code that takes the format as a variable</p><pre><code data-lang="c">const char *fmt = load_message("greeting");   /* a format taken from a table */
-printf(fmt, count);                           /* no warning. no check either */</code></pre><p>Not a single warning comes from this code. Because a way of knowing whether format and arguments match does not exist at compile time. Worst is when the format is <strong>user input</strong>, which becomes the format string vulnerability seen in chapter 53.</p></div><h3>69.4 Four — who frees this</h3><pre><code data-lang="c">char *s = build_message();    /* must this be freed? the type says nothing */</code></pre><p>As learned in chapter 40, dynamically taken memory must be released by somebody exactly once. Yet a <code>char *</code> a function returned may be any of four things.</p><ul><li>Just allocated — it must be freed.</li><li>Pointing at a buffer the caller gave — it must not be freed.</li><li>A string literal in a read-only place — freeing it is an accident.</li><li>A static buffer the next call will overwrite — it must neither be freed nor held for long (chapter 53′s <code>strtok</code> was such).</li></ul><p>The types of the four cases are <strong>all the same</strong>. The answer is in the documentation, and documentation goes out of step with code as a matter of course. Here arise chapter 40′s three accidents — a leak (nobody frees), a double free (both free), and use after free (somebody still points at it after freeing).</p><div class="dev antipattern"><p class="dev-label">✗ An API whose type does not state ownership</p><pre><code data-lang="c">const char *lookup(int code);        /* a literal? an allocation? a static buffer? */
-char       *format_time(time_t t);   /* must this be freed? */</code></pre><p>It cannot be known from the name and type alone. <strong>Every place</strong> that uses this API must remember the documentation, and if even one forgets it becomes one of the three accidents above. That the discipline is entrusted to human memory is the essence of the problem.</p></div><h3>69.5 Five — a callback nobody can type-check for you</h3><pre><code data-lang="c">qsort(a, n, sizeof *a, cmp);   /* cmp takes const void* */</code></pre><p><code>qsort</code> takes a comparison function through a <code>void *</code> interface in order to sort any type. In a language with no generics this is nearly the only way, but the price is <strong>the complete abandonment of type checking</strong>. Whatever you cast to inside the comparator, the compiler believes you.</p><div><div><p><code>examples/ch69/cmp_bad.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdlib.h>
-#include &lt;string.h>
-
-/* 반례: 첫 글자만 비교한다. 타입은 완벽하게 맞고, 경고도 없다 */
-static int cmp_first_char(const void *a, const void *b) {
-    const char *const *x = a;
-    const char *const *y = b;
-    return (*x)[0] - (*y)[0];
-}
-
-/* 정례: 문자열 전체를 비교한다 */
-static int cmp_full(const void *a, const void *b) {
-    const char *const *x = a;
-    const char *const *y = b;
-    return strcmp(*x, *y);
-}
-
-static void show(const char *label, const char **v, size_t n) {
-    printf("%s:", label);
-    for (size_t i = 0; i &lt; n; i++) printf(" %s", v[i]);
-    printf("\n");
-}
-
-int main(void) {
-    const char *src[] = {"pear", "apple", "peach", "apricot"};
-    const char *v[4];
-    size_t n = sizeof src / sizeof src[0];
-
-    memcpy(v, src, sizeof src);
-    qsort(v, n, sizeof v[0], cmp_first_char);
-    show("first-char", v, n);
-
-    memcpy(v, src, sizeof src);
-    qsort(v, n, sizeof v[0], cmp_full);
-    show("full      ", v, n);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>first-char: apple apricot pear peach
-full      : apple apricot peach pear
-</code></pre></div></div><p>The <code>first-char</code> comparator’s types match perfectly, it compiles without a single warning, and it does not die. It is only that <code>peach</code> and <code>pear</code> are in the wrong order — seeing only the first letter, the two were judged “equal” and the rest was left to chance. This class of bug is found last of all, because it gives <strong>a quietly wrong answer</strong>.</p><div class="dev realcase"><p class="dev-label">◉ Attacks aiming at a data structure’s worst case</p><p>There is a performance trap in the same place. Widely used sorting and hashing implementations are fast on average but slow down sharply on particular inputs, and the technique of an attacker deliberately making such inputs to paralyse a server (an algorithmic complexity attack) was organised in a 2003 paper and used in real attacks. Attacks of the same family aiming at hash collisions brought down several web frameworks at once in 2011. They were events showing that a data structure’s <strong>worst case</strong> is itself a security problem, and so today’s libraries take as their defaults sorting with a guarantee even in the worst case (introsort) and hashes using a random seed — we see them in the flesh in chapter 76.</p></div><h3>69.6 And a sixth — bytes have types</h3><p>We said five, but one more must be added to be fair. It is the strict aliasing seen in chapter 13. A hand-written parser that peers into a byte buffer through pointers of different widths runs perfectly at <code>-O0</code> and quietly gives a different answer at <code>-O2</code>. It is the representative of the “bug that appears only in release” seen in chapter 17, and the clause to which the Linux kernel surrendered with a single flag.</p><p>Gathering the six into one table gives this part’s map.</p><div class="dev recap"><p class="dev-label">☰ Recap</p><table><tr><th><strong>problem</strong></th><th><strong>what C gives</strong></th><th><strong>what is needed</strong></th></tr><tr><td>buffer overflow and truncation</td><td>string functions that do not know the size</td><td>strings that carry their length, writes that do not truncate</td></tr><tr><td>unconfirmed failure</td><td>sentinel values and <code>errno</code></td><td>errors that come as values, a compile refusal if discarded</td></tr><tr><td>format mismatch</td><td>a <code>printf</code> that believes the format string</td><td>placeholders that take the type from the argument</td></tr><tr><td>unclear ownership</td><td>a <code>char *</code> that means four things</td><td>different types for owning and borrowing</td></tr><tr><td>unchecked callbacks</td><td>the <code>void *</code> interface</td><td>documented contracts and worst-case-guaranteed algorithms</td></tr><tr><td>the hidden type of bytes</td><td>UB on breaking the aliasing rule</td><td>a byte type the rule exempts</td></tr></table></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Would it not be better to use another language entirely to avoid such problems?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>That too is an answer, and many places really went that road (chapter 1). But the places where C must be used still remain — operating systems, firmware, the floor layer other languages lean on, and projects where decades of code have already piled up. What can be done in such places is <strong>not to change the language but to change the shape of the API</strong>. The right-hand column of the table above is not a list of items requiring a new language but things that can be made by design within C. From the next chapter we see that design.</p></div></div><p>The library that implements that right-hand column as it stands is the proven this book has leaned on. We first met it in chapter 38 and its name has come up a few times since, but treating it head on begins now. The next chapter is installation and a first program — and why this library has the shape of “nothing to install”.</p>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> for measuring elapsed time use clock() or the platform's monotonic clock </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-t">clock_t</span></strong> c0 <strong><span class="tok-x">=</span></strong> <strong>clock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">volatile</span></strong> <strong><span class="tok-t">long</span></strong> acc <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">long</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">1000000</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> acc <strong><span class="tok-x">+=</span></strong> i<span class="tok-x">;</span>
+    <strong><span class="tok-t">clock_t</span></strong> c1 <strong><span class="tok-x">=</span></strong> <strong>clock</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">time measured with clock(): </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">double</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>c1 </strong><strong><span class="tok-x">-</span></strong><strong> c0</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">/</span></strong><strong> CLOCKS_PER_SEC </strong><strong><span class="tok-x">>=</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">.</span></strong><strong><span class="tok-n">0</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">measured (the value differs by machine)</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">?</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>the trap in the struct fields: tm_year=126 (the year 2026), tm_mon=7 (August)
+the weekday mktime filled in: Wednesday (tm_wday=3)
+strftime: [2026-08-05 13:45:30] (19 characters)
+a small buffer: it returns 0 (0 means failure — the contents are unspecified)
+30 days later: 2026-09-04
+difftime: 2592000 seconds
+time measured with clock(): measured (the value differs by machine)
+</code></pre></div></div><p>Two fields are famous traps.</p><ul><li><code>tm_year</code> is <strong>the value with 1900 subtracted</strong>. 2026 is 126.</li><li><code>tm_mon</code> is <strong>from 0</strong>. August is 7.</li></ul><p>With <code>tm_mday</code> (from 1), <code>tm_wday</code> (Sunday is 0) and <code>tm_yday</code> (from 0) the rules are all different, so when filling them by hand it is better to keep a table beside you.</p><p><code>mktime</code> does two things — it turns a <code>struct tm</code> into a <code>time_t</code>, and it <strong>normalises the struct</strong>. In the example, adding 30 to <code>tm_mday</code> exceeded the range and yet it was tidied into 4 September thanks to that. Not doing date arithmetic yourself but using this property is the canonical way.</p><p><code>tm_isdst</code> is easy to forget too. Putting in −1 means “I do not know, judge for yourself”, and putting 0 or 1 in wrongly puts you an hour out.</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Carrying around the result of <code>localtime</code></p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> tm <strong><span class="tok-x">*</span></strong>a <strong><span class="tok-x">=</span></strong> <strong>localtime</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>t1</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-t">struct</span></strong> tm <strong><span class="tok-x">*</span></strong>b <strong><span class="tok-x">=</span></strong> <strong>localtime</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>t2</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> what a pointed at has been overwritten </span></em><em><span class="tok-c">*/</span></em>
+<strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> a</strong><strong><span class="tok-x">-></span></strong><strong>tm_hour</strong><strong><span class="tok-x">,</span></strong><strong> b</strong><strong><span class="tok-x">-></span></strong><strong>tm_hour</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> both are t2's time </span></em><em><span class="tok-c">*/</span></em></code></pre><p><code>localtime</code>, <code>gmtime</code>, <code>ctime</code> and <code>asctime</code> return <strong>an internal static buffer</strong> (those functions chapter 56 brushed past by name only). The next call overwrites the previous result, and in a program running along several strands they wreck each other’s results.</p><p>There are two prescriptions. <strong>Copy it</strong> immediately on receipt, or use the edition in which the caller gives the buffer (<code>localtime_r</code> and <code>gmtime_r</code> are POSIX, <code>localtime_s</code> is annex K and MSVC). To keep portability with the standard alone, copying is the right answer.</p></div><h3>69.3 Printing to a string — <code>strftime</code></h3><p>Unlike <code>printf</code>, <code>strftime</code> takes the buffer size and <strong>returns 0 if it does not fit</strong>. The example’s small buffer is that case. If the return value is 0 the buffer’s content is undetermined, so it must not be used.</p><p><code>asctime</code> and <code>ctime</code> are better not used. Besides returning a static buffer, the form is fixed (<code>"Wed Aug<span style="white-space: pre-wrap">&#x20;&#x20;</span>5 13:45:30 2026\n"</code>) and it can overflow when the year exceeds four digits, so C23 marked them for retirement.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>specifier</strong></th><th><strong>meaning</strong></th><th><strong>note</strong></th></tr><tr><td><code>%Y</code>, <code>%m</code>, <code>%d</code></td><td>year, month, day</td><td>the ISO date is <code>%Y-%m-%d</code></td></tr><tr><td><code>%H</code>, <code>%M</code>, <code>%S</code></td><td>hour, minute, second</td><td>24-hour</td></tr><tr><td><code>%F</code>, <code>%T</code></td><td><code>%Y-%m-%d</code>, <code>%H:%M:%S</code></td><td>C99</td></tr><tr><td><code>%z</code>, <code>%Z</code></td><td>time-zone offset and name</td><td>locale- and platform-dependent</td></tr><tr><td><code>%s</code></td><td>epoch seconds</td><td>★ not standard (a POSIX extension)</td></tr><tr><td><code>%c</code>, <code>%x</code>, <code>%X</code></td><td>locale notation</td><td>for humans. not used for machines</td></tr></table></div><p class="float-caption">Table 69.2</p></figure><h3>69.4 Time zones and summer time — what the standard does not handle</h3><p>The time zones standard C knows are only two, “local” and “UTC”, and there is not even a standard way to <strong>change</strong> the local time zone (POSIX’s <code>TZ</code> environment variable is the practice). To handle an arbitrary time zone a library is needed.</p><p>Summer time is trickier still. On a transition day there arise times that do not exist (the hour skipped in spring) and times that exist twice (the hour repeated in autumn). What <code>mktime</code> returns when given such input is settled by the implementation.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Real accidents time has called down</p><p>Time is a regular in quiet accidents. In 2012 and 2015, when <strong>leap seconds</strong> were inserted, several server programs burned CPU at 100% or froze — because kernels and applications had not assumed a situation in which “one second comes twice”.</p><p>The limit of a <strong>32-bit <code>time_t</code></strong> overflows on 19 January 2038 (the day chapter 26′s overflow appears on a worldwide scale). In embedded and old systems it is an ongoing task even now, and so the transition to a 64-bit <code>time_t</code> has long been under way.</p><p><strong>Code that measures elapsed time in local time</strong> loses or gains an hour on every summer-time transition day. A log’s timestamps go backwards, a timeout becomes an hour long, a scheduler runs the same job twice. The prescription is always the same — <strong>a monotonic clock for elapsed time, UTC for records, local time only when showing it to a human</strong>.</p></div><div class="dev recap"><p class="dev-label">Recap</p><p>Time in summary.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>what you want to do</strong></th><th><strong>what to use</strong></th><th><strong>what to beware of</strong></th></tr><tr><td>the current time</td><td><code>time(NULL)</code></td><td>in seconds. it can go backwards</td></tr><tr><td>splitting it up</td><td><code>localtime</code>/<code>gmtime</code> + <strong>copy at once</strong></td><td>the static buffer</td></tr><tr><td>date arithmetic</td><td>add to the fields and <code>mktime</code></td><td>do not calculate seconds by hand</td></tr><tr><td>to a string</td><td><code>strftime</code></td><td>a return of 0 = failure</td></tr><tr><td>difference</td><td><code>difftime</code></td><td><code>t2 - t1</code> is not portable</td></tr><tr><td>measuring elapsed time</td><td>the platform’s monotonic clock</td><td><code>time</code> and <code>localtime</code> forbidden</td></tr><tr><td>storing and transmitting</td><td>UTC + ISO 8601</td><td>do not store local time</td></tr><tr><td>not to be used</td><td><code>asctime</code>, <code>ctime</code></td><td>static buffer, fixed form, to be retired in C23</td></tr></table></div><p class="float-caption">Table 69.3</p></figure></div><p>We have passed time. The next chapter is the tools used when a program <strong>has gone wrong</strong> — error numbers, assertions, signals, and non-local jumps.</p>
 <div class="nav"><a href="ch68.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch70.html">Next →</a></div>
 </div></main></body></html>

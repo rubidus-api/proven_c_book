@@ -163,7 +163,7 @@ same too.
   And if the address is not aligned, a strict machine dies on the spot.
 
   Some codebases quiet the compiler with `-fno-strict-aliasing` (the Linux kernel
-  does), but that is *paying with a whole level of optimization*. In new code, use
+  does), but that is *paying with a whole level of optimisation*. In new code, use
   `memcpy`.
 ]
 

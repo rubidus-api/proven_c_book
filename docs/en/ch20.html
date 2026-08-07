@@ -3,9 +3,13 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>20 Expressions — the things that become values — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,22 +259,26 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch19.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch21.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch20.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>20 Expressions — the things that become values</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>We go inside the statement. How to write values in source code (literals), how to weave values into calculations (operators and expressions), and the order of calculation (precedence and parentheses) — but, following this book’s principle, only the minimal set: addition, subtraction, multiplication and parentheses. That alone takes us surprisingly far.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapters 7 and 8 taught how to hold numbers <strong>in the machine</strong> (two’s complement, IEEE 754). So when a number is written <strong>in source code</strong> — when you write <code>12</code>, say — when does it become the machine’s bits?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>At compile time. The <code>12</code> in the source is just two characters (in the terms of chapter 9, the characters <code>1</code> and <code>2</code>), and the compiler reads it, translates it into a two’s-complement bit pattern and plants it in the executable. A notation for a value written in source is called a <strong>literal</strong> — meaning “as the letters say.” That the bridge between the world of letters and the world of bits is the compiler — chapter 16′s relay is at work here too.</p></div></div><h3>20.1 Literals — values written in source</h3><p>We have met literals several times already. The <code>0</code> of hello world is an integer literal, and <code>"Hello, world!\n"</code> is a <strong>string literal</strong> — the characters inside the quotation marks become a value “as they are.” Add a decimal point to an integer literal (<code>3.5</code>) and it becomes a floating-point value from chapter 8.</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then if I write <code>0.1</code> in the source, does the machine hold exactly 0.1?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>It does not — exactly as chapter 8 taught. The compiler translates the literal <code>0.1</code> into its <strong>nearest neighbour</strong> (<code>3FB9 9999 9999 999A</code>). A literal is “a notation writing the value as it is”, but if that value is not on the grid of representable numbers, the approximation has already happened at translation. Writing it in the source does not make it exact — chapter 8′s lesson holds in the world of source code too.</p></div></div><h3>20.2 Expressions — the things that are evaluated into values</h3><p>Weave literals together with operators and you have an <strong>expression</strong>, as in <code>2 + 3 * 4</code>. The definition takes one sentence — <strong>that which is calculated (evaluated) into a value.</strong> This property of “becoming a value” is the whole of an expression, and half of the eye for reading C from here on. Wherever a value is needed in code, an expression may go there — a single literal is the simplest expression of all.</p><p>This chapter has only four operators — plus <code>+</code>, minus <code>-</code>, times <code>*</code>, and parentheses <code>( )</code>. Following this book’s spiral principle, the remaining operators join in the chapters where they become necessary (comparison in chapter 29, division in chapter 27 — why division was put off, in a moment).</p><p>Here is the demonstration. The <code>%d</code> in the example below is a mark meaning “print an integer value here in decimal”; its formal explanation is in chapter 22 — for now it is only a window for seeing results.</p><div><div><p><code>examples/ch20/expr.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+<h2 id="loc-20">20 Expressions — the things that become values</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 7, Representing integers · the representation of integers</div><div>chapter 19, The structure of a program · where statements and expressions sit</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapters 7 and 8 taught how to hold numbers <strong>in the machine</strong> (two’s complement, IEEE 754). So when a number is written <strong>in source code</strong> — when you write <code>12</code>, say — when does it become the machine’s bits?</p><div class="qa-a"><p><span class="dev-label">A.</span> At compile time. The <code>12</code> in the source is just two characters (in the terms of chapter 9, the characters <code>1</code> and <code>2</code>), and the compiler reads it, translates it into a two’s-complement bit pattern and plants it in the executable. A notation for a value written in source is called a <strong>literal</strong> — meaning “as the letters say.” That the bridge between the world of letters and the world of bits is the compiler — chapter 16′s relay is at work here too.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">We go inside the statement. How to write values in source code (literals), how to weave values into calculations (operators and expressions), and the order of calculation (precedence and parentheses) — but, following this book’s principle, only the minimal set: addition, subtraction, multiplication and parentheses. That alone takes us surprisingly far.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Then if I write <code>0.1</code> in the source, does the machine hold exactly 0.1?</li><li>Why was division put off? Leaving one of the four operations out feels odd.</li><li>Is <code>printf("hello")</code> a value too? A function call is written in the position of an expression.</li></ol></div></div><div></div><h3>20.1 Literals — values written in source</h3><p>We have met literals several times already. The <code>0</code> of hello world is an integer literal, and <code>"Hello, world!\n"</code> is a <strong>string literal</strong> — the characters inside the quotation marks become a value “as they are.” Add a decimal point to an integer literal (<code>3.5</code>) and it becomes a floating-point value from chapter 8.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Then if I write <code>0.1</code> in the source, does the machine hold exactly 0.1?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> It does not — exactly as chapter 8 taught. The compiler translates the literal <code>0.1</code> into its <strong>nearest neighbour</strong> (<code>3FB9 9999 9999 999A</code>). A literal is “a notation writing the value as it is”, but if that value is not on the grid of representable numbers, the approximation has already happened at translation. Writing it in the source does not make it exact — chapter 8′s lesson holds in the world of source code too.</p></div></div><h3>20.2 Expressions — the things that are evaluated into values</h3><p>Weave literals together with operators and you have an <strong>expression</strong>, as in <code>2 + 3 * 4</code>. The definition takes one sentence — <strong>that which is calculated (evaluated) into a value.</strong> This property of “becoming a value” is the whole of an expression, and half of the eye for reading C from here on. Wherever a value is needed in code, an expression may go there — a single literal is the simplest expression of all.</p><p>This chapter has only four operators — plus <code>+</code>, minus <code>-</code>, times <code>*</code>, and parentheses <code>( )</code>. Following this book’s spiral principle, the remaining operators join in the chapters where they become necessary (comparison in chapter 29, division in chapter 27 — why division was put off, in a moment).</p><p>Here is the demonstration. The <code>%d</code> in the example below is a mark meaning “print an integer value here in decimal”; its formal explanation is in chapter 22 — for now it is only a window for seeing results.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch20/expr.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
-int main(void)
-{
-    printf("%d\n", 2 + 3 * 4);    /* 곱셈이 먼저 계산된다 */
-    printf("%d\n", (2 + 3) * 4);  /* 괄호가 순서를 명시한다 */
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>14
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the multiplication is computed first </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">2</span></strong><strong> </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> the parentheses state the order </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>14
 20
-</code></pre></div></div><h3>20.3 Order — precedence, and the practice of parentheses</h3><p>The first line of the demonstration is 14 because the multiplication was calculated <strong>before</strong> the addition. Exactly the convention of the mathematics lesson, and C has fixed such a ranking of “who goes first” — <strong>precedence</strong> — for every operator.</p><p>Here we state this book’s recommendation in advance. <strong>Do not memorise the precedence table; use parentheses.</strong> C has dozens of operators and the ranking table runs to more than fifteen rows — even people who have memorised it all get confused and cause accidents. Make the order explicit with parentheses, as in the second line, and there is nothing to memorise and nothing to misread. The full table is in the appendix as reference material; the text goes with “arithmetic by the mathematical convention, parentheses everywhere else.”</p><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Why was division put off? Leaving one of the four operations out feels odd.</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Because integer division <strong>differs from division in mathematics</strong>. In C <code>7 / 2</code> is not 3.5 but 3 — division between integers is the quotient with the fractional part discarded, and it only makes sense understood as a set with its partner operator <code>%</code> (remainder). Including the exact rule of that discarding (which way it goes for negative numbers), it is a subject worth treating properly on top of chapter 7′s world of integers, so it has been given a place in chapter 27. Better to treat it squarely, all at once, than to introduce it half-heartedly now and create the misconception “I thought 7/2 was 3.5.”</p></div></div><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Is <code>printf("hello")</code> a value too? A function call is written in the position of an expression.</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Good eye — it is. Calling a function is itself an expression, and therefore becomes a value. What that value is and where it goes is exactly the next chapter’s subject. That one question has already half-opened the next chapter’s door.</p></div></div><h3>20.4 One caution planted early — the order in time may differ</h3><p>About precedence there is one caution to plant as a seed. Precedence is a rule of <strong>binding</strong> — who is whose <strong>material</strong> — not of <strong>what the machine calculates first in time</strong>. Which of the left and right materials of an addition is calculated first, for instance, is not fixed by the standard and <strong>may differ between compilers</strong>. In an expression like <code>2 + 3</code> it does not matter at all, but when calculating a material leaves a trace such as output, the order of those traces may differ.</p><p>Be reassured on one point, though — the order <strong>between statements</strong> is guaranteed absolutely. Chapter 19′s “one statement at a time, top to bottom” is a contract. What can waver is only the inside of a single statement, and the exact rules there (side effects, the notion of sequence points) are faced head on in chapter 32, once more material is in place. For now one practical rule suffices: <strong>do not cram order-sensitive work into one statement; split the statements.</strong></p><p>To summarise — a notation writing a value in source is a literal, that which is evaluated into a value is an expression, and the order of binding is governed by arithmetic convention and parentheses, while the order in time inside one statement may differ. In the next chapter we learn the most important device that <strong>consumes and produces</strong> values — how to call a function. Hello world’s heart, <code>printf(...)</code>, is finally treated head on.</p>
+</code></pre></div></div><h3>20.3 Order — precedence, and the practice of parentheses</h3><p>The first line of the demonstration is 14 because the multiplication was calculated <strong>before</strong> the addition. Exactly the convention of the mathematics lesson, and C has fixed such a ranking of “who goes first” — <strong>precedence</strong> — for every operator.</p><p>Here we state this book’s recommendation in advance. <strong>Do not memorise the precedence table; use parentheses.</strong> C has dozens of operators and the ranking table runs to more than fifteen rows — even people who have memorised it all get confused and cause accidents. Make the order explicit with parentheses, as in the second line, and there is nothing to memorise and nothing to misread. The full table is in the appendix as reference material; the text goes with “arithmetic by the mathematical convention, parentheses everywhere else.”</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why was division put off? Leaving one of the four operations out feels odd.</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Because integer division <strong>differs from division in mathematics</strong>. In C <code>7 / 2</code> is not 3.5 but 3 — division between integers is the quotient with the fractional part discarded, and it only makes sense understood as a set with its partner operator <code>%</code> (remainder). Including the exact rule of that discarding (which way it goes for negative numbers), it is a subject worth treating properly on top of chapter 7′s world of integers, so it has been given a place in chapter 27. Better to treat it squarely, all at once, than to introduce it half-heartedly now and create the misconception “I thought 7/2 was 3.5.”</p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Is <code>printf("hello")</code> a value too? A function call is written in the position of an expression.</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Good eye — it is. Calling a function is itself an expression, and therefore becomes a value. What that value is and where it goes is exactly the next chapter’s subject. That one question has already half-opened the next chapter’s door.</p></div></div><h3>20.4 One caution planted early — the order in time may differ</h3><p>About precedence there is one caution to plant as a seed. Precedence is a rule of <strong>binding</strong> — who is whose <strong>material</strong> — not of <strong>what the machine calculates first in time</strong>. Which of the left and right materials of an addition is calculated first, for instance, is not fixed by the standard and <strong>may differ between compilers</strong>. In an expression like <code>2 + 3</code> it does not matter at all, but when calculating a material leaves a trace such as output, the order of those traces may differ.</p><p>Be reassured on one point, though — the order <strong>between statements</strong> is guaranteed absolutely. Chapter 19′s “one statement at a time, top to bottom” is a contract. What can waver is only the inside of a single statement, and the exact rules there (side effects, the notion of sequence points) are faced head on in chapter 32, once more material is in place. For now one practical rule suffices: <strong>do not cram order-sensitive work into one statement; split the statements.</strong></p><p>To summarise — a notation writing a value in source is a literal, that which is evaluated into a value is an expression, and the order of binding is governed by arithmetic convention and parentheses, while the order in time inside one statement may differ. In the next chapter we learn the most important device that <strong>consumes and produces</strong> values — how to call a function. Hello world’s heart, <code>printf(...)</code>, is finally treated head on.</p>
 <div class="nav"><a href="ch19.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch21.html">Next →</a></div>
 </div></main></body></html>

@@ -46,7 +46,7 @@ will do.
   [TI Arm Clang (`tiarmclang`)], [TI's Arm cores], [free. Clang-based, with TI extensions],
   [MPLAB XC8 / XC-DSC / XC32], [Microchip PIC, AVR, SAM], [usable free of charge. XC32 covers Arm and MIPS],
   [Renesas CC-RX / CC-RL], [Renesas RX, RL78], [commercial. Renesas chips only],
-  [Green Hills Optimizing Compilers], [Arm, PowerPC, RISC-V and others], [commercial. a long-standing power in the safety market],
+  [Green Hills Optimising Compilers], [Arm, PowerPC, RISC-V and others], [commercial. a long-standing power in the safety market],
   [Wind River Diab], [Arm, PowerPC and others], [commercial. aerospace and automotive certification],
   [SDCC], [8051, STM8, Z80, 6502, PDK and other 8-bit], [free software. the standard for small chips],
   [`arm-none-eabi-gcc` and other GCC ports], [Arm, RISC-V, AVR, MSP430 …], [free software. the default inside vendor SDKs],

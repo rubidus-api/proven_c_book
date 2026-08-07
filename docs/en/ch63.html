@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>63 What the new standards added, and the *_s controversy — Proven C Book</title><style>
+<title>63 Locales ① — a program’s regional settings — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,62 +259,109 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch62.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch64.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch63.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>63 What the new standards added, and the <code>*_s</code> controversy</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The last chapter of this part. We skim the headers C99, C11 and C23 added to the standard library, and then see the whole story of this language’s most famous failed attempt — annex K, which tried to bring “safe functions” into the standard. Why <code>gets_s</code> and <code>strcpy_s</code> are not widely used, and what is different about Microsoft’s functions of the same names.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 54 said the speed at which headers grow is the same as the language’s speed of change, and chapter 56 said <code>gets</code>’s funeral took twenty years. Then where are the “safe functions” the standard brought in to fill that place?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Mostly <strong>nowhere</strong>. C11 brought in dozens of functions such as <code>gets_s</code> and <code>strcpy_s</code> as annex K, but it was <strong>optional</strong> and the major implementations refused to adopt it. What was confirmed on the machine that made this book is the same — the “annex K: not present in this implementation” the example printed. The latter part of this chapter is that story.</p></div></div><h3>63.1 What C99 added</h3><table><tr><th><strong>header</strong></th><th><strong>what</strong></th><th><strong>its position today</strong></th></tr><tr><td><code>&lt;stdint.h></code></td><td>fixed-width integers (<code>int32_t</code> and so on)</td><td>effectively compulsory. chapter 26</td></tr><tr><td><code>&lt;inttypes.h></code></td><td>the format macros for those types</td><td>the <code>PRId32</code> family. appendix B</td></tr><tr><td><code>&lt;stdbool.h></code></td><td><code>bool</code>, <code>true</code>, <code>false</code></td><td>unnecessary, having become keywords in C23</td></tr><tr><td><code>&lt;complex.h></code></td><td>complex numbers</td><td>optional. support is uneven</td></tr><tr><td><code>&lt;fenv.h></code></td><td>the floating-point environment</td><td>chapter 60</td></tr><tr><td><code>&lt;tgmath.h></code></td><td>type-generic mathematics</td><td>chapter 60</td></tr></table><p><code>&lt;stdint.h></code> is this list’s winner. A standard way to express “exactly 32 bits” finally arose, and the practice of every project keeping its own <code>typedef</code> until then was tidied away.</p><h3>63.2 What C11 added</h3><table><tr><th><strong>header</strong></th><th><strong>what</strong></th><th><strong>its position today</strong></th></tr><tr><td><code>&lt;stdatomic.h></code></td><td>atomic operations and memory orders</td><td>the foundation of concurrency. chapter 12′s story</td></tr><tr><td><code>&lt;threads.h></code></td><td>threads, mutexes, condition variables</td><td>★ adoption is slow — pthreads are usually used</td></tr><tr><td><code>&lt;stdalign.h></code></td><td><code>alignas</code>, <code>alignof</code></td><td>keywords in C23</td></tr><tr><td><code>&lt;stdnoreturn.h></code></td><td><code>noreturn</code></td><td>to be retired in C23, in favour of <code>[[noreturn]]</code></td></tr><tr><td><code>&lt;uchar.h></code></td><td><code>char16_t</code>, <code>char32_t</code></td><td>chapter 59</td></tr></table><p><code>&lt;threads.h></code>‘s circumstance is interesting. Though it is in the standard, glibc long did not provide it, so portable code still uses POSIX threads. It is a case showing that <strong>entering the standard and becoming usable are different things</strong>.</p><h3>63.3 What C23 added</h3><div><div><p><code>examples/ch63/newheaders.c</code></p><pre><code data-lang="c">#define __STDC_WANT_LIB_EXT1__ 1
-#include &lt;stdio.h>
-#include &lt;string.h>
-#include &lt;stdint.h>
-#include &lt;stdckdint.h>
-#include &lt;stdalign.h>
-#include &lt;stddef.h>
+<h2 id="loc-63">63 Locales ① — a program’s regional settings</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 62, Character classification · that the judgement depends on the locale</div><div>chapter 50, The three faces of <code>main</code> · environment variables</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 62 said the answer <code>isalpha</code> gives depends on “the current locale”. But I have never set a locale. What does it mean for an answer to depend on something I never set?</p><div class="qa-a"><p><p><span class="dev-label">A.</span> <strong>Because one is already settled even if you set nothing.</strong> The standard fixes that too — at program startup the state is as if <code>setlocale(LC_ALL, "C")</code> had been called (§7.11.1.1p4). So a program that does nothing runs in the minimal environment called the C locale.</p><p>A locale is <strong>the device by which settings outside the program change behaviour inside it.</strong> It is what makes one executable print <code>2026년 8월 6일</code> in Seoul, <code>06.08.2026</code> in Berlin, and <code>3,14</code> from <code>printf("%f")</code>. This chapter is about the names and rules of that device; the next is about what it changes.</p></p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-98"></span>What a locale is, from the ground up. Why it exists, what the six categories divide, the exact contract of <code>setlocale</code>, by what rule and which international standards a name like <code>ko_KR.UTF-8</code> is built, the precedence of the environment variables, and where on the machine that data lives.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Is a locale translation?</li><li>May categories be mixed?</li><li>Which standard fixes this grammar?</li></ol></div></div><div></div><h3>63.1 Why it exists — conventions differ by country</h3><p>When a program shows something to a person, there is not one “correct” way to write it.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>What</strong></th><th><strong>Korea</strong></th><th><strong>Germany</strong></th></tr><tr><td>Decimal point</td><td><code>3.14</code></td><td><code>3,14</code></td></tr><tr><td>Thousands</td><td><code>1,234,567</code></td><td><code>1.234.567</code></td></tr><tr><td>Date</td><td><code>2026년 8월 6일</code></td><td><code>06.08.2026</code></td></tr><tr><td>Currency</td><td><code>₩1,234</code></td><td><code>1.234,00 €</code></td></tr><tr><td>Sorting</td><td>Hangul order</td><td><code>ä</code> filed with <code>a</code></td></tr></table></div><p class="float-caption">Table 63.1</p></figure><p>Writing this out by hand in every program multiplies the code by the number of countries. So Unix and C took another road — <strong>make the conventions data, keep them outside the program, and let the program choose only which set to work with.</strong> That bundle of data is a locale.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Is a locale translation?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> No, and the distinction matters. A locale deals with <strong>conventions</strong> — decimal points, grouping, the order of a date, sorting, case, currency symbols. Turning the messages a program prints into another language, that is, <strong>translation</strong>, is outside standard C.</p><p>Unix has a separate <code>LC_MESSAGES</code> category and tools such as <code>gettext</code> for translation, but it is not among the six categories C fixes. What this book covers stops at conventions too.</p></p></div></div><h3>63.2 A locale is process-global state</h3><p>The nature of a locale in one line: <strong>one locale per process.</strong></p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch63/locale_probe.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> A locale is process-global state — what it starts as, and what changes it. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">locale.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
 
-int main(void)
-{
-    /* ① 부속서 K 가 실제로 있는가 — 구현이 알려 준다 */
-#ifdef __STDC_LIB_EXT1__
-    printf("부속서 K: 있음 (__STDC_LIB_EXT1__)\n");
-#else
-    printf("부속서 K: 이 구현에는 없다\n");
-#endif
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> setlocale returns "the name of the locale now in force".</span></em>
+<em><span class="tok-c">   Pass NULL as the second argument to ask without changing anything. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>show_current</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>when<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> LC_ALL=</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> when</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-    /* ② C23 의 검사 산술 — 넘침을 값으로 알려 준다 */
-    int a = 2000000000, b = 2000000000, sum;
-    if (ckd_add(&amp;sum, a, b))
-        printf("ckd_add: 넘쳤다 (int 로는 담을 수 없다)\n");
-    else
-        printf("ckd_add: %d\n", sum);
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (1) A program always starts in the "C" locale (standard §7.11.1.1p4) </span></em><em><span class="tok-c">*/</span></em>
+    <strong>show_current</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">at startup:         </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    size_t count = (size_t)-1 / 2, elem = 8, bytes;
-    if (ckd_mul(&amp;bytes, count, elem))
-        printf("ckd_mul: 넘쳤다 — 할당을 시도하지 않는다\n");
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (2) "" means "the locale the environment says".</span></em>
+<em><span class="tok-c">           It reads LC_ALL, then LC_xxx, then LANG. </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>applied <strong><span class="tok-x">=</span></strong> <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>applied<span class="tok-x">)</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">setlocale(LC_ALL,</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">):  </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> applied</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">else</span></strong>
+        <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">setlocale(LC_ALL,</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">) failed — the environment has no locale</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ③ 고정 폭 정수와 정렬 */
-    printf("int32_t=%zu bytes, alignof(max_align_t)=%zu\n",
-           sizeof(int32_t), alignof(max_align_t));
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (3) How many bytes one character may take depends on the locale.</span></em>
+<em><span class="tok-c">           MB_CUR_MAX looks like a constant but reads *the current locale*. </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">MB_CUR_MAX:             </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">size_t</span></strong><strong><span class="tok-x">)</span></strong><strong>MB_CUR_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ④ C23 의 bool 은 키워드다 — &lt;stdbool.h> 없이 쓴다 */
-    bool ready = true;
-    printf("bool 은 키워드: %s\n", ready ? "true" : "false");
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (4) If the requested locale is not on this machine, setlocale returns</span></em>
+<em><span class="tok-c">           null. So always look at the return value — it fails quietly. </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>candidates<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span>
+        <span class="tok-s">"</span><span class="tok-s">C</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">C.UTF-8</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">en_US.UTF-8</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">ko_KR.UTF-8</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">ko_KR.EUC-KR</span><span class="tok-s">"</span><span class="tok-x">,</span>
+        <span class="tok-s">"</span><span class="tok-s">de_DE.UTF-8</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">tr_TR.UTF-8</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">ja_JP.UTF-8</span><span class="tok-s">"</span><span class="tok-x">,</span> <span class="tok-s">"</span><span class="tok-s">no_SUCH.locale</span><span class="tok-s">"</span><span class="tok-x">,</span>
+    <span class="tok-x">}</span><span class="tok-x">;</span>
 
-    /* ⑤ 표준이 정한 매크로로 판을 확인한다 */
-    printf("__STDC_VERSION__ = %ldL\n", (long)__STDC_VERSION__);
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>부속서 K: 이 구현에는 없다
-ckd_add: 넘쳤다 (int 로는 담을 수 없다)
-ckd_mul: 넘쳤다 — 할당을 시도하지 않는다
-int32_t=4 bytes, alignof(max_align_t)=16
-bool 은 키워드: true
-__STDC_VERSION__ = 202000L
-</code></pre></div></div><p><code>&lt;stdckdint.h></code> is this edition’s practical winner. It reports the wrap-round of the size calculations seen in chapter 57 <strong>as a value</strong> — <code>ckd_add</code>, <code>ckd_sub</code> and <code>ckd_mul</code> return true on overflow, and the result may be treated as “unusable” rather than as the wrapped value.</p><p><code>&lt;stdbit.h></code> is new too. Bit manipulations such as counting leading zeros, counting set bits and rounding up to a power of two have become standard functions — until then a place that leaned on compiler builtins (<code>__builtin_clz</code> and the like).</p><p>Besides these, C23 promoted <code>bool</code>, <code>true</code>, <code>false</code>, <code>static_assert</code> and <code>thread_local</code> to keywords, brought in <code>nullptr</code> (chapter 34), and effectively retired compatibility headers such as <code>&lt;stdbool.h></code> and <code>&lt;stdnoreturn.h></code>.</p><h3>63.4 Annex K — the failed attempt at “safe functions”</h3><p>Now the main business of this chapter.</p><p>In the early 2000s Microsoft put functions such as <code>strcpy_s</code> and <code>sprintf_s</code> into its compiler and began raising warnings on use of the existing functions. The proposal to make that design a standard entered C11 as <strong>annex K</strong> (bounds-checking interfaces).</p><p>The core ideas were three.</p><ol><li>The destination size is <strong>compulsorily</strong> taken as an argument.</li><li>When a problem arises it does not truncate and carry on but <strong>returns an error</strong> (<code>errno_t</code>).</li><li>When a contract violation is detected, the program’s chosen <strong>constraint handler</strong> is called.</li></ol><pre><code data-lang="c">#define __STDC_WANT_LIB_EXT1__ 1
-#include &lt;string.h>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">Available on this machine?</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">char</span></strong> saved<span class="tok-x">[</span><span class="tok-n">128</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong>snprintf</strong><strong><span class="tok-x">(</span></strong><strong>saved</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> saved</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-char dst[8];
-errno_t e = strcpy_s(dst, sizeof dst, src);   /* an error if it overflows */</code></pre><p>The direction resembles what we organised in chapter 54 as “what is needed”. Yet the result was a failure.</p><div class="dev realcase"><p class="dev-label">◉ Why annex K was not adopted</p><p>In 2015, C standards committee document N1967, “Field Experience With Annex K”, surveyed the actual state. Its summary was cold — <strong>it was not widely implemented, it behaved differently where it was implemented, and there was no evidence that it made real code safer</strong>.</p><p>Concretely these were the circumstances.</p><ul><li><strong>Microsoft’s functions and the standard’s functions are not the same.</strong> The names are the same while arguments and behaviour go out of step in places, so code fitted to one side broke on the other.</li><li><strong>Major implementations, glibc among them, did not adopt it.</strong> That is still so today — the reason the earlier example printed “not present in this implementation”.</li><li><strong>The global state called the constraint handler</strong> caused conflicts between libraries.</li><li>It merely changed existing code mechanically, while the real defects remained <strong>where the size is calculated wrongly</strong>.</li></ul><p>The committee went as far as discussing removing annex K, and in the end it was settled to be kept but effectively not recommended. It is a representative case showing how the expectation that “putting it in the standard makes things safe” goes wrong in reality.</p></div><div class="dev misconception"><p class="dev-label">⚠ “Using functions with <code>_s</code> attached is safe”</p><p>Three things must be checked. First, <strong>is that function there</strong> — the standard’s annex K is optional and is absent on most of the Unix family. Second, <strong>which edition is it</strong> — the standard’s and Microsoft’s may differ. Third, <strong>what becomes safe</strong> — it means the size is taken as an argument, not that the size you passed is right. The mistake of passing <code>strlen</code> instead of <code>sizeof</code> is just as much an accident in an <code>_s</code> function.</p><p>The realistic choice in portable code is still this — within the standard, <code>snprintf</code> and explicit bounds checking; where the platform permits, the <code>strlcpy</code> family; and for the repeated danger zones, components with checking built in (Part XII).</p></div><div class="dev platform"><p class="dev-label">⊞ Platform note — The <code>_s</code> functions met on Windows</p><p>MSVC has long provided <code>strcpy_s</code>, <code>sprintf_s</code>, <code>fopen_s</code> and so on, and raises the <code>C4996</code> warning when the existing functions are used. Defining <code>_CRT_SECURE_NO_WARNINGS</code> to turn the warning off is the practice.</p><p>The point to beware of is that <strong>these functions are not entirely the same as the standard’s annex K</strong>. For example the behaviour on argument-validation failure and the rules for return values may differ. So unless the code is Windows-only one does not lean on the <code>_s</code> family, and cross-platform projects mostly choose to keep a wrapper of their own.</p></div><h3>63.5 What this part leaves behind</h3><p>We have walked the standard library across ten chapters. Memorising function names was not the aim, so what remains to be kept is a few attitudes.</p><ol><li><strong>Read the contract first.</strong> Does it take a size, how does it report failure, who owns the pointer it returned.</li><li><strong>Do not throw away return values.</strong> Especially <code>fclose</code>, <code>snprintf</code> and the <code>scanf</code> family.</li><li><strong>Suspect global state.</strong> <code>errno</code>, the locale, static buffers, the rounding mode.</li><li><strong>Being in the standard does not make it safe.</strong> <code>gets</code> survived twenty-two years.</li><li><strong>Weigh platform extensions between the gain and portability.</strong></li></ol><div class="dev recap"><p class="dev-label">☰ Recap</p><p>A table of the editions.</p><table><tr><th><strong>edition</strong></th><th><strong>representative addition</strong></th><th><strong>is it actually used</strong></th></tr><tr><td>C99</td><td><code>&lt;stdint.h></code>, <code>&lt;inttypes.h></code></td><td>yes — effectively compulsory</td></tr><tr><td>C99</td><td><code>&lt;complex.h></code></td><td>rarely</td></tr><tr><td>C11</td><td><code>&lt;stdatomic.h></code></td><td>yes — the foundation of concurrency</td></tr><tr><td>C11</td><td><code>&lt;threads.h></code></td><td>rarely — pthreads prevail</td></tr><tr><td>C11</td><td>annex K (<code>*_s</code>)</td><td>no — this chapter’s story</td></tr><tr><td>C23</td><td><code>&lt;stdckdint.h></code></td><td>yes — the right answer for size calculations</td></tr><tr><td>C23</td><td><code>&lt;stdbit.h></code></td><td>growing</td></tr><tr><td>C23</td><td>keyword promotion (<code>bool</code>, <code>nullptr</code> and so on)</td><td>yes</td></tr></table></div><p>The bottom three lines of that table — <code>&lt;stdatomic.h></code>, <code>&lt;stdckdint.h></code> and keyword promotion — have only shown their faces. The three remaining chapters of this part treat those three in detail, one each. We begin with the foundation of concurrency.</p>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <strong><span class="tok-k">sizeof</span></strong> candidates <strong><span class="tok-x">/</span></strong> <strong><span class="tok-k">sizeof</span></strong> <strong><span class="tok-x">*</span></strong>candidates<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>got <strong><span class="tok-x">=</span></strong> <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> candidates</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>got<span class="tok-x">)</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-15s</span></strong><strong><span class="tok-s"> yes  MB_CUR_MAX=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>                        candidates</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">size_t</span></strong><strong><span class="tok-x">)</span></strong><strong>MB_CUR_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">else</span></strong>     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-15s</span></strong><strong><span class="tok-s"> no</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> candidates</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (5) Put it back — hand the name string in again. But the pointer</span></em>
+<em><span class="tok-c">           setlocale returned may be overwritten by the next call, so copy it. </span></em><em><span class="tok-c">*/</span></em>
+    <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> saved</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>show_current</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">restored:           </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> (6) Categories can be set separately. This is the idiom in practice —</span></em>
+<em><span class="tok-c">           what people see follows the environment, numbers a machine reads</span></em>
+<em><span class="tok-c">           stay in "C". </span></em><em><span class="tok-c">*/</span></em>
+    <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_NUMERIC</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">C</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">mixed — LC_CTYPE=</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">, LC_NUMERIC=</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_CTYPE</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_NUMERIC</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> Asking LC_ALL lists every category when they are not all the same </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">asking LC_ALL gives: </span></strong><strong><span class="tok-s">%.60s</span></strong><strong><span class="tok-s">...</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>at startup:          LC_ALL=C
+setlocale(LC_ALL,""):  C.UTF-8
+MB_CUR_MAX:             6
+
+Available on this machine?
+  C               yes  MB_CUR_MAX=1
+  C.UTF-8         yes  MB_CUR_MAX=6
+  en_US.UTF-8     yes  MB_CUR_MAX=6
+  ko_KR.UTF-8     yes  MB_CUR_MAX=6
+  ko_KR.EUC-KR    yes  MB_CUR_MAX=2
+  de_DE.UTF-8     yes  MB_CUR_MAX=6
+  tr_TR.UTF-8     yes  MB_CUR_MAX=6
+  ja_JP.UTF-8     yes  MB_CUR_MAX=6
+  no_SUCH.locale  no
+
+restored:            LC_ALL=C.UTF-8
+mixed — LC_CTYPE=C.UTF-8, LC_NUMERIC=C
+asking LC_ALL gives: LC_CTYPE=C.UTF-8;LC_NUMERIC=C;LC_TIME=C.UTF-8;LC_COLLATE=C.U...
+</code></pre></div></div><p>The first line of the demonstration shows the standard’s rule in the flesh. Before anything happens, <code>LC_ALL</code> is <code>C</code>. And one <code>setlocale(LC_ALL, "")</code> moves it to whatever the environment says.</p><p>Two things follow from its being global.</p><p><strong>First, it can change without you calling anything.</strong> If a library you linked calls <code>setlocale</code>, your <code>printf("%f")</code> is affected from that moment. GUI toolkits commonly do.</p><p><strong>Second, it is a race between threads.</strong> C23 states this explicitly — a call to <code>setlocale</code> may introduce <strong>a data race</strong> with other <code>setlocale</code> calls or with functions affected by the locale (§7.11.1.1p5). If you want different locales in different threads, standard C has no road; POSIX’s <code>uselocale</code> family is needed (chapter 64).</p><h3>63.3 The six categories — what governs what</h3><p>A locale is not one lump; it divides into <strong>categories</strong>. The standard fixes six, and it also enumerates what each one affects.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Category</strong></th><th><strong>What it governs</strong></th><th><strong>Functions affected</strong></th></tr><tr><td><code>LC_CTYPE</code></td><td>Classification, case, <strong>multibyte conversion</strong></td><td><code>isalpha</code> family (chapter 62), <code>mbrtowc</code> family (chapter 65)</td></tr><tr><td><code>LC_NUMERIC</code></td><td>The decimal point and grouping of plain numbers</td><td>★ <code>printf</code>, <code>scanf</code>, <code>strtod</code></td></tr><tr><td><code>LC_MONETARY</code></td><td>Monetary formatting information</td><td><code>localeconv</code></td></tr><tr><td><code>LC_COLLATE</code></td><td>String comparison order</td><td><code>strcoll</code>, <code>strxfrm</code></td></tr><tr><td><code>LC_TIME</code></td><td>Date and time formatting</td><td><code>strftime</code>, <code>wcsftime</code></td></tr><tr><td><code>LC_ALL</code></td><td>(the name for all of the above at once)</td><td>—</td></tr></table></div><p class="float-caption">Table 63.2</p></figure><p>You need not memorise the table, but one line is worth keeping: <strong><code>LC_NUMERIC</code> governs <code>printf</code>.</strong> Nearly every case of this device corrupting data in practice comes from that line (chapter 64).</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The categories POSIX added</p><p>On top of standard C’s six, POSIX and glibc laid more. <code>LC_MESSAGES</code> (translation), and glibc’s <code>LC_PAPER</code> (paper size), <code>LC_NAME</code> (the order of name parts), <code>LC_ADDRESS</code>, <code>LC_TELEPHONE</code>, <code>LC_MEASUREMENT</code> (metric or not), <code>LC_IDENTIFICATION</code>. The long semicolon-separated list the demonstration printed when asking <code>LC_ALL</code> is exactly those.</p><p>The standard leaves the door open: names beginning with <code>LC_</code> and an upper-case letter may be defined by the implementation (§7.11p3). So these names work on Linux and may not elsewhere.</p></div><h3>63.4 The exact contract of <code>setlocale</code></h3><p>One function, simple in shape, dense in contract.</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong>setlocale</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> category<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>locale<span class="tok-x">)</span><span class="tok-x">;</span></code></pre><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Second argument</strong></th><th><strong>Meaning</strong></th></tr><tr><td><code>"C"</code></td><td>The minimal environment the standard fixes. Where a program starts</td></tr><tr><td><code>""</code> (empty string)</td><td><strong>The locale the environment says</strong> — it reads the environment variables</td></tr><tr><td><code>NULL</code></td><td>Do not change anything; only report the present value</td></tr><tr><td>Any other string</td><td>An implementation-defined name (<code>"ko_KR.UTF-8"</code>, …)</td></tr></table></div><p class="float-caption">Table 63.3</p></figure><p>The return value splits two ways. On success it returns a string holding <strong>the name of the locale that was set (or is in force)</strong>; on failure it returns null.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“<code>setlocale</code> does not fail”</strong></p><p>The quietest accident starts here. If the requested locale is <strong>not installed</strong> on that machine, <code>setlocale</code> returns null and <strong>changes nothing.</strong> Without looking at the return value the program carries on believing the locale changed, dates come out in English and Korean comes out broken.</p><p>The <code>no_SUCH.locale</code> line of the demonstration is that case. Linux distributions often ship a minimum of locales to save space (container images especially), which makes this the classic place where what worked on the developer’s machine does not work in production.</p><pre><code data-lang="c"><strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong>fprintf</strong><strong><span class="tok-x">(</span></strong><strong>stderr</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">warning: could not apply the locale; continuing in C.</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span></code></pre></div><p>The returned pointer has a rule too. That string points into static storage that <strong>a later <code>setlocale</code> call may overwrite</strong>. If you intend to restore it later, copy it, as the demonstration does.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> May categories be mixed?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> They may, and doing so is the standard practice. The last part of the demonstration is the idiom.</p><pre><code data-lang="c"><strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_ALL</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> follow the environment for everything, then </span></em><em><span class="tok-c">*/</span></em>
+<strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_NUMERIC</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">C</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> put numbers back into "C" </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Dates, sorting and currency shown to a person follow the environment, while <strong>numbers a machine will read and write are pinned</strong> so the locale cannot move them. These two lines prevent most of the data corruption seen in chapter 64.</p><p>Once categories are mixed, <code>setlocale(LC_ALL, NULL)</code> returns a long string of the form <code>LC_CTYPE=…;LC_NUMERIC=…;…</code>. That is the demonstration’s last line — the rule is “one name if they all agree, a list if they do not.”</p></p></div></div><h3>63.5 The grammar of a locale name</h3><p><code>ko_KR.UTF-8</code>. Take the name apart and there are four international standards inside it.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Position</strong></th><th><strong>Example</strong></th><th><strong>Fixed by</strong></th></tr><tr><td>Language</td><td><code>ko</code></td><td>ISO 639-1 (two letters), or ISO 639-2/-3 (three)</td></tr><tr><td><code>_</code> + territory</td><td><code>_KR</code></td><td>ISO 3166-1 alpha-2 country code</td></tr><tr><td><code>.</code> + codeset</td><td><code>.UTF-8</code></td><td>A character-set name (IANA registry, ISO 8859 family, …)</td></tr><tr><td><code>@</code> + modifier</td><td><code>@euro</code></td><td>A variant convention for the same language and place</td></tr></table></div><p class="float-caption">Table 63.4</p></figure><p>The whole grammar can be written like this.</p><pre><code data-lang="text">language[_TERRITORY][.codeset][@modifier]
+
+ko_KR.UTF-8      Korean, Republic of Korea, UTF-8
+de_DE@euro       German, Germany, the euro variant
+sr_RS@latin      Serbian written in the Latin script
+C   or  POSIX    the minimal locale the standard fixes</code></pre><span id="idx-entry-99"></span><span id="idx-entry-100"></span><p>What matters is that the language and the territory are <strong>codes borrowed from other standards</strong>. <code>ko</code> is the code ISO 639-1 gave Korean and <code>KR</code> is the one ISO 3166-1 gave the Republic of Korea. A locale name is not something C invented; it is an assembly of code systems that already existed.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Which standard fixes this grammar?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Not the C standard. C fixes only <code>"C"</code> and <code>""</code>, and says the rest are <strong>implementation-defined strings</strong> (§7.11.1.1p3).</p><p>But one footnote points the way — “<strong>ISO/IEC 9945</strong> specifies locale and charmap formats that can be used to specify locales for C.” ISO/IEC 9945 is <strong>POSIX</strong> (IEEE Std 1003.1). The <code>language_TERRITORY.codeset@modifier</code> grammar, the format of locale definition files, and the precedence of the environment variables are all fixed by POSIX.</p><p>So the naming rules of this chapter are <strong>the rules that hold on Unix-like systems.</strong> Windows uses another system, and the web uses a third — compared below.</p></p></div></div><h4>63.5.1 Codeset names and normalisation</h4><p><code>.UTF-8</code>, <code>.utf8</code>, <code>.UTF8</code> — all three name the same thing. glibc compares names ignoring case and <code>-</code>. So even when <code>locale -a</code> prints <code>ko_KR.utf8</code>, a program may ask for <code>"ko_KR.UTF-8"</code>.</p><p>The codeset names themselves come from yet another registry. <code>UTF-8</code>, <code>EUC-KR</code> and <code>ISO-8859-1</code> are registered in IANA’s character-set registry, and behind them stand the ISO/IEC 8859 family or Unicode (ISO/IEC 10646).</p><p><strong>The codeset part often matters more than the rest of the name.</strong> <code>ko_KR.UTF-8</code> and <code>ko_KR.EUC-KR</code> share a language and a territory but differ in <strong>how many bytes a character takes</strong>. In the demonstration their <code>MB_CUR_MAX</code> values split, 6 against 2.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>One country, two encodings — the era of <code>ko_KR.EUC-KR</code></p><p>Korean Unix environments of the 1990s and early 2000s defaulted to <code>ko_KR.eucKR</code> (or <code>ko_KR.EUC-KR</code>) — a world in which one Hangul syllable is two bytes. Code written then has the assumption “Hangul is two bytes” embedded everywhere: string lengths divided by two, cursors moved by two, truncation rounded to an even byte count.</p><p>Moving to UTF-8 broke all of it. Hangul became three bytes, and that code began cutting letters in half. This is what the encoding transition actually felt like in Korea, and it is also why the three layers of chapter 67 — bytes, code points, characters — have to be told apart.</p></div><h4>63.5.2 Names in other worlds — BCP 47 and Windows</h4><p>The same “Korean (Republic of Korea)” is named differently by each system.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>System</strong></th><th><strong>Notation</strong></th><th><strong>Basis</strong></th></tr><tr><td>POSIX and C</td><td><code>ko_KR.UTF-8</code></td><td>ISO/IEC 9945 (POSIX)</td></tr><tr><td>BCP 47 (web, XML, HTTP)</td><td><code>ko-KR</code></td><td>RFC 5646 (tags), RFC 4647 (matching)</td></tr><tr><td>Windows (Vista onwards)</td><td><code>ko-KR</code></td><td>Follows BCP 47</td></tr><tr><td>Windows (the old way)</td><td><code>Korean_Korea.949</code></td><td>Windows-specific</td></tr><tr><td>Unicode CLDR</td><td><code>ko_KR</code></td><td>UTS #35 (LDML)</td></tr></table></div><p class="float-caption">Table 63.5</p></figure><span id="idx-entry-101"></span><p>BCP 47 is the internet standard — the tag in HTML’s <code>lang="ko-KR"</code> and in HTTP’s <code>Accept-Language</code>. It uses a hyphen instead of an underscore and has no codeset part, because the web handles encoding separately. When the script must be stated, an ISO 15924 code goes in the middle, as in <code>sr-Latn-RS</code>.</p><p><strong>A program that spans both worlds must translate names.</strong> To pass a browser’s <code>ko-KR</code> to <code>setlocale</code> it has to become <code>ko_KR.UTF-8</code>, which means holding a mapping table somewhere. Mistakes are frequent at that seam.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The modern source of locale data — CLDR</p><p>Who maintains the actual convention data — how a country writes dates, what its currency symbol is? Today’s answer is the Unicode Consortium’s <strong>CLDR</strong> (Common Locale Data Repository), in the format UTS #35 (LDML) fixes. ICU, Java, Android and browsers all take their data from there.</p><p>glibc’s locale definitions come from an older line — ISO/IEC TR 14652 (a specification method for cultural conventions) and ISO/IEC 15897 (procedures for registering cultural elements) — and the files themselves sit in <code>/usr/share/i18n/locales/</code> in a human-readable form.</p><p>Since the two lines differ, <strong>the same locale may carry slightly different values.</strong> That is where a Java program and a C program printing the same date differently comes from.</p></div><h3>63.6 The precedence of the environment variables</h3><p>We said <code>setlocale(LC_ALL, "")</code> uses “the locale the environment says”. Exactly what environment — POSIX fixes the precedence.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Rank</strong></th><th><strong>Variable</strong></th><th><strong>Meaning</strong></th></tr><tr><td>1</td><td><code>LC_ALL</code></td><td>If present, it overrides every category</td></tr><tr><td>2</td><td><code>LC_CTYPE</code>, <code>LC_TIME</code>, …</td><td>Sets only that category</td></tr><tr><td>3</td><td><code>LANG</code></td><td>The default for categories not set above</td></tr></table></div><p class="float-caption">Table 63.6</p></figure><p>So <code>LANG=ko_KR.UTF-8 LC_NUMERIC=C ./program</code> runs mostly with Korean conventions but with numbers in C conventions. The scripts that launch server programs pin <code>LC_ALL=C</code> for the same reason — <strong>to insulate logs and parsing from the environment.</strong></p><pre><code data-lang="sh"><strong>$</strong><strong> locale                 </strong><em><span class="tok-c">#</span></em><em><span class="tok-c"> what the environment is setting right now</span></em>
+<strong>$</strong><strong> locale</strong><strong><span class="tok-x"> -</span></strong><strong>a              </strong><em><span class="tok-c">#</span></em><em><span class="tok-c"> the locales installed on this machine</span></em>
+<strong>$</strong><strong> locale</strong><strong><span class="tok-x"> -</span></strong><strong>k</strong><strong> LC_NUMERIC   </strong><em><span class="tok-c">#</span></em><em><span class="tok-c"> the values of one category in detail</span></em></code></pre><h3>63.7 Where locale data lives</h3><p>A locale is not inside the program. It has to be <strong>installed on the machine</strong>.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Step</strong></th><th><strong>What</strong></th></tr><tr><td>Definition file</td><td><code>/usr/share/i18n/locales/ko_KR</code> — human-readable</td></tr><tr><td>Charmap</td><td><code>/usr/share/i18n/charmaps/UTF-8.gz</code></td></tr><tr><td>Compile</td><td><code>localedef -i ko_KR -f UTF-8 ko_KR.UTF-8</code></td></tr><tr><td>Installed under</td><td><code>/usr/lib/locale/</code> (or <code>locale-archive</code>)</td></tr><tr><td>Search path</td><td>Changeable with the <code>LOCPATH</code> environment variable</td></tr></table></div><p class="float-caption">Table 63.7</p></figure><p>Knowing this structure lets you solve the “missing locale” problem yourself. If a container has no <code>ko_KR.UTF-8</code>, put the definition file in and build it with <code>localedef</code>.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>How this book checked its locale tables</p><p>The machine this book is built on also started with only <code>C</code>, <code>C.UTF-8</code> and <code>POSIX</code>. So, to check the tables of the next chapter, the necessary locales were built from glibc 2.41′s definitions.</p><pre><code data-lang="sh"><strong>localedef</strong><strong><span class="tok-x"> -</span></strong><strong>i</strong><strong> ko_KR</strong><strong><span class="tok-x"> -</span></strong><strong>f</strong><strong> UTF-8 </strong><strong><span class="tok-x">&lt;</span></strong><strong>path</strong><strong><span class="tok-x">></span></strong><strong>/ko_KR.UTF-8</strong>
+<strong>localedef</strong><strong><span class="tok-x"> -</span></strong><strong>i</strong><strong> de_DE</strong><strong><span class="tok-x"> -</span></strong><strong>f</strong><strong> UTF-8 </strong><strong><span class="tok-x">&lt;</span></strong><strong>path</strong><strong><span class="tok-x">></span></strong><strong>/de_DE.UTF-8</strong>
+<strong><span class="tok-k">export</span></strong><strong> </strong><strong>LOCPATH</strong><strong><span class="tok-x">=</span></strong><strong><span class="tok-x">&lt;</span></strong><strong>path</strong><strong><span class="tok-x">></span></strong></code></pre><p>So the values from other locales printed in this book are not guesses; they are <strong>what came out of running it that way.</strong> Conversely, if the reader’s machine lacks those locales the examples print “not on this machine” — they are written so as not to assume any locale exists.</p></div><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>What to remember</strong></th><th><strong>The point</strong></th></tr><tr><td>What it is</td><td><strong>Conventions</strong> set outside the program. Not translation</td></tr><tr><td>Starting value</td><td>Always <code>"C"</code> — the standard says so</td></tr><tr><td>Scope</td><td>Process-global. A library can change it; threads race over it</td></tr><tr><td>Categories</td><td><code>LC_CTYPE</code>, <code>LC_NUMERIC</code>, <code>LC_MONETARY</code>, <code>LC_COLLATE</code>, <code>LC_TIME</code> (+<code>LC_ALL</code>)</td></tr><tr><td><code>setlocale</code></td><td><code>""</code>=environment, <code>NULL</code>=query. <strong>Null return means failure</strong></td></tr><tr><td>Names</td><td><code>language_TERRITORY.codeset@modifier</code> — ISO 639, ISO 3166, charset registry</td></tr><tr><td>Basis</td><td>The grammar and formats are POSIX (ISO/IEC 9945). The web uses BCP 47</td></tr><tr><td>Environment</td><td><code>LC_ALL</code> > <code>LC_</code>category > <code>LANG</code></td></tr><tr><td>In practice</td><td><code>LC_ALL, ""</code> followed by <code>LC_NUMERIC, "C"</code></td></tr></table></div><p class="float-caption">Table 63.8</p></figure></div><p>We have seen what a locale is and how one is chosen. The next chapter is <strong>what it changes and how</strong> — numbers, money, time and sorting, one at a time.</p>
 <div class="nav"><a href="ch62.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch64.html">Next →</a></div>
 </div></main></body></html>

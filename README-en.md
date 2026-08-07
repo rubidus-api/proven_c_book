@@ -10,12 +10,12 @@
 > default, and ends as a manual for the
 > [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.21.0 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-ko.pdf)
+- **Current edition**: v0.22.0 — **draft**
+- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-ko.pdf)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.21.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.21.0-ko.pdf)
-- 13 parts, 92 chapters, appendices A–E and an index — 670 pages in English, 639 in Korean.
+- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.22.0/proven_c_book-v0.22.0-all.zip)
+- Copies inside the repository: [en PDF](dist/proven_c_book-v0.22.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.22.0-ko.pdf)
+- 13 parts, 92 chapters, appendices A–E and an index — 678 pages in English, 645 in Korean.
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## What kind of book is this
@@ -26,9 +26,9 @@ sets; why `signal` entered the standard as the common denominator rather than as
 the fixed version — these places cannot be crossed by memorising syntax, and the
 accidents come later at exactly those places.
 
-This book **walks through them one at a time**. Every chapter opens with "what
-this chapter leans on → looking back → when this chapter ends → the questions
-this chapter answers", and the body alternates between explanation,
+This book **walks through them one at a time**. Every chapter opens with "what to know
+first → looking back → by the end of this chapter → the questions this chapter
+answers", and the body alternates between explanation,
 question-and-answer, common misconceptions, real cases and counter-examples.
 There are no exercises: the choice was a book that can be read through without
 strain, at the cost of leaving practice to other books and to your own programs.

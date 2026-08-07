@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>74 문자열과 텍스트 — Proven C Book</title><style>
+<title>74 쪼개지지 않는 연산 — &lt;stdatomic.h&gt; — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,170 +259,66 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../en/">English</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch73.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch75.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch74.html">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>74 문자열과 텍스트</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>69장의 첫째 버그 — 그릇의 크기를 모르는 문자열 함수 — 에 대한 답이다. 길이를 지니고 다니는 문자열, 소유와 빌림의 구분, 그리고 이 라이브러리 에서 가장 논쟁적인 결정인 <strong>거부하되 자르지 않는다</strong>까지. 9장의 인코딩 이야기와 37장의 경계 이야기가 여기서 하나로 모인다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>37장에서 C 문자열은 “NUL을 만날 때까지”가 곧 길이라, 길이를 알려면 매번 세어야 한다고 했다. 그러면 길이를 함께 들고 다니면 무엇이 좋아지는가 — 그리고 무엇을 잃는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>얻는 것이 셋이다. 길이를 세는 비용이 사라지고(<math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math>이 <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math>이 된다), 중간에 0바이트가 들어 있는 자료도 다룰 수 있으며, 무엇보다 <strong>경계를 검사할 수 있다</strong> — 길이를 모르면 검사할 것 자체가 없다. 잃는 것은 둘이다. 문자열 하나가 한 워드가 아니라 두 워드가 되고, <code>printf("%s")</code> 처럼 NUL 종단을 기대하는 세상과 만날 때 변환이 필요해진다. 이 라이브러리는 그 변환 비용을 없애려고 내부적으로 NUL도 함께 유지한다 — 둘 다 가지는 절충이다.</p></div></div><h3>74.1 두 개의 타입, 하나의 규칙</h3><p>문자열 어휘는 둘뿐이다.</p><ul><li><code>proven_u8str_t</code> — <strong>소유하는</strong> 문자열. 버퍼와 길이와 용량을 가진다.</li><li><code>proven_u8str_view_t</code> — <strong>빌린</strong> 문자열. 포인터와 길이뿐이다.</li></ul><p>이름에 <code>view</code>가 있으면 빌린 것이고, 빌린 것은 파괴하지 않는다. 73장에서 세운 규칙이 문자열에 그대로 적용된 것이다. <code>u8</code>은 UTF-8을 뜻한다 — 9장에서 본 그 인코딩이 이 라이브러리의 기본 텍스트 표현이다.</p><p>속을 열어 보면 왜 둘로 갈랐는지가 분명해진다.</p><pre><code data-lang="c">/* 빌린 문자열 — 72장의 mem_view_t 와 같은 모양이다 */
-typedef struct {
-    const proven_byte_t *ptr;
-    proven_size_t        size;
-} proven_u8str_view_t;
+<h2 id="loc-74">74 쪼개지지 않는 연산 — <code>&lt;stdatomic.h></code></h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>11장 기억의 분화 · 캐시와 기억의 층</div><div>41장 수명과 저장 기간 · 수명과 공유</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>12장에서 CPU가 한 박자에 여러 일을 하고 순서까지 바꿔 실행한다고 했고, 11장에서는 코어마다 자기 캐시를 들고 있다고 했다. 그러면 두 갈래가 같은 변수를 동시에 1씩 늘리면 — 결과는 2인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 아닐 수 있다. <code>x = x + 1</code>은 기계에게 한 걸음이 아니라 <strong>세 걸음</strong>(읽고, 더하고, 쓰고)이고, 두 갈래가 이 세 걸음을 서로 끼워 넣으면 둘이 같은 값을 읽어 같은 값을 쓴다 — 하나가 통째로 사라진다. 게다가 코어마다 캐시가 달라서 “썼는데 상대에게 안 보이는” 시차까지 겹친다. 이 장의 첫 예제가 그 손실을 실제로 세어 보인다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-108"></span>여러 갈래가 같은 기억을 동시에 만질 때 무슨 일이 일어나는지 보고, C11이 그 자리에 들여온 도구 — 원자적 타입과 연산 — 을 익힌다. 왜 <span id="idx-entry-109"></span>데이터 경쟁이 “느려짐”이 아니라 <strong>계약 밖</strong>인지, <code>volatile</code>이 왜 답이 아닌지, 그리고 메모리 순서(memory order)라는 어려운 손잡이를 언제 건드리고 언제 두어야 하는지까지.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>compare_exchange</code>의 strong과 weak은 무엇이 다른가? 왜 “헛되이 실패” 하는 판이 따로 있는가?</li></ol></div></div><div></div><h3>74.1 잃어버린 갱신 — 눈으로 확인한다</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch74/atomic.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 경쟁 상태와 원자적 연산 — 같은 프로그램을 두 번 돌린다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdatomic.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">threads.h</span><span class="tok-s">></span>
 
-/* 소유하는 문자열 — 버퍼 하나와 "빌린 것인가" 깃발 */
-typedef struct {
-    proven_buf_t internal;   /* { ptr, len, cap } */
-    bool         borrowed;
-} proven_u8str_t;</code></pre><p><code>proven_buf_t</code>의 세 칸이 문자열의 성격을 그대로 말해 준다. <strong><code>len</code>은 지금 담긴 내용의 바이트 수</strong>, <strong><code>cap</code>은 버퍼 전체 크기</strong>이고, 그 차이가 NUL 자리를 포함한 여유다. 그래서 <code>create(alloc, 64)</code>가 실제로는 65바이트를 잡는다 — 64는 <strong>내용</strong>의 한도이고 한 바이트는 NUL의 몫이다. 이 한 바이트 덕에 <code>proven_u8str_as_cstr</code>이 복사도 할당도 없이 C 문자열을 내줄 수 있다.</p><p><code>borrowed</code> 깃발은 <code>_borrow</code>로 만든 문자열을 표시한다. 이 깃발이 켜져 있으면 <code>_destroy</code>는 <strong>아무것도 해제하지 않고</strong> 구조체만 비운다 — 남의 기억을 돌려줄 수는 없기 때문이다.</p><p>문자열을 얻는 길은 셋이다.</p><table><tr><th><strong>함수</strong></th><th><strong>할당</strong></th><th><strong>파괴</strong></th><th><strong>쓰는 자리</strong></th></tr><tr><td><code>proven_u8str_create(alloc, limit)</code></td><td>예</td><td><code>_destroy</code> 필요</td><td>빈 문자열로 시작해 채워 나갈 때</td></tr><tr><td><code>proven_u8str_create_from_view(alloc, v)</code></td><td>예</td><td><code>_destroy</code> 필요</td><td>있는 내용을 복사해 소유할 때</td></tr><tr><td><code>proven_u8str_borrow(buf, cap)</code></td><td>아니오</td><td>불필요(무해)</td><td>스택·정적 배열 위에서. 임베디드</td></tr></table><p><code>_borrow</code>의 <code>cap</code>이 <strong>NUL을 포함한 전체 용량</strong>이라는 점만 주의하면 된다 — <code>buf[64]</code>를 주면 내용은 63바이트까지다.</p><p>리터럴에서 뷰를 만드는 것은 매크로 하나로 끝난다.</p><pre><code data-lang="c">PROVEN_LIT("hello")        /* 컴파일 시간에 { ptr, 5 } 가 된다 — strlen 없음 */
-proven_u8str_view_from_cstr(p)   /* 실행 시간에 길이를 센다 */</code></pre><p><code>PROVEN_LIT</code>은 <code>sizeof("...") - 1</code>로 길이를 뽑으므로 <strong>실행 시간 비용이 0</strong>이다. 문자열 리터럴을 넘길 때는 이쪽을 쓰는 것이 관행이고, 길이를 모르는 C 문자열에는 <code>_from_cstr</code>을 쓴다.</p><div><div><p><code>examples/ch74/ops.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
-#include &lt;stdio.h>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">THREADS</span><span class="tok-p"> </span><span class="tok-n">4</span>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">BUMPS</span><span class="tok-p">   </span><span class="tok-n">200000</span>
 
-static void show(const char *label, proven_u8str_view_t v)
-{
-    printf("%-12s [%.*s] (%zu bytes)\n", label, (int)v.size, (const char *)v.ptr, v.size);
-}
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">long</span></strong>        plain<span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 그냥 long — 보호 없음 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> atomic_long safe<span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 원자적 long        </span></em><em><span class="tok-c">*/</span></em>
 
-int main(void)
-{
-    /* ① 할당 없는 문자열: 스택 버퍼를 빌려 쓴다.
-          allocator 가 없는 시그니처 = 할당하지 않는다 */
-    proven_byte_t buf[16];
-    proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> <strong>worker</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>unused<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>unused<span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> BUMPS<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+        plain <strong><span class="tok-x">=</span></strong> plain <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>                    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 읽고-더하고-쓰기: 쪼개진다 </span></em><em><span class="tok-c">*/</span></em>
+        <strong>atomic_fetch_add</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>safe</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>           <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 한 덩어리로 일어난다      </span></em><em><span class="tok-c">*/</span></em>
+    <span class="tok-x">}</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-    proven_err_t e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr("hello"));
-    printf("append 'hello' : %s\n", proven_is_ok(e) ? "ok" : "refused");
-    show("content", proven_u8str_as_view(&amp;s));
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    thrd_t t<span class="tok-x">[</span>THREADS<span class="tok-x">]</span><span class="tok-x">;</span>
 
-    /* ② 자리가 모자라면 거부한다 — 자르지 않는다 */
-    e = proven_u8str_append(&amp;s, proven_u8str_view_from_cstr(" world, and more"));
-    printf("append long    : %s (err=%d)\n",
-           proven_is_ok(e) ? "ok" : "refused", (int)e);
-    show("unchanged", proven_u8str_as_view(&amp;s));   /* 실패 원자성 */
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> THREADS<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong>thrd_create</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>t</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> worker</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> THREADS<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong>thrd_join</strong><strong><span class="tok-x">(</span></strong><strong>t</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ③ 찾기와 자르기 — 전부 view 위에서, 복사 없이 */
-    proven_u8str_view_t csv = proven_u8str_view_from_cstr("name,age,city");
-    proven_u8str_view_t comma = proven_u8str_view_from_cstr(",");
+    <strong><span class="tok-t">long</span></strong> expected <strong><span class="tok-x">=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">long</span></strong><span class="tok-x">)</span>THREADS <strong><span class="tok-x">*</span></strong> BUMPS<span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">기대한 값 : </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> expected</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">보호 없음 : </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> plain</strong><strong><span class="tok-x">,</span></strong><strong> plain </strong><strong><span class="tok-x">==</span></strong><strong> expected </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  &lt;- 잃어버렸다</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">원자적    : </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>safe</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    proven_size_t at = proven_u8str_view_find(csv, 0, comma);
-    printf("first comma at : %zu\n", at);
-    show("field 1", proven_u8str_view_slice(csv, 0, at));
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">atomic_long 은 잠금 없이 되는가? </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>atomic_is_lock_free</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>safe</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">예</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">아니오</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>기대한 값 : 800000
+보호 없음 : 262699  &lt;- 잃어버렸다
+원자적    : 800000
 
-    /* ④ 구분자로 훑기: 못 찾으면 센티널(PROVEN_INDEX_NOT_FOUND)이 온다 */
-    proven_size_t start = 0;
-    int n = 0;
-    for (;;) {
-        proven_size_t hit = proven_u8str_view_find(csv, start, comma);
-        proven_size_t end = (hit == PROVEN_INDEX_NOT_FOUND) ? csv.size : hit;
-        char label[24];
-        snprintf(label, sizeof label, "field %d", ++n % 100);
-        show(label, proven_u8str_view_slice(csv, start, end - start));
-        if (hit == PROVEN_INDEX_NOT_FOUND) break;
-        start = hit + 1;
-    }
-
-    /* ⑤ 비교와 접두사 검사 */
-    printf("eq 'name,age,city' : %d\n",
-           proven_u8str_view_eq(csv, proven_u8str_view_from_cstr("name,age,city")));
-    printf("starts with 'name' : %d\n",
-           proven_u8str_view_starts_with(csv, proven_u8str_view_from_cstr("name")));
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>append 'hello' : ok
-content      [hello] (5 bytes)
-append long    : refused (err=2)
-unchanged    [hello] (5 bytes)
-first comma at : 4
-field 1      [name] (4 bytes)
-field 1      [name] (4 bytes)
-field 2      [age] (3 bytes)
-field 3      [city] (4 bytes)
-eq 'name,age,city' : 1
-starts with 'name' : 1
-</code></pre></div></div><p>첫 줄이 73장의 규칙을 다시 보여 준다. <code>proven_u8str_borrow</code>에는 할당자가 없다 — 그러므로 할당하지 않는다. 스택에 잡은 16바이트 배열 위에서 문자열 연산을 하는 것이고, 임베디드에서 힙 없이 문자열을 다루는 방식이 정확히 이것이다.</p><h3>74.2 거부하되, 자르지 않는다</h3><p>두 번째 <code>append</code>가 이 부에서 가장 중요한 한 줄이다. 16바이트 그릇에 <code>"hello"</code> 다음으로 <code>" world, and more"</code>를 붙이려 하자 라이브러리는 <strong>아무것도 쓰지 않고</strong> <code>PROVEN_ERR_OUT_OF_BOUNDS</code>를 돌려주었다. 그리고 그다음 줄이 보여 주듯 원래 내용 <code>hello</code>는 그대로다 — 71장에서 배운 실패 원자성이다.</p><p>69장에서 본 <code>snprintf</code>의 선택과 정반대다. 왜 자르지 않는가?</p><p><strong>잘린 값은 짧은 값이 아니라 다른 값이기 때문이다.</strong> 잘린 경로는 다른 파일을 가리키고, 잘린 명령은 다른 명령이며, 잘린 사용자 이름은 다른 사람이다. 자르고 성공을 말하면 호출자는 자기가 받은 것이 요청한 것인지 알 수 없다. 그래서 이 라이브러리는 <strong>결정을 호출자에게 되돌려준다</strong> — “자리가 모자랍니다. 어떻게 할까요?”</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>그래도 로그 한 줄처럼 잘려도 괜찮은 자리가 있지 않은가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>있다. 그래서 <strong>명시적으로 부분만 쓰는</strong> 함수가 따로 있다 — <code>proven_u8str_append_partial</code>은 들어간 바이트 수를 돌려준다. 이름이 길고 반환값이 다르다는 점이 핵심이다. 자르기는 여전히 가능하지만, 그것을 하려면 <strong>그렇게 적어야</strong> 한다. 기본값은 언제나 안전한 쪽이고 위험한 선택은 눈에 보이는 이름으로만 할 수 있다는 원칙(72장의 <code>_unchecked</code>와 같다)이 여기서도 지켜진다.</p></div></div><div class="dev antipattern"><p class="dev-label">✗ 성장과 고정 용량을 헷갈리기</p><pre><code data-lang="c">proven_u8str_t s = proven_u8str_borrow(buf, sizeof buf);
-proven_err_t e = proven_u8str_append_grow(alloc, &amp;s, view);  /* 위험 */</code></pre><p><code>_append</code>는 용량 안에서만 쓰고, <code>_append_grow</code>는 모자라면 할당자에게 더 달라고 한다 — 그래서 후자에만 할당자 인자가 있다. 문제는 빌린 버퍼(<code>_borrow</code>) 위에서 성장을 요구하는 경우다. 스택 배열은 자랄 수 없으므로 이것은 설계 오류다.</p><p>라이브러리는 이 경우 <strong>조용히 남의 기억을 재할당하지 않고</strong> <code>OUT_OF_BOUNDS</code>를 돌려준다 — 들어가는 동안은 성공하고, 들어가지 않게 되는 순간 거부한다. 시그니처를 읽는 습관이 여기서 그대로 방어가 된다 — <strong>할당자가 있으면 자랄 수 있고, 없으면 자랄 수 없다.</strong></p></div><h3>74.3 세 갈래의 쓰기 — 거부·자름·성장</h3><p>이 라이브러리의 문자열 연산은 이름만 보고 갈래를 알 수 있게 되어 있다. “자리가 모자랄 때 어떻게 하는가”가 그 갈래다.</p><table><tr><th><strong>갈래</strong></th><th><strong>이름의 꼴</strong></th><th><strong>모자랄 때</strong></th><th><strong>실패 원자성</strong></th></tr><tr><td>고정 용량·원자적</td><td><code>_append</code>, <code>_insert</code>, <code>_replace_at</code></td><td>거부(<code>OUT_OF_BOUNDS</code>)</td><td>예 — 원본 그대로</td></tr><tr><td>최선 노력·자름</td><td><code>_append_partial</code>, <code>_append_fmt_trunc</code></td><td>들어가는 만큼 쓰고 알린다</td><td>아니오(의도적)</td></tr><tr><td>성장</td><td><code>_append_grow</code>, <code>_insert_grow</code>, <code>_replace_at_grow</code></td><td>할당자에게 더 달라고 한다</td><td>예 — 할당 실패 시 원본 그대로</td></tr></table><p>세 갈래가 다 필요한 이유는 자리마다 옳은 답이 다르기 때문이다. 파일 경로를 만드는 자리에서는 잘리면 안 되므로 <strong>거부</strong>가 옳고, 화면 한 줄에 맞춰 로그를 찍는 자리에서는 <strong>자름</strong>이 옳고, 내용이 얼마나 될지 모르는 자리에서는 <strong>성장</strong>이 옳다. 기본값(짧은 이름)이 거부라는 점이 이 설계의 태도를 보여 준다.</p><h3>74.4 문자열을 고치는 연산들</h3><p>붙이기만으로는 부족하다. 가운데를 고치고, 지우고, 되쓰는 연산이 함께 있다.</p><div><div><p><code>examples/ch74/edit.c</code></p><pre><code data-lang="c">/* 문자열을 고치는 연산들 — 끼우기, 지우기, 바꾸기, 그리고 되쓰기.
-   전부 "들어가면 하고, 안 들어가면 원본을 그대로 두고 거부한다". */
-#include &lt;proven.h>
-
-static void show(const char *label, const proven_u8str_t *s)
-{
-    proven_u8str_view_t v = proven_u8str_as_view(s);
-    proven_println("{:&lt;16} \"{}\" (len {})",
-                   PROVEN_ARG(label), PROVEN_ARG(v), PROVEN_ARG(v.size));
-}
-
-int main(void)
-{
-    proven_allocator_t alloc = proven_heap_allocator();
-
-    /* ── ① 뷰에서 바로 만들기 ─────────────────────────────────── */
-    proven_result_u8str_t r =
-        proven_u8str_create_from_view(alloc, PROVEN_LIT("hello world"));
-    if (!proven_is_ok(r.err)) return 1;
-    proven_u8str_t s = r.value;
-    show("만든 직후", &amp;s);
-
-    /* ── ② 가운데에 끼우기 ────────────────────────────────────── */
-    proven_err_t e = proven_u8str_insert_grow(alloc, &amp;s, 5, PROVEN_LIT(","));
-    show("insert(5, \",\")", &amp;s);
-
-    /* ── ③ 구간 바꾸기 — 길이가 달라도 된다 ───────────────────── */
-    e = proven_u8str_replace_at_grow(alloc, &amp;s, 7, 5, PROVEN_LIT("proven C"));
-    show("replace_at", &amp;s);
-
-    /* ── ④ 처음 만나는 조각 바꾸기 ────────────────────────────── */
-    e = proven_u8str_replace_first(&amp;s, 0, PROVEN_LIT("hello"), PROVEN_LIT("HELLO"));
-    show("replace_first", &amp;s);
-
-    /* 없는 것을 바꾸라고 하면 아무 일도 하지 않고 성공한다 */
-    e = proven_u8str_replace_first(&amp;s, 0, PROVEN_LIT("zzz"), PROVEN_LIT("!"));
-    proven_println("없는 것 바꾸기     -> err={} (그대로 두고 성공)",
-                   PROVEN_ARG((int)e));
-
-    /* ── ⑤ 구간 지우기 ───────────────────────────────────────── */
-    e = proven_u8str_remove(&amp;s, 0, 6);
-    show("remove(0,6)", &amp;s);
-
-    /* ── ⑥ 되쓰기 — 버퍼는 그대로 두고 내용만 비운다 ──────────── */
-    e = proven_u8str_reset(&amp;s);
-    show("reset 뒤", &amp;s);
-
-    e = proven_u8str_append(&amp;s, PROVEN_LIT("다시 쓴다"));
-    show("다시 채운 뒤", &amp;s);
-    proven_println("(reset 은 재할당 없이 되쓰기 위한 것 — 프레임마다 새로 짓는 코드에)");
-
-    /* ── ⑦ 미리 잡아 두기 ────────────────────────────────────── */
-    e = proven_u8str_reserve(alloc, &amp;s, 256);
-    proven_println("reserve(256)      -> err={} (아레나에서 특히 값을 한다)",
-                   PROVEN_ARG((int)e));
-
-    /* ── ⑧ 조회 연산들 ───────────────────────────────────────── */
-    proven_u8str_view_t v = proven_u8str_as_view(&amp;s);
-    proven_println("starts_with(\"다시\")={} ends_with(\"쓴다\")={} find(\"쓴\")={}",
-                   PROVEN_ARG((bool)proven_u8str_view_starts_with(v, PROVEN_LIT("다시"))),
-                   PROVEN_ARG((bool)proven_u8str_view_ends_with(v, PROVEN_LIT("쓴다"))),
-                   PROVEN_ARG(proven_u8str_view_find(v, 0, PROVEN_LIT("쓴"))));
-
-    proven_size_t nf = proven_u8str_view_find(v, 0, PROVEN_LIT("없음"));
-    proven_println("못 찾으면 {} (PROVEN_INDEX_NOT_FOUND)",
-                   PROVEN_ARG((bool)(nf == PROVEN_INDEX_NOT_FOUND)));
-
-    proven_u8str_destroy(alloc, &amp;s);
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>만든 직후    "hello world" (len 11)
-insert(5, ",")   "hello, world" (len 12)
-replace_at       "hello, proven C" (len 15)
-replace_first    "HELLO, proven C" (len 15)
-없는 것 바꾸기     -> err=0 (그대로 두고 성공)
-remove(0,6)      " proven C" (len 9)
-reset 뒤        "" (len 0)
-다시 채운 뒤 "다시 쓴다" (len 13)
-(reset 은 재할당 없이 되쓰기 위한 것 — 프레임마다 새로 짓는 코드에)
-reserve(256)      -> err=0 (아레나에서 특히 값을 한다)
-starts_with("다시")=true ends_with("쓴다")=true find("쓴")=7
-못 찾으면 true (PROVEN_INDEX_NOT_FOUND)
-</code></pre></div></div><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>계약</strong></th></tr><tr><td><code>_insert(&amp;s, i, v)</code></td><td><code>i</code> 자리에 끼워 넣는다</td><td><code>i</code> ≤ 길이. 뒤를 밀어낸다</td></tr><tr><td><code>_remove(&amp;s, i, n)</code></td><td><code>i</code>부터 <code>n</code>바이트를 지운다</td><td>범위를 넘으면 에러</td></tr><tr><td><code>_replace_at(&amp;s, i, old, v)</code></td><td>구간을 다른 내용으로</td><td>길이가 달라도 된다</td></tr><tr><td><code>_replace_first(&amp;s, off, t, r)</code></td><td>처음 만나는 <code>t</code>를 <code>r</code>로</td><td>★ 없으면 <strong>성공</strong>으로 돌아온다</td></tr><tr><td><code>_reset(&amp;s)</code></td><td>내용만 비운다</td><td>버퍼와 용량은 그대로</td></tr><tr><td><code>_reserve(alloc, &amp;s, n)</code></td><td>용량을 미리 <code>n</code>까지</td><td>아레나에서 특히 값을 한다</td></tr><tr><td><code>_append_byte(alloc, &amp;s, b)</code></td><td>한 바이트 붙이기</td><td>필요하면 늘린다</td></tr></table><p>별표 친 <code>_replace_first</code>의 계약을 조심해야 한다. <strong>찾지 못해도 에러가 아니라 성공</strong>이다 — “바꿀 것이 없었다”와 “바꿨다”를 구별하려면 <code>proven_u8str_view_find</code>로 먼저 확인해야 한다. 예제의 “없는 것 바꾸기”가 <code>err=0</code>으로 돌아오는 것이 그 확인이다.</p><p><code>_reset</code>과 <code>_reserve</code>는 성능을 위한 짝이다. 프레임마다, 요청마다 문자열을 새로 짓는 코드에서 <strong>버퍼를 버리지 않고 되쓰는</strong> 것이 <code>_reset</code>이고, 얼마나 커질지 대충 아는 경우 미리 잡아 두는 것이 <code>_reserve</code>다. 73장에서 본 대로 아레나 위에서는 <code>_reserve</code>가 특히 값을 한다 — 중간에 다른 할당이 끼기 전에 크게 잡아 두면 제자리 성장이 가능해지기 때문이다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>_insert</code>와 <code>_insert_grow</code> 중 어느 쪽을 기본으로 삼아야 하는가?</p></div><div class="dev qa-a"><p class="dev-label">답 <strong>용량을 내가 정한 자리에서는 <code>_insert</code></strong>, <strong>내용이 얼마나 될지 모르는 자리에서는 <code>_insert_grow</code></strong>다. 판단의 기준은 간단하다 — “여기서 자리가 모자란 것이 <strong>버그</strong>인가, 아니면 <strong>일어날 수 있는 일</strong>인가.”</p><p>고정 크기 버퍼에 프로토콜 헤더를 조립하는 자리라면 모자란 것이 버그이고, 그때는 거부가 옳다(그리고 그 에러가 버그를 드러낸다). 사용자 입력을 이어 붙이는 자리라면 얼마든지 길어질 수 있으니 성장이 옳다. 임베디드 코드가 <code>_grow</code> 없는 판만 쓰는 이유도 같다 — 그쪽에서는 <strong>예측 불가능한 성장 자체가 금지</strong>이기 때문이다(78장).</p></div></div><h3>74.5 찾기와 자르기 — 복사 없는 텍스트 처리</h3><p>예제의 ③·④가 뷰의 진짜 쓸모다. 부분 문자열을 얻는 데 복사가 필요 없다 — 원본을 가리키는 포인터와 길이를 새로 계산할 뿐이다. CSV 한 줄을 세 필드로 가르는 동안 할당은 한 번도 일어나지 않았다.</p><p>이 무늬는 파서에서 특히 강력하다. 25장에서 <code>sscanf</code>로 줄을 해석할 때는 결과를 담을 버퍼를 미리 준비해야 했지만, 뷰로 자르면 <strong>원본 위에 표시만</strong> 남긴다. 대신 지켜야 할 것이 하나 늘어난다 — 72장에서 본 대로 <strong>원본이 살아 있는 동안만 유효하다</strong>.</p><p><code>find</code>가 못 찾았을 때 돌려주는 값에도 규약이 있다. 0이나 음수가 아니라 <code>PROVEN_INDEX_NOT_FOUND</code>라는 이름의 센티널이다. 69장에서 센티널 값의 위험을 이야기했는데, 여기서는 <strong>이름이 붙어 있고 문서화되어 있다</strong>는 점이 다르다 — 이름 없는 마법의 수와 이름 붙은 계약은 다른 물건이다.</p><div class="dev misconception"><p class="dev-label">⚠ “길이를 들고 다니면 글자 수를 아는 것이다”</p><p>아니다. 길이는 <strong>바이트 수</strong>다. 9장에서 배운 대로 UTF-8에서 한 글자는 1~4바이트이므로, 한글 “가”는 3바이트이고 이모지는 4바이트다. 예제의 출력이 굳이 “(5 bytes)”라고 밝히는 이유다. 그래서 “n번째 글자”를 다루는 일은 여전히 조심스럽고, <strong>바이트 경계에서 아무 데나 자르면</strong> 9장에서 본 깨진 글자가 나온다. 문자열 라이브러리가 해결해 주는 것은 경계 침범이지 인코딩의 본질적 난이도가 아니다.</p></div><h3>74.6 두 세계의 경계 — NUL 종단과 UTF-16</h3><p>바깥 세계와 만나는 자리마다 변환이 필요하다.</p><ul><li><code>proven_u8str_as_cstr</code> — 소유 문자열에서 NUL 종단 포인터를 얻는다. 내부에 NUL을 유지해 두므로 복사도 할당도 없다. <code>printf("%s")</code>나 파일 API에 넘길 때 쓴다.</li><li><code>proven_u8str_view_to_cstr</code> — 뷰에서 NUL 종단 문자열을 만든다. 이쪽은 <strong>할당자를 받는다</strong> — 뷰는 원본 중간을 가리킬 수 있어 그 자리에 NUL을 쓸 수 없기 때문이다. 시그니처가 다시 한번 사실을 말해 준다.</li><li><code>proven_u16str_t</code> / <code>proven_u16str_view_t</code> — UTF-16 세계와의 다리다. Windows API가 이 인코딩을 쓰므로 변환이 필요하고, 변환은 실패할 수 있다(짝이 맞지 않는 서러게이트 같은 것). 그래서 결과는 꾸러미로 온다.</li></ul><div class="dev realcase"><p class="dev-label">◉ “추측하지 말고 거부하라” — 인코딩 처리의 원칙</p><p>9장에서 본 텍스트 보안 문제들의 뿌리는 대개 <strong>너그러운 디코더</strong>다. 잘못된 UTF-8을 만났을 때 “비슷한 것으로 고쳐 읽는” 구현은 과거 여러 번 보안 사고의 통로가 됐다 — 특히 지나치게 긴 인코딩(overlong)을 허용한 디코더들이 검사를 우회당했다. 그래서 오늘의 규범은 한 문장이다. <strong>유효하지 않은 입력은 고쳐 읽지 말고 거부하라.</strong> proven의 인코딩 변환이 <code>PROVEN_ERR_INVALID_ENCODING</code>을 돌려주며 멈추는 것이 그 규범의 구현이고, 이 원칙은 이 장 전체의 “자르지 않는다”와 정확히 같은 정신이다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><p>문자열 어휘 요약.</p><table><tr><th><strong>함수</strong></th><th><strong>하는 일</strong></th><th><strong>실패·소유</strong></th></tr><tr><td><code>u8str_create(alloc, cap)</code></td><td>소유 문자열 생성</td><td>꾸러미 반환, <code>_destroy</code> 필요</td></tr><tr><td><code>u8str_borrow(buf, cap)</code></td><td>남의 버퍼 위에 문자열</td><td>할당 없음, 파괴 없음</td></tr><tr><td><code>u8str_append(&amp;s, v)</code></td><td>용량 안에서 덧붙임</td><td>모자라면 거부(원본 보존)</td></tr><tr><td><code>u8str_append_partial</code></td><td>들어가는 만큼</td><td>넣은 바이트 수 반환</td></tr><tr><td><code>u8str_append_grow(alloc,…)</code></td><td>모자라면 늘려서</td><td>할당 실패 가능</td></tr><tr><td><code>u8str_view_find</code></td><td>부분 문자열 위치</td><td>없으면 <code>PROVEN_INDEX_NOT_FOUND</code></td></tr><tr><td><code>u8str_view_slice</code></td><td>부분 뷰</td><td>복사 없음 — 원본 수명에 묶임</td></tr><tr><td><code>u8str_as_cstr</code></td><td>NUL 종단 포인터</td><td>복사 없음</td></tr><tr><td><code>u8str_view_to_cstr</code></td><td>뷰 → C 문자열</td><td>할당자 필요</td></tr></table></div><p>문자열을 안전하게 담고 자를 수 있게 됐다. 그런데 아직 <strong>만드는</strong> 일이 남았다 — 수와 값을 글자로 바꾸고, 글자를 다시 수로 되돌리는 일. 69장의 셋째 버그가 기다리는 자리이자, 이 라이브러리에서 가장 눈에 띄게 다른 문법이 나오는 자리다.</p>
+atomic_long 은 잠금 없이 되는가? 예
+</code></pre></div></div><p>같은 루프를 네 갈래가 20만 번씩 돌았다. 기대한 값은 80만인데, 보호 없는 <code>long</code>은 그 근처에도 못 갔다. 사라진 몫은 실행할 때마다 다르다 — 이 비결정성이야말로 이 부류 버그의 성격이다. <strong>재현되지 않는 손실</strong>.</p><p>원자적(atomic) 변수 쪽은 언제나 정확히 80만이다. <code>atomic_fetch_add</code>가 “읽고-더하고-쓰기”를 <strong>쪼개질 수 없는 한 덩어리</strong>로 수행하기 때문이다. 원자(原子)라는 이름이 그 뜻이다 — 더 이상 쪼개지지 않는 것.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“경쟁 상태는 값이 가끔 어긋나는, 확률적인 성능 문제다”</strong></p><p>두 겹으로 틀렸다. 첫째, 값이 어긋나는 것이 아니라 <strong>계약이 깨진다</strong>. C11 이후의 표준은 이렇게 정한다 — 두 갈래가 같은 기억을 동시에 만지고 그중 하나라도 쓰기이며 원자적이지도 순서 지어지지도 않았다면, 그것은 <strong>데이터 경쟁</strong>이고 프로그램 전체가 정의되지 않은 동작이다(49장). “값이 하나 틀리는” 정도로 끝난다는 보장이 없다는 뜻이다.</p><p>둘째, 컴파일러가 이 전제 위에서 최적화한다. 경쟁이 없다고 가정하고 변수를 레지스터에 올려 두면, 상대가 아무리 값을 바꿔도 이쪽 루프는 <strong>영원히 옛 값만 본다</strong>. 실제로 “디버그 빌드에서는 되는데 릴리스에서 멈추는” 무한 루프의 흔한 정체가 이것이다(17장의 릴리스 전용 버그가 여기서 재현된다).</p></div><h3>74.2 <code>volatile</code>은 왜 답이 아닌가</h3><p>C를 오래 쓴 코드에서 <code>volatile int flag;</code>로 갈래 사이 신호를 주고받는 관행을 자주 본다. 지금은 틀린 관행이다. <code>volatile</code>이 약속하는 것은 하나 뿐이다 — <strong>컴파일러가 이 접근을 없애거나 합치지 않는다</strong>. 49장에서 볼 대로 그 목적은 하드웨어 레지스터(값이 바깥에서 바뀌는 자리)였다.</p><p><code>volatile</code>이 약속하지 않는 것이 둘이다. <strong>원자성</strong> — <code>volatile long x;</code>의 <code>x++</code>도 여전히 세 걸음이라 쪼개진다. 그리고 <strong>순서와 가시성</strong> — CPU가 쓰기 순서를 바꾸거나 다른 코어에 늦게 보이는 것을 막지 못한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th></th><th><strong>쪼개지지 않음</strong></th><th><strong>코어 사이 가시성</strong></th><th><strong>재배열 차단</strong></th></tr><tr><td><code>volatile</code></td><td>아니오</td><td>아니오</td><td>아니오(다른 접근 대비)</td></tr><tr><td><code>_Atomic</code></td><td>예</td><td>예</td><td>예(선택한 순서만큼)</td></tr><tr><td>뮤텍스</td><td>예(구간 전체)</td><td>예</td><td>예</td></tr></table></div><p class="float-caption">표 74.1</p></figure><p>정리하면 이렇다. <strong>하드웨어 레지스터에는 <code>volatile</code>, 갈래 사이 공유에는 원자적 타입이나 뮤텍스.</strong> 자바나 C#의 <code>volatile</code>은 이름만 같고 의미가 달라서(그쪽은 실제로 가시성을 보장한다), 그 언어의 습관을 C로 들여오는 것이 흔한 사고의 통로다.</p><h3>74.3 원자적 타입과 연산</h3><p>쓰는 법은 단순하다. 타입 앞에 <code>_Atomic</code>을 붙이거나, 헤더가 주는 이름 (<code>atomic_int</code>, <code>atomic_long</code>, <code>atomic_bool</code>, <code>atomic_size_t</code> …)을 쓴다.</p><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdatomic.h</span><span class="tok-s">></span>
+atomic_int  counter <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> = _Atomic int </span></em><em><span class="tok-c">*/</span></em>
+_Atomic <strong><span class="tok-t">long</span></strong> total<span class="tok-x">;</span></code></pre><p>연산은 함수(또는 그 이름의 매크로)로 부른다. 평범한 연산자(<code>++</code>, <code>+=</code>)를 써도 원자적으로 동작하지만, <strong>원자적이라는 사실이 코드에 보이지 않아</strong> 읽는 사람이 놓치기 쉬우므로 명시적 함수를 권한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>연산</strong></th><th><strong>하는 일</strong></th><th><strong>쓰는 자리</strong></th></tr><tr><td><code>atomic_load</code></td><td>읽기</td><td>현재 값 보기</td></tr><tr><td><code>atomic_store</code></td><td>쓰기</td><td>값 설정</td></tr><tr><td><code>atomic_fetch_add</code>·<code>_sub</code></td><td>더하고 <strong>이전 값</strong> 반환</td><td>카운터·통계</td></tr><tr><td><code>atomic_fetch_or</code>·<code>_and</code>·<code>_xor</code></td><td>비트 조작</td><td>플래그 집합</td></tr><tr><td><code>atomic_exchange</code></td><td>바꾸고 이전 값 반환</td><td>자리 교체</td></tr><tr><td><code>atomic_compare_exchange_strong</code></td><td>기대값과 같을 때만 바꾼다(CAS)</td><td>잠금 없는 자료구조</td></tr><tr><td><code>atomic_compare_exchange_weak</code></td><td>같지만 헛되이 실패할 수 있다</td><td>루프 안에서</td></tr><tr><td><code>atomic_flag_test_and_set</code></td><td>가장 원시적인 시험-설정</td><td>스핀락</td></tr></table></div><p class="float-caption">표 74.2</p></figure><p><code>fetch_add</code>가 <strong>이전 값</strong>을 돌려준다는 점이 자주 헷갈리는 자리다. “몇 번째 인지”를 얻고 싶으면 반환값을 쓰고, “지금 얼마인지”를 알고 싶으면 반환값에 더한 값이거나 별도의 <code>atomic_load</code>다 — 그런데 후자는 그사이 또 바뀔 수 있다.</p><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>원자적 연산을 여러 번 부르면 그 묶음도 원자적이라고 믿기</p><pre><code data-lang="c"><strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong>atomic_load</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>count</strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">&lt;</span></strong> LIMIT<span class="tok-x">)</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ① 읽고 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>atomic_fetch_add</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>count</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ② 더한다 — 그사이 남이 끼어든다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>①과 ② 사이에 다른 갈래가 값을 올리면 한도를 넘긴다. <strong>원자성은 연산 하나의 성질이지 구간의 성질이 아니다.</strong> 구간을 지키려면 CAS 루프로 묶거나 뮤텍스를 쓴다.</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> cur <strong><span class="tok-x">=</span></strong> <strong>atomic_load</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>count</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">do</span></strong> <span class="tok-x">{</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>cur <strong><span class="tok-x">>=</span></strong> LIMIT<span class="tok-x">)</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 한도 검사와 갱신을 한 덩어리로 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span> <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>atomic_compare_exchange_weak</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>count</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>cur</strong><strong><span class="tok-x">,</span></strong><strong> cur </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span><span class="tok-x">;</span></code></pre><p>실패하면 <code>cur</code>에 <strong>현재 값이 담겨 돌아온다</strong>는 것이 이 관용구의 핵심이다. 그래서 루프 안에서 다시 읽을 필요가 없다.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>compare_exchange</code>의 strong과 weak은 무엇이 다른가? 왜 “헛되이 실패” 하는 판이 따로 있는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 일부 CPU(ARM 계열 등)는 CAS를 “예약하고-나중에-조건부로 쓰기”라는 두 명령 쌍으로 구현한다. 그사이 인터럽트나 캐시 사정으로 예약이 풀리면, 값이 기대와 같았는데도 실패로 돌아온다 — 이것이 <strong>가짜 실패</strong>(spurious failure)다. <code>weak</code>은 이 실패를 그대로 노출하는 대신 더 빠르고, <code>strong</code>은 내부에서 다시 시도해 “값이 달랐을 때만 실패”를 보장하는 대신 조금 느리다.</p><p>규칙은 간단하다. <strong>루프 안에서는 <code>weak</code>, 루프 없이 한 번만 시도할 때는 <code>strong</code>.</strong> 어차피 루프가 다시 돌 것이므로 가짜 실패가 해롭지 않고, 그 대가로 이득만 남는다.</p></p></div></div><h3>74.4 메모리 순서 — 건드리지 않는 것이 기본</h3><p><code>atomic_fetch_add(&amp;x, 1)</code>처럼 순서를 지정하지 않으면 가장 강한 순서인 <strong>순차 일관성</strong>(<code>memory_order_seq_cst</code>)이 쓰인다. 모든 갈래가 원자적 연산의 순서를 하나의 일관된 이야기로 본다는 뜻이고, 사람이 추론하기 가장 쉬운 모형이다. 대신 가장 비싸다.</p><p>C는 여섯 가지 순서를 제공한다. 표로 얼굴만 익힌다 — <strong>대부분의 프로그램은 기본값만 쓰면 된다.</strong></p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>순서</strong></th><th><strong>보장</strong></th><th><strong>쓰는 자리</strong></th></tr><tr><td><code>seq_cst</code></td><td>전역적으로 하나의 순서</td><td>기본값. 의심스러우면 이것</td></tr><tr><td><code>acquire</code></td><td>이후의 접근이 위로 못 올라감</td><td>잠금 얻기·소비자 쪽 읽기</td></tr><tr><td><code>release</code></td><td>이전의 접근이 아래로 못 내려감</td><td>잠금 놓기·생산자 쪽 쓰기</td></tr><tr><td><code>acq_rel</code></td><td>읽고-쓰기 연산에서 둘 다</td><td>CAS 로 상태 전이</td></tr><tr><td><code>relaxed</code></td><td>원자성만. 순서 보장 없음</td><td>순수 카운터·통계</td></tr><tr><td><code>consume</code></td><td>사실상 폐기(구현이 acquire 로 격상)</td><td>쓰지 않는다</td></tr></table></div><p class="float-caption">표 74.3</p></figure><p>가장 흔한 실전 쓰임은 두 가지다. 첫째, <strong>생산자-소비자의 깃발</strong>: 데이터를 채운 뒤 <code>release</code>로 깃발을 세우고, 소비자는 <code>acquire</code>로 깃발을 본 뒤 데이터를 읽는다. 이 짝이 “깃발이 보이면 데이터도 보인다”를 보장 한다. 둘째, <strong>순수 통계 카운터</strong>: 값의 최종 합만 맞으면 되고 다른 데이터와 순서를 맞출 필요가 없으므로 <code>relaxed</code>가 정확히 맞는 도구다.</p><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>성능을 위해 일단 <code>relaxed</code>로 바꿔 보기</p><pre><code data-lang="c"><strong>atomic_store_explicit</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>ready</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> memory_order_relaxed</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 깃발 </span></em><em><span class="tok-c">*/</span></em></code></pre><p><code>relaxed</code>는 <strong>이 변수의 원자성만</strong> 보장한다. 앞에서 채운 데이터가 상대에게 보인다는 보장이 없으므로, 소비자는 깃발이 선 것을 보고도 <strong>채워지기 전의 데이터</strong>를 읽을 수 있다. 이런 코드는 x86에서는 대개 멀쩡히 돌다가 ARM 기기에서 재현 불가능한 버그로 나타난다 — 하드웨어마다 허용하는 재배열이 다르기 때문이다.</p><p>규칙: <strong>깃발과 데이터가 짝을 이루면 <code>release</code>/<code>acquire</code>.</strong> 그 짝을 이해하기 전에는 기본값을 그대로 둔다. 여기서 아끼는 나노초보다 잃는 시간이 훨씬 크다.</p></div><h3>74.5 잠금 없음(lock-free)이라는 말</h3><p>예제 마지막 줄이 <code>atomic_is_lock_free</code>로 물은 것이 그것이다. 원자적 타입이 CPU 명령 하나로 처리되면 <strong>잠금 없음</strong>이고, 그렇지 않으면 라이브러리가 뒤에서 숨은 잠금을 쓴다. 오늘의 주류 기계에서 포인터 크기 이하의 정수는 대개 잠금 없이 된다. 반면 큰 구조체를 <code>_Atomic</code>으로 감싸면 — 문법은 통과하지만 — 숨은 잠금이 붙어 성능이 뜻밖에 나빠질 수 있다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“원자적 연산은 뮤텍스보다 항상 빠르다”</strong></p><p>경합이 낮을 때는 대개 맞지만, 경합이 심하면 뒤집힌다. 여러 코어가 같은 캐시 라인을 두고 다투면 그 라인이 코어 사이를 계속 오간다(11장의 거짓 공유가 여기서 재현된다). CAS 루프는 실패할 때마다 다시 도는데, 경합이 심하면 이 재시도가 통째로 낭비다 — 뮤텍스는 실패한 갈래를 재우지만 스핀은 코어를 태운다.</p><p>그리고 잠금 없는 자료구조를 <strong>직접 짜는 것</strong>은 난도가 다른 일이다. ABA 문제(값이 A에서 B로 갔다 A로 돌아와 CAS가 속는 것), 메모리 회수 시점, 진행 보장 — 논문 한 편짜리 주제들이다. 실무의 정답은 대개 이렇다: <strong>카운터와 깃발에는 원자적 타입, 자료구조에는 검증된 라이브러리나 뮤텍스.</strong></p></div><h3>74.6 쓸 자리와 쓰지 않을 자리</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>상황</strong></th><th><strong>권하는 도구</strong></th><th><strong>이유</strong></th></tr><tr><td>통계 카운터</td><td><code>atomic_fetch_add</code>(<code>relaxed</code>)</td><td>순서가 필요 없다</td></tr><tr><td>종료 요청 깃발</td><td><code>atomic_bool</code> + <code>release</code>/<code>acquire</code></td><td>데이터와 짝을 이룬다</td></tr><tr><td>한 번만 초기화</td><td><code>call_once</code>(<code>&lt;threads.h></code>) 또는 CAS</td><td>이중 검사 잠금은 손으로 짜지 않는다</td></tr><tr><td>여러 값의 불변식</td><td>뮤텍스</td><td>원자성은 변수 하나 단위다</td></tr><tr><td>큰 구조체 공유</td><td>뮤텍스</td><td><code>_Atomic</code> 구조체는 숨은 잠금</td></tr><tr><td>신호 처리기와의 공유</td><td><code>sig_atomic_t</code> 또는 잠금 없는 원자적 타입</td><td>70장의 제약</td></tr><tr><td>하드웨어 레지스터</td><td><code>volatile</code></td><td>갈래 사이 공유가 아니다</td></tr></table></div><p class="float-caption">표 74.4</p></figure><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>C11이 메모리 모델을 들여온 이유</p><p>C11 이전의 표준에는 <strong>갈래가 여럿이라는 개념 자체가 없었다.</strong> 스레드는 라이브러리(POSIX 스레드 등)의 일이었고, 언어는 “프로그램이 한 줄기로 흐른다”는 전제 위에서 최적화를 정의했다. 그 틈에서 오랫동안 아무도 정확히 답할 수 없는 질문들이 쌓였다 — 컴파일러가 이 쓰기를 다른 갈래가 본다고 가정해야 하는가, 이 재배열은 합법인가, 뮤텍스 없는 이 코드는 틀린 것인가.</p><p>2004년경 자바가 먼저 메모리 모델을 정비했고, C++11과 C11이 그 흐름을 이어 <strong>언어 차원의 메모리 모델</strong>을 도입했다. 이때 들어온 것이 데이터 경쟁의 정의, 원자적 타입, 그리고 여섯 가지 메모리 순서다. 오늘 우리가 “데이터 경쟁은 정의되지 않은 동작”이라고 한 줄로 말할 수 있는 것은 이 정비 덕분이다 — 그 전에는 그 문장을 적을 언어조차 없었다.</p></div><div class="dev recap"><p class="dev-label">복습 정리</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>데이터 경쟁</td><td>느림이 아니라 <strong>계약 밖</strong>. 최적화가 코드를 바꾼다</td></tr><tr><td><code>volatile</code></td><td>갈래 사이 공유의 도구가 아니다. 하드웨어용</td></tr><tr><td>기본 순서</td><td><code>seq_cst</code>. 대부분 그대로 두는 것이 정답</td></tr><tr><td><code>fetch_add</code></td><td><strong>이전 값</strong>을 돌려준다</td></tr><tr><td>연산 두 번</td><td>묶어도 원자적이 아니다 — CAS 루프나 뮤텍스</td></tr><tr><td><code>weak</code>/<code>strong</code></td><td>루프 안이면 <code>weak</code></td></tr><tr><td>잠금 없음</td><td>작은 정수는 대개 예. 큰 구조체는 숨은 잠금</td></tr><tr><td>자료구조</td><td>직접 짜지 않는다</td></tr></table></div><p class="float-caption">표 74.5</p></figure></div><p>쪼개지지 않는 연산을 보았다. 다음 장은 정반대 방향의 도구다 — 연산이 <strong>그릇을 넘쳤는지</strong>를 계약대로 물어보는, C23의 검사 산술이다.</p>
 <div class="nav"><a href="ch73.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch75.html">다음 →</a></div>
 </div></main></body></html>

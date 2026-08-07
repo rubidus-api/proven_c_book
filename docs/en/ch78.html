@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>78 The boundaries — running things overlapped, and when there is no OS — Proven C Book</title><style>
+<title>78 Inside the allocator — the heap, alternative allocators, alternative standard libraries — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,74 +259,19 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch77.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch79.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch78.html">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>78 The boundaries — running things overlapped, and when there is no OS</h2><div class="dev organizer"><p class="dev-label">By the end of this chapter</p><p>The last chapter of Part XII. We see the two ways of running several things <span id="idx-entry-111"></span>overlapped (stackless coroutines and the job system), why allocators and pointer provenance become a problem in a program running along several strands, and what shape this library takes in a place with no operating system at all. The last section is <strong>when it is better not to use it</strong>.</p></div><div><div class="dev deepqa"><p class="dev-label">Looking back</p><p>Chapter 12 said cores became several because of the clock’s limits, and that accidents such as false sharing arise. Then how many different meanings does the phrase “doing several things at once” have?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>At least two. <strong>Concurrency</strong> is several tasks progressing by turns while waiting for each other, and it holds even with one core — such is a server doing other work while waiting for input and output. <strong>Parallelism</strong> is several cores really calculating at the same moment. The former is a problem of <strong>structure</strong>, the latter a problem of <strong>performance</strong>. This chapter’s coroutines treat the former and the job system the latter.</p></div></div><h3>78.1 Stackless coroutines — overlapping without threads</h3><p>If a function can do some work, stop, and later start again <strong>from that place</strong>, much becomes easy. Because the code can be written in order instead of a state machine being written by hand.</p><div><div><p><code>examples/ch78/coro.c</code></p><pre><code data-lang="c">#include &lt;proven.h>
-#include &lt;stdio.h>
-
-/* 스택리스 코루틴: 진행 상태를 구조체 한 칸에 담고, 매크로가 switch 로
-   그 자리에 되돌아간다. 스레드도, 별도 스택도, 할당도 없다. */
-typedef struct {
-    proven_coro_t co;      /* 어디까지 갔는지 기억하는 칸 */
-    int           sent;
-    int           limit;
-} producer_t;
-
-/* 0 을 돌려주면 "값 하나를 내놓고 잠시 멈춤", 1 이면 "다 끝남" */
-static int produce(producer_t *p, int *out)
-{
-    PROVEN_CORO_BEGIN(&amp;p->co);
-    while (p->sent &lt; p->limit) {
-        *out = p->sent * 10;
-        p->sent += 1;
-        PROVEN_CORO_YIELD(&amp;p->co);   /* 여기서 나갔다가 다음 호출에 되돌아온다 */
-    }
-    PROVEN_CORO_END(&amp;p->co);
-}
-
-int main(void)
-{
-    producer_t p = { .sent = 0, .limit = 4 };
-    PROVEN_CORO_INIT(&amp;p.co);
-
-    int value = -1;
-    while (!PROVEN_CORO_IS_DONE(&amp;p.co)) {
-        if (produce(&amp;p, &amp;value) == 0)
-            printf("produced %d\n", value);
-    }
-    printf("finished after %d values; coroutine state is %zu bytes\n",
-           p.sent, sizeof(proven_coro_t));
-    return 0;
-}
-</code></pre></div><div><p>Output</p><pre><code>produced 0
-produced 10
-produced 20
-produced 30
-finished after 4 values; coroutine state is 4 bytes
-</code></pre></div></div><p>The heart of it is the last line — the state this coroutine remembers is <strong>4 bytes</strong>. There is no separate stack, no thread and no allocation. It is a tidying up of an old knack in C in which macros make re-entry points with <code>switch</code> and <code>case</code> (a cousin of Duff’s device — that syntax seen in chapter 30 is used again here).</p><p>The price is clear too. <strong>Local variables do not survive</strong> — stop and come back and they are gone, so state that must be maintained has to be kept in a struct. It is why the example kept <code>sent</code> as a struct member. And, being implemented with <code>switch</code>, <code>PROVEN_CORO_YIELD</code> cannot be put inside another <code>switch</code>.</p><p>Even so the reason this model is loved in embedded work is plain. If one task is 4 bytes, hundreds may be raised with no burden, and since no stack is taken separately the memory usage can be calculated at compile time.</p><div class="dev misconception"><p class="dev-label">⚠ “A coroutine is a light version of a thread”</p><p>What they do is entirely different. Threads are switched by the operating system <strong>cutting in as it pleases</strong> (pre-emption), while a coroutine stops only where it itself wrote <code>YIELD</code> (co-operation). So race conditions do not arise between coroutines — because two coroutines never run at the same moment. There is a price in exchange. If one coroutine calculates long without yielding, all the rest starve. And coroutines cannot use several cores — which is why the next section’s job system exists separately.</p></div><h3>78.2 The job system — using several cores</h3><p><code>proven_job_sys_t</code> is a small system equipped with a queue of work and worker threads. Its characteristic is that the queue’s size is <strong>fixed</strong> — if it overflows, submission fails, and that failure comes as a value. The judgement is that an infinitely growing queue is merely a device for putting the problem off until memory is exhausted.</p><p>There are five doors, and their order is itself the contract.</p><pre><code data-lang="c">proven_job_sys_t *sys;
-proven_err_t e = proven_job_system_init(alloc, 4, 256, &amp;sys);  /* ① 4 workers, queue 256 */
-bool ok = proven_job_submit(sys, routine, arg);                /* ② submit (false if full) */
-bool did = proven_job_execute_one(sys);                        /* ③ this thread handles one too */
-proven_job_system_close(sys);                                  /* ④ take no more */
-proven_job_system_destroy(sys);                                /* ⑤ join the workers and clean up */</code></pre><p>That it is an <strong>opaque type</strong> stands out — the inside of <code>proven_job_sys_t</code> is not in the header and it is handled only by pointer (the opaque type of chapter 52 in the flesh). Platform resources such as threads and locks are inside, and their layout is not to be exposed to user code.</p><p>That ④ and ⑤ are divided is a contract too. <strong>Closing</strong> is “no more submissions are taken”, and <strong>destroying</strong> is “wait for the workers to finish and then clean up”. Between them, the header requires the producer threads to be joined.</p><p><code>proven_job_execute_one</code> is a little special. It lets <strong>the submitting side handle one item of work itself</strong> — so when submission fails because the queue is full, instead of merely waiting one can handle one and try again (a simple form of work stealing).</p><div class="dev antipattern"><p class="dev-label">✗ Overlapping closing with submitting</p><pre><code data-lang="c">/* thread A */                    /* thread B */
-proven_job_submit(sys, job);      proven_job_system_destroy(sys);</code></pre><p>A pattern the header explicitly forbids. The correct order is <strong>close, join all the producers, then destroy</strong>. Such ordering contracts are not solved by hiding a lock inside the data structure — rather, a hidden lock increases the code that “mistakenly believes it works”. It is also why this library puts no locks in its containers and pins down that <strong>shared mutation is synchronised by the caller</strong>.</p></div><h3>78.3 Threads, allocators, and provenance</h3><p>In a program running along several strands the allocator demands special care. If two threads use one arena together, the simple action seen in chapter 73 of “cutting from the front” becomes a race at once. The prescription is mostly <strong>one per thread</strong> — and then no synchronisation is needed at all.</p><p>Pointer <strong>provenance</strong>, whose name only was seen in chapter 14, becomes practical here too. Since even at the same address it matters which allocation a pointer came from, giving a block obtained from one allocator back to another is a contract violation (as in chapter 73′s counterexample) even if the address happens to match. The library’s name came from here.</p><h3>78.4 When there is no OS — freestanding</h3><p>This is the constraint that most shaped this library. It is the demand to run in the very environment chapter 53 gave as the reason the standard library is thin — a place with no operating system, no heap and no files.</p><span id="idx-entry-112"></span><p>What changes in a freestanding build is this.</p><ul><li><code>platform/</code> is not included at all. Files, time and OS randomness disappear.</li><li>Allocation is done with an arena over a static buffer (chapter 73). There is no <code>malloc</code>.</li><li>Strings are handled with <code>_borrow</code> over stack and static buffers (chapter 74).</li><li>The panic handler is registered by you — there may be no console to print to, so it becomes a matter of lighting an LED, kicking a watchdog or rebooting.</li><li>Real-number formatting uses large-integer arithmetic, so it can be taken out whole if it is not needed.</li></ul><p>Why the disciplines of the earlier chapters — “take the allocator as an argument”, “a view is borrowed”, “no hidden globals” — were so persistent shows itself here. Those disciplines were not a taste but <strong>the minimum condition for running in this environment</strong>.</p><h4>78.4.1 The actual build procedure</h4><p>Left in words alone it stays vague, so here is the order.</p><ol><li><strong>Take <code>platform/</code> out of the compilation list.</strong> Leave only <code>src/proven/*.c</code>. Files, time, OS randomness, streams, mmap and the job system go out with it.</li><li><strong>Define <code>PROVEN_FREESTANDING</code></strong> (<code>-DPROVEN_FREESTANDING=1</code>). <code>proven_heap_allocator()</code> then returns <strong>an unusable value</strong> (all zeros), and if it is used by mistake <code>proven_alloc_is_valid</code> says false.</li><li><strong>Take the backing memory statically.</strong> Put one array where the linker script knows it and lay an arena over it (chapter 73).</li><li><strong>Register a panic handler.</strong> There being no console, one of an LED, a watchdog or a reboot (chapter 71′s example).</li><li><strong>Take out what is not needed.</strong> If real-number formatting is not used, <code>-DPROVEN_FMT_NO_FLOAT</code> strips the large-integer arithmetic code out whole.</li></ol><pre><code data-lang="c">/* the skeleton of a freestanding program */
-static proven_byte_t g_pool[8 * 1024];      /* the memory budget is settled here */
-
-int main(void)
-{
-    proven_set_panic_handler(board_panic);
-    proven_arena_t arena = proven_arena_create(
-        (proven_mem_mut_t){ .ptr = g_pool, .size = sizeof g_pool });
-    proven_allocator_t alloc = proven_arena_as_allocator(&amp;arena);
-
-    for (;;) {
-        proven_arena_reset(&amp;arena);          /* taken back each turn */
-        handle_one_event(alloc);
-    }
-}</code></pre><p>These twenty lines contain all of this part’s discipline — <strong>the allocator is an argument</strong>, <strong>lifetime is per arena</strong>, <strong><code>main</code> does not return</strong> (chapter 47), and <strong>the memory budget is written as a number in the source</strong>.</p><div class="dev realcase"><p class="dev-label">◉ The same code in two worlds — and its price</p><p>Keeping as one set the code that runs both in embedded work and on a host really is of great value. If a protocol parser can be tested on a PC and put into the firmware as it stands, the time spent floundering on a board with no debugging environment shrinks greatly. It is why many embedded teams keep a separate “test build that runs on the host”, and what makes that structure possible is exactly the design of <strong>confining platform dependence to one layer</strong>. The price is that the API becomes a little more formal — code that works anywhere is specialised to nowhere.</p></div><h3>78.5 When it is better not to use it</h3><p>We close honestly. There are cases where this library is not the answer.</p><ul><li><strong>Short, script-like programs</strong> — for a twenty-line tool, ownership discipline and allocator parameters are mere formality. The standard library is enough.</li><li><strong>A codebase that already has other conventions</strong> — a large project mostly already has its own string, container and error conventions. Mix two conventions and conversion code arises at every boundary, and those boundaries become the places of new bugs.</li><li><strong>Places like C++ and Rust where the language already solves the problem</strong> — in an environment where the language handles ownership and error propagation, there is little reason to lay a C library on top.</li><li><strong>Work that one standard function finishes</strong> — exactly as this book said in chapter 53. The right attitude is neither “do not use it” nor “use it unconditionally” but <strong>knowing the contract and choosing</strong>.</li></ul><div><div class="dev qa-q"><p class="dev-label">Q</p><p>Then what remains of what was learned in this part if proven is not used?</p></div><div class="dev qa-a"><p class="dev-label">A</p><p>Almost all of it. Strings that carry their length, writes that refuse rather than truncate, errors that come back as values, allocation visible in the signature, the distinction of owning and borrowing, size calculation done with checked arithmetic, comparators that keep a total order, hashes that assume adversarial input — these are not a library but <strong>design principles</strong>, and they can be applied by hand to any C code. Open chapter 69′s table again and the right-hand column is entirely such items. What this part really wanted to sell is not the code but that column.</p></div></div><div class="dev recap"><p class="dev-label">☰ Recap</p><p>A summary of the whole of Part XII — problems and answers.</p><table><tr><th><strong>chapter 69′s problem</strong></th><th><strong>the answer</strong></th><th><strong>chapter</strong></th></tr><tr><td>strings that do not know the size</td><td>views (ptr+size), refusing rather than truncating</td><td>chapters 72 and 74</td></tr><tr><td>unconfirmed failure</td><td>errors as values, <code>[[nodiscard]]</code></td><td>chapter 71</td></tr><tr><td>format mismatch</td><td><code>{}</code> and <code>PROVEN_ARG</code> (<code>_Generic</code>)</td><td>chapter 75</td></tr><tr><td>unclear ownership</td><td>the allocator parameter, owning versus borrowing</td><td>chapter 73</td></tr><tr><td>unchecked callbacks</td><td>documented contracts, introsort, keyed hashes</td><td>chapter 76</td></tr><tr><td>the hidden type of bytes</td><td><code>proven_byte_t</code></td><td>chapter 72</td></tr><tr><td>environments with no OS</td><td>separating the platform layer, static arenas</td><td>chapter 78</td></tr></table></div><p>With this, the promise this book made in chapter 1 has been kept — showing C’s problems first, and showing one answer to them through to the end. The two remaining chapters are the story beyond these pages. In the next chapter we look round the terrain of practice (build tools, version control, real projects), and in the last we gather up the road this book has travelled.</p>
+<h2 id="loc-78">78 Inside the allocator — the heap, alternative allocators, alternative standard libraries</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 42, Dynamic memory · dynamic allocation</div><div>chapter 77, A program’s map of memory · a program’s map of memory</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 42 said one <code>malloc</code> is “a trip to the warehouse office”, and chapter 77 showed where in the address space that warehouse lies. Then what ledgers exactly does that office keep inside?</p><div class="qa-a"><p><span class="dev-label">A.</span> It writes two things down — <strong>which piece is free</strong> and <strong>how many bytes each piece is</strong>. The classic answer manages the former with lists by size (bins) and the latter with a header attached to each block. How these two ledgers are designed settles an allocator’s performance and security entire. This chapter is the map of that design.</p></div></div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-114"></span>We open the inside of the <code>malloc</code> chapter 42 passed over saying only “it is expensive”. How an allocator manages free pieces (bins, boundary tags, coalescing), why there is a cache per strand, what fragmentation is and why <span id="idx-entry-115"></span>it does not recover. Then the alternatives that can be swapped in for the standard <code>malloc</code> (jemalloc, tcmalloc, mimalloc, snmalloc) and the alternative standard libraries (musl, picolibc and others), and the arenas and pools that change the very shape of allocation. The end of this chapter is the door to Part XII.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Then should <code>malloc</code> no longer be used?</li></ol></div></div><div></div><h3>78.1 Ledger ① — the header attached to each block</h3><p><code>free(p)</code> does not take a size. And yet it must know how many bytes are being returned. The answer is simple — <strong>the size is written just before the address that was returned.</strong></p><pre><code data-lang="text">        ┌────────────┬──────────────────────────┐
+        │ header     │ the place given to you   │
+        │ size·flags │ ← the address malloc gave│
+        └────────────┴──────────────────────────┘</code></pre><p>This header explains two facts seen in chapter 42. <strong>Even a request for 1 byte consumes far more</strong> (the header plus alignment padding), and <strong>making countless small pieces makes the management information as large as the data.</strong></p><p>The classic design (the dlmalloc family) lays one more layer on top of this. It writes the size <strong>at the end of the block too</strong> — a <strong>boundary tag</strong>. Then from any block the size of “the block just before” can be known at once, so <strong>coalescing</strong> with a neighbouring free piece on release finishes in constant time. It is the most basic device for preventing pieces from scattering finely.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“A heap block’s header is an internal matter, no need to care”</strong></p><p>It is worth caring about for two reasons.</p><p>First, <strong>security</strong>. The header being right beside the user data, one buffer overflow can overwrite a neighbouring block’s header. Then the allocator’s ledger tells lies, and an attacker can make “the next <code>malloc</code> return the address I want”. The whole family of techniques called heap exploitation grows from this place. So modern allocators put defences in — scrambling the free list’s pointers with the address (safe-linking), inserting marks that notice a double free, or putting the header entirely away from the user data (mimalloc and snmalloc below go in that direction).</p><p>Second, <strong>memory accounting</strong>. The answer to “why do a million 100-byte pieces eat 160 MB rather than 100 MB” is this header and the alignment padding.</p></div><h3>78.2 Ledger ② — lists by size and caches per strand</h3><p>Keep the free pieces in one long list and every request must scan the whole list. So the lists are divided by size — these are <strong>bins</strong>. Taking glibc’s allocator as an example, there are roughly these layers.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>layer</strong></th><th><strong>what</strong></th><th><strong>why</strong></th></tr><tr><td>tcache</td><td>a small cache kept separately per strand</td><td>to take pieces out at once without locking</td></tr><tr><td>fastbin</td><td>singly linked lists of small sizes</td><td>quick reuse without coalescing</td></tr><tr><td>smallbin</td><td>lists by exact size</td><td>finding is constant time</td></tr><tr><td>largebin</td><td>sorted lists by range</td><td>to choose a fitting size</td></tr><tr><td>unsorted bin</td><td>a temporary place for the just-freed</td><td>to reuse as it is for the next request</td></tr><tr><td>top chunk</td><td>the lump remaining at the very end of the heap</td><td>when short, it is cut from here</td></tr></table></div><p class="float-caption">Table 78.1</p></figure><p>The heart of it is the <strong>cache per strand</strong> (tcache). If several strands touch the same ledger it becomes slow through locking (chapter 74), so each strand keeps a small drawer of its own and takes from there first. Only when the drawer is empty does it go to the shared ledger. It is the common design of today’s fast allocators, differing only in name (tcache, thread cache, mimalloc’s local heap) while the idea is the same.</p><p>Two things seen in chapter 77 attach here. When the heap is short it is enlarged with <code>brk</code> (for small requests), and large requests are received separately through <code>mmap</code>. And releasing a large block may return it to the operating system, while small ones are mostly only marked in the ledger.</p><h3>78.3 Fragmentation — memory grows though there is no leak</h3><p><strong>Fragmentation</strong> has two faces.</p><p><strong>Internal fragmentation</strong> — the waste arising from giving a piece larger than the request. Request 24 bytes and be given a 32-byte slot and 8 bytes die. It is the fate of allocators that use size classes, and speed is gained in exchange.</p><p><strong>External fragmentation</strong> — the state in which the total free space is ample but there is no <strong>contiguous</strong> large lump, so a large request fails. If small pieces are lodged among the large ones, those large pieces cannot be joined.</p><p>This is the identity of the phenomenon “there is no leak and yet memory keeps growing”. It appears especially in long-running servers, and the cause is usually <strong>allocating things of different lifetimes mixed together</strong> — one long-lived small object lodged in the middle of a large empty region ties up that whole region.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>how to mitigate it</strong></th><th><strong>explanation</strong></th></tr><tr><td>gather things of similar lifetime</td><td>an arena does exactly this (below)</td></tr><tr><td>things of the same size into a pool</td><td>no pieces arise</td></tr><tr><td>take long-lived objects early</td><td>taken at startup, they do not lodge in the middle</td></tr><tr><td>change the allocator</td><td>there are ones with different purge and shrink policies (below)</td></tr><tr><td>periodic restarts</td><td>an honest last resort — really used</td></tr></table></div><p class="float-caption">Table 78.2</p></figure><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Why RSS does not go down</p><p>There is a conversation that recurs in operations. “There seems to be a memory leak — the request has ended and the process memory (RSS) does not go down.” And yet checking with tools shows no leak.</p><p>The reason is, as seen in chapter 42, that <code>free</code> is not a return to the operating system, and two more things compound it. First, even to return it <strong>the end side of the heap must be empty</strong> to shrink (if even one live block sits below the top chunk it cannot shrink). Second, the allocator judges that being sparing with returns is advantageous — another request will come soon.</p><p>Hence a rule of observation in the field. <strong>When diagnosing a memory problem do not look at RSS alone</strong> — look together at the allocator’s statistics (<code>malloc_info</code>, say) and at the number and size distribution of live allocations. And if you really want to give it back there is a road of asking explicitly (glibc’s <code>malloc_trim</code>, the purge settings of jemalloc and mimalloc).</p></div><h3>78.4 Swapping out the standard <code>malloc</code> — alternative allocators</h3><p>The allocator alone can be changed without mending the program. <code>malloc</code> and <code>free</code> are, after all, names, so linking another implementation (statically) or inserting it at run time (Linux’s <code>LD_PRELOAD</code>) makes that one be used.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>allocator</strong></th><th><strong>where it came from</strong></th><th><strong>character</strong></th></tr><tr><td>glibc malloc (ptmalloc)</td><td>GNU</td><td>the default. balanced. improved with tcache</td></tr><tr><td>jemalloc</td><td>FreeBSD → Meta</td><td>size classes and arenas. strong on suppressing fragmentation and on statistics</td></tr><tr><td>TCMalloc</td><td>Google</td><td>centred on per-strand caches. multi-strand throughput</td></tr><tr><td>mimalloc</td><td>Microsoft</td><td>relatively new (2019–). small and fast, with a safety-minded header layout</td></tr><tr><td>snmalloc</td><td>MS Research</td><td>a design that passes cross-strand frees as messages</td></tr><tr><td>scudo</td><td>LLVM</td><td>security-hardened. the default on Android</td></tr></table></div><p class="float-caption">Table 78.3</p></figure><p>How much difference does changing make — <strong>it depends on the workload</strong> is the honest answer. On a server with many strands and a flood of small allocations tens of per cent can change, while in a single-strand computational program there is almost no difference. So the rule is one: <strong>measure, then change.</strong> And before changing, trying chapter 42′s first prescription — not allocating at all in the hot loop — is usually the greater gain.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>How swapping is actually done</p><ul><li><strong>At run time</strong> — <code>LD_PRELOAD=/usr/lib/libjemalloc.so ./program</code> (Linux). Neither the code nor the build is touched.</li><li><strong>At link time</strong> — join it as <code>-ljemalloc</code> and that <code>malloc</code> is used.</li><li><strong>Windows</strong> — the above do not work. It is common to use the CRT’s heap, or to link the allocator as a library and call its API directly from your own code.</li><li><strong>The road that works anywhere</strong> — writing the code from the start so that it <strong>takes an allocator as an argument</strong>. This chapter’s last section and Part XII are that way.</li></ul></div><h3>78.5 Alternative standard libraries</h3><p>There is also the choice of swapping out one layer larger than the allocator — the standard library implementation itself. It is the flesh of chapter 56′s “the standard is a list and the implementations are several”.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>implementation</strong></th><th><strong>where it is used</strong></th><th><strong>character</strong></th></tr><tr><td>glibc</td><td>mainstream Linux distributions</td><td>the most features. large and rich in extensions</td></tr><tr><td>musl</td><td>containers, static linking, Alpine</td><td>small and simple. advantageous for static linking</td></tr><tr><td>uClibc-ng</td><td>small embedded Linux</td><td>features chosen and cut down</td></tr><tr><td>picolibc</td><td>bare metal, RTOS</td><td>a small one split off from newlib and avr-libc</td></tr><tr><td>newlib(-nano)</td><td>the default of embedded toolchains</td><td>it comes with <code>arm-none-eabi-gcc</code></td></tr><tr><td>Bionic</td><td>Android</td><td>security-minded (the scudo allocator)</td></tr><tr><td>UCRT</td><td>Windows</td><td>the runtime MSVC and MinGW use</td></tr></table></div><p class="float-caption">Table 78.4</p></figure><p>The criteria for choosing are mostly three — <strong>size</strong> (embedded, containers), <strong>the convenience of static linking</strong> (musl’s strength), and <strong>the breadth of features</strong> (glibc’s strength). And what one runs into when moving is mostly not standard C but <strong>extensions</strong>: functions only glibc has, locale handling, subtle differences in threads and signals. Chapter 56′s conclusion — “use only what is in the standard and it ports” — pays here.</p><h3>78.6 Alternatives that change the shape — arenas, pools, and the allocator as an argument</h3><p>Until now the story has been <strong>making the same <code>malloc</code> better</strong>. There is another road. It is changing <strong>the very shape</strong> of allocation.</p><p><strong>Arena (region, bump allocator).</strong> Take a large lump once, and when a request comes merely push a pointer forward. Allocation is one addition and so nearly free, and release <strong>is not done individually</strong> — when the work is done the pointer is returned to the beginning and the whole is thrown away. There is no fragmentation, the time is constant, and release cannot be forgotten. In exchange, individual release is given up.</p><p>This way fits perfectly “things of the same lifetime”. One request of a web server, one function of a compiler, one frame of a game — for each unit of work with a clear beginning and end, keep one arena and reset it when it ends. It really is widely used (Apache’s memory pools and PostgreSQL’s memory contexts are the same idea).</p><p><strong>Pool (slab).</strong> An allocator that handles only pieces of the same size. Slots cut in advance are managed as a list, so allocation and release are one list operation each, and there is no internal fragmentation either. It fits data structures with tens of thousands of nodes, or the fixed-object management of embedded work seen in chapter 77.</p><p><strong>Taking the allocator as an argument.</strong> For the two above to have force, a library must <strong>ask the caller</strong> “where shall I get memory from”. So modern C libraries make a bundle of allocation functions into one value and take it as an argument. The table of function pointers learned in chapter 54 does exactly this work here.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>proven’s memory model — a trailer for the next part</p><p>The library this book has leaned on uses exactly this design. proven handles the allocator as one value (<code>proven_allocator_t</code>) — inside it are the <code>alloc</code>, <code>realloc</code> and <code>free</code> function pointers and a context (<code>ctx</code>), exactly chapter 54′s vtable. And there are three providers that make that value.</p><ul><li><code>proven_heap_allocator()</code> — the standard <code>malloc</code> wrapped in that interface.</li><li><code>proven_arena_create(backing)</code> — takes <strong>memory already secured</strong> and makes it a bump allocator. It is returned whole with <code>proven_arena_reset</code> and fitted into the same interface with <code>proven_arena_as_allocator</code>.</li><li><code>proven_pool_init(...)</code> — lays a pool of same-size pieces over a backing allocator.</li></ul><p>This structure gives three things. First, <strong>the same data-structure code runs on the heap, on an arena and in a pool</strong> — where memory comes from is settled by an argument. Second, the embedded norm seen in chapter 77 (no dynamic allocation) can be kept — give a static array as the arena’s backing and <code>malloc</code> is never called once. Third, failure comes back as a value (<code>proven_result_mem_mut_t</code>) — instead of checking for null you check the result.</p><p>We meet these three as real code in Part XII. The heap’s circumstances seen in this chapter — that it is expensive, fragments, can fail, and is sometimes forbidden outright in embedded work — are the whole reason for that design.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Then should <code>malloc</code> no longer be used?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> No. <code>malloc</code> is still the right answer as the general-purpose tool for handling <strong>things of assorted lifetimes</strong>. The knack is fitting the tool to the purpose.</p><ul><li>the lifetime equals a unit of work → <strong>an arena</strong></li><li>the sizes are all the same → <strong>a pool</strong></li><li>lifetimes and sizes are assorted → <strong><code>malloc</code></strong> (or an allocator wrapping it)</li><li>real-time or safety-critical → <strong>static allocation</strong>, plus the two above</li></ul><p>And whichever is used, chapter 42′s discipline stands — settle the ownership, confirm failure, and check with tools (ASan, Valgrind).</p></p></div></div><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>to remember</strong></th><th><strong>the point</strong></th></tr><tr><td>the header</td><td>the size is written just before the user’s place — an overflow breaks the ledger</td></tr><tr><td>boundary tags</td><td>writing the size at both ends makes coalescing with a neighbour constant time</td></tr><tr><td>bins</td><td>lists by size. the per-strand cache (tcache) avoids locking</td></tr><tr><td>internal/external fragmentation</td><td>waste vs. no <strong>contiguous</strong> large lump left</td></tr><tr><td>RSS</td><td>it may not go down even after <code>free</code> — distinguish it from a leak</td></tr><tr><td>alternative allocators</td><td>jemalloc, TCMalloc, mimalloc, snmalloc, scudo. <strong>measure, then change</strong></td></tr><tr><td>alternative libcs</td><td>musl, picolibc, newlib, Bionic — a trade of size, static linking and features</td></tr><tr><td>arena</td><td>only pushing, and throwing the whole away. for things of the same lifetime</td></tr><tr><td>pool</td><td>the same size only. no fragmentation</td></tr><tr><td>the allocator as an argument</td><td>the same code runs on heap, arena or pool alike (Part XII)</td></tr></table></div><p class="float-caption">Table 78.5</p></figure></div><p>We have walked the terrain of the standard library and opened even the warehouse beneath it. The next part is the attempt to handle all these traps and costs <strong>by design</strong> — proven, the library this book has leaned on.</p>
 <div class="nav"><a href="ch77.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch79.html">Next →</a></div>
 </div></main></body></html>

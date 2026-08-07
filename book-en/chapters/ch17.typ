@@ -113,7 +113,7 @@ the optimised machine code, and where a pointer points.
 #dtable(
   columns: 3,
   [*What*], [*Character*], [*Where it helps in this book*],
-  [Compiler Explorer (#link("https://godbolt.org")[`godbolt.org`])], [Source and *assembly* side by side. Over a thousand C compiler builds], [Chapter 13 (optimization), chapter 16 (compilation), chapter 46 (operators)],
+  [Compiler Explorer (#link("https://godbolt.org")[`godbolt.org`])], [Source and *assembly* side by side. Over a thousand C compiler builds], [Chapter 13 (optimisation), chapter 16 (compilation), chapter 46 (operators)],
   [OnlineGDB], [Editing, running and a *debugger* in the browser], [Following this chapter's debugger section without installing],
   [Wandbox, Coliru], [Running the same code under several compiler builds], [Spotting "works only on my compiler"],
   [Replit], [A workspace with files and a terminal], [Examples split across files (chapter 51)],
@@ -373,7 +373,7 @@ Breakpoint 1 at 0x1040: file bug.c, line 12.
 Breakpoint 1, main () at bug.c:12
 12	    printf("sum = %d (should be 150)\n", sum_all(data, 5));
 (gdb) info locals
-data = <optimized out>
+data = <optimised out>
 ```
 
 The function we were looking for *is not there*. The compiler spread `sum_all`
@@ -384,7 +384,7 @@ here in the form of blocking the observer's view.
 
 The blind spots commonly met in optimised builds:
 
-- `<optimized out>` — the variable lives only in a register, or not at all, and
+- `<optimised out>` — the variable lives only in a register, or not at all, and
   its value cannot be seen (chapter 11's registers return here).
 - *line numbers jump* — stepping goes 12 → 15 → 12. The compiler reordered the
   instructions, and the debugger is not lying but showing the real, shuffled
@@ -559,8 +559,8 @@ several times.
   executed. So modern C development layers its nets: warnings (always) +
   sanitizers (test runs) + crossing two compilers (habit) + and using components
   that are hard to have accidents with in the first place. That last item is
-  where this book's proven stands later on (chapter 40) — tools are nets, and
-  good components are footholds you do not fall off to begin with.
+  where chapter 40's disciplines stand — tools are nets, and good components are
+  footholds you do not fall off to begin with.
 ]
 
 == Closing Part III

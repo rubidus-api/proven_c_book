@@ -24,4 +24,12 @@ if command -v find >/dev/null 2>&1; then
   done
 fi
 
+# 원고 규칙 검사 (RFC-0006 §3.3, RFC-0007 S8)
+if [ -f scripts/check-headings.py ]; then
+  python3 scripts/check-headings.py || fail "chapter heading rule violated"
+fi
+if [ -f scripts/check-chapter-openings.py ]; then
+  python3 scripts/check-chapter-openings.py || fail "chapter opening rule violated"
+fi
+
 printf '%s\n' "project-check: ok"

@@ -550,7 +550,7 @@ only the exception), and *turning signals into events* (libuv, CPython — the
 modern prescription for getting around the permitted list).
 
 The middle group is the interesting one. "Remove the null check and catch it with
-`SIGSEGV`" is the archetype of an optimization that *pushes the cost onto the
+`SIGSEGV`" is the archetype of an optimisation that *pushes the cost onto the
 rare case* — one instruction is deleted from the normal path at the price of a
 long trip through the kernel and a handler when the accident happens. It is the
 same calculation as chapter 11's "a rare branch may be expensive."

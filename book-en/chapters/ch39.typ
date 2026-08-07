@@ -311,13 +311,13 @@ side wins* (the example's `L"wide" " and narrow"` becomes a wide string), and
   to UTF-8's self-synchronising design, chapter 9). Work that needs the
   *character layer* (counting characters, cutting, case conversion) requires UTF-8
   decoding, and since the standard library's support is thin there, using a
-  library is the practice — proven's u8str family takes exactly this place (first
-  met in the next chapter, in earnest in chapter 56). Keep one rule in mind and
+  library is the practice (Part XII covers one such library). Keep one rule in
+  mind and
   most accidents are prevented: *do not cut a string by byte index* — cut through
   the waist of a Hangul syllable and you get a broken byte sequence.
 ]
 
 We know the string's identity and cost. The next chapter is this part's turning
 point — a dissection of the class of accident called the boundary violation, and
-the appearance of this book's underlying technology, proven. The "safe input"
-seed planted in chapter 25 is finally collected.
+five disciplines for handling a failed parse. The "safe input" seed planted in
+chapter 25 is finally collected.

@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>65 넘침을 묻는 법 — &lt;stdckdint.h&gt; — Proven C Book</title><style>
+<title>65 와이드 문자 ① — wchar_t와 멀티바이트 변환 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,82 +259,225 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../en/">English</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch64.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch66.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch65.html">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>65 넘침을 묻는 법 — <code>&lt;stdckdint.h></code></h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><span id="idx-entry-94"></span><p>C23이 들여온 검사 산술(checked arithmetic)을 익힌다. 왜 “계산한 뒤에 넘쳤는지 확인하는” 손수 짠 코드가 위험한지, <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code>이 정확히 무엇을 약속하는지, 그리고 기존 코드의 크기 계산을 어떻게 이 도구로 옮기는지까지 본다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>7장에서 부호 없는 넘침은 정의된 감아 돌기이고 부호 있는 넘침은 계약 밖이라 했고, 58장에서는 <code>calloc</code>이 원소 수와 크기의 곱을 검사한다고 했다. 그러면 곱셈이 넘치는지 우리가 직접 확인하려면 어떻게 적는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>바로 그 “직접 확인”이 반세기 동안 틀리게 적혀 온 코드다. 부호 있는 값에서는 <strong>넘친 뒤에 검사하는 것 자체가 이미 계약 밖</strong>이라 컴파일러가 검사 코드를 지워 버릴 수 있고(13장의 편집자), 부호 없는 값에서도 나눗셈을 끼운 관용구는 읽기 어렵고 틀리기 쉽다. C23은 이 자리를 언어 차원에서 정리했다.</p></div></div><h3>65.1 사후 검사라는 함정</h3><p>가장 흔한 손수 짠 검사부터 본다.</p><div class="dev antipattern"><p class="dev-label">✗ 더한 다음에 넘쳤는지 보기</p><pre><code data-lang="c">int sum = a + b;
-if (sum &lt; a) { /* 넘쳤다 */ }        /* ← 이 검사가 사라질 수 있다 */</code></pre><p><code>a</code>와 <code>b</code>가 부호 있는 정수라면 <code>a + b</code>가 넘치는 순간 이미 정의되지 않은 동작이다. 그 뒤의 검사는 “넘치지 않았다면”이라는 전제 위에서만 뜻이 있으므로, 컴파일러는 <code>sum &lt; a</code>가 결코 참이 될 수 없다고 판단해 <strong>조건문을 통째로 지운다.</strong> 실제로 이 무늬 때문에 여러 프로젝트에서 검사가 조용히 사라졌고, 그중에는 보안 검사도 있었다.</p><p>부호 없는 값이라면 감아 돌기가 정의되어 있으므로 위 검사는 <strong>동작한다.</strong> 다만 곱셈으로 가면 그마저 까다로워진다.</p><pre><code data-lang="c">if (n != 0 &amp;&amp; bytes / n != sz) { /* 넘쳤다 */ }   /* 맞지만 읽기 어렵다 */</code></pre></div><p>그래서 컴파일러들이 저마다 확장을 내놓았다 — GCC와 Clang의 <code>__builtin_add_overflow</code> 계열, MSVC의 <code>SafeInt</code>, 여러 프로젝트의 자체 매크로. 잘 동작했지만 <strong>이식성이 없었고</strong>, 이식성을 확보하려면 프로젝트마다 같은 껍데기를 다시 짜야 했다. 57장의 <code>strlcpy</code> 이야기와 같은 무늬다 — 현실이 먼저 답을 찾고 표준이 뒤늦게 추인한다.</p><h3>65.2 C23의 답 — <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code></h3><div><div><p><code>examples/ch65/ckdint.c</code></p><pre><code data-lang="c">/* 넘침을 값이 아니라 "일어났는가"로 받는다 — C23 &lt;stdckdint.h> */
-#include &lt;limits.h>
-#include &lt;stdckdint.h>
-#include &lt;stdint.h>
-#include &lt;stdio.h>
-#include &lt;stdlib.h>
+<h2 id="loc-65">65 와이드 문자 ① — <code>wchar_t</code>와 멀티바이트 변환</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>9장 문자와 텍스트 · 코드포인트와 인코딩</div><div>63장 로케일 ① · <code>LC_CTYPE</code></div><div>62장 문자 분류 · 바이트 판정의 한계</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>9장에서 UTF-8은 한 글자가 1~4바이트라고 했다. 그렇다면 “글자 하나를 담는 타입”을 만들면 되지 않는가? C에는 그런 것이 있는가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> 있다. 그것이 <code>wchar_t</code>이고, C95가 바로 그 발상으로 들여왔다 — <strong>한 글자를 한 단위로 담자.</strong> 문제는 그 발상이 30년 뒤의 현실과 어긋났다는 데 있다.</p><p>표준은 <code>wchar_t</code>의 <strong>크기도 인코딩도 정하지 않았다.</strong> “지원하는 로케일 중 가장 큰 확장 문자집합의 모든 원소를 서로 다른 코드로 표현할 수 있는 정수형”이라고만 했다. 그 결과 리눅스에서는 4바이트 UTF-32가 되었고 Windows에서는 2바이트 UTF-16이 되었다 — 그리고 뒤쪽에서는 「한 글자 = 한 단위」가 성립하지 않는다.</p><p>이 장은 그 타입의 정확한 계약과, 바이트열이 글자로 풀리는 과정을 한 단계씩 본다. 어긋남의 결과는 다음 장에서 본다.</p></p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-104"></span><code>wchar_t</code>의 정체를 밑바닥까지 본다. 표준의 정의와 구현이 밝히는 매크로, 다섯 가지 문자 상수와 문자열의 타입·크기·바이트, <code>MB_CUR_MAX</code>와 <code>MB_LEN_MAX</code>의 차이, <code>mbstate_t</code>가 왜 필요한지, 그리고 <code>mbrtowc</code>가 바이트를 먹으며 글자를 만들어 내는 과정을 단계별 실측으로.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>소스 코드에 <code>"한"</code>이라고 적으면 어떤 바이트가 되는가?</li><li>UTF-8은 최대 4바이트인데 왜 <code>MB_CUR_MAX</code>가 6인가?</li></ol></div></div><div></div><h3>65.1 표준이 정한 것과 정하지 않은 것</h3><p><code>wchar_t</code>는 <code>&lt;stddef.h></code>가 정의하는 정수 타입이다. 표준의 정의를 그대로 옮기면 <strong>“지원되는 로케일 중에서 지정된 가장 큰 확장 문자집합의 모든 원소에 대해 서로 다른 코드를 표현할 수 있는 정수 타입”</strong>이다.</p><p>여기에 없는 것을 보아야 한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>표준이 정한 것</strong></th><th><strong>정하지 않은 것</strong></th></tr><tr><td>정수 타입이다</td><td>몇 바이트인지</td></tr><tr><td>문자마다 다른 값을 가진다</td><td>부호가 있는지</td></tr><tr><td>기본 문자집합의 값은 양수</td><td>어떤 인코딩인지(유니코드인지도)</td></tr></table></div><p class="float-caption">표 65.1</p></figure><p>그래서 이식성 있는 코드는 <code>wchar_t</code>의 값을 유니코드 코드포인트로 <strong>가정할 수 없다</strong>. 대신 구현이 그 사실을 밝히는 매크로가 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>매크로</strong></th><th><strong>정의되어 있으면</strong></th></tr><tr><td><code>__STDC_ISO_10646__</code></td><td><code>wchar_t</code> 값이 ISO/IEC 10646(유니코드) 코드포인트와 같다. 값은 <code>yyyymmL</code> 꼴</td></tr><tr><td><code>__STDC_UTF_16__</code></td><td><code>char16_t</code>가 UTF-16이다</td></tr><tr><td><code>__STDC_UTF_32__</code></td><td><code>char32_t</code>가 UTF-32이다</td></tr><tr><td><code>__STDC_MB_MIGHT_NEQ_WC__</code></td><td>기본 문자집합의 문자라도 <code>'x'</code>와 <code>L'x'</code>의 값이 다를 수 있다</td></tr></table></div><p class="float-caption">표 65.2</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples/ch65/wide_lit.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 다섯 가지 문자 상수와 문자열 — 타입, 요소 크기, 그리고 실제 바이트. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">uchar.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">wchar.h</span><span class="tok-s">></span>
 
-/* 흔한 할당 계산: 원소 n 개 x 크기 sz. 곱셈이 넘치면 그릇이 작아진다. */
-static void *alloc_array(size_t n, size_t sz)
-{
-    size_t bytes;
-    if (ckd_mul(&amp;bytes, n, sz)) {       /* 참이면 넘쳤다 */
-        printf("  크기 계산이 넘쳤다 - 할당하지 않는다\n");
-        return NULL;
-    }
-    return malloc(bytes);
-}
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 어떤 배열이든 요소 하나씩 16진수로 늘어놓는다.</span></em>
+<em><span class="tok-c">   char 은 부호 있는 구현이 흔하므로(26장) 요소 크기만큼 잘라 낸다 —</span></em>
+<em><span class="tok-c">   그러지 않으면 0xED 가 FFFFFFED 로 늘어나 보인다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">DUMP</span></strong><span class="tok-x">(</span>label<span class="tok-x">,</span><span class="tok-p"> </span>arr<span class="tok-x">)</span><span class="tok-p">                                                     </span><span class="tok-x">\</span>
+    <strong><span class="tok-k">do</span></strong> <span class="tok-x">{</span>                                                                     \
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-10s</span></strong><strong><span class="tok-s"> 요소 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">바이트 × </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">개:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>label</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong>                   \</strong>
+<strong>               </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">/</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>             \
+        <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <strong><span class="tok-k">sizeof</span></strong> <span class="tok-x">(</span>arr<span class="tok-x">)</span> <strong><span class="tok-x">/</span></strong> <strong><span class="tok-k">sizeof</span></strong> <span class="tok-x">(</span>arr<span class="tok-x">)</span><span class="tok-x">[</span><span class="tok-n">0</span><span class="tok-x">]</span><span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>          \
+            <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%0*llX</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong>                    \</strong>
+<strong>                   </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong>                              \</strong>
+<strong>                   </strong><strong><span class="tok-x">&amp;</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-t">ULL</span></strong><strong> </strong><strong><span class="tok-x">&lt;&lt;</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">8</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong>arr</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">[</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                 \
+        <strong>putchar</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                                                       \
+    <span class="tok-x">}</span> <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><span class="tok-n">0</span><span class="tok-x">)</span>
 
-int main(void)
-{
-    /* 판정과 결과 읽기를 반드시 갈라 적는다 (한 표현식에 섞으면 순서가 없다) */
-    int r;
-    bool over = ckd_add(&amp;r, INT_MAX, 1);
-    printf("INT_MAX = %d\n", INT_MAX);
-    printf("ckd_add(INT_MAX, 1)  넘침? %s   r = %d (감아 돈 값)\n", over ? "예" : "아니오", r);
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[문자 상수] 같은 'A' 를 다섯 가지로 적으면</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-14s</span></strong><strong><span class="tok-s"> 타입 크기 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, 값 </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">'A'</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>   </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-14s</span></strong><strong><span class="tok-s"> 타입 크기 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, 값 </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">L'A'</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">L</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-t">L</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-14s</span></strong><strong><span class="tok-s"> 타입 크기 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, 값 </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">u'A'</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-t">u</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-14s</span></strong><strong><span class="tok-s"> 타입 크기 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, 값 </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">U'A'</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">U</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-t">U</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-14s</span></strong><strong><span class="tok-s"> 타입 크기 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, 값 </span></strong><strong><span class="tok-s">%u</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">u8'A'</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">u8</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-t">u8</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-s">A</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  ('A' 는 int 다 — C 에서 문자 상수의 타입은 char 가 아니다)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    over = ckd_add(&amp;r, 1, 2);
-    printf("ckd_add(1, 2)        넘침? %s   r = %d\n", over ? "예" : "아니오", r);
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[문자열] </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">한</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> 하나를 다섯 가지로 적으면</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong>     s_plain<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong>   <span class="tok-s">"</span><span class="tok-s">한</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> char8_t  s_u8<span class="tok-x">[</span><span class="tok-x">]</span>    <strong><span class="tok-x">=</span></strong> <strong><span class="tok-t">u8</span></strong><span class="tok-s">"</span><span class="tok-s">한</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> char16_t s_u16<span class="tok-x">[</span><span class="tok-x">]</span>   <strong><span class="tok-x">=</span></strong>  <strong><span class="tok-t">u</span></strong><span class="tok-s">"</span><span class="tok-s">한</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> char32_t s_u32<span class="tok-x">[</span><span class="tok-x">]</span>   <strong><span class="tok-x">=</span></strong>  <strong><span class="tok-t">U</span></strong><span class="tok-s">"</span><span class="tok-s">한</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> wchar_t  s_wide<span class="tok-x">[</span><span class="tok-x">]</span>  <strong><span class="tok-x">=</span></strong>  <strong><span class="tok-t">L</span></strong><span class="tok-s">"</span><span class="tok-s">한</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>     s_plain</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char8_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  s_u8</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char16_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> s_u16</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char32_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> s_u32</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">wchar_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  s_wide</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* 타입이 섞여도 수학적 값으로 판정한다 */
-    signed char c;
-    over = ckd_add(&amp;c, 200, 100);
-    printf("signed char &lt;- 300   넘침? %s   c = %d\n", over ? "예" : "아니오", c);
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[BMP 밖의 글자] U+1F600 (웃는 얼굴)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong>     e_plain<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong>   <span class="tok-s">"</span><span class="tok-n">\U0001F600</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> char16_t e_u16<span class="tok-x">[</span><span class="tok-x">]</span>   <strong><span class="tok-x">=</span></strong>  <strong><span class="tok-t">u</span></strong><span class="tok-s">"</span><span class="tok-n">\U0001F600</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> char32_t e_u32<span class="tok-x">[</span><span class="tok-x">]</span>   <strong><span class="tok-x">=</span></strong>  <strong><span class="tok-t">U</span></strong><span class="tok-s">"</span><span class="tok-n">\U0001F600</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> wchar_t  e_wide<span class="tok-x">[</span><span class="tok-x">]</span>  <strong><span class="tok-x">=</span></strong>  <strong><span class="tok-t">L</span></strong><span class="tok-s">"</span><span class="tok-n">\U0001F600</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>     e_plain</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char16_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> e_u16</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ← 두 요소가 된다: 서러게이트 쌍 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">char32_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> e_u32</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>DUMP</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">wchar_t</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong>  e_wide</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  char16_t 만 요소가 둘이다 — 16비트로는 담기지 않아 쌍으로 쪼갠다.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* 부호 없는 뺄셈: 감아 도는 것은 정의된 동작이지만, 여기서도 "넘쳤다"고 알린다 */
-    unsigned u;
-    over = ckd_sub(&amp;u, 3u, 5u);
-    printf("unsigned  &lt;- 3 - 5   넘침? %s   u = %u\n", over ? "예" : "아니오", u);
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[구현이 밝히는 것]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#ifdef</span></strong><span class="tok-p"> __STDC_ISO_10646__</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  __STDC_ISO_10646__ = </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">L — wchar_t 값이 유니코드 코드포인트다</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>__STDC_ISO_10646__</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#else</span></strong>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  __STDC_ISO_10646__ 없음 — wchar_t 인코딩은 구현이 정한다(윈도가 그렇다)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#endif</span></strong>
+<strong><span class="tok-k">#ifdef</span></strong><span class="tok-p"> __STDC_UTF_16__</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  __STDC_UTF_16__  = 1 — char16_t 는 UTF-16 이다</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#endif</span></strong>
+<strong><span class="tok-k">#ifdef</span></strong><span class="tok-p"> __STDC_UTF_32__</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  __STDC_UTF_32__  = 1 — char32_t 는 UTF-32 이다</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">#endif</span></strong>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  sizeof(wchar_t) = </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">, WCHAR_MIN = </span></strong><strong><span class="tok-s">%ld</span></strong><strong><span class="tok-s">, WCHAR_MAX = </span></strong><strong><span class="tok-s">%lld</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong>wchar_t</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>WCHAR_MIN</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">long</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>WCHAR_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>[문자 상수] 같은 'A' 를 다섯 가지로 적으면
+  'A'            타입 크기 4, 값 65
+  L'A'           타입 크기 4, 값 65
+  u'A'           타입 크기 2, 값 65
+  U'A'           타입 크기 4, 값 65
+  u8'A'          타입 크기 1, 값 65
+  ('A' 는 int 다 — C 에서 문자 상수의 타입은 char 가 아니다)
 
-    printf("\n할당 계산\n");
-    void *ok = alloc_array(1000, sizeof(int));
-    printf("  1000 x %zu -> %s\n", sizeof(int), ok ? "할당됨" : "거부됨");
-    free(ok);
-    void *bad = alloc_array(SIZE_MAX / 2, sizeof(int));
-    printf("  SIZE_MAX/2 x %zu -> %s\n", sizeof(int), bad ? "할당됨" : "거부됨");
-    free(bad);
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>INT_MAX = 2147483647
-ckd_add(INT_MAX, 1)  넘침? 예   r = -2147483648 (감아 돈 값)
-ckd_add(1, 2)        넘침? 아니오   r = 3
-signed char &lt;- 300   넘침? 예   c = 44
-unsigned  &lt;- 3 - 5   넘침? 예   u = 4294967294
+[문자열] "한" 하나를 다섯 가지로 적으면
+  char       요소 1바이트 × 4개: ED 95 9C 00
+  char8_t    요소 1바이트 × 4개: ED 95 9C 00
+  char16_t   요소 2바이트 × 2개: D55C 0000
+  char32_t   요소 4바이트 × 2개: 0000D55C 00000000
+  wchar_t    요소 4바이트 × 2개: 0000D55C 00000000
 
-할당 계산
-  1000 x 4 -> 할당됨
-  크기 계산이 넘쳤다 - 할당하지 않는다
-  SIZE_MAX/2 x 4 -> 거부됨
-</code></pre></div></div><p>읽는 법은 이렇다. 세 매크로 모두 모양이 같다.</p><pre><code data-lang="c">bool 넘쳤는가 = ckd_add(&amp;결과, 왼쪽, 오른쪽);</code></pre><p>약속이 네 가지다.</p><ol><li><strong>무한 정밀도로 계산한 뒤 그릇에 넣는다.</strong> 판정은 “수학적 결과가 결과 타입에 들어가는가”이고, 중간 계산에서 넘치는 일이 없다. 그래서 인자의 타입이 서로 달라도, 심지어 인자보다 결과 타입이 좁아도 정확히 판정한다 — 예제의 <code>signed char &lt;- 300</code>이 그 확인이다.</li><li><strong>결과 타입은 첫 인자(포인터)가 정한다.</strong> 인자들의 승격 규칙(27장)이 결과를 좌우하지 않는다는 뜻이라, “어느 타입으로 계산되는가”를 두고 고민할 일이 없다.</li><li><strong>넘쳐도 결과는 저장된다.</strong> 그 값은 결과 타입으로 감아 돈 값이다. 예제의 <code>INT_MAX + 1</code>이 <code>-2147483648</code>로 남은 것이 그것이다 — 부호 있는 값이라도 <strong>이 자리에서는 정의된 동작</strong>이라는 점이 중요하다.</li><li><strong>부호 없는 감아 돌기도 “넘쳤다”고 알린다.</strong> 예제의 <code>3u - 5u</code>가 그 확인이다. 값 자체는 정의된 결과(<code>4294967294</code>)지만, 검사 산술은 <strong>수학적 값과 달라졌음</strong>을 알린다. 크기 계산에서 이것이 필요한 성질이다.</li></ol><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>ckd_*</code>는 함수인가 매크로인가? 인자를 여러 번 평가하지는 않는가?</p></div><div class="dev qa-a"><p class="dev-label">답 표준이 정한 것은 매크로이지만, 인자를 여러 번 평가하지 않도록 못박혀 있다(구현은 대개 컴파일러 내장 기능으로 확장한다). 그래서 <code>ckd_add(&amp;r, i++, j)</code> 같은 코드도 안전하다.</p><p>다만 <strong>다른</strong> 함정이 있다. 판정과 결과를 한 표현식 안에 섞으면 안 된다.</p><pre><code data-lang="c">printf("%s %d", ckd_add(&amp;r, a, b) ? "넘침" : "정상", r);   /* 위험 */</code></pre><p><code>r</code>을 읽는 시점과 <code>ckd_add</code>가 <code>r</code>에 쓰는 시점 사이에 순서가 정해져 있지 않아, 옛 값을 찍을 수 있다(20장의 순서 이야기다). 실제로 이 장의 예제를 처음 쓸 때 이 실수로 엉뚱한 값이 찍혔다. <strong>판정을 변수에 받고, 그다음 줄에서 결과를 쓴다</strong> — 이 한 줄 규율이면 끝난다.</p></div></div><h3>65.3 어디에 쓰는가 — 크기 계산이 첫 번째다</h3><p>예제 뒷부분의 <code>alloc_array</code>가 전형이다. 할당 크기 계산은 검사 산술이 가장 절실한 자리다. <code>n * sz</code>가 넘치면 <strong>작은 그릇을 얻고 큰 줄 알고 쓰는</strong> 상태가 되어, 곧바로 버퍼 넘침 사고로 이어진다. 유명한 취약점 여럿이 정확히 이 경로였다.</p><table><tr><th><strong>자리</strong></th><th><strong>예전 관용구</strong></th><th><strong>지금</strong></th></tr><tr><td>배열 할당</td><td><code>n &amp;&amp; SIZE_MAX/n &lt; sz</code> 검사</td><td><code>ckd_mul(&amp;bytes, n, sz)</code></td></tr><tr><td>버퍼 확장</td><td><code>cap * 2</code> 그냥 계산</td><td><code>ckd_mul(&amp;cap2, cap, 2)</code></td></tr><tr><td>길이 합치기</td><td><code>len1 + len2 + 1</code></td><td><code>ckd_add</code> 두 번</td></tr><tr><td>인덱스 계산</td><td><code>base + off</code> 그냥</td><td><code>ckd_add</code>(부호 있는 값이면 필수)</td></tr><tr><td>입력에서 온 수</td><td><code>atoi</code> 뒤 그냥 사용</td><td><code>strtol</code>(58장) + 범위 검사</td></tr></table><p>마지막 줄이 중요하다. 검사 산술은 <strong>계산</strong>의 넘침을 잡을 뿐, 애초에 값이 너무 큰 것을 걸러 주지는 않는다. 입력 해석 단계의 검사(58장)와 계산 단계의 검사는 서로를 대신하지 못한다.</p><div class="dev misconception"><p class="dev-label">⚠ “<code>ckd_*</code>를 쓰면 정수 넘침 걱정이 끝난다”</p><p>세 가지가 남는다. 첫째, <strong>나눗셈</strong>은 이 헤더에 없다 — <code>INT_MIN / -1</code>은 여전히 스스로 막아야 하는 계약 밖이다. 둘째, <strong>변환</strong>은 검사하지 않는다. 넓은 타입에서 좁은 타입으로 대입하는 것은 산술이 아니라 변환이라(7장의 잘림), 여기서 값이 망가지는 것은 <code>ckd_*</code>의 소관이 아니다. 셋째, <strong>부동소수점</strong>은 대상이 아니다(60장).</p><p>요약하면 검사 산술은 “덧셈·뺄셈·곱셈이 그릇을 넘겼는가”라는 좁고 분명한 질문에 답하는 도구다. 좁아서 좋은 도구이기도 하다.</p></div><h3>65.4 이 도구가 없는 곳에서</h3><p>C23 헤더를 아직 못 쓰는 환경이라면 두 단계로 대비한다.</p><pre><code data-lang="c">#if defined(__has_include)
-#  if __has_include(&lt;stdckdint.h>)
-#    include &lt;stdckdint.h>
-#    define HAVE_CKDINT 1
-#  endif
-#endif
+[BMP 밖의 글자] U+1F600 (웃는 얼굴)
+  char       요소 1바이트 × 5개: F0 9F 98 80 00
+  char16_t   요소 2바이트 × 3개: D83D DE00 0000
+  char32_t   요소 4바이트 × 2개: 0001F600 00000000
+  wchar_t    요소 4바이트 × 2개: 0001F600 00000000
+  char16_t 만 요소가 둘이다 — 16비트로는 담기지 않아 쌍으로 쪼갠다.
 
-#ifndef HAVE_CKDINT                      /* GCC·Clang 확장으로 메운다 */
-#  define ckd_add(r, a, b) __builtin_add_overflow((a), (b), (r))
-#  define ckd_sub(r, a, b) __builtin_sub_overflow((a), (b), (r))
-#  define ckd_mul(r, a, b) __builtin_mul_overflow((a), (b), (r))
-#endif</code></pre><p>인자 순서가 다르다는 점만 주의하면 된다 — 표준은 결과 포인터가 앞, 컴파일러 내장은 뒤다. 이런 껍데기를 한 자리에 모아 두는 것이 49장에서 말한 이식성 층의 실제 모습이고, 제12부의 라이브러리도 같은 일을 한다.</p><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — 검사를 도구에 맡기는 길</p><p>코드를 고치지 않고 넘침을 잡는 방법도 있다. GCC와 Clang의 <code>-fsanitize=signed-integer-overflow</code>(UBSan)는 실행 중에 넘침을 잡아 보고하고, <code>-ftrapv</code>는 넘침에서 프로그램을 세운다. 둘 다 <strong>시험용</strong>이다 — 넘침이 실제로 일어난 실행에서만 드러나므로, 검사 산술처럼 “일어날 수 있는 자리를 코드로 막는” 것과는 성격이 다르다. 17장의 디버거 이야기와 같은 결론이다: 도구는 관찰을 돕지만 계약을 대신하지 않는다.</p></div><div class="dev recap"><p class="dev-label">☰ 복습 정리</p><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>사후 검사</td><td>부호 있는 값에서는 검사 자체가 계약 밖 — 지워질 수 있다</td></tr><tr><td>모양</td><td><code>bool 넘침 = ckd_add(&amp;결과, a, b)</code></td></tr><tr><td>판정 기준</td><td>수학적 결과가 <strong>결과 타입</strong>에 들어가는가</td></tr><tr><td>결과 타입</td><td>첫 인자가 정한다. 승격 규칙에 휘둘리지 않는다</td></tr><tr><td>넘쳐도</td><td>감아 돈 값이 저장된다(정의된 동작)</td></tr><tr><td>부호 없는 값</td><td>감아 돌기도 “넘침”으로 알린다</td></tr><tr><td>한 표현식</td><td>판정과 결과를 섞지 않는다</td></tr><tr><td>적용 1순위</td><td>할당 크기 계산</td></tr><tr><td>없는 곳</td><td><code>__builtin_*_overflow</code> 로 껍데기를 만든다</td></tr></table></div><p>넘침을 계약대로 묻는 법을 익혔다. 다음 장은 이 부의 마지막이자, C23이 언어에 손댄 가장 눈에 띄는 변화다 — 매크로였던 것들이 키워드가 된 이야기다.</p>
+[구현이 밝히는 것]
+  __STDC_ISO_10646__ = 201706L — wchar_t 값이 유니코드 코드포인트다
+  __STDC_UTF_16__  = 1 — char16_t 는 UTF-16 이다
+  __STDC_UTF_32__  = 1 — char32_t 는 UTF-32 이다
+  sizeof(wchar_t) = 4, WCHAR_MIN = -2147483648, WCHAR_MAX = 2147483647
+</code></pre></div></div><p>시연의 마지막 부분이 이 기계의 답이다 — <code>__STDC_ISO_10646__</code>이 정의되어 있고, <code>wchar_t</code>는 4바이트다. <strong>Windows에서는 이 매크로가 정의되지 않는다.</strong> 2바이트로는 유니코드의 모든 문자를 하나의 값으로 담을 수 없어 조건을 만족하지 못하기 때문이다. 이 한 줄이 66장 전체의 씨앗이다.</p><h3>65.2 다섯 가지 문자 상수와 문자열</h3><p>C23에는 문자를 적는 방법이 다섯 가지다. 각각 타입과 인코딩이 다르다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>표기</strong></th><th><strong>상수의 타입</strong></th><th><strong>문자열 요소</strong></th><th><strong>인코딩</strong></th></tr><tr><td><code>'A'</code></td><td><code>int</code></td><td><code>char</code></td><td>실행 문자집합(대개 UTF-8 바이트)</td></tr><tr><td><code>u8'A'</code> / <code>u8"…"</code></td><td><code>unsigned char</code></td><td><code>char8_t</code></td><td>UTF-8</td></tr><tr><td><code>u'A'</code> / <code>u"…"</code></td><td><code>char16_t</code></td><td><code>char16_t</code></td><td>UTF-16</td></tr><tr><td><code>U'A'</code> / <code>U"…"</code></td><td><code>char32_t</code></td><td><code>char32_t</code></td><td>UTF-32</td></tr><tr><td><code>L'A'</code> / <code>L"…"</code></td><td><code>wchar_t</code></td><td><code>wchar_t</code></td><td>구현이 정한다</td></tr></table></div><p class="float-caption">표 65.3</p></figure><p>시연의 첫 부분이 이 표를 실물로 보인다. 눈에 띄는 것이 셋이다.</p><p><strong>첫째, <code>'A'</code>의 타입은 <code>char</code>가 아니라 <code>int</code>다.</strong> C에서 문자 상수는 <code>int</code>이고, 그래서 <code>sizeof('A')</code>가 4다(C++와 다른 자리다).</p><p><strong>둘째, <code>u8</code> 접두사는 C23에서 문자 상수에도 붙는다.</strong> 다만 한 UTF-8 코드 단위로 표현되는 문자, 즉 아스키 범위만 쓸 수 있다.</p><p><strong>셋째, 같은 “한”이 표기마다 전혀 다른 바이트가 된다.</strong> <code>char</code>로는 <code>ED 95 9C</code> 세 바이트, <code>char16_t</code>로는 <code>D55C</code> 한 단위, <code>char32_t</code>와 <code>wchar_t</code>로는 <code>0000D55C</code> 한 단위다.</p><p>그리고 BMP 밖의 문자에서 결정적인 차이가 드러난다. U+1F600을 담을 때 <code>char16_t</code>만 <strong>요소가 둘</strong>이 된다 — <code>D83D DE00</code>. 16비트에 담기지 않아 쌍으로 쪼갠 것이고, 그 쌍의 이름이 서러게이트다(66장).</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 소스 코드에 <code>"한"</code>이라고 적으면 어떤 바이트가 되는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> <strong>소스 파일의 인코딩</strong>과 <strong>실행 문자집합</strong>이라는 두 단계를 거친다(17장의 인코딩 사슬). 컴파일러는 소스 파일을 어떤 인코딩으로 읽을지 정하고(GCC는 기본 UTF-8, <code>-finput-charset</code>으로 바꾼다), 그것을 실행 문자집합으로 옮겨 문자열 리터럴의 바이트를 만든다(<code>-fexec-charset</code>).</p><p>이 둘이 어긋나면 컴파일은 되는데 문자열만 깨진다. 그래서 이식성이 중요한 코드는 비아스키 문자를 소스에 직접 적는 대신 <strong>유니버설 문자 이름</strong>을 쓴다.</p><pre><code data-lang="c"><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>s <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">한</span><span class="tok-s">"</span><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> U+D55C 를 실행 문자집합으로 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">const</span></strong> char32_t <strong><span class="tok-x">*</span></strong>t <strong><span class="tok-x">=</span></strong> <strong><span class="tok-t">U</span></strong><span class="tok-s">"</span><span class="tok-n">\U0001F600</span><span class="tok-s">"</span><span class="tok-x">;</span></code></pre><p><code>\u</code>는 네 자리, <code>\U</code>는 여덟 자리다. 시연도 이모지를 이 표기로 적었다 — 그래야 이 책의 예제가 어느 편집기·어느 빌드 설정에서도 같은 바이트를 만든다.</p></p></div></div><h3>65.3 <code>MB_CUR_MAX</code>와 <code>MB_LEN_MAX</code></h3><p>이름이 닮은 두 매크로가 전혀 다른 것을 뜻한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>매크로</strong></th><th><strong>헤더</strong></th><th><strong>무엇</strong></th></tr><tr><td><code>MB_CUR_MAX</code></td><td><code>&lt;stdlib.h></code></td><td><strong>지금 로케일</strong>에서 한 글자의 최대 바이트 수 — 실행 중에 바뀐다</td></tr><tr><td><code>MB_LEN_MAX</code></td><td><code>&lt;limits.h></code></td><td>지원하는 어느 로케일에서든 넘지 않는 상한 — 컴파일 타임 상수</td></tr></table></div><p class="float-caption">표 65.4</p></figure><p>63장 시연에서 <code>MB_CUR_MAX</code>가 로케일에 따라 1(C)·2(EUC-KR)·6(UTF-8)으로 바뀌는 것을 보았다. 버퍼를 잡을 때 어느 쪽을 써야 하는지가 여기서 갈린다 — <strong>배열 크기는 <code>MB_LEN_MAX</code>로 잡고, 루프의 판단은 <code>MB_CUR_MAX</code>로</strong> 한다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> UTF-8은 최대 4바이트인데 왜 <code>MB_CUR_MAX</code>가 6인가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 역사의 흔적이다. UTF-8의 원래 정의(RFC 2279)는 최대 6바이트까지 허용했고, 31비트 코드까지 적을 수 있었다. 유니코드가 U+10FFFF에서 멈추기로 하면서 RFC 3629가 4바이트로 잘라 냈지만, glibc의 <code>MB_CUR_MAX</code>는 여유 있는 옛 값을 그대로 두고 있다.</p><p>실무의 결론은 바뀌지 않는다 — <strong>버퍼는 <code>MB_CUR_MAX</code>(또는 <code>MB_LEN_MAX</code>)만큼 잡는다.</strong> 실제로 4바이트를 넘지 않는다고 해서 4로 잡으면, 다른 인코딩의 로케일에서 넘칠 수 있다.</p></p></div></div><h3>65.4 변환 함수의 세 층</h3><p>바이트열과 와이드 문자 사이를 오가는 함수가 여럿인데, 세 층으로 정리된다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>층</strong></th><th><strong>함수</strong></th><th><strong>성격</strong></th></tr><tr><td>옛 층(C89)</td><td><code>mbtowc</code>·<code>wctomb</code>·<code>mbstowcs</code>·<code>wcstombs</code></td><td>변환 상태를 <strong>함수 내부에</strong> 숨겨 둔다 — 재진입 불가</td></tr><tr><td>상태를 드러낸 층(C95)</td><td><code>mbrtowc</code>·<code>wcrtomb</code>·<code>mbsrtowcs</code>·<code>wcsrtombs</code></td><td><code>mbstate_t *</code>를 인자로 받는다. <code>r</code>은 restartable</td></tr><tr><td>유니코드 전용 층(C11)</td><td><code>mbrtoc16</code>·<code>c16rtomb</code>·<code>mbrtoc32</code>·<code>c32rtomb</code></td><td><code>&lt;uchar.h></code>. 로케일의 인코딩과 UTF-16/32 사이</td></tr></table></div><p class="float-caption">표 65.5</p></figure><p>새로 쓰는 코드는 가운데 층을 쓴다. 이름의 <code>r</code>이 「재시작 가능」을 뜻하고, 그 재시작을 가능하게 하는 것이 <code>mbstate_t</code>다.</p><h4>65.4.1 <code>mbstate_t</code>가 왜 필요한가</h4><p>변환에 상태가 왜 필요한가. 두 가지 사정 때문이다.</p><p><strong>첫째, 글자가 잘려서 온다.</strong> 네트워크나 파일에서 읽으면 버퍼 경계가 글자 가운데를 지날 수 있다. “한”의 세 바이트 중 둘만 들어온 상태에서 함수는 “틀렸다”가 아니라 “아직 모자라다”라고 답해야 하고, 다음 조각이 왔을 때 <strong>이어서</strong> 읽어야 한다.</p><p><strong>둘째, 상태가 있는 인코딩이 있다.</strong> ISO-2022-JP 같은 인코딩은 이스케이프 시퀀스로 「지금부터 한자」·「지금부터 아스키」를 전환한다. 지금 어느 모드인지를 기억하지 않으면 같은 바이트가 다른 글자가 된다.</p><p><code>mbstate_t</code>는 그 두 가지를 담는 불투명한 객체다. 규칙은 셋이다 — <strong>0으로 채우면 초기 상태</strong>이고, <strong>변환 하나마다 자기 객체를 쓰며</strong>, <strong>속을 들여다보지 않는다.</strong></p><pre><code data-lang="c">mbstate_t st<span class="tok-x">;</span>
+<strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 초기 상태로 </span></em><em><span class="tok-c">*/</span></em></code></pre><h3>65.5 <code>mbrtowc</code> — 한 단계씩 뜯어보기</h3><p>이 장의 핵심 함수다. 계약이 촘촘한 만큼, 반환값을 정확히 읽는 것이 전부다.</p><pre><code data-lang="c"><strong><span class="tok-t">size_t</span></strong> <strong>mbrtowc</strong><span class="tok-x">(</span>wchar_t <strong><span class="tok-x">*</span></strong> <strong><span class="tok-k">restrict</span></strong> pwc<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong> <strong><span class="tok-k">restrict</span></strong> s<span class="tok-x">,</span>
+               <strong><span class="tok-t">size_t</span></strong> n<span class="tok-x">,</span> mbstate_t <strong><span class="tok-x">*</span></strong> <strong><span class="tok-k">restrict</span></strong> ps<span class="tok-x">)</span><span class="tok-x">;</span></code></pre><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>반환값</strong></th><th><strong>뜻</strong></th></tr><tr><td><code>0</code></td><td>널 문자를 완성했다(변환 결과가 널 와이드 문자)</td></tr><tr><td>1~<code>n</code></td><td>이만큼의 바이트를 소비해 한 글자를 완성했다</td></tr><tr><td><code>(size_t)-2</code></td><td><code>n</code>바이트를 전부 보았지만 아직 글자가 완성되지 않았다 — 상태는 갱신된다</td></tr><tr><td><code>(size_t)-1</code></td><td>부정한 시퀀스다. <code>errno</code>에 <code>EILSEQ</code>가 담기고 상태는 미정</td></tr></table></div><p class="float-caption">표 65.6</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples/ch65/mbrtowc_step.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> mbrtowc — 바이트열이 한 글자씩 wchar_t 로 풀리는 과정을 한 단계씩. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">errno.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">locale.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span><span class="tok-p">          </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> MB_CUR_MAX </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">wchar.h</span><span class="tok-s">></span>
+
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 반환값의 네 갈래를 사람 말로 옮긴다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong><strong>explain</strong><span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> r<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span>           <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">널 문자를 만났다(0을 돌려준다)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">1</span><span class="tok-x">)</span>  <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">부정한 시퀀스 (errno=EILSEQ)</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">2</span><span class="tok-x">)</span>  <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">아직 한 글자가 안 됐다 — 더 필요하다</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-s">"</span><span class="tok-s">이만큼의 바이트를 먹고 한 글자를 만들었다</span><span class="tok-s">"</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>walk</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>label<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>s<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> len<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    mbstate_t st<span class="tok-x">;</span>
+    <strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 초기 변환 상태 </span></em><em><span class="tok-c">*/</span></em>
+
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">] 바이트 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">개:</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> label</strong><strong><span class="tok-x">,</span></strong><strong> len</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> len<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s"> </span></strong><strong><span class="tok-s">%02X</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong><span class="tok-x">)</span></strong><strong>s</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong><span class="tok-t">size_t</span></strong> pos <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span>pos <strong><span class="tok-x">&lt;</span></strong> len<span class="tok-x">)</span> <span class="tok-x">{</span>
+        wchar_t wc <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+        errno <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+        <strong><span class="tok-t">size_t</span></strong> r <strong><span class="tok-x">=</span></strong> <strong>mbrtowc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>wc</strong><strong><span class="tok-x">,</span></strong><strong> s </strong><strong><span class="tok-x">+</span></strong><strong> pos</strong><strong><span class="tok-x">,</span></strong><strong> len </strong><strong><span class="tok-x">-</span></strong><strong> pos</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  위치 </span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-s">: mbrtowc → </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> pos</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">1</span><span class="tok-x">)</span>      <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">(size_t)-1   </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">else</span></strong> <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">2</span><span class="tok-x">)</span> <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">(size_t)-2   </span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">else</span></strong>                      <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%-12zu</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>explain</strong><strong><span class="tok-x">(</span></strong><strong>r</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">!=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">1</span> <strong><span class="tok-x">&amp;&amp;</span></strong> r <strong><span class="tok-x">!=</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">2</span><span class="tok-x">)</span>
+            <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  → U+</span></strong><strong><span class="tok-s">%04lX</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>wc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">1</span> <strong><span class="tok-x">||</span></strong> r <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">2</span><span class="tok-x">)</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+        pos <strong><span class="tok-x">+=</span></strong> <span class="tok-x">(</span>r <strong><span class="tok-x">==</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> <strong><span class="tok-x">?</span></strong> <span class="tok-n">1</span> <strong><span class="tok-x">:</span></strong> r<span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+<span class="tok-x">}</span>
+
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이 예제는 UTF-8 로케일이 필요하다 — 없으면 그 사실을 밝히고 끝낸다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>loc <strong><span class="tok-x">=</span></strong> <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_CTYPE</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">C.UTF-8</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>loc<span class="tok-x">)</span> loc <strong><span class="tok-x">=</span></strong> <strong>setlocale</strong><strong><span class="tok-x">(</span></strong><strong>LC_CTYPE</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">en_US.UTF-8</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>loc<span class="tok-x">)</span> <span class="tok-x">{</span> <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">UTF-8 로케일이 없다 — 이 시연은 건너뛴다</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">LC_CTYPE=</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">, MB_CUR_MAX=</span></strong><strong><span class="tok-s">%zu</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> loc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">size_t</span></strong><strong><span class="tok-x">)</span></strong><strong>MB_CUR_MAX</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <strong>walk</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">아스키 두 글자</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">Hi</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>walk</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">한글 한 글자</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">한</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">3</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>walk</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">BMP 밖 이모지</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\xF0</span></strong><strong><span class="tok-n">\x9F</span></strong><strong><span class="tok-n">\x98</span></strong><strong><span class="tok-n">\x80</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 잘린 문자: 세 바이트 중 둘만 준다 → (size_t)-2 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>walk</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">잘린 한 글자</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\xED</span></strong><strong><span class="tok-n">\x95</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 부정한 시퀀스: 후행 바이트로 시작 → (size_t)-1 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>walk</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">부정한 시퀀스</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\x9C</span></strong><strong><span class="tok-n">\x41</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 상태는 이어진다: 잘린 조각을 두 번에 나눠 넣어도 이어 붙는다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[스트림처럼 조각으로 들어올 때] </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">한</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">을 2+1 바이트로 나눠 넣는다</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    mbstate_t st<span class="tok-x">;</span>
+    <strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    wchar_t wc <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">size_t</span></strong> r1 <strong><span class="tok-x">=</span></strong> <strong>mbrtowc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>wc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\xED</span></strong><strong><span class="tok-n">\x95</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">2</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  1차(2바이트): </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>explain</strong><strong><span class="tok-x">(</span></strong><strong>r1</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">size_t</span></strong> r2 <strong><span class="tok-x">=</span></strong> <strong>mbrtowc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>wc</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\x9C</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  2차(1바이트): </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> → U+</span></strong><strong><span class="tok-s">%04lX</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong>explain</strong><strong><span class="tok-x">(</span></strong><strong>r2</strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">unsigned</span></strong><strong> </strong><strong><span class="tok-t">long</span></strong><strong><span class="tok-x">)</span></strong><strong>wc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  mbstate_t 가 '어디까지 봤는지'를 들고 있어서 이어 붙는다.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>LC_CTYPE=C.UTF-8, MB_CUR_MAX=6
+
+[아스키 두 글자] 바이트 2개: 48 69
+  위치 0: mbrtowc → 1           이만큼의 바이트를 먹고 한 글자를 만들었다  → U+0048
+  위치 1: mbrtowc → 1           이만큼의 바이트를 먹고 한 글자를 만들었다  → U+0069
+
+[한글 한 글자] 바이트 3개: ED 95 9C
+  위치 0: mbrtowc → 3           이만큼의 바이트를 먹고 한 글자를 만들었다  → U+D55C
+
+[BMP 밖 이모지] 바이트 4개: F0 9F 98 80
+  위치 0: mbrtowc → 4           이만큼의 바이트를 먹고 한 글자를 만들었다  → U+1F600
+
+[잘린 한 글자] 바이트 2개: ED 95
+  위치 0: mbrtowc → (size_t)-2   아직 한 글자가 안 됐다 — 더 필요하다
+
+[부정한 시퀀스] 바이트 2개: 9C 41
+  위치 0: mbrtowc → (size_t)-1   부정한 시퀀스 (errno=EILSEQ)
+
+[스트림처럼 조각으로 들어올 때] "한"을 2+1 바이트로 나눠 넣는다
+  1차(2바이트): 아직 한 글자가 안 됐다 — 더 필요하다
+  2차(1바이트): 이만큼의 바이트를 먹고 한 글자를 만들었다 → U+D55C
+  mbstate_t 가 '어디까지 봤는지'를 들고 있어서 이어 붙는다.
+</code></pre></div></div><p>시연이 이 네 갈래를 차례로 보인다. 아스키는 1바이트씩, 한글은 3바이트를 한 번에, BMP 밖 이모지는 4바이트를 한 번에 먹는다. 잘린 조각에는 <code>(size_t)-2</code>, 후행 바이트로 시작하는 조각에는 <code>(size_t)-1</code>이 나온다.</p><p><strong>마지막 시연이 <code>mbstate_t</code>의 존재 이유를 그대로 보여 준다.</strong> “한”의 세 바이트를 2+1로 나눠 넣었더니, 첫 호출은 <code>(size_t)-2</code>를 돌려주고 둘째 호출에서 U+D55C가 완성됐다. 상태 객체가 「두 바이트까지 봤다」를 들고 있었기 때문이다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>(size_t)-2</code>는 오류다”</strong></p><p>아니다. <strong>정상적인 중간 상태</strong>다. 오류는 <code>(size_t)-1</code> 하나뿐이다.</p><p>이 둘을 뭉뚱그려 처리하면 스트림 처리기가 조각난 입력에서 멀쩡한 글자를 버리게 된다. 네트워크에서 4096바이트씩 읽는 코드라면 거의 매 버퍼의 끝에서 <code>(size_t)-2</code>를 만난다 — 그때 해야 할 일은 <strong>남은 바이트를 다음 버퍼 앞에 붙여 이어 읽는 것</strong>이지, 오류로 끊는 것이 아니다.</p><p>두 값이 모두 <code>(size_t)</code>의 큰 수라는 점도 함정이다. <code>int</code>에 받아 <code>&lt; 0</code>으로 견주면 구현에 따라 엉뚱해진다. <strong>반드시 <code>size_t</code>로 받아 <code>(size_t)-1</code>, <code>(size_t)-2</code>와 직접 견준다.</strong></p></div><h4>65.5.1 문자열 통째로 — <code>mbsrtowcs</code></h4><p>한 글자씩이 아니라 문자열 전체를 옮길 때는 <code>mbsrtowcs</code>를 쓴다. 계약의 요령이 둘 있다.</p><pre><code data-lang="c">mbstate_t st<span class="tok-x">;</span>
+<strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> utf8<span class="tok-x">;</span>                       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 진행 위치를 담는 포인터 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">size_t</span></strong> need <strong><span class="tok-x">=</span></strong> <strong>mbsrtowcs</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>p</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ① 필요한 길이를 먼저 묻는다 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>need <strong><span class="tok-x">==</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">size_t</span></strong><span class="tok-x">)</span><strong><span class="tok-x">-</span></strong><span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> EILSEQ </span></em><em><span class="tok-c">*/</span></em> <span class="tok-x">}</span>
+
+wchar_t <strong><span class="tok-x">*</span></strong>buf <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong>need </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>buf</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+p <strong><span class="tok-x">=</span></strong> utf8<span class="tok-x">;</span>                                   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ② 포인터와 상태를 되돌리고 </span></em><em><span class="tok-c">*/</span></em>
+<strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<strong>mbsrtowcs</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>p</strong><strong><span class="tok-x">,</span></strong><strong> need </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ③ 실제로 옮긴다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p><strong>첫 인자를 널로 주면 길이만 센다</strong> — 그래서 버퍼 크기를 미리 알 수 있다. 그리고 <code>s</code>가 <code>const char **</code>인 이유는, 변환이 도중에 멈췄을 때 <strong>어디까지 읽었는지</strong>를 호출자에게 돌려주기 위해서다. 옛 <code>mbstowcs</code>에는 이 기능이 없어 스트림 처리에 쓸 수 없었다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>변환은 로케일에 매여 있다</p><p>여기서 놓치기 쉬운 사실 하나. <code>mbrtowc</code>가 UTF-8을 이해하는 것은 <strong>지금 로케일이 UTF-8이기 때문</strong>이다. <code>LC_CTYPE</code>이 <code>"C"</code>이면 같은 바이트가 부정한 시퀀스가 된다.</p><p>그래서 와이드 문자를 쓰는 프로그램은 시작하자마자 <code>setlocale(LC_ALL, "")</code>을 불러야 하고, <strong>그 로케일이 UTF-8이 아닐 수도 있다</strong>는 사실을 감당해야 한다. 시연이 UTF-8 로케일을 명시적으로 찾고, 없으면 건너뛰는 이유가 이것이다.</p><p>「이 함수들은 인코딩을 고를 수 없다」는 제약이 실무에서 와이드 문자를 멀리하게 만든 큰 이유다. 프로그램이 다루려는 인코딩과 사용자의 로케일이 같아야 한다는 전제는 서버 프로그램에서 특히 지키기 어렵다.</p></div><div class="dev recap"><p class="dev-label">복습 정리</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요점</strong></th></tr><tr><td><code>wchar_t</code></td><td>정수 타입. 크기도 인코딩도 표준이 정하지 않는다</td></tr><tr><td>유니코드 보장</td><td><code>__STDC_ISO_10646__</code>이 정의되어야 코드포인트다</td></tr><tr><td>문자 상수</td><td><code>'A'</code>는 <code>int</code>. <code>u8</code>/<code>u</code>/<code>U</code>/<code>L</code> 네 접두사</td></tr><tr><td>BMP 밖</td><td><code>char16_t</code>만 요소가 둘이 된다(서러게이트)</td></tr><tr><td><code>MB_CUR_MAX</code></td><td>로케일에 따라 바뀐다. 상한은 <code>MB_LEN_MAX</code></td></tr><tr><td>변환 함수</td><td><code>r</code> 붙은 것(<code>mbrtowc</code>)을 쓴다</td></tr><tr><td><code>mbstate_t</code></td><td>0으로 채워 시작. 잘린 글자와 상태 있는 인코딩 때문</td></tr><tr><td>반환값</td><td><code>-2</code>는 오류가 아니라 “더 필요”</td></tr><tr><td>전제</td><td><code>LC_CTYPE</code>이 그 인코딩이어야 한다</td></tr></table></div><p class="float-caption">표 65.7</p></figure></div><p><code>wchar_t</code>의 계약과 변환의 과정을 보았다. 다음 장은 그 계약이 실제 플랫폼에서 어떻게 갈라졌는지다 — Windows의 2바이트, 리눅스의 4바이트, 그리고 UTF-16이 유니코드를 다 담지 못해 생긴 일들.</p>
 <div class="nav"><a href="ch64.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch66.html">다음 →</a></div>
 </div></main></body></html>

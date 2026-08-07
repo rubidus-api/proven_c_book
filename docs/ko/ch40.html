@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>40 동적 메모리 — Proven C Book</title><style>
+<title>40 안전한 입력 — 넘침을 막고, 실패를 다루기 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,122 +259,132 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../en/">English</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch39.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch41.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch40.html">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>40 동적 메모리</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p>제7부의 마지막 자리 — 실행 중에 크기를 정하고, 원하는 때까지 살려 <span id="idx-entry-70"></span>두는 기억이다. <code>malloc</code>과 <code>free</code>, 소유라는 개념, 그리고 이 세계의 세 가지 대표 사고(누수·이중 해제·해제 후 사용)까지. 기억의 지도가 여기서 완성된다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p>39장에서 자동 수명(함수와 함께 죽는다)과 정적 수명(프로그램 내내 산다)을 배웠다. 그러면 “입력에 따라 크기가 정해지고, 필요한 동안만 살아야 하는” 기억은 — 둘 중 어디에 두는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>어느 쪽도 맞지 않는다. 크기가 실행 중에 정해지고 수명이 프로그램의 논리에 따라 갈리는 기억이 필요하다 — 그래서 세 번째 자리가 있다: <span id="idx-entry-71"></span><strong>동적 저장 기간</strong>, 흔히 <strong>힙</strong>(heap)이라 부르는 창고다. 이 자리의 규칙은 앞의 둘과 결정적으로 다르다 — <strong>태어남과 죽음을 프로그래머가 직접 지시한다.</strong></p></div></div><h3>40.1 빌리고, 돌려준다</h3><p>문법은 함수 두 개다. <code>malloc(바이트 수)</code>는 창고에서 그만큼의 연속된 칸을 빌려 그 시작 주소를 돌려주고, <code>free(주소)</code>는 빌린 것을 돌려준다.</p><div><div><p><code>examples/ch40/dyn.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
-#include &lt;stdlib.h>
+<h2 id="loc-40">40 안전한 입력 — 넘침을 막고, 실패를 다루기</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>25장 입력 · 입력의 위험</div><div>39장 문자열 · 문자열은 끝을 표시할 뿐이다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>39장의 <code>gets</code>는 그릇 크기를 안 받아서 퇴출됐고, 25장의 <code>fgets</code>는 크기를 받아서 안전하다 했다. 그러면 “크기를 받는다”는 것만으로 입력의 안전 문제가 다 풀리는가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> 절반만이다. 크기 전달은 <strong>넘침</strong>을 막지만, 입력에는 두 번째 문제가 있다 — <strong>내용을 믿을 수 없다</strong>는 것(25장). 수를 기대했는데 글자가 오고, 짧은 줄을 기대했는데 긴 줄이 오고, 악의적인 상대는 일부러 경계를 노린 입력을 만든다(22장의 서식 문자열 공격이 그 맛보기였다).</p><p>안전한 입력이란 [넘침 차단 + <strong>실패의 명시적 처리</strong>]의 합이다. 앞의 절반은 25·39장에서 갖췄으니, 이 장은 뒤의 절반을 세운다.</p></p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">25장에서 “안전한 입력은 왜 어려운가”를 예고했고, 34·39장에서 그 위험의 뿌리(경계, NUL 종단)를 배웠다. 이 장에서 사고의 해부를 끝내고, <span id="idx-entry-68"></span><strong>입력 해석의 실패를 어떻게 다룰 것인가</strong>를 다섯 규율로 정리한다. 표준 C 만으로 세울 수 있는 규율이고, 뒤에서 만날 라이브러리들이 그 위에 선다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 표준 라이브러리만으로는 부족하다는 말인가?</li></ol></div></div><div></div><h3>40.1 사고의 해부 — 경계 침범이라는 유행병</h3><p>37장의 경계 규칙과 39장의 NUL 종단을 합치면, C 역사상 가장 값비싼 사고 무늬가 조립된다. 그릇보다 긴 입력이 이웃 기억을 덮어쓴다(경계 침범) — 덮어써진 곳이 하필 <strong>함수 호출의 복귀 장부</strong>(다음 장에서 정체를 본다)라면, 공격자는 입력만으로 프로그램의 실행 흐름을 탈취한다. 이것이 버퍼 오버플로 공격의 골자이고, Morris worm(1988, 39장)부터 오늘의 보안 공지까지 면면히 이어지는 유행병이다. 통계적으로도 압도적이다 — 주요 보안 기관들의 “가장 위험한 소프트웨어 결함” 목록에서 경계 침범 계열은 수십 년째 최상위 단골이다.</p><p>C가 실행 중 경계 검사를 “하지 않기로” 했기 때문에(37장), 방어는 층층이 쌓는 수밖에 없다 — 크기를 받는 함수(<code>fgets</code>), 경고와 새니타이저(17장), 그리고 <strong>입력을 해석하는 코드 자체의 규율</strong>. 마지막 층이 이 장의 주제다.</p><h3>40.2 표준 도구들은 실패를 어떻게 알리는가</h3><p>먼저 지금 가진 도구들이 실패를 어떤 방식으로 말하는지 모아 본다. 제각각이라는 사실 자체가 이 장의 출발점이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>함수</strong></th><th><strong>성공을 어떻게 아는가</strong></th><th><strong>걸리는 자리</strong></th></tr><tr><td><code>fgets</code></td><td>널이 아닌 포인터를 돌려준다</td><td><strong>줄이 잘렸는지</strong>는 따로 봐야 한다 — 끝에 <code>\n</code>이 있는지로</td></tr><tr><td><code>scanf</code>·<code>sscanf</code></td><td><strong>변환에 성공한 개수</strong>를 돌려준다</td><td>어디서 멈췄는지 모른다. 개수를 안 보는 코드가 흔하다</td></tr><tr><td><code>strtol</code> 계열</td><td><code>endptr</code>와 <code>errno</code>를 함께 본다</td><td>세 가지를 함께 봐야 한다 — 반환값·<code>endptr</code>·<code>errno</code></td></tr><tr><td><code>atoi</code></td><td>알 방법이 없다</td><td>실패와 「0을 읽음」이 구별되지 않는다. 쓰지 않는다</td></tr></table></div><p class="float-caption">표 40.1</p></figure><p><code>strtol</code> 계열이 그나마 온전한 계약을 가졌지만, 올바르게 쓰려면 <strong>세 가지를 한꺼번에</strong> 확인해야 한다 — 그래서 실무에서는 이 함수를 직접 부르지 않고 <strong>감싸서</strong> 쓴다. 그 감싸는 방식이 이 장의 다섯 규율이다.</p><h3>40.3 입력 해석의 실패를 다루는 다섯 규율</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch40/parse.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 입력 해석의 실패를 다루는 다섯 규율 — 표준 C 만으로. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">errno.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">inttypes.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">limits.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 
-int main(void)
-{
-    int count = 5;
-    int *scores = malloc(count * sizeof *scores);   /* 창고에서 빌린다 */
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 실패를 '값'으로 돌려주는 결과 꾸러미.</span></em>
+<em><span class="tok-c">   성공 여부와 값을 갈라 담고, 어디까지 읽었는지도 함께 돌려준다. </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-t">struct</span></strong> parse_i64 <span class="tok-x">{</span>
+    <strong><span class="tok-t">bool</span></strong>        ok<span class="tok-x">;</span>
+    <strong><span class="tok-t">long</span></strong> <strong><span class="tok-t">long</span></strong>   value<span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>rest<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 해석이 멈춘 자리 — 이어 읽거나 오류를 가리킬 때 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>why<span class="tok-x">;</span>       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 실패한 이유(사람이 읽는 말) </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span><span class="tok-x">;</span>
 
-    if (scores == nullptr) {                        /* 빌리기는 실패할 수 있다 */
-        printf("allocation failed\n");
-        return 1;
-    }
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> [[nodiscard]] 는 "이 반환값을 버리면 경고하라"는 C23 의 표기다.</span></em>
+<em><span class="tok-c">   실패 확인을 잊는 실수를 컴파일러가 잡아 준다. </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">[</span><span class="tok-x">[</span>nodiscard<span class="tok-x">]</span><span class="tok-x">]</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">struct</span></strong> parse_i64 <strong>parse_int</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>text<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">struct</span></strong> parse_i64 r <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>ok <strong><span class="tok-x">=</span></strong> <span class="tok-n">false</span><span class="tok-x">,</span> <span class="tok-x">.</span>value <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">,</span> <span class="tok-x">.</span>rest <strong><span class="tok-x">=</span></strong> text<span class="tok-x">,</span> <span class="tok-x">.</span>why <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>text<span class="tok-x">)</span> <span class="tok-x">{</span> r<span class="tok-x">.</span>why <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">입력이 없다</span><span class="tok-s">"</span><span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> r<span class="tok-x">;</span> <span class="tok-x">}</span>
 
-    int sum = 0;
-    for (int i = 0; i &lt; count; i += 1) {
-        scores[i] = (i + 1) * 10;
-        sum += scores[i];
-    }
-    printf("total: %d\n", sum);
+    errno <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>end <strong><span class="tok-x">=</span></strong> nullptr<span class="tok-x">;</span>
+    <strong><span class="tok-t">long</span></strong> <strong><span class="tok-t">long</span></strong> v <strong><span class="tok-x">=</span></strong> <strong>strtoll</strong><strong><span class="tok-x">(</span></strong><strong>text</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>end</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">10</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    free(scores);                                   /* 빌린 것은 돌려준다 */
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>total: 150
-</code></pre></div></div><p>세 가지 관행이 시연에 박혀 있다.</p><p><strong>크기 계산은 <code>sizeof *포인터</code>로.</strong> <code>count * sizeof *scores</code>는 “원소 하나의 크기 × 개수”인데, 타입 이름 대신 <strong>대상</strong>으로 크기를 물었다 — 나중에 타입이 바뀌어도 이 줄은 고칠 필요가 없다.</p><p><strong>빌리기는 실패할 수 있다.</strong> <code>malloc</code>은 창고가 부족하면 널 포인터를 돌려준다 — 그래서 <strong>쓰기 전에 확인한다</strong>(34장의 수칙이 여기서 실전이 된다). 확인 없이 쓰면 널 역참조로 붕괴다.</p><p><strong>빌린 것은 돌려준다.</strong> <code>free</code>를 잊으면 그 칸은 프로그램이 끝날 때까지 묶여 있다 — <strong>메모리 누수</strong>(leak)다. 짧은 프로그램에서는 티가 안 나지만, 오래 도는 서버에서는 조금씩 새어 나가 결국 기계를 잡아먹는다.</p><h3>40.2 돌려받은 주소의 정렬 — 무엇을 담을지 모르므로</h3><div><div><p><code>examples/ch40/alloc_cost.c</code></p><pre><code data-lang="c">/* malloc 이 돌려주는 주소의 정렬, 그리고 빌리고 돌려주는 값 */
-#include &lt;stdint.h>
-#include &lt;stddef.h>
-#include &lt;stdio.h>
-#include &lt;stdlib.h>
-#include &lt;time.h>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>end <strong><span class="tok-x">==</span></strong> text<span class="tok-x">)</span>                 <span class="tok-x">{</span> r<span class="tok-x">.</span>why <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">수로 시작하지 않는다</span><span class="tok-s">"</span><span class="tok-x">;</span>  <strong><span class="tok-k">return</span></strong> r<span class="tok-x">;</span> <span class="tok-x">}</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>errno <strong><span class="tok-x">==</span></strong> ERANGE<span class="tok-x">)</span>             <span class="tok-x">{</span> r<span class="tok-x">.</span>why <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">이 타입에 담기지 않는다</span><span class="tok-s">"</span><span class="tok-x">;</span> r<span class="tok-x">.</span>rest <strong><span class="tok-x">=</span></strong> end<span class="tok-x">;</span> <strong><span class="tok-k">return</span></strong> r<span class="tok-x">;</span> <span class="tok-x">}</span>
 
-#define N 300000
+    r<span class="tok-x">.</span>ok <strong><span class="tok-x">=</span></strong> <span class="tok-n">true</span><span class="tok-x">;</span> r<span class="tok-x">.</span>value <strong><span class="tok-x">=</span></strong> v<span class="tok-x">;</span> r<span class="tok-x">.</span>rest <strong><span class="tok-x">=</span></strong> end<span class="tok-x">;</span> r<span class="tok-x">.</span>why <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> r<span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-static double seconds_since(struct timespec t0)
-{
-    struct timespec t1;
-    timespec_get(&amp;t1, TIME_UTC);
-    return (double)(t1.tv_sec - t0.tv_sec) + (double)(t1.tv_nsec - t0.tv_nsec) / 1e9;
-}
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>show</strong><span class="tok-x">(</span><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>text<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">struct</span></strong> parse_i64 r <strong><span class="tok-x">=</span></strong> <strong>parse_int</strong><strong><span class="tok-x">(</span></strong><strong>text</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>r<span class="tok-x">.</span>ok<span class="tok-x">)</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-24s</span></strong><strong><span class="tok-s"> → 성공: </span></strong><strong><span class="tok-s">%lld</span></strong><strong><span class="tok-s">, 남은 입력: </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>               text</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>value</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>rest</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">else</span></strong>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-s">%-24s</span></strong><strong><span class="tok-s"> → 실패: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> text</strong><strong><span class="tok-x">,</span></strong><strong> r</strong><strong><span class="tok-x">.</span></strong><strong>why</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-static void *volatile sink;      /* 최적화가 할당을 지우지 못하게 붙잡는다 */
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 잘림을 오류로 다루는 복사 — "잘렸지만 성공"을 남기지 않는다 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">[</span><span class="tok-x">[</span>nodiscard<span class="tok-x">]</span><span class="tok-x">]</span>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">bool</span></strong> <strong>copy_line</strong><span class="tok-x">(</span><strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>dst<span class="tok-x">,</span> <strong><span class="tok-t">size_t</span></strong> cap<span class="tok-x">,</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>src<span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong><span class="tok-t">size_t</span></strong> n <strong><span class="tok-x">=</span></strong> <strong>strlen</strong><strong><span class="tok-x">(</span></strong><strong>src</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>n <strong><span class="tok-x">+</span></strong> <span class="tok-n">1</span> <strong><span class="tok-x">></span></strong> cap<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">false</span><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 잘릴 상황이면 아예 실패로 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>memcpy</strong><strong><span class="tok-x">(</span></strong><strong>dst</strong><strong><span class="tok-x">,</span></strong><strong> src</strong><strong><span class="tok-x">,</span></strong><strong> n </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">true</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-int main(void)
-{
-    /* ── ① 정렬: 무엇을 담을지 모르므로 가장 엄격한 정렬로 준다 ── */
-    printf("max_align_t 의 정렬  = %zu 바이트\n", alignof(max_align_t));
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">[① 실패를 값으로 돌려준다 — 성공 여부와 값을 갈라서]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">42</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  42 그리고 나머지</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">마흔둘</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>show</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">999999999999999999999999</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    size_t misaligned = 0;
-    void *p[8];
-    for (int i = 0; i &lt; 8; i++) {
-        p[i] = malloc(1);                    /* 1바이트만 요청해도 */
-        if ((uintptr_t)p[i] % alignof(max_align_t) != 0) misaligned++;
-    }
-    printf("1바이트 요청 8회 중 기본 정렬을 어긴 것: %zu 개\n", misaligned);
-    printf("이웃한 두 블록의 주소 간격: %td 바이트 (1을 요청했는데도)\n",
-           (char *)p[1] - (char *)p[0]);
-    for (int i = 0; i &lt; 8; i++) free(p[i]);
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[② 어디까지 읽었는지 알려준다]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>csv <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">10,20,30</span><span class="tok-s">"</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">long</span></strong> <strong><span class="tok-t">long</span></strong> sum <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+    <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> csv<span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><span class="tok-x">;</span><span class="tok-x">;</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+        <strong><span class="tok-t">struct</span></strong> parse_i64 r <strong><span class="tok-x">=</span></strong> <strong>parse_int</strong><strong><span class="tok-x">(</span></strong><strong>p</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>r<span class="tok-x">.</span>ok<span class="tok-x">)</span> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+        sum <strong><span class="tok-x">+=</span></strong> r<span class="tok-x">.</span>value<span class="tok-x">;</span>
+        p <strong><span class="tok-x">=</span></strong> r<span class="tok-x">.</span>rest<span class="tok-x">;</span>
+        <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">==</span></strong> <span class="tok-s">'</span><span class="tok-s">,</span><span class="tok-s">'</span><span class="tok-x">)</span> p<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
+        <strong><span class="tok-k">else</span></strong> <strong><span class="tok-k">break</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> 의 합 = </span></strong><strong><span class="tok-s">%lld</span></strong><strong><span class="tok-s">  ← rest 가 있어 이어 읽을 수 있다</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> csv</strong><strong><span class="tok-x">,</span></strong><strong> sum</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    /* ── ② 값: 같은 일을 세 방식으로 ── */
-    struct timespec t0;
-    unsigned long long acc = 0;
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[③ 잘림을 성공으로 치지 않는다]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">char</span></strong> small<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">hello</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> → </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>copy_line</strong><strong><span class="tok-x">(</span></strong><strong>small</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> small</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">hello</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">성공</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">실패(잘림)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">hello, world</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s"> → </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           </strong><strong>copy_line</strong><strong><span class="tok-x">(</span></strong><strong>small</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> small</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">hello, world</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">성공</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">실패(잘림)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    timespec_get(&amp;t0, TIME_UTC);
-    for (int i = 0; i &lt; N; i++) {           /* 매번 빌리고 돌려준다 */
-        char *b = malloc(64);
-        if (!b) return 1;
-        b[0] = (char)i;
-        acc += (unsigned char)b[0];
-        sink = b;
-        free(b);
-    }
-    double t_alloc = seconds_since(t0);
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[④ 실패하면 출력 인자를 건드리지 않는다]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-t">long</span></strong> <strong><span class="tok-t">long</span></strong> keep <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">-</span></strong><span class="tok-n">1</span><span class="tok-x">;</span>
+    <strong><span class="tok-t">struct</span></strong> parse_i64 bad <strong><span class="tok-x">=</span></strong> <strong>parse_int</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">없는 수</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>bad<span class="tok-x">.</span>ok<span class="tok-x">)</span> keep <strong><span class="tok-x">=</span></strong> bad<span class="tok-x">.</span>value<span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  실패한 뒤 원래 값이 그대로인가: </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s"> (keep = </span></strong><strong><span class="tok-s">%lld</span></strong><strong><span class="tok-s">)</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong>
+<strong>           keep </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-x">-</span></strong><strong><span class="tok-n">1</span></strong><strong> </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">예</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">아니오</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> keep</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    char *reused = malloc(64);
-    if (!reused) return 1;
-    timespec_get(&amp;t0, TIME_UTC);
-    for (int i = 0; i &lt; N; i++) {           /* 한 번 빌려 계속 쓴다 */
-        reused[0] = (char)i;
-        acc += (unsigned char)reused[0];
-        sink = reused;
-    }
-    double t_reuse = seconds_since(t0);
-    free(reused);
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">[⑤ 확인을 잊으면 컴파일러가 말하게 한다]</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  parse_int 와 copy_line 에는 [[nodiscard]] 가 붙어 있다.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  반환값을 버리면 경고가 난다 — 실패 확인을 잊는 사고를 막는다.</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>[① 실패를 값으로 돌려준다 — 성공 여부와 값을 갈라서]
+  42                       → 성공: 42, 남은 입력: ""
+    42 그리고 나머지 → 성공: 42, 남은 입력: " 그리고 나머지"
+  마흔둘                → 실패: 수로 시작하지 않는다
+  999999999999999999999999 → 실패: 이 타입에 담기지 않는다
 
-    timespec_get(&amp;t0, TIME_UTC);
-    for (int i = 0; i &lt; N; i++) {           /* 아예 스택에 둔다 */
-        char b[64];
-        b[0] = (char)i;
-        acc += (unsigned char)b[0];
-        sink = b;
-    }
-    double t_stack = seconds_since(t0);
+[② 어디까지 읽었는지 알려준다]
+  "10,20,30" 의 합 = 60  ← rest 가 있어 이어 읽을 수 있다
 
-    printf("\n%d 회 반복\n", N);
-    printf("  매번 malloc + free : %7.4f 초  (회당 %5.1f ns)\n", t_alloc, t_alloc / N * 1e9);
-    printf("  한 번 빌려 재사용   : %7.4f 초  (회당 %5.1f ns)\n", t_reuse, t_reuse / N * 1e9);
-    printf("  스택 배열           : %7.4f 초  (회당 %5.1f ns)\n", t_stack, t_stack / N * 1e9);
-    printf("\n(합계 %llu — 계산이 지워지지 않게 쓰는 값)\n", acc);
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>max_align_t 의 정렬  = 16 바이트
-1바이트 요청 8회 중 기본 정렬을 어긴 것: 0 개
-이웃한 두 블록의 주소 간격: 32 바이트 (1을 요청했는데도)
+[③ 잘림을 성공으로 치지 않는다]
+  "hello" → 성공
+  "hello, world" → 실패(잘림)
 
-300000 회 반복
-  매번 malloc + free :  0.0037 초  (회당  12.3 ns)
-  한 번 빌려 재사용   :  0.0007 초  (회당   2.3 ns)
-  스택 배열           :  0.0007 초  (회당   2.2 ns)
+[④ 실패하면 출력 인자를 건드리지 않는다]
+  실패한 뒤 원래 값이 그대로인가: 예 (keep = -1)
 
-(합계 114739248 — 계산이 지워지지 않게 쓰는 값)
-</code></pre></div></div><p>예제의 첫 부분이 답하는 질문은 이것이다. <code>malloc(1)</code>이라고 겨우 1바이트를 빌렸는데, 그 주소는 아무 데나 놓여도 되는가?</p><p>안 된다. <code>malloc</code>은 <strong>무엇을 담을지 모른 채</strong> 자리를 내주기 때문이다. 돌려준 자리에 <code>double</code>을 놓을 수도, 포인터를 놓을 수도, 큰 구조체를 놓을 수도 있다. 그래서 표준은 이렇게 약속한다 — <strong><code>malloc</code> 계열이 돌려주는 주소는 어떤 기본 타입에도 맞는 정렬을 만족한다.</strong> 그 “가장 엄격한 기본 정렬”에 붙은 이름이 <code>max_align_t</code>이고, 이 기계에서는 16바이트다(6장의 정렬 규칙이 여기서 실물이 된다).</p><p>두 가지가 따라 나온다.</p><p><strong>첫째, 작게 빌려도 자리는 그만큼 작지 않다.</strong> 예제에서 1바이트씩 여덟 번 빌렸는데 이웃 블록의 주소 간격이 32바이트였다. 정렬을 맞추느라 남는 자리와, 할당자가 블록마다 붙이는 관리 정보(크기·상태) 때문이다. <strong>작은 조각을 수없이 많이 빌리는 프로그램은 요청한 것보다 훨씬 많은 기억을 쓴다</strong>는 뜻이고, 이것이 뒤에서 볼 아레나·풀 같은 방식이 태어난 이유다(68장).</p><p><strong>둘째, 더 엄격한 정렬이 필요하면 따로 요청해야 한다.</strong> SIMD 명령이나 하드웨어 DMA가 64바이트·4096바이트 정렬을 요구하는 경우가 있는데, 이때 쓰는 것이 C11의 <code>aligned_alloc(정렬, 크기)</code>이다. 규칙 두 가지를 지켜야 한다 — 정렬은 2의 거듭제곱이어야 하고, C11에서는 <strong>크기가 정렬의 배수</strong>여야 했다(C23에서 이 제약이 풀렸다). 돌려주는 것은 여전히 <code>free</code>로 반납한다.</p><div class="dev platform"><p class="dev-label">⊞ 플랫폼 노트 — 정렬 할당의 이름은 플랫폼마다 다르다</p><p>표준의 <code>aligned_alloc</code>은 비교적 최근(C11)에 들어왔고, 그 전에는 플랫폼마다 다른 함수를 썼다 — POSIX의 <code>posix_memalign</code>, 윈도우의 <code>_aligned_malloc</code> (그리고 짝이 되는 <code>_aligned_free</code>. 윈도우에서는 이것을 <code>free</code>로 반납하면 안 된다). 옛 코드에서 이 이름들을 만나면 “정렬을 지정한 할당이구나”로 읽으면 된다.</p></div><h3>40.3 값싸 보이는 두 줄의 값 — 할당은 왜 비싼가</h3><p>예제의 뒷부분은 같은 일을 세 방식으로 30만 번 반복해 시간을 잰다. 매번 빌리고 돌려주는 쪽이 재사용이나 스택보다 눈에 띄게 느리다 — 이 기계에서 회당 열 나노초 남짓이다. 값 자체는 기계와 할당자에 따라 다르지만, <strong>두 자릿수 배의 차이</strong>가 난다는 사실은 어디서나 같다.</p><p>왜 비싼가. <code>malloc</code>은 “칸을 준다”는 한 줄로 보이지만 실제로는 <strong>창고 관리 사무소</strong>를 한 번 다녀오는 일이다.</p><ol><li><strong>맞는 크기의 빈 조각을 찾는다.</strong> 할당자는 반납된 조각들을 크기별 목록으로 관리하고, 요청이 오면 그중 맞는 것을 고른다. 목록을 뒤지고, 필요하면 큰 조각을 잘라 쓰고, 남은 조각을 다시 목록에 넣는다 — 전부 자료구조 조작이다.</li><li><strong>관리 정보를 쓴다.</strong> 블록마다 크기와 상태를 적어 두어야 나중에 <code>free</code>가 “이게 몇 바이트였는지” 알 수 있다. 그래서 할당은 <strong>쓰기</strong>를 동반한다.</li><li><strong>모자라면 운영체제에 손을 벌린다.</strong> 창고가 비면 시스템 호출(<code>brk</code>나 <code>mmap</code>)로 주소 공간을 더 받아 온다. 이것은 커널로 들어갔다 나오는 일이라 훨씬 비싸다. 다행히 자주 일어나지는 않는다 — 할당자가 넉넉히 받아 두고 잘라 쓰기 때문이다.</li><li><strong>여러 갈래가 있으면 잠금이 걸린다.</strong> 창고 장부는 공유 자원이라 갈래마다 다투면 느려진다(64장의 경쟁 이야기다). 현대 할당자들이 갈래마다 작은 캐시를 따로 두는 이유가 이것이다.</li><li><strong>캐시가 식는다.</strong> 갓 받은 주소는 대개 캐시에 없어서 첫 접근이 느리다 (11장의 사다리). 반대로 재사용한 버퍼는 이미 캐시에 올라와 있다 — 예제에서 재사용 쪽이 빠른 이유의 절반은 여기에 있다.</li></ol><p>그래서 실무 규칙이 나온다. <strong>뜨거운 루프 안에서 할당하지 않는다.</strong> 미리 한 번 빌려 재사용하거나, 크기를 아는 것은 스택에 두거나, 여러 개를 한꺼번에 빌려 잘라 쓴다. 마지막 방식이 아레나이고, 68장과 제12부가 그 이야기다.</p><div class="dev misconception"><p class="dev-label">⚠ “<code>free</code>는 운영체제에 메모리를 돌려주는 것이다”</p><p>대개 아니다. <code>free</code>는 <strong>할당자의 장부에 “이 조각은 다시 쓸 수 있다”고 적는 것</strong>이지, 운영체제에 반납하는 것이 아니다. 그래서 큰 데이터를 해제한 뒤에도 작업 관리자에서 프로그램의 메모리 사용량이 그대로인 것이 정상이다 — 할당자가 다음 요청에 쓰려고 들고 있는 것이다(큰 블록은 반납되기도 한다).</p><p>이 사실이 두 가지를 설명한다. 첫째, “메모리를 해제했는데 왜 안 줄어드느냐” 는 흔한 오해. 둘째, 오래 도는 서버가 <strong>누수가 없는데도</strong> 메모리를 계속 붙들고 있는 현상 — 조각들이 흩어져 큰 덩어리를 만들지 못하는 <strong>단편화</strong> (fragmentation)다. 68장에서 정면으로 다룬다.</p></div><h3>40.4 소유 — 누가 돌려줄 책임을 지는가</h3><p><code>malloc</code>이 준 주소는 여러 변수에 복사될 수 있고, 함수 사이를 오갈 수도 있다. 그런데 <code>free</code>는 <strong>정확히 한 번</strong> 불려야 한다 — 여기서 C 프로그래밍 의 핵심 규율이 나온다: 어느 시점에든 그 기억을 해제할 책임을 지는 주체 하나를 정해 두는 것, <strong>소유</strong>(ownership)라는 관념이다. C에는 소유를 강제하는 문법이 없다 — 그래서 소유는 <strong>주석과 이름과 규약</strong>으로 표현 된다(“이 함수는 반환한 포인터의 소유권을 넘긴다”처럼). 현대 언어들이 소유를 타입 체계로 끌어올린 것(Rust의 소유권, C++의 스마트 포인터)은 이 규율을 기계가 강제하게 만든 결과다 — 1장에서 본 이웃 언어들의 문제의식이 바로 이 자리에서 나왔다.</p><div class="dev realcase"><p class="dev-label">◉ 세 가지 대표 사고 — 누수, 이중 해제, 해제 후 사용</p><p>동적 메모리의 사고는 세 얼굴로 온다. <strong>누수</strong>는 돌려주기를 잊는 것 — 느리게 죽는 병이다. <strong>이중 해제</strong>(double free)는 같은 주소를 두 번 <code>free</code>하는 것으로, 창고 관리 장부를 망가뜨려 그 뒤의 모든 할당이 오염된다. 가장 위험한 것은 <strong>해제 후 사용</strong>(use-after-free) — 돌려준 칸의 주소를 계속 쓰는 것이다. 39장의 댕글링 포인터가 힙에서 재현되는 것인데, 창고는 그 칸을 곧 다른 요청에 내주므로 <strong>공격자가 그 자리에 자기 데이터를 놓을</strong> 수 있다. 브라우저와 커널의 심각한 취약점 목록에서 use-after-free는 오늘도 최상위 단골이고, 그래서 현대 시스템 프로그래밍 전체가 “소유를 언어가 강제하게 하자”는 방향으로 움직여 왔다. C에서의 방어는 규율 + 도구다 — <code>free</code> 직후 포인터에 <code>nullptr</code>를 대입하는 관행, 그리고 17장의 ASan(이 세 사고를 모두 잡아내는 것이 ASan의 주특기다).</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p>그러면 동적 메모리를 되도록 피하는 것이 상책인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>실제로 그것이 첫 번째 전략이고, 이 책이 여기까지 <code>malloc</code> 없이 온 이유이기도 하다 — 크기를 아는 데이터는 자동 변수(스택)로 두는 것이 가장 빠르고 가장 안전하다(해제할 것이 없으니 세 사고가 원천 봉쇄된다). 임베디드나 안전 필수 분야에서는 아예 동적 할당을 금지하는 규약도 흔하다. 그러나 실행 중에 크기가 정해지는 데이터(사용자가 준 목록, 파일 내용)는 결국 창고가 필요하고 — 그때는 소유를 명확히 하고, 도구로 검사하고, 잘 만들어진 부품(38장의 proven처럼 할당과 경계를 함께 관리하는 계열)을 쓰는 것이 실무의 답이다.</p></div></div><h3>40.5 제7부를 닫으며</h3><p>기억의 지도가 완성됐다 — 레지스터와 캐시라는 사다리(11장) 위에, C의 세 저장 기간(자동·정적·동적)이 놓이고, 그 위를 포인터가 다닌다. 33장에서 개념을 얻고, 34–35장에서 규칙을, 36–37장에서 연속된 기억과 문자열을, 38장에서 안전한 부품을, 39–40장에서 수명과 창고를 배웠다. C의 힘과 위험이 함께 사는 자리를 한 바퀴 돈 것이다.</p><p>동적 메모리의 문법과 규율, 그리고 값까지 보았다. 할당자가 창고를 실제로 어떻게 관리하는지, 요즘 널리 쓰이는 대안 할당자와 대안 표준 라이브러리는 무엇인지, 그리고 프로그램의 기억이 운영체제와 임베디드 칩에서 각각 어떤 지도로 놓이는지는 제11부의 끝에서 두 장을 들여 다룬다(67·68장).</p><p>다음 부는 짧지만 오래 미뤄 온 곳이다 — 제5부에서 “타입을 만드는 선언은 메모리 모델을 갖춘 뒤”라며 미뤄 두었던 구조체와 공용체. 이제 그 조건이 갖춰졌다.</p>
+[⑤ 확인을 잊으면 컴파일러가 말하게 한다]
+  parse_int 와 copy_line 에는 [[nodiscard]] 가 붙어 있다.
+  반환값을 버리면 경고가 난다 — 실패 확인을 잊는 사고를 막는다.
+</code></pre></div></div><p>시연의 <code>parse_int</code>가 그 다섯을 한 함수에 담았다. 하나씩 읽는다.</p><h4>40.3.1 ① 실패를 값으로 돌려준다</h4><p>「성공했는가」와 「값은 무엇인가」를 <strong>갈라서</strong> 돌려준다. <code>atoi</code>처럼 값 하나만 돌려주면 실패를 표현할 자리가 없고, <code>scanf</code>처럼 개수로 알리면 <strong>무엇이 실패했는지</strong>가 남지 않는다.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> parse_i64 <span class="tok-x">{</span> <strong><span class="tok-t">bool</span></strong> ok<span class="tok-x">;</span> <strong><span class="tok-t">long</span></strong> <strong><span class="tok-t">long</span></strong> value<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>rest<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>why<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>구조체를 값으로 돌려주는 것이 부담스러워 보일 수 있지만, 이 크기는 대개 레지스터 두어 개에 실린다(44장). <strong>실패를 타입에 적어 두는 값</strong>이 그보다 훨씬 크다.</p><h4>40.3.2 ② 확인을 잊으면 컴파일러가 말하게 한다</h4><p>C23의 <code>[[nodiscard]]</code>를 붙이면 <strong>반환값을 버리는 코드에 경고</strong>가 난다.</p><pre><code data-lang="c"><span class="tok-x">[</span><span class="tok-x">[</span>nodiscard<span class="tok-x">]</span><span class="tok-x">]</span> <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">struct</span></strong> parse_i64 <strong>parse_int</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">const</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>text</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p>「확인해야 한다」를 문서가 아니라 <strong>컴파일러의 일</strong>로 옮기는 것이다. 사람이 기억해야 하는 규칙은 언젠가 잊히고, 잊힌 자리가 바로 사고가 나는 자리다.</p><h4>40.3.3 ③ 어디까지 읽었는지 알려준다</h4><p><code>strtol</code>의 <code>endptr</code>이 좋은 선례다. <strong>해석이 멈춘 자리</strong>를 함께 돌려주면 두 가지가 가능해진다 — 이어서 읽기(시연의 <code>10,20,30</code> 합산)와, 오류가 난 자리를 사람에게 가리켜 보이기(「3번째 글자에서 막혔습니다」).</p><h4>40.3.4 ④ 잘림을 성공으로 치지 않는다</h4><p>가장 자주 어겨지는 규율이다. 「그릇에 안 들어가서 잘라 넣었다」를 성공으로 돌려주면, 잘린 이름으로 파일을 찾고 잘린 주소로 접속하는 사고가 뒤따른다.</p><p>시연의 <code>copy_line</code>은 <strong>들어가지 않으면 아무것도 하지 않고 실패</strong>를 돌려준다. <code>strncpy</code>가 잘림을 알려 주지 않아 생긴 오랜 문제(59장)의 교훈이 이것이다.</p><h4>40.3.5 ⑤ 실패하면 출력 인자를 건드리지 않는다</h4><p>실패했을 때 결과 자리에 반쯤 채워진 값이 남으면, 그 값을 쓰는 코드가 생긴다. <strong>실패하면 아무것도 바꾸지 않는다</strong>를 계약으로 정하고 문서에 적는다 — 시연의 마지막 부분이 그것을 확인한다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>scanf</code>의 반환값만 확인하면 안전하다”</strong></p><p>절반만 맞다. 개수 확인은 <strong>변환이 몇 개나 성공했는지</strong>를 알려 줄 뿐, 위의 규율 ③④⑤를 대신하지 못한다.</p><ul><li><strong>어디서 멈췄는지</strong> 알 수 없다 — 남은 입력을 다시 읽을 방법이 마땅치 않다.</li><li><code>%s</code>에 <strong>폭을 적지 않으면</strong> 그릇 크기를 모른 채 쓴다(넘침). <code>%9s</code>처럼 폭을 반드시 적는다.</li><li>실패했을 때 <strong>어떤 인자가 이미 채워졌는지</strong> 계약이 흐릿하다.</li></ul><p>그래서 실무의 관행은 「줄 단위로 읽고(<code>fgets</code>), 그 줄을 직접 해석한다」다. 이 장의 다섯 규율이 그 「직접 해석」의 골격이다.</p></div><h3>40.4 이 규율을 부품으로 굳히면</h3><p>같은 규율을 함수마다 손으로 다시 지으면 결국 어딘가에서 빠뜨린다. 그래서 실무의 다음 단계는 <strong>규율을 부품으로 굳히는 것</strong>이다 — 실패가 값으로 드러나고, 경계가 언제나 검사되며, 확인을 잊으면 컴파일러가 말해 주는 형태로.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 표준 라이브러리만으로는 부족하다는 말인가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 부족하다기보다 <strong>매번 다시 지어야 한다</strong>는 것이 문제다. 표준 라이브러리는 1970~80년대의 관행을 그대로 안고 있고(59·60장), 위의 다섯 규율 중 어느 것도 기본값으로 주지 않는다. 그래서 실무의 코드베이스는 예외 없이 <strong>자기만의 얇은 층</strong>을 얹는다 — 문자열, 입력 해석, 수 변환에 안전한 껍데기를 씌우는 층이다.</p><p>그 층을 라이브러리로 만들어 두면 팀 전체가 같은 규율 위에 서게 된다. 이 책도 그 예를 하나 준비해 두었다 — 저자가 만든 <code>proven</code>이고, <strong>제12부</strong>가 그 설계와 사용법을 다룬다. 특히 81장 「에러는 값이다」가 이 장의 ①②를, 84장 「문자열과 텍스트」가 ③④를 라이브러리 차원에서 다시 다룬다.</p><p>중요한 것은 어느 라이브러리를 쓰느냐가 아니라 <strong>규율을 부품에 새겨 두었는가</strong>다. 같은 사상의 다른 부품을 골라도, 직접 만들어도 좋다.</p></p></div></div><p>입력의 안전을 갖췄다. 그런데 이 장에서 “함수 호출의 복귀 장부”라는 말이 설명 없이 지나갔다 — 기억의 어디에 무엇이 살고, 언제 태어나고 죽는가. 다음 장이 그 지도 — 수명과 저장 기간 — 다.</p>
 <div class="nav"><a href="ch39.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch41.html">다음 →</a></div>
 </div></main></body></html>

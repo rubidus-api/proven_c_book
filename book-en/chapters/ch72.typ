@@ -227,7 +227,7 @@ rule follows by itself. A compiler puts a local in one of three places.
   [In a caller-saved register], [Anything at all], [It is neither saved nor restored],
 )
 
-Turn optimization off and the compiler mostly puts locals on the stack, so only
+Turn optimisation off and the compiler mostly puts locals on the stack, so only
 the first row happens — which is why nothing *appears* wrong at `-O0`. Turn it on
 and heavily used variables move into registers, and the second and third rows
 appear.
@@ -257,7 +257,7 @@ Three variables split exactly along that rule.
   [`statik`], [static], [Guaranteed],
 )
 
-*This rule really does bite.* Build with optimization off and all three show 2;
+*This rule really does bite.* Build with optimisation off and all three show 2;
 build the same code with `-O2` and `plain` *comes back as 1* — the compiler had
 kept that variable in a register, and `longjmp` restored the registers to their
 values at `setjmp`. This book ran both builds and confirmed the difference, and
@@ -272,9 +272,9 @@ the example reports which build it is by looking at `__OPTIMIZE__`.
   #dtable(
     columns: 2,
     [*Place*], [*What it prevents*],
-    [MMIO and hardware registers], [Optimizations that erase or merge reads and writes],
-    [Flags exchanged with a signal handler], [Optimizations that skip the read in a loop],
-    [Locals that cross a `longjmp`], [Optimizations that keep the value only in a register],
+    [MMIO and hardware registers], [Optimisations that erase or merge reads and writes],
+    [Flags exchanged with a signal handler], [Optimisations that skip the read in a loop],
+    [Locals that cross a `longjmp`], [Optimisations that keep the value only in a register],
   )
 
   All three prevent "the compiler bypassing memory". Conversely, *`volatile` is
@@ -321,7 +321,7 @@ non-`volatile` one reverts to the null it held at `setjmp` (we checked). Then
 static copy and ASan reports it as "Direct leak of 64 byte(s)".
 
 *There is cleanup code, and it still leaks.* Reading the code will not show it,
-and it appears only in the optimized build that ships. Of the accidents in this
+and it appears only in the optimised build that ships. Of the accidents in this
 pattern it is the hardest to diagnose.
 
 There is an opposite direction too. If the old value is not null but *an address

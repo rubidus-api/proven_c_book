@@ -1,11 +1,15 @@
 <!doctype html>
 <html lang="ko">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>50 가변 인자 함수 — Proven C Book</title><style>
+<title>50 main의 세 얼굴 — 진입점과 종료 상태 — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a; }
+  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
 @media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8; } }
+  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -19,43 +23,235 @@ main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
 .wrap { width:100%; max-width:none; margin:0; }
 h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
-h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.4rem 0 1.4rem; }
-h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 1.2rem; padding-bottom:.5rem;
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:2.2rem 0 .6rem; padding-left:.55rem;
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
      border-left:4px solid var(--fg); }
-p { margin:.75rem 0; } a { color:var(--link); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
 pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-code { background:var(--code-bg); padding:.08em .3em; border-radius:2px; font-size:.93em; }
-pre { background:var(--code-bg); border:1px solid var(--rule); border-radius:4px;
-      padding:.85rem 1rem; overflow-x:auto; line-height:1.55; font-size:.9rem; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
 pre code { background:none; padding:0; }
-table { border-collapse:collapse; margin:1.1rem 0; font-size:.92rem; width:100%;
-        display:block; overflow-x:auto; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
 th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
-th { background:var(--box-bg); font-weight:700; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
-.dev { margin:1.1rem 0; padding:.7rem .95rem; background:var(--box-bg);
-       border-left:3px solid var(--box-rule); border-radius:2px; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
+       border-left:3px solid var(--box-rule); border-radius:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
 .dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
-             font-size:.88rem; color:var(--muted); margin-bottom:.25rem; }
-.organizer { border-left-style:double; border-left-width:6px; }
-.deepqa { border-left-style:dashed; }
-.qa-q { background:transparent; border-left:3px solid var(--fg); }
-.qa-a { background:transparent; border-left:1px solid var(--rule); }
-.misconception { border-left-width:5px; }
-.antipattern { border-left-style:dotted; border-left-width:5px; }
-.realcase { border-left-width:1px; border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); }
-.mathbox { font-size:.95rem; }
-.recap { border:1px solid var(--rule); border-left:3px solid var(--box-rule); }
-.platform { border-left-style:double; }
-.note { border:1px solid var(--rule); background:var(--box-bg); padding:.65rem .9rem;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
+  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
+.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
+  background:none; }
+.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
+  text-indent:0; border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
+  padding:0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:1px solid var(--fg); border-radius:0; background:none;
+  padding:0 .9rem .55rem; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg);
+  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
+.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
+.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
+.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
+.dev.recap > figure, .dev.mathbox > figure {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* 갈래는 테두리 모양으로 구별한다 */
+.dev.antipattern { border-style:dashed; }
+.dev.platform { border-style:double; }
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
+         border-bottom:1px solid var(--rule); }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
             font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
 .toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
 .toc a:hover { text-decoration:underline; }
@@ -63,156 +259,56 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+body { font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
+pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span>
-<a href="../en/">English</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch49.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch51.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch50.html">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>50 가변 인자 함수</h2><div class="dev organizer"><p class="dev-label">이 장이 끝나면</p><p><code>printf</code>가 인자를 몇 개든 받을 수 있었던 비밀을 연다. <code>&lt;stdarg.h></code>의 네 도구, 이 장치가 왜 타입 안전하지 않은지, 그 역사(K&amp;R의 <code>varargs</code> 에서 C89의 <code>stdarg</code>, C23의 정리까지), 그리고 오늘의 대안까지. 22장의 “서식은 계약”이 왜 그토록 엄격한 계약이었는지가 여기서 밝혀진다.</p></div><div><div class="dev deepqa"><p class="dev-label">돌아보기</p><p><span id="idx-entry-88"></span>28장에서 가변 인자로 넘어가는 값에는 기본 진급(float→double, 작은 정수→int)이 적용된다고 배웠다. 그런데 왜 하필 그 자리에만 특별한 진급 규칙이 있는가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>받는 쪽이 <strong>타입을 모르기 때문이다.</strong> 보통의 함수는 원형(24장)에 인자 타입이 적혀 있어 컴파일러가 양쪽을 맞춰 준다. 그러나 가변 인자 자리는 원형에 <code>...</code>뿐이라 맞출 상대가 없다 — 그래서 “일단 다들 큰 타입으로 통일해서 보내자”는 약속으로 혼란을 줄인 것이다. 이 장은 그 “타입을 모르는 자리”에서 어떻게 값을 꺼내는지, 그리고 그 대가가 무엇인지의 이야기다.</p></div></div><h3>50.1 네 개의 도구</h3><p><code>&lt;stdarg.h></code>가 주는 것은 타입 하나와 매크로 셋이다 — <code>va_list</code>(읽개), <code>va_start</code>(시작), <code>va_arg</code>(하나 꺼내기), <code>va_end</code>(닫기). 시연으로 본다.</p><div><div><p><code>examples/ch50/va.c</code></p><pre><code data-lang="c">#include &lt;stdarg.h>
-#include &lt;stdio.h>
+<h2 id="loc-50">50 <code>main</code>의 세 얼굴 — 진입점과 종료 상태</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>3장 프로그램과 프로세스 · 프로세스로 실행된다는 것</div><div>19장 프로그램의 구조 · 프로그램의 뼈대</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>3장에서 프로세스가 끝나며 <strong>종료 상태</strong>라는 숫자 하나를 남긴다고 했고, 14장의 헬로 월드는 <code>return 0;</code>으로 끝났다. 그러면 그 0은 누가 받고, 0이 아닌 값을 돌려주면 무슨 일이 일어나는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 받는 쪽은 <strong>이 프로그램을 실행한 쪽</strong>이다 — 터미널의 셸, 빌드 도구, 스크립트, 또는 이 프로그램을 자식으로 띄운 다른 프로그램. 그들은 그 숫자 하나로 “잘 끝났는가”를 판단하고 다음 행동을 정한다. 그래서 <code>main</code>의 반환값은 장식이 아니라 <strong>프로그램이 바깥세상과 나누는 마지막 대화</strong>다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-88"></span>14장에서 “약속된 출발점”이라고만 하고 지나간 <code>main</code>을 정면으로 다룬다. 표준이 허용하는 <strong>세 가지 형태</strong>, 명령줄 인자 <code>argc</code>·<code>argv</code>의 정확한 계약, <span id="idx-entry-89"></span>그리고 돌려주는 값이 어디로 가서 무엇이 되는지 — 리눅스·윈도우·임베디드의 관례까지. <code>void main()</code>이 왜 틀린 표기인지도 여기서 매듭짓는다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>인자를 해석하는 코드를 직접 짜야 하는가? <code>-v</code>나 <code>--help</code> 같은 것들 말이다.</li><li><code>main</code>이 특별한 함수라면, 재귀로 부르거나 주소를 얻어도 되는가?</li></ol></div></div><div></div><h3>50.1 표준이 허용하는 세 가지 형태</h3><p>C 표준은 <code>main</code>의 정의를 이렇게 못박는다 — 반환 타입은 <code>int</code>여야 하고, 매개변수는 <strong>없거나</strong>, <strong>둘이거나</strong>, 아니면 <strong>구현이 정한 다른 방식</strong>이어야 한다. 그래서 세 얼굴이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>형태</strong></th><th><strong>언제 쓰나</strong></th><th><strong>지위</strong></th></tr><tr><td><code>int main(void)</code></td><td>명령줄 인자를 쓰지 않을 때</td><td>표준</td></tr><tr><td><code>int main(int argc, char *argv[])</code></td><td>인자를 받을 때</td><td>표준</td></tr><tr><td>그 밖의 형태</td><td><code>envp</code> 같은 확장 인자</td><td><strong>구현 정의</strong></td></tr></table></div><p class="float-caption">표 50.1</p></figure><p>두 번째 형태의 <code>char *argv[]</code>는 <code>char **argv</code>라고 적어도 같다(39장의 배열 매개변수가 포인터로 무너지는 규칙 그대로다). 이름도 자유다 — <code>argc</code>·<code>argv</code>는 관례일 뿐이다.</p><p>세 번째 형태의 대표가 <code>int main(int argc, char *argv[], char *envp[])</code>다. 유닉스 계열과 윈도우가 흔히 지원하지만 <strong>표준이 아니고</strong>, 환경 변수를 읽는 이식성 있는 길은 <code>getenv</code>(58장)다.</p><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span><code>void main()</code></p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span> … <span class="tok-x">}</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 표준이 아니다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>옛 교재와 Turbo C 시절 코드에서 흔히 보이는 표기다. 표준은 반환 타입을 <code>int</code>로 못박았으므로, 이 표기는 <strong>호스트 환경에서는 계약 밖</strong>이다. 실제로 많은 컴파일러가 경고를 내고, 일부는 오류로 처리한다.</p><p>두 가지 예외적 사정만 알아 두면 된다. 첫째, <strong>자유 사용 구현</strong>(56장)에서는 시작 함수의 이름과 형태가 구현이 정하는 것이라 <code>void main(void)</code>를 공식 지원하는 임베디드 컴파일러가 실제로 있다 — 반환값을 받을 곳이 없으니 그 코드를 없애 크기를 아끼려는 것이다. 둘째, 그것은 <strong>그 컴파일러의 약속</strong>이지 표준의 약속이 아니다. 호스트 환경의 코드에서는 언제나 <code>int</code>다.</p></div><h3>50.2 <code>argc</code>와 <code>argv</code>의 계약</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch50/entry.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> main 이 받는 것과 남기는 것 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
 
-/* 개수를 첫 인자로 받는 방식 — 스스로는 개수를 알 길이 없다 */
-int sum_n(int count, ...)
-{
-    va_list ap;
-    int total = 0;
+<em><span class="tok-c">/*</span></em><em><span class="tok-c"> 프로그램이 끝날 때 불러 달라고 등록해 두는 함수 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>farewell</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>puts</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  atexit: 등록해 둔 마무리가 여기서 돈다</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+<span class="tok-x">}</span>
 
-    va_start(ap, count);            /* count 다음부터 읽겠다 */
-    for (int i = 0; i &lt; count; i += 1) {
-        total += va_arg(ap, int);   /* 타입을 '내가' 알려 준다 */
-    }
-    va_end(ap);                     /* 반드시 닫는다 */
-    return total;
-}
+<strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> argc<span class="tok-x">,</span> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>argv<span class="tok-x">[</span><span class="tok-x">]</span><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>atexit</strong><strong><span class="tok-x">(</span></strong><strong>farewell</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-/* 끝 표지(sentinel)로 개수를 대신하는 방식 */
-int sum_until_zero(int first, ...)
-{
-    va_list ap;
-    int total = first;
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">argc = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> argc</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> argc<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  argv[</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">] = </span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">,</span></strong><strong> argv</strong><strong><span class="tok-x">[</span></strong><strong>i</strong><strong><span class="tok-x">]</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    va_start(ap, first);
-    for (;;) {
-        int v = va_arg(ap, int);
-        if (v == 0) { break; }
-        total += v;
-    }
-    va_end(ap);
-    return total;
-}
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 표준이 약속한다: argv[argc] 는 반드시 널 포인터다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">argv[argc] 는 널인가? </span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> argv</strong><strong><span class="tok-x">[</span></strong><strong>argc</strong><strong><span class="tok-x">]</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> nullptr </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">예</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">아니오</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-int main(void)
-{
-    printf("sum_n(4, 1,2,3,4)        = %d\n", sum_n(4, 1, 2, 3, 4));
-    printf("sum_until_zero(1,2,3,0)  = %d\n", sum_until_zero(1, 2, 3, 0));
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>sum_n(4, 1,2,3,4)        = 10
-sum_until_zero(1,2,3,0)  = 6
-</code></pre></div></div><p>핵심은 <code>va_arg(ap, int)</code>의 둘째 인자다 — <strong>꺼낼 값의 타입을 프로그래머가 알려 준다.</strong> 함수는 무엇이 왔는지 모르므로, “지금 꺼낼 것은 int다”라고 말해 주는 사람이 필요하고 그 사람이 호출자와 약속을 공유한 작성자다. 이 약속이 어긋나면 — 실제로는 double이 왔는데 int로 꺼내면 — 계약 밖이다(46장). 기억의 잘못된 자리를 읽는 것이니 값이 쓰레기가 되거나 그 뒤의 꺼내기가 전부 어긋난다.</p><p>그리고 함수는 <strong>인자가 몇 개인지도</strong> 모른다. 그래서 개수를 알아내는 길을 호출 규약으로 만들어야 하는데, 시연이 두 관행을 보인다 — 첫 인자로 개수를 받거나(<code>sum_n</code>), 끝을 알리는 표지 값을 약속하거나 (<code>sum_until_zero</code>). <code>printf</code>는 세 번째 길을 쓴다: <strong>서식 문자열이 개수와 타입을 동시에 알려 주는 명세</strong>인 것이다. 22장에서 “서식은 계약”이라 한 말의 정확한 무게가 이것이다 — 그 계약이 깨지면 printf는 있지도 않은 인자를 꺼내며 메모리를 뒤진다(22장의 서식 문자열 취약점이 바로 이 메커니즘이었다).</p><h3>50.2 기본 인자 승격 — <code>...</code>을 건너는 값은 굵어진다</h3><p><code>va_arg</code>가 타입을 물어보는 이유가 하나 더 있다. <code>...</code>을 건너는 인자는 <strong>원래 타입 그대로 가지 않기</strong> 때문이다. 28장에서 본 기본 인자 승격(default argument promotion)이 여기서 실제로 일어난다.</p><table><tr><th><strong>넘긴 것</strong></th><th><strong>실제로 도착하는 것</strong></th><th><strong>그래서</strong></th></tr><tr><td><code>char</code>, <code>signed char</code>, <code>unsigned char</code></td><td><code>int</code>(★)</td><td><code>va_arg(ap, char)</code>는 틀렸다</td></tr><tr><td><code>short</code>, <code>unsigned short</code></td><td><code>int</code>(★)</td><td><code>va_arg(ap, int)</code>로 꺼낸다</td></tr><tr><td><code>bool</code></td><td><code>int</code></td><td>같음</td></tr><tr><td><code>float</code></td><td><code>double</code></td><td><code>va_arg(ap, float)</code>는 틀렸다</td></tr><tr><td><code>int</code> 이상의 정수</td><td>그대로</td><td>—</td></tr><tr><td>포인터</td><td>그대로</td><td>단 널 상수는 캐스트가 필요하다</td></tr></table><p>규칙을 한 줄로 줄이면 이렇다 — <strong><code>int</code>보다 좁은 정수는 정수 승격을 거치고, <code>float</code>은 <code>double</code>이 된다.</strong> 그래서 <code>printf</code>에 <code>float</code> 전용 서식이 없고 (53장), <code>va_arg(ap, float)</code>라고 쓰면 도착하지도 않은 타입을 꺼내는 계약 위반이 된다.</p><p>표의 별표에 단서가 하나 붙는다. 정수 승격의 결과는 <strong>거의 언제나</strong> <code>int</code> 이지만, 정확히는 “<code>int</code>가 그 타입의 모든 값을 표현할 수 있으면 <code>int</code>, 아니면 <code>unsigned int</code>”다(28장). 오늘의 주류 기계에서는 <code>unsigned short</code>도 <code>int</code>에 다 들어가므로 <code>int</code>가 되지만, <code>short</code>와 <code>int</code>의 폭이 같은 구현 에서는 <code>unsigned short</code>가 <code>unsigned int</code>로 승격된다. 그런 자리에서 <code>va_arg(ap, int)</code>로 꺼내면 부호가 어긋난다 — <strong>꺼낼 때는 실제로 승격된 타입을 써야 한다</strong>는 것이 정확한 규칙이다.</p><p>널 포인터를 넘길 때의 함정도 여기서 나온다. <code>NULL</code>이 정수 <code>0</code>으로 정의된 구현에서는 <code>...</code> 자리에 정수 0이 실려 가서, 받는 쪽이 <code>va_arg(ap, char*)</code>로 꺼내면 폭이 어긋난다. C23의 <code>nullptr</code>(34장)이나 명시적 캐스트(<code>(char *)0</code>)를 쓰는 이유다.</p><h3>50.3 근본적 한계 — 함수는 아무것도 모른다</h3><p>가변 인자 함수는 <strong>넘어온 인자의 개수도, 타입도 알지 못한다.</strong> 스택에 값이 놓여 있을 뿐, 그것을 설명하는 정보가 함께 오지 않기 때문이다. 그래서 모든 가변 인자 함수는 그 정보를 <strong>바깥에서</strong> 얻어야 하고, 방법은 결국 셋뿐이다.</p><table><tr><th><strong>방식</strong></th><th><strong>예</strong></th><th><strong>깨지는 방식</strong></th></tr><tr><td>명세 문자열이 알려 준다</td><td><code>printf("%d %s", ...)</code></td><td>서식과 인자가 어긋나면 UB. 서식이 변수면 검사도 불가</td></tr><tr><td>개수·타입을 인자로 받는다</td><td><code>sum_n(3, a, b, c)</code></td><td>개수를 잘못 세면 없는 인자를 꺼낸다</td></tr><tr><td>끝 표지를 약속한다</td><td><code>execl(..., (char *)NULL)</code></td><td>표지를 빠뜨리면 멈추지 않는다</td></tr></table><p>세 방식 모두 <strong>사람이 약속을 지켜야</strong> 성립한다는 공통점이 있다. 컴파일러가 검사해 줄 정보가 애초에 존재하지 않기 때문이다. 69장에서 이것을 “C가 50년째 출하하는 다섯 가지 버그” 중 하나로 꼽는 이유가 여기 있다.</p><h3>50.4 <code>_Generic</code> — 타입을 컴파일 시간에 붙잡기</h3><p>C11이 이 문제에 도구 하나를 보탰다. <code>_Generic</code>은 <strong>표현식의 타입에 따라 여러 선택지 중 하나를 컴파일 시간에 고르는</strong> 문법이다.</p><pre><code data-lang="c">#define TYPE_NAME(x) _Generic((x), \
-    int:          "int",           \
-    double:       "double",        \
-    const char *: "string",        \
-    default:      "other")</code></pre><p>주의할 점 셋이 있다. 첫째, 고르는 기준은 <strong>타입</strong>이지 값이 아니다. 둘째, 고르지 않은 가지는 <strong>컴파일되지도 않는다</strong> — 그래서 서로 다른 타입에만 맞는 코드를 나란히 둘 수 있다. 셋째, 목록에 없는 타입을 주면 <code>default</code>가 없는 한 <strong>컴파일 오류</strong>가 난다 — 이 성질이 다음 절의 핵심이다.</p><div><div><p><code>examples/ch50/generic.c</code></p><pre><code data-lang="c">#include &lt;stdio.h>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">EXIT_SUCCESS = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">, EXIT_FAILURE = </span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> EXIT_SUCCESS</strong><strong><span class="tok-x">,</span></strong><strong> EXIT_FAILURE</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-/* C11 _Generic: 표현식의 *타입*에 따라 컴파일 시간에 하나를 고른다.
-   실행 시간 비용이 0인 것이 핵심이다. */
-#define TYPE_NAME(x) _Generic((x),      \
-    _Bool:        "bool",               \
-    char:         "char",               \
-    int:          "int",                \
-    unsigned:     "unsigned",           \
-    long:         "long",               \
-    double:       "double",             \
-    float:        "float",              \
-    const char *: "string",             \
-    char *:       "string",             \
-    default:      "other")
-
-/* 값과 타입 꼬리표를 한 꾸러미로 묶는다 — proven 의 PROVEN_ARG 와 같은 착상 */
-enum arg_kind { A_INT, A_DOUBLE, A_STR };
-
-struct arg {
-    enum arg_kind kind;
-    union { long i; double d; const char *s; } v;
-};
-
-static struct arg arg_from_int(long v)        { return (struct arg){ A_INT,    { .i = v } }; }
-static struct arg arg_from_double(double v)   { return (struct arg){ A_DOUBLE, { .d = v } }; }
-static struct arg arg_from_str(const char *v) { return (struct arg){ A_STR,    { .s = v } }; }
-
-#define ARG(x) _Generic((x),            \
-    int:          arg_from_int,         \
-    long:         arg_from_int,         \
-    double:       arg_from_double,      \
-    float:        arg_from_double,      \
-    const char *: arg_from_str,         \
-    char *:       arg_from_str)(x)
-
-/* 인자의 타입을 함수가 *알고 받는다* — 서식 문자열을 믿지 않는다 */
-static void print_args(const struct arg *a, size_t n)
-{
-    for (size_t i = 0; i &lt; n; i++) {
-        switch (a[i].kind) {
-            case A_INT:    printf("  [%zu] int    %ld\n", i, a[i].v.i); break;
-            case A_DOUBLE: printf("  [%zu] double %.3f\n", i, a[i].v.d); break;
-            case A_STR:    printf("  [%zu] string %s\n", i, a[i].v.s); break;
-        }
-    }
-}
-
-/* 배열 리터럴로 개수까지 함께 넘긴다 — 가변 인자가 아니다 */
-#define PRINT(...) do {                                       \
-    struct arg _args[] = { __VA_ARGS__ };                     \
-    print_args(_args, sizeof _args / sizeof _args[0]);        \
-} while (0)
-
-int main(void)
-{
-    int         n = 42;
-    double      x = 3.14159;
-    const char *s = "hello";
-    char        c = 'A';
-    bool        b = true;
-
-    printf("TYPE_NAME: %s %s %s %s %s\n",
-           TYPE_NAME(n), TYPE_NAME(x), TYPE_NAME(s), TYPE_NAME(c), TYPE_NAME(b));
-
-    printf("typed arguments:\n");
-    PRINT(ARG(n), ARG(x), ARG(s));
-    return 0;
-}
-</code></pre></div><div><p>실행 결과</p><pre><code>TYPE_NAME: int double string char bool
-typed arguments:
-  [0] int    42
-  [1] double 3.142
-  [2] string hello
-</code></pre></div></div><p>예제의 뒷부분이 이 장의 결론이다. <code>ARG(x)</code>는 <code>_Generic</code>으로 값의 타입을 알아내, <strong>값과 타입 꼬리표를 함께 담은 구조체</strong>를 만든다. 그리고 그것들을 배열에 담아 넘기므로 함수는 개수까지 알게 된다 — 가변 인자를 아예 쓰지 않는 것이다. 서식 문자열이 없으니 서식과 인자가 어긋날 자리도 없다.</p><h3>50.5 proven의 <code>PROVEN_ARG</code> — 실물의 구조</h3><p>75장에서 쓴 <code>proven_println("{}", PROVEN_ARG(x))</code>가 정확히 이 구조다. 실제 구현을 뜯어보면 세 조각으로 되어 있다.</p><p><strong>① 타입 꼬리표와 값을 담는 꾸러미.</strong> 라이브러리는 인자 하나를 이렇게 표현한다 — 어떤 종류인지 알려 주는 열거값과, 값 자체를 담는 공용체 (43장의 태그된 공용체 그대로다).</p><pre><code data-lang="c">typedef enum {
-    PROVEN_ARG_NONE, PROVEN_ARG_I32, PROVEN_ARG_U32,
-    PROVEN_ARG_I64,  PROVEN_ARG_U64, PROVEN_ARG_F64,
-    PROVEN_ARG_CSTR, PROVEN_ARG_STR_VIEW, PROVEN_ARG_PTR,
-    PROVEN_ARG_CHAR, PROVEN_ARG_BOOL, PROVEN_ARG_CUSTOM, /* ... */
-} proven_arg_type_t;</code></pre><p><strong>② 타입마다 하나씩 있는 생성 함수.</strong> <code>proven_arg_i32(int v)</code>처럼, 값을 받아 꼬리표를 붙여 돌려주는 작은 함수들이다. 전부 <code>static inline</code>이라 호출 비용이 없다.</p><p><strong>③ <code>_Generic</code>으로 그 함수들을 고르는 매크로.</strong> 실제 헤더의 모습이다.</p><pre><code data-lang="c">#define PROVEN_ARG(x) _Generic((x),          \
-    _Bool:              proven_arg_bool,     \
-    char:               proven_arg_char,     \
-    signed char:        proven_arg_i32,      \
-    unsigned char:      proven_arg_u32,      \
-    short:              proven_arg_i32,      \
-    unsigned short:     proven_arg_u32,      \
-    int:                proven_arg_i32,      \
-    unsigned int:       proven_arg_u32,      \
-    long:               proven_arg_i64,      \
-    unsigned long:      proven_arg_u64,      \
-    long long:          proven_arg_i64,      \
-    unsigned long long: proven_arg_u64,      \
-    double:             proven_arg_f64,      \
-    float:              proven_arg_f64,      \
-    const char*:        proven_arg_cstr,     \
-    char*:              proven_arg_cstr,     \
-    void*:              proven_arg_ptr,      \
-    proven_u8str_view_t: proven_arg_str_view,\
-    proven_arg_t:       proven_arg_identity  \
-)(x)</code></pre><p>읽는 요령은 마지막 줄의 <code>(x)</code>다. <code>_Generic</code>이 <strong>함수 이름 하나</strong>로 값이 정해지고, 그 뒤의 <code>(x)</code>가 그 함수를 호출한다. 즉 <code>PROVEN_ARG(n)</code>은 <code>n</code>이 <code>int</code>면 <code>proven_arg_i32(n)</code>으로, <code>double</code>이면 <code>proven_arg_f64(n)</code> 으로 컴파일된다.</p><p>설계의 세부 몇 가지가 눈에 띈다.</p><ul><li><strong>좁은 정수를 굵은 쪽으로 모은다</strong> — <code>short</code>와 <code>signed char</code>가 모두 <code>proven_arg_i32</code>로 간다. 앞 절의 기본 인자 승격과 같은 방향이지만, 이쪽은 <strong>컴파일러가 아니라 라이브러리가 명시적으로</strong> 정한 것이다.</li><li><strong><code>float</code>을 <code>double</code>로 모은다</strong> — 같은 이유다.</li><li><strong><code>char</code>만 따로 둔다</strong> — <code>proven_arg_char</code>가 따로 있어서 <code>char c = 'Z'</code>가 숫자 90이 아니라 글자 <code>Z</code>로 찍힌다. 다만 <code>PROVEN_ARG('Z')</code>는 <code>'Z'</code>가 <code>int</code>인 C의 규칙 때문에 여전히 90으로 간다 — 헤더가 이 한계를 주석에 정직하게 적어 두었다.</li><li><strong><code>proven_arg_t</code> 자기 자신도 목록에 있다</strong> — 이미 꾸러미로 만든 값을 다시 감쌀 때 그대로 통과시키기 위한 항등 가지다.</li><li><strong>목록에 없는 타입은 컴파일 오류</strong> — <code>default</code> 가지가 없다. 구조체를 실수로 넘기면 빌드가 실패한다. <code>printf</code>가 무엇이든 받아 주고 실행 중에 무너지던 것과 정반대의 선택이다.</li></ul><p>그다음은 단순하다. <code>proven_println("...", PROVEN_ARG(a), PROVEN_ARG(b))</code>는 꾸러미들을 <strong>배열 리터럴</strong>로 묶어 개수와 함께 실제 함수에 넘긴다. 가변 인자 자리를 통과하지 않으므로 승격도, 개수 추측도, 서식-인자 불일치도 없다.</p><div><div class="dev qa-q"><p class="dev-label">문</p><p>그러면 <code>_Generic</code>으로 C에 제네릭이 생긴 것인가?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>아니다. <code>_Generic</code>은 <strong>이미 존재하는 함수들 중에서 고르는</strong> 장치이지, 타입에 따라 코드를 새로 만들어 주지 않는다. 타입마다 함수를 하나씩 손으로 써 두어야 하고, 목록도 손으로 유지해야 한다. 그래서 표준 라이브러리의 <code>&lt;tgmath.h></code>(수학 함수의 타입별 선택)나 이 절의 <code>PROVEN_ARG</code>처럼 <strong>유한하고 잘 알려진 타입 집합</strong>에 쓰인다. 진짜 제네릭이 필요하면 C에서는 여전히 매크로로 코드를 찍어 내거나(76장의 컨테이너 매크로), <code>void *</code>와 크기를 넘기는 방식(69장의 <code>qsort</code>)을 쓴다.</p></div></div><h3>50.6 역사 — varargs에서 stdarg로</h3><p>이 장치의 역사는 C가 계약의 언어로 자란 과정의 축소판이다.</p><p><strong>표준 이전(K&amp;R 시절).</strong> 원형이 없던 시절(12장)의 C에서는 사실상 모든 함수가 인자 개수를 검사받지 않았다 — <code>printf</code> 같은 함수가 특별할 것도 없었다. 인자를 꺼내는 방법도 이식성이 없었다: 첫 인자의 주소에서 스택을 따라 훑는 식의 요령을 각자 썼는데, 인자를 스택이 아니라 레지스터로 넘기는 기계가 나오면서 이 요령이 깨졌다. 그래서 나온 것이 Unix 계열의 <code>&lt;varargs.h></code>였다 — 요령을 매크로로 감싸 기계 차이를 숨긴 첫 시도다.</p><p><strong>C89 — <code>&lt;stdarg.h></code>.</strong> 표준화 위원회가 원형을 도입하면서(10·24장) 가변 인자도 정식 문법을 얻었다: 원형에 <code>...</code>을 적고, 값 꺼내기는 <code>va_*</code> 매크로로 한다. 옛 <code>varargs</code>와의 결정적 차이는 <strong>이름 있는 인자가 최소 하나 필요하다</strong>는 것이다(<code>va_start</code>가 그 인자를 기준점으로 삼는다) — 그래서 <code>printf(const char *fmt, ...)</code>처럼 서식이 앞에 오는 서명이 표준이 됐다.</p><p><strong>C23 — 다듬기.</strong> 기준점 인자가 필요하다는 제약이 완화되어(<code>va_start</code>의 둘째 인자가 선택적) 인자 없는 가변 함수도 적을 수 있게 됐고, 옛 <code>varargs.h</code>는 역사 속으로 완전히 사라졌다. 반세기에 걸쳐 “이식성 없는 요령 → 표준 매크로 → 군더더기 제거”로 다듬어 온 것이다.</p><div class="dev misconception"><p class="dev-label">⚠ “가변 인자 함수는 편리하니 자주 쓰면 좋다”</p><p>편리해 보이지만, C에서 가변 인자는 <strong>타입 안전이 사라지는 자리</strong>다. 컴파일러는 <code>...</code> 자리의 인자를 검사하지 않고, 받는 쪽은 타입을 추측할 방법이 없다. <code>printf</code> 계열이 그나마 안전한 것은 컴파일러가 <strong>특별히</strong> 서식 문자열을 읽어 검사해 주기 때문이지(17장의 경고), 언어의 일반 규칙 덕분이 아니다 — 직접 만든 가변 인자 함수에는 그 그물이 없다. 실무 권고는 분명하다: <strong>꼭 필요하지 않으면 만들지 않는다.</strong> 대안이 대개 더 낫다 — 개수가 정해졌으면 그냥 인자를 나열하고, 여럿 이면 배열과 길이를 받고(36장의 관행), 종류가 다양하면 43장의 태그된 공용체로 명시적인 값 목록을 받는다. C 라이브러리 설계의 현대적 취향은 “가변 인자는 로깅·서식처럼 도구의 검사가 붙는 자리에만”이다.</p></div><div><div class="dev qa-q"><p class="dev-label">문</p><p><code>printf</code> 같은 서식 함수를 감싸는 내 함수를 만들려면 어떻게 하는가 — 예컨대 로그 함수?</p></div><div class="dev qa-a"><p class="dev-label">답</p><p>그 자리를 위해 <code>v</code> 붙은 짝이 표준에 준비되어 있다 — <code>vprintf</code>, <code>vfprintf</code>, <code>vsnprintf</code>처럼 <strong><code>va_list</code>를 그대로 받는</strong> 판들이다. 내 함수가 <code>...</code>으로 받아 <code>va_start</code>로 읽개를 만든 뒤, 그 읽개를 통째로 넘겨주면 된다. 서식 검사 경고를 내 함수에서도 받고 싶다면 컴파일러 확장 표기(gcc·clang의 <code>format</code> 속성)를 붙이는 것이 관행이다 — 언어가 못 주는 안전을 도구가 메우는, 이 책에 여러 번 나온 무늬다.</p></div></div><p>가변 인자의 정체를 알았다 — 함수에 <strong>값</strong>을 여럿 넘기는 법이었다. 다음 장은 그 거울상이다. 함수 자체를 값으로 다루는 법, 즉 함수 포인터다.</p>
+    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 성공을 알리는 세 가지 표기는 모두 같은 뜻이다 </span></em><em><span class="tok-c">*/</span></em>
+    <strong><span class="tok-k">return</span></strong> EXIT_SUCCESS<span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> == return 0; == (C99 부터) 그냥 끝내기 </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span>
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>argc = 1
+  argv[0] = "/opt/data/ai-share/proven_c_book/build/examples-bin/ch50/entry"
+argv[argc] 는 널인가? 예
+EXIT_SUCCESS = 0, EXIT_FAILURE = 1
+  atexit: 등록해 둔 마무리가 여기서 돈다
+</code></pre></div></div><p>표준이 약속하는 것은 다음과 같고, 이 약속이 인자 처리 코드의 뼈대가 된다.</p><ol><li><code>argc</code>는 <strong>0 이상</strong>이다. 인자가 하나도 없을 수 있다.</li><li><code>argv[0]</code>은 <strong>프로그램 이름</strong>이다 — 다만 이름을 알 수 없으면 빈 문자열일 수 있다. 그래서 <code>argv[0]</code>을 무조건 믿고 경로를 계산하는 코드는 위험하다.</li><li><code>argv[1]</code>부터 <code>argv[argc-1]</code>까지가 실제 인자다.</li><li><strong><code>argv[argc]</code>는 반드시 널 포인터다.</strong> 예제가 그것을 확인했다. 그래서 <code>for (char **p = argv; *p; p++)</code>처럼 널을 끝 표시로 삼는 순회가 성립한다.</li><li>이 문자열들은 <strong>수정할 수 있고</strong>, 프로그램이 도는 동안 유효하다.</li></ol><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 인자를 해석하는 코드를 직접 짜야 하는가? <code>-v</code>나 <code>--help</code> 같은 것들 말이다.</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 먼저 두 가지를 갈라야 한다 — <strong>인자를 받는 것</strong>과 <strong>인자를 해석하는 것</strong>은 다른 일이다.</p><p><strong>받는 것은 표준에 있다.</strong> 방금 본 <code>argc</code>·<code>argv</code>가 그것이고, 어느 플랫폼 에서든 이 두 매개변수로 인자가 들어온다. 이 자리에 부족한 것은 없다.</p><p><strong>해석기가 없는 것이다.</strong> “<code>-v</code>는 자세히 보기, <code>--out FILE</code>은 값이 붙는 옵션, 나머지는 파일 이름”처럼 <strong>해석하는</strong> 규칙을 표준 C는 하나도 제공하지 않는다. <code>getopt</code> 같은 함수가 <code>&lt;stdlib.h></code>에 없다는 뜻이다. 그래서 그 일은 세 갈래로 나뉜다.</p><p><strong>직접 짜기</strong> — 짧은 프로그램이면 이것으로 충분하다. <code>argv</code>를 훑으며 <code>strcmp</code>로 가르고, 값이 붙는 인자는 다음 칸을 읽는다. 숫자로 바꿀 때는 <code>atoi</code>가 아니라 <code>strtol</code>을 쓴다(58장).</p><p><strong>플랫폼 도구</strong> — 유닉스 계열에는 POSIX의 <code>getopt</code>(<code>&lt;unistd.h></code>)와 GNU의 <code>getopt_long</code>(<code>--이름</code> 형태를 다룬다)이 있고, glibc에는 도움말까지 만들어 주는 <code>argp</code>가 있다. 전부 표준이 아니라 플랫폼의 것이다. 윈도우의 C 런타임에는 <code>getopt</code>가 없어서, 이식 프로젝트는 대개 <code>getopt</code> 구현 하나를 저장소에 넣어 두거나 자체 해석기를 쓴다.</p><p><strong>라이브러리</strong> — 규모가 커지면(하위 명령, 도움말 생성, 설정 파일과의 병합) 인자 해석 전용 라이브러리를 쓴다.</p><p>어느 쪽이든 규칙 하나는 지킨다: <strong>인자는 바깥에서 온 입력이다.</strong> 41장의 입력 처리 수칙 — 길이를 믿지 않고, 숫자 변환의 실패를 확인하고, 경로를 그대로 이어 붙이지 않는 것 — 이 그대로 적용된다.</p></p></div></div><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>인자는 어떻게 프로그램까지 오는가 — 유닉스와 윈도우</p><p><code>argv</code>가 표준이라고 해서 <strong>만들어지는 방식</strong>까지 같은 것은 아니다. 두 세계가 정반대다.</p><p><strong>유닉스 계열</strong> — 프로그램을 띄우는 쪽이 애초에 <strong>문자열의 배열</strong>을 넘긴다 (3장의 <code>execve</code>가 그렇다). 셸이 따옴표와 와일드카드를 먼저 처리해 조각내 주므로, 프로그램이 받는 <code>argv</code>는 이미 나뉘어 있다. 커널은 그 배열을 그대로 새 프로세스에 실어 준다.</p><p><strong>윈도우</strong> — <code>CreateProcess</code>는 <strong>문자열 하나</strong>를 넘긴다(3장). 즉 나누는 일이 받는 쪽 몫이다. 그래서 C 런타임이 시작 코드에서 그 한 줄을 규칙에 따라 쪼개 <code>argv</code>를 만들어 <code>main</code>에 넘긴다 — <code>argc</code>·<code>argv</code>가 표준대로 오는 것은 런타임이 그 일을 대신해 주기 때문이다.</p><p>이 차이가 실무에 두 가지를 남긴다. 첫째, 윈도우에서는 <strong>원본 명령줄</strong>을 직접 볼 수 있고 필요하면 직접 쪼갤 수도 있다 — <code>GetCommandLineW</code>가 그 한 줄을 돌려주고, <code>CommandLineToArgvW</code>가 표준 규칙으로 쪼개 준다. 유니코드 인자를 온전히 받으려면 <code>wmain</code>(또는 이 두 함수)을 쓰는 것이 관행이다. 둘째, <strong>쪼개는 규칙이 플랫폼마다 다르다</strong> — 따옴표와 역슬래시의 처리가 특히 그렇다. 그래서 다른 프로그램을 띄우며 인자를 만들 때는 “문자열을 손으로 이어 붙이지 말고 인자를 배열로 넘기는” API(<code>posix_spawn</code>, <code>CreateProcess</code>의 인자 조립 규칙)를 쓰라는 조언이 나온다(61장의 <code>system</code> 반례와 같은 결이다).</p></div><h3>50.3 돌려주는 값 — 세 가지 표기와 하나의 뜻</h3><p><code>main</code>을 끝내는 방법은 셋이고, 셋 다 같은 뜻이다.</p><pre><code data-lang="c"><strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 명시적 </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">return</span></strong> EXIT_SUCCESS<span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> &lt;stdlib.h> 의 이름. 값은 0 </span></em><em><span class="tok-c">*/</span></em>
+}                      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 그냥 끝내기 — C99 부터 return 0; 과 같다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>마지막 것이 C99에서 들어온 특례다. <strong><code>main</code>에 한해</strong> 반환값 없이 끝나면 0을 돌려준 것으로 친다(다른 함수에서는 값을 안 돌려주고 그 값을 쓰면 계약 밖이다). C89 시절 코드가 값 없이 끝나는 일이 흔했던 것을 표준이 뒤늦게 추인한 셈이다.</p><p>실패를 알릴 때는 <code>EXIT_FAILURE</code>를 쓴다. 예제가 확인한 대로 흔한 값은 1이지만 <strong>표준이 1이라고 약속하지는 않는다</strong> — “0이 아닌, 실패를 뜻하는 값”일 뿐이다. 그 밖의 숫자를 돌려주는 것은 <strong>구현 정의</strong>다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>끝내는 방법</strong></th><th><strong>하는 일</strong></th><th><strong>주의</strong></th></tr><tr><td><code>return n;</code> (main 에서)</td><td><code>exit(n)</code>과 같다</td><td>정리 절차가 모두 돈다</td></tr><tr><td><code>exit(n)</code></td><td>어디서든 프로그램 종료</td><td><code>atexit</code> 등록 함수 실행, 스트림 비움</td></tr><tr><td><code>quick_exit(n)</code></td><td>빠른 종료(C11)</td><td><code>at_quick_exit</code> 만 돈다</td></tr><tr><td><code>_Exit(n)</code></td><td>즉시 종료</td><td>정리를 <strong>하지 않는다</strong></td></tr><tr><td><code>abort()</code></td><td>비정상 종료</td><td>정리 없음. 코어 덤프가 남을 수 있다</td></tr></table></div><p class="float-caption">표 50.2</p></figure><p>예제의 <code>atexit</code>가 그 정리 절차를 보여 준다 — 등록해 둔 함수가 <code>main</code>이 끝난 뒤에 돌았다. 여기에 열린 스트림을 비우는 일(58장의 버퍼)도 포함된다. 그래서 <strong><code>_Exit</code>나 <code>abort</code>로 끝내면 출력이 사라질 수 있다.</strong></p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“종료 상태로 아무 숫자나 돌려줄 수 있다”</strong></p><p>돌려줄 수는 있지만 <strong>받는 쪽이 그대로 보리라는 보장은 없다.</strong> 유닉스 계열은 자식의 종료 상태를 전할 때 <strong>하위 8비트만</strong> 쓴다. 그래서 <code>return 300;</code>으로 끝낸 프로그램의 상태를 셸에서 보면 300이 아니라 44다(300 − 256).</p><pre><code data-lang="text">$ ./ex ; echo $?
+44</code></pre><p>윈도우는 32비트 종료 코드를 그대로 전하므로 이 잘림이 없다. 이식성 있는 규칙은 하나다 — <strong>0은 성공, 1은 실패, 그 밖에는 0–125 범위의 작은 수만 쓴다.</strong> 큰 수나 음수를 상태로 흘려보내지 않는다.</p></div><h3>50.4 관례 — 그 숫자를 누가 어떻게 읽는가</h3><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>리눅스·유닉스 계열</p><p>셸이 마지막 명령의 상태를 <code>$?</code>에 담아 둔다. 관례는 이렇다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>값</strong></th><th><strong>뜻</strong></th></tr><tr><td>0</td><td>성공</td></tr><tr><td>1</td><td>일반적인 실패</td></tr><tr><td>2</td><td>사용법 오류(많은 도구의 관례)</td></tr><tr><td>126</td><td>실행할 수는 있으나 권한 등으로 실행 실패(셸)</td></tr><tr><td>127</td><td>명령을 찾을 수 없음(셸)</td></tr><tr><td>128 + N</td><td>N번 신호로 죽었다(셸의 표기)</td></tr></table></div><p class="float-caption">표 50.3</p></figure><p>이 관례 덕에 스크립트가 <code>if ./프로그램; then …</code>처럼 상태만으로 흐름을 정할 수 있고, <code>make</code>와 CI가 실패를 알아챈다. BSD 계열에는 <code>&lt;sysexits.h></code>에 더 세분한 관례(<code>EX_USAGE</code> 64 등)가 있지만 널리 쓰이지는 않는다.</p><p>주의: 128 이상은 신호로 죽은 것과 헷갈리므로, 프로그램이 스스로 돌려주는 값으로는 피하는 편이 좋다.</p></div><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>윈도우</p><p>같은 숫자가 <strong>종료 코드</strong>(exit code)라 불리고, 배치 파일에서 <code>%ERRORLEVEL%</code>로, PowerShell 에서 <code>$LASTEXITCODE</code>로 읽는다. 프로그램에서 자식의 코드를 받을 때는 <code>GetExitCodeProcess</code>를 쓴다.</p><p>차이는 둘이다. <strong>하위 8비트로 잘리지 않는다</strong>(32비트 그대로), 그리고 특정 값들이 시스템 오류 코드와 겹쳐 읽힐 수 있다. 일반 프로그램은 여전히 0과 1을 쓰는 것이 안전하다.</p></div><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>임베디드 — 돌아갈 곳이 없다</p><p>운영체제가 없는 기계에서는 <code>main</code>이 끝나도 상태를 받을 상대가 없다. 그래서 이 세계의 <code>main</code>은 대개 <strong>끝나지 않는다</strong>.</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
+<span class="tok-x">{</span>
+    <strong>init</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><span class="tok-x">;</span><span class="tok-x">;</span><span class="tok-x">)</span> <span class="tok-x">{</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 영원히 돈다 </span></em><em><span class="tok-c">*/</span></em>
+        <strong>poll</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <span class="tok-x">}</span>
+<span class="tok-x">}</span></code></pre><p>만약 끝나면 무슨 일이 벌어지는가 — 그것도 구현이 정한다. 시작 코드가 무한 루프로 붙잡아 두거나, 칩을 리셋하거나, 아무 데로나 흘러갈 수 있다. 그래서 임베디드 코딩 규약들은 “<code>main</code>은 반환하지 않는다”를 명시적으로 요구하는 경우가 많다. 진입점의 이름조차 <code>main</code>이 아닐 수 있다는 것은 56장에서 본 그대로다 — 리셋 벡터가 가리키는 함수가 시작점이고, 그 함수가 <code>.data</code>를 옮기고 <code>.bss</code>를 0으로 채운 뒤 <code>main</code>을 부른다(77장).</p></div><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>종료 상태 하나가 만든 도구 생태계</p><p>“0은 성공”이라는 한 줄의 관례가 얼마나 큰 것을 지탱하는지 보면 재미있다. 셸의 <code>&amp;&amp;</code>와 <code>||</code>, <code>make</code>가 규칙 하나가 실패하면 멈추는 것, CI가 빌드 실패를 판정하는 것, 컨테이너가 프로세스의 종료 코드로 재시작을 결정하는 것, 테스트 러너가 통과·실패를 세는 것 — 전부 이 숫자 하나를 읽는다.</p><p>9장에서 본 “작은 프로그램을 텍스트 스트림으로 잇는다”는 유닉스 철학에는 사실 통로가 하나 더 있었던 셈이다. 데이터는 스트림으로 흐르고, <strong>성공과 실패는 종료 상태로 흐른다.</strong> 그래서 도구다운 프로그램을 만들려면 두 가지를 지켜야 한다: 결과는 표준 출력으로, 오류 메시지는 표준 오류로, 그리고 <strong>성패는 반드시 종료 상태에 담을 것.</strong></p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>main</code>이 특별한 함수라면, 재귀로 부르거나 주소를 얻어도 되는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 호스트 환경의 C에서 <code>main</code>은 문법적으로 평범한 함수라, 부르는 것도 주소를 얻는 것도 문법상 가능하다. 그러나 <strong>하지 않는 것이 규범이다</strong> — C++은 아예 금지하고, C에서도 시작 코드와 라이브러리 초기화가 얽힌 자리라 얻을 것이 없다. 프로그램의 시작은 한 번뿐이라고 두는 편이 읽는 사람에게도 낫다.</p><p>대신 알아 둘 것이 있다. <code>main</code>이 시작점이라는 말은 <strong>C 프로그램 관점</strong>의 이야기다. 실제로는 그 앞에 시작 코드(<code>crt0</code> 같은 것)가 돌면서 정적 구역을 준비하고 인자를 챙겨 <code>main</code>을 부른다(77장). <code>main</code>은 “가장 먼저 도는 코드”가 아니라 “우리가 쓰는 코드 중 가장 먼저 도는 것”이다.</p></p></div></div><div class="dev recap"><p class="dev-label">복습 정리</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>세 형태</td><td><code>int main(void)</code>, <code>int main(int, char *[])</code>, 구현 정의</td></tr><tr><td><code>void main()</code></td><td>표준이 아니다(임베디드 확장은 별개)</td></tr><tr><td><code>argv[0]</code></td><td>프로그램 이름 — 비어 있을 수 있다</td></tr><tr><td><code>argv[argc]</code></td><td>반드시 널. 순회의 끝 표시</td></tr><tr><td>끝내는 법</td><td><code>return</code>·<code>exit</code>(정리함) / <code>_Exit</code>·<code>abort</code>(정리 안 함)</td></tr><tr><td>C99 특례</td><td><code>main</code>은 값 없이 끝나도 0</td></tr><tr><td>값의 범위</td><td>0–125 의 작은 수. 유닉스는 하위 8비트만 전한다</td></tr><tr><td>관례</td><td>0 성공, 1 실패, 2 사용법 오류(유닉스)</td></tr><tr><td>임베디드</td><td><code>main</code>은 대개 반환하지 않는다</td></tr></table></div><p class="float-caption">표 50.4</p></figure></div><p>프로그램의 시작과 끝을 보았다. 이제 프로그램이 <strong>여러 파일로 나뉘는</strong> 이야기로 넘어간다 — 16장의 링커가 다시 등장하는 자리다.</p>
 <div class="nav"><a href="ch49.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch51.html">다음 →</a></div>
 </div></main></body></html>

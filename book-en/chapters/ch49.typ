@@ -46,6 +46,14 @@ has met so far:
 The first two are worlds where "there are several answers but there is an answer."
 Only UB is a world where there is no answer at all.
 
+*The words again, nailed down.* The three names in the table above —
+implementation-defined, unspecified, undefined behavior — are *the standard's own
+terms, written in the document itself*. The phrase "grey area", used in this
+chapter's title and body, is, as chapter 12 said, *a name this book adopted for
+convenience*; it is not in the standard. When talking to anyone else, translate it
+into the exact word — not "that's a grey area" but "that's unspecified" or
+"that's UB".
+
 == Why it exists
 
 There are two reasons for leaving an outside-the-contract region. First, *because
