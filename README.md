@@ -9,12 +9,12 @@
 > 생겼는지에서 출발해, C23을 기본값으로 삼고, 마지막 부에서
 > [proven](https://github.com/rubidus-api) C 라이브러리로 이어진다.
 
-- **현재 판**: v0.24.0 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.24.0/proven_c_book-v0.24.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.24.0/proven_c_book-v0.24.0-en.pdf)
+- **현재 판**: v0.25.0 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.25.0/proven_c_book-v0.25.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.25.0/proven_c_book-v0.25.0-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.24.0/proven_c_book-v0.24.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.24.0/proven_c_book-v0.24.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.24.0/proven_c_book-v0.24.0-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.24.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.24.0-en.pdf)
-- 13부 94장 + 부록 A~E + 찾아보기 — 한국어판 665쪽, 영어판 700쪽
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.25.0/proven_c_book-v0.25.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.25.0/proven_c_book-v0.25.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.25.0/proven_c_book-v0.25.0-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.25.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.25.0-en.pdf)
+- 13부 94장 + 부록 A~E + 찾아보기 — 한국어판 673쪽, 영어판 709쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 어떤 책인가
@@ -53,7 +53,7 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
 
 ## 이 책이 다른 점
 
-- **인쇄된 실행 결과는 전부 실제 출력이다.** 예제 143개를 매 빌드마다
+- **인쇄된 실행 결과는 전부 실제 출력이다.** 예제 144개를 매 빌드마다
   컴파일·실행해 그 출력을 지면에 싣는다(GCC 기준, Clang으로 교차 검증).
   사람이 옮겨 적은 출력은 한 줄도 없다.
 - **주장을 재려고 코드를 돌린다.** "`-O2`에서는 `longjmp` 뒤에 비 `volatile`
@@ -92,7 +92,7 @@ CC=clang scripts/verify-examples.sh     # 다른 컴파일러로 교차 검증
 ```
 dist/        배포물 — PDF(ko·en)와 zip 묶음
 docs/        GitHub Pages 가 서비스하는 HTML 판 (ko/, en/)
-examples/    본문에 실리는 예제 143개 — 전부 검증된 것
+examples/    본문에 실리는 예제 144개 — 전부 검증된 것
 examples-en/ 같은 예제의 영어판 (주석·문자열·출력이 영어)
 scripts/     예제 검증 스크립트
 vendor/      proven 라이브러리 스냅샷 (예제 링크용)

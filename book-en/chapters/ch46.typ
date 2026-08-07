@@ -70,6 +70,238 @@ lvalue that nonetheless cannot be assigned to — a special case (chapter 37).
   assignment and for increment below.
 ]
 
+== Every way of writing a constant
+
+The leaves of an expression are constants. Yet the notations for writing them are
+scattered through the standard's lexical clauses (§6.4.4, §6.4.5), and what trips
+people in practice is nearly always a *prefix, a suffix or an escape*. They are
+gathered here.
+
+#demo("examples/ch46/constants.c")
+
+=== Integer constants (§6.4.4.1)
+
+#dtable(
+  columns: 4,
+  [*Base*], [*Notation*], [*Example*], [*Note*],
+  [decimal], [starts with `1`\~`9`], [`1234`], [],
+  [octal], [starts with `0`], [`0755` = 493], [*the commonest trap* — `08` is an error],
+  [hexadecimal], [`0x` or `0X`], [`0xFF` = 255], [],
+  [binary], [`0b` or `0B`], [`0b1010` = 10], [*added in C23*],
+)
+
+The suffix settles the type.
+
+#dtable(
+  columns: 3,
+  [*Suffix*], [*Meaning*], [*Measured size*],
+  [(none)], [from `int` upwards, whichever fits first], [`sizeof 1` = 4],
+  [`u` `U`], [an unsigned type], [`sizeof 1U` = 4],
+  [`l` `L`], [`long` or wider], [`sizeof 1L` = 8],
+  [`ll` `LL`], [`long long` or wider], [`sizeof 1LL` = 8],
+  [`wb` `WB`], [`_BitInt` (*C23*)], [`sizeof 1wb` = 1],
+)
+
+The rule for the type is "the first type in the list that can hold it". An unsuffixed
+*decimal* constant walks only `int` → `long` → `long long`, and *unsigned types are
+not candidates.* Octal, hexadecimal and binary constants do put unsigned types in the
+list --- which is why `0xFFFFFFFF` becomes `unsigned int`, and why the same value
+written in decimal has a different type: measured, `sizeof(0xFFFFFFFF)` is 4 and
+`sizeof(4294967295)` is 8 (the first `unsigned int`, the second `long`). That feeds
+straight into promotion and the usual arithmetic conversions (chapter 28), which is
+where practice's habit of not writing bit masks in decimal comes from.
+
+#qa[
+  Why the advice never to use a lowercase `l`?
+][
+  Because in many fonts `1` (one) and `l` (ell) look almost identical. `10l` being
+  read as `101` has really happened. *Suffixes in capitals* --- `10L`, `1UL` --- is the
+  long-standing convention, and this book follows it. The `0x` prefix is conventionally
+  lowercase, which looks like the opposite rule, but the reason is the same: whichever
+  is easier to tell apart.
+]
+
+=== The C23 digit separator `'`
+
+A notation for breaking up long numbers arrived in C23. It has no effect on the
+value --- in the standard's words it is *ignored when determining the value of the
+constant.*
+
+The standard's own example shows the traps along with the feature. Measured:
+
+#dtable(
+  columns: 3,
+  [*Written*], [*Result*], [*Why*],
+  [`12'34`], [`1234`], [a separator goes only between digits],
+  [`0b11'10'11'01`], [`237`], [binary takes it too],
+  [`0x1'2'3'4AB'C'D`], [`305441741`], [so does hexadecimal],
+  [`0x'FF`], [*error* — "digit separator after base indicator"], [it may not follow `0x`],
+  [`'1'2`], [*error*], [read as the character constant `'1'` followed by `2`],
+)
+
+The last row is this notation's one danger. *A separator is a separator only between
+two digits*; at the front it is read as a single quote --- the start of a character
+constant.
+
+=== Character constants (§6.4.4.4)
+
+#dtable(
+  columns: 4,
+  [*Notation*], [*Type*], [*Measured size*], [*Note*],
+  [`'a'`], [*`int`*], [4], [★in C a character constant is not a `char`],
+  [`u8'a'`], [`char8_t`], [1], [*C23*. Must be one UTF-8 code unit],
+  [`u'a'`], [`char16_t`], [2], [one UTF-16 code unit],
+  [`U'a'`], [`char32_t`], [4], [one UTF-32 code unit],
+  [`L'a'`], [`wchar_t`], [4 (Linux), 2 (Windows)], [the wide literal encoding (chapter 9)],
+  [`'ab'`], [`int`], [4], [*value implementation-defined*. GCC warns with `-Wmultichar`],
+)
+
+#misconception[
+  "`'a'` is a `char`, so its size is 1"
+][
+  True in C++ and *false in C.* Measured, the very same `sizeof('a')` is 4 in C and 1
+  in C++.
+
+  The standard's sentence is "an integer character constant has type `int`"
+  (§6.4.4.4p11). Its value is "what results when an object of type `char` holding that
+  character is converted to `int`", so *the value is what you expect and only the type
+  is wider.*
+
+  Where it shows is mostly `sizeof`, `_Generic`, and overloading on the C++ side. Write
+  only C and the practical harm is near zero, but in a header used from both languages
+  it must be known.
+]
+
+The escapes are exactly these (§6.4.4.4).
+
+#dtable(
+  columns: 3,
+  [*Kind*], [*Notation*], [*Note*],
+  [must be escaped], [`\'` `\\`], [the single quote and the backslash *must* take this form],
+  [optional], [`\"` `\?`], [inside a string `\"` is needed],
+  [non-graphic characters], [`\a` `\b` `\f` `\n` `\r` `\t` `\v`], [their meanings are defined in §5.2.3],
+  [octal], [`\` + octal digits], [*at most three digits*],
+  [hexadecimal], [`\x` + hex digits], [★*there is no digit limit*],
+  [universal character names], [`\uXXXX` `\UXXXXXXXX`], [naming characters outside the basic set],
+)
+
+#antipattern[
+  `"\x411"` --- a hex escape eats the letter after it
+][
+  The standard nails it: *each octal or hexadecimal escape sequence is the longest
+  sequence of characters that can constitute the escape sequence* (§6.4.4.4p7). Octal
+  stops at three digits; *hexadecimal does not stop.*
+
+  ```c
+  "\x411"      /* not 'A'(0x41) then '1', but a request for 0x411 */
+  ```
+
+  Measured, GCC warns `hex escape sequence out of range`. The fix is *to split the
+  string and let it join* --- adjacent string literals concatenate (below), so
+  `"\x41" "1"` is exactly `"A1"`.
+]
+
+=== Floating constants (§6.4.4.3)
+
+The decimal form must have *either a decimal point or an exponent part.* So `1.`,
+`.5` and `1e3` are all valid, while `1` is an integer constant.
+
+#dtable(
+  columns: 3,
+  [*Suffix*], [*Type*], [*Measured size*],
+  [(none)], [`double`], [8],
+  [`f` `F`], [`float`], [4],
+  [`l` `L`], [`long double`], [16 (x86-64 Linux)],
+  [`df` `dd` `dl`], [`_Decimal32` / `_Decimal64` / `_Decimal128` (*C23*)], [4 / 8 / 16],
+)
+
+There are also *hexadecimal floating constants* (C99) --- `0x1p-3` is exactly 0.125.
+
+#qa[
+  Why must a hex float have the `p` exponent, and why use one at all?
+][
+  Because `e` is unavailable: in hexadecimal `e` is *the digit 14* and cannot start an
+  exponent. So `p`, meaning a binary exponent, was given its own place, and *`p` cannot
+  be omitted* --- without it there is no telling where the significand ends. `0x1p-3` is
+  "1 × 2#super[−3]".
+
+  The reason to use one is *exactness*. As chapter 8 showed, decimal `0.1` does not sit
+  exactly in binary, whereas the hex notation transcribes the binary representation
+  itself, so *no rounding happens in translation.* Hence its use in floating-point
+  tests' expected values, in the standard library's tables of constants, and in papers
+  about floating point. `printf`'s `%a` prints in the same notation (appendix B).
+]
+
+Worth noting too that the suffix changes the value. Measured, `(double)0.1f == 0.1` is
+*false* --- `0.1f` is the nearest value on the `float` grid and `0.1` the nearest on the
+`double` grid, and those are different numbers (chapters 8 and 47).
+
+=== String literals (§6.4.5)
+
+#dtable(
+  columns: 4,
+  [*Notation*], [*Element type*], [*Encoding*], [*Measured `sizeof`*],
+  [`"가"`], [`char`], [the literal encoding (chapter 9)], [4 (3 UTF-8 bytes + NUL)],
+  [`u8"가"`], [`char8_t`], [*always UTF-8*], [4],
+  [`u"가"`], [`char16_t`], [UTF-16], [4 (1 code unit + NUL)],
+  [`U"가"`], [`char32_t`], [UTF-32], [8],
+  [`L"가"`], [`wchar_t`], [the wide literal encoding], [8 (Linux)],
+)
+
+Four properties go together.
+
++ *A NUL is appended.* `sizeof "abc"` is not 3 but *4*.
++ *Adjacent literals join into one* (translation phase 6). `"hello, " "world"` is one
+  string. It is the standard way to split a long string across lines, and the way out
+  of the `\x` trap above. But *the prefixes must not be mixed* --- `u"a" U"b"` is a
+  compile error (a constraint violation).
++ *A NUL inside does not cut the array short.* `"a\0b"` has `strlen` 1 and `sizeof` 4
+  --- the string functions stop, the data is all there.
++ *Modifying one is undefined behaviour.* Measured, it usually dies at run time (it is
+  placed in a read-only section). So take string literals as *`const char *`.*
+
+#antipattern[
+  `char *s = "abc"; s[0] = 'X';`
+][
+  It compiles (in C the type of a string literal is `char[N]`, not `const`), and it
+  dies when run --- SIGSEGV in the measurement.
+
+  C++ closed this off entirely (a string literal is `const char[N]` there, so the
+  assignment is an error). C left it open for compatibility with old code, so *the
+  habit has to close it* --- take it as `const char *s = "abc";` and the compiler
+  catches it. Turning on `-Wwrite-strings` is another way.
+]
+
+=== Things that look like constants
+
+#dtable(
+  columns: 3,
+  [*Notation*], [*What it really is*], [*More*],
+  [`RED` (an enumeration constant)], [*an integer constant*, of type `int`], [chapter 52 — it lives in the ordinary-identifier yard],
+  [`nullptr`], [a *keyword* of type `nullptr_t` (*C23*)], [chapter 35],
+  [`true` `false`], [*keywords* yielding `bool` values (*C23*)], [chapter 29],
+  [`(int[]){1,2,3}` a compound literal], [not a constant but an *object* — you can take its address], [chapter 44],
+  [`#define N 100`], [not a constant but *token replacement*], [chapter 54],
+  [`constexpr int n = 10;`], [*C23*'s real constant — usable in a constant expression], [chapter 23],
+)
+
+The last two rows pay off in practice. A macro has neither type nor scope
+(chapter 54), and a `const int` is *not a constant expression* in C --- the place
+where C and C++ part. But "cannot be used" is less accurate than *where* it cannot be,
+so here it is, measured.
+
+#dtable(
+  columns: 2,
+  [*Given `const int n = 10;`, writing*], [*Result (GCC, C23)*],
+  [`int a[n];` inside a block], [accepted --- but as a *variable length array*, not a constant one],
+  [`int a[n];` at file scope], [error --- `variably modified 'a' at file scope`],
+  [`static int a[n];` inside a block], [error --- `storage size of 'a' isn't constant`],
+  [`case n:`], [error --- `case label does not reduce to an integer constant`],
+)
+
+That is, it fails wherever *a real constant expression* is required. C23's `constexpr`
+came in to fill that place.
+
 == Precedence and associativity
 
 The higher up, the more strongly it binds. *Associativity* decides which side
@@ -119,6 +351,183 @@ operators bind *more weakly* than the comparisons is a trace of early C, before 
 had `&&` and `||`. So parentheses are effectively mandatory around a bit test.
 The standard itself notes in a footnote that `a<b<c` does not read as it does in
 mathematics.
+
+== Prefix and postfix — the same job, a different value
+
+`++` and `--` can go before or after. Knowing exactly how the two differ is a good
+part of the power to read C expressions, so they are gathered here.
+
+=== The contract the standard sets
+
+#dtable(
+  columns: 4,
+  [], [*prefix `++x` (§6.5.4.1)*], [*postfix `x++` (§6.5.3.5)*], [*the same?*],
+  [Operand], [a modifiable lvalue of real or pointer type], [the same], [*the same*],
+  [What it does to the object], [adds 1], [adds 1], [*the same*],
+  [The value of the expression], [the value *after* the change], [the value *before* the change], [different],
+  [Is the result an lvalue], [no], [no], [the same (C++ differs — below)],
+  [How it is defined], [`++E` is equivalent to `(E += 1)`], [defined separately], [different],
+)
+
+*The only difference is the value the expression yields.* What happens to the object
+is identical. So in a place where the value is not used --- the third slot of a
+`for`, a statement that is just `i++;` --- the two mean *exactly* the same thing.
+
+#misconception[
+  "It says real type, so it cannot be used on integers"
+][
+  What the standard calls a *real type* is not "floating point". By the
+  classification in §6.2.5 it is *integer types and real floating types together*,
+  and the only thing left out is *complex*. So it applies to `int`, `char`, `bool`,
+  `double` and pointers, and by the standard not to `double _Complex`.
+
+  Measured, GCC lets `z++` (complex) through and only says
+  "ISO C does not support `++` and `--` on complex types" when `-Wpedantic` is on ---
+  a place it accepts as an extension (chapter 12's grey area).
+]
+
+=== When the value is settled, and when memory changes
+
+This is the heart of the section. In `x++` the *event of settling the value* and the
+*event of changing memory* are **two different events**, and the standard fixes only
+their order.
+
+#dtable(
+  columns: 2,
+  [*What*], [*The standard's sentence*],
+  [Postfix (§6.5.3.5p2)], [the *value computation* of the result is *sequenced before* the side effect of updating the stored value of the operand],
+  [Prefix (§6.5.4.1p2 → §6.5.17.1p3)], [`++E` is `(E += 1)`, and in an assignment *the side effect of updating the left operand is sequenced after the value computations of both operands*],
+  [Every expression (§6.5.1p1)], [the value computations of the operands are sequenced before the value computation of the result],
+)
+
+How to read that matters. The standard nails down the *relative order*, not *the
+moment*.
+
+#misconception[
+  "A postfix increment happens at the end of the statement (at the semicolon)"
+][
+  A very widespread belief. Nothing in the standard says it. What is settled is only
+  the *order* --- "the result's value first, the store after" --- and when the store
+  actually happens is *any time before the next sequence point*: possibly before the
+  first instruction of the next statement, possibly in the middle of the same
+  expression.
+
+  The belief is dangerous because it invites the next thought: "so if I use it twice
+  in one expression, the order must be settled". It is not.
+
+  ```c
+  i = i++ + 1;                 /* outside the contract — undefined behaviour */
+  a[i] = i++;                  /* outside the contract */
+  printf("%d %d\n", i++, i++); /* outside the contract */
+  ```
+
+  Section 6.5.1p2 nails it: if a side effect on a scalar object is *unsequenced*
+  relative to another side effect on it or to a value computation using it, the
+  behaviour is undefined. Prefix and postfix are caught alike. GCC reports
+  "operation on 'i' may be undefined" through `-Wsequence-point` (included in
+  `-Wall`) --- *though there are many shapes it cannot catch, so do not lean on the
+  warning alone.*
+]
+
+#qa[
+  Then when does the `i++` in `for (i = 0; i < n; i++)` happen?
+][
+  The third slot is evaluated *after the body of each iteration* --- that is the rule
+  of the `for` statement, not of the postfix operator (chapter 31). Since nobody uses
+  the result here, switching to prefix does not change one character of the meaning.
+
+  The confusing place is where the *result is used*, as in `while (*d++ = *s++);`.
+  There, "write what is pointed at now, and move the pointers on" sits in one
+  expression. The two `++` operators touch *different objects* (`d` and `s`), so it is
+  inside the contract. Touch the same object twice and it falls outside --- that is
+  the boundary line.
+]
+
+=== The truth of "prefix is faster"
+
+#realcase[
+  `++` and `--` were not created for the PDP-11
+][
+  The explanation that "`++` was made to use the PDP-11's auto-increment addressing
+  mode" still circulates. Dennis Ritchie, who made C, denied it himself. In "The
+  Development of the C Language" he wrote that people often guess so but it is
+  *historically impossible, inasmuch as there was no PDP-11 when B was developed.*
+  The PDP-7 did have a few "auto-increment" memory cells, and that probably suggested
+  the operators to Thompson --- yet *those cells were not used directly in
+  implementing them*, and a stronger motivation was probably his observation that
+  *the translation of `++x` was smaller than that of `x=x+1`*. Generalising them to
+  both prefix and postfix was Thompson's own doing.
+
+  So the "smaller translation" motive was *real* --- but it was a comparison of `++x`
+  with `x=x+1`, not of `++x` with `x++`. Today's received wisdom is that fact bent
+  once in the retelling.
+]
+
+What about today's compilers? Measuring settles it.
+
+#dtable(
+  columns: 3,
+  [*Place*], [*Unoptimised (`-O0`)*], [*Ordinary build (`-O2`)*],
+  [`for (…; i++)` vs `++i` --- value unused], [the generated assembly does not differ *by one byte*], [the same],
+  [`a = (*b)++` vs `a = ++(*b)` --- value used], [9 instructions vs 11 --- *the postfix one was the shorter*], [3 vs 3, identical],
+)
+
+Two things to read out. *First, for C scalars there is no speed difference.* Where
+the value is unused the compiler emits the same code. *Second, where the value is
+used and the code differs, that is not "postfix is slower" but "the two compute
+different things"* --- one needs the old value, the other the new.
+
+=== Two things change in C++
+
+#platform[
+  Lvalue-ness, and user-defined types
+][
+  *1. Is the result an lvalue?* In C *neither* prefix nor postfix is. C++ made the
+  prefix one an lvalue. Measured, they part like this.
+
+  #dtable(
+    columns: 3,
+    [*Code*], [*C (GCC)*], [*C++ (G++)*],
+    [`&++x`], [`lvalue required as unary '&' operand` --- error], [accepted],
+    [`++x = 5`], [`lvalue required as left operand of assignment` --- error], [accepted],
+    [`&x++`], [error], [error --- postfix is a value (prvalue) in C++ too],
+  )
+
+  So code like `++x = 5` *compiles in C++ and does not in C*. A place to watch in
+  code that crosses between the two languages --- and even in C++ it is convention
+  not to write it, being hard to read.
+
+  *2. Postfix on a user-defined type makes a copy.* This is the real reason the
+  "prefer prefix" convention took root in the C++ world. A postfix operator has to
+  return *the value before the change*, so for a class it makes a copy of the old
+  state, keeps it, and returns that.
+
+  Attach a counter to the copy constructor and measure: advancing one iterator 1000
+  times cost the prefix form *0 copies* and the postfix form *1000 copies* --- the
+  same under `-O2` (a copy with an observable side effect cannot be optimised away).
+
+  *C does not have this problem.* C's `++` attaches only to scalars, and a scalar's
+  "copy" is one register, which is why the difference vanishes in the measurements
+  above. Carry the advice "use prefix" straight into C and it becomes a *rule without
+  a reason.*
+]
+
+#qa[
+  What, then, should be used in C?
+][
+  This book's recommendation.
+
+  - *Where the value is unused, make prefix the default.* Not for speed but for the
+    *signal it gives the reader* --- "the value of this expression is not used". It is
+    also the habit that keeps paying when you move to C++. That said,
+    `for (i = 0; i < n; i++)` has been an idiom since K&R and plenty of codebases keep
+    it. *Settle it as a team and hold to it.*
+  - *Where the value is used, write the one you need.* Old value: postfix. New value:
+    prefix. Here the computation chooses, not taste.
+  - *And the one real rule --- never touch the same object twice in one expression.*
+    Prefix or postfix, keep that and this operator will not hurt you. Chapter 32's
+    "split statements when the side effects matter" says the same thing.
+]
 
 == Operator by operator
 
