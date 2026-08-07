@@ -132,6 +132,142 @@ happened to be equal, but *there is no guarantee anywhere that they are*.
   good specimen of where C's portability splits.
 ]
 
+== How to print a function pointer
+
+The previous section said `void *` and function pointers are different worlds.
+The place that fact trips people up most often is *logging* — you want to record
+"which callback ran", and chapter 34's `printf("%p", (void *)p)` does not work
+here.
+
+#demo("examples-en/ch54/print_funcptr.c")
+
+=== Why it cannot be passed to `%p`
+
+The reason is two-layered.
+
+*First, `%p` takes a `void *` (or a character pointer) only* (chapter 34). A
+function pointer is not on that list.
+
+*Second, the conversion from a function pointer to `void *` is not defined by the
+standard at all*, exactly as the previous section said. So the line below has no
+basis in the standard's text, even where a compiler accepts it.
+
+```c
+printf("%p", (void *)f);      /* a conversion ISO C does not define */
+```
+
+GCC's own reaction, as checked for this book, says the same: turn on `-Wpedantic`
+and you get *"ISO C forbids conversion of function pointer to object pointer
+type"*.
+
+#antipattern[
+  Three common wrong answers
+][
+  ```c
+  printf("%p", f);              /* 1: the function pointer itself — outside the contract */
+  printf("%p", (void *)f);      /* 2: a conversion outside ISO C (POSIX allows it) */
+  printf("%p", (void *)&f);     /* 3: compiles, warns about nothing, and… */
+  ```
+  The third is the nastiest. `&f` is *the address of the pointer variable*, not of
+  the function. The compiler says nothing, the output is a plausible hexadecimal
+  number, and the value is entirely wrong. "No warning, so it must be right" does
+  not hold here.
+]
+
+#platform[
+  POSIX fills the gap
+][
+  On Unix-like systems things differ. Because POSIX defines `dlsym()` as returning
+  *the address of a function as a `void *`*, conversion between function pointers
+  and `void *` has to work there.
+
+  So in code aimed only at Linux, macOS and the BSDs, `(void *)f` is closer to a
+  specification than to a habit. But it is *POSIX's promise, not C's* — a textbook
+  grey area (chapter 12), with the same discipline: *if you use it, write one line
+  saying why it is safe here, and know what you would switch to when portability
+  starts to matter.*
+]
+
+=== The portable road — lift the bytes
+
+To solve it with the standard alone, *do not read the pointer as a value; move its
+bytes.* `memcpy` is inside the contract for any type.
+
+```c
+unsigned char raw[sizeof f];
+memcpy(raw, &f, sizeof raw);
+for (size_t i = sizeof raw; i-- > 0; ) printf("%02X", raw[i]);
+```
+
+The demonstration's `fmt_funcptr` is that shape. What it gains and loses is plain
+— *it compiles everywhere with no warning*, and *it is a riddle to a reader*. On
+some platforms those bytes are not even the function's entry point but the address
+of a descriptor (see the platform note below).
+
+=== The best answer — a name instead of an address
+
+The practical answer is the third road: *do not print the address, print the
+name.*
+
+The demonstration's `struct named_op` is that pattern. Keep a name string in the
+function table and the log holds a line a person reads at once, such as
+`mul(7, 3) = 21`. *Comparing* function pointers is guaranteed by the standard
+(equal when they point at the same function), so scanning the table for the name
+is inside the contract too.
+
+#dtable(
+  columns: 3,
+  [*Method*], [*Portability*], [*Value as a log*],
+  [Carrying the name alongside], [★ everywhere], [★ read directly by a person],
+  [Printing bytes with `memcpy`], [★ everywhere], [A riddle — needs symbols to decode],
+  [`(void *)f` through `%p`], [POSIX only], [A riddle, as above],
+  [Recovering the name with `dladdr`, `SymFromAddr`], [Per platform], [★ Best when a name comes out],
+)
+
+#realcase[
+  Recovering a name from an address, and its limits
+][
+  There is a way to go from an address to a name in a running program: `dladdr()`
+  on Unix, DbgHelp's `SymFromAddr()` on Windows, and the kernel's `%pS` specifier
+  seen earlier.
+
+  Running `dladdr` for this book showed the limits directly.
+
+  #dtable(
+    columns: 2,
+    [*Target*], [*Result*],
+    [A `static` function], [No name found — it is not in the symbol table],
+    [An ordinary global function], [Not found without `-rdynamic`; found with it],
+    [`printf`], [Found, but as the internal alias `_IO_printf`],
+  )
+
+  In other words, *getting a name is a stroke of luck.* A build that keeps no
+  symbols — as release builds usually do — yields nothing, and what does come out
+  may differ from the name in the source. So "turning an address back into a name"
+  is *a debugger's job*, and a log the program writes itself had better *carry the
+  name from the start*.
+]
+
+#platform[
+  Machines where a function pointer is not one address
+][
+  There is a reason this section follows the standard so carefully: *platforms
+  really existed where a function pointer was not a plain address.*
+
+  - On segmented x86, a `far` function pointer was a segment and an offset pair,
+    differing from data pointers even in size.
+  - On IBM AIX and the old Itanium ABI a function pointer pointed at a
+    *descriptor* — a struct holding the entry point and a global data pointer.
+    Print "the address" of two function pointers there and you get the addresses
+    of those structs, not the entry points.
+  - On Harvard-architecture microcontrollers, code and data live in different
+    address spaces entirely.
+
+  That is why the standard never said "a function pointer can be converted to
+  `void *`", and never will. Looking only at an ordinary desktop it seems
+  over-careful; *go down to embedded and it is still alive today.*
+]
+
 == Dispatch tables — an array instead of a `switch`
 
 The example's ④ is that. Pair names with functions and lay them out in an array,

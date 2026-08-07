@@ -10,12 +10,12 @@
 > default, and ends as a manual for the
 > [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.20.0 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.20.0/proven_c_book-v0.20.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.20.0/proven_c_book-v0.20.0-ko.pdf)
+- **Current edition**: v0.21.0 — **draft**
+- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-ko.pdf)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.20.0/proven_c_book-v0.20.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.20.0/proven_c_book-v0.20.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.20.0/proven_c_book-v0.20.0-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.20.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.20.0-ko.pdf)
-- 13 parts, 92 chapters, appendices A–E and an index — 663 pages in English, 631 in Korean.
+- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.21.0/proven_c_book-v0.21.0-all.zip)
+- Copies inside the repository: [en PDF](dist/proven_c_book-v0.21.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.21.0-ko.pdf)
+- 13 parts, 92 chapters, appendices A–E and an index — 670 pages in English, 639 in Korean.
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## What kind of book is this
@@ -58,7 +58,7 @@ documents, and the complete C grammar in EBNF.
 
 ## What makes it different
 
-- **Every printed output is real.** All 137 listings are compiled and run on
+- **Every printed output is real.** All 139 listings are compiled and run on
   every build and their output is pasted into the page (GCC, cross-checked with
   Clang). Not one line of output was copied by hand.
 - **Claims are measured by running code.** Statements such as "at `-O2` a
@@ -103,7 +103,7 @@ CC=clang scripts/verify-examples.sh     # cross-check with another compiler
 ```
 dist/        Distribution — PDFs (ko, en) and zip bundles
 docs/        The HTML edition served by GitHub Pages (ko/, en/)
-examples/    The 137 listings that appear in the book — all verified
+examples/    The 139 listings that appear in the book — all verified
 examples-en/ The same listings in English (comments, strings, output)
 scripts/     Listing verification scripts
 vendor/      A snapshot of the proven library (for linking the listings)

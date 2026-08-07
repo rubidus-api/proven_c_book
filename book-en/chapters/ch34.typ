@@ -227,6 +227,137 @@ values with a contract* — the alignment rules (chapter 36), provenance
   the second a matter of the contract.
 ]
 
+== How to print an address
+
+The first thing anyone does when debugging is look at where a pointer points. Even
+this ordinary act has a contract.
+
+#demo("examples-en/ch34/print_ptr.c")
+
+=== The exact contract of `%p`
+
+What the standard fixes (§7.23.6.1) is two lines.
+
+#dtable(
+  columns: 2,
+  [*What*], [*The rule*],
+  [What may be passed], [A `void *` or a *character-type pointer* — the latter added in C23],
+  [The form of the output], [*Implementation-defined*],
+)
+
+Two practical rules follow at once.
+
+*First, cast anything else.* Passing an `int *` straight in, as in
+`printf("%p", &n)`, is outside the contract: variadic arguments carry no type
+check (chapter 53), and nothing guarantees that pointer types share a
+representation — the standard says only that `void *` and character pointers do,
+and states plainly that *pointers to other types may not* (§6.2.5p33).
+
+```c
+printf("%p", (void *)p);      /* like this */
+printf("%p", p);              /* not like this */
+```
+
+*Second, do not lean on the output's form.* The demonstration printing a null
+pointer is the proof: this implementation writes `(nil)`. The `0x` prefix, the
+number of digits and the letter case all vary. So never write code that *parses*
+what `%p` produced.
+
+#misconception[
+  "`-Wall -Wextra` is on, so a missing cast will be caught"
+][
+  It will not. This book checked.
+
+  #dtable(
+    columns: 2,
+    [*Options*], [`printf("%p", &x)` with an `int *`],
+    [`-Wall -Wextra`], [No warning],
+    [`-Wformat=2`], [`format '%p' expects argument of type 'void *', but argument 2 has type 'int *'`],
+  )
+
+  It is the kind of mistake that only appears *one level up* in warnings. One of
+  the few places where chapter 17's defaults are not enough — a codebase that
+  prints pointers often may want `-Wformat=2` on as well.
+]
+
+=== When it has to become a string — `uintptr_t` and `PRIxPTR`
+
+To put an address into a log buffer or to line columns up, `%p` is not enough.
+That is what `uintptr_t` from `<stdint.h>` and `PRIxPTR` from `<inttypes.h>` are
+for.
+
+```c
+uintptr_t u = (uintptr_t)(void *)p;
+snprintf(line, sizeof line, "obj=0x%016" PRIxPTR, u);
+```
+
+What the standard promises `uintptr_t` is exactly this — *any valid `void *`
+converted to it and back compares equal to the original* (§7.22.1.4). The
+demonstration checks that round trip.
+
+Two things to know. *`uintptr_t` is optional*, so an implementation may lack it
+(rare today), and *the round trip is guaranteed for `void *` only* — function
+pointers are outside that sentence (chapter 54).
+
+#qa[
+  Then why not always use `PRIxPTR` instead of `%p`?
+][
+  They are for different jobs.
+
+  #dtable(
+    columns: 3,
+    [], [`%p`], [`PRIxPTR`],
+    [Simplicity], [★ one cast], [an integer conversion plus a format macro],
+    [Output form], [the implementation decides], [★ you decide (width, fill, case)],
+    [What you pass], [`void *`], [`uintptr_t`],
+    [Availability], [always], [when `uintptr_t` exists],
+  )
+
+  The practical split: *`%p` for something a person will glance at once*, and
+  *`PRIxPTR` for a log a machine will read again or that must line up.* With a
+  fixed width, as in the demonstration's `obj=0x0000…`, a log is far easier to
+  scan.
+]
+
+=== But — does the address need printing at all?
+
+The last part of this section matters most. *An address means something only
+within that run.*
+
+Today's operating systems randomise the layout at every launch (ASLR), so the
+`0x7ffd…` in yesterday's log means nothing in today's run. And once such a value
+gets out, it tells an attacker how memory is laid out — the first thing they look
+for.
+
+#realcase[
+  The Linux kernel hashes `%p`
+][
+  The kernel's `printk` printed raw addresses through `%p` for a long time. From
+  kernel 4.15 the plain `%p` output is *hashed*. The official documentation
+  (`printk-formats`) puts it thus — pointers printed without a specifier extension
+  "are hashed to prevent leaking information about the kernel memory layout."
+  Before enough entropy has been gathered it prints `(ptrval)` instead.
+
+  In exchange the kernel provides *better specifiers*.
+
+  #dtable(
+    columns: 2,
+    [*Specifier*], [*What it prints*],
+    [`%pS`, `%pB`], [Not an address but a *symbol name* (the function's name)],
+    [`%px`], [The raw address — only when truly needed],
+    [`%pK`], [Follows the `kptr_restrict` setting (for procfs and sysfs)],
+    [`%pe`], [An error pointer as a name (`-ENOSPC` and the like)],
+  )
+
+  The order the documentation recommends is this book's conclusion too — *print a
+  name where you can, and an address only when you must.* For debugging, the boot
+  parameter `no_hash_pointers` opens the raw addresses again.
+
+  An application can follow the same discipline. As in the demonstration's last
+  part, keeping *a name or an ordinal* makes the log easier to read and leaves
+  nothing to leak.
+]
+
 == The size of a pointer is not one number
 
 Here is why the answer above said "8 bytes on this machine" so carefully. The
