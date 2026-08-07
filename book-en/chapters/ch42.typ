@@ -51,6 +51,28 @@ the program ends — a *memory leak*. It does not show in a short program, but i
 long-running server it seeps away little by little and eventually eats the
 machine.
 
+#misconception[
+  "Memory from `calloc` comes with its pointers initialised to null"
+][
+  What `calloc` promises is one thing: *every bit is set to zero.* That is not
+  the same as "a null pointer" or "0.0" — chapter 35's distinction between
+  spelling and representation catches you here too.
+
+  #dtable(
+    columns: 2,
+    [*What `calloc` promises*], [*What it does not*],
+    [Every bit of the memory is zero], [That those bits mean a null pointer],
+    [The same bits as an integer 0], [That they mean the floating value 0.0 (with IEEE 754 they happen to)],
+  )
+
+  On today's mainstream machines all three coincide, so no accident follows.
+  Still, *code that allocates an array of pointers with `calloc` and says "they
+  are all null, so a check is enough" is standing on that coincidence* — better
+  to know it. Where portability matters, fill them with `nullptr` in a loop
+  after allocating, or mark "empty" by something other than zero in the first
+  place.
+]
+
 == The alignment of the address returned — because it does not know what will go in
 
 #demo("examples-en/ch42/alloc_cost.c")

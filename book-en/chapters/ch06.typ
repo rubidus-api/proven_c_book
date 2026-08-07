@@ -79,6 +79,31 @@ meaningful.
   all zeros" is alive and well right now.
 ]
 
+#misconception[
+  "A null pointer is zero"
+][
+  Half right. The sentence has to be read in two layers.
+
+  #dtable(
+    columns: 2,
+    [*The source-code layer (spelling)*], [*The in-memory layer (representation)*],
+    [You may write `p = 0;`], [Nothing promises the stored bits are all zero],
+    [You may ask whether `p == 0`], [The compiler compares against that machine's own null],
+    [The standard promises it], [The machine decides it],
+  )
+
+  So *the 0 you write in the source is a symbol meaning "nothing"*, and the
+  compiler translates it into that machine's real null representation. That is
+  why both assignment and comparison hold everywhere.
+
+  *Filling the bits with zero yourself* is work in the other layer. Pushing a
+  pointer to zero with `memset`, or trusting memory from `calloc` to be null, is
+  a story that holds only on machines where "all bits zero" and "null" coincide.
+  On today's mainstream machines they really do — but that is not the contract.
+  Chapter 35 shows the difference in the flesh, and chapter 43 explains why the
+  two ways of emptying a struct mean different things.
+]
+
 == The three nulls — three things alike only in name
 
 There are three things called "null" around C. Telling them apart once, now,

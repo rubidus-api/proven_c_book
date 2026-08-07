@@ -98,7 +98,9 @@ In the demonstration both `path` and `in.note` come out null.
   On an implementation where those two promises come apart, the latter is not
   null.
 
-  The same goes for floating point: `{0}` promises the value 0.0, `memset`
+  Chapter 35's demonstration empties this very struct both ways and prints the
+  bytes side by side — on this machine the results agree, and the promises do
+  not. The same goes for floating point: `{0}` promises the value 0.0, `memset`
   promises a bit pattern. The working rule is simple — *use an initializer to
   empty a struct, and keep `memset` for other purposes* (such as the padding
   question below).
