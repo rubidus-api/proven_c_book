@@ -66,7 +66,7 @@ int main(void)
            before, strerror(before), errno, strerror(errno));
 
     /* ③ 계산 도중에 끼어들어도 결과가 같다.
-       이 구현은 처리 뒤 SIG_DFL 로 되돌아가므로(71장) 다시 걸어 준다. */
+       이 구현은 처리 뒤 SIG_DFL 로 되돌아가므로(73장) 다시 걸어 준다. */
     signal(SIGUSR1, careful);
     hits = 0;
     long quiet = compute(0);            /* 신호 없이 */
@@ -77,7 +77,7 @@ int main(void)
     puts(quiet == hit ? "같다 — 커널이 레지스터 전부를 저장했다가 되돌려 주었다"
                       : "다르다 — 이럴 리가 없다");
 
-    puts("\nsetjmp/longjmp 와의 차이가 여기 있다(72장):");
+    puts("\nsetjmp/longjmp 와의 차이가 여기 있다(74장):");
     puts("  신호: 커널이 *전체* 레지스터 집합을 저장했다가 복원한다 →");
     puts("        수식 한복판으로 되돌아와도 계산이 이어진다.");
     puts("  longjmp: jmp_buf 에는 *피호출자 보존* 레지스터만 들어간다 →");
