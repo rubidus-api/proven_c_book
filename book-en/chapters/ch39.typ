@@ -279,7 +279,7 @@ its keep in sorting and pivoting), and *jagged rows* can be held at all.
 Three representative cases:
 
 - `int main(int argc, char *argv[])` — an array of strings of differing lengths.
-  Chapter 28's `argv` is exactly this pattern.
+  Chapter 52's `argv` is exactly this pattern.
 - *Image libraries* — libjpeg's `JSAMPARRAY` is an array of row pointers, because
   an API that processes an image one scanline at a time must be able to swap the
   buffer for each line.

@@ -177,7 +177,7 @@ may be stored in two steps on some machines, and a signal arriving in between
 would see a half-changed value.
 
 `volatile` is there for a different reason. The compiler may decide "nothing in
-this loop changes `stop`" and delete the test altogether (chapter 14's
+this loop changes `stop`" and delete the test altogether (chapter 13's
 optimisation). `volatile` says *really read it every time*. The two do different
 jobs, so *both* are needed — `volatile sig_atomic_t`.
 

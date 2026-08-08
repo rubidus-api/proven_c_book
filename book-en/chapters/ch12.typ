@@ -216,7 +216,7 @@ names are enough.
   [Pushing a pointer to zero with `memset` and calling it null], [Chapters 6, 36, 45],
   [Walking a declared two-dimensional array as if it were flat], [Chapter 39],
   [Subtracting an `offsetof` to recover the enclosing struct (`container_of`)], [Chapter 46],
-  [Writing `int rc = setjmp(env);` outside the four contexts the standard fixes], [Chapter 71],
+  [Writing `int rc = setjmp(env);` outside the four contexts the standard fixes], [Chapter 76],
   [Forcing a layout with `#pragma pack`], [Chapter 46],
   [Converting a function pointer to `void *` to print or pass it], [Chapter 58 — where POSIX requires it],
 )

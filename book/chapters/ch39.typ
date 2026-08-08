@@ -264,7 +264,7 @@ void sum(size_t rows, size_t cols, const int a[rows][cols]);
 대표 사례가 셋이다.
 
 - `int main(int argc, char *argv[])` — 길이가 제각각인 문자열들의 배열이다.
-  28장에서 본 `argv`가 바로 이 무늬다.
+  52장에서 볼 `argv`가 바로 이 무늬다.
 - *이미지 라이브러리* — libjpeg의 `JSAMPARRAY`가 행 포인터 배열이다. 이미지를
   한 줄씩 처리하는 API에서, 줄 단위로 버퍼를 갈아 끼울 수 있어야 하기 때문이다.
 - *들쭉날쭉한 자료* — 문장마다 길이가 다른 텍스트, 노드마다 자식 수가 다른 그래프.

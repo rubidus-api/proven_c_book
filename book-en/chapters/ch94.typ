@@ -159,21 +159,21 @@ turning it on with one line in CMake is today's practice.
 #platform[
   Observation tools of embedded work — how to measure a machine with no screen
 ][
-  Over the tools seen in chapter 18 (probes, OpenOCD, RTT, static analysis) there is
+  Over the tools of chapter 95 (probes, OpenOCD, RTT, static analysis) there is
   one more layer that *measures performance and behaviour*.
 
   - *Cycle counters* — read a counter inside the chip, such as the DWT cycle counter
     of Arm Cortex-M, and count the clocks of a stretch directly. The most accurate and
     the cheapest.
   - *GPIO toggling* — raise and lower one pin before and after the stretch you want to
-    measure and look at it with chapter 18's logic analyser. It is the frontal method
+    measure and look at it with chapter 95's logic analyser. It is the frontal method
     still widely used on chips with no software profiler.
   - *RTOS tracing* — tools such as SEGGER `SystemView` and Percepio `Tracealyzer` draw
     task switches, interrupts and queue waits on a time axis. It is the way to see with
     your eyes "why is this task late".
   - *Measuring stack usage* — the stack painting seen in chapter 81, and static
     analysis tools' worst-case depth calculation.
-  - *Tracking code size* — it is common practice to hang chapter 18's map files and
+  - *Tracking code size* — it is common practice to hang chapter 95's map files and
     `bloaty` on CI and watch how much the size has grown with each commit.
   - *Hardware in the loop (HIL)* — attaching a real board to test equipment and running
     it automatically. With simulators (QEMU, Renode) it is one of the two axes of

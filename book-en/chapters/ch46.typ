@@ -251,7 +251,7 @@ types one at a time.*
 
 The demonstration's `encode` is that shape. Four knacks belong to it.
 
-+ *Use fixed-width types* — `uint8_t`, `uint16_t`, `uint32_t` (chapter 74). The
++ *Use fixed-width types* — `uint8_t`, `uint16_t`, `uint32_t` (chapters 26 and 27). The
   size of an `int` or a `long` depends on the platform.
 + *Write the byte order into the code.* The demonstration writes big endian
   (network byte order). Written with shifts and masks, *the same bytes come out

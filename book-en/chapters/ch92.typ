@@ -41,7 +41,7 @@ being written by hand.
 The heart of it is the last line — the state this coroutine remembers is *4 bytes*.
 There is no separate stack, no thread and no allocation. It is a tidying up of an old
 knack in C in which macros make re-entry points with `switch` and `case` (a cousin of
-Duff's device — that syntax seen in chapter 31 is used again here).
+Duff's device — that syntax seen in chapter 32 is used again here).
 
 The price is clear too. *Local variables do not survive* — stop and come back and they
 are gone, so state that must be maintained has to be kept in a struct. It is why the

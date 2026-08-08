@@ -4,7 +4,7 @@
 
 #prereq(
   ([chapter 75, Signals], [the thing that cuts into the flow]),
-  ([chapter 41, The stack and calls], [how call frames are stacked and cleared]),
+  ([chapter 43, Lifetime and storage duration], [how call frames are stacked and unwound]),
   ([chapter 50, How to report failure], [returning failure as a value]),
 )
 
@@ -200,7 +200,7 @@ On this implementation (glibc, x86-64) the 200 bytes of a `jmp_buf` divide thus.
 
 Print the eight slots and their order appears — RBX, RBP, R12, R13, R14, R15, the
 stack pointer, the return address. That is exactly the list the x86-64 SysV
-calling convention marks *callee-saved* (chapter 41's calling convention).
+calling convention marks *callee-saved* (chapter 43's automatic lifetime and call frames).
 
 Two things stand out.
 

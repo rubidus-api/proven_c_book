@@ -29,8 +29,8 @@ None. Every chapter leans only on chapters before it.
 | 16 | The general shape of compilation | 5 |
 | 23 | Declaring variables | 5 |
 | 24 | Declaring and defining functions | 5 |
-| 41 | Strings | 5 |
 | 45 | Structs | 5 |
+| 60 | The terrain of the standard library | 5 |
 
 ## Full table by part
 
@@ -108,9 +108,9 @@ None. Every chapter leans only on chapters before it.
 | 38 | Arrays | 35, 11 | 39, 41, 45, 46, 48, 58, 59, 64, 86 |
 | 39 | Multidimensional arrays | 38, 37, 11 | 40 |
 | 40 | Loop techniques — nesting, escaping, and making a block | 32, 39 | — |
-| 41 | Strings | 9, 38 | 42, 64, 76, 83, 88 |
+| 41 | Strings | 9, 38 | 42, 64, 83, 88 |
 | 42 | Safe input — blocking overflow, handling failure | 25, 41 | 50, 60, 63 |
-| 43 | Lifetime and storage duration | 24, 2 | 44, 78, 81 |
+| 43 | Lifetime and storage duration | 24, 2 | 44, 76, 78, 81 |
 | 44 | Dynamic memory | 43, 2 | 65, 82, 87, 90 |
 
 ### Part VIII — The shape of data
@@ -164,7 +164,7 @@ None. Every chapter leans only on chapters before it.
 | 73 | Time — `<time.h>` | 45, 60 | — |
 | 74 | Diagnosis and control — `<errno.h>`, `<assert.h>`, `<signal.h>`, `<setjmp.h>` | 50, 51 | 75 |
 | 75 | Signals — `<signal.h>` | 74, 52, 3 | 76 |
-| 76 | Non-local jumps — `<setjmp.h>` | 75, 41, 50 | — |
+| 76 | Non-local jumps — `<setjmp.h>` | 75, 43, 50 | — |
 | 77 | What the new standards added, and the `*_s` controversy | 61, 63 | 80 |
 | 78 | Operations that do not split — `<stdatomic.h>` | 11, 43 | 92 |
 | 79 | How to ask about overflow — `<stdckdint.h>` | 27, 51 | 86 |

@@ -109,7 +109,7 @@ and so on) contains a roster (declarations) of the workers you may use, and
 `#include` fetches the roster so that box's workers can be called.
 
 Which boxes the standard library has and what is in them is surveyed with a map
-in chapter 53. What to take away now is one instinct — *half of programming is
+in chapter 61. What to take away now is one instinct — *half of programming is
 calling functions other people made.* Recognising a well-made worker and
 employing it correctly decides half of your code, which is why "which worker
 shall I use?" becomes a large subject again in the later part of this book

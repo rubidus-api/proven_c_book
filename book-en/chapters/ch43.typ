@@ -140,7 +140,7 @@ same object*. It is the groundwork of chapter 53 (several files).
 - *`auto`* — the old word stating automatic storage duration. Being the default
   anyway, nobody wrote it, and *C23 recycled the slot for type inference* — write
   `auto x = 1 + 2;` and the type comes from the initialiser.
-- *`register`* — the old request "in a register if possible" (chapter 10). It has
+- *`register`* — the old request "in a register if possible" (chapter 11). It has
   no effect on today's optimisation, but one rule survives: *the address of a
   `register` variable cannot be taken* (`&x` becomes an error).
 - *`typedef`* — syntactically it goes in this slot but does something entirely

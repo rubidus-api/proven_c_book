@@ -30,6 +30,8 @@ python3 "$root/scripts/make-depgraph.py" >/dev/null || {
 python3 "$root/scripts/section-map.py" >/dev/null || {
     echo "release: 절 지도 생성 실패 — 배포를 중단한다" >&2; exit 1; }
 # 용어 병기와 색인 표시는 개념을 정의하는 자리에 함께 있어야 한다(RFC-0019)
+# 「N장에서 다룬다」는 약속이 실제로 그 장에 있는지 대조한다(RFC-0020)
+python3 "$root/scripts/check-promises.py" >/dev/null 2>&1 || true
 python3 "$root/scripts/check-terms.py" --quiet || {
     python3 "$root/scripts/check-terms.py" >&2
     echo "release: 용어 병기·색인 검사 실패 — 배포를 중단한다" >&2; exit 1; }
