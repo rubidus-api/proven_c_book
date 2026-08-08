@@ -90,7 +90,7 @@ implementation's kindness, not the language's guarantee.
 
 *C++ differs.* In C++ a string literal's type is `const char[N]`, and the first line
 above is *a compile error*. This item belongs in the list of "differences between the
-two languages" seen in chapter 94.
+two languages" that chapter 94 draws up.
 
 #qa[
   Why did C not attach `const`?
@@ -100,7 +100,7 @@ two languages" seen in chapter 94.
   string literals into a `char *`. The moment the literal's type became `const char[N]`,
   all of that code would be subject to diagnosis.
 
-  It is the same circumstance as `gets`'s funeral taking twenty years (chapter 63) —
+  It is the same circumstance as `gets`'s funeral taking twenty years (chapter 63 tells it) —
   *the standard is an institution that must protect existing code*, so when "the right
   type" and "code already written" collide it leans towards the latter. C++, first
   standardised in 1998, carried no such burden and could attach `const` from the start
@@ -202,7 +202,7 @@ puts("build: " __DATE__ " " __TIME__);     /* with the compiler's own literals t
 ```
 
 The point is that raising the version means mending *one line*. It weaves just as well
-with literals the compiler predefines (`__DATE__`, chapter 56), so many programs build
+with literals the compiler predefines (`__DATE__`, treated in chapter 56), so many programs build
 their banner and `--version` output this way.
 
 *Keeping format fragments under names.* The same technique applied to `printf`'s

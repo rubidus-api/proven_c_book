@@ -131,7 +131,7 @@ type letter*.
 
 *Third, it rounds but keeps the number of digits.* `load=0.42` is what `{:.2}` made.
 
-=== Which formatting function to use
+== Which formatting function to use
 
 Chapter 88's three kinds are here in formatting too. Organised in a table there is
 nothing to choose over.

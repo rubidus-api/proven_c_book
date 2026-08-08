@@ -150,7 +150,7 @@ implementation is free." It is within a few years of chapter 8's IEEE 754
 languages alike, arbitrary from vendor to vendor, began to be governed by
 written agreements.
 
-=== The places the contract does not cover — grey areas
+== The places the contract does not cover — grey areas
 
 Once there is a contract, one question follows at once: *what about the things
 the contract does not mention?*
@@ -267,7 +267,7 @@ names are enough.
   different things.
 ]
 
-=== When a standard outside C promises instead
+== When a standard outside C promises instead
 
 Among the grey areas, some have a different character: *C says nothing, and
 another standard makes the promise in its place.*

@@ -197,7 +197,39 @@ turning it on with one line in CMake is today's practice.
   problem call for the tool* is the order of the field.
 ]
 
+== What runs in C even today — and why
+
+Chapter 1 said "C is everywhere". Now the concrete names and reasons can be written
+down.
+
+#dtable(
+  columns: 3,
+  [*project*], [*what*], [*why C*],
+  [the Linux kernel], [the heart of an operating system], [it must handle hardware directly, must have no runtime dependency, and every architecture has a compiler],
+  [SQLite], [the most widely deployed database in the world], [it must be ported everywhere (phones, aircraft, browsers) and needed the extreme simplicity of distributing as a single source file],
+  [FFmpeg], [the standard tool of video and audio processing], [codec work where performance is everything, direct connection with hardware acceleration APIs],
+  [Redis], [an in-memory data store], [predictable latency and control of memory — it manages chapter 11's ladder itself],
+  [curl], [the universal tool of internet transfer], [it must go onto every platform and every device (cars, TVs, even spacecraft)],
+  [CPython, Ruby and others], [implementations of other languages], [a language runtime needs the lowest layer in the end, and the C interface is the ecosystem's common tongue],
+  [OpenSSL, zlib], [cryptography and compression libraries], [because they must be called from every language — the C ABI is the de facto universal interface],
+)
+
+Draw out the common threads and the reasons for choosing C organise into four.
+
+- *When you must stand at the lowest layer* — operating systems, drivers, runtimes.
+- *When it must be moved everywhere* — when a new chip appears, a C compiler is made
+  first (chapter 4's portability revolution has held for half a century).
+- *When performance and resources must be controlled by hand* — memory layout, latency,
+  executable size.
+- *When it must speak with every other language* — from Python, Java or Rust alike, a C
+  function can be called. The C ABI is the international common tongue between
+  languages.
+
 == The industry's rulebooks — MISRA C and its neighbours
+
+Read that list again — cars, aircraft, medical devices, power plants — and one thing
+is common to all of it: *these are places where being wrong hurts people.* So these
+industries use C, but they do not use it plainly.
 
 Where lives or large sums are at stake, "let us write C well" is not enough. So
 industries have *written down the subset of C that may be used.* How chapter 12's
@@ -329,34 +361,6 @@ read and check it.*
   benefit is unseen while the cost is visible daily. Which is why a rulebook is
   sustained by *an organisation's procedures*, not by an individual's willpower.
 ]
-
-== What runs in C even today — and why
-
-Chapter 1 said "C is everywhere". Now the concrete names and reasons can be written
-down.
-
-#dtable(
-  columns: 3,
-  [*project*], [*what*], [*why C*],
-  [the Linux kernel], [the heart of an operating system], [it must handle hardware directly, must have no runtime dependency, and every architecture has a compiler],
-  [SQLite], [the most widely deployed database in the world], [it must be ported everywhere (phones, aircraft, browsers) and needed the extreme simplicity of distributing as a single source file],
-  [FFmpeg], [the standard tool of video and audio processing], [codec work where performance is everything, direct connection with hardware acceleration APIs],
-  [Redis], [an in-memory data store], [predictable latency and control of memory — it manages chapter 11's ladder itself],
-  [curl], [the universal tool of internet transfer], [it must go onto every platform and every device (cars, TVs, even spacecraft)],
-  [CPython, Ruby and others], [implementations of other languages], [a language runtime needs the lowest layer in the end, and the C interface is the ecosystem's common tongue],
-  [OpenSSL, zlib], [cryptography and compression libraries], [because they must be called from every language — the C ABI is the de facto universal interface],
-)
-
-Draw out the common threads and the reasons for choosing C organise into four.
-
-- *When you must stand at the lowest layer* — operating systems, drivers, runtimes.
-- *When it must be moved everywhere* — when a new chip appears, a C compiler is made
-  first (chapter 4's portability revolution has held for half a century).
-- *When performance and resources must be controlled by hand* — memory layout, latency,
-  executable size.
-- *When it must speak with every other language* — from Python, Java or Rust alike, a C
-  function can be called. The C ABI is the international common tongue between
-  languages.
 
 == C and C++ — siblings, not parent and child
 

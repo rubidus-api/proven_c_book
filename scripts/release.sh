@@ -27,6 +27,8 @@ fi
 # 의존 관계도는 원고에서 뽑아내므로 배포 직전에 다시 만든다(손으로 갱신하지 않는다)
 python3 "$root/scripts/make-depgraph.py" >/dev/null || {
     echo "release: 의존 관계도 생성 실패 — 배포를 중단한다" >&2; exit 1; }
+python3 "$root/scripts/section-map.py" >/dev/null || {
+    echo "release: 절 지도 생성 실패 — 배포를 중단한다" >&2; exit 1; }
 
 stage="$root/build/release"
 rm -rf "$stage"; mkdir -p "$stage/ko" "$stage/en"

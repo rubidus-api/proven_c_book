@@ -192,7 +192,7 @@ Martin Richards at Cambridge distilled its essence into a small, practical
 language called *BCPL* (1967). BCPL's radical simplicity was this: *there is
 only one type.* Every value is just one word-sized slot, and whether to use it
 as a number or as an address is decided by the operation. It pushed "what is in
-the slot is only bits, and interpretation decides" — the lesson of chapter 5 —
+the slot is only bits, and interpretation decides" — the lesson of the next chapter —
 across the entire language.
 
 At Bell Labs, Ken Thompson, building early Unix on an ageing PDP-7, made *B*

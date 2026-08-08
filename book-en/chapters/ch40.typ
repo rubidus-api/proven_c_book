@@ -208,7 +208,7 @@ is how chapter 43's pairing of `malloc` and `free` is kept in practice.
 #qa[
   What about conventions (MISRA and the like) that forbid `goto` outright?
 ][
-  As chapter 94 shows, rulebooks such as MISRA forbid or tightly limit `goto`. Three
+  As chapter 94 will show, rulebooks such as MISRA forbid or tightly limit `goto`. Three
   alternatives are used there.
 
   - *Lift it into a function.* Number 3 above. Much of the cleanup problem also

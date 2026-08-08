@@ -145,7 +145,7 @@ is three bytes, so no byte of it means anything on its own — passing 0xED to
 `isalpha` asks "is this fragment a letter?", and that question has no answer.
 
 To judge a character made of several bytes, there are two roads. Convert to *wide
-characters* and use `<wctype.h>`'s `iswalpha` (chapters 69 and 70), or *work on
+characters* and use `<wctype.h>`'s `iswalpha` (chapters 69 and 70 treat it), or *work on
 the byte string as it is* and do only the judgements you need yourself
 (chapter 71). This book recommends the latter, and chapter 71 says why.
 

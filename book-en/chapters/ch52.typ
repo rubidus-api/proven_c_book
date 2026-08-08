@@ -260,7 +260,7 @@ it. So *ending with `_Exit` or `abort` can lose output.*
   startup code may hold it in an infinite loop, reset the chip, or let it wander
   anywhere. So embedded coding conventions often explicitly require that "`main`
   does not return." That the entry point may not even be called `main` is exactly
-  as chapter 60 showed — the function the reset vector points at is the starting
+  as chapter 60 will show — the function the reset vector points at is the starting
   point, and that function copies `.data`, fills `.bss` with zeros and then calls
   `main` (chapter 81).
 ]

@@ -246,7 +246,7 @@ to promise.
 
   Second, *because it is the basic move for working in the world of bits.*
   Packing several values into the bit positions of one integer and taking them
-  back out — assembling UTF-8 bytes as in chapter 9, the tagged pointers of
+  back out — assembling UTF-8 bytes as chapter 9 will show, the tagged pointers of
   chapter 6, splitting a colour value (RGB), reading the flags of a hardware
   register — is all a combination of shift and mask: "push to the position you
   want, and keep only the bits you need." The shift as multiplication has been

@@ -48,7 +48,7 @@ integer literal (`3.5`) and it becomes a floating-point value from chapter 8.
   the world of source code too.
 ]
 
-== Every way of writing a constant
+== Writing constants — the whole map
 
 Having met literals in the previous section, this is the place to gather *every
 notation for writing a value in source* at once. The standard scatters them through
@@ -62,7 +62,7 @@ enough.
 
 #demo("examples/ch20/constants.c")
 
-=== Integer constants (§6.4.4.1)
+== Integer constants (§6.4.4.1)
 
 #dtable(
   columns: 4,
@@ -101,7 +101,7 @@ hexadecimal can give it a different type.
   is easier to tell apart.
 ]
 
-=== The C23 digit separator `'`
+== The C23 digit separator `'`
 
 A notation for breaking up long numbers arrived in C23. It has no effect on the
 value --- in the standard's words it is *ignored when determining the value of the
@@ -123,7 +123,7 @@ The last row is this notation's one danger. *A separator is a separator only bet
 two digits*; at the front it is read as a single quote --- the start of a character
 constant.
 
-=== Character constants (§6.4.4.4)
+== Character constants (§6.4.4.4)
 
 The type names read fully only after chapter 9's character sets and chapter 27's
 integers --- for now just see that *the prefix settles the type*.
@@ -184,7 +184,7 @@ The escapes are exactly these (§6.4.4.4).
   `"\x41" "1"` is exactly `"A1"`.
 ]
 
-=== Floating constants (§6.4.4.3)
+== Floating constants (§6.4.4.3)
 
 The decimal form must have *either a decimal point or an exponent part.* So `1.`,
 `.5` and `1e3` are all valid, while `1` is an integer constant.
@@ -221,7 +221,7 @@ Worth noting too that the suffix changes the value. Measured, `(double)0.1f == 0
 *false* --- `0.1f` is the nearest value on the `float` grid and `0.1` the nearest on the
 `double` grid, and those are different numbers (chapters 8 and 49).
 
-=== String literals (§6.4.5)
+== String literals (§6.4.5)
 
 #dtable(
   columns: 4,
@@ -257,7 +257,7 @@ Four properties go together.
   catches it. Turning on `-Wwrite-strings` is another way.
 ]
 
-=== Things that look like constants
+== Things that look like constants
 
 #dtable(
   columns: 3,

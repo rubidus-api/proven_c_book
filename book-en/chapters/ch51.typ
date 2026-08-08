@@ -145,7 +145,7 @@ practice is not the compiler but *the other tools that handle the file*.
 
   So today's practice is one line — *end a text file with a new-line.* An editor
   setting (add a final new-line automatically), `.editorconfig`'s
-  `insert_final_newline`, and the formatting tools seen in chapter 94 do that work for
+  `insert_final_newline`, and the formatting tools of chapter 94 do that work for
   you. The C standard's clause is, in effect, the oldest ground for that practice.
 ]
 
