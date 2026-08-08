@@ -9,12 +9,12 @@
 > 생겼는지에서 출발해, C23을 기본값으로 삼고, 마지막 부에서
 > [proven](https://github.com/rubidus-api) C 라이브러리로 이어진다.
 
-- **현재 판**: v0.28.0 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-en.pdf)
+- **현재 판**: v0.29.0 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.29.0/proven_c_book-v0.29.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.29.0/proven_c_book-v0.29.0-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.28.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.28.0-en.pdf)
-- 13부 96장 + 부록 A~E + 찾아보기 — 한국어판 696쪽, 영어판 745쪽
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.29.0/proven_c_book-v0.29.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.29.0/proven_c_book-v0.29.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.29.0/proven_c_book-v0.29.0-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.29.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.29.0-en.pdf)
+- 13부 96장 + 부록 A~E + 찾아보기 — 한국어판 696쪽, 영어판 746쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 어떤 책인가
@@ -68,6 +68,20 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
 - **AI를 보조 도구로 삼아 집필했다.** 구성·방침·수록 여부는 저자가 정하고
   검토했으며, 예제는 기계가 매번 실제로 돌려 검증한다 — 누가 썼든 *돌지 않는
   코드는 이 책에 실리지 않는다*.
+
+## 장 사이의 의존 관계
+
+각 장 서두의 「먼저 알아야 할 것」이 곧 의존 선언이라, 그것을 그대로 뽑아 관계도로
+그린다. 손으로 그린 그림이 아니라 *원고에서 생성한 것*이라 원고와 어긋나지 않는다.
+
+[![장 사이의 의존 관계](docs/dependency-graph.svg)](docs/DEPENDENCIES.md)
+
+가로축이 1장부터 96장까지이고, 호 하나가 의존 하나다 — 왼쪽(기댄 곳)에서
+오른쪽(그 장)으로 걸린다. 호가 길수록 멀리서 끌어오는 것이고, 점이 클수록 여러
+장이 그 장에 기댄다. 뒤 장에 기대는 자리가 있으면 붉은 점선으로 드러난다.
+
+- 표로 보기 — [DEPENDENCIES.md](docs/DEPENDENCIES.md) · [English](docs/DEPENDENCIES-en.md)
+- 다시 만들기 — `python3 scripts/make-depgraph.py`
 
 ## 예제 직접 돌려 보기
 
