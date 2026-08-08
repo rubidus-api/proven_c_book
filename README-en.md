@@ -1,5 +1,9 @@
 # Proven C Book — An Introduction to Modern C with the Proven C Library
 
+This book serves as both an introduction to the C language and an introduction to
+the proven C library. It is written for readers from beginners in C through to
+those who have just finished a first textbook.
+
 *[한국어판 README](README.md)*
 
 > Why do integers wrap around? Why is a pointer not simply a number? What does a
