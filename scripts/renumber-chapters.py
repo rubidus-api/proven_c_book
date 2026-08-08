@@ -35,7 +35,10 @@ def remap(n: int) -> int:
 PLACE = "«{}»"   # «n»
 
 # 한국어: 33장 / 26·27장 / 5~6장
-KO_GROUP = re.compile(r"((?:\d+\s*[·~,]\s*)*\d+)\s*장")
+# ★2026-08-09 감사에서 드러난 결함: 「Morris worm(1988, 39장)」처럼 앞에 연도가
+#   있으면 "1988, 39" 를 한 묶음으로 물어 연도까지 밀어 버렸다(1988→1992).
+#   그래서 묶음의 각 수를 *네 자리 미만*으로 제한한다 — 장 번호는 세 자리를 넘지 않는다.
+KO_GROUP = re.compile(r"((?:\d{1,3}\s*[·~,]\s*)*\d{1,3})\s*장(?![0-9])")
 # 영어: chapter 33 / chapters 26 and 27 / ch. 21, 24, 50
 EN_GROUP = re.compile(r"\b(chapters?|ch\.)(\s+)((?:\d+\s*(?:,|and|–|-|to)\s*)*\d+)", re.I)
 NUM = re.compile(r"\d+")
