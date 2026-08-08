@@ -9,12 +9,12 @@
 > 생겼는지에서 출발해, C23을 기본값으로 삼고, 마지막 부에서
 > [proven](https://github.com/rubidus-api) C 라이브러리로 이어진다.
 
-- **현재 판**: v0.27.0 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.27.0/proven_c_book-v0.27.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.27.0/proven_c_book-v0.27.0-en.pdf)
+- **현재 판**: v0.28.0 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.27.0/proven_c_book-v0.27.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.27.0/proven_c_book-v0.27.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.27.0/proven_c_book-v0.27.0-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.27.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.27.0-en.pdf)
-- 13부 95장 + 부록 A~E + 찾아보기 — 한국어판 685쪽, 영어판 721쪽
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.28.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.28.0-en.pdf)
+- 13부 96장 + 부록 A~E + 찾아보기 — 한국어판 696쪽, 영어판 745쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 어떤 책인가
@@ -41,7 +41,7 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
 | 1~2부 | 컴퓨터가 어떻게 생겼는지 | 기억의 분화 — 레지스터·캐시·다층의 사다리 / 수의 표현 — IEEE 754라는 계약 / 문자와 텍스트 — 표준 속의 흉터 |
 | 3~4부 | 첫 프로그램과 최소 도구 | 헬로 월드 / 컴파일러의 지형 — 현역 C 컴파일러들 |
 | 5~6부 | 선언·값·흐름 | **타입의 지도 — 표준이 가른 것들** / 암묵적 변환 — 승격과 통상 산술 변환 / 반복 — 루프와 불변식 |
-| 7부 | **기억** | 널 — 삼형제의 정식 취급 / 포인터의 규칙 — 정렬과 프로버넌스 / 다차원 배열 / 수명과 저장 기간 |
+| 7부 | **기억** | **반복의 기법 — 중첩, 탈출, `do{}while(0)`** / 널 — 삼형제의 정식 취급 / 포인터의 규칙 — 정렬과 프로버넌스 / 다차원 배열 / 수명과 저장 기간 |
 | 8~9부 | 자료의 모양과 깊은 구석 | 공용체와 표현 / 실수 — 근사의 수학 / **정의되지 않은 동작** |
 | 10부 | 구성 | **이름의 세계 — 네 이름 공간과 세 축** / **이름 충돌을 다루는 법 — 접두어에서 `namespace`까지** / 전처리기와 번역 단계 / 함수를 값으로 |
 | 11부 | **표준 라이브러리 정독** | 스트림의 실제 / 신호 `<signal.h>` / 비지역 점프 `<setjmp.h>` / 로케일 두 장 / 와이드 문자 두 장 / 실무의 유니코드 / 할당자의 속 |
@@ -53,7 +53,7 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
 
 ## 이 책이 다른 점
 
-- **인쇄된 실행 결과는 전부 실제 출력이다.** 예제 146개를 매 빌드마다
+- **인쇄된 실행 결과는 전부 실제 출력이다.** 예제 149개를 매 빌드마다
   컴파일·실행해 그 출력을 지면에 싣는다(GCC 기준, Clang으로 교차 검증).
   사람이 옮겨 적은 출력은 한 줄도 없다.
 - **주장을 재려고 코드를 돌린다.** "`-O2`에서는 `longjmp` 뒤에 비 `volatile`
@@ -92,7 +92,7 @@ CC=clang scripts/verify-examples.sh     # 다른 컴파일러로 교차 검증
 ```
 dist/        배포물 — PDF(ko·en)와 zip 묶음
 docs/        GitHub Pages 가 서비스하는 HTML 판 (ko/, en/)
-examples/    본문에 실리는 예제 146개 — 전부 검증된 것
+examples/    본문에 실리는 예제 149개 — 전부 검증된 것
 examples-en/ 같은 예제의 영어판 (주석·문자열·출력이 영어)
 scripts/     예제 검증 스크립트
 vendor/      proven 라이브러리 스냅샷 (예제 링크용)
