@@ -206,7 +206,7 @@
 | 포인터 | pointer | 6 | 절 제목 | 6 | 35 |
 | 표준 라이브러리 | standard library | 21 | 절 제목 | 21 | 60 |
 | 표준 입출력 | standard I/O | 3 | 첫 등장 | 3 | 3 |
-| 표준 출력 | standard output | 10 | 첫 등장 | 10 | 22 |
+| 표준 출력 | standard output | 22 | 굵은 강조 | 10 | 22 |
 | 프로세스 | process | 3 | 절 제목 | 3 | 3 |
 | 프리스탠딩 | freestanding | 92 | 절 제목 | 92 | 92 |
 | 프리스탠딩(freestanding) | — | 92 | 첫 등장 | — | 92 |

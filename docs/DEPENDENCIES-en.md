@@ -72,7 +72,7 @@ None. Every chapter leans only on chapters before it.
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
 | 19 | The structure of a program | 15, 13 | 20, 21, 22, 23, 52, 56 |
-| 20 | Expressions — the things that become values | 7, 19 | 21, 30, 33, 48 |
+| 20 | Expressions and constants — the things that become values | 7, 19 | 21, 30, 33, 48 |
 | 21 | Using functions — how to call | 20, 19 | 24 |
 | 22 | Output | 10, 19 | 25, 57, 62 |
 
