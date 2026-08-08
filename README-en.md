@@ -10,12 +10,12 @@
 > default, and ends as a manual for the
 > [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.28.0 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-ko.pdf)
+- **Current edition**: v0.29.0 — **draft**
+- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.29.0/proven_c_book-v0.29.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.29.0/proven_c_book-v0.29.0-ko.pdf)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.28.0/proven_c_book-v0.28.0-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.28.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.28.0-ko.pdf)
-- 13 parts, 96 chapters, appendices A–E and an index — 745 pages in English, 696 in Korean.
+- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.29.0/proven_c_book-v0.29.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.29.0/proven_c_book-v0.29.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.29.0/proven_c_book-v0.29.0-all.zip)
+- Copies inside the repository: [en PDF](dist/proven_c_book-v0.29.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.29.0-ko.pdf)
+- 13 parts, 96 chapters, appendices A–E and an index — 746 pages in English, 696 in Korean.
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## What kind of book is this
@@ -77,6 +77,22 @@ documents, and the complete C grammar in EBNF.
   goes in were decided and reviewed by the author, and the listings are verified
   by a machine on every build — whoever wrote it, *code that does not run does
   not go into this book.*
+
+## Dependencies between chapters
+
+Each chapter opens with "What to know first", which is itself a declaration of
+dependency, so those entries are extracted and drawn as a graph. It is not a
+hand-drawn picture but one *generated from the manuscript*, so it cannot drift.
+
+[![Dependencies between chapters](docs/dependency-graph-en.svg)](docs/DEPENDENCIES-en.md)
+
+The horizontal axis runs from chapter 1 to 96, and each arc is one dependency ---
+from the chapter leaned on (left) to the chapter itself (right). The longer the arc,
+the further back it reaches; the bigger the dot, the more chapters lean on it. Any
+chapter leaning on a later one shows up as a red dashed arc.
+
+- As tables — [DEPENDENCIES-en.md](docs/DEPENDENCIES-en.md) · [한국어](docs/DEPENDENCIES.md)
+- To regenerate — `python3 scripts/make-depgraph.py`
 
 ## Running the listings yourself
 

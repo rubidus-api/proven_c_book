@@ -3,6 +3,7 @@
 = Implicit conversions — promotion and the usual arithmetic conversions
 
 #prereq(
+  ([chapter 26, The map of types], [the word "arithmetic type"]),
   ([chapter 27, Integers], [integer types differ in width]),
   ([chapter 28, Integer operations], [an operation happens between one type]),
 )

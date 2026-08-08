@@ -5,7 +5,6 @@
 #prereq(
   ([chapter 67, Locales ①], [categories and `setlocale`]),
   ([chapter 62, Streams in practice], [`printf` formats]),
-  ([chapter 73, Time], [`strftime`]),
 )
 
 #deepqa[
@@ -196,7 +195,8 @@ stops after `3` in a locale whose decimal point is a comma.
 
 == `LC_TIME` — writing dates and times
 
-The time arithmetic itself has nothing to do with the locale (chapter 73). What
+The time arithmetic itself has nothing to do with the locale --- `<time.h>` gets
+its proper treatment in chapter 73; here we only borrow its format characters. What
 the locale changes is *the writing*, and the window is `strftime`'s conversion
 specifiers.
 

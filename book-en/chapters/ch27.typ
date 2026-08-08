@@ -3,6 +3,7 @@
 = Integers — a world of finite numbers
 
 #prereq(
+  ([chapter 26, The map of types], [where the integer and basic types sit]),
   ([chapter 7, Representing integers], [sign and overflow]),
   ([chapter 23, Declaring variables], [a type is the shape of the vessel]),
 )
