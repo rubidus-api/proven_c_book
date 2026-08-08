@@ -20,7 +20,7 @@
 ]
 
 #organizer[
-#idx("atomic operations")  We see what happens when several strands touch the same
+#idx("atomic")#idx("atomic operations")  We see what happens when several strands touch the same
   memory at once, and learn the tool C11 brought into that place — atomic types and
   operations. Why a data race is *outside the contract* rather than "slow", why
 #idx("data race")  `volatile` is not the answer, and when to touch and when to
@@ -205,7 +205,7 @@ final sum need be right and there is no need to order it against other data, so
 == The phrase "lock-free"
 
 That is what the example's last line asked with `atomic_is_lock_free`. If an atomic
-type is handled by a single CPU instruction it is *lock-free*, and if not the
+#idx("lock-free")  type is handled by a single CPU instruction it is *lock-free*, and if not the
 library uses a hidden lock behind the scenes. On today's mainstream machines
 integers of pointer size or smaller are mostly lock-free. Wrap a large struct in
 `_Atomic`, on the other hand, and — the syntax passes but — a hidden lock attaches

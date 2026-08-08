@@ -9,7 +9,7 @@
 
 #deepqa[
   Chapter 53 made a multi-file program and learned about headers, object files and
-#idx("the compilation process")  linking, and chapter 16 saw the four runners of
+#idx("compilation")#idx("the compilation process")  linking, and chapter 16 saw the four runners of
   the compilation relay. Then what exactly is "using a library" in that picture?
 ][
   One of two things. *Compiling it together*, or *linking something compiled

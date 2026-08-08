@@ -20,7 +20,7 @@
 #organizer[
   You will learn why a computer's input and output has the shape of "characters
   flowing one line at a time." The answer lies in the age of paper — punched
-  cards, line printers, and the typewriter-like printing terminal. The origin of
+#idx("terminal")  cards, line printers, and the typewriter-like printing terminal. The origin of
   the two characters `\n` and of the odd name `tty` unravels here too. By the
   end of this chapter you will understand in advance what the `printf` of your
   first program is talking to.

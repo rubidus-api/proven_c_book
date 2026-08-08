@@ -168,7 +168,7 @@ differently, and comparisons can come out reversed.
 #qa[
   What happens if the value fits nothing in the list?
 ][
-  If it does not fit even the widest candidate, it goes into an *extended integer type
+#idx("integer type")  If it does not fit even the widest candidate, it goes into an *extended integer type
   the implementation provides*, or, if there is none, it is a constraint violation and
   gets diagnosed. Meeting this in practice has one answer --- *use the fixed-width
   types and their macros* (`UINT64_C(…)`, `<stdint.h>`). "Do not leave the type to the

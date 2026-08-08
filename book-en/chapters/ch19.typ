@@ -75,7 +75,7 @@ indentation are entirely tidiness for human eyes. A language like this is called
   Plausible — well-written code mostly looks like that. But that is *practice*,
   not a rule. Grammatically you may crowd several statements onto one line, or
   spread one statement over five. To the compiler they are all the same program.
-  And yet the practice of "one statement per line, indent inside a block" has
+#idx("block")  And yet the practice of "one statement per line, indent inside a block" has
   survived half a century for a simple reason — code is read far more often by
   humans than by machines. This book's examples follow that practice too:
   distinguishing the freedom the grammar allows from the restraint the practice

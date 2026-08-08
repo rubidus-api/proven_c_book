@@ -65,7 +65,7 @@ lvalue that nonetheless cannot be assigned to — a special case (chapter 38).
   the right-hand side, and a `const int c` is an lvalue that is not a
   *modifiable* lvalue, so it cannot be assigned to.
 
-  That is why the standard says "modifiable lvalue" when it means the
+#idx("modifiable lvalue")  That is why the standard says "modifiable lvalue" when it means the
   stricter thing. You will see that phrase in the operand column for
   assignment and for increment below.
 ]

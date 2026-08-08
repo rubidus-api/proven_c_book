@@ -148,7 +148,7 @@ nicely. To convert into a format for the chip you use `objcopy`
 
 *⑧ Seeing the signals with your eyes.* A moment comes when software tools alone
 will not do. When you must see what signal is leaving a pin, out come the
-*logic analyser* (the free software `sigrok`/PulseView supports inexpensive
+#idx("sigrok")  *logic analyser* (the free software `sigrok`/PulseView supports inexpensive
 hardware) and the oscilloscope. That half of the "the code is right but it does
 not work" problems are wiring and power is an old proverb of this world.
 

@@ -15,7 +15,7 @@
   There are two paths. It gives NaN or an infinity as the *return value*, and at
   the same time leaves the reason in *`errno`* — `EDOM` for outside the domain,
   `ERANGE` when the result exceeds the representable range. But an implementation
-  may choose to report through the floating-point exception flags (`<fenv.h>`)
+#idx("floating-point exception")  may choose to report through the floating-point exception flags (`<fenv.h>`)
   instead of `errno`, so to check portably you must be ready to look at both. In
   the field it is usually simpler to check the return value with `isnan` and
   `isinf`.

@@ -90,7 +90,7 @@ example, there are roughly these layers.
   [top chunk], [the lump remaining at the very end of the heap], [when short, it is cut from here],
 )
 
-The heart of it is the *cache per strand* (tcache). If several strands touch the
+#idx("tcache")  The heart of it is the *cache per strand* (tcache). If several strands touch the
 same ledger it becomes slow through locking (chapter 78), so each strand keeps a
 small drawer of its own and takes from there first. Only when the drawer is empty
 does it go to the shared ledger. It is the common design of today's fast allocators,

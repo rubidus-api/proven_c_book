@@ -44,7 +44,7 @@ Think of a person working at a desk and the picture comes together.
 
 *Code* is only read. Rewriting the work order during execution is usually forbidden.
 
-*The static region* takes its place when the program starts and stays as it is until
+#idx("static")  *The static region* takes its place when the program starts and stays as it is until
 it ends. That it is visible anywhere and always alive is both its strength and its
 danger — convenient, but a value that can change anywhere is hard to follow.
 

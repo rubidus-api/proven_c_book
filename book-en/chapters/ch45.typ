@@ -13,7 +13,7 @@
   pointers). Then what does it mean for a programmer to *make a new type*?
 ][
   It is settling a new shape of memory and giving it a name. Declare "I shall call
-  a lump of two integers side by side a point", and from that moment point is a
+#idx("point")  a lump of two integers side by side a point", and from that moment point is a
   fully-fledged type from which variables can be made, which can be passed to
   functions and laid out as an array. If chapter 38's array was *a repetition of
   the same type*, a struct is *a bundle of different types* — and the moment that

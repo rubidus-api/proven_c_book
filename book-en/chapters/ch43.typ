@@ -115,7 +115,7 @@ same object*. It is the groundwork of chapter 53 (several files).
   Seen through the standard's terms there is no room for confusion.
 
   ```c
-  static int counter;        /* file scope: makes the linkage *internal* (the duration was static anyway) */
+#idx("internal")  static int counter;        /* file scope: makes the linkage *internal* (the duration was static anyway) */
 
   void f(void) {
       static int calls;      /* block scope: makes the storage duration *static* (there is no linkage) */

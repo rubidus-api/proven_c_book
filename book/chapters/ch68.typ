@@ -25,7 +25,7 @@
 #idx("localeconv")  로케일이 실제로 바꾸는 것들을 하나씩 뜯어본다. `struct lconv`의 스물네
   멤버 전부, 자리 묶음 문자열의 인코딩, 통화 표기가 조립되는 규칙,
   `LC_NUMERIC`이 데이터를 망가뜨리는 무늬, `strftime`의 로케일 의존 서식과
-  불변 서식, `strcoll`과 정렬 키, 그리고 스레드와 로케일.
+#idx("스레드")  불변 서식, `strcoll`과 정렬 키, 그리고 스레드와 로케일.
 ]
 
 #chapter-questions()

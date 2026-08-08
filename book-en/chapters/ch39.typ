@@ -50,7 +50,7 @@ subscript varies fastest* (row-major). A multidimensional array does not fold
 memory into a grid; it is *one line* with the rows laid end to end.
 
 #qa[
-  Are there languages that lay them out column-major?
+#idx("column-major")  Are there languages that lay them out column-major?
 ][
   Yes. Fortran is the classic one, along with MATLAB, R, Julia, and OpenGL's
   matrix convention. Neither is correct in the abstract — it is a *convention*,

@@ -227,7 +227,7 @@ Qt는 반대로 갔다. 내부를 UTF-16으로 고정하고, 바깥과는 `QStri
 와이드 문자에는 입출력 함수도 딸려 있다 — `wprintf`·`fputws`·`getwc`·`fgetws`,
 그리고 `EOF` 대신 `WEOF`. 그런데 잘 알려지지 않은 규칙이 하나 있다.
 
-*스트림 하나에는 방향(orientation)이 있고, 한 번 정해지면 바꿀 수 없다.*
+#idx("스트림 방향")  *스트림 하나에는 방향(orientation)이 있고, 한 번 정해지면 바꿀 수 없다.*
 
 #dtable(
   columns: 2,

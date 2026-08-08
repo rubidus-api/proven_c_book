@@ -79,7 +79,7 @@ things are not caught by the shape alone.
 )
 
 The demonstration rejects each of the three. The first row matters most —
-*overlong encodings are a security problem.* There really were attacks that wrote
+#idx("overlong")  *overlong encodings are a security problem.* There really were attacks that wrote
 `..` or `/` in several bytes to slip past a path check, so that a later layer
 would interpret them again. That is why "only the shortest form is valid" became a
 requirement of the specification.

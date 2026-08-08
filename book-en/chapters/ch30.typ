@@ -13,7 +13,7 @@
   expression becomes a value (chapter 20), so if a comparison is an expression,
   what value does it become?
 ][
-  True or false — it becomes a value holding only those two. In C23 that type is
+#idx("true")  True or false — it becomes a value holding only those two. In C23 that type is
   named `bool` and its values `true` and `false`. That a comparison is not a
   "question" but *an expression computing a bool value* — that perspective is
   this chapter's centre, and in the next chapter branching consumes that value.
@@ -22,7 +22,7 @@
 #organizer[
 #idx("boolean")  The world of true and false as values — C23's `bool`, the
   comparison operators, and the logical operators with their special property
-#idx("condition")  (short-circuit evaluation). The "condition" the next
+  (short-circuit evaluation). The "condition" the next
   chapter's branching will ask about is made here.
 ]
 

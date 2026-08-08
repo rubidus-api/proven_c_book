@@ -19,7 +19,7 @@
 
 #organizer[
   Before closing the book we look round the world beyond these pages. The two
-  essential tools of the field (make and git), the representative projects that run
+#idx("git")  essential tools of the field (make and git), the representative projects that run
   in pure C even today and why they chose C, what C does in embedded work, and how
   C's limits are crossed in practice. It is a map of where the language this book has
   taught actually stands.
@@ -105,7 +105,7 @@ them.
 - *Platform debuggers* — Windows' `WinDbg` and the Visual Studio debugger. WinDbg's
   *time travel debugging* (TTD) in particular records the execution whole and lets you
   turn it *backwards* as you look.
-- *Record and replay* — Linux's `rr` does the same. Record a bug once reproduced and
+#idx("rr")  - *Record and replay* — Linux's `rr` does the same. Record a bug once reproduced and
   that execution can be turned back identically as many times as you like, which is
   especially strong against bugs that "reproduce only sometimes". It is the frontal
   method against the heisenbug seen in chapter 17.
@@ -140,7 +140,7 @@ expensive allocations (chapter 44) are crowded, all become visible as they are.
 - *Dynamic checking* — chapter 17's sanitizers (ASan, UBSan, TSan) and
   `valgrind --tool=memcheck`. The former must be recompiled and is fast, the latter can
   be run as it stands and is slow.
-- *Coverage* — `gcov`/`lcov` (GCC), `llvm-cov` (Clang). They show "which lines the
+#idx("coverage")  - *Coverage* — `gcov`/`lcov` (GCC), `llvm-cov` (Clang). They show "which lines the
   tests actually passed through".
 - *Fuzzing* — `libFuzzer`, `AFL++`, `honggfuzz`. Pour in random input and find the
   places it dies. The effect is great in code that *eats outside input*, such as parsers
@@ -150,7 +150,7 @@ expensive allocations (chapter 44) are crowded, all become visible as they are.
 
 === ⑤ Is it good for people to read — formatting and documentation
 
-`clang-format` (automatic formatting), `uncrustify`, `Doxygen` (generating
+#idx("automatic")  `clang-format` (automatic formatting), `uncrustify`, `Doxygen` (generating
 documentation from comments), and `compile_commands.json` (a list of the build
 commands). The last is the file an editor's autocompletion (`clangd`) and static
 analysis tools read in order to know "with what options is this file compiled", so

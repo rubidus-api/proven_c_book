@@ -14,7 +14,7 @@
 ][
   Neither fits. We need memory whose size is settled at run time and whose
   lifetime is decided by the program's logic — so there is a third place:
-#idx("heap")  *allocated storage duration*, the warehouse commonly called the
+#idx("allocated")#idx("heap")  *allocated storage duration*, the warehouse commonly called the
   *heap*. The rule of this place differs decisively from the other two — *the
   programmer directly orders its birth and its death.*
 ]

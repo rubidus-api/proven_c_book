@@ -88,7 +88,7 @@ servers.
 One current runs through the table — *they all converged on LLVM.* Maintaining a
 compiler of one's own from scratch became too expensive, so taking the common
 parts (parsing the syntax, optimisation) from LLVM and attaching only a back end
-suited to one's own chip became the standard approach. Intel's classic `icc`
+#idx("icc")  suited to one's own chip became the standard approach. Intel's classic `icc`
 stepping back and the LLVM-based `icx` taking its place is the most symbolic
 scene of that current.
 

@@ -29,7 +29,7 @@
 #idx("name space")  You often hear that "C has no name spaces". It is half true — the standard
   defines *four* of them. What C lacks is a way for *you* to make a new one.
   This chapter sets out the four, binds them together with scope and linkage
-  into three axes, and covers shadowing and reserved names. The next chapter
+#idx("shadowing")  into three axes, and covers shadowing and reserved names. The next chapter
   builds on it to answer "so how do collisions get prevented".
 ]
 
@@ -40,13 +40,13 @@
 The saying is widespread, and it misleads just as widely. The standard's own
 sentence says nearly the opposite.
 
-Section 6.2.3 states that if more than one declaration of a particular identifier
+#idx("identifier")  Section 6.2.3 states that if more than one declaration of a particular identifier
 is visible at a point in a translation unit, *the syntactic context* tells the uses
 apart; thus there are *separate name spaces* for the various categories of
 identifiers.
 
 So C *does* have name spaces. What it lacks is the ability to open a new yard, as
-`namespace app { … }` does. Blur that distinction and you cannot explain why both
+#idx("namespace")  `namespace app { … }` does. Blur that distinction and you cannot explain why both
 of the following are true.
 
 - `typedef struct node node;` is legal --- different name spaces.

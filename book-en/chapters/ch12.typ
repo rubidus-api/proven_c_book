@@ -49,7 +49,7 @@ overlap.
 
 Let us record one trick from the same era. To save the management cost of each
 turn of a loop (counting, judging the fork), there is a technique of handling
-*several items per turn* — loop unrolling. In 1983 a programmer named Tom Duff
+#idx("loop unrolling")  *several items per turn* — loop unrolling. In 1983 a programmer named Tom Duff
 pushed this technique to its limit by grotesquely overlapping two pieces of C
 syntax, and the code became a legend under the name *Duff's device*. The code
 itself cannot be shown yet — this book has not introduced those constructs. A

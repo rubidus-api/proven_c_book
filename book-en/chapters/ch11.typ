@@ -67,7 +67,7 @@ calculation that looks like "slot 100 + slot 104" is always
   memory the slower.*
 ]
 
-The surface of C carries a trace of this stratum. C has a keyword `register` —
+#idx("keyword")  The surface of C carries a trace of this stratum. C has a keyword `register` —
 an old-days request that "this variable be kept in a register if possible."
 Today compilers place things far better than people do, so the request has
 become decoration; but the question of who puts a variable in a register and
@@ -111,8 +111,8 @@ not (a miss) you make the trip to the stacks just then.
 
 This works because of programs' habits. Programs do not touch memory at random —
 they *touch again soon what they just touched*
-#idx("locality") (temporal locality) and *go on to touch the neighbours of what
-they touched* (spatial locality). Think of a loop touching the same variable
+  (temporal locality) and *go on to touch the neighbours of what
+#idx("locality")  they touched* (spatial locality). Think of a loop touching the same variable
 repeatedly, and of an array being scanned from the front. Thanks to these
 habits, a single small desk removes most of the trips to the stacks.
 
@@ -194,7 +194,7 @@ lumps of assorted sizes in and out and unusable gaps appear between them
 Today's answer is *paging*. Memory is cut into pieces of one size — usually
 4 KiB — and such a piece is called a *page*. The virtual address space is cut
 the same way, and the two are paired page by page. Since the pieces are all the
-same size any free slot will take any page, and external fragmentation
+#idx("external")  same size any free slot will take any page, and external fragmentation
 disappears. In exchange a correspondence table is needed: the *page table*.
 
 x86-64 stacks that table four deep (five on recent parts). A 48-bit address is

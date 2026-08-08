@@ -232,7 +232,7 @@ And sometimes what rides inside the number is not a number at all.
   value is a number at one moment and an address at another.
 
   *Machines where an address is not a number at all.* On CHERI and Arm Morello a
-  pointer is a 128-bit bundle (a capability) carrying bounds and permissions
+#idx("capability")  pointer is a 128-bit bundle (a capability) carrying bounds and permissions
   along with the address. The hardware checks those bounds, so a value converted
   to an integer, played with and converted back has lost its permissions and
   cannot be used.

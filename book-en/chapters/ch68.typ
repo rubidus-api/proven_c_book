@@ -281,7 +281,7 @@ accent, then case).
 == Locales and threads
 
 Chapter 67 said the locale is process-global. In a program with several threads
-that becomes a problem — one thread changing the locale to print a date for a
+#idx("thread")  that becomes a problem — one thread changing the locale to print a date for a
 user shakes another thread's `printf("%f")`.
 
 Standard C has no remedy. What exists are extensions.

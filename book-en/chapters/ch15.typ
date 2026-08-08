@@ -57,7 +57,7 @@ different jobs.
   [shell], [the *program* running inside that window], [reads the line you typed, interprets it, runs it and returns the result],
 )
 
-That is, *the terminal is the glass, the shell is the worker behind it.* "Typing a
+#idx("shell")  That is, *the terminal is the glass, the shell is the worker behind it.* "Typing a
 command into the terminal" is really "typing a command to the shell through the
 terminal".
 

@@ -169,7 +169,7 @@ in front.
 
 #qa[
   But chapter 84's `proven_println` had no such mark. Why is screen output alone an
-  exception?
+#idx("exception")  exception?
 ][
   Because contracts have grades too. The failure of a write going to the console has
   conventionally been ignored (have you ever seen code that checks `printf`'s return

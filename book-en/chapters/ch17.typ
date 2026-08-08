@@ -538,7 +538,7 @@ boards with neither screen nor keyboard. The order of attack is roughly this.
   dump in a debugger afterwards and trace the crash site back to source lines.
 + *Narrow by bisection.* Lower the optimisation level (`-O2` → `-O1` → `-O0`) to
   see where behaviour diverges, and halve the version-control history to find
-  when the bug entered (chapter 94's `git bisect`).
+#idx("git")  when the bug entered (chapter 94's `git bisect`).
 + *Make a minimal reproduction.* Reducing the problem to the smallest program
   that reproduces it often exposes the cause by itself, and turns it into
   something you can ask others about.

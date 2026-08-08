@@ -120,7 +120,7 @@ static void on_int(int sig) { (void)sig; stop = 1; }
 반환값, `sig_atomic_t`의 정체, POSIX `sigaction`과 그 구조체 속, 그리고
 서버·셸·터미널의 실제 사용 사례까지 75장에서 본다.
 
-== 비지역 점프 — `setjmp`/`longjmp`
+== 비지역 점프(non-local jump) — `setjmp`/`longjmp`
 
 `setjmp`로 지금 자리를 기억해 두고, 나중에 깊은 곳에서 `longjmp`로 되돌아
 오는 장치다. 예외가 없는 언어에서 예외 비슷한 것을 만들려는 시도이고,

@@ -29,6 +29,10 @@ python3 "$root/scripts/make-depgraph.py" >/dev/null || {
     echo "release: 의존 관계도 생성 실패 — 배포를 중단한다" >&2; exit 1; }
 python3 "$root/scripts/section-map.py" >/dev/null || {
     echo "release: 절 지도 생성 실패 — 배포를 중단한다" >&2; exit 1; }
+# 용어 병기와 색인 표시는 개념을 정의하는 자리에 함께 있어야 한다(RFC-0019)
+python3 "$root/scripts/check-terms.py" --quiet || {
+    python3 "$root/scripts/check-terms.py" >&2
+    echo "release: 용어 병기·색인 검사 실패 — 배포를 중단한다" >&2; exit 1; }
 
 stage="$root/build/release"
 rm -rf "$stage"; mkdir -p "$stage/ko" "$stage/en"

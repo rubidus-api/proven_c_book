@@ -28,7 +28,7 @@
 #organizer[
 #idx("type")  This book has been using words like "arithmetic type", "scalar type",
   "aggregate" and "complete type" already. This is where they get defined. The whole
-  classification of §6.2.5 gets built --- object and function, complete and
+#idx("function")  classification of §6.2.5 gets built --- object and function, complete and
   incomplete, basic types, integer, real and arithmetic, derived, scalar and
   aggregate, qualifiers --- and on top of it the types of `<stdint.h>` that write
   their width into their name. The next chapter's integers, and the one after that's

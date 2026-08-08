@@ -88,7 +88,7 @@ value but the *type*.
 For now, *that a suffix changes the type* is all you need. The type names above, and
 the exact rule for which type the compiler picks when there is no suffix, come in
 *chapter 27 once integers have been met properly*, in "The type of an integer
-constant". One thing in advance --- writing the same value in decimal or in
+#idx("constant")  constant". One thing in advance --- writing the same value in decimal or in
 hexadecimal can give it a different type.
 
 #qa[

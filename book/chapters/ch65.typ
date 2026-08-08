@@ -20,7 +20,7 @@
 
 #organizer[
   이름 그대로 "표준 라이브러리"라는 서랍이다. 문자열을 수로 바꾸는 함수,
-  난수, 동적 할당, 프로그램 종료, 정렬과 이진 탐색이 한데 들어 있다.
+  난수, 동적 할당(dynamic allocation), 프로그램 종료, 정렬과 이진 탐색이 한데 들어 있다.
   공통점이 없는 대신 함정은 많다 — 특히 *실패를 알릴 방법이 없는 변환
   함수*와 *종료 함수들의 미묘한 차이*가 이 장의 두 축이다.
 ]
@@ -123,7 +123,7 @@ C23에서는 아예 *정의되지 않은 동작*이 됐다(제안 N2464). 구현
 크기가 0이 될 수 있는 재할당 코드라면 `n == 0`을 먼저 걸러 내야 한다.
 
 ```c
-proven_err_t resize(char **buf, size_t n) {
+proven_err_t resize(char *buf, size_t n) {
     if (n == 0) { free(*buf); *buf = nullptr; return OK; }  /* 0을 넘기지 않는다 */
     char *tmp = realloc(*buf, n);
     ...

@@ -135,7 +135,7 @@ as it stands. So standard C's `FILE*` kept a buffer (chapter 10's story of line
 buffering), and proven puts a *stream* in the same place — differing in two ways.
 
 - *The caller gives the buffer.* The stream does not allocate in secret.
-- *The failure of a flush comes as a value.* It is not quietly swallowed on closing.
+#idx("flush")  - *The failure of a flush comes as a value.* It is not quietly swallowed on closing.
 
 These two aim at the same problem. In buffered writing the real failure shows itself
 not in `write` but in the *flush*, and missing that failure creates data that "was

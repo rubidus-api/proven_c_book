@@ -143,16 +143,16 @@ the answer sharp.
 
 An address is not one of the three: it is *all three, and none of them wholly.*
 
-- *As a nominal number*: the most basic use. `&x` is the *name* of the object x,
+#idx("nominal")  - *As a nominal number*: the most basic use. `&x` is the *name* of the object x,
   and whether two addresses are the same may always be asked (which is why `==`
   and `!=` are allowed even between different objects, appendix A). This is
   exactly what a locker number does.
-- *As an ordinal number*: within one array, before and after mean something.
+#idx("ordinal")  - *As an ordinal number*: within one array, before and after mean something.
   `&a[1] < &a[2]` is true, and on that rest sorting, searching and bounds
   checks. But *between different arrays the question cannot be asked* — which is
   why ordering them is outside the contract (appendix A). What has an order is
   not addresses in general but addresses *within one object*.
-- *As a cardinal number*: the difference of two addresses counts — not bytes but
+#idx("cardinal")  - *As a cardinal number*: the difference of two addresses counts — not bytes but
   *elements* (chapter 38). `&a[4] - &a[1]` is 3, meaning "three elements lie
   between". And this subtraction, too, means something only within one array.
 
@@ -166,7 +166,7 @@ an address is whichever of the three the context allows.
 === Why an integer, of all things
 
 Naming an object could have been done otherwise — a name string, an index into a
-table, a handle; languages and operating systems have done all of these. C chose
+#idx("handle")  table, a handle; languages and operating systems have done all of these. C chose
 an integer for a simple reason: *the machine was already doing it that way.* As
 chapters 4 and 5 showed, a machine address is a number, adding to it gives the
 neighbouring slot, and CPUs have circuitry that computes "base + index × size" in
@@ -411,7 +411,7 @@ Nor is this only in the past tense.
   representation of a pointer are settled by the machine and the build"*.)
 
   *CHERI and Arm Morello.* Real hardware in which a pointer is a bundle of
-  address, bounds and permissions (a capability). The address is 64 bits but the
+#idx("capability")  address, bounds and permissions (a capability). The address is 64 bits but the
   pointer is *128*, and `sizeof(void *)` is 16.
 
   Two things must be told apart here. *A round trip through the official

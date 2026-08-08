@@ -165,7 +165,7 @@ Normally an argument is expanded first (argument substitution), but an argument 
 becomes the operand of `#` or `##` is the exception and the *unexpanded original
 token* is used. So when the value is wanted, one more layer is added so that the
 argument is expanded *before* it meets `#` or `##` — this is the idiom called
-*double expansion*, or an *indirection macro*.
+#idx("double expansion")  *double expansion*, or an *indirection macro*.
 
 One more rule is needed. Its name is not the standard's but people's — the *blue
 paint rule*. If a macro's own name appears again while it is being expanded, *that
@@ -265,7 +265,7 @@ several tokens (`LOW`, `", world"`), only the leading `LOW` is pasted and the re
 follows after it as it stands.
 
 And it is worth pointing out that step 7 is the business not of the preprocessor but
-of *translation phase 6*. What the preprocessor produced was, after all, the two
+#idx("translation phase")  of *translation phase 6*. What the preprocessor produced was, after all, the two
 string literals `"hello" ", world"`, and their joining into one is the next stage.
 
 #qa[
@@ -340,7 +340,7 @@ int j[] = { t(1,2,3), t(,4,5), t(6,,7), t(8,9,),
 
 What happens if an argument is left empty and `##` is used? There being nothing to
 paste, it looks like an error, but the standard settles that in an empty argument's
-place there is an invisible token called a *placemarker*. This token leaves whatever it
+#idx("placemarker")  place there is an invisible token called a *placemarker*. This token leaves whatever it
 is pasted with as it is, and vanishes when the expansion ends.
 
 So `t(6,,7)` pastes `6` and `7` into `67`, and `t(,,)` *leaves no token at all*. It is
