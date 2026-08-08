@@ -14,12 +14,12 @@ those who have just finished a first textbook.
 > default, and ends as a manual for the
 > [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.30.0 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.30.0/proven_c_book-v0.30.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.30.0/proven_c_book-v0.30.0-ko.pdf)
+- **Current edition**: v0.31.0 — **draft**
+- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.31.0/proven_c_book-v0.31.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.31.0/proven_c_book-v0.31.0-ko.pdf)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.30.0/proven_c_book-v0.30.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.30.0/proven_c_book-v0.30.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.30.0/proven_c_book-v0.30.0-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.30.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.30.0-ko.pdf)
-- 13 parts, 96 chapters, appendices A–E and an index — 747 pages in English, 696 in Korean.
+- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.31.0/proven_c_book-v0.31.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.31.0/proven_c_book-v0.31.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.31.0/proven_c_book-v0.31.0-all.zip)
+- Copies inside the repository: [en PDF](dist/proven_c_book-v0.31.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.31.0-ko.pdf)
+- 13 parts, 96 chapters, appendices A–E and an index — 751 pages in English, 700 in Korean.
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## What kind of book is this

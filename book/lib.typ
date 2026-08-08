@@ -311,6 +311,29 @@
   lines.join("\n")
 }
 
+// 실행 결과만 따로 내는 상자. 소스를 먼저 보이고 한참 뒤에 결과를 보이는
+// 자리(15장의 첫 프로그램)에서 쓴다 — `demo(.., show-output: false)` 의 짝이다.
+#let demo-output(path) = {
+  let out = read(_out-dir(path) + _rel(path) + ".out")
+  if _html {
+    html.elem("div", attrs: (class: "demo demo-out"), {
+      html.elem("p", attrs: (class: "demo-head"), _L.output)
+      html.elem("div", attrs: (class: "demo-body"), raw(out, block: true))
+    })
+  } else {
+    block(breakable: true, width: 100%,
+          stroke: 0.5pt + black, inset: 0pt)[
+      #set par(first-line-indent: 0em)
+      #block(width: 100%, inset: (x: 8pt, y: 6pt), above: 0pt, below: 0pt,
+             stroke: (bottom: 0.5pt + black))[
+        #text(font: ("Noto Sans CJK KR", "Noto Sans"), size: 0.96em,
+              weight: "bold")[#_L.output]]
+      #block(width: 100%, inset: (x: 8pt, y: 7pt), above: 0pt, below: 0pt)[
+        #raw(_hardwrap(out), block: true)]
+    ]
+  }
+}
+
 #let demo(path, show-output: true, stdin: false, highlight: none) = {
   // 시연 상자는 1×2 다 — 표제 줄(파일 경로 또는 "실행 결과")과 내용을
   // 가로선으로 가른다 (저자 지시 2026-08-06). HTML 도 같은 모양으로 낸다.
