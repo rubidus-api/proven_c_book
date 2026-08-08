@@ -4,7 +4,7 @@
 `scripts/sync-status.py --write` 가 자동으로 갱신한다.
 The Korean edition is the source; this table is generated.
 
-- **synced** 93 · **stale** 0 · **pending** 0
+- **synced** 108 · **stale** 0 · **pending** 0
 
 | 원본 / source | 상태 / state |
 |---|---|
@@ -89,6 +89,21 @@ The Korean edition is the source; this table is generated.
 | `book/chapters/ch79.typ` | ✅ synced |
 | `book/chapters/ch80.typ` | ✅ synced |
 | `book/chapters/ch81.typ` | ✅ synced |
+| `book/chapters/ch82.typ` | ✅ synced |
+| `book/chapters/ch83.typ` | ✅ synced |
+| `book/chapters/ch84.typ` | ✅ synced |
+| `book/chapters/ch85.typ` | ✅ synced |
+| `book/chapters/ch86.typ` | ✅ synced |
+| `book/chapters/ch87.typ` | ✅ synced |
+| `book/chapters/ch88.typ` | ✅ synced |
+| `book/chapters/ch89.typ` | ✅ synced |
+| `book/chapters/ch90.typ` | ✅ synced |
+| `book/chapters/ch91.typ` | ✅ synced |
+| `book/chapters/ch92.typ` | ✅ synced |
+| `book/chapters/ch93.typ` | ✅ synced |
+| `book/chapters/ch94.typ` | ✅ synced |
+| `book/chapters/ch95.typ` | ✅ synced |
+| `book/chapters/ch96.typ` | ✅ synced |
 | `book/parts/part02.typ` | ✅ synced |
 | `book/parts/part11s.typ` | ✅ synced |
 | `book/parts/part12.typ` | ✅ synced |
