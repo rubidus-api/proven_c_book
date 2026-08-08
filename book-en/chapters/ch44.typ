@@ -73,6 +73,182 @@ machine.
   place.
 ]
 
+== How to write a `malloc` call — an old argument
+
+There are several ways to write the same allocation, and the C world has argued for
+thirty years about which is right. Find a piece on this subject online and it is
+usually heated, because both sides have grounds. Let us measure and decide.
+
+#dtable(
+  columns: 3,
+  [*Form*], [*Shape*], [*Who recommends it*],
+  [1. take the size from the target], [`p = malloc(n * sizeof *p);`], [the practice since K&R, the Linux kernel, the C FAQ],
+  [2. name the type and cast], [`p = (T *)malloc(n * sizeof(T));`], [CERT MEM02-C; codebases that value C++ compatibility],
+  [3. the compromise], [`p = (T *)malloc(n * sizeof *p);`], [cast where a cast is needed, without letting the size drift],
+)
+
+#demo("examples-en/ch44/malloc_style.c")
+
+=== Four reasons for form 1
+
+*First, when the type changes there is only one place to fix.* This is the biggest
+reason. The Linux kernel's coding style puts it this way --- spelling the type name
+out "*hurts readability and introduces an opportunity for a bug when the pointer
+variable type is changed but the corresponding sizeof that is passed to a memory
+allocator is not*".
+
+Think of the common act of changing an `int *` into a `struct node *`. Form 1 needs
+only the declaration changed and the size follows; form 2 needs *two* places changed,
+and forgetting one compiles cleanly with too small a block.
+
+*Second, the type name never appears, so it cannot drift.* This goes one step beyond
+"only one place to fix" --- in form 1 *there is no way to write it wrongly.*
+
+*Third, `sizeof *p` does not read `p`.* At first sight it looks like dereferencing a
+pointer that has not been allocated yet. It is not: the operand of `sizeof` is *not
+evaluated* (chapter 48). The listing confirms it --- `sizeof *p` computes fine with
+`p` null, because the size comes from the *type*, not the value.
+
+*Fourth, the cast used to hide a bug.* Before the standard and in the C89 era,
+calling `malloc` without including `<stdlib.h>` made the compiler assume "a function
+returning `int`". Putting that `int` into a pointer draws a diagnostic --- and *the
+cast wipes that diagnostic away.* Reproduced by measurement:
+
+#dtable(
+  columns: 2,
+  [*Called without a declaration (C89, builtins off)*], [*What the compiler says*],
+  [`p = (int *)f(4);`], [`cast to pointer from integer of different size` --- blamed on the cast],
+  [`p = f(4);`], [`initialization of 'int *' from 'int' makes pointer from integer without a cast` --- *exactly* right],
+)
+
+Honesty requires adding that this fourth reason has *nearly lost its force today*.
+C99 removed implicit function declarations, and in C23 it is an outright error ---
+measured, `error: implicit declaration of function 'malloc'` appears with or without
+the cast. "The cast hides a bug" is now *a historical explanation*, not a present
+reason. When a piece still wields it as the clincher, check which decade it is
+describing.
+
+=== The case for form 2 --- CERT MEM02-C
+
+The other side has standards behind it too. The SEI CERT C Coding Standard's
+*MEM02-C* is titled "*Immediately cast the result of a memory allocation function
+call into a pointer to the allocated type*", and its rationale is this --- "casting
+the result of `malloc()` to the appropriate pointer type *enables the compiler to
+catch subsequent inadvertent pointer conversions*".
+
+The claim holds. Compile CERT's own example and the difference is plain.
+
+#dtable(
+  columns: 2,
+  [*Code*], [*What GCC 14 emits*],
+  [`widget *p = malloc(sizeof(gadget));`], [*a warning* --- `allocation of insufficient size '1' for type 'struct widget' with size '40'`],
+  [`widget *p = (gadget *)malloc(sizeof(gadget));`], [*an error* --- `assignment to 'struct widget *' from incompatible pointer type`],
+  [`widget *p = malloc(sizeof *p);`], [nothing --- *that bug cannot be written*],
+)
+
+That the cast promotes a warning into an error is true. But the third row shows the
+heart of the argument --- **form 1 needs no diagnostic, because there is no mistake
+to diagnose.** And CERT itself rates this recommendation *severity low, likelihood
+unlikely, priority P3*.
+
+=== Form 3 and the "C++ compatibility" reason --- is it real?
+
+The most frequently heard reason for the cast is "because it must build with a C++
+compiler too". C++ does not allow an implicit conversion from `void *` to another
+pointer type, so without a cast it genuinely fails to compile --- measured,
+`error: invalid conversion from 'void*' to 'int*'`.
+
+Three things deserve weighing before accepting that reason.
+
+*First, C++ does not recommend `malloc` in the first place.* The way to obtain memory
+in C++ is `new`, and more properly containers and smart pointers. So "a `malloc` call
+that also builds as C++" means *keeping code C++ does not recommend conformant to C++
+syntax*. It is worth asking what that buys.
+
+*Second, the compatibility is not actually obtained.* This is decisive. A modern C
+file with the cast dutifully applied was handed to a C++ compiler:
+
+#dtable(
+  columns: 2,
+  [*What the file contains*], [*What the C++ compiler says*],
+  [`(struct pt *)malloc(n * sizeof *p)`], [passes --- thanks to the cast],
+  [`struct pt a = { .z = 3, .x = 1 };`], [*error* --- `designator order for field 'pt::x' does not match declaration`],
+  [`_Generic(n, int: 1, default: 0)`], [*error* --- `'_Generic' was not declared in this scope`],
+  [`int vla[n];`], [not in standard C++ (it passes only as a GNU extension)],
+)
+
+That is, **the cast does not get the file into C++.** The ordering constraint on
+designated initialisers, `_Generic`, variable length arrays, `restrict`, compound
+literals, flexible array members --- the two languages have diverged steadily since
+1989, and C23 and C++23 are further apart than ever (chapter 94). *What one cast buys
+is not compatibility but the illusion of it.*
+
+*Third, what is really shared is the header, not the `.c` file.* The realistic place
+where C and C++ meet is a header (`extern "C"`, chapter 55) --- and **headers do not
+call `malloc`.** The calls live in implementation files, and those are compiled by a
+C compiler.
+
+#qa[
+  Is there no place, then, where the cast is right?
+][
+  There is --- but where there is *an actual circumstance*, not "just in case".
+
+  - *Projects that really do build `.c` files as C++.* Rare, but they exist ---
+    some embedded toolchains, old MSVC practice, builds that pull C code wholesale
+    into a C++ translation unit. There it is a requirement, not a choice.
+  - *Under a convention that follows CERT.* As chapter 94 showed, where a rulebook
+    governs, the rulebook wins.
+
+  In such a place, prefer form 3, `(T *)malloc(n * sizeof *p)` --- satisfy C++ with
+  the cast while keeping form 1's safety by taking the size from the target. Measured,
+  this form passed in both C and C++. *If one of the two must go, let it be writing
+  the type name twice.*
+]
+
+#antipattern[
+  The real danger both forms share --- overflow in the multiplication
+][
+  The cast argument tends to hide something. *The multiplication in `n * sizeof *p`
+  can overflow.*
+
+  ```c
+  p = malloc(n * sizeof *p);   /* with a large n the product wraps */
+  ```
+
+  As the listing showed, when the wrapped result is a tiny number **`malloc`
+  succeeds** --- and writing `n` elements into that tiny block brings the heap down.
+  The hole is equally open with or without the cast, and it has become a real
+  vulnerability more than once.
+
+  Three ways to close it.
+
+  - *Check the count first* --- `if (n > SIZE_MAX / sizeof *p) return NULL;`
+  - *Use `calloc(n, sizeof *p)`* --- the standard requires it to check the
+    multiplication. Measured, `calloc` refused the overflowing request (zeroing is a
+    bonus and a cost).
+  - *Use checked arithmetic* --- C23's `<stdckdint.h>` (chapter 79).
+
+  This is a far more valuable argument than whether to write a cast.
+]
+
+#qa[
+  So which does this book use?
+][
+  *Form 1.* `p = malloc(n * sizeof *p);`
+
+  The reason in one line --- **a form that cannot be written wrongly beats a form that
+  catches you when you write it wrongly.** A cast is a device that turns a mismatch
+  into a diagnostic; form 1 removes the mismatch. In the language of chapter 12's
+  ladder, *better than rung 3 (let the build tell you) is a design where the state
+  never arises.*
+
+  This is not offered as a rule to enforce. In a codebase that must build `.c` as C++,
+  or under a convention that follows CERT, forms 2 and 3 are the right choice.
+  *Choosing knowingly differs from inheriting a habit* --- and the commonest mistake
+  in this argument is not which form you pick but attaching the cast without knowing
+  why, because that is how you were taught.
+]
+
 == The alignment of the address returned — because it does not know what will go in
 
 #demo("examples-en/ch44/alloc_cost.c")
