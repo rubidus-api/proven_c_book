@@ -123,7 +123,7 @@ address" but *counting in slots*. Only on a `char *` is 1 one byte; on an
 The first block of output shows the whole rule. The same `+ 1` moves a different
 distance for each type, and the distance is exactly `sizeof`. So `(char *)p + 1`
 and `p + 1` point at different places — which is where the idiom of casting to a
-character pointer to move by bytes comes from (chapter 85's views do this).
+character pointer to move by bytes comes from (chapter 86's views do this).
 
 The second block is *subtraction*. `&a[4] - &a[1]` is 3, not 12 — pointer
 subtraction gives a count of *elements*, not of bytes. And that is why the result
@@ -259,7 +259,7 @@ Local VLAs, however, have hardened into something *not recommended* in practice.
   input directly as a size and an attacker can bring down the stack, and there is
   no way to check for that collapse.
 - *There is no way to report failure.* `malloc` at least returns null
-  (chapter 43); a VLA simply collapses when there is no room.
+  (chapter 44); a VLA simply collapses when there is no room.
 - *Its standing in the standard wavered too.* Mandatory in C99, it became an
   *optional* feature in C11 (if `__STDC_NO_VLA__` is defined, the implementation
   lacks it). MSVC does not support it.
@@ -267,7 +267,7 @@ Local VLAs, however, have hardened into something *not recommended* in practice.
   of stack usage and performance were the reasons.
 
 In summary: *the VLA notation in a parameter is usable; avoid local VLAs.* If you
-need an array whose size is settled at run time, chapter 43's dynamic allocation
+need an array whose size is settled at run time, chapter 44's dynamic allocation
 is the proper method.
 
 == `[static N]` in a parameter — "at least this many will arrive"
@@ -278,7 +278,7 @@ There is one more peculiar syntax used only in array parameters.
 int sum3(const int a[static 3]);   /* a points at three or more elements */
 ```
 
-Here `static` has nothing to do with storage duration (chapter 42). It means the
+Here `static` has nothing to do with storage duration (chapter 43). It means the
 contract *"the pointer passed in this argument points at an array of at least N
 elements."* Two things are gained — the compiler may optimise on that premise
 (prefetching and the like), and it can point out with a warning code that passes
@@ -389,7 +389,7 @@ pointer itself will not move."
 An array's safety rule is one and admits no compromise — *valid numbers run from
 0 to the slot count minus one.* Reading or writing `a[5]` (in a five-slot array)
 is outside the contract, and that slot is *someone else's memory* — perhaps a
-neighbouring variable, perhaps the ledger of a function call seen in chapter 41.
+neighbouring variable, perhaps the ledger of a function call seen in chapter 42.
 Read it and you get rubbish; write it and someone else's data is quietly broken —
 the buffer overrun is the single cause of more accidents and security
 vulnerabilities than anything else in C's history (the next two chapters are those
@@ -415,7 +415,7 @@ for (int *it = a; it != a + 5; it += 1) { /* use *it */ }
   part). The run-time net is chapter 17's ASan — run code that violates a boundary
   in an ASan build and it is caught at the moment of violation, with file and line
   number. And there is the road of using components with boundary checking built
-  in from the start — chapter 41's proven is that road.
+  in from the start — chapter 42's proven is that road.
 ]
 
 We can handle contiguous memory. The next chapter *stacks* this rule — the case

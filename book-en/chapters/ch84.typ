@@ -1,335 +1,301 @@
 #import "../../book/lib.typ": *
 
-= Errors are values
+= Getting started — there is nothing to install
 
 #prereq(
-  ([chapter 49, Errors and contracts], [errors as values]),
-  ([chapter 82, The five bugs shipped for fifty years], [the unchecked return value]),
+  ([chapter 53, Several files], [several files and linking]),
+  ([chapter 83, The five bugs shipped for fifty years], [the five bugs]),
 )
 
 #deepqa[
-  Chapter 49 said C's ways of reporting an error are only three — the return value,
-  global state, and stopping the program — and that of these the return value is the
-  most honest. Then how does one say both "it failed" and "here is the result" with a
-  single return value?
+  Chapter 53 made a multi-file program and learned about headers, object files and
+#idx("the compilation process")  linking, and chapter 16 saw the four runners of
+  the compilation relay. Then what exactly is "using a library" in that picture?
 ][
-  There are three ways. Mix an *impossible value* into the result's place (null,
-  `-1` — that trap seen in chapter 82), take the result out as an *output parameter*
-  and use the return value for status alone, or *hold both in one struct* and return
-  them together. proven uses the second and third together — and the third is
-  possible because, as learned in chapter 44, a C struct can be returned by value.
+  One of two things. *Compiling it together*, or *linking something compiled
+  separately*. The former road is handing somebody else's source to the compiler
+  along with mine; the latter is handing the linker a lump that has already become
+  object code (a static `.a` or a shared `.so`/`.dll`). Either way the compiler makes
+  the call from the *declaration* (the header) and the linker finds and joins the
+  *definition* — exactly chapter 53's picture. proven took the former road, and the
+  next section is why.
 ]
 
 #organizer[
-  We see the answer to chapter 82's second bug — unconfirmed failure. The way of
-  returning failure as a value, the bundle holding a value and an error together,
-  and the device that makes the compiler protest if an error is thrown away. The
-  discipline set up in chapter 49, "errors are values", hardens here into a type.
+  The first chapter that actually uses proven. We first see why this library has no
+  `configure`, no package manager and no shared library to link — and what that
+  choice gives and takes away — and then run a first program. The third bug seen in
+  chapter 83 (format mismatch) already disappears in this first program. Then we follow
+  *the whole life of one object* (make it, use it, give it back) and set up the three
+  rules needed to read the rest of this part.
 ]
 
 #chapter-questions()
 
-== Two shapes of return
+== The choice of having nothing to install
 
-The rule is simple. *A function that can fail must return the failure as a value.*
+proven has no installation procedure. Compile the source you have obtained together
+with your program and that is all. There are only two directories that matter.
 
-- If there is no result to return, it returns a single `proven_err_t`.
-- If there is a result to return, it returns an `{err, value}` bundle — with a name
-  per type, such as `proven_result_u8str_t` or `proven_result_size_t`.
+- `src/proven/` — the portable body. The operating system is not called here.
+- `platform/` — a thin layer that makes system calls. It is the only part that must
+  be changed when moving to a new machine.
 
-`proven_err_t` is an enumeration and success is `PROVEN_OK` (0). The check is always
-the single `proven_is_ok(err)` — writing `err == 0` would work too, but using the name
-lets the code survive a later change of representation.
+In an environment with no operating system (embedded) it is built without
+`platform/`. This separation settled the shape of the whole library — the demand
+"it must run anywhere" becomes the discipline "keep neither hidden allocation nor
+hidden global state".
 
-=== Every error code
-
-Failures have a name per kind, and there are sixteen in all. They are not to be
-memorised; it is enough to know *what branches exist* — most code divides only success
-from failure, and looks at the branch only when attempting recovery.
-
-#dtable(
-  columns: 3,
-  [*code*], [*what happened*], [*mainly where*],
-  [`PROVEN_OK`], [success (0)], [—],
-  [`ERR_NOMEM`], [the allocator could not hand out memory], [`_create`, `_grow`],
-  [`ERR_OUT_OF_BOUNDS`], [outside the vessel — refused rather than truncated], [`append`, `slice`, array indexing],
-  [`ERR_INVALID_ENCODING`], [the UTF-8/UTF-16 was broken], [string conversion, `hex`/`base64`],
-  [`ERR_INVALID_ARG`], [an argument is outside the contract (null, 0, an unusable allocator)], [almost every entry point],
-  [`ERR_IO`], [the outside world failed], [files and streams],
-  [`ERR_NOT_FOUND`], [what was sought is not there], [map lookup, opening a file],
-  [`ERR_INVALID_STATE`], [it cannot be done in the present state], [a closed stream, a destroyed object],
-  [`ERR_NEED_MORE`], [more input is needed before judging], [parsers and decoders],
-  [`ERR_OVERFLOW`], [a size calculation overflowed], [`create`, container growth],
-  [`ERR_UNSUPPORTED`], [this environment does not have that facility], [OS features under freestanding],
-  [`ERR_AGAIN`], [not now — try again], [non-blocking I/O],
-  [`ERR_EOF`], [the end was reached], [reading],
-  [`ERR_BUSY`], [somebody else is using it], [locks, the job queue],
-  [`ERR_PERMISSION`], [there is no permission], [files],
-  [`ERR_INVALID_FORMAT`], [the format was wrong], [parsing, format strings],
-)
-
-#demo("examples-en/ch84/codes.c")
-
-The latter part of the example shows this table in the flesh. Try to put twelve bytes
-into an eight-byte vessel and `OUT_OF_BOUNDS` comes — *and the original is left
-untouched* (the length is still 0). Give an unusable allocator and it is caught as
-`INVALID_ARG` before anything is made. Slicing outside the range too is a refusal, not
-"as much as there is".
-
-Two things are worth taking from here. First, *`ERR_INVALID_ARG` is usually a bug in my
-own code* — not a failure of the outside world but a contract violation, so it is to be
-mended rather than recovered from. Second, `ERR_EOF` and `ERR_AGAIN` are *part of the
-normal flow*. In a reading loop EOF is not an error but the ending condition
-(chapter 90).
-
-=== The kinds of result bundle
-
-A function with a value to return has one bundle per type. The naming rule being the
-same, the list need not be memorised — inside a `proven_result_XXX_t` there are always
-just `err` and `value`.
-
-#dtable(
-  columns: 3,
-  [*bundle*], [*the type of `value`*], [*where it is returned*],
-  [`proven_result_size_t`], [`proven_size_t`], [lengths, counts, bytes written],
-  [`proven_result_mem_mut_t`], [`proven_mem_mut_t`], [allocators (chapters 85 and 86)],
-  [`proven_result_mem_view_t`], [`proven_mem_view_t`], [slicing (chapter 85)],
-  [`proven_result_u8str_t`], [`proven_u8str_t`], [making a string (chapter 87)],
-  [`proven_result_buf_t`], [`proven_buf_t`], [making a buffer],
-  [`proven_result_cstr_t`], [`const char *`], [exporting as a C string (chapter 87)],
-  [`proven_fmt_result_t`], [(amount written and amount needed)], [formatting (chapter 88)],
-)
-
-Only the last row is of a different grain. For formatting, "success or failure" is not
-enough — if it was truncated you must know *how much more was needed* — so beside `err`
-it carries two numbers as well (we look at it closely in chapter 88).
-
-#demo("examples-en/ch84/errval.c")
-
-This example contains all of this chapter's syntax. `make_greeting` sends the result
-out through an output parameter (`out`) and used the return value for status alone —
-on failure it passes it up as it is. And `proven_u8str_create` returns a bundle, so
-`made.value` is taken out *only after checking*. The order must not be reversed.
-
-#antipattern[
-  Taking out `value` before checking
+#qa[
+  Why not distribute it as a package? Installing would be more convenient.
 ][
-  ```c
-  proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* dangerous */
-  ```
-  It finishes in one line and looks clean, but what comes into your hand on failure
-  is *a meaningless value*. The bundle's contract is "`value` has meaning only when
-  `err` is `PROVEN_OK`", so this code has skipped the contract. That on failure a
-  struct filled with zeros usually arrives and it does not die immediately is rather
-  the danger — the accident is put off until much later (that pattern from
-  chapter 82).
+  It is a trade of price for gain. What is lost is convenience — it cannot be got
+  through a system package, and updating becomes not "raising a version" but
+  "fetching new source". What is gained is control. The library cannot differ from
+  the source you are looking at now, compilation options you did not choose do not
+  come attached, and links do not break because a distribution built it with
+  different settings. Above all, it is *the only model that works both in a hosted
+  environment and on bare metal* — embedded work has no package manager to begin
+  with.
 ]
 
-The output of the second call compresses this part's theme. On trying to put
-`"Hello, world"` into a capacity of 8 bytes, the library, *instead of putting in as
-much as fits and declaring success*, wrote nothing and returned a failure. It is the
-exact opposite choice from `snprintf`'s quiet truncation seen in chapter 82.
+== How this book's examples are built
 
-== Throw it away and the compiler protests
-
-Returning the error as a value is not enough by itself. As seen in chapter 82, a
-return value *can be thrown away*. So functions for which failure is meaningful have
-C23's #idx("nodiscard")`[[nodiscard]]` attached (we saw the name in chapter 49).
-Throw the result away and the compiler really says this.
+To state it honestly, this book's proven examples are compiled as follows. The
+library's source is made into object files once and linked with the example.
 
 ```text
-warning: ignoring return value of ‘proven_u8str_append’,
-         declared with attribute ‘nodiscard’ [-Wunused-result]
-    5 |     proven_u8str_append(&s, proven_u8str_view_from_cstr("hi"));
-      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-note: declared here
-  123 | [[nodiscard]] proven_err_t proven_u8str_append(...);
+$ cc -std=c23 -O1 -Ivendor/proven/include -c vendor/proven/src/proven/*.c
+$ cc -std=c23 -Wall -Wextra -Werror -Ivendor/proven/include \
+     hello.c vendor-obj/*.o -lm -o hello
 ```
 
-If the `-Werror` recommended in chapter 17 is turned on, this is not a warning but a
-*build failure*. What was "checking is optional" has become "it does not compile
-unless you check".
+The first line handles the body, the second my program. `-I` tells it where to find
+headers (chapter 53), `-lm` joins the mathematical functions. These two lines are
+what this book's verification script really runs every time, and every execution
+result printed on these pages is the output of a program made that way.
 
-Of course there are times when you really do want to ignore it. Then `(void)` is put
-in front.
+== The first program
 
-```c
-(void)proven_u8str_append(&s, view);   /* ignored knowingly */
-```
+One `#include <proven.h>` opens the whole library.
 
-#qa[
-  If it can be ignored with `(void)`, is it not compulsory after all?
+#demo("examples-en/ch84/hello.c")
+
+We read it line by line. `proven_println` takes a format and arguments and prints
+one line to standard output — so far the same as `printf`. What differs is the
+*placeholder*.
+
+- `{}` has no type in it. It is neither `%d` nor `%s` but simply `{}`.
+- The type comes *from the argument*. `PROVEN_ARG(x)` looks at `x`'s type and wraps
+  the value with a fitting tag attached.
+- So chapter 83's third bug — the mismatch of format and argument — *structurally*
+  cannot happen. The type is not written twice, so there is no place for them to go
+  out of step.
+
+What is written after the colon, as in `{:>8}`, corresponds to the width, alignment
+and precision seen in chapter 60. `>` is right alignment, `<` left alignment, `.3` is
+to three decimal places. That the alignment symbol comes first is what differs from
+`printf`.
+
+== Three rules — the key to this whole part
+
+The functions ahead number more than a hundred, but the rules for reading their
+signatures are only three. Get these three into your hand and you can read half of any
+function you have never seen, without the documentation.
+
++ *Only a function that takes an allocator as an argument takes memory.* If
+  `proven_allocator_t` appears in the signature it means "this function may allocate",
+  and if it does not, it takes *not one byte*. So which functions are usable in
+  embedded work and which are not divide before your eyes (chapter 87).
++ *Failure comes as a value.* If there is no result to return it gives a single
+  `proven_err_t`; if there is, an `{err, value}` bundle. Before checking `err` you do
+  not look at `value` (chapter 85).
++ *Give a thing back with the allocator you made it with.* What was obtained with
+  `_create` is let go with `_destroy`, and what has `view` in its name is borrowed and
+  is not destroyed (chapters 86 and 87).
+
+The naming rules have almost no exceptions either.
+
+#dtable(
+  columns: 3,
+  [*shape of the name*], [*meaning*], [*example*],
+  [`_create`], [obtain a new object from an allocator — returns a bundle], [`proven_u8str_create`],
+  [`_borrow`], [lay an object over somebody's memory — no allocation], [`proven_u8str_borrow`],
+  [`_destroy`], [give it back with the allocator it was made with], [`proven_u8str_destroy`],
+  [`_as_`], [see the same thing through another eye — no copying], [`proven_u8str_as_view`],
+  [`_view`], [borrowed. it is not destroyed], [`proven_u8str_view_t`],
+  [`_checked`], [check the boundary and error if it is broken], [`..._slice_checked`],
+  [`_unchecked`], [skip the check — for places the caller has already confirmed], [`..._slice_unchecked`],
+  [`_grow`], [enlarge if short — which is why it takes an allocator], [`proven_u8str_append_grow`],
+  [`_or_panic`], [panic on failure. for places with nobody to return to], [`proven_arena_alloc_or_panic`],
+)
+
+== The life of one object
+
+Rather than reading three lines of rules, it is quicker to follow one real thing to
+the end. The program below holds the whole course of *making, using and giving back* a
+string object on one screen.
+
+#demo("examples-en/ch84/first.c")
+
+Six places to point at.
+
+*① It took an allocator as an argument.* That `build_line`'s first argument is an
+allocator is the declaration that "this function may take memory". The caller settles
+whether to give it the heap or an arena (chapter 87).
+
+*② Making returns a bundle.* `proven_u8str_create` gives a
+`proven_result_u8str_t` (that is, `{err, value}`). Before checking `err` you do not
+take `value` out — that order is the whole of chapter 85.
+
+*③ The capacity is "by content".* The 64 of `create(alloc, 64)` is *the number of
+bytes of content to hold*, and the library internally takes one more byte for the NUL.
+That is how `as_cstr` can hand out a C string without copying.
+
+*④ The failure path gives back too.* If formatting fails, the string taken so far is
+returned with `destroy` before the error is raised. Grow this pattern and it becomes
+chapter 85's `goto` cleanup idiom.
+
+*⑤ The place where ownership passes is explicit.* `*out = line;` is that place. After
+this line the string's owner is the caller, and the responsibility to destroy it is the
+caller's too.
+
+*⑥ Destroying empties the struct.* That the length prints as 0 after `destroy` is the
+evidence. It is so that the returned buffer is not still pointed at, and the contract
+that *a destroyed object is not used again* stands as it is.
+
+#antipattern[
+  The four mistakes a beginner meets on the first day
 ][
-  Because the purpose of the compulsion is not "to prevent ignoring" but *"to make
-  ignoring visible"*. An error thrown away with no mark is invisible in code review,
-  while a line with `(void)` attached becomes a declaration that "this failure is
-  deliberately ignored". The very fact that it must be typed is the heart of it — it
-  cannot be done by accident, only on purpose.
+  ```c
+  /* ① taking value out without checking */
+  proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* rubbish on failure */
+
+  /* ② destroying with a different allocator */
+  proven_u8str_destroy(other_alloc, &s);                     /* contract violation */
+
+  /* ③ holding a view longer than its original */
+  proven_u8str_view_t v = proven_u8str_as_view(&s);
+  proven_u8str_destroy(alloc, &s);
+  proven_println("{}", PROVEN_ARG(v));                       /* reads a dead place */
+
+  /* ④ forgetting PROVEN_ARG */
+  proven_println("count={}", count);                         /* does not compile */
+  ```
+  Of the four only ④ is caught by the compiler. The other three are blocked *by a human
+  keeping the rules*, which is why the previous section said to get the three rules into
+  your hand. ③ in particular is met again in chapter 88, and once more when an arena is
+  reset.
 ]
 
 #qa[
-  But chapter 83's `proven_println` had no such mark. Why is screen output alone an
-  exception?
+  Must an object be made with `_create`? What about where there is no heap?
 ][
-  Because contracts have grades too. The failure of a write going to the console has
-  conventionally been ignored (have you ever seen code that checks `printf`'s return
-  value?), and making every line of output carry a `(void)` would bury the code in
-  noise. So this library placed output in the grade that *returns the error but does
-  not compel a check*. Conversely, the functions on the *input* side do have the mark
-  — ignore the failure of a read and you treat "data not read" as though it had been
-  read, replaying chapter 82's second bug exactly. Where to attach the mark is itself
-  a design judgement.
+  No. Most objects come with *a borrowing edition* as well.
+  `proven_u8str_borrow(buf, sizeof buf)` lays a string over a stack or static array —
+  it takes no allocator, so it takes not one byte, and therefore needs no `destroy`
+  either (the caller is already the owner). Embedded code handles strings this way
+  (chapter 88), and several of this book's examples run so.
+
+  There is a middle form too. Take the memory once in a large piece, lay an arena over
+  it and hand out from there (chapter 87) — then `malloc` is never called once while the
+  `_create` family can be used as it is.
 ]
 
-== What remains after a failure — failure atomicity
-
-There is a question that naturally arises after receiving an error. *What state is
-the object the failed function was touching in now?*
-
-#idx("failure atomicity")The library's answer is *failure atomicity* — unless the
-documentation says otherwise, a failed operation leaves the target in the state it
-was in before being touched. If memory runs short while growing an array the existing
-elements are still alive, and if there is not enough room while appending to a string
-the original content stands. The second call of the example just now is that case —
-it failed, but no half-written string was left.
-
-Why does this matter? Without failure atomicity a caller can do nothing after a
-failure *but throw the object away*. With it, "give up this addition and carry on
-with what has been gathered so far" becomes possible.
+#qa[
+  How does `PROVEN_ARG` find out the type? Does C not lack function overloading?
+][
+  It uses a device that came in with C11, `_Generic` — the syntax that chooses one
+  of several things *at compile time* according to an expression's type.
+  `PROVEN_ARG(x)` makes a small struct with an integer tag attached if `x` is an
+  `int`, a real tag if a `double`, a string tag if a `const char *`. It is not
+  determining the type at run time but *using as it stands what the compiler already
+  knows*, so there is no cost. The syntax and the whole formatting rules are treated
+  head on in chapter 89.
+]
 
 #misconception[
-  "If it fails we will end the program anyway, so what does the state matter"
+  "Using a library makes the program heavy"
 ][
-  For a short-running command-line tool that may be so. But long-running programs —
-  servers, editors, games, firmware — must not die on one failure. If the whole server
-  went down because handling one request failed for lack of memory, that would be the
-  greater accident. Failure atomicity is the minimal condition that makes possible the
-  recovery of "throw away only this request and take the next".
-]
-
-== Raising a failure upward — together with the cleanup
-
-Receiving errors as values raises one practical problem at once. *If it fails in the
-middle, who gives back what has been taken so far?* In a language with exceptions the
-stack unwinds and destructors handle it, but C has no such device (chapter 73). So an
-idiom is needed.
-
-#demo("examples-en/ch84/cleanup.c")
-
-This example deliberately inserts a failing allocator (once the *budget* runs out it
-necessarily gives `NOMEM`) and runs all three cases — failure from the first
-allocation, one taken and failure at the second, and everything succeeding. The middle
-case is the heart of it. `x` has already been taken while `y` failed, so simply
-returning here is *a leak*.
-
-The pattern comes to three.
-
-+ *Mark what you hold with a flag* — one boolean such as `has_x`. If the resources are
-  several, so are the flags.
-+ *On failure everything gathers at one place* — `goto done`. That use chapter 73
-  called "disciplined `goto`".
-+ *Clean up in reverse order of taking* — what was taken later is given back first.
-
-It is worth noticing too that after ownership passes with `*out = y;` on the success
-path, `y` is not destroyed thereafter. *You must be able to point at the place where
-ownership passes with a single line of code* — a function that cannot is usually one of
-blurred design.
-
-#qa[
-  Is deliberately making a failing allocator of any use in practice too?
-][
-  Of great use. The out-of-memory path is almost never executed in a real program, so
-  in most codebases it is *the least tested path*. And a leak or double free there is
-  the hardest of all to diagnose.
-
-  As chapter 86 will show, an allocator is simply a value, so a shell that "fails from
-  the nth call" can be made in ten lines, as in the example, and inserted. Raise n from
-  1 and run the tests and you can pass through *every failure point* once, and running
-  it with ASan or Valgrind (chapter 17) makes that path's leaks show themselves plainly.
-  It is the place where the decision that the library does not call `malloc` directly
-  comes back as testability.
-]
-
-== When there is nobody to return to — the panic
-
-To return an error as a value there must be *somebody to return it to*. But in a
-place where the contract itself is broken there is no such somebody — if, for
-example, a null arrived in a place where there is no reason whatever to pass a null,
-that is not a failure but means *the program's logic is already wrong*.
-
-For such places the library has a panic path. It is the same spirit as chapter 49's
-`assert`, differing in that the way it is handled can be swapped out so as to be
-usable in embedded work too (chapter 91).
-
-There are only two doors.
-
-```c
-void proven_panic(const char *msg);                       /* raise a panic */
-void proven_set_panic_handler(proven_panic_handler_t h);  /* swap the handler */
-```
-
-The default handler *does not return* — it stops the program on the spot (the
-implementation is `__builtin_trap()`). And this swapping is what pays in embedded work.
-On a board with no console there is nowhere to print a message, so a handler is
-registered that lights an LED, kicks the watchdog, or reboots.
-
-```c
-static void my_panic(const char *msg) {
-    (void)msg;
-    board_led_on(LED_FAULT);
-    for (;;) { }          /* it does not go back */
-}
-/* at the program's starting place */
-proven_set_panic_handler(my_panic);
-```
-
-*A handler must not return.* If it returns, the validity of what an `_or_panic`
-function gave back is not guaranteed — a panic is the declaration that "from here the
-program's premises are broken". The exception is test code deliberately using a
-returning handler to confirm the panic path, and even then the value after it is not
-used.
-
-The places where the library itself calls a panic can be counted on the fingers — the
-functions with `_or_panic` in the name (chapter 86's arena allocation is
-representative) and a few places where the contract is plainly already broken. Everything
-else is returned as a value.
-
-The distinction is best remembered like this.
-
-#recap[
-  #dtable(
-  columns: 3,
-    [*situation*], [*example*], [*the library's handling*],
-    [failure of the outside world], [out of memory, file not found, out of room], [return the error as a value],
-    [the caller's contract violation], [a null that must not be, reusing a destroyed object], [panic (or undefined)],
-    [failure that may be ignored], [console output failure], [return the error but do not compel],
-)
+  A frequently heard worry, and it depends on the character of the language and the
+  library. In C, a library compiled together as source leaves *what is not used out
+  of the executable* — because the linker does not put in an object file that is not
+  referenced (chapter 16's linking stage). Moreover proven has no initialisation code
+  running at startup, no global state being registered, and no thread quietly rising.
+  Becoming heavy is not the price of using a library but what happens when a
+  framework takes over the program's structure.
 ]
 
 #realcase[
-  Other languages that chose errors as values
+  The practice of distributing as source — SQLite in one file
 ][
-  This design is not C's invention alone but a current common to recent systems
-  languages. Go has functions return a result and an error side by side, and Rust
-  wraps success and failure in the single `Result` type and warns if it is ignored.
-  Both are languages that decided not to use exceptions, and the reason is the same —
-  *the error paths must be visible in the shape of the code*. Exceptions are
-  convenient but erase from the signature "which failure jumps where from here".
-  Three different languages, in effect, found the answer to the second row of
-  chapter 82's table from the same direction.
+  This distribution model is not a peculiar choice of proven's alone. SQLite, the
+  most widely used database engine in the world, provides as its official
+  distribution form an *amalgamation* joining dozens of source files into one huge
+  `.c` file — fetch it, compile it with your program, and that is all. The `stb`
+  family of libraries, famous for image and font handling, is a single header file
+  entire. The reason is the same in every case. In a world where build environments
+  are all different, *the most portable unit of distribution is source*.
 ]
 
-#qa[
-  What is the price of this way?
+== Attaching it to your own project — a minimal Makefile
+
+To avoid typing the two lines above every time, use chapter 94's `make`. Supposing the
+library has been put whole into `vendor/proven`, this much suffices.
+
+```make
+CC      = cc
+CFLAGS  = -std=c23 -Wall -Wextra -Werror -O2 -Ivendor/proven/include
+VSRC    = $(wildcard vendor/proven/src/proven/*.c) \
+          $(wildcard vendor/proven/platform/*.c)
+VOBJ    = $(VSRC:.c=.o)
+
+app: app.o $(VOBJ)
+	$(CC) $^ -lm -o $@
+
+clean:
+	rm -f app app.o $(VOBJ)
+```
+
+Only three things need be known. *`-I`* tells it where to find `<proven.h>`
+(chapter 53). *`platform/`* is the thin layer that calls the operating system, so when
+going to bare metal only this line is removed (chapter 92). *`-lm`* joins the
+mathematical functions that real-number formatting uses — take reals out of the
+formatter (chapter 92's `PROVEN_FMT_NO_FLOAT`) and this is not needed either.
+
+#platform[
+  On Windows and in embedded work
 ][
-  `if`s multiply. There being no device like exceptions to sweep a deep failure up in
-  one go, code that checks and passes upward attaches at every place a failure is
-  met. That is half the reason the `make_greeting` of the example just now runs to
-  some twenty lines. In exchange one thing is gained — *where and what can fail is
-  visible in the code as it stands.* That there is no hidden failure is the thing
-  this library sells.
+  *MSVC* — this library requires C23. Recent updates of Visual Studio 2022 support a
+  good deal of it with `/std:clatest`, but the surest road is to use `clang-cl` or
+  MinGW-w64 (GCC) on Windows too (chapter 18's terrain).
+
+  *Embedded* — leave out `platform/` and compile only `src/proven/*.c`. There being no
+  heap, `proven_heap_allocator()` returns an unusable value (all zeros), and an arena
+  laid over a static array is used instead (chapter 87). The detailed procedure is
+  chapter 92.
 ]
 
-Knowing the shape of errors, we now go down to what those errors protect — memory
-itself. The next chapter is bytes and views, and size calculation that does not
-overflow.
+#recap[
+  This chapter in summary.
+
+  #dtable(
+  columns: 2,
+    [*what*], [*how*],
+    [header], [one `#include <proven.h>`],
+    [build], [compile `src/proven/*.c` with the program (`-I` for the header path, `-lm`)],
+    [OS dependence], [only in `platform/` (build without it if absent)],
+    [rule ①], [only a function that takes an allocator takes memory],
+    [rule ②], [failure comes as a value — check `err`, then `value`],
+    [rule ③], [destroy with the allocator it was made with. a `view` is not destroyed],
+    [making], [`_create` (allocates) / `_borrow` (over somebody's buffer, no allocation)],
+    [output], [`proven_println("... {} ...", PROVEN_ARG(x))`],
+    [format specification], [`{:>8}` `{:<8}` `{:.3}` — after the colon],
+    [the price], [a `PROVEN_ARG` per argument, a syntax unlike the familiar `%d`],
+)
+]
+
+The first program has run. Yet the `proven_println` just used can in fact fail too —
+because the band going to the screen may break (chapter 10). This function returns an
+error but *does not compel a check*, and that choice itself is a good entrance to
+understanding this library's error model. The next chapter is that.

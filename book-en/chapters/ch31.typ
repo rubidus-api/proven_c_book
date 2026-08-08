@@ -113,12 +113,12 @@ practice.
   On entering a `switch`, execution *jumps straight to the matching label*. So the two
   lines at the head of the block are executed for no value at all. And yet the variable
   `i` *exists* — once the block has been entered, that block's local variables get their
-  places (chapter 42's automatic storage duration).
+  places (chapter 43's automatic storage duration).
 
   The result is curious. If `expr` is 0 it jumps to `case 0:`, `i = 17` runs and 17 is
   printed; but *if it is not 0* it jumps straight to `default:` and `i` is read
   *never having been initialised* — the reading of an indeterminate value learned in
-  chapter 50. And that with the initialising line sitting there in plain sight.
+  chapter 51. And that with the initialising line sitting there in plain sight.
 
   This example is in the standard not to say "write it this way" but to pin down *the
   consequence of a `case` being merely a label*. The rules in practice are two — *do not

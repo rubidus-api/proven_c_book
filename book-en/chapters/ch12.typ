@@ -158,7 +158,7 @@ the contract does not mention?*
 The standard speaks in three ways — *it promises* (this is how it goes
 everywhere), *the implementation decides* (it varies, but must be documented), and
 *it says nothing at all*. The proper names for the three and the exact
-distinctions are chapter 50's business.
+distinctions are chapter 51's business.
 
 And practice holds one more place that has no name at all — *not guaranteed by
 the standard's words, yet working on every major implementation, and so widely
@@ -171,7 +171,7 @@ three above, a *grey area*.
   *Let this be nailed down: "grey area" is a name this book adopted for
   convenience.* Search the standard as long as you like and the phrase is not
   there. The standard uses three words, and each has an exact definition —
-  *implementation-defined*, *unspecified*, and *undefined behavior*. Chapter 50
+  *implementation-defined*, *unspecified*, and *undefined behavior*. Chapter 51
   treats those three properly.
 
   Why have another name, then? Because the standard's three leave one place in
@@ -213,12 +213,12 @@ names are enough.
 #dtable(
   columns: 2,
   [*The practice*], [*Where it is treated*],
-  [Pushing a pointer to zero with `memset` and calling it null], [Chapters 6, 36, 44],
+  [Pushing a pointer to zero with `memset` and calling it null], [Chapters 6, 36, 45],
   [Walking a declared two-dimensional array as if it were flat], [Chapter 39],
-  [Subtracting an `offsetof` to recover the enclosing struct (`container_of`)], [Chapter 45],
-  [Writing `int rc = setjmp(env);` outside the four contexts the standard fixes], [Chapter 70],
-  [Forcing a layout with `#pragma pack`], [Chapter 45],
-  [Converting a function pointer to `void *` to print or pass it], [Chapter 57 — where POSIX requires it],
+  [Subtracting an `offsetof` to recover the enclosing struct (`container_of`)], [Chapter 46],
+  [Writing `int rc = setjmp(env);` outside the four contexts the standard fixes], [Chapter 71],
+  [Forcing a layout with `#pragma pack`], [Chapter 46],
+  [Converting a function pointer to `void *` to print or pass it], [Chapter 58 — where POSIX requires it],
 )
 
 #qa[
@@ -275,11 +275,11 @@ another standard makes the promise in its place.*
 #dtable(
   columns: 3,
   [*What C leaves open*], [*What promises instead*], [*Example*],
-  [The format and rounding of floating point], [IEEE 754 (= ISO/IEC 60559)], [That a `float` is 32 bits and how it rounds (chapters 8, 48)],
-  [Conversion between function pointers and `void *`], [POSIX (ISO/IEC 9945)], [`dlsym` returning a function's address as `void *` (chapter 57)],
-  [File names, paths, processes], [POSIX], [`open`, `fork`, the path separator (chapter 90)],
-  [The grammar of locale names], [POSIX], [The spelling `ko_KR.UTF-8` (chapter 66)],
-  [The character set], [Unicode (ISO/IEC 10646)], [When `__STDC_ISO_10646__` is defined (chapter 68)],
+  [The format and rounding of floating point], [IEEE 754 (= ISO/IEC 60559)], [That a `float` is 32 bits and how it rounds (chapters 8, 49)],
+  [Conversion between function pointers and `void *`], [POSIX (ISO/IEC 9945)], [`dlsym` returning a function's address as `void *` (chapter 58)],
+  [File names, paths, processes], [POSIX], [`open`, `fork`, the path separator (chapter 91)],
+  [The grammar of locale names], [POSIX], [The spelling `ko_KR.UTF-8` (chapter 67)],
+  [The character set], [Unicode (ISO/IEC 10646)], [When `__STDC_ISO_10646__` is defined (chapter 69)],
 )
 
 Do not read this as "C did not settle it, so anything goes". *Another contract is
@@ -295,7 +295,7 @@ lying in that place*, and it too was written with care.
   machine at all, the committee had to leave out what is true on particular
   machines only. Floating point was not nailed to IEEE 754, and function pointers
   were not equated with data pointers, because machines existed on which that
-  would not have worked (chapter 57's platform note is the list).
+  would not have worked (chapter 58's platform note is the list).
 
   *Second, the standard that fills the gap has its own reasons, and the two can
   collide.* POSIX required the conversion between function pointers and `void *`

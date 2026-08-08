@@ -116,7 +116,7 @@ derived from. Reduced to three practical rules.
   when the optimisation level or the compiler version changes. That "it ran just
   now" is not evidence of keeping the contract — that the criterion is
   chapter 14's "is it correct on the abstract machine" — is this chapter's
-  conclusion, and chapter 50 shows the whole of this subject.
+  conclusion, and chapter 51 shows the whole of this subject.
 ]
 
 We have the rules of pointers too. Now we take these tools to contiguous memory —

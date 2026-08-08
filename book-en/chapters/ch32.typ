@@ -79,7 +79,7 @@ and is the least frequently seen of the three.
   correctness]. Even if you do not write it out every time, the habit of asking
   "what fact does not change in this loop?" becomes the eye that catches most
   loop bugs — turning one too few or one too many, the off-by-one. It is also the
-  first exercise in the perspective of code as contract (chapter 49).
+  first exercise in the perspective of code as contract (chapter 50).
 ]
 
 #qa[
@@ -140,3 +140,7 @@ With repetition the tools of flow are complete — sequence (chapter 19), branch
 into the *meaning* of that device the function — how values cross over, what
 exactly a side effect is, and the formal answer to the seed planted in
 chapter 20 (the order of evaluation).
+
+(The *techniques* of loops --- nesting and traversal order, shedding several
+layers at once, the `do { } while (0)` that makes a macro one statement --- need
+arrays first, so they are gathered in chapter 40.)

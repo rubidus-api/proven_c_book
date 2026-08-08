@@ -100,7 +100,7 @@ million slots all at zero" does not grow large.
   Conversely, *a temporary value on the workbench (the stack) is not 0.* It inherits
   as it stands the place some other work just used and left, so what remains there
   cannot be known. This difference is one of the places people learning C stumble at
-  most often, and chapter 42 treats it formally.
+  most often, and chapter 43 treats it formally.
 ]
 
 == The characters of the three regions contrasted
@@ -133,7 +133,7 @@ these three regions are broken.
   on the workbench, or write a program that calls itself endlessly, and the workbench
   overflows and the program dies on the spot — the name is exactly that, *stack
   overflow* (the name of the world's most famous programming question site came from
-  here). The detailed numbers and remedies are treated in chapters 42 and 80.
+  here). The detailed numbers and remedies are treated in chapters 43 and 81.
 ]
 
 #misconception[
@@ -142,7 +142,7 @@ these three regions are broken.
   Half right. The problem is not the amount but *which region is used and how*. Values
   used briefly on the workbench and cleared away are nearly free however many there
   are, while repeatedly borrowing from and returning to the warehouse is noticeably
-  slow even with small amounts (we measure it in chapter 43). And for a reason we
+  slow even with small amounts (we measure it in chapter 44). And for a reason we
   shall see in chapter 11, *the same amount scattered or gathered* makes a difference
   of several times. A sense for handling memory grows not from "how much" but from
   "where, and in what order".
@@ -158,10 +158,10 @@ whole book.
   [*where*], [*what*],
   [chapters 5 and 6], [addresses and alignment — the geography of the corridor the regions lie in],
   [chapter 11], [the ladder of memory — even the same region differs in speed by cache],
-  [chapter 42], [lifetime and storage duration — what C's grammar calls these regions],
-  [chapter 43], [dynamic memory — the discipline of borrowing from and returning to the warehouse],
-  [chapter 80], [the real map in operating systems and embedded work],
-  [chapter 81], [inside the allocator that manages the warehouse],
+  [chapter 43], [lifetime and storage duration — what C's grammar calls these regions],
+  [chapter 44], [dynamic memory — the discipline of borrowing from and returning to the warehouse],
+  [chapter 81], [the real map in operating systems and embedded work],
+  [chapter 82], [inside the allocator that manages the warehouse],
 )
 
 We have seen what a program puts where. The next chapter looks briefly at what the

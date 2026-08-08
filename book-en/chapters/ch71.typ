@@ -1,177 +1,308 @@
 #import "../../book/lib.typ": *
 
-= Numbers — `<math.h>`, `<fenv.h>`, `<tgmath.h>`
+= In practice — handling Unicode and multibyte encodings
 
 #prereq(
-  ([chapter 48, Real numbers], [the mathematics of approximation]),
-  ([chapter 8, Representing numbers], [IEEE 754]),
+  ([chapter 70, Wide characters ②], [UTF-16 and the platform split]),
+  ([chapter 69, Wide characters ①], [conversion functions and `mbstate_t`]),
+  ([chapter 9, Characters and text], [code points and encodings]),
 )
 
 #deepqa[
-  Chapter 48 said not to compare reals with `==`, and chapter 8 said 0.1 is not
-  exactly representable. Then how does a mathematical function tell you when it
-  receives "input it cannot calculate"?
+  Through chapters 69 and 70 the advice "handle UTF-8 byte strings as they are"
+  kept returning. But if you handle bytes as they are, how do you do something
+  like "delete the third character"?
 ][
-  There are two paths. It gives NaN or an infinity as the *return value*, and at
-  the same time leaves the reason in *`errno`* — `EDOM` for outside the domain,
-  `ERANGE` when the result exceeds the representable range. But an implementation
-  may choose to report through the floating-point exception flags (`<fenv.h>`)
-  instead of `errno`, so to check portably you must be ready to look at both. In
-  the field it is usually simpler to check the return value with `isnan` and
-  `isinf`.
+  *Because most programs never do that.* Count what they actually do: read,
+  store, compare, concatenate, search, and hand back out. All six work on UTF-8
+  byte strings *with no decoding at all.*
+
+  The work that needs characters — moving a cursor, finding a line-break point,
+  counting letters — belongs to an editor or a renderer, and at that layer even
+  code points are not enough; you need *grapheme clusters*. This chapter draws
+  that line: how far to go on bytes, where decoding begins, and what to watch for
+  there.
 ]
 
 #organizer[
-  We look at how real-number calculation reports failure. The mathematics of
-  approximation learned in chapters 8 and 48 becomes the contract of functions here
-  — calls outside the domain, results beyond the range, the properties of NaN and
-  infinity, and the hidden global state called the rounding mode.
+#idx("UTF-8")  The prescriptions of practice. Why a UTF-8-first design wins, the three layers
+  of "how many characters" and grapheme clusters, normalisation, case that
+  depends on language, a UTF-8 validator written by hand, and the traps of the
+  legacy two-byte encodings still in use.
 ]
 
 #chapter-questions()
 
-== The properties of NaN and infinity
+== The principle — UTF-8 inside, conversion only at the boundary
 
-#demo("examples-en/ch71/math.c")
+The conclusion first.
 
-Four things to point out in the output.
+#dtable(
+  columns: 2,
+  [*Place*], [*What to use*],
+  [Inside the program], [UTF-8 byte strings (`char *`, length in bytes)],
+  [Files, networks, databases], [UTF-8],
+  [Calling the Windows API], [Convert to UTF-16 at the boundary only],
+  [Character-level editing and rendering], [Decode to code points or graphemes only where needed],
+)
 
-*① NaN is not equal to itself.* IEEE 754 settled it so. Hence the old idiom that
-if `x != x` is true then `x` is NaN, while the standard function is `isnan(x)`.
-Because of this property, sorting an array containing NaN with `qsort` breaks the
-comparator's total order and the result collapses (chapter 64).
+Why this design wins follows straight from UTF-8's properties.
 
-*② Dividing a real by zero is not outside the contract.* Unlike integer division
-(chapter 28), in an IEEE 754 environment it yields an infinity or a NaN. But the
-same holds that *the very fact of dividing by zero is usually a bug*.
+#dtable(
+  columns: 2,
+  [*Property of UTF-8*], [*What it buys*],
+  [Fully compatible with ASCII], [Existing code, protocols and file formats keep working],
+  [Trail bytes are always 0x80 or above], [They never collide with separators like `'/'`, `'\\'` or `','`],
+  [It is self-synchronising], [A character boundary can be found from any position],
+  [Byte order equals code-point order], [`strcmp` gives a code-point-ordered sort],
+  [It has no endianness], [No byte order mark is needed],
+)
 
-*③ `sqrt(-1)` is `EDOM`, `exp(1000)` is `ERANGE`.* The former is outside the
-domain, the latter a case where the result exceeded the representable range. If you
-mean to look at `errno`, set it to 0 just before the call (chapter 73).
+#demo("examples-en/ch71/utf8_scan.c")
 
-*④ 0.0 and −0.0 are equal under `==`.* But the sign bit differs, and `1/0.0` and
-`1/-0.0` are +∞ and −∞ respectively. If the sign must be distinguished, use
-`signbit`.
+The last part of the demonstration shows self-synchronisation. Point at any byte
+and testing `(b & 0xC0) == 0x80` alone tells you whether you are inside a
+character or at its start — which is why a buffer can be cut anywhere and
+recovered, and why a scanner can move on to the next character in damaged data.
 
-#misconception[
-  "Comparing reals is safe if you use an epsilon"
-][
-  The epsilon comparison learned in chapter 48 is not omnipotent. Absolute error
-  (`fabs(a-b) < eps`) becomes meaningless when the values are large — near 1e9,
-  1e-9 is not even representable — and relative error collapses near zero. The
-  prescription in the field is *settling a tolerance that fits the situation*, not
-  using a universal constant. And it is better to ask first whether it can be
-  handled with integers or fixed point so that the comparison is not needed at all
-  (chapter 8's story of calculating money).
-]
+== Validation — what to reject even when the shape is right
 
-#qa[
-  How do the functions of `math.h` report failure — the return value alone cannot say?
-][
-  In three ways. *Outside the domain* (say `sqrt(-1)`) they return NaN and set
-  `errno` to `EDOM`. *Beyond the range* (say `exp(1000)`) they return infinity and
-  set `ERANGE`. And the floating-point exception flags of `<fenv.h>` are raised.
-
-  The trouble is that *how far each of the three is honoured varies between
-  implementations*. So the practical idiom is to clear `errno = 0` before the call
-  and check immediately after (chapter 73). To inspect the value itself use
-  `isnan` and `isinf` — they say what they mean, unlike tricks such as `x != x`.
-]
-
-== Functions often got wrong
+Code that reads UTF-8 *must validate*. The rules are RFC 3629 (STD 63), and three
+things are not caught by the shape alone.
 
 #dtable(
   columns: 3,
-  [*function*], [*what it does*], [*trap*],
-  [`pow(x, y)`], [raising to a power], [used for an integer power it can be slow and inexact],
-  [`round`, `nearbyint`], [rounding], [`round` goes away from zero, `nearbyint` follows the current mode],
-  [`floor`, `ceil`, `trunc`], [cutting to an integer], [the direction differs for negatives],
-  [`fmod`, `remainder`], [the remainder], [their sign rules differ from each other],
-  [`abs`, `fabs`], [absolute value], [★ `abs` is for integers. used on a real it truncates],
-  [`atan2(y, x)`], [angle], [the argument order is `y, x`],
-  [`isnan`, `isinf`], [classification], [they are macros — they cannot be used as function pointers],
+  [*What to reject*], [*Example*], [*Why*],
+  [Overlong encodings], [`C0 80`], [U+0000 written in two bytes — a classic way past a check],
+  [Encoded surrogates], [`ED A0 80`], [U+D800 is not a character (chapter 70)],
+  [Out of range], [`F5 80 80 80`], [Beyond U+10FFFF],
 )
 
-`pow(x, 2)` is widely used, but for an integer square `x * x` is faster and exact.
-The compiler often optimises it, but not always.
+The demonstration rejects each of the three. The first row matters most —
+*overlong encodings are a security problem.* There really were attacks that wrote
+`..` or `/` in several bytes to slip past a path check, so that a later layer
+would interpret them again. That is why "only the shortest form is valid" became a
+requirement of the specification.
 
-The mistake of using `abs` on a real is especially quiet. `<stdlib.h>`'s `abs`
-takes an `int`, so `abs(-1.5)` turns −1.5 into 1. Today's compilers warn, but it is
-easy to miss in a file that does not include `<math.h>`.
-
-== Rounding modes and floating-point exceptions — `<fenv.h>`
-
-Floating-point operations have two pieces of *hidden global state*.
-
-*The rounding mode* — the default is "to the nearest value, ties to even". It can
-be changed with `fesetround`, and once changed every subsequent real operation is
-affected.
-
-*The exception flags* — flags are raised when division by zero, overflow,
-inexactness and so on occur. They are read with `fetestexcept` and cleared with
-`feclearexcept`. They are finer than `errno`, but to use this facility
-`#pragma STDC FENV_ACCESS ON` must be turned on — and then the compiler refrains
-from reordering real operations, so optimisation is reduced.
-
-#antipattern[
-  Turning on `-ffast-math` and checking for NaN
+#misconception[
+  "UTF-8 is just bytes, so it can be passed through without validation"
 ][
-  ```sh
-  cc -O2 -ffast-math app.c        # tells the compiler "take it that NaN and infinity do not exist"
-  ```
-  ```c
-  if (isnan(x)) { /* this branch can vanish entirely */ }
-  ```
-  Options of the `-ffast-math` family tell the compiler it may assume
-  associativity and ignore the existence of NaN and −0.0. Speed is gained, but *the
-  checking code can vanish under optimisation* — the real-number edition of the
-  "bug that appears only in release" seen in chapter 17. In a program where
-  numerical accuracy matters, not turning it on is the default.
+  Passing it through the middle untouched is mostly safe. The problem is *the
+  moment of interpretation.*
+
+  An unvalidated byte string can be interpreted differently by different layers,
+  and that mismatch becomes a security hole — the first layer sees "odd bytes" and
+  lets them by, the next reads them as `/`. This is especially so where a web
+  server, a file system and a database meet.
+
+  One discipline — *validate once at the input boundary and trust it afterwards.*
+  Marking clearly in the code where that happened is part of the discipline. Part
+  XII's `u8` family in proven is an example of enforcing it through the type.
 ]
 
-== Type-generic — `<tgmath.h>`
+== The three layers of "how many characters", and the fourth
 
-`sqrt` is for `double`, `sqrtf` for `float`, `sqrtl` for `long double`. Include
-`<tgmath.h>` and the edition fitting the argument's type is chosen by `sqrt(x)`
-alone — the representative case of the `_Generic` seen in chapter 56 being used in
-the standard library.
+Chapter 70 said length has three answers. Counting what a reader sees makes four.
 
-It is convenient but has a price. Being macros, they cannot be passed as function
-pointers, and there may be implementations that evaluate the argument twice, so
-putting in an expression with side effects is dangerous.
+#demo("examples-en/ch71/graphemes.c")
+
+#dtable(
+  columns: 3,
+  [*Layer*], [*Unit*], [*Where it is used*],
+  [Bytes], [`char`], [Storage, transmission, buffer sizes],
+  [Code units], [A UTF-16 unit, …], [The `length` of Java and JavaScript],
+  [Code points], [One Unicode value], [Normalisation, classification, conversion],
+  [Grapheme clusters], [What a reader sees as one character], [Cursor movement, counting, truncation],
+)
+
+The demonstration measures the difference. One emoji family is *18 bytes, 5 code
+points, 1 visible character.* An invisible character, ZWJ (U+200D), joined three
+people into one. A flag is two regional indicators gathered into one.
+
+The same happens in Hangul. "가" can be written as the precomposed U+AC00 or as
+U+1100 (ㄱ) + U+1161 (ㅏ) — what appears on screen is the same letter.
+
+#qa[
+  How do you count grapheme clusters?
+][
+  The rules are Unicode Annex UAX \#29. It defines "where a character breaks" by
+  combinations of character properties, and implementing it properly needs the
+  Unicode database.
+
+  The demonstration's count is a *simplified version* covering the four cases you
+  meet most — combining marks, Hangul conjoining jamo, ZWJ joins and regional
+  indicator pairs. That is enough to count most emoji and Hangul correctly, but it
+  is not complete.
+
+  The practical conclusion: *do not implement it yourself.* Where grapheme units
+  are genuinely needed (an editor's cursor, display width), use ICU or its like.
+  The purpose of this section is to know *when* they are needed: not for storage,
+  comparison or transmission, but only when handling what a person sees.
+]
+
+== Normalisation — the same letter, different bytes
+
+The two ways of writing "가" become a problem at once in practice, *because
+different bytes make `strcmp` say different.* To the user it is the same letter,
+yet the search misses, file names collide, and a login name is treated as another.
+
+Unicode handles this with *normalisation* (UAX \#15). There are four forms.
+
+#dtable(
+  columns: 3,
+  [*Form*], [*What*], [*Example*],
+  [NFC], [Compose as far as possible (the usual recommendation)], [`ㄱ`+`ㅏ` → `가`],
+  [NFD], [Decompose as far as possible], [`가` → `ㄱ`+`ㅏ`],
+  [NFKC, NFKD], [Also unify compatibility characters that look different], [`㈜` → `(주)`, fullwidth `Ａ` → `A`],
+)
 
 #realcase[
-  The same calculation, a different answer — the history of excess precision
+  macOS file names and NFD
 ][
-  x86's old floating-point unit (x87) calculated internally in 80 bits. So it
-  happened that the same `double` operation differed depending on whether it was
-  still in a register or had been stored to memory — change the optimisation level
-  and the result changed minutely, and `x == y` that had been true could become
-  false.
+  macOS's HFS+ file system stored file names *normalised into something close to
+  NFD*. So a Korean file name created on macOS and moved to Linux often appeared
+  with its jamo pulled apart.
 
-  C99 made this circumstance explicit with `FLT_EVAL_METHOD`, and today's 64-bit
-  x86 uses SSE so the problem has greatly diminished. But the possibility of "the
-  same code, a different answer" still remains in compilation options and the
-  target machine — the reason chapter 48 said "real-number calculation needs
-  reproducibility looked after separately."
+  For the same reason archives broke, web servers returned 404, and `git status`
+  reported perfectly good files as modified. Git ended up adding a
+  `core.precomposeunicode` setting to put names back into NFC on macOS.
+
+  Two lessons. *One, normalise before comparing strings* — especially when using
+  something a person typed (a file name, a user name, a search term) as a key.
+  *Two, settle on one form across the whole system* — usually NFC.
+
+  Standard C has no normalisation function. ICU or its like is required.
 ]
 
-#recap[
-  Numbers in summary.
+== Case and sorting depend on the language
 
+The assumption that `toupper` turns one character into one character also
+collapses under Unicode.
+
+#dtable(
+  columns: 3,
+  [*Example*], [*What happens*], [*So*],
+  [Turkish `i`], [Its capital is `İ` (dotted I)], [Without a locale it cannot be done right],
+  [Turkish `I`], [Its lower case is `ı` (dotless i)], [The exact opposite of English],
+  [German `ß`], [Its capital is `SS`, two letters], [Not a one-to-one mapping],
+  [Greek `Σ`], [At the end of a word it is `ς`], [It depends on position],
+)
+
+#realcase[
+  The Turkish `i` — code that really did break
+][
+  The common idiom "to compare case-insensitively, upper-case both and compare"
+  breaks in a Turkish locale. Upper-casing `"file"` gives `"FİLE"`, which is not
+  `"FILE"`.
+
+  Because of this, extension checks failed, HTTP header names did not match and
+  configuration keys went unrecognised in real software. Java's
+  `toUpperCase(Locale.ROOT)` exists as a separate call because of this problem.
+
+  The remedy is to separate the layers. *What a machine compares — protocols,
+  identifiers, file extensions — is folded by ASCII rules only, independent of the
+  locale.* The locale is used only for names shown to people.
+
+  ```c
+  /* for machines — ASCII only, independent of the locale */
+  static char ascii_lower(char c)
+  { return (c >= 'A' && c <= 'Z') ? (char)(c - 'A' + 'a') : c; }
+  ```
+]
+
+== Still alive — the legacy two-byte encodings
+
+The world has not all become UTF-8. Old files, old databases and the protocols of
+old equipment still carry regional two-byte encodings.
+
+#dtable(
+  columns: 3,
+  [*Encoding*], [*Region*], [*Underlying standard*],
+  [EUC-KR / CP949 (UHC)], [Korea], [KS X 1001 (formerly KS C 5601)],
+  [Shift_JIS / CP932], [Japan], [JIS X 0208],
+  [Big5], [Taiwan, Hong Kong], [— (a de facto standard)],
+  [GBK / GB 18030], [China], [GB 18030-2022 (a mandatory Chinese national standard)],
+)
+
+Their common structure is "lead byte + trail byte". And *in some of them the
+trail byte reaches into ASCII* — which is where the famous accident happens.
+
+#demo("examples-en/ch71/legacy_lead.c")
+
+The demonstration reproduces it. In Shift_JIS, 表 is `95 5C` and ソ is `83 5C`,
+and that second byte `0x5C` is the ASCII backslash. So
+`strrchr(path, '\\')` *mistakes a character's trail byte for a path separator.*
+In the demonstration it points at 7 instead of the correct 5, and cutting there
+breaks the file name.
+
+In Japan these characters even have a name — *dame-moji* (ダメ文字). 表, ソ, 十
+and ダ caused accidents over and over in path handling, escaping and SQL.
+
+#dtable(
+  columns: 3,
+  [*Encoding*], [*Trail byte range*], [`0x5C` as a trail?],
+  [EUC-KR], [A1\~FE], [No — safe],
+  [CP949], [41\~5A, 61\~7A, 81\~FE], [No — safe],
+  [Shift_JIS], [40\~7E, 80\~FC], [★ Yes],
+  [Big5], [40\~7E, A1\~FE], [★ Yes],
+  [GBK], [40\~FE (not 7F)], [★ Yes],
+  [UTF-8], [80\~BF], [No — structurally impossible],
+)
+
+*The Korean encodings escaped this accident by luck.* EUC-KR's trail bytes are
+all 0xA1 or above and so never touch ASCII. Code handling Japanese or Chinese, by
+contrast, must use a lead-byte-aware scan.
+
+#antipattern[
+  Scanning a legacy-encoded string byte by byte
+][
+  ```c
+  char *ext = strrchr(filename, '.');    /* can misbehave in Shift_JIS */
+  for (char *p = s; *p; p++)             /* mistakes a trail byte for a character */
+      if (*p == ',') split(p);
+  ```
+  On meeting a lead byte you must step over two. The `safe_last_sep` of the
+  demonstration is that shape. With standard functions, advance one character at a
+  time with `mblen` or `mbrtowc` — but only if the locale is that encoding
+  (chapter 69).
+
+  The better prescription is not to create the problem — *convert to UTF-8 at the
+  input boundary and handle only UTF-8 inside.*
+]
+
+== What does the converting
+
+#dtable(
+  columns: 3,
+  [*Means*], [*Where*], [*Character*],
+  [`iconv`], [POSIX], [Named by encoding. Outside standard C, but on every Unix],
+  [The `MultiByteToWideChar` family], [Windows], [Named by code page number],
+  [ICU], [Portable], [The most complete — normalisation, collation, graphemes],
+  [The `mbrtowc` family], [Standard C], [*Only the locale's encoding* (chapter 69)],
+  [Writing it yourself], [—], [UTF-8 ↔ UTF-16/32 is short. The demonstrations are the example],
+)
+
+Let us restate that standard C alone cannot handle an arbitrary encoding.
+`mbrtowc` knows only "the encoding of the current locale". So a task like "read a
+EUC-KR file and save it as UTF-8" is outside standard C and needs `iconv` or a
+conversion table of your own.
+
+#recap[
   #dtable(
-    columns: 3,
-    [*situation*], [*what to use*], [*what to beware of*],
-    [checking for NaN], [`isnan`], [`x == NaN` is always false],
-    [checking for infinity], [`isinf`], [dividing a real by zero is not UB],
-    [the kind of a value], [`fpclassify`], [the existence of subnormal numbers],
-    [domain and range errors], [the return value + `errno`], [`errno = 0` just before the call],
-    [integer squares], [`x * x`], [`pow(x, 2)`],
-    [absolute value of a real], [`fabs`], [`abs` (for integers)],
-    [per-type functions], [`<tgmath.h>`], [macros — no arguments with side effects],
-    [fast-math options], [off by default], [checking code vanishes],
+    columns: 2,
+    [*What to remember*], [*The point*],
+    [Design], [UTF-8 byte strings inside, conversion at the boundary only],
+    [Validation], [Once, at the input boundary. Reject overlong, surrogate and out-of-range],
+    [Length], [Bytes, code units, code points, graphemes — settle which layer first],
+    [Normalisation], [To NFC before comparing. Not in standard C],
+    [Case], [ASCII rules for machines. Remember the Turkish `i`],
+    [Legacy], [Shift_JIS, Big5 and GBK have trail bytes that reach into ASCII],
+    [Scanning], [In legacy encodings, know the lead bytes and step over],
+    [Conversion], [`iconv`, ICU, platform APIs. Standard C only does the locale's encoding],
   )
 ]
 
-We have passed numbers. The next chapter is time — a place with unusually much
-that the standard does not settle for you.
+The story of characters that began in chapter 66 closes after six chapters —
+from the judgement of one byte through locales and `wchar_t` to the prescriptions
+of practice. The next chapter is what recent standards added, and the long
+argument over "safe" functions.

@@ -163,7 +163,7 @@ three representations*. That neutrality was not free — with different
 representations the result bits of the same operation differ, so the standard
 had no choice but to leave much of the behaviour of signed integers as "it
 depends on the machine." Half the reason signed overflow became *undefined
-behaviour* (chapter 50) lies here.
+behaviour* (chapter 51) lies here.
 
 Meanwhile reality converged on one side. The circuit simplicity of two's
 complement was overwhelming, so for decades essentially every new CPU used it
@@ -197,7 +197,7 @@ practice was promoted to a promise of the standard (exactly the pattern of the
   spectacularly was not an overflow "alarm" but a *downstream accident* caused
   by the wrapped value. Watching for overflow is the programmer's job, not the
   machine's — which is also why verified tools like proven check arithmetic
-  later on (chapters 41 and 85).
+  later on (chapters 42 and 86).
 ]
 
 == Shift — pushing bits wholesale
@@ -269,7 +269,7 @@ to promise.
   is by now a familiar pattern — unable to take sides, it put *shifts of at
   least the width* outside the contract, as undefined behaviour. "Where machines
   respond differently, the standard gives up on promising" — we meet this
-  pattern formally again in chapter 50.
+  pattern formally again in chapter 51.
 ]
 
 == Sign extension — from a narrow container to a wide one

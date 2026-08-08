@@ -1,287 +1,335 @@
 #import "../../book/lib.typ": *
 
-= The foundation — bytes, views, and arithmetic that does not overflow
+= Errors are values
 
 #prereq(
-  ([chapter 37, The rules of pointers], [alignment and provenance]),
-  ([chapter 38, Arrays], [arrays and bounds]),
-  ([chapter 78, How to ask about overflow], [arithmetic that does not overflow]),
+  ([chapter 50, Errors and contracts], [errors as values]),
+  ([chapter 83, The five bugs shipped for fifty years], [the unchecked return value]),
 )
 
 #deepqa[
-  Chapter 37 said that pointers to a character type (`char*`, `signed char*`,
-  `unsigned char*`) alone have the privilege of
-  peering into any object byte by byte, and chapter 13 showed code that broke that
-  rule quietly collapsing under optimisation. Then what, concretely, does "handling
-  bytes safely" keep?
+  Chapter 50 said C's ways of reporting an error are only three — the return value,
+  global state, and stopping the program — and that of these the return value is the
+  most honest. Then how does one say both "it failed" and "here is the result" with a
+  single return value?
 ][
-  Two things. First, *fix the type you peer with to the one the rule exempts* —
-  `unsigned char`. Second, *do not lose the range you are peering into* — carry a
-  pointer alone and you forget where your land ends, which is chapter 38's boundary
-  trespass. proven's basic vocabulary is these two each made into a type.
+  There are three ways. Mix an *impossible value* into the result's place (null,
+  `-1` — that trap seen in chapter 83), take the result out as an *output parameter*
+  and use the return value for status alone, or *hold both in one struct* and return
+  them together. proven uses the second and third together — and the third is
+  possible because, as learned in chapter 45, a C struct can be returned by value.
 ]
 
 #organizer[
-  We see the four basic vocabularies the whole library stands on — the type that
-#idx("view")  points at raw bytes, the *view* binding pointer and length into one,
-  size calculation that does not wrap, and alignment. Chapter 82's sixth bug (the
-  hidden type of bytes) and chapter 38's boundary problem obtain their answer at the
-  level of types here.
+  We see the answer to chapter 83's second bug — unconfirmed failure. The way of
+  returning failure as a value, the bundle holding a value and an error together,
+  and the device that makes the compiler protest if an error is thrown away. The
+  discipline set up in chapter 50, "errors are values", hardens here into a type.
 ]
 
 #chapter-questions()
 
-== Bytes have a name
+== Two shapes of return
 
-`proven_byte_t` is an alias for `unsigned char`. It seems no great thing, but one
-declaration writes down a contract — "this pointer is an eye that looks at
-*representation*, not something pointing at a value of some type".
+The rule is simple. *A function that can fail must return the failure as a value.*
 
-Why this distinction matters was already seen in chapter 13. Code that looks at the
-same memory alternately through `uint32_t*` and `uint16_t*` breaks the aliasing rule,
-and the compiler uses that premise in optimisation. Looking through `unsigned char`,
-on the other hand, is explicitly permitted by the standard. It is why the library
-always goes through this type when handling raw memory, and so through the library
-that bug cannot be written.
+- If there is no result to return, it returns a single `proven_err_t`.
+- If there is a result to return, it returns an `{err, value}` bundle — with a name
+  per type, such as `proven_result_u8str_t` or `proven_result_size_t`.
 
-== Views — pointer and length as one
+`proven_err_t` is an enumeration and success is `PROVEN_OK` (0). The check is always
+the single `proven_is_ok(err)` — writing `err == 0` would work too, but using the name
+lets the code survive a later change of representation.
 
-The vocabulary for pointing at memory is only three, and all are structs of two slots.
-The difference between the three is only *does it own* and *may it be changed*.
+=== Every error code
 
-```c
-/* ① an owned lump — "this memory is mine, and one day I give it back" */
-typedef struct {
-    proven_byte_t *ptr;
-    proven_size_t  size;
-} proven_mem_t;
-
-/* ② a borrowed reading window — it only peers into somebody's memory */
-typedef struct {
-    const proven_byte_t *ptr;
-    proven_size_t        size;
-} proven_mem_view_t;
-
-/* ③ a borrowed writing window — it may change somebody's memory but not return it */
-typedef struct {
-    proven_byte_t *ptr;
-    proven_size_t  size;
-} proven_mem_mut_t;
-```
-
-One `const` divides ② from ③, and *the name* divides ① from the rest. What this small
-struct does is one thing — *making sure the pointer and the length never part*. It is
-the answer to the problem chapter 40 called "the real problem of strings is carrying
-the length separately".
-
-#dtable(
-  columns: 4,
-  [*type*], [*owns*], [*writes*], [*where it comes from*],
-  [`proven_mem_t`], [yes], [yes], [an allocator (chapter 86)],
-  [`proven_mem_view_t`], [no], [no], [`_as_view`, slicing, literals],
-  [`proven_mem_mut_t`], [no], [yes], [an allocation result, a stack array, slicing],
-)
-
-There are paired functions for obtaining a window from an owned lump too —
-`proven_mem_view_from_owned` and `proven_mem_mut_from_owned`. The `from_owned` in the
-name means "leave the ownership as it is and open only a window".
-
-#demo("examples-en/ch85/mem.c")
-
-The example runs the vocabulary of this section and the next once each. Five places to
-point at.
-
-*① A view is two words.* The output's `sizeof(mem_view_t)=16` is that (on 64-bit,
-pointer 8 + length 8). That it is larger than a bare pointer (8 bytes) is a view's only
-cost, and in exchange bounds checking becomes possible.
-
-*② Only the writing window can change things.* The example changed the first letter
-with `mut.ptr[0] = 'A'` and every later output begins with `A`. Try to change the same
-place through the reading view and it is *a compile error* — that is what the `const`
-does.
-
-*③ Slicing has two editions.* We look at them closely in the next section.
-
-*④ Copying and moving have boundaries too.* `proven_mem_copy(dst, dst_cap, src)`
-*compulsorily* takes the destination's capacity and, if the source does not fit, writes
-not one byte and returns `OUT_OF_BOUNDS` (the output's `copy 15 into 8`). If they may
-overlap it is `proven_mem_move` — chapter 63's `memcpy`/`memmove` distinction as it
-stands.
-
-*⑤ You can ask which lump a pointer belongs to.*
-`proven_range_contains_ptr` is that, and what is worth noticing is that *the
-implementation compares as integers*. Comparing pointers from different allocations
-with `<` or `>=` is outside the contract (chapter 37), so the library converts to
-`uintptr_t` and then checks. It is the function chapter 86's arena uses when confirming
-"is this pointer one I handed out".
-
-This detour is not, however, *a portable check the standard guarantees.*
-`uintptr_t` is an optional type — an implementation need not have it — and the
-standard nowhere promises that converting pointers to integers preserves the
-order of addresses. What it promises is only the round trip: pointer →
-`uintptr_t` → the same pointer. On today's mainstream platforms, with their flat
-address spaces, the ordered comparison does what one expects; on machines where
-an address is not a single number — segmented addresses, or capability pointers
-(the CHERI of chapter 5) — it is another story. So this function should be read
-not as a contract but as *an assumption about the platforms proven supports*:
-a flat address space in which the integer conversion preserves order (see the
-support range in chapter 91).
-
-== Slicing — the operation used most in this part
-
-#demo("examples-en/ch85/view.c")
-
-`slice 6+4` is this section's heart. From an 8-byte view we asked for 4 bytes from
-the 6th, so two bytes are short. The library *does not cut off as much as there is* —
-it returns an error (number 2 is `PROVEN_ERR_OUT_OF_BOUNDS`). Giving as much as there
-is looks kinder, but then the caller cannot know whether what was received is what
-was requested. It is blocking chapter 82's truncation problem from repeating here.
-
-Four functions form pairs — reading/writing × checked/unchecked.
+Failures have a name per kind, and there are sixteen in all. They are not to be
+memorised; it is enough to know *what branches exist* — most code divides only success
+from failure, and looks at the branch only when attempting recovery.
 
 #dtable(
   columns: 3,
-  [*function*], [*what it returns*], [*when*],
-  [`proven_mem_view_slice_checked`], [an `{err, view}` bundle], [the default. when the boundary is unknown],
-  [`proven_mem_view_slice_unchecked`], [a view (no check)], [a hot loop whose boundary is already confirmed],
-  [`proven_mem_mut_slice_checked`], [an `{err, mut}` bundle], [the default (writing)],
-  [`proven_mem_mut_slice_unchecked`], [a writing window (no check)], [the same],
+  [*code*], [*what happened*], [*mainly where*],
+  [`PROVEN_OK`], [success (0)], [—],
+  [`ERR_NOMEM`], [the allocator could not hand out memory], [`_create`, `_grow`],
+  [`ERR_OUT_OF_BOUNDS`], [outside the vessel — refused rather than truncated], [`append`, `slice`, array indexing],
+  [`ERR_INVALID_ENCODING`], [the UTF-8/UTF-16 was broken], [string conversion, `hex`/`base64`],
+  [`ERR_INVALID_ARG`], [an argument is outside the contract (null, 0, an unusable allocator)], [almost every entry point],
+  [`ERR_IO`], [the outside world failed], [files and streams],
+  [`ERR_NOT_FOUND`], [what was sought is not there], [map lookup, opening a file],
+  [`ERR_INVALID_STATE`], [it cannot be done in the present state], [a closed stream, a destroyed object],
+  [`ERR_NEED_MORE`], [more input is needed before judging], [parsers and decoders],
+  [`ERR_OVERFLOW`], [a size calculation overflowed], [`create`, container growth],
+  [`ERR_UNSUPPORTED`], [this environment does not have that facility], [OS features under freestanding],
+  [`ERR_AGAIN`], [not now — try again], [non-blocking I/O],
+  [`ERR_EOF`], [the end was reached], [reading],
+  [`ERR_BUSY`], [somebody else is using it], [locks, the job queue],
+  [`ERR_PERMISSION`], [there is no permission], [files],
+  [`ERR_INVALID_FORMAT`], [the format was wrong], [parsing, format strings],
 )
 
-The checked edition's contract is three lines. *If the length is nonzero and the
-pointer is null*, `INVALID_ARG`. *If `offset` exceeds the size, or `offset + size`
-exceeds it*, `OUT_OF_BOUNDS` — and it matters that this check is written not as
-`offset + size > view.size` but as `size > view.size - offset`. The former can wrap in
-the addition; the latter never can (the same spirit as the checked arithmetic later in
-this chapter). *If the size is 0* it returns an empty view with a null pointer and size
-0 — a safeguard against dereferencing a pointer to nothing.
+#demo("examples-en/ch85/codes.c")
 
-#qa[
-  I saw the slicing function in two editions, `_checked` and `_unchecked` — why does
-  the latter exist?
-][
-  For places where the boundary has *already been checked*. Redoing the same check
-  every turn inside a loop is waste, so one checks once before the loop and uses the
-  unchecked edition inside.
+The latter part of the example shows this table in the flesh. Try to put twelve bytes
+into an eight-byte vessel and `OUT_OF_BOUNDS` comes — *and the original is left
+untouched* (the length is still 0). Give an unusable allocator and it is caught as
+`INVALID_ARG` before anything is made. Slicing outside the range too is a refusal, not
+"as much as there is".
 
-  ```c
-  /* read in 8-byte pieces — the loop condition already guarantees the boundary */
-  for (proven_size_t off = 0; off + 8 <= buf.size; off += 8) {
-      proven_mem_view_t chunk = proven_mem_view_slice_unchecked(buf, off, 8);
-      process(chunk);
-  }
-  ```
+Two things are worth taking from here. First, *`ERR_INVALID_ARG` is usually a bug in my
+own code* — not a failure of the outside world but a contract violation, so it is to be
+mended rather than recovered from. Second, `ERR_EOF` and `ERR_AGAIN` are *part of the
+normal flow*. In a reading loop EOF is not an error but the ending condition
+(chapter 91).
 
-  That the name carries `_unchecked` matters — the dangerous choice can be made only
-  through *a visible name*, and the default is always the safe side. It is one form of
-  chapter 49's "write the contract as code", with the practical benefit too that
-  searching for `_unchecked` in review skims the dangerous places.
-]
+=== The kinds of result bundle
+
+A function with a value to return has one bundle per type. The naming rule being the
+same, the list need not be memorised — inside a `proven_result_XXX_t` there are always
+just `err` and `value`.
+
+#dtable(
+  columns: 3,
+  [*bundle*], [*the type of `value`*], [*where it is returned*],
+  [`proven_result_size_t`], [`proven_size_t`], [lengths, counts, bytes written],
+  [`proven_result_mem_mut_t`], [`proven_mem_mut_t`], [allocators (chapters 86 and 87)],
+  [`proven_result_mem_view_t`], [`proven_mem_view_t`], [slicing (chapter 86)],
+  [`proven_result_u8str_t`], [`proven_u8str_t`], [making a string (chapter 88)],
+  [`proven_result_buf_t`], [`proven_buf_t`], [making a buffer],
+  [`proven_result_cstr_t`], [`const char *`], [exporting as a C string (chapter 88)],
+  [`proven_fmt_result_t`], [(amount written and amount needed)], [formatting (chapter 89)],
+)
+
+Only the last row is of a different grain. For formatting, "success or failure" is not
+enough — if it was truncated you must know *how much more was needed* — so beside `err`
+it carries two numbers as well (we look at it closely in chapter 89).
+
+#demo("examples-en/ch85/errval.c")
+
+This example contains all of this chapter's syntax. `make_greeting` sends the result
+out through an output parameter (`out`) and used the return value for status alone —
+on failure it passes it up as it is. And `proven_u8str_create` returns a bundle, so
+`made.value` is taken out *only after checking*. The order must not be reversed.
 
 #antipattern[
-  Holding a view longer than its owner
+  Taking out `value` before checking
 ][
   ```c
-  proven_mem_view_t get_view(void) {
-      proven_byte_t local[16] = {0};
-      return (proven_mem_view_t){ .ptr = local, .size = sizeof local };
-  }   /* local dies here — the returned view is already invalid */
+  proven_u8str_t s = proven_u8str_create(alloc, 64).value;   /* dangerous */
   ```
-  A view is *borrowed*. When the owner vanishes it becomes invalid that instant, and
-  use after that is the access to a dead automatic variable learned in chapter 42.
-  That a view is safer than a pointer is about *boundaries*, not about *lifetime* —
-  lifetime is still for a human to keep. That is why the next chapter's story of
-  allocators becomes necessary.
+  It finishes in one line and looks clean, but what comes into your hand on failure
+  is *a meaningless value*. The bundle's contract is "`value` has meaning only when
+  `err` is `PROVEN_OK`", so this code has skipped the contract. That on failure a
+  struct filled with zeros usually arrives and it does not die immediately is rather
+  the danger — the accident is put off until much later (that pattern from
+  chapter 83).
 ]
 
-== Size arithmetic that does not overflow
+The output of the second call compresses this part's theme. On trying to put
+`"Hello, world"` into a capacity of 8 bytes, the library, *instead of putting in as
+much as fits and declaring success*, wrote nothing and returned a failure. It is the
+exact opposite choice from `snprintf`'s quiet truncation seen in chapter 83.
 
-Chapter 27 taught the wrap-round of unsigned integers, and chapter 7 showed why it is
-defined behaviour. The fact that wrapping is quiet becomes especially dangerous in one
-place — *when calculating the number of bytes to allocate*.
+== Throw it away and the compiler protests
 
-```c
-void *p = malloc(count * sizeof(item_t));   /* if count is large it wraps */
+Returning the error as a value is not enough by itself. As seen in chapter 83, a
+return value *can be thrown away*. So functions for which failure is meaningful have
+C23's #idx("nodiscard")`[[nodiscard]]` attached (we saw the name in chapter 50).
+Throw the result away and the compiler really says this.
+
+```text
+warning: ignoring return value of ‘proven_u8str_append’,
+         declared with attribute ‘nodiscard’ [-Wunused-result]
+    5 |     proven_u8str_append(&s, proven_u8str_view_from_cstr("hi"));
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+note: declared here
+  123 | [[nodiscard]] proven_err_t proven_u8str_append(...);
 ```
 
-If `count` is large enough the product wraps into a very small number, and `malloc`
-succeeds at that small size. Then the program begins writing as many items as it
-originally intended — a typical heap overflow. This is the pattern chapter 27 gave as
-the real accident case of overflow, "size calculation".
+If the `-Werror` recommended in chapter 17 is turned on, this is not a warning but a
+*build failure*. What was "checking is optional" has become "it does not compile
+unless you check".
 
-#idx("checked arithmetic")The library uses C23's checked arithmetic for size
-calculation. The example's `PROVEN_CKD_MUL` is that: if the product overflows it
-returns *true* (the return value is whether it overflowed, not the result of the
-calculation). If it overflows, the allocation is not even attempted.
+Of course there are times when you really do want to ignore it. Then `(void)` is put
+in front.
+
+```c
+(void)proven_u8str_append(&s, view);   /* ignored knowingly */
+```
+
+#qa[
+  If it can be ignored with `(void)`, is it not compulsory after all?
+][
+  Because the purpose of the compulsion is not "to prevent ignoring" but *"to make
+  ignoring visible"*. An error thrown away with no mark is invisible in code review,
+  while a line with `(void)` attached becomes a declaration that "this failure is
+  deliberately ignored". The very fact that it must be typed is the heart of it — it
+  cannot be done by accident, only on purpose.
+]
+
+#qa[
+  But chapter 84's `proven_println` had no such mark. Why is screen output alone an
+  exception?
+][
+  Because contracts have grades too. The failure of a write going to the console has
+  conventionally been ignored (have you ever seen code that checks `printf`'s return
+  value?), and making every line of output carry a `(void)` would bury the code in
+  noise. So this library placed output in the grade that *returns the error but does
+  not compel a check*. Conversely, the functions on the *input* side do have the mark
+  — ignore the failure of a read and you treat "data not read" as though it had been
+  read, replaying chapter 83's second bug exactly. Where to attach the mark is itself
+  a design judgement.
+]
+
+== What remains after a failure — failure atomicity
+
+There is a question that naturally arises after receiving an error. *What state is
+the object the failed function was touching in now?*
+
+#idx("failure atomicity")The library's answer is *failure atomicity* — unless the
+documentation says otherwise, a failed operation leaves the target in the state it
+was in before being touched. If memory runs short while growing an array the existing
+elements are still alive, and if there is not enough room while appending to a string
+the original content stands. The second call of the example just now is that case —
+it failed, but no half-written string was left.
+
+Why does this matter? Without failure atomicity a caller can do nothing after a
+failure *but throw the object away*. With it, "give up this addition and carry on
+with what has been gathered so far" becomes possible.
 
 #misconception[
-  "`size_t` is as much as 64 bits, so it cannot overflow"
+  "If it fails we will end the program anyway, so what does the state matter"
 ][
-  It can, and it does. Because multiplication grows values *on a squared scale* —
-  four billion × four billion already exceeds 64 bits. Moreover on a 32-bit machine
-  `size_t` is still 32 bits, and code multiplying two 32-bit fields read from a file
-  format wraps on the spot. Most important of all is *who settles that number*. If the
-  size is a constant inside the program you may rest easy, but if it is a number that
-  came from a file or the network then it is *an operand chosen by the attacker*.
+  For a short-running command-line tool that may be so. But long-running programs —
+  servers, editors, games, firmware — must not die on one failure. If the whole server
+  went down because handling one request failed for lack of memory, that would be the
+  greater accident. Failure atomicity is the minimal condition that makes possible the
+  recovery of "throw away only this request and take the next".
+]
+
+== Raising a failure upward — together with the cleanup
+
+Receiving errors as values raises one practical problem at once. *If it fails in the
+middle, who gives back what has been taken so far?* In a language with exceptions the
+stack unwinds and destructors handle it, but C has no such device (chapter 74). So an
+idiom is needed.
+
+#demo("examples-en/ch85/cleanup.c")
+
+This example deliberately inserts a failing allocator (once the *budget* runs out it
+necessarily gives `NOMEM`) and runs all three cases — failure from the first
+allocation, one taken and failure at the second, and everything succeeding. The middle
+case is the heart of it. `x` has already been taken while `y` failed, so simply
+returning here is *a leak*.
+
+The pattern comes to three.
+
++ *Mark what you hold with a flag* — one boolean such as `has_x`. If the resources are
+  several, so are the flags.
++ *On failure everything gathers at one place* — `goto done`. That use chapter 74
+  called "disciplined `goto`".
++ *Clean up in reverse order of taking* — what was taken later is given back first.
+
+It is worth noticing too that after ownership passes with `*out = y;` on the success
+path, `y` is not destroyed thereafter. *You must be able to point at the place where
+ownership passes with a single line of code* — a function that cannot is usually one of
+blurred design.
+
+#qa[
+  Is deliberately making a failing allocator of any use in practice too?
+][
+  Of great use. The out-of-memory path is almost never executed in a real program, so
+  in most codebases it is *the least tested path*. And a leak or double free there is
+  the hardest of all to diagnose.
+
+  As chapter 87 will show, an allocator is simply a value, so a shell that "fails from
+  the nth call" can be made in ten lines, as in the example, and inserted. Raise n from
+  1 and run the tests and you can pass through *every failure point* once, and running
+  it with ASan or Valgrind (chapter 17) makes that path's leaks show themselves plainly.
+  It is the place where the decision that the library does not call `malloc` directly
+  comes back as testability.
+]
+
+== When there is nobody to return to — the panic
+
+To return an error as a value there must be *somebody to return it to*. But in a
+place where the contract itself is broken there is no such somebody — if, for
+example, a null arrived in a place where there is no reason whatever to pass a null,
+that is not a failure but means *the program's logic is already wrong*.
+
+For such places the library has a panic path. It is the same spirit as chapter 50's
+`assert`, differing in that the way it is handled can be swapped out so as to be
+usable in embedded work too (chapter 92).
+
+There are only two doors.
+
+```c
+void proven_panic(const char *msg);                       /* raise a panic */
+void proven_set_panic_handler(proven_panic_handler_t h);  /* swap the handler */
+```
+
+The default handler *does not return* — it stops the program on the spot (the
+implementation is `__builtin_trap()`). And this swapping is what pays in embedded work.
+On a board with no console there is nowhere to print a message, so a handler is
+registered that lights an LED, kicks the watchdog, or reboots.
+
+```c
+static void my_panic(const char *msg) {
+    (void)msg;
+    board_led_on(LED_FAULT);
+    for (;;) { }          /* it does not go back */
+}
+/* at the program's starting place */
+proven_set_panic_handler(my_panic);
+```
+
+*A handler must not return.* If it returns, the validity of what an `_or_panic`
+function gave back is not guaranteed — a panic is the declaration that "from here the
+program's premises are broken". The exception is test code deliberately using a
+returning handler to confirm the panic path, and even then the value after it is not
+used.
+
+The places where the library itself calls a panic can be counted on the fingers — the
+functions with `_or_panic` in the name (chapter 87's arena allocation is
+representative) and a few places where the contract is plainly already broken. Everything
+else is returned as a value.
+
+The distinction is best remembered like this.
+
+#recap[
+  #dtable(
+  columns: 3,
+    [*situation*], [*example*], [*the library's handling*],
+    [failure of the outside world], [out of memory, file not found, out of room], [return the error as a value],
+    [the caller's contract violation], [a null that must not be, reusing a destroyed object], [panic (or undefined)],
+    [failure that may be ignored], [console output failure], [return the error but do not compel],
+)
 ]
 
 #realcase[
-  The vulnerabilities one multiplication made
+  Other languages that chose errors as values
 ][
-  This pattern is a regular in the CVE lists. Cases have been reported repeatedly of
-  an image decoder wrapping while calculating
-  `width * height * bytes_per_pixel` in 32 bits, of a font parser wrapping while
-  multiplying the glyph count, of decompression code wrapping while multiplying the
-  original size. What they share is that *the input file settles the size* — that is,
-  the attacker can choose the multiplication's operands. So today's languages and
-  libraries do size calculation with checked arithmetic, or handle it with types that
-  cannot overflow at all.
+  This design is not C's invention alone but a current common to recent systems
+  languages. Go has functions return a result and an error side by side, and Rust
+  wraps success and failure in the single `Result` type and warns if it is ignored.
+  Both are languages that decided not to use exceptions, and the reason is the same —
+  *the error paths must be visible in the shape of the code*. Exceptions are
+  convenient but erase from the signature "which failure jumps where from here".
+  Three different languages, in effect, found the answer to the second row of
+  chapter 83's table from the same direction.
 ]
 
-== Alignment — pushing up to the next boundary
-
-The alignment learned in chapter 6 becomes a practical tool here.
-`proven_mem_align_up(13, 8)` returns 16 — because to fit an object starting at
-address 13 to an 8-byte boundary it must be pushed to 16. This is exactly the
-calculation the next chapter's arena does every time it lays objects out in a row.
-
-#dtable(
-  columns: 3,
-  [*name*], [*what*], [*note*],
-  [`proven_mem_align_up(a, n)`], [rounds `a` up to a multiple of `n`], [0 if it overflows or `n` is not a power of two],
-  [`proven_uintptr_align_up(p, n)`], [rounds an address up], [as an integer, instead of pointer arithmetic],
-  [`proven_is_pow2(n)`], [is it a power of two], [checking an alignment value],
-  [`PROVEN_MAX_ALIGN`], [`alignof(max_align_t)`], [usually 16. holds any type],
-  [`PROVEN_DEFAULT_ALIGNMENT`], [8], [the default for byte data such as strings and buffers],
-)
-
-*Reporting failure as 0* is these functions' peculiar contract. If the alignment is not
-a power of two or the rounding overflows they return 0, so the result must be checked
-for 0 before being used as a size. Inside the library the arena does that check for
-you, so you will call these directly only when making a data structure of your own.
-
-It is worth knowing too that the two constants have different uses. A byte array or a
-string is content with `PROVEN_DEFAULT_ALIGNMENT` (8), while *general allocation that
-does not know what type is coming* uses `PROVEN_MAX_ALIGN`. It is also why chapter 86's
-heap allocator divides the two — requests at or below the default alignment go to
-`malloc` (growth in place is then possible), and stricter requests to an aligned
-allocation.
-
-#recap[
-  This chapter's vocabulary.
-
-  #dtable(
-  columns: 3,
-    [*name*], [*what*], [*contract*],
-    [`proven_byte_t`], [an alias for `unsigned char`], [the only legal window onto representation],
-    [`proven_mem_view_t`], [a read-only view (ptr+size)], [borrowed — it cannot outlive its owner],
-    [`proven_mem_mut_t`], [a writable view], [the same],
-    [`..._slice_checked`], [making a sub-view], [an error if it exceeds the range, no truncation],
-    [`PROVEN_CKD_MUL/ADD`], [checked arithmetic], [true if it overflows — the calculation is discarded],
-    [`proven_mem_align_up`], [rounding up an alignment], [alignment is a power of two],
-)
+#qa[
+  What is the price of this way?
+][
+  `if`s multiply. There being no device like exceptions to sweep a deep failure up in
+  one go, code that checks and passes upward attaches at every place a failure is
+  met. That is half the reason the `make_greeting` of the example just now runs to
+  some twenty lines. In exchange one thing is gained — *where and what can fail is
+  visible in the code as it stands.* That there is no hidden failure is the thing
+  this library sells.
 ]
 
-We are equipped with the vocabulary for *looking at* memory. Next is the story of
-*obtaining* memory — and in that place we meet this library's most characteristic
-decision.
+Knowing the shape of errors, we now go down to what those errors protect — memory
+itself. The next chapter is bytes and views, and size calculation that does not
+overflow.

@@ -88,7 +88,7 @@ the tens of thousands of lines pasted in by `#include <stdio.h>` is exactly such
 *a bundle of prototypes*. Showing the compiler `printf`'s contract signature in
 #idx("header file")advance — that is the header file's job, and the linker joins
 the body (the story of that division of labour growing into multi-file projects
-is chapter 52).
+is chapter 53).
 
 We can now also state the age of this invention, the prototype — as chapter 12
 showed, it came in with C89's standardisation. Before that C did not check the
@@ -123,8 +123,8 @@ workers name things freely without worrying about touching one another's tools �
 half the secret of a program not collapsing as it grows is this partition. (The
 deeper circumstances of the workbench — the lifetime of names, the precise
 picture of how values travel between functions — continue in chapters 30 and
-42. And a name has two further properties besides scope — *linkage* and its
-*name space* — which chapters 52 and 53 set side by side with it.)
+43. And a name has two further properties besides scope — *linkage* and its
+*name space* — which chapters 53 and 54 set side by side with it.)
 
 == Settling the credit — int main(void)
 

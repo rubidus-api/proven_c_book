@@ -48,8 +48,8 @@ are; *only the type knows.*
   [*What a type settles*], [*Example*], [*More*],
   [size], [`sizeof(int)` = 4], [chapter 6],
   [representation], [`-1` as an `int` is `FF FF FF FF`], [chapters 7, 8],
-  [permitted operations], [`%` only on integers, `/` on arithmetic types], [chapters 28, 47],
-  [contract], [`const` says "I will not change this"], [chapters 23, 49],
+  [permitted operations], [`%` only on integers, `/` on arithmetic types], [chapters 28, 48],
+  [contract], [`const` says "I will not change this"], [chapters 23, 50],
 )
 
 So "knowing a type" is not knowing syntax but *knowing those four*. And the standard
@@ -68,7 +68,7 @@ The topmost division is in two.
 
 This division shows itself in practice. *`sizeof` cannot be applied to a function
 type*, and being no object it has neither size nor alignment. That is why treating a
-function as a value means turning it into *a pointer to a function* (chapter 57).
+function as a value means turning it into *a pointer to a function* (chapter 58).
 
 === Complete and incomplete types
 
@@ -86,7 +86,7 @@ An incomplete type is not a defect but *a tool*. It can express "I know this typ
 exists and nothing of its insides", which is what makes an *opaque type* possible ---
 hiding the insides in a header and passing only pointers (`FILE *` is the archetype).
 Hiding the insides means callers cannot depend on them, and that is the design gain
-(chapter 45).
+(chapter 46).
 
 #qa[
   `void` means "nothing at all", so why is it a type?
@@ -131,7 +131,7 @@ example of that sentence.
   [*Type*], [*Signedness*], [*Where it is used*],
   [`char`], [the implementation settles it --- *the same range, representation and behaviour* as either `signed char` or `unsigned char`], [for holding characters],
   [`signed char`], [signed], [a small signed integer],
-  [`unsigned char`], [unsigned], [*for looking at bytes* (chapter 46)],
+  [`unsigned char`], [unsigned], [*for looking at bytes* (chapter 47)],
 )
 
 The heart of it is the sentence a footnote nails down --- *whichever choice was made,
@@ -169,7 +169,7 @@ are three, not two.
   All that is special is the value: it is always 0 or 1, since putting any scalar into
   a `bool` gives 0 for zero and 1 for anything else. C99's `_Bool` gained the keyword
   `bool` in C23, and `<stdbool.h>` became a header you may or may not include
-  (chapter 79).
+  (chapter 80).
 ]
 
 == Integer, real, arithmetic — the collective names
@@ -181,13 +181,13 @@ are not *branches* of the tree but *words that gather several branches.*
   columns: 3,
   [*Name*], [*What it gathers (§6.2.5)*], [*Where the name is used*],
   [integer types], [`char` + signed integer + unsigned integer + *enumerated types*], [the operands of `%` and `<<`],
-  [real types], [integer types + *real* floating types (complex excluded)], [the operands of `++` and `--` (chapter 47)],
+  [real types], [integer types + *real* floating types (complex excluded)], [the operands of `++` and `--` (chapter 48)],
   [arithmetic types], [integer types + floating types (complex included)], [the operands of `+`, `-`, `*`, `/`; what promotion acts on],
   [scalar types], [arithmetic types + pointers + *`nullptr_t`* (C23)], [the condition of `if` and `while`, the operand of `!`],
   [aggregate types], [array + struct --- ★*not union*], [the rules for initializer lists],
 )
 
-In chapter 47's tables of operator contracts you will meet cells such as "operand: a
+In chapter 48's tables of operator contracts you will meet cells such as "operand: a
 real type or a pointer", and now they can be read exactly.
 
 #misconception[
@@ -197,7 +197,7 @@ real type or a pointer", and now they can be read exactly.
   called aggregate types"*. The union is missing.
 
   The reason is that "aggregate" means *holding several things at once*. A union has
-  only one member alive at a time (chapter 46's active member), so it does not fit
+  only one member alive at a time (chapter 47's active member), so it does not fit
   that definition.
 
   *C++ differs* --- there a union that meets the conditions is an aggregate. The
@@ -215,16 +215,16 @@ constructed is a *derived type*.
   columns: 3,
   [*Derivation*], [*From what to what*], [*More*],
   [array], [from element type T to "array of T"], [chapter 38],
-  [structure], [holding several types *in sequence*], [chapter 44],
-  [union], [holding several types *overlapping*], [chapter 46],
+  [structure], [holding several types *in sequence*], [chapter 45],
+  [union], [holding several types *overlapping*], [chapter 47],
   [function], [from return type T to "function returning T"], [chapter 24],
   [pointer], [from referenced type T to "pointer to T"], [chapter 35],
-  [atomic], [`_Atomic(T)` --- a conditional feature], [chapter 77],
+  [atomic], [`_Atomic(T)` --- a conditional feature], [chapter 78],
 )
 
 *These constructions apply recursively.* "An array of 10 pointers to int" and "a
 pointer to a function returning int" are both built that way. That recursion is
-exactly why chapter 58, "Reading declarations", is hard, and the standard gathers
+exactly why chapter 59, "Reading declarations", is hard, and the standard gathers
 three of them --- *array, function and pointer* --- under the name *derived declarator
 types*. Those three are precisely what must be unwrapped from the inside out when
 reading a declaration.
@@ -238,7 +238,7 @@ versions*.
   columns: 3,
   [*Qualifier*], [*What it promises*], [*More*],
   [`const`], [I will not change it through this name], [chapter 23],
-  [`volatile`], [it may change without my knowing, so do not optimise it away], [chapters 13, 75, 77],
+  [`volatile`], [it may change without my knowing, so do not optimise it away], [chapters 13, 76, 78],
   [`restrict`], [this object is reached only through this pointer], [chapter 38],
 )
 
@@ -338,7 +338,7 @@ The most used, and the most injuring, so it gets its own treatment.
 #antipattern[
   3. Thinking it is a new type
 ][
-  A `typedef` makes an alias, not a new type (chapter 58). So `uint8_t` and
+  A `typedef` makes an alias, not a new type (chapter 59). So `uint8_t` and
   `unsigned char` are *the same type*, and neither `_Generic` nor overloading can tell
   them apart. The measurement's first output is the evidence.
 
@@ -359,7 +359,7 @@ The most used, and the most injuring, so it gets its own treatment.
 #dtable(
   columns: 3,
   [*In this place*], [*use this*], [*why*],
-  [protocols, file formats, hardware registers], [exact width `uint32_t`], [the byte count is the contract (chapter 46)],
+  [protocols, file formats, hardware registers], [exact width `uint32_t`], [the byte count is the contract (chapter 47)],
   [portable code facing every implementation], [minimum width `uint_least16_t`], [exact width is optional],
   [loop counters, local computation], [fastest `uint_fast32_t`, or simply `int`], [where speed is worth more than width],
   [sizes, indices, byte counts], [`size_t` (`<stddef.h>`)], [it is `sizeof`'s type and covers any array],
@@ -382,7 +382,7 @@ is the contract*, not something good to sprinkle about for thrift.
   In practice another header such as `<stdio.h>` often drags `size_t` in for you,
   which blurs the distinction --- and *the day that header changes, it breaks.* The
   discipline is to include the header that defines the type you use (the same grain
-  as chapter 53's story about names).
+  as chapter 54's story about names).
 ]
 
 == Summary — the standard's words and this book's chapters
@@ -390,17 +390,17 @@ is the contract*, not something good to sprinkle about for thrift.
 #dtable(
   columns: 3,
   [*The standard's word*], [*What it is*], [*The chapter that faces it*],
-  [object type / function type], [what holds a value / what works], [here, chapters 24, 57],
-  [complete / incomplete type], [is the size known], [here, chapter 45],
-  [basic types], [`char` + integer + floating], [here, chapters 27, 47],
-  [character types], [the three `char`, `signed char`, `unsigned char`], [here, chapters 9, 40],
+  [object type / function type], [what holds a value / what works], [here, chapters 24, 58],
+  [complete / incomplete type], [is the size known], [here, chapter 46],
+  [basic types], [`char` + integer + floating], [here, chapters 27, 48],
+  [character types], [the three `char`, `signed char`, `unsigned char`], [here, chapters 9, 41],
   [integer types], [`char` + integer + enumerated], [chapter 27],
-  [real types], [integer + real floating], [chapter 47],
+  [real types], [integer + real floating], [chapter 48],
   [arithmetic types], [integer + floating], [chapter 29 (promotion)],
-  [derived types], [array, struct, union, function, pointer, atomic], [chapters 35–38, 44–46],
+  [derived types], [array, struct, union, function, pointer, atomic], [chapters 35–38, 45–47],
   [scalar types], [arithmetic + pointer + `nullptr_t`], [chapters 30, 36],
-  [aggregate types], [array + struct], [chapters 38, 44],
-  [qualified types], [`const`, `volatile`, `restrict`], [chapters 23, 38, 75],
+  [aggregate types], [array + struct], [chapters 38, 45],
+  [qualified types], [`const`, `volatile`, `restrict`], [chapters 23, 38, 76],
 )
 
 The map is open. From the next chapter we dig into its cells one at a time --- first

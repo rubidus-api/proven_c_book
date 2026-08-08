@@ -1,323 +1,388 @@
 #import "../../book/lib.typ": *
 
-= Strings
+= Loop techniques — nesting, escaping, and making a block
 
 #prereq(
-  ([chapter 9, Characters and text], [the representation of letters]),
-  ([chapter 38, Arrays], [arrays and subscripts]),
+  ([chapter 32, Loops and invariants], [the three loops `while`, `for`, `do-while`]),
+  ([chapter 39, Multidimensional arrays], [rows and columns, and their layout in memory]),
 )
 
 #deepqa[
-  Chapter 9 said the string representation C chose is NUL termination, "planting
-  a marker at the end", and foreshadowed its three prices (the length must be
-  counted, a NUL cannot be held as content, lose the marker and it runs away).
-  Now that you have learned arrays (chapter 38) — how would you define a C string
-  exactly, yourself?
+  Chapter 32 taught the three loops and chapter 39 the two-dimensional array.
+  So the sum of every cell of `int a[1000][1000]` can be written two ways ---
+  rows first, or columns first. The two give *the same answer*. What differs?
 ][
-  *A char array, somewhere in which there is a byte of value 0 (the NUL
-  character, `'\0'`), plus the agreement that "the string" means from the start
-  to just before that marker* — that is all. There is no separate string type. An
-  array, and an agreement. This chapter treats the use and the cost of that
-  agreement.
+  *The speed --- by about eight times.* As chapter 39 showed, a 2-D array is laid
+  out in memory *row by row* (row-major), and as chapter 11 showed, the cache
+  brings in *neighbouring bytes together*. Walk along a row and you spend the
+  line you fetched; walk down a column and every step calls for a new one.
+
+  Having learned loops and knowing how to *drive* them are different things.
+  This chapter fills that gap.
 ]
 
 #organizer[
-#idx("string")  C's string faced head on — its identity as a char array plus
-  NUL termination, the special circumstances of string literals, the real cost of
-  measuring length, and the practical matter of "character count ≠ byte count"
-  that Hangul brings out. The last of the three nulls (the NUL character) gets
-  its formal treatment here.
+#idx("nested loop")  The practical techniques of loops, gathered --- nesting and traversal order
+  (measured), the four ways of leaving nested loops and how they rank, the two
+  places where `goto` is right and the discipline it demands, the
+  `do { } while (0)` that makes a macro one statement, and the idioms and traps
+  met over and over in practice. If chapter 32 was "what a loop is", this
+  chapter is "how a loop is driven".
 ]
 
 #chapter-questions()
 
-== The identity — an array, and an agreement
+== Nested loops — walking a multidimensional array
 
-`char greet[] = "안녕";` — initialise an array with a string literal and the
-compiler builds the array by *appending `'\0'` after* the bytes of the
-characters. The demonstration dissects it.
-
-#demo("examples-en/ch40/str.c")
-
-There are layers to read. `strlen` (the length measurement of the standard
-`<string.h>`) answered 6 — "안녕" is *two characters, six bytes* (exactly
-chapter 9's UTF-8 table: Hangul syllables live in the 3-byte range). The byte
-dump `EC 95 88 EB 85 95` is the bare face of those six bytes, and `sizeof greet`
-is 7 — the size of a container that also holds the NUL marker. This is the moment
-chapter 8's misconception ("one character = one byte") is disproved by an
-execution result.
-
-`strlen`'s *cost* can now be stated exactly too — as chapter 9 foretold, NUL
-termination does not write the length down, so strlen *walks one slot at a time
-until it meets the marker*. The longer the string the longer it takes
-(proportional to the slot count), which is why code calling strlen in a loop
-condition every time is a classic performance trap (the demonstration's loop is
-in fact that pattern — harmless for a short string, but for a long one the
-practice is to take the length into a variable first).
-
-== String literals — read-only ground
-
-Instead of initialising an array you may hold a literal in a pointer — and here
-lies an important difference:
+Chapter 39's `int a[R][C]` lies in memory *as one line*, in row-major order ---
+`a[0][0] a[0][1] … a[0][C-1] a[1][0] …`. The order of the nested loops decides
+*with what stride* you walk that line.
 
 ```c
-char buf[] = "you may change this";      /* copied into my array — modifiable */
-const char *msg = "you must not change this";  /* points at the literal itself */
+for (int i = 0; i < R; i++)          /* rows first — one step to the neighbour */
+    for (int j = 0; j < C; j++)
+        sum += a[i][j];
+
+for (int j = 0; j < C; j++)          /* columns first — a whole row skipped each step */
+    for (int i = 0; i < R; i++)
+        sum += a[i][j];
 ```
 
-A string literal is itself *read-only data* baked into the program — attempting
-to modify it is outside the contract, and in a modern environment it usually
-collapses on the spot (literals being placed in a write-forbidden region —
-chapter 6's protected zone doing another kindness). So the rule is to declare
-pointers to literals as `const char*` — where chapter 23's `const` was
-documentation saying "I will not change this", here it works as a lock that stops,
-at compile time, the mistake of trying to change what must not be changed.
+The same computation. Measured, not the same at all.
 
-=== The type is not `const` — C's odd place
+#dtable(
+  columns: 3,
+  [*Traversal*], [*Summing 4000×4000 `int`*], [*Why*],
+  [rows first `(i, j)`], [11–14 ms], [it uses up the line the cache fetched, then moves on],
+  [columns first `(j, i)`], [101–113 ms], [each step jumps 16 KB and calls for a new line],
+)
 
-And here lies C's famous contradiction. *It must not be modified, and yet its type
-carries no `const`.* The type of `"abcdef"` is not `const char[7]` but plain `char[7]`.
+*Eight times.* Same algorithm, same operation count, same result. Chapter 11's
+"the cache governs speed" becomes a visible number here.
 
-```c
-char *p = "hello";     /* C: it passes without a warning */
-p[0] = 'H';            /* but this is undefined behaviour */
-```
-
-That is, the compiler does not block it. "Not modifiable" exists *only as a contract,
-not as a type*, and breaking it is chapter 50's undefined behaviour — mostly it dies on
-the spot thanks to being placed in a write-protected region, but that is the
-implementation's kindness, not the language's guarantee.
-
-*C++ differs.* In C++ a string literal's type is `const char[N]`, and the first line
-above is *a compile error*. This item belongs in the list of "differences between the
-two languages" seen in chapter 93.
+So practice's first optimisation is usually *changing the loop order* --- without
+complicating the code or touching the algorithm, just swapping two lines so that
+the inner subscript is *the axis that varies fastest.*
 
 #qa[
-  Why did C not attach `const`?
+  So should the last subscript always go innermost?
 ][
-  *So as not to break existing code.* The word `const` itself entered the standard only
-  with C89 (chapter 23), and by then the world already had mountains of code putting
-  string literals into a `char *`. The moment the literal's type became `const char[N]`,
-  all of that code would be subject to diagnosis.
+  Usually, yes. Two things go with it though.
 
-  It is the same circumstance as `gets`'s funeral taking twenty years (chapter 62) —
-  *the standard is an institution that must protect existing code*, so when "the right
-  type" and "code already written" collide it leans towards the latter. C++, first
-  standardised in 1998, carried no such burden and could attach `const` from the start
-  (chapter 93's "siblings, not parent and child" is confirmed here too).
+  *1. The layout decides what is right.* C is row-major, but Fortran is
+  column-major, so numerical code ported from Fortran may be right the other way
+  round. If it is not an array but an *array of structs*, it changes again
+  (chapter 45's layout story).
 
-  So discipline stands in for the language. *A pointer at a literal is always declared
-  `const char *`.* Then what the type cannot do has been written in by a human, and from
-  there the compiler keeps it. GCC's and Clang's `-Wwrite-strings` is an option that
-  changes a literal's type to `const char[N]` outright, but it is not the default
-  because warnings pour out of old code.
+  *2. Some computations cannot have their order changed.* Where the previous cell's
+  result feeds the next (accumulation, recurrences), the order is part of the
+  algorithm. What is used then is *tiling* --- cutting the work into blocks that
+  fit the cache --- which is beyond this book.
+
+  One rule is worth keeping: *let the innermost loop move most tightly through
+  memory.* That is a factor of several, for free.
 ]
 
-#qa[
-  What of the newest standard and the ones to come?
+== Leaving nested loops
+
+Write a nested loop and you hit a problem at once.
+
+#misconception[
+  "`break` leaves the loop"
 ][
-  *It stands as it is up to C23.* A string literal's type is still `char[N]` and
-  modifying one is still undefined behaviour. C23 changed two things while leaving this
-  place alone — settling `u8"..."`'s element type as `char8_t` and pinning down two's
-  complement are both separate from this clause.
+  It leaves *the innermost layer only*. The standard says so --- `break` ends the
+  nearest enclosing `switch` or iteration statement, one of them.
 
-  Nor is there any sign of change in the next edition (C2y). The reason is the one above
-  — changing the type now would make half a century of code subject to diagnosis. The way
-  the standard tidies this place has been not to mend the type but *to let the tools
-  warn*, and that is likely to remain so.
+  The listing measured it. Code that broke only in the inner loop visited 18 of the
+  table's 20 cells --- it found the value and *the outer loop kept going.*
 
-  In summary, remember it like this — *the type is `char[N]`, the contract is "do not
-  modify", and the defence is `const char *` plus compiler warnings.*
+  And C has *no labelled `break`.* Here it parts from other languages.
+
+  #dtable(
+    columns: 2,
+    [*Language*], [*Device for shedding several layers at once*],
+    [C], [none --- `goto` or another way],
+    [Java], [`outer: for (…) { break outer; }`],
+    [Go], [the same label syntax; `continue` takes one too],
+    [Rust], [`'outer: loop { break 'outer; }` --- it even returns a value],
+    [Perl, PHP], [`last LABEL` / `break 2` (the depth as a number)],
+  )
 ]
 
-== A literal is an array too
+C offers four ways, each worth something different.
 
-The previous section said a literal may be copied into an array or pointed at by a
-pointer, and one step further in there is a surprising fact — *a string literal is
-itself already an array.* Written with its type exactly, `"abcdef"` is `char[7]` (six
-characters + the NUL).
-
-#demo("examples-en/ch40/literal.c")
-
-The output's first two lines are that confirmation. `sizeof "abcdef"` is 7 and
-`sizeof ""` is 1 — not a pointer's size (8) but *the array's size*. A literal decaying
-into a pointer is the decay seen in chapter 38, and `sizeof` being the exception to
-decay is why the array's real size shows.
-
-Something amusing follows from its being an array. Being an array, *a subscript can be
-attached.*
-
-```c
-"abcdef"[3]     /* 'd' */
-```
-
-And recalling the identity `a[i] ≡ *(a + i)` learned in chapter 38, since addition
-commutes, `*(a + i) ≡ *(i + a) ≡ i[a]`. That is,
-
-```c
-3["abcdef"]     /* 'd' as well — entirely legal grammatically */
-```
-
-That the example prints `d` for both is the evidence. There is no use for it in
-practice (it merely bewilders the reader) and it is notation seen only in obfuscation
-contests, but no example shows more clearly that *the array subscript is not a
-decoration of the grammar but another notation for pointer arithmetic*.
-
-== Concatenation — adjacent literals become one
-
-Write two string literals side by side and the compiler joins them into one.
-
-```c
-"abc" "def"        /* -> "abcdef" — no comma, no operator */
-```
-
-That the example's `sizeof("abc" "def")` is 7 confirms it (3+3+NUL). This happens not
-in the preprocessor but in *translation phase 6* (chapter 55's table) — so a string
-fragment produced by a macro joins with the literal beside it too.
-
-There are two uses.
-
-*① Writing a long sentence over several lines.* It is cleaner than joining lines with
-a backslash — because the indentation does not go inside the string.
-
-```c
-const char *help =
-    "usage: tool [options] file\n"
-    "  -v   verbose\n"
-    "  -o   output file\n";
-```
-
-*② Keeping fragments under names and assembling them.* This is the use most often seen
-in practice, and it appears with three faces.
-
-*Assembling a version string.* The value is written in one place and woven in
-elsewhere.
-
-```c
-#define MY_PROGRAM_VERSION  "v3.1.2"
-#define PROGRAM_TITLE       "my_program " MY_PROGRAM_VERSION
-
-puts(PROGRAM_TITLE);                       /* my_program v3.1.2 */
-puts("build: " __DATE__ " " __TIME__);     /* with the compiler's own literals too */
-```
-
-The point is that raising the version means mending *one line*. It weaves just as well
-with literals the compiler predefines (`__DATE__`, chapter 55), so many programs build
-their banner and `--version` output this way.
-
-*Keeping format fragments under names.* The same technique applied to `printf`'s
-format.
-
-```c
-#define ID_FMT    "%d"
-#define TEMP_FMT  "%.1f"
-
-printf("id = " ID_FMT ", temp = " TEMP_FMT "\n", id, temp);
-```
-
-The demand that a format string *be a constant* (chapter 59's format string
-vulnerability, and the compiler's format checking) is kept while the fragments are
-managed under names. It contrasts with passing a variable, as in
-`printf(fmt_string_variable, …)`, which makes all that checking vanish at once —
-*concatenation finishes at compile time, so the result is still one literal.*
-
-*The standard library uses the same technique.* The format macros of `<inttypes.h>`
-seen in chapter 76 and appendix B stand exactly on this rule.
-
-```c
-printf("total = %" PRIu64 "\n", total);
-```
-
-`PRIu64` is defined as `"lu"` or `"llu"` (it differs by platform) and joins with the
-fragments before and after into one format string. The problem that the format for a
-fixed-width integer differs by platform was solved *by concatenation alone*.
-
-The three cases come to the same one thing — *give literal fragments names and weave
-them at the place of use.* And all three pair with chapter 55's `#` operator. If the
-version is managed as numbers, the numbers can be turned into strings and woven.
-
-```c
-#define VER_MAJOR 3
-#define VER_MINOR 1
-#define STR_RAW(x) #x
-#define STR(x)     STR_RAW(x)                     /* double expansion (chapter 55) */
-#define VERSION    "v" STR(VER_MAJOR) "." STR(VER_MINOR)   /* "v3.1" */
-```
-
-#antipattern[
-  Variables do not join
-][
-  ```c
-  const char *unit = "°C";
-  printf("temp = %.1f" unit "\n", t);   /* a compile error */
-  ```
-  Concatenation is a rule *between literals*. `unit` is a variable and so cannot join.
-  To insert a variable's content the answer is one more placeholder —
-  `printf("temp = %.1f%s\n", t, unit)`.
-
-  For the same reason, when keeping a fragment to be joined in a `#define`, *that macro
-  must expand to a string literal*. Define it as something that is not a literal and it
-  will not join.
-]
-
-== Prefixes — a literal of which encoding
-
-A letter may be attached before a literal to settle *which character type's array it
-is*.
+#demo("examples-en/ch40/nested_exit.c")
 
 #dtable(
   columns: 4,
-  [*notation*], [*element type*], [*encoding*], [*`sizeof "AB"`*],
-  [`"AB"`], [`char`], [the execution character set (mostly UTF-8)], [3],
-  [`u8"AB"`], [`char8_t` (C23) / `char`], [UTF-8], [3],
-  [`u"AB"`], [`char16_t`], [UTF-16], [6],
-  [`U"AB"`], [`char32_t`], [UTF-32], [12],
-  [`L"AB"`], [`wchar_t`], [the implementation settles it], [12 on the example's machine],
+  [*Way*], [*How*], [*Good*], [*Bad*],
+  [1. a flag variable], [put `&& !found` on the outer condition], [no `goto`], [the condition grows, and *where it ends is scattered over two places*. One more test per iteration too],
+  [2. `goto`], [jump to a label the moment it is found], [it says "shed both layers at once" in one line], [some conventions forbid `goto`],
+  [3. *a function and `return`*], [make the search a function], [`return` sheds any depth. No escape device at all], [one more function, and returning several values needs a struct],
+  [4. condition on the outer loop], [`for (i = 0; i < R && !done; i++)`], [a variant of 1], [the same problem as 1],
 )
 
-The example really prints this table. That `L"AB"` is 12 bytes is because this Linux
-machine's `wchar_t` is 4 bytes — *on Windows it is 2 bytes and this becomes 6.* It is
-where chapter 65's "the size of `wchar_t` differs by implementation" shows itself at
-the level of literals.
+*This book's recommendation is 3 → 2 → 1.*
 
-Character constants take the same prefixes (`L'A'`, `u'A'`). And where concatenation
-meets prefixes there is one more rule — *if only one side has a prefix, the prefixed
-side wins* (the example's `L"wide" " and narrow"` becomes a wide string), and
-*joining two different prefixes is outside the contract.*
+*Three comes first* because the problem is not the escape but *the lump*. If a
+nested loop has grown long enough that you are contriving a way out, its inside has
+already become "something worth naming". Lift it into a function and it gains a
+name, `return` solves the escape for free, and it becomes testable.
+
+*Two beats one* because the intent shows. A flag makes the reader *reconstruct*
+"when this variable becomes true, the loop ends somewhere"; `goto done;` says right
+there that it ends. And a flag is easy to get wrong --- forget the inner `break` and
+it quietly runs one more round.
+
+== The two places `goto` is right
+
+Clear away the misunderstanding first.
 
 #realcase[
-  gets — the function expelled from the standard
+  What Dijkstra actually objected to
 ][
-  Attached to the third price of NUL termination (lose the marker and it runs
-  away) is the most famous funeral in the history of the C standard. `gets` in the
-  early standard library was a function that "reads a line and puts it into an
-  array" — and *it did not take the container's size*. If the input was longer
-  than the container it overwrote the neighbouring memory as it went: a function
-  with the boundary violation of chapter 38 built into its design. In 1988 the
-  internet's first large-scale worm (the Morris worm) spread through defects of
-  this class, and after decades of accidents the C11 standard *deleted* `gets` —
-  a rare case of a standard formally burying one of its own functions. That is the
-  reason this book taught `fgets` (the successor that takes the container's size)
-  from the start in chapter 25 — and the next chapter faces this whole class of
-  accident head on.
+  Dijkstra's 1968 letter to CACM, "Go To Statement Considered Harmful", may be the
+  most cited and *least read* piece in programming's history.
+
+  Its argument is not "do not use the word `goto`". It is that *one must be able to
+  map a point in the program's text onto the progress of its execution*, and that
+  unrestrained jumping destroys that mapping. Even the title's "considered harmful"
+  is understood to have come not from Dijkstra but from the editor, Niklaus Wirth.
+
+  Seen from today, most of what that letter demanded *has already happened* ---
+  `while`, `for`, functions, `break` and `return` replaced nearly every use of the
+  `goto` of that era. What remains are the two places below, and in them `goto`
+  makes the flow *easier* to read. That is why the Linux kernel's coding style
+  explicitly permits it.
+]
+
+=== Place 1 --- shedding several loops at once
+
+The pattern from the previous section. The rules are *downwards only, and nearby.*
+
+```c
+for (int i = 0; i < R; i++)
+    for (int j = 0; j < C; j++)
+        if (grid[i][j] == target) { found = (struct pos){ i, j }; goto done; }
+done:
+    …
+```
+
+=== Place 2 --- gathering the cleanup of error handling
+
+A function that acquires several resources must *give back only what it acquired so
+far* when it fails midway. Written with `if`s, the giving-back code gets copied
+layer upon layer.
+
+#demo("examples-en/ch40/macro_block.c")
+
+The listing's `build` is that pattern. The labels are stacked *in reverse order of
+release*, and a failure jumps to the label that matches it.
+
+```c
+    a = malloc(n);
+    if (!a) goto out;          /* nothing to give back yet */
+    b = malloc(n);
+    if (!b) goto free_a;       /* give back only a */
+    …
+    free(b);
+free_a:
+    free(a);
+out:
+    return ok;
+```
+
+*There is exactly one copy of the cleanup code* --- that is what the pattern buys.
+Add a third or fourth resource and only a label is added; nothing is duplicated. It
+is how chapter 43's pairing of `malloc` and `free` is kept in practice.
+
+#dtable(
+  columns: 2,
+  [*The discipline for `goto`*], [*Why*],
+  [*jump downwards only*], [a jump upwards is a loop, and a loop should be written with loop syntax to be read],
+  [*jump nearby* --- same function, within sight], [jump far and Dijkstra's problem really does appear],
+  [*name labels for what they do*], [`done`, `cleanup`, `free_buf` --- `label1` is not a name],
+  [*do not skip an initialisation*], [a variable whose initialisation was skipped holds an indeterminate value, and *jumping into the scope of a variable-length array is a constraint violation* the compiler diagnoses],
+)
+
+#qa[
+  What about conventions (MISRA and the like) that forbid `goto` outright?
+][
+  As chapter 94 shows, rulebooks such as MISRA forbid or tightly limit `goto`. Three
+  alternatives are used there.
+
+  - *Lift it into a function.* Number 3 above. Much of the cleanup problem also
+    dissolves once the work is split into small "acquire, use, release" functions.
+  - *A `do { … } while (0)` run once.* A `break` inside it gives the same effect as
+    "jump to the cleanup" --- the next section's pattern used for control flow.
+  - *One state variable stepping through stages.* Chaining `if (ok) { … }`, which
+    gets harder to read as the stages multiply.
+
+  Judge it by chapter 12's ladder --- where a rulebook governs, follow the rulebook
+  and pay its price (longer code) knowingly. Where none governs, there is no reason
+  to bind yourself with "`goto` is always bad".
+]
+
+== Making a macro one statement — `do { } while (0)`
+
+A macro holding several statements has an old trap. Wrapping it in braces is not
+enough.
+
+```c
+#define SWAP_BAD(a, b)  { int t = (a); (a) = (b); (b) = t; }
+
+if (x < y) SWAP_BAD(x, y); else puts("...");
+```
+
+Expand it and the reason shows --- it becomes `if (x < y) { … }; else …`, where the
+semicolon after the braces is *an empty statement*. The `if` ends on that empty
+statement and the `else` loses its partner. Measured, GCC says:
+
+```text
+error: 'else' without a previous 'if'
+```
+
+`do { } while (0)` solves exactly this, because it is *a braced block and, at the
+same time, a single statement that wants a semicolon after it.*
+
+#dtable(
+  columns: 4,
+  [*Macro body*], [between `if` and `else`], [as a `for` body (no braces)], [the semicolon],
+  [bare statements], [breaks], [*only the first statement* repeats — a silent accident], [not needed (confusing)],
+  [`{ … }`], [breaks], [fine], [adding one creates an empty statement],
+  [`do { … } while (0)`], [*fine*], [*fine*], [*naturally required*],
+)
+
+In the listing, `SWAP` and `LOG` work between `if` and `else` and as a brace-less
+`for` body alike --- that is the confirmation.
+
+#qa[
+  `while (0)` — doesn't that mean it never runs?
+][
+  It is a `do-while`, so it *runs the body first* and tests afterwards (chapter 32).
+  The condition being false, it runs exactly once --- which is the point.
+
+  Compilers know the pattern too. Even built without optimisation it folds into "a
+  loop whose condition is always false", so *the run-time cost is zero*. It merely
+  borrows the shape of a loop; no loop actually loops.
+]
+
+#antipattern[
+  Using `do { } while (0)` for a macro that yields a value
+][
+  ```c
+  #define MAX(a, b)  do { … } while (0)   /* cannot yield a value */
+  int m = MAX(x, y);                       /* a statement cannot be assigned */
+  ```
+
+  `do { } while (0)` is a tool for making *statements*. When a value is needed, pick
+  one of three.
+
+  - *An expression macro* --- `#define MAX(a, b) ((a) > (b) ? (a) : (b))`. Parenthesise
+    everything, and accept that an argument is *evaluated twice* (which is why
+    `MAX(i++, j)` is an accident).
+  - *A `static inline` function* --- it has types and evaluates each argument once.
+    Since C99 this is the proper answer (chapter 24).
+  - *`_Generic` choosing a function per type* --- when several types must be taken
+    (chapters 26 and 56).
+
+  GCC and Clang have a statement-expression extension `({ … })` that does both, but
+  it is *not standard* (chapter 12's grey area). Where portability matters, use the
+  three above.
+]
+
+#realcase[
+  `do { } while (0)` in the standard library and the kernel
+][
+  The pattern is not a habit but a de facto standard. Open the Linux kernel's headers
+  and `do { } while (0)` appears thousands of times; the coding-style document
+  *requires* the form for multi-statement macros.
+
+  There is an amusing variant. A macro that does nothing --- a log macro outside a
+  debug build, say --- if defined as an empty `#define LOG(...)` leaves a bare
+  semicolon, which breaks places like `if (x) LOG(…);`. So it is defined as
+  `#define LOG(...) do { } while (0)`: *an empty do-while*, doing nothing while
+  keeping the property of being a statement.
+
+  As a bonus, unused macro arguments can raise "unused variable" warnings, so the
+  habit of writing `do { (void)(x); } while (0)` settled in alongside it.
+]
+
+== Other idioms, and their traps
+
+#demo("examples-en/ch40/loop_idioms.c")
+
+=== Walking backwards --- `i >= 0` is unusable with `size_t`
+
+The most frequent bite.
+
+```c
+for (size_t i = n - 1; i >= 0; i--)   /* an infinite loop */
+```
+
+An unsigned value is *always at least 0*, so the condition never fails, and `i--` at
+0 wraps to `SIZE_MAX` (chapter 27). GCC says so through `-Wtype-limits` (included in
+`-Wall -Wextra`): "comparison of unsigned expression in `>= 0` is always true".
+
+There are two right shapes.
+
+```c
+for (size_t i = n; i-- > 0; )   /* the idiom — the test does the decrement too */
+for (int i = (int)n - 1; i >= 0; i--)   /* a signed index */
+```
+
+The first is the common one. `i-- > 0` means "see whether the current value exceeds
+0, then subtract one" (chapter 48's postfix), so the body sees `n-1` down to `0` in
+turn.
+
+=== The rest of the idioms
+
+#dtable(
+  columns: 3,
+  [*Idiom*], [*What it is*], [*Watch out*],
+  [`for (;;)` / `while (1)`], [an infinite loop; the two are identical], [GCC warns about neither (measured). Many codebases prefer `for (;;)` because MSVC used to warn on `while (1)`],
+  [the comma operator], [`for (i = 0, j = m - 1; i < j; i++, j--)`], [closing in from both ends. *Outside this place* the convention is not to use the comma operator],
+  [a sentinel loop], [`while ((c = getchar()) != EOF)`], [*the parentheses are required* — without them it is `c = (getchar() != EOF)`. And `c` must be an `int` (chapter 63)],
+  [`strlen` in the loop condition], [`for (i = 0; i < strlen(s); i++)`], [it counts the string from the start every round. Take the length into a variable (chapter 41)],
+  [a floating-point counter], [`for (double x = 0; x != 1.0; x += 0.1)`], [*it may never end* — 0.1 is not exact (chapter 49). Count in integers and divide],
+  [an empty body `;`], [`while (*p++) ;`], [short, but the semicolon is invisible. See below],
+)
+
+#antipattern[
+  An empty body nobody notices
+][
+  ```c
+  for (int i = 0; i < n; i++);      /* one semicolon and the body is gone */
+      total += a[i];                /* outside the loop — and i is not here */
+  ```
+
+  The indentation promises repetition; what happens is that the loop spins *empty*
+  and ends.
+
+  ★Measured, the warnings do not help. `-Wempty-body` catches `if (x);` with
+  "suggest braces around empty body in an 'if' statement" but *does not catch
+  `for (…);` or `while (…);`* --- those are a deliberate idiom.
+
+  So discipline has to stop it --- *if an empty body is the intent, make it visible.*
+
+  ```c
+  while (*p++ != '\0')
+      continue;                     /* "this is empty on purpose" */
+  ```
 ]
 
 #qa[
-  To handle Hangul properly — to work in units of characters — what must be done?
+  In a `do-while`, where does `continue` go?
 ][
-  Distinguishing two layers is the starting point. At the *byte layer* (the world
-  of C strings) you may treat UTF-8 simply as a byte sequence — copying, joining,
-  storing and transmitting are safe without knowing character boundaries (thanks
-  to UTF-8's self-synchronising design, chapter 9). Work that needs the
-  *character layer* (counting characters, cutting, case conversion) requires UTF-8
-  decoding, and since the standard library's support is thin there, using a
-  library is the practice (Part XII covers one such library). Keep one rule in
-  mind and
-  most accidents are prevented: *do not cut a string by byte index* — cut through
-  the waist of a Hangul syllable and you get a broken byte sequence.
+  *To the test* --- not to the top of the body. It is the same rule as in `while` and
+  `for` (in a `for` it passes through the update expression first).
+
+  It confuses people because a `do-while`'s condition is written *below*, giving the
+  impression that `continue` "goes back up". The actual flow is "down to the test,
+  and back up if it is true". Measured, the output matches the same code written as
+  a `while`.
 ]
 
-We know the string's identity and cost. The next chapter is this part's turning
-point — a dissection of the class of accident called the boundary violation, and
-five disciplines for handling a failed parse. The "safe input" seed planted in
-chapter 25 is finally collected.
+We have nesting, escaping, and the making of a statement out of a macro. But this
+chapter's listings kept walking `char` arrays --- and the next chapter is the
+*agreement* attached to such an array: the string.

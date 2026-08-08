@@ -1,175 +1,177 @@
 #import "../../book/lib.typ": *
 
-= Time — `<time.h>`
+= Numbers — `<math.h>`, `<fenv.h>`, `<tgmath.h>`
 
 #prereq(
-  ([chapter 44, Structs], [values bundled in a struct]),
-  ([chapter 59, The terrain of the standard library], [the contract the standard settles]),
+  ([chapter 49, Real numbers], [the mathematics of approximation]),
+  ([chapter 8, Representing numbers], [IEEE 754]),
 )
 
 #deepqa[
-  Bringing forward a story to be treated in Part XII: calendar time and elapsed
-  time were said to be different things. Then what is used in standard C to measure
-  exactly "whether three seconds have passed"?
+  Chapter 49 said not to compare reals with `==`, and chapter 8 said 0.1 is not
+  exactly representable. Then how does a mathematical function tell you when it
+  receives "input it cannot calculate"?
 ][
-  With the standard alone there is no way to measure it exactly. `time` is in
-  seconds and can go backwards when the system adjusts the clock, and `clock`
-  measures not wall-clock time but *the CPU time the process used* (so it does not
-  grow while waiting for input and output). C11 brought in `timespec_get` but does
-  not require a monotonic clock. Accurate elapsed measurement is the part of
-  POSIX's `clock_gettime(CLOCK_MONOTONIC, …)` or Windows'
-  `QueryPerformanceCounter` — that is, of *a platform API*.
+  There are two paths. It gives NaN or an infinity as the *return value*, and at
+  the same time leaves the reason in *`errno`* — `EDOM` for outside the domain,
+  `ERANGE` when the result exceeds the representable range. But an implementation
+  may choose to report through the floating-point exception flags (`<fenv.h>`)
+  instead of `errno`, so to check portably you must be ready to look at both. In
+  the field it is usually simpler to check the return value with `isnan` and
+  `isinf`.
 ]
 
 #organizer[
-  The header the standard settled unusually little of. The standard says neither
-  what `time_t` is nor how time zones are handled. We look at the traps that arise
-  in those gaps — the year with 1900 subtracted, the month starting from 0,
-  functions that return a static buffer, and the fact that *there is no monotonic
-  clock in the standard for measuring elapsed time*.
+  We look at how real-number calculation reports failure. The mathematics of
+  approximation learned in chapters 8 and 49 becomes the contract of functions here
+  — calls outside the domain, results beyond the range, the properties of NaN and
+  infinity, and the hidden global state called the rounding mode.
 ]
 
 #chapter-questions()
 
-== Three representations of time
+== The properties of NaN and infinity
 
-#dtable(
-  columns: 3,
-  [*type or function*], [*what*], [*to know*],
-  [`time_t`], [calendar time (usually seconds since 1970)], [★ the standard settles only "an arithmetic type"],
-  [`struct tm`], [split into year, month, day, hour, minute, second], [the field rules are a trap],
-  [`clock_t`], [the CPU time the process used], [divide by `CLOCKS_PER_SEC`],
-  [`struct timespec`], [seconds + nanoseconds (C11)], [`timespec_get`],
-)
+#demo("examples-en/ch72/math.c")
 
-That the standard did not settle what `time_t` is matters. In most implementations
-it is seconds since 1970-01-01 UTC, but that is *a practice*, not a guarantee of
-the standard. So portable code does not calculate with `time_t`'s internal value
-directly but takes the difference with `difftime`.
+Four things to point out in the output.
+
+*① NaN is not equal to itself.* IEEE 754 settled it so. Hence the old idiom that
+if `x != x` is true then `x` is NaN, while the standard function is `isnan(x)`.
+Because of this property, sorting an array containing NaN with `qsort` breaks the
+comparator's total order and the result collapses (chapter 65).
+
+*② Dividing a real by zero is not outside the contract.* Unlike integer division
+(chapter 28), in an IEEE 754 environment it yields an infinity or a NaN. But the
+same holds that *the very fact of dividing by zero is usually a bug*.
+
+*③ `sqrt(-1)` is `EDOM`, `exp(1000)` is `ERANGE`.* The former is outside the
+domain, the latter a case where the result exceeded the representable range. If you
+mean to look at `errno`, set it to 0 just before the call (chapter 74).
+
+*④ 0.0 and −0.0 are equal under `==`.* But the sign bit differs, and `1/0.0` and
+`1/-0.0` are +∞ and −∞ respectively. If the sign must be distinguished, use
+`signbit`.
+
+#misconception[
+  "Comparing reals is safe if you use an epsilon"
+][
+  The epsilon comparison learned in chapter 49 is not omnipotent. Absolute error
+  (`fabs(a-b) < eps`) becomes meaningless when the values are large — near 1e9,
+  1e-9 is not even representable — and relative error collapses near zero. The
+  prescription in the field is *settling a tolerance that fits the situation*, not
+  using a universal constant. And it is better to ask first whether it can be
+  handled with integers or fixed point so that the comparison is not needed at all
+  (chapter 8's story of calculating money).
+]
 
 #qa[
-  Why do so many types exist for time — would one count of seconds not do?
+  How do the functions of `math.h` report failure — the return value alone cannot say?
 ][
-  Because three different jobs are involved. `time_t` is an opaque value naming
-  *one moment*; `struct tm` is the *calendar notation* people read (year, month,
-  day, hour, minute, second); `clock_t` is a scale for measuring *elapsed time*.
-  Turning a moment into a calendar is a hard computation full of time zones,
-  daylight saving and leap seconds, so the standard keeps the two in separate
-  types and lets `localtime` and `mktime` bridge them.
+  In three ways. *Outside the domain* (say `sqrt(-1)`) they return NaN and set
+  `errno` to `EDOM`. *Beyond the range* (say `exp(1000)`) they return infinity and
+  set `ERANGE`. And the floating-point exception flags of `<fenv.h>` are raised.
 
-  The accidents in practice happen exactly at that border — subtracting two
-  `time_t` values gives seconds, but adding to the fields of a `struct tm`
-  directly produces an unnormalised date. Date arithmetic must go through
-  `mktime`.
+  The trouble is that *how far each of the three is honoured varies between
+  implementations*. So the practical idiom is to clear `errno = 0` before the call
+  and check immediately after (chapter 74). To inspect the value itself use
+  `isnan` and `isinf` — they say what they mean, unlike tricks such as `x != x`.
 ]
 
-== The traps of `struct tm`
-
-#demo("examples-en/ch72/timefns.c")
-
-Two fields are famous traps.
-
-- `tm_year` is *the value with 1900 subtracted*. 2026 is 126.
-- `tm_mon` is *from 0*. August is 7.
-
-With `tm_mday` (from 1), `tm_wday` (Sunday is 0) and `tm_yday` (from 0) the rules
-are all different, so when filling them by hand it is better to keep a table
-beside you.
-
-`mktime` does two things — it turns a `struct tm` into a `time_t`, and it
-*normalises the struct*. In the example, adding 30 to `tm_mday` exceeded the range
-and yet it was tidied into 4 September thanks to that. Not doing date arithmetic
-yourself but using this property is the canonical way.
-
-`tm_isdst` is easy to forget too. Putting in −1 means "I do not know, judge for
-yourself", and putting 0 or 1 in wrongly puts you an hour out.
-
-#antipattern[
-  Carrying around the result of `localtime`
-][
-  ```c
-  struct tm *a = localtime(&t1);
-  struct tm *b = localtime(&t2);   /* what a pointed at has been overwritten */
-  printf("%d %d\n", a->tm_hour, b->tm_hour);   /* both are t2's time */
-  ```
-  `localtime`, `gmtime`, `ctime` and `asctime` return *an internal static buffer*
-  (those functions chapter 59 brushed past by name only). The next call overwrites
-  the previous result, and in a program running along several strands they wreck
-  each other's results.
-
-  There are two prescriptions. *Copy it* immediately on receipt, or use the edition
-  in which the caller gives the buffer (`localtime_r` and `gmtime_r` are POSIX,
-  `localtime_s` is annex K and MSVC). To keep portability with the standard alone,
-  copying is the right answer.
-]
-
-== Printing to a string — `strftime`
-
-Unlike `printf`, `strftime` takes the buffer size and *returns 0 if it does not
-fit*. The example's small buffer is that case. If the return value is 0 the
-buffer's content is undetermined, so it must not be used.
-
-`asctime` and `ctime` are better not used. Besides returning a static buffer, the
-form is fixed (`"Wed Aug  5 13:45:30 2026\n"`) and it can overflow when the year
-exceeds four digits, so C23 marked them for retirement.
+== Functions often got wrong
 
 #dtable(
   columns: 3,
-  [*specifier*], [*meaning*], [*note*],
-  [`%Y`, `%m`, `%d`], [year, month, day], [the ISO date is `%Y-%m-%d`],
-  [`%H`, `%M`, `%S`], [hour, minute, second], [24-hour],
-  [`%F`, `%T`], [`%Y-%m-%d`, `%H:%M:%S`], [C99],
-  [`%z`, `%Z`], [time-zone offset and name], [locale- and platform-dependent],
-  [`%s`], [epoch seconds], [★ not standard (a POSIX extension)],
-  [`%c`, `%x`, `%X`], [locale notation], [for humans. not used for machines],
+  [*function*], [*what it does*], [*trap*],
+  [`pow(x, y)`], [raising to a power], [used for an integer power it can be slow and inexact],
+  [`round`, `nearbyint`], [rounding], [`round` goes away from zero, `nearbyint` follows the current mode],
+  [`floor`, `ceil`, `trunc`], [cutting to an integer], [the direction differs for negatives],
+  [`fmod`, `remainder`], [the remainder], [their sign rules differ from each other],
+  [`abs`, `fabs`], [absolute value], [★ `abs` is for integers. used on a real it truncates],
+  [`atan2(y, x)`], [angle], [the argument order is `y, x`],
+  [`isnan`, `isinf`], [classification], [they are macros — they cannot be used as function pointers],
 )
 
-== Time zones and summer time — what the standard does not handle
+`pow(x, 2)` is widely used, but for an integer square `x * x` is faster and exact.
+The compiler often optimises it, but not always.
 
-The time zones standard C knows are only two, "local" and "UTC", and there is not
-even a standard way to *change* the local time zone (POSIX's `TZ` environment
-variable is the practice). To handle an arbitrary time zone a library is needed.
+The mistake of using `abs` on a real is especially quiet. `<stdlib.h>`'s `abs`
+takes an `int`, so `abs(-1.5)` turns −1.5 into 1. Today's compilers warn, but it is
+easy to miss in a file that does not include `<math.h>`.
 
-Summer time is trickier still. On a transition day there arise times that do not
-exist (the hour skipped in spring) and times that exist twice (the hour repeated in
-autumn). What `mktime` returns when given such input is settled by the
-implementation.
+== Rounding modes and floating-point exceptions — `<fenv.h>`
+
+Floating-point operations have two pieces of *hidden global state*.
+
+*The rounding mode* — the default is "to the nearest value, ties to even". It can
+be changed with `fesetround`, and once changed every subsequent real operation is
+affected.
+
+*The exception flags* — flags are raised when division by zero, overflow,
+inexactness and so on occur. They are read with `fetestexcept` and cleared with
+`feclearexcept`. They are finer than `errno`, but to use this facility
+`#pragma STDC FENV_ACCESS ON` must be turned on — and then the compiler refrains
+from reordering real operations, so optimisation is reduced.
+
+#antipattern[
+  Turning on `-ffast-math` and checking for NaN
+][
+  ```sh
+  cc -O2 -ffast-math app.c        # tells the compiler "take it that NaN and infinity do not exist"
+  ```
+  ```c
+  if (isnan(x)) { /* this branch can vanish entirely */ }
+  ```
+  Options of the `-ffast-math` family tell the compiler it may assume
+  associativity and ignore the existence of NaN and −0.0. Speed is gained, but *the
+  checking code can vanish under optimisation* — the real-number edition of the
+  "bug that appears only in release" seen in chapter 17. In a program where
+  numerical accuracy matters, not turning it on is the default.
+]
+
+== Type-generic — `<tgmath.h>`
+
+`sqrt` is for `double`, `sqrtf` for `float`, `sqrtl` for `long double`. Include
+`<tgmath.h>` and the edition fitting the argument's type is chosen by `sqrt(x)`
+alone — the representative case of the `_Generic` seen in chapter 57 being used in
+the standard library.
+
+It is convenient but has a price. Being macros, they cannot be passed as function
+pointers, and there may be implementations that evaluate the argument twice, so
+putting in an expression with side effects is dangerous.
 
 #realcase[
-  Real accidents time has called down
+  The same calculation, a different answer — the history of excess precision
 ][
-  Time is a regular in quiet accidents. In 2012 and 2015, when *leap seconds* were
-  inserted, several server programs burned CPU at 100% or froze — because kernels
-  and applications had not assumed a situation in which "one second comes twice".
+  x86's old floating-point unit (x87) calculated internally in 80 bits. So it
+  happened that the same `double` operation differed depending on whether it was
+  still in a register or had been stored to memory — change the optimisation level
+  and the result changed minutely, and `x == y` that had been true could become
+  false.
 
-  The limit of a *32-bit `time_t`* overflows on 19 January 2038 (the day
-  chapter 27's overflow appears on a worldwide scale). In embedded and old systems
-  it is an ongoing task even now, and so the transition to a 64-bit `time_t` has
-  long been under way.
-
-  *Code that measures elapsed time in local time* loses or gains an hour on every
-  summer-time transition day. A log's timestamps go backwards, a timeout becomes an
-  hour long, a scheduler runs the same job twice. The prescription is always the
-  same — *a monotonic clock for elapsed time, UTC for records, local time only when
-  showing it to a human*.
+  C99 made this circumstance explicit with `FLT_EVAL_METHOD`, and today's 64-bit
+  x86 uses SSE so the problem has greatly diminished. But the possibility of "the
+  same code, a different answer" still remains in compilation options and the
+  target machine — the reason chapter 49 said "real-number calculation needs
+  reproducibility looked after separately."
 ]
 
 #recap[
-  Time in summary.
+  Numbers in summary.
 
   #dtable(
     columns: 3,
-    [*what you want to do*], [*what to use*], [*what to beware of*],
-    [the current time], [`time(NULL)`], [in seconds. it can go backwards],
-    [splitting it up], [`localtime`/`gmtime` + *copy at once*], [the static buffer],
-    [date arithmetic], [add to the fields and `mktime`], [do not calculate seconds by hand],
-    [to a string], [`strftime`], [a return of 0 = failure],
-    [difference], [`difftime`], [`t2 - t1` is not portable],
-    [measuring elapsed time], [the platform's monotonic clock], [`time` and `localtime` forbidden],
-    [storing and transmitting], [UTC + ISO 8601], [do not store local time],
-    [not to be used], [`asctime`, `ctime`], [static buffer, fixed form, to be retired in C23],
+    [*situation*], [*what to use*], [*what to beware of*],
+    [checking for NaN], [`isnan`], [`x == NaN` is always false],
+    [checking for infinity], [`isinf`], [dividing a real by zero is not UB],
+    [the kind of a value], [`fpclassify`], [the existence of subnormal numbers],
+    [domain and range errors], [the return value + `errno`], [`errno = 0` just before the call],
+    [integer squares], [`x * x`], [`pow(x, 2)`],
+    [absolute value of a real], [`fabs`], [`abs` (for integers)],
+    [per-type functions], [`<tgmath.h>`], [macros — no arguments with side effects],
+    [fast-math options], [off by default], [checking code vanishes],
   )
 ]
 
-We have passed time. The next chapter is the tools used when a program *has gone
-wrong* — error numbers, assertions, signals, and non-local jumps.
+We have passed numbers. The next chapter is time — a place with unusually much
+that the standard does not settle for you.

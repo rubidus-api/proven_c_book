@@ -100,7 +100,7 @@ meaningful.
   pointer to zero with `memset`, or trusting memory from `calloc` to be null, is
   a story that holds only on machines where "all bits zero" and "null" coincide.
   On today's mainstream machines they really do — but that is not the contract.
-  Chapter 36 shows the difference in the flesh, and chapter 44 explains why the
+  Chapter 36 shows the difference in the flesh, and chapter 45 explains why the
   two ways of emptying a struct mean different things.
 ]
 
@@ -118,7 +118,7 @@ saves great confusion later. They get formal treatment in Part VII
 - *The NUL character* — an entirely different object. It is a single
   *character* of value 0, at position 0 of the character table (chapter 9),
   written `'\0'` in C. It is one byte of data and is used to mark the end of a
-  string (chapter 40). It lives in the world of characters.
+  string (chapter 41). It lives in the world of characters.
 
 All three have "null" in the name and all three have a 0 tangled up in them
 somewhere, so they are easy to mix up, but the pointer's null and the

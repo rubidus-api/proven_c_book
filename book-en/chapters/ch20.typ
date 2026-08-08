@@ -189,7 +189,7 @@ The escapes are exactly these (§6.4.4.4).
 The decimal form must have *either a decimal point or an exponent part.* So `1.`,
 `.5` and `1e3` are all valid, while `1` is an integer constant.
 
-Floating constants take suffixes too (what the types are comes in chapters 8 and 48).
+Floating constants take suffixes too (what the types are comes in chapters 8 and 49).
 
 #dtable(
   columns: 3,
@@ -219,7 +219,7 @@ There are also *hexadecimal floating constants* (C99) --- `0x1p-3` is exactly 0.
 
 Worth noting too that the suffix changes the value. Measured, `(double)0.1f == 0.1` is
 *false* --- `0.1f` is the nearest value on the `float` grid and `0.1` the nearest on the
-`double` grid, and those are different numbers (chapters 8 and 48).
+`double` grid, and those are different numbers (chapters 8 and 49).
 
 === String literals (§6.4.5)
 
@@ -262,16 +262,16 @@ Four properties go together.
 #dtable(
   columns: 3,
   [*Notation*], [*What it really is*], [*More*],
-  [`RED` (an enumeration constant)], [*an integer constant*, of type `int`], [chapter 53 — it lives in the ordinary-identifier yard],
+  [`RED` (an enumeration constant)], [*an integer constant*, of type `int`], [chapter 54 — it lives in the ordinary-identifier yard],
   [`nullptr`], [a *keyword* of type `nullptr_t` (*C23*)], [chapter 36],
   [`true` `false`], [*keywords* yielding `bool` values (*C23*)], [chapter 30],
-  [`(int[]){1,2,3}` a compound literal], [not a constant but an *object* — you can take its address], [chapter 45],
-  [`#define N 100`], [not a constant but *token replacement*], [chapter 55],
+  [`(int[]){1,2,3}` a compound literal], [not a constant but an *object* — you can take its address], [chapter 46],
+  [`#define N 100`], [not a constant but *token replacement*], [chapter 56],
   [`constexpr int n = 10;`], [*C23*'s real constant — usable in a constant expression], [chapter 23],
 )
 
 The last two rows pay off in practice. A macro has neither type nor scope
-(chapter 55), and a `const int` is *not a constant expression* in C --- the place
+(chapter 56), and a `const int` is *not a constant expression* in C --- the place
 where C and C++ part. But "cannot be used" is less accurate than *where* it cannot be,
 so here it is, measured.
 

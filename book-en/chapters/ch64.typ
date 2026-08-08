@@ -1,247 +1,223 @@
 #import "../../book/lib.typ": *
 
-= The drawer of odds and ends — `<stdlib.h>`
+= Strings and memory — `<string.h>`
 
 #prereq(
-  ([chapter 59, The terrain of the standard library], [the terrain of the standard library]),
-  ([chapter 43, Dynamic memory], [allocating and giving back]),
+  ([chapter 41, Strings], [a string is an array that only marks its end]),
+  ([chapter 38, Arrays], [handling memory in bulk]),
 )
 
 #deepqa[
-  Chapter 25 read input with `fgets` and parsed it with `sscanf`, and chapter 59
-  said `sscanf` does not tell you "where and why it failed". Then what is the most
-  accurate way to turn one string into an integer?
+  Chapter 41 said a C string is "up to the NUL", so its length must be counted
+  every time, and chapter 61 said functions that do not take a size are the first
+  chronic illness. Then does using `strncpy` instead of `strcpy` cure that illness?
 ][
-  The `strtol` family. This function tells three things at once — the converted
-  value, *where it stopped* (the end pointer), and whether the range was exceeded
-  (`errno` being `ERANGE`). `atoi` tells none of them. Its name is short so it
-  appears often in introductions, but it is a function not used in the field.
+  It does not. Contrary to the impression the name gives, `strncpy` *was not
+  designed as a safe copying function.* Its original purpose was filling the
+  fixed-length fields of old Unix (a 14-byte directory entry name, say) — so it
+  fills all the spare places with zeros, and if there is not enough room it does
+  not attach a NUL. Both properties go against the expectations of "string
+  copying". This chapter's first example shows it before your eyes.
 ]
 
 #organizer[
-  A drawer named, exactly as it says, "the standard library". Functions that turn
-  strings into numbers, random numbers, dynamic allocation, program termination,
-  sorting and binary search are all in here together. In place of anything in
-  common there are many traps — in particular *conversion functions with no way to
-  report failure* and *the subtle differences between the terminating functions*
-  are this chapter's two axes.
+  The header in which the most accidents have happened in C. Functions that do not
+  take a size, `strncpy` which is not safe despite its name, copying that touches
+  overlapping regions, `strtok` which destroys the original and hides state — the
+  dangers of strings learned in chapter 41 take concrete shape here function by
+  function. We also see the real portability of the non-standard alternatives (the
+  `strlcpy` family).
 ]
 
 #chapter-questions()
 
-== Conversion — why `atoi` is abandoned
+== The truth about `strncpy`
 
-#demo("examples-en/ch64/convert.c")
+#demo("examples-en/ch64/strncpy.c")
 
-Put the output side by side and the difference is clear.
+Two things come out.
 
-- `atoi("abc")` is 0. But `atoi("0")` is 0 too — *failure and success cannot be
-  distinguished.*
-- `atoi("42abc")` is 42. It quietly ignores the rubbish attached behind.
-- `atoi("99999999999999999999")` came out as −1. The standard says only that this
-  case is *undefined behaviour* — −1 came out by accident; any value at all could
-  come out and nothing is guaranteed.
+*First, it fills all the spare places with zeros.* Put 3 characters into a 10-byte
+buffer and it writes zeros over the remaining seven. The bigger the buffer, the
+bigger the waste.
 
-`strtol` distinguished, for the same inputs, "not a number", "characters left
-over" and "out of range" separately. The checking code looks long, but that length
-is precisely *the real complexity of handling a string that came from outside*.
+*Second, when it fits exactly or overflows it does not attach a NUL.* Put `abcd`
+into a 4-byte buffer and there is no room for the NUL, so what remains is *a byte
+array, not a string*. Print that with `%s` or pass it to `strlen` and it reads
+outside the buffer — the typical route of "I used the safe function and it blew
+up."
 
-#antipattern[
-  Reading user input with `atoi`
-][
-  ```c
-  int port = atoi(argv[1]);      /* "0" and "bad input" are the same value */
-  ```
-  Mended, it goes like this.
-  ```c
-  errno = 0;
-  char *end;
-  long v = strtol(argv[1], &end, 10);
-  if (end == argv[1] || *end != '\0') { /* not a number */ }
-  else if (errno == ERANGE || v < 1 || v > 65535) { /* out of range */ }
-  else port = (int)v;
-  ```
-  *Setting `errno` to 0 just before the call* is the convention (chapter 73).
-  Without it you read the value a previous call left behind.
-]
+gcc really does catch this mistake. Here is the diagnosis received when first
+writing the example.
 
-Real conversion is the same. `atof` cannot report failure, while `strtod` gives an
-end pointer and `ERANGE`. Moreover `strtod` may, according to the locale, read the
-decimal point as `,` rather than `.` (chapter 65) — a point always to be remembered
-when parsing a data format.
-
-#qa[
-  Why does `qsort` take its comparison through two `void *` — would knowing the type not be faster?
-][
-  Because the standard library must sort *an array of any type at all*. C has no
-  generics, so the only passage that erases a type is `void *` (chapter 35), and
-  the price is a cast and a dereference inside the comparator every time. The
-  price is not only speed. Where the type has been erased, a mistake gets no help
-  from the compiler: pass the wrong element size, or write a comparator that takes
-  `int` where it must take `int*`, and it collapses quietly. That is why chapter
-  89's `proven_array_sort` pins the type with a macro, and why chapter 82 counts
-  "the unchecked callback" among the five bugs.
-]
-
-== Dynamic allocation — four functions and their contracts
-
-We organise what chapter 43 taught, function by function.
-
-#dtable(
-  columns: 3,
-  [*function*], [*what it does*], [*contract and traps*],
-  [`malloc(n)`], [allocate n bytes], [the content is undetermined. null on failure],
-  [`calloc(k, n)`], [allocate k×n bytes + fill with zeros], [★ *the implementation* checks the multiplication for overflow],
-  [`realloc(p, n)`], [change the size], [★ on failure the original is kept — assigning the return value straight to the original leaks],
-  [`free(p)`], [release], [null is safe. freeing twice is outside the contract],
-  [`aligned_alloc(a, n)`], [aligned allocation (C11)], [n must be a multiple of a],
-)
-
-`calloc`'s multiplication check is where it is useful. `malloc(k * n)` may have the
-product wrap round as seen in chapter 63, but for `calloc(k, n)` the standard
-requires the implementation to check for overflow and return null. *If sizes must
-be multiplied, `calloc` is the safer choice.*
-
-#antipattern[
-  Assigning `realloc`'s return value straight to the original
-][
-  ```c
-  buf = realloc(buf, new_size);   /* on failure the original address is lost → a leak */
-  if (!buf) return -1;
-  ```
-  The correct idiom goes through a temporary variable.
-  ```c
-  char *tmp = realloc(buf, new_size);
-  if (!tmp) { /* buf is still valid — it can be cleaned up or gone on using */ return -1; }
-  buf = tmp;
-  ```
-  It is why chapter 62's line-reading example used this idiom.
-]
-
-`realloc` has two more peculiar rules. `realloc(NULL, n)` is the same as
-`malloc(n)`, and *`realloc(p, 0)` is not to be used.* Its status changed from
-edition to edition — up to C17 it was *implementation-defined* and marked as
-deprecated, and in C23 it became outright *undefined behaviour* (proposal N2464).
-It is a place where implementations diverged so far that the standard gave up on
-settling it.
-
-What this change leaves in practice is one line — *to release, use `free(p)`.* Code
-that reallocates to a size that may become 0 must filter that case first.
-
-```c
-proven_err_t resize(char **buf, size_t n) {
-    if (n == 0) { free(*buf); *buf = nullptr; return OK; }  /* never pass 0 */
-    char *tmp = realloc(*buf, n);
-    ...
-}
+```text
+error: ‘strncpy’ output truncated before terminating nul copying 4 bytes
+       from a string of the same length [-Werror=stringop-truncation]
 ```
 
-== Termination — the difference between four ways
+But as seen in chapter 61, the compiler catches *only what it can see*. If the
+source's length is settled during execution, this warning does not appear.
+
+#antipattern[
+  Copying "safely" with `strncpy`
+][
+  ```c
+  char dst[32];
+  strncpy(dst, src, sizeof dst);      /* there may be no NUL */
+  printf("%s\n", dst);                 /* it reads outside the buffer */
+  ```
+  It must be mended at least like this.
+  ```c
+  strncpy(dst, src, sizeof dst - 1);
+  dst[sizeof dst - 1] = '\0';          /* close it by hand */
+  if (strlen(src) >= sizeof dst) { /* truncated — handle it */ }
+  ```
+  Three lines are needed, and leaving out even one of them is an accident. That is
+  why this function is assessed as "a safety device that is hard to use."
+]
+
+== Then what is used
+
+Within the standard, the most practical tool for safely joining strings is in fact
+in `<stdio.h>`.
+
+```c
+int need = snprintf(dst, sizeof dst, "%s", src);
+if (need < 0 || (size_t)need >= sizeof dst) { /* truncated */ }
+```
+
+There is the criticism that it is slow (the cost of interpreting the format), but
+it is the only standard function that keeps the boundary while letting you *know
+about truncation*.
+
+#dtable(
+  columns: 4,
+  [*function*], [*status*], [*boundary*], [*can truncation be known*],
+  [`strcpy`, `strcat`], [standard], [none], [—],
+  [`strncpy`], [standard], [yes], [no (must be measured by hand)],
+  [`strncat`], [standard], [yes (but the argument is the *remaining room*)], [no],
+  [`snprintf`], [standard], [yes], [yes (the return value)],
+  [`strlcpy`, `strlcat`], [the BSD family, a C23 annex], [yes], [yes (the return value)],
+  [`strcpy_s`, `strcat_s`], [C11 annex K (optional)], [yes], [yes (an error return)],
+)
+
+`strncat`'s argument is a particular trap — the second argument is not *the
+destination's size* but *the number of bytes that may additionally be written*.
+`strncat(dst, src, sizeof dst)` is almost always wrong, and
+`sizeof dst - strlen(dst) - 1` is right.
+
+#realcase[
+  Why `strlcpy` was not standard
+][
+  OpenBSD put out `strlcpy` and `strlcat` in 1998. They take the destination's
+  size, always close with a NUL, and return *the length of the source* so that
+  truncation can be known. They spread through the BSD family and several
+  libraries, but glibc long refused to adopt them — the counter-argument being that
+  "an API that quietly permits truncation only moves the problem."
+
+  So code using `strlcpy` was long unportable on Linux, and every project came to
+  have its own edition. In 2023 glibc 2.38 finally added them and C23 brought in
+  functions of similar intent as an annex, but *the state in which you must check
+  the target platform's edition before saying "it can be used"* persists. It is a
+  representative case showing the gap between the standard and reality.
+]
+
+== Overlapping regions — `memcpy` and `memmove`
+
+#demo("examples-en/ch64/overlap.c")
+
+`memcpy`'s contract includes "the two regions must not overlap". Calling it with
+them overlapping is undefined behaviour, and in an optimised implementation values
+really do get scrambled — because there is no guarantee that bytes are moved in
+order (several bytes may be moved at once with SIMD, or moved from the back).
+
+If they may overlap, it is `memmove`. Contrary to the impression its name gives,
+it does not mean "moving" but *copying that is safe even when overlapping*.
+
+#misconception[
+  "`memcpy` is always faster than `memmove`"
+][
+  An old saying. Today the performance difference between the two is mostly
+  negligible, and in some implementations they converge on the same code. The
+  reason `memcpy` can be faster is that it can use the premise "they do not
+  overlap" in optimisation, and if that premise is set wrongly, what is lost (a
+  bug that is hard to find) is far greater than what is gained (a few nanoseconds).
+  *If there is the slightest possibility of overlap, `memmove`* — that is the
+  modern default.
+]
+
+== `strtok` — it destroys the original and hides state
+
+The last part of the example. `strtok` has two sins.
+
+*First, it destroys the original.* It makes tokens by overwriting the separators
+with NUL. So it cannot be used on a read-only string (a string literal) — using it
+there is outside the contract — and if the original is needed it must be copied
+first.
+
+*Second, it hides state inside the function.* That is why `NULL` is passed from
+the second call onward. That state is *singular*, so if another function calls
+`strtok` in the middle of cutting tokens the two wreck each other's traversal. In
+a program running along several strands it gets worse.
+
+There are three alternatives. Use an edition in which the caller holds the state,
+such as `strtok_r` (POSIX) or `strtok_s` (annex K); cut it yourself with `strcspn`
+and `strchr`; or use a tool that *does not touch the original*, like Part XII's
+view-based splitting.
+
+== The traps of the remaining functions
 
 #dtable(
   columns: 3,
-  [*way*], [*cleanup*], [*where it is used*],
-  [`return` (in main)], [the same as `exit`], [normal termination],
-  [`exit(status)`], [runs `atexit`, flushes and closes streams], [normal termination (from deep inside)],
-  [`quick_exit(status)`], [runs only `at_quick_exit`, no flush], [quick termination (C11)],
-  [`_Exit(status)`], [does nothing], [special places such as a child process],
-  [`abort()`], [no cleanup, an abnormal-termination signal], [an unrecoverable error],
+  [*function*], [*what it does*], [*to beware of*],
+  [`strlen`], [length], [with no NUL it runs away. $O(n)$ every time],
+  [`strcmp`], [comparison in dictionary order], [only the sign of the return value means anything. 0 is "equal"],
+  [`strncmp`], [compare the first n bytes], [if n exceeds the length it stops at the NUL],
+  [`strchr`, `strrchr`], [find a character], [if the sought character is `'\0'` it points at the end],
+  [`strstr`], [substring], [worst-case performance differs by implementation],
+  [`strspn`, `strcspn`], [length by a set of characters], [the heart of the cutting idiom],
+  [`memset`], [fill with a byte], [★ for erasing secrets it may vanish under optimisation],
+  [`memcmp`], [compare bytes], [★ it compares padding too. it must not be used to compare structs],
 )
 
-The heart of it is *the buffer*. `exit` empties the streams while `_Exit` and
-`abort` do not — the "output vanishing" accident seen in chapter 62 happens here.
-It is also why the last log of a program dying by `abort` is not seen.
+The two starred entries are especially dangerous in practice.
 
-Functions registered with `atexit` are called in the *reverse* order of
-registration, and the standard guarantees registration of at least 32. Calling
-`exit` again inside a registered function is outside the contract.
+*Erasing a secret with `memset`* — the `memset(key, 0, len)` that erases after use
+may, if `key` is not read afterwards, be seen by the compiler as a "useless write"
+and deleted (chapter 13's optimisation story). C11 put `memset_s` in annex K for
+this, and each platform has a function such as `explicit_bzero` or
+`SecureZeroMemory`.
 
-== Sorting and searching — `qsort` and `bsearch`
+*Comparing structs with `memcmp`* — because of the padding seen in chapter 45.
+Even for two structs holding the same values, if the padding bytes differ `memcmp`
+answers "different". The members must be compared one by one.
 
-The functions chapter 60 foretold. Written out exactly, the contract is this.
-
-- The comparator is `int cmp(const void *a, const void *b)` and returns a
-  negative, zero or positive value. *Making it by subtraction can overflow* —
-  `return *x - *y;` is wrong for large values.
-  `return (*x > *y) - (*x < *y);` is the safe idiom.
-- The comparator must be a *total order* (chapter 82). If it is inconsistent the
-  result is not merely jumbled — it can trespass outside the array.
-- `qsort` is *not a stable sort.* The relative order of equal values is not
-  preserved. If it is needed, lay the original index on top in the comparator to
-  break ties.
-- Worst-case performance is settled by the implementation. The standard guarantees
-  nothing — the reason chapter 60's complexity attack was possible.
-- `bsearch` presumes *a sorted array*. If it is not sorted the result is
-  meaningless.
-
-== Random numbers — the limits of `rand`
-
-`rand` returns a number from 0 to `RAND_MAX`. `RAND_MAX` is guaranteed only to be
-at least 32767, so if a larger range is needed it must be composed.
-
-#antipattern[
-  Making a range with `rand() % n`
+#qa[
+  I hear `memcmp` is dangerous for comparing passwords too?
 ][
-  ```c
-  int dice = rand() % 6 + 1;      /* the values are not even */
-  ```
-  If `RAND_MAX + 1` is not a multiple of `n`, the values at the front come out
-  more often. If the range is small the bias is small too, but as `n` grows it
-  becomes noticeable. Moreover some old implementations had poor quality in the low
-  bits, so `% 2` even came out alternating.
-
-  If an even distribution is needed, use *rejection sampling* — throw away a value
-  that exceeds the range and draw again. And *never use it for secrets* (Part XII's
-  random number story).
-]
-
-Give no seed with `srand` and it is the same as `srand(1)` — the same sequence
-every time. `srand(time(NULL))` is a common idiom, but two processes started in the
-same second get the same sequence.
-
-== The environment and processes
-
-`getenv` returns an environment variable, but that string *must not be modified*
-and may not be valid after a subsequent `setenv`-like call. If the value is needed,
-copy it.
-
-`system` raises a shell and executes a command. If user input is mixed into that
-string it becomes *command injection* — the same class as the classic
-vulnerability of web applications. Within the standard there is no alternative, and
-the right answer is to use a platform API (`posix_spawn`, `CreateProcess`) and pass
-the arguments as an array.
-
-#realcase[
-  A real bug made by subtraction in a `qsort` comparator
-][
-  A comparator of the form `return a - b;` is the most common mistake in sorting
-  code. If the values are near `INT_MIN` the subtraction overflows and the sign
-  flips, and the sort quietly gives a wrong result — since the signed overflow
-  learned in chapter 7 is outside the contract, the symptom even changes with the
-  compiler's optimisation.
-
-  This pattern has been reported repeatedly in kernels, databases and game engines
-  alike, common enough that static analysis tools catch it with a rule of their
-  own. The mend is one line — do not subtract, compare.
+  Correct, for a different reason. `memcmp` returns the instant it meets a
+  differing byte, so *the time the comparison took leaks how much of the front
+  matched.* That means an attacker can measure time and get it right one byte at a
+  time (a timing attack). When comparing a secret, use a constant-time comparison
+  function that always takes the same time regardless of length — it is not in the
+  standard; cryptographic libraries provide it.
 ]
 
 #recap[
-  `<stdlib.h>` in summary.
+  `<string.h>` in summary.
 
   #dtable(
     columns: 3,
-    [*what you want to do*], [*what to use*], [*what to avoid*],
-    [string → integer], [`strtol` + end pointer + `errno`], [`atoi`],
-    [string → real], [`strtod` (mind the locale)], [`atof`],
-    [allocate an array], [`calloc(k, n)`], [`malloc(k * n)`],
-    [change the size], [`realloc` via a temporary variable], [assigning straight to the original],
-    [normal termination], [`return`/`exit`], [`_Exit` (buffer loss)],
-    [sorting], [`qsort` + a total-order comparator], [a subtracting comparator, assuming stability],
-    [random numbers], [rejection sampling, a generator fit for the purpose], [`rand() % n`, using it for secrets],
-    [external commands], [an argument array through a platform API], [joining input into `system`],
+    [*what you want to do*], [*what to use*], [*what not to use*],
+    [copy a string], [`snprintf` (or the platform's `strlcpy`)], [`strcpy`, a careless `strncpy`],
+    [join], [`snprintf` in one go], [`strcat`, `strncat` with its confusing argument],
+    [copy that may overlap], [`memmove`], [`memcpy`],
+    [cut tokens], [`strcspn`/`strchr` or `strtok_r`], [`strtok`],
+    [compare structs], [compare member by member], [`memcmp` (padding)],
+    [compare secrets], [constant-time comparison], [`memcmp` (time leak)],
+    [erase secrets], [the platform's explicit function], [`memset` (vanishes under optimisation)],
   )
 ]
 
-The drawer is tidied. The next chapter is the functions that handle a single
-character — and the fact that those functions are tied to the global state called
-the locale.
+We have passed the strings. The next chapter is the drawer of odds and ends and a
+treasury of accidents — `<stdlib.h>`.

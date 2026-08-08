@@ -192,7 +192,7 @@ using it unknowingly — this book's choice is the explicit `nullptr` assignment
   three siblings is still outstanding.
 ][
   Three chapters later. The NUL character works not in the world of pointers but
-  in the world of *strings* (as the end marker), so chapter 40, which treats
+  in the world of *strings* (as the end marker), so chapter 41, which treats
   strings properly, is its stage. While waiting, the distinction once more —
   `nullptr` is "nowhere to point" (a pointer value), `'\0'` is "the text ends
   here" (a character value, one byte in size). Strangers living in different

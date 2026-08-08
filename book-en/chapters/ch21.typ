@@ -83,7 +83,7 @@ away."
   That is C's division of labour. But this generosity has a shadow: if the return
   value is what reports "did it succeed?", discarding it means missing the
   failure. C's way of reporting errors as values, and the story of "return values
-  you must not discard", is the subject of chapter 49.
+  you must not discard", is the subject of chapter 50.
 ]
 
 #qa[
@@ -97,7 +97,7 @@ away."
   it is outside the contract (undefined behaviour). The trap sits exactly one
   step outside "surely this just works" — a case where chapter 7's asymmetry left
   its trace even in a function's manual. This kind of boundary hunting becomes
-  chapter 50's speciality.
+  chapter 51's speciality.
 ]
 
 == The standard library — workers made in advance
@@ -109,11 +109,11 @@ and so on) contains a roster (declarations) of the workers you may use, and
 `#include` fetches the roster so that box's workers can be called.
 
 Which boxes the standard library has and what is in them is surveyed with a map
-in chapter 52. What to take away now is one instinct — *half of programming is
+in chapter 53. What to take away now is one instinct — *half of programming is
 calling functions other people made.* Recognising a well-made worker and
 employing it correctly decides half of your code, which is why "which worker
 shall I use?" becomes a large subject again in the later part of this book
-(chapter 41).
+(chapter 42).
 
 Only two slots of hello world remain — exactly how the format inside `printf`'s
 quotation marks works (next chapter), and the identity of `int main(void)` and

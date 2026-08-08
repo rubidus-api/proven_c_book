@@ -54,7 +54,7 @@ screen. A control character is not a letter but an instruction to a device —
 next chapter (streams). And sitting at *slot 0* of this table is the *NUL
 character* whose face we learned in chapter 6. A character meaning "no character
 at all", which C later adopted as the mark for the end of a string
-(chapter 40).
+(chapter 41).
 
 ASCII became the winning table — nearly every character code today carries
 ASCII inside it. But 128 slots were tight even for English and nowhere near
@@ -130,7 +130,7 @@ mountains of existing ASCII text. The answer was the variable-length encoding
 else takes 2–4 bytes. Thanks to the exquisite design by which an existing ASCII
 file is already valid UTF-8, UTF-8 has become effectively the only standard for
 the web and for source code today. It is what this book's examples and C23's
-`u8""` strings use as well (chapter 40).
+`u8""` strings use as well (chapter 41).
 
 #mathbox[
   The byte structure of UTF-8
@@ -159,7 +159,7 @@ the web and for source code today. It is what this book's examples and C23's
 ][
   A misconception left over from the intuitions of the ASCII era, and especially
   dangerous when learning C — because C's `char` type is, despite the name, not
-  a "character" but a *byte* (chapter 40). In UTF-8 the English `A` is 1 byte
+  a "character" but a *byte* (chapter 41). In UTF-8 the English `A` is 1 byte
   but the Hangul `가` is 3. The two letters of "안녕" are six bytes. Character
   count and byte count are different objects, and code in which the distinction
   has collapsed will certainly cause an accident when handling Hangul.
@@ -191,7 +191,7 @@ execution character set are implementation-defined.*
 
 === Where the crossing happens — translation phases 1 and 5
 
-The place the two sets meet is pinned down in the translation phases (chapter 55).
+The place the two sets meet is pinned down in the translation phases (chapter 56).
 
 #dtable(
   columns: 2,
@@ -262,7 +262,7 @@ the literal prefixes (§6.4.5).
 
 Where the bytes must not move --- protocols, file formats, a test's expected value
 --- write `u8"…"`. *Two characters that turn "the implementation decides" into "the
-standard decides."* The fuller story of the wide side returns in chapters 68 and 69.
+standard decides."* The fuller story of the wide side returns in chapters 69 and 70.
 
 == Same letter, several representations — the security terrain hidden in text
 
@@ -366,7 +366,7 @@ a string. The price is threefold: to know the length you must *count all the way
 to the NUL*; you cannot hold a NUL in the content; and above all, forget to
 plant the marker and the reader runs on into other people's land. That last
 price is the terrain of more accidents than any other in C's history, and
-chapter 40 is the scene.
+chapter 41 is the scene.
 
 *Method 3 — manage length and capacity together.* The dynamic strings of modern
 languages usually manage three values as one bundle: [where the content is, the
@@ -402,7 +402,7 @@ representation. One thing to remember: *the shape a string takes in memory is
 not one thing but a choice made by a language and a library, and that choice
 determines the character of its performance and safety.* What character C's
 choice (NUL termination) has, and how it must be handled, is faced head on in
-chapter 40.
+chapter 41.
 
 #qa[
   Why does a beginner need to know this messy history now? Is it not enough to

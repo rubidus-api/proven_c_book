@@ -58,7 +58,7 @@ year later.
 first value in when you declare.* The slot of a variable declared without
 initialisation holds whatever rubbish bits happened to be left there
 (chapter 5 — a slot is always full of something), and reading that is a
-representative path to an accident. Formal treatment is in chapter 41, but the
+representative path to an accident. Formal treatment is in chapter 42, but the
 habit starts now.
 
 == Assignment — the side effect that changes state
