@@ -4,7 +4,7 @@
 
 #prereq(
   ([chapter 24, Declaring and defining functions], [declaring and defining a function]),
-  ([chapter 20, Expressions], [how a value is handed over]),
+  ([chapter 20, Expressions and constants], [how a value is handed over]),
 )
 
 #deepqa[

@@ -79,6 +79,72 @@ deliberate credit).
   — that is this book's choice.
 ]
 
+== The contract of `fgets` --- what it gives, and what it leaves to you
+
+Know the first stage exactly. `fgets` promises three things.
+
+#dtable(
+  columns: 2,
+  [*Promise*], [*What it means*],
+  [it will not *exceed the box*], [it was told `sizeof line`, so it stores no more --- overflow is cut off at the root],
+  [it appends a NUL], [so what arrived can be used as a string (chapter 41)],
+  [it *keeps the newline*], [the `\n` of the line read is inside the box --- stripping it is your job],
+)
+
+The third bites beginners most often. The listing makes it visible --- the newline is
+printed as `@`.
+
+#demo("examples-en/ch25/lines.c", stdin: true)
+
+=== How do you know it was cut?
+
+The middle two lines of the listing answer that. When a line longer than the box
+arrives, `fgets` stores *only as much as fills the box* and returns --- and then
+*there is no newline at the end.*
+
+#dtable(
+  columns: 2,
+  [*How the box ends*], [*Meaning*],
+  [it ends with `… \n`], [one whole line was received],
+  [it ends with no newline], [*the line was cut* --- the rest is still on the band, and the next `fgets` picks it up],
+)
+
+That is, *"is there a newline at the end?" is the signal of truncation.* The listing's
+one long line arriving in three pieces is the proof.
+
+Two idioms follow in practice.
+
+```c
+line[strcspn(line, "\n")] = '\0';   /* strip the newline if there is one */
+```
+
+The first is *stripping the newline*. That one line is the idiom: `strcspn`
+(chapter 41) gives "where the first `\n` is", so putting a NUL there removes it. With
+no newline it points at the end of the string and nothing happens --- one line handles
+both cases.
+
+The second is *treating truncation as an error*. Let "cut but fine" pass as success
+and looking up a file under a truncated name follows --- chapter 42 treats it properly
+as one of five disciplines.
+
+#qa[
+  How big should the box be?
+][
+  There is no single answer, only a basis for judging.
+
+  For *a line a person types*, be generous --- 256 or 1024 are common choices for a
+  name, a path or a command. The listing used 16 deliberately, to *show* truncation.
+
+  Where *the line length has no bound*, enlarging the box does not end it. Then you
+  check for truncation and join the pieces (calling `fgets` again), or use a tool that
+  grows the box to the line --- POSIX's `getline`, which standard C does not have
+  (chapter 65).
+
+  One thing to remember: *as long as you use a function that takes the size, a box too
+  small causes "truncation", not "overflow".* Truncation can be checked; overflow
+  brings the program down.
+]
+
 == Interpretation can fail
 
 Unlike output, input has one essentially new problem — *you do not know what the

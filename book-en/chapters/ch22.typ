@@ -78,6 +78,102 @@ appendix.)
   vanish, which is the common reason the log just before an accident is missing.
 ]
 
+== Kinds of blank — a slot per kind of value
+
+`%d` and `%s` carry you a fair way, but each kind of value has its own blank. Learn
+the common ones first.
+
+#demo("examples-en/ch22/convert.c")
+
+#dtable(
+  columns: 3,
+  [*Blank*], [*What it takes*], [*Where the name comes from*],
+  [`%d`], [an integer, in decimal], [decimal],
+  [`%f`], [a real number in point notation --- six places by default], [floating],
+  [`%c`], [one character], [character],
+  [`%s`], [a string], [string],
+  [`%x`], [an integer in hexadecimal --- `%X` for capitals], [hexadecimal],
+  [`%%`], [not a blank but a percent sign itself], [---],
+)
+
+Integer, real, character, string --- chapter 20 taught four ways of writing a
+constant, and here is one blank for each of the four. The remaining conversions
+(unsigned integers, pointers, sizes) arrive with the types that need them, and the
+full list is in appendix B.
+
+== Lining things up --- width and precision
+
+A blank can also say *how wide* and *how precise*. It pays off immediately when
+making a table.
+
+#dtable(
+  columns: 3,
+  [*Written*], [*Meaning*], [*Result*],
+  [`%6d`], [reserve six columns, *right* aligned], [`|␣␣␣␣␣7|`],
+  [`%-6d`], [a minus means *left* aligned], [`|7␣␣␣␣␣|`],
+  [`%06d`], [fill the blanks with zeros], [`|000042|`],
+  [`%.2f`], [two places after the point --- it rounds], [`0.67`],
+  [`%8.2f`], [width and precision together], [`|␣␣␣␣0.67|`],
+  [`%.3s`], [on a string it means *how many characters*], [`abc`],
+)
+
+Remember the reading order and it never confuses: after `%` come *alignment
+(`-`, `0`) → width → dot and precision → the conversion letter.*
+
+#misconception[
+  "Give it a width of eight and eight characters fit"
+][
+  It counts *bytes*. The listing's last table shows it --- the English table is
+  neat and the Hangul one is not. One Hangul syllable is three bytes in UTF-8
+  (chapter 9), so the eight columns `%-8s` reserves hold barely two Hangul
+  characters.
+
+  Lining up a Hangul table in a terminal means *counting characters and padding by
+  hand*, and even that raises another question: how many cells does one character
+  occupy on screen (East Asian characters take two)? Chapter 71 meets this problem
+  again.
+]
+
+== Output has more than one window
+
+Besides `printf` there are three more, each for a different place.
+
+#dtable(
+  columns: 3,
+  [*Function*], [*What it does*], [*When*],
+  [`printf`], [prints by a format], [when values are slotted in],
+  [`puts`], [prints one string *and the newline*], [a fixed line. Faster and safer than `printf`],
+  [`putchar`], [one character], [when building output a character at a time],
+  [`fprintf`], [prints *to a chosen stream*], [when it must not go to standard output],
+)
+
+The last matters. A program has *two* bands going out (chapter 10) --- *standard
+output* (`stdout`), where results flow, and *standard error* (`stderr`), where error
+messages flow.
+
+```c
+printf("result: %d\n", 42);                   /* standard output */
+fprintf(stderr, "cannot open the file\n");    /* standard error */
+```
+
+They are separated because of *redirection* (chapter 10). Send the results to a file
+and the error messages must still reach the screen; pipe the results to the next
+program and error messages must not be mixed in. "Results to standard output, words
+for a human to standard error" is the discipline of a program that behaves like a
+tool (the same grain as chapter 52's exit status).
+
+#qa[
+  Why did the `stderr` line come out at the top of the listing's output?
+][
+  *Because standard error is not buffered.* Standard output, as the recall showed,
+  gathers in a warehouse before flowing; standard error sends at once --- an error
+  message must survive even if the program dies a moment later.
+
+  So when both bands are captured into one file (as this book's listing verification
+  does) *the order they came out in can differ from the order they were written in.*
+  That is design, not accident, and worth knowing when reading logs.
+]
+
 == Matching — the contract between format and materials
 
 A format string is a *contract*. The number and kinds of blanks promise the

@@ -3,7 +3,7 @@
 = Using functions — how to call
 
 #prereq(
-  ([chapter 20, Expressions], [an expression becomes a value]),
+  ([chapter 20, Expressions and constants], [an expression becomes a value]),
   ([chapter 19, The structure of a program], [the lump of work called a function]),
 )
 

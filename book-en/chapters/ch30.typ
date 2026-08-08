@@ -3,7 +3,7 @@
 = Booleans and comparison
 
 #prereq(
-  ([chapter 20, Expressions], [the value of an expression]),
+  ([chapter 20, Expressions and constants], [the value of an expression]),
   ([chapter 29, Implicit conversions], [the promotion rules]),
 )
 

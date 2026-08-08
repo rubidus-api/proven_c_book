@@ -1,6 +1,6 @@
 #import "../../book/lib.typ": *
 
-= Expressions — the things that become values
+= Expressions and constants — the things that become values
 
 #prereq(
   ([chapter 7, Representing integers], [the representation of integers]),
@@ -21,11 +21,14 @@
 ]
 
 #organizer[
-  We go inside the statement. How to write values in source code (literals), how
-  to weave values into calculations (operators and expressions), and the order
-  of calculation (precedence and parentheses) — but, following this book's
-  principle, only the minimal set: addition, subtraction, multiplication and
-  parentheses. That alone takes us surprisingly far.
+  We go inside the statement. *How to write values in source code* is half of it ---
+  the notations for integer, character, floating and string constants are gathered
+#idx("operators and expressions")  here in one place, so this is where to come back when "what was that notation
+  again?" arises --- and the other half is weaving values into calculations
+  (operators and expressions) and the order of calculation (precedence and
+  parentheses). As this book's principle demands, only the minimum set of operators:
+  addition, subtraction, multiplication and parentheses. Even that goes surprisingly
+  far.
 ]
 
 #chapter-questions()
