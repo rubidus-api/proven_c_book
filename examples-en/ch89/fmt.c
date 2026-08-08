@@ -3,7 +3,7 @@
 
 int main(void)
 {
-    /* 화면이 아니라 문자열로 형식화한다 — 버퍼는 스택에서 빌린다 */
+    /* formatted into a string rather than onto the screen — the buffer is borrowed from the stack */
     proven_byte_t buf[64];
     proven_u8str_t out = proven_u8str_borrow(buf, sizeof buf);
 
@@ -19,7 +19,7 @@ int main(void)
         printf("formatted : %.*s\n", (int)v.size, (const char *)v.ptr);
     }
 
-    /* 그릇이 모자라면? 자르지 않고 거부한다 */
+    /* and if the vessel is too small? it refuses rather than truncating */
     proven_byte_t small_buf[8];
     proven_u8str_t small = proven_u8str_borrow(small_buf, sizeof small_buf);
     proven_fmt_result_t r2 = proven_u8str_append_fmt(&small, "{}:{}",
@@ -27,7 +27,7 @@ int main(void)
     printf("into 8 bytes: %s (err=%d)\n",
            proven_is_ok(r2.err) ? "ok" : "refused", (int)r2.err);
 
-    /* 정렬과 자릿수 — 50장의 폭/정밀도에 해당한다 */
+    /* alignment and digits — the width and precision of chapter 51 */
     proven_u8str_t line = proven_u8str_borrow(buf, sizeof buf);
     (void)proven_u8str_reset(&line);
     proven_fmt_result_t r3 = proven_u8str_append_fmt(&line, "|{:>10}|{:<10}|{:.3}|",

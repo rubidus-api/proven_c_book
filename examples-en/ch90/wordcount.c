@@ -1,10 +1,10 @@
 #include <proven.h>
 #include <stdio.h>
 
-/* 낱말을 세어 정렬해 찍는다 — 맵과 배열과 정렬을 한 번에 */
+/* Words counted, sorted and printed — a map, an array and a sort at once */
 typedef struct { proven_u8str_view_t word; int count; } entry_t;
 
-/* 비교자는 전순서여야 한다: 동점도 일관되게 갈라 준다 (51장의 반례를 피한다) */
+/* a comparator must be a total order: ties are broken consistently too (avoiding chapter 52's counterexample) */
 static int by_count_desc(const void *a, const void *b)
 {
     const entry_t *x = a, *y = b;
@@ -21,7 +21,7 @@ int main(void)
     proven_allocator_t alloc = proven_heap_allocator();
     const char *text = "the quick fox the lazy dog the fox";
 
-    /* 문자열 키 맵: 기본은 HashDoS 에 견디는 키드 해시를 쓴다 */
+    /* a map with string keys: by default a keyed hash that stands up to HashDoS */
     proven_result_map_t made_map =
         proven_map_create(alloc, 16, PROVEN_KEY_TYPE_U8_OWNED, sizeof(int), alignof(int));
     if (!proven_is_ok(made_map.err)) return 1;
@@ -46,7 +46,7 @@ int main(void)
     }
     printf("distinct words: %zu\n", counts.len);
 
-    /* 세어 둔 것을 배열에 모아 정렬한다 */
+    /* the counts gathered into an array and sorted */
     proven_result_array_t made_arr = PROVEN_ARRAY_INIT(alloc, entry_t, 8);
     if (!proven_is_ok(made_arr.err)) return 1;
     proven_array_t list = made_arr.value;
@@ -59,7 +59,7 @@ int main(void)
         if (!proven_is_ok(PROVEN_ARRAY_PUSH(&list, entry_t, e))) break;
     }
 
-    proven_array_sort(&list, by_count_desc);   /* 최악에도 O(n log n) 보장 */
+    proven_array_sort(&list, by_count_desc);   /* O(n log n) guaranteed even in the worst case */
     for (size_t i = 0; i < list.len; i++) {
         const entry_t *e = PROVEN_ARRAY_GET(&list, entry_t, i);
         printf("  %.*s = %d\n", (int)e->word.size, (const char *)e->word.ptr, e->count);

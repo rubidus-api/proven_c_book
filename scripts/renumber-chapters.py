@@ -23,13 +23,13 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-# 새로 끼우는 장: 26(타입의 지도, RFC-0016), 25장 바로 다음
-INSERTS = (26,)
+# 새로 끼우는 장: 40(반복의 기법, RFC-0017), 39장 바로 다음
+INSERTS = (40,)
 
 
 def remap(n: int) -> int:
     """옛 장 번호 → 새 장 번호."""
-    return n if n < 26 else n + 1
+    return n if n < 40 else n + 1
 
 
 PLACE = "«{}»"   # «n»

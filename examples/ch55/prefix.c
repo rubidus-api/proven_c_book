@@ -12,7 +12,7 @@ static void impl_reset(void)                 { buf_len = 0; buf[0] = '\0'; }
 static bool impl_push(const char *s)
 {
     size_t n = strlen(s);
-    if ((size_t)buf_len + n + 1 > sizeof buf) return false;   /* 잘림은 실패다(41장) */
+    if ((size_t)buf_len + n + 1 > sizeof buf) return false;   /* 잘림은 실패다(42장) */
     memcpy(buf + buf_len, s, n + 1);
     buf_len += (int)n;
     return true;

@@ -11,7 +11,7 @@
 #define MY_PROGRAM_VERSION  "v3.1.2"
 #define PROGRAM_TITLE       "my_program " MY_PROGRAM_VERSION
 
-/* a version kept as numbers becomes a string through a double indirection (chapter 55) */
+/* a version kept as numbers becomes a string through a double indirection (chapter 56) */
 #define VER_MAJOR 3
 #define VER_MINOR 1
 #define STR_RAW(x) #x

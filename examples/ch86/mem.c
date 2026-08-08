@@ -56,7 +56,7 @@ int main(void)
     proven_println("copy 15 into 8  -> err={} (넘치면 아예 안 쓴다)",
                    PROVEN_ARG((int)e2));
 
-    /* 겹치는 영역은 move 로. 63장의 memcpy/memmove 구분이 여기서도 같다 */
+    /* 겹치는 영역은 move 로. 64장의 memcpy/memmove 구분이 여기서도 같다 */
     proven_err_t e3 = proven_mem_move(storage + 2, 13,
                                       proven_mem_view_slice_unchecked(view, 0, 5));
     show("move 후 원본", (proven_mem_view_t){ .ptr = storage, .size = 7 });

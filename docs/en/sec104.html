@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Index — Proven C Book</title><style>
+<title>Appendix E — How grammar is written (EBNF) and the whole C grammar — Proven C Book</title><style>
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
@@ -266,9 +266,796 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="sec103.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><span class="off" aria-hidden="true">→</span></span><a href="../ko/">한국어</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="sec103.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="sec105.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2>Index</h2><p>Gathered here are only the places where this book <strong>defines a concept or treats it head on</strong>. Places where a word merely passes by are not listed — the purpose of an index is not to count every appearance but to tell you where to open the book.</p><p>This edition (HTML) has no page numbers, so only the headwords are listed. The index with page numbers is in the PDF edition.</p><ul><li><a href="ch66.html#idx-entry-104">BCP 47</a></li><li><a href="sec102.html#idx-entry-134">BNF</a></li><li><a href="ch32.html#idx-entry-58">Duff's device</a></li><li><a href="sec102.html#idx-entry-135">EBNF</a></li><li><a href="ch08.html#idx-entry-18">IEEE 754</a></li><li><a href="ch66.html#idx-entry-103">ISO 3166</a></li><li><a href="ch67.html#idx-entry-106">ISO 4217</a></li><li><a href="ch66.html#idx-entry-102">ISO 639</a></li><li><a href="ch92.html#idx-entry-132">JSON</a></li><li><a href="ch06.html#idx-entry-12">NUL character</a></li><li><a href="ch69.html#idx-entry-108">UTF-16</a></li><li><a href="ch09.html#idx-entry-19">UTF-8</a></li><li><a href="ch09.html#idx-entry-21">Unicode</a></li><li><a href="ch13.html#idx-entry-33">abstract machine</a></li><li><a href="ch06.html#idx-entry-11">alignment</a></li><li><a href="ch81.html#idx-entry-117">allocator</a></li><li><a href="ch86.html#idx-entry-123">arena</a></li><li><a href="ch37.html#idx-entry-65">array</a></li><li><a href="ch49.html#idx-entry-84">assert</a></li><li><a href="ch34.html#idx-entry-62">assignment</a></li><li><a href="ch77.html#idx-entry-111">atomic operations</a></li><li><a href="ch04.html#idx-entry-5">bit</a></li><li><a href="ch79.html#idx-entry-114">bool</a></li><li><a href="ch30.html#idx-entry-55">boolean</a></li><li><a href="ch12.html#idx-entry-31">branch prediction</a></li><li><a href="ch02.html#idx-entry-2">bss</a></li><li><a href="ch38.html#idx-entry-66">buffer overrun</a></li><li><a href="ch04.html#idx-entry-6">byte</a></li><li><a href="ch11.html#idx-entry-27">cache</a></li><li><a href="ch11.html#idx-entry-29">cache line</a></li><li><a href="ch65.html#idx-entry-100">character classification</a></li><li><a href="ch09.html#idx-entry-20">character set</a></li><li><a href="ch78.html#idx-entry-113">checked arithmetic</a></li><li><a href="ch48.html#idx-entry-82">comparing reals</a></li><li><a href="ch18.html#idx-entry-43">compiler</a></li><li><a href="ch13.html#idx-entry-34">compiler optimisation</a></li><li><a href="ch45.html#idx-entry-78">compound literal</a></li><li><a href="ch30.html#idx-entry-56">condition</a></li><li><a href="ch49.html#idx-entry-85">const</a></li><li><a href="ch49.html#idx-entry-83">contract</a></li><li><a href="ch91.html#idx-entry-130">coroutine</a></li><li><a href="ch77.html#idx-entry-112">data race</a></li><li><a href="ch17.html#idx-entry-40">debugger</a></li><li><a href="ch35.html#idx-entry-64">dereference</a></li><li><a href="ch28.html#idx-entry-51">division</a></li><li><a href="ch43.html#idx-entry-75">dynamic allocation</a></li><li><a href="ch94.html#idx-entry-133">embedded</a></li><li><a href="ch09.html#idx-entry-22">encoding</a></li><li><a href="ch05.html#idx-entry-8">endianness</a></li><li><a href="ch51.html#idx-entry-90">exit status</a></li><li><a href="ch47.html#idx-entry-81">expression</a></li><li><a href="ch84.html#idx-entry-121">failure atomicity</a></li><li><a href="ch12.html#idx-entry-32">false sharing</a></li><li><a href="ch44.html#idx-entry-77">flexible array member</a></li><li><a href="ch08.html#idx-entry-17">floating point</a></li><li><a href="ch03.html#idx-entry-4">fork</a></li><li><a href="ch22.html#idx-entry-45">format string</a></li><li><a href="ch81.html#idx-entry-118">fragmentation</a></li><li><a href="ch91.html#idx-entry-131">freestanding</a></li><li><a href="ch24.html#idx-entry-47">function prototype</a></li><li><a href="ch89.html#idx-entry-128">hash map</a></li><li><a href="ch24.html#idx-entry-48">header file</a></li><li><a href="ch43.html#idx-entry-74">heap</a></li><li><a href="ch50.html#idx-entry-86">implementation-defined</a></li><li><a href="ch88.html#idx-entry-126">implicit conversion</a></li><li><a href="ch29.html#idx-entry-53">integer promotion</a></li><li><a href="ch27.html#idx-entry-50">integer types</a></li><li><a href="ch89.html#idx-entry-129">introsort</a></li><li><a href="ch42.html#idx-entry-73">linkage</a></li><li><a href="ch16.html#idx-entry-39">linking</a></li><li><a href="ch66.html#idx-entry-101">locale</a></li><li><a href="ch67.html#idx-entry-105">localeconv</a></li><li><a href="ch11.html#idx-entry-28">locality</a></li><li><a href="ch31.html#idx-entry-57">loop</a></li><li><a href="ch51.html#idx-entry-89">main</a></li><li><a href="ch05.html#idx-entry-9">memory address</a></li><li><a href="ch02.html#idx-entry-1">memory regions</a></li><li><a href="ch13.html#idx-entry-36">multicore</a></li><li><a href="ch39.html#idx-entry-67">multidimensional array</a></li><li><a href="ch54.html#idx-entry-93">name collision</a></li><li><a href="ch53.html#idx-entry-92">name space</a></li><li><a href="ch84.html#idx-entry-120">nodiscard</a></li><li><a href="ch75.html#idx-entry-110">non-local jump</a></li><li><a href="ch09.html#idx-entry-23">normalization</a></li><li><a href="ch06.html#idx-entry-10">null pointer</a></li><li><a href="ch79.html#idx-entry-115">nullptr</a></li><li><a href="ch07.html#idx-entry-15">ones' complement</a></li><li><a href="ch07.html#idx-entry-14">overflow</a></li><li><a href="ch86.html#idx-entry-125">owning and borrowing</a></li><li><a href="ch45.html#idx-entry-79">padding</a></li><li><a href="ch41.html#idx-entry-69">parsing input</a></li><li><a href="ch12.html#idx-entry-30">pipeline</a></li><li><a href="ch35.html#idx-entry-63">pointer</a></li><li><a href="ch86.html#idx-entry-124">pool</a></li><li><a href="ch55.html#idx-entry-94">preprocessor</a></li><li><a href="ch03.html#idx-entry-3">process</a></li><li><a href="ch14.html#idx-entry-38">provenance</a></li><li><a href="ch58.html#idx-entry-97">reading declarations</a></li><li><a href="ch33.html#idx-entry-61">recursion</a></li><li><a href="ch10.html#idx-entry-25">redirection</a></li><li><a href="ch11.html#idx-entry-26">register</a></li><li><a href="ch17.html#idx-entry-41">sanitizer</a></li><li><a href="ch88.html#idx-entry-127">scanner</a></li><li><a href="ch42.html#idx-entry-72">scope</a></li><li><a href="ch33.html#idx-entry-60">sequence point</a></li><li><a href="ch07.html#idx-entry-16">shift</a></li><li><a href="ch33.html#idx-entry-59">side effect</a></li><li><a href="ch28.html#idx-entry-52">sign extension</a></li><li><a href="ch74.html#idx-entry-109">signal</a></li><li><a href="ch42.html#idx-entry-70">stack</a></li><li><a href="ch80.html#idx-entry-116">stack size</a></li><li><a href="ch59.html#idx-entry-99">standard library</a></li><li><a href="ch22.html#idx-entry-44">standard output</a></li><li><a href="ch42.html#idx-entry-71">storage duration</a></li><li><a href="ch10.html#idx-entry-24">stream</a></li><li><a href="ch13.html#idx-entry-37">strict aliasing</a></li><li><a href="ch40.html#idx-entry-68">string</a></li><li><a href="ch44.html#idx-entry-76">struct</a></li><li><a href="ch83.html#idx-entry-119">the compilation process</a></li><li><a href="ch55.html#idx-entry-95">translation phases</a></li><li><a href="ch52.html#idx-entry-91">translation unit</a></li><li><a href="ch07.html#idx-entry-13">two's complement</a></li><li><a href="ch26.html#idx-entry-49">type</a></li><li><a href="ch58.html#idx-entry-98">typedef</a></li><li><a href="ch50.html#idx-entry-88">undefined behaviour (UB)</a></li><li><a href="ch46.html#idx-entry-80">union</a></li><li><a href="ch50.html#idx-entry-87">unspecified</a></li><li><a href="ch29.html#idx-entry-54">usual arithmetic conversions</a></li><li><a href="ch23.html#idx-entry-46">variable</a></li><li><a href="ch56.html#idx-entry-96">variadic arguments</a></li><li><a href="ch85.html#idx-entry-122">view</a></li><li><a href="ch13.html#idx-entry-35">volatile</a></li><li><a href="ch17.html#idx-entry-42">warning options</a></li><li><a href="ch68.html#idx-entry-107">wide character</a></li><li><a href="ch05.html#idx-entry-7">word</a></li></ul>
-<div class="nav"><a href="sec103.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><span></span></div>
+<h2>Appendix E — How grammar is written (EBNF) and the whole C grammar</h2><p>This appendix holds two things. EBNF, the <strong>notation for writing</strong> a programming language’s grammar, and <strong>the whole C grammar</strong> read in that notation. What the parser seen in chapter 16 actually looks at while it works, and how to read the grammar sections of the standard document, are resolved here.</p><p>The later sections follow <strong>annex A</strong> of the C23 standard (ISO/IEC 9899:2024, free draft N3220) as it stands — in its order of lexical grammar, phrase structure grammar and preprocessing directives. The rules are carried over from the standard, with “what this rule actually permits” added to each section.</p><h3>The notation for writing grammar — from BNF to EBNF</h3><p>A language’s grammar can be written as <strong>a list of rules</strong>. It is the way of pushing “a sentence is made of these, and each of them is again made of these” down to the end.</p><span id="idx-entry-135"></span><p>The first to use this way widely was <strong>BNF</strong> (Backus–Naur Form). It was used in the 1960 ALGOL 60 report and carries the names of two people (John Backus and Peter Naur). The notation is simple.</p><pre><code data-lang="text">&lt;digit>  ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+&lt;number> ::= &lt;digit> | &lt;digit> &lt;number></code></pre><p>The way to read it is this. <code>::=</code> is “is made up as follows”, <code>|</code> is “or”, a name inside angle brackets is a <strong>nonterminal</strong> (something that unfolds further into other rules), and a letter written plainly is a <strong>terminal</strong> (an actual character that does not unfold further). The second line writes, by recursion, “one digit, or one digit followed again by a number”, and so defines <strong>a number of one or more places</strong>.</p><span id="idx-entry-136"></span><p>BNF has the inconvenience that recursion must be used every time repetition or option is written. So it was extended into <strong>EBNF</strong> (Extended BNF), with a few more symbols added.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>notation</strong></th><th><strong>meaning</strong></th><th><strong>example</strong></th></tr><tr><td><code>=</code> or <code>::=</code></td><td>defines</td><td><code>digit = "0" | "1" ;</code></td></tr><tr><td><code>|</code></td><td>or (choice)</td><td><code>sign = "+" | "-" ;</code></td></tr><tr><td><code>[ … ]</code></td><td>may or may not be there (0 or 1 time)</td><td><code>[ sign ] number</code></td></tr><tr><td><code>{ … }</code></td><td>repeated 0 or more times</td><td><code>digit { digit }</code></td></tr><tr><td><code>( … )</code></td><td>grouping</td><td><code>( "+" | "-" ) digit</code></td></tr><tr><td><code>" … "</code></td><td>terminal (literally)</td><td><code>";"</code></td></tr><tr><td><code>;</code></td><td>the end of a rule</td><td>—</td></tr></table></div><p class="float-caption">Table 97.1</p></figure><p>Write the same “number of one or more places” in EBNF and the recursion disappears.</p><pre><code data-lang="text">number = digit { digit } ;</code></pre><p>There is a standardised EBNF (ISO/IEC 14977), but real documents use dialects that differ a little. A common variation is the postfix symbols that came from regular expressions — <code>?</code> (0 or 1 time), <code>*</code> (0 or more), <code>+</code> (1 or more).</p><h3>How to read the C standard’s notation</h3><p><strong>The C standard document does not use EBNF.</strong> It uses a notation close to BNF instead, and its rules look like this.</p><pre><code data-lang="text">iteration-statement:
+    while ( expression ) secondary-block
+    do secondary-block while ( expression ) ;
+    for ( expression_opt ; expression_opt ; expression_opt ) secondary-block</code></pre><p>Four conventions are all you need to read the standard’s grammar sections as they stand.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>convention</strong></th><th><strong>meaning</strong></th></tr><tr><td>each indented line after <code>name:</code></td><td>one alternative. a line break stands in for <code>|</code></td></tr><tr><td><code>_opt</code> (a subscript opt in the standard)</td><td>that element need not be there</td></tr><tr><td>the list after <code>one of</code></td><td>one of those listed. all are terminals</td></tr><tr><td>an italic name</td><td>a nonterminal. it unfolds into other rules</td></tr></table></div><p class="float-caption">Table 97.2</p></figure><p>Subscripts cannot be used in this appendix, so the standard’s opt is written <code>_opt</code>. Why <code>for (;;)</code> holds as an infinite loop is written in that one rule above as it stands — because all three places may be omitted.</p><p>It is worth knowing in advance too that the grammar is divided into two layers. <strong>The lexical grammar</strong> is the rules that gather characters into tokens, and <strong>the phrase structure grammar</strong> is the rules that weave those tokens — exactly the division of lexer and parser seen in chapter 16. The preprocessor has a separate grammar altogether (having already been handled and vanished in chapter 56′s translation phases, so nothing like <code>#include</code> appears in the C grammar of A.2 below).</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> What is good about writing grammar down like this?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Three things become better.</p><p>First, <strong>ambiguity comes to light.</strong> Write in natural language “a statement comes after the condition” and in <code>if (a) if (b) x; else y;</code> it cannot be known which <code>if</code> the <code>else</code> attaches to; write it as a grammar and that ambiguity shows itself as a conflict of rules (C settles it as “it attaches to the nearest <code>if</code>”).</p><p>Second, <strong>a tool can read it.</strong> Tools that generate a parser from a grammar rather than writing it by hand (yacc/bison, ANTLR and the like) take this notation as input.</p><p>Third, <strong>a person can confirm things.</strong> The way the standard document answers the question “may this be written in this place” is exactly these grammar sections.</p></p></div></div><h3>A.1 Lexical grammar</h3><h4>A.1.1 Lexical elements</h4><pre><code data-lang="text">token:
+    keyword
+    identifier
+    constant
+    string-literal
+    punctuator
+
+preprocessing-token:
+    header-name
+    identifier
+    pp-number
+    character-constant
+    string-literal
+    punctuator
+    each non-white-space character that cannot be one of the above</code></pre><p>The difference between the two rules is the boundary of the translation phases seen in chapter 56. A <strong>preprocessing token</strong> is not yet a word of C — that the <code>&lt;stdio.h></code> of <code>#include &lt;stdio.h></code> is caught as a header-name token, and that something like <code>123abc</code> is caught whole as a <code>pp-number</code>, are the business of this layer. Then in translation phase 7 each preprocessing token turns into a <strong>token</strong>, and only then does a diagnosis such as “this is not an integer constant” appear.</p><p>The last line (“a single non-white-space character that is none of the above”) matters. Characters C does not use, such as <code>@</code> and <code>$</code>, <strong>do exist as preprocessing tokens</strong>. So they can pass through inside a macro, and if they remain in the final code it becomes an error then.</p><h4>A.1.2 Keywords</h4><pre><code data-lang="text">keyword: one of
+    alignas        alignof        auto           bool
+    break          case           char           const
+    constexpr      continue       default        do
+    double         else           enum           extern
+    false          float          for            goto
+    if             inline         int            long
+    nullptr        register       restrict       return
+    short          signed         sizeof         static
+    static_assert  struct         switch         thread_local
+    true           typedef        typeof         typeof_unqual
+    union          unsigned       void           volatile
+    while          _Alignas       _Alignof       _Atomic
+    _BitInt        _Bool          _Complex       _Decimal128
+    _Decimal32     _Decimal64     _Generic       _Imaginary
+    _Noreturn      _Static_assert _Thread_local</code></pre><p>The promotion treated in chapter 80 is visible in this list as it stands. <code>bool</code>, <code>true</code>, <code>false</code>, <code>nullptr</code>, <code>static_assert</code>, <code>alignas</code>, <code>thread_local</code>, <code>constexpr</code> and <code>typeof</code> have risen to being <strong>keywords</strong>, and beneath them the underscored names (<code>_Bool</code>, <code>_Alignas</code>, …) remain as they were for old code. The two names point at the same thing.</p><p><code>_BitInt</code> stands out too — the <strong>integer with a specified bit width</strong> C23 brought in, written like <code>_BitInt(5)</code>. It is for places that need “exactly n bits”, such as hardware register fields and fixed-point arithmetic.</p><h4>A.1.3 Identifiers</h4><pre><code data-lang="text">identifier:
+    identifier-start
+    identifier identifier-continue
+
+identifier-start:
+    nondigit
+    a character with the XID_Start property
+    a universal-character-name with the XID_Start property
+
+identifier-continue:
+    digit
+    nondigit
+    a character with the XID_Continue property
+    a universal-character-name with the XID_Continue property
+
+nondigit: one of
+    _ a b c d e f g h i j k l m n o p q r s t u v w x y z
+      A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+
+digit: one of
+    0 1 2 3 4 5 6 7 8 9</code></pre><p>The recursion in the first rule is that familiar rule “the first character must not be a digit” — only <code>identifier-start</code> may come at the beginning, and <code>digit</code> is only in <code>identifier-continue</code>.</p><p>What C23 changed is <strong>the handling of Unicode</strong>. The older standard listed the permitted characters, while C23 refers to Unicode’s XID_Start and XID_Continue properties. So identifiers in Korean are possible in principle. But for the reasons seen in chapter 9 (encodings, normalisation, invisible characters) the practice in the field is still ASCII.</p><h4>A.1.4 Universal character names</h4><pre><code data-lang="text">universal-character-name:
+    \u hex-quad
+    \U hex-quad hex-quad
+
+hex-quad:
+    hexadecimal-digit hexadecimal-digit hexadecimal-digit hexadecimal-digit</code></pre><p>It is the way of writing a particular code point regardless of the source file’s encoding (chapter 9). <code>"é"</code> means U+00E9 whatever the file’s encoding is.</p><h4>A.1.5 Constants</h4><pre><code data-lang="text">constant:
+    integer-constant
+    floating-constant
+    enumeration-constant
+    character-constant
+    predefined-constant</code></pre><p><strong>Integer constants.</strong></p><pre><code data-lang="text">integer-constant:
+    decimal-constant integer-suffix_opt
+    octal-constant integer-suffix_opt
+    hexadecimal-constant integer-suffix_opt
+    binary-constant integer-suffix_opt
+
+decimal-constant:
+    nonzero-digit
+    decimal-constant '_opt digit
+
+octal-constant:
+    0
+    octal-constant '_opt octal-digit
+
+hexadecimal-constant:
+    hexadecimal-prefix hexadecimal-digit-sequence
+
+binary-constant:
+    binary-prefix binary-digit
+    binary-constant '_opt binary-digit
+
+hexadecimal-prefix: one of  0x 0X
+binary-prefix:      one of  0b 0B
+nonzero-digit:      one of  1 2 3 4 5 6 7 8 9
+octal-digit:        one of  0 1 2 3 4 5 6 7
+hexadecimal-digit:  one of  0 1 2 3 4 5 6 7 8 9 a b c d e f A B C D E F
+
+hexadecimal-digit-sequence:
+    hexadecimal-digit
+    hexadecimal-digit-sequence '_opt hexadecimal-digit
+
+binary-digit: one of  0 1
+
+integer-suffix:
+    unsigned-suffix long-suffix_opt
+    unsigned-suffix long-long-suffix
+    unsigned-suffix bit-precise-int-suffix
+    long-suffix unsigned-suffix_opt
+    long-long-suffix unsigned-suffix_opt
+    bit-precise-int-suffix unsigned-suffix_opt
+
+bit-precise-int-suffix: one of  wb WB
+unsigned-suffix:        one of  u U
+long-suffix:            one of  l L
+long-long-suffix:       one of  ll LL</code></pre><p>Three things to point out.</p><p><strong>① Beginning with <code>0</code> means octal.</strong> The first line of <code>octal-constant</code> is that rule, and it is why <code>017</code> is 15. It is the source of the classic mistake of writing a date or a time as <code>08</code> and meeting a compile error (<code>8</code> is not an octal digit).</p><p><strong>② C23 brought in binary literals and digit separators.</strong> They can be written like <code>0b1010'0110</code> — the <code>'_opt</code> visible in the rules is that separator. Writing chapter 28′s bit operations becomes far more readable.</p><p><strong>③ A <code>wb</code> suffix appeared.</strong> It is for <code>_BitInt</code> constants (<code>123wb</code>).</p><p><strong>Floating constants.</strong></p><pre><code data-lang="text">floating-constant:
+    decimal-floating-constant
+    hexadecimal-floating-constant
+
+decimal-floating-constant:
+    fractional-constant exponent-part_opt floating-suffix_opt
+    digit-sequence exponent-part floating-suffix_opt
+
+hexadecimal-floating-constant:
+    hexadecimal-prefix hexadecimal-fractional-constant
+        binary-exponent-part floating-suffix_opt
+    hexadecimal-prefix hexadecimal-digit-sequence
+        binary-exponent-part floating-suffix_opt
+
+fractional-constant:
+    digit-sequence_opt . digit-sequence
+    digit-sequence .
+
+exponent-part:
+    e sign_opt digit-sequence
+    E sign_opt digit-sequence
+
+sign: one of  + -
+
+digit-sequence:
+    digit
+    digit-sequence '_opt digit
+
+hexadecimal-fractional-constant:
+    hexadecimal-digit-sequence_opt . hexadecimal-digit-sequence
+    hexadecimal-digit-sequence .
+
+binary-exponent-part:
+    p sign_opt digit-sequence
+    P sign_opt digit-sequence
+
+floating-suffix: one of  f l F L df dd dl DF DD DL</code></pre><p>The second line of <code>fractional-constant</code> permits <code>1.</code>, and the <code>_opt</code> in the first line permits <code>.5</code>. And if there is an exponent part the decimal point may be absent (<code>1e9</code>).</p><p><strong>Hexadecimal floating constants</strong> (<code>0x1.8p3</code>) were brought in by C99 and are used to write and read exactly the bit representation seen in chapter 8 — writing in decimal lets rounding in, while this notation carries the representation over as it is. The knack is that the exponent <code>p</code> is <strong>a power of two</strong>.</p><p>The suffixes <code>df</code>, <code>dd</code> and <code>dl</code> belong to decimal floating point (<code>_Decimal32/64/128</code>), an optional facility for places that demand decimal rounding, such as calculating money.</p><p><strong>Character constants and predefined constants.</strong></p><pre><code data-lang="text">enumeration-constant:
+    identifier
+
+character-constant:
+    encoding-prefix_opt ' c-char-sequence '
+
+encoding-prefix: one of  u8 u U L
+
+c-char-sequence:
+    c-char
+    c-char-sequence c-char
+
+c-char:
+    any member of the source character set except ' \ and newline
+    escape-sequence
+
+escape-sequence:
+    simple-escape-sequence
+    octal-escape-sequence
+    hexadecimal-escape-sequence
+    universal-character-name
+
+simple-escape-sequence: one of
+    \' \" \? \\ \a \b \f \n \r \t \v
+
+octal-escape-sequence:
+    \ octal-digit
+    \ octal-digit octal-digit
+    \ octal-digit octal-digit octal-digit
+
+hexadecimal-escape-sequence:
+    \x hexadecimal-digit
+    hexadecimal-escape-sequence hexadecimal-digit
+
+predefined-constant: one of
+    false true nullptr</code></pre><p>The recursion in <code>hexadecimal-escape-sequence</code> explains one famous trap — <strong>there is no upper limit on the number of digits.</strong> <code>"\x41BC"</code> is read not as <code>\x41</code> followed by <code>BC</code> but as one <code>\x41BC</code>, and if the value does not fit in a <code>char</code> it is outside the contract. Octal escapes, by contrast, are cut at three digits at most.</p><p>That <code>predefined-constant</code> exists as a rule of its own is C23′s change (chapter 80) — <code>true</code>, <code>false</code> and <code>nullptr</code> became <strong>grammatical elements</strong> rather than macros.</p><h4>A.1.6 String literals</h4><pre><code data-lang="text">string-literal:
+    encoding-prefix_opt " s-char-sequence_opt "
+
+s-char-sequence:
+    s-char
+    s-char-sequence s-char
+
+s-char:
+    any member of the source character set except " \ and newline
+    escape-sequence</code></pre><p>The <code>_opt</code> permits the empty string <code>""</code>. The prefixes are the same four as for character constants — <code>u8"..."</code> (UTF-8), <code>u"..."</code> (UTF-16), <code>U"..."</code> (UTF-32), <code>L"..."</code> (wide). That adjacent string literals join into one is not grammar but the business of <strong>translation phase 6</strong> (chapter 56).</p><h4>A.1.7 Punctuators</h4><pre><code data-lang="text">punctuator: one of
+    [  ]  (  )  {  }  .  ->
+    ++  --  &amp;  *  +  -  ~  !
+    /  %  &lt;&lt;  >>  &lt;  >  &lt;=  >=  ==  !=  ^  |  &amp;&amp;  ||
+    ?  :  ::  ;  ...
+    =  *=  /=  %=  +=  -=  &lt;&lt;=  >>=  &amp;=  ^=  |=
+    ,  #  ##
+    &lt;:  :>  &lt;%  %>  %:  %:%:</code></pre><p>The last line is the <strong>digraphs</strong>. <code>&lt;:</code> is the same as <code>[</code>, <code>%:</code> the same as <code>#</code> — relics of the days when keyboards lacked those characters, and unlike trigraphs they remain in C23.</p><p><code>::</code> newly entered because of chapter 80′s attribute syntax (<code>[[gnu::packed]]</code>).</p><h4>A.1.8 Header names</h4><pre><code data-lang="text">header-name:
+    &lt; h-char-sequence >
+    " q-char-sequence "
+
+h-char-sequence:
+    h-char
+    h-char-sequence h-char
+
+h-char:
+    any member of the source character set except newline and >
+
+q-char-sequence:
+    q-char
+    q-char-sequence q-char
+
+q-char:
+    any member of the source character set except newline and "</code></pre><p>This token is made <strong>only inside a preprocessing directive</strong>. So the <code>/</code> and <code>.</code> inside <code>&lt;stdio.h></code> are not read as division and member access — a rare place where the lexer cuts differently according to context.</p><h4>A.1.9 Preprocessing numbers</h4><pre><code data-lang="text">pp-number:
+    digit
+    . digit
+    pp-number identifier-continue
+    pp-number ' digit
+    pp-number ' nondigit
+    pp-number e sign
+    pp-number E sign
+    pp-number p sign
+    pp-number P sign
+    pp-number .</code></pre><p>The preprocessor does not yet know the grammar of numbers. So it catches whole, as one token, “a lump beginning with a digit and continuing with letters, dots and signs” — <code>1.2e+3</code>, <code>0xFFul</code>, and even <code>1abc</code> are each a single <code>pp-number</code>. Whether it is valid is sorted out in translation phase 7 by holding it against the integer and floating constant grammar.</p><p>Thanks to this rule macro substitution does not split a number, and the <code>+</code> in the middle of <code>1.2e+3</code> is not read as addition.</p><h3>A.2 Phrase structure grammar</h3><h4>A.2.1 Expressions</h4><pre><code data-lang="text">primary-expression:
+    identifier
+    constant
+    string-literal
+    ( expression )
+    generic-selection
+
+generic-selection:
+    _Generic ( assignment-expression , generic-assoc-list )
+
+generic-assoc-list:
+    generic-association
+    generic-assoc-list , generic-association
+
+generic-association:
+    type-name : assignment-expression
+    default : assignment-expression
+
+postfix-expression:
+    primary-expression
+    postfix-expression [ expression ]
+    postfix-expression ( argument-expression-list_opt )
+    postfix-expression . identifier
+    postfix-expression -> identifier
+    postfix-expression ++
+    postfix-expression --
+    compound-literal
+
+argument-expression-list:
+    assignment-expression
+    argument-expression-list , assignment-expression
+
+compound-literal:
+    ( storage-class-specifiers_opt type-name ) braced-initializer
+
+storage-class-specifiers:
+    storage-class-specifier
+    storage-class-specifiers storage-class-specifier
+
+unary-expression:
+    postfix-expression
+    ++ unary-expression
+    -- unary-expression
+    unary-operator cast-expression
+    sizeof unary-expression
+    sizeof ( type-name )
+    alignof ( type-name )
+
+unary-operator: one of  &amp; * + - ~ !
+
+cast-expression:
+    unary-expression
+    ( type-name ) cast-expression
+
+multiplicative-expression:
+    cast-expression
+    multiplicative-expression * cast-expression
+    multiplicative-expression / cast-expression
+    multiplicative-expression % cast-expression
+
+additive-expression:
+    multiplicative-expression
+    additive-expression + multiplicative-expression
+    additive-expression - multiplicative-expression
+
+shift-expression:
+    additive-expression
+    shift-expression &lt;&lt; additive-expression
+    shift-expression >> additive-expression
+
+relational-expression:
+    shift-expression
+    relational-expression &lt;  shift-expression
+    relational-expression >  shift-expression
+    relational-expression &lt;= shift-expression
+    relational-expression >= shift-expression
+
+equality-expression:
+    relational-expression
+    equality-expression == relational-expression
+    equality-expression != relational-expression
+
+AND-expression:
+    equality-expression
+    AND-expression &amp; equality-expression
+
+exclusive-OR-expression:
+    AND-expression
+    exclusive-OR-expression ^ AND-expression
+
+inclusive-OR-expression:
+    exclusive-OR-expression
+    inclusive-OR-expression | exclusive-OR-expression
+
+logical-AND-expression:
+    inclusive-OR-expression
+    logical-AND-expression &amp;&amp; inclusive-OR-expression
+
+logical-OR-expression:
+    logical-AND-expression
+    logical-OR-expression || logical-AND-expression
+
+conditional-expression:
+    logical-OR-expression
+    logical-OR-expression ? expression : conditional-expression
+
+assignment-expression:
+    conditional-expression
+    unary-expression assignment-operator assignment-expression
+
+assignment-operator: one of
+    =  *=  /=  %=  +=  -=  &lt;&lt;=  >>=  &amp;=  ^=  |=
+
+expression:
+    assignment-expression
+    expression , assignment-expression
+
+constant-expression:
+    conditional-expression</code></pre><p>This ladder is <strong>the same content</strong> as appendix A’s precedence table. The table is a summary for memorising, and the grammar shows where that table came from — the reason multiplication is stronger than addition is that “an additive expression is defined as being made of multiplicative expressions”.</p><p>A few things visible only in the grammar.</p><p><strong>① The left of an assignment is a <code>unary-expression</code>.</strong> So <code>a + b = c</code> is already caught at the grammar stage — the left side is not a unary expression. <code>*p = c</code> and <code>a[i] = c</code>, on the other hand, pass (they are unary and postfix expressions).</p><p><strong>② Why assignment is right-associative is visible.</strong> The right-hand side is again an <code>assignment-expression</code>, so <code>a = b = c</code> binds as <code>a = (b = c)</code>. Addition is left-recursive (<code>additive-expression + …</code>) and so binds from the left.</p><p><strong>③ The middle of the conditional operator is an <code>expression</code>.</strong> So a comma expression can go in, as in <code>a ? b, c : d</code>, but the last place is a <code>conditional-expression</code>, so parentheses are needed to write an assignment there.</p><p><strong>④ <code>constant-expression</code> is settled not by the grammar but by a constraint.</strong> By the rule alone it is simply a conditional expression, and the demand that it “must be constant” is in a separate constraints clause. What may be written for an array size or a <code>case</code> label is that clause’s part (chapter 23).</p><p><strong>⑤ A compound literal can carry a storage class.</strong> <code>storage-class-specifiers_opt</code> is C23′s addition, so the lifetime can be settled as in <code>(static int[]){1,2,3}</code> (a way round chapter 46′s block-lifetime trap).</p><h4>A.2.2 Declarations</h4><pre><code data-lang="text">declaration:
+    declaration-specifiers init-declarator-list_opt ;
+    attribute-specifier-sequence declaration-specifiers init-declarator-list ;
+    static_assert-declaration
+    attribute-declaration
+
+declaration-specifiers:
+    declaration-specifier attribute-specifier-sequence_opt
+    declaration-specifier declaration-specifiers
+
+declaration-specifier:
+    storage-class-specifier
+    type-specifier-qualifier
+    function-specifier
+
+init-declarator-list:
+    init-declarator
+    init-declarator-list , init-declarator
+
+init-declarator:
+    declarator
+    declarator = initializer
+
+attribute-declaration:
+    attribute-specifier-sequence ;</code></pre><p>The <code>init-declarator-list_opt</code> of the first rule permits <strong>a declaration with no declarator</strong>, as in <code>struct point { int x; };</code> — the case of making only a type and no variable.</p><p>That <code>declaration-specifiers</code> is recursive is the ground for permitting jumbled orders such as <code>unsigned static long const int</code>. The grammar does not enforce an order and the meaning is the same, but it is better to keep the conventional order for the reader.</p><p><strong>Storage classes and types.</strong></p><pre><code data-lang="text">storage-class-specifier: one of
+    auto  constexpr  extern  register  static  thread_local  typedef
+
+type-specifier:
+    void
+    char
+    short
+    int
+    long
+    float
+    double
+    signed
+    unsigned
+    _BitInt ( constant-expression )
+    bool
+    _Complex
+    _Decimal32
+    _Decimal64
+    _Decimal128
+    atomic-type-specifier
+    struct-or-union-specifier
+    enum-specifier
+    typedef-name
+    typeof-specifier
+
+type-qualifier: one of
+    const  restrict  volatile  _Atomic
+
+function-specifier: one of
+    inline  _Noreturn
+
+alignment-specifier:
+    alignas ( type-name )
+    alignas ( constant-expression )
+
+type-specifier-qualifier:
+    type-specifier
+    type-qualifier
+    alignment-specifier</code></pre><p>The four axes organised in chapter 43 are in these few lines as they stand. That <code>typedef</code> is <strong>one of the storage-class specifiers</strong> is visible here (chapter 59), and the demand that “there be only one storage class” is pinned down not by the grammar but by a constraints clause. That <code>constexpr</code> came into the storage-class place is as seen in chapter 80.</p><p><strong>Structures and unions.</strong></p><pre><code data-lang="text">struct-or-union-specifier:
+    struct-or-union attribute-specifier-sequence_opt identifier_opt
+        { member-declaration-list }
+    struct-or-union attribute-specifier-sequence_opt identifier
+
+struct-or-union: one of
+    struct  union
+
+member-declaration-list:
+    member-declaration
+    member-declaration-list member-declaration
+
+member-declaration:
+    attribute-specifier-sequence_opt specifier-qualifier-list
+        member-declarator-list_opt ;
+    static_assert-declaration
+
+specifier-qualifier-list:
+    type-specifier-qualifier attribute-specifier-sequence_opt
+    type-specifier-qualifier specifier-qualifier-list
+
+member-declarator-list:
+    member-declarator
+    member-declarator-list , member-declarator
+
+member-declarator:
+    declarator
+    declarator_opt : constant-expression</code></pre><p>The second line of <code>member-declarator</code> is the <strong>bit-field</strong>, and <code>declarator_opt</code> permits an unnamed bit-field (<code>int : 3;</code> — padding that merely leaves room) (chapter 45).</p><p>That <code>member-declaration-list</code> contains <code>static_assert-declaration</code> is worth noticing too. It means the layout can be checked inside the struct.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> header <span class="tok-x">{</span>
+    <strong><span class="tok-t">uint32_t</span></strong> magic<span class="tok-x">;</span>
+    <strong><span class="tok-t">uint16_t</span></strong> version<span class="tok-x">;</span>
+    <strong>static_assert</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">sizeof</span></strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">uint32_t</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">==</span></strong><strong> </strong><strong><span class="tok-n">4</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> inside the struct </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p><strong>Enumerations.</strong></p><pre><code data-lang="text">enum-specifier:
+    enum attribute-specifier-sequence_opt identifier_opt
+        enum-type-specifier_opt { enumerator-list }
+    enum attribute-specifier-sequence_opt identifier_opt
+        enum-type-specifier_opt { enumerator-list , }
+    enum identifier enum-type-specifier_opt
+
+enumerator-list:
+    enumerator
+    enumerator-list , enumerator
+
+enumerator:
+    enumeration-constant attribute-specifier-sequence_opt
+    enumeration-constant attribute-specifier-sequence_opt = constant-expression
+
+enum-type-specifier:
+    : specifier-qualifier-list</code></pre><p>The <code>, }</code> of the second line permits <strong>a trailing comma</strong> — a practical courtesy that keeps diffs clean when adding an item to a list.</p><p><code>enum-type-specifier</code> is C23′s addition, letting the underlying type of an enumeration be settled.</p><pre><code data-lang="c"><strong><span class="tok-t">enum</span></strong> status : uint8_t <span class="tok-x">{</span> OK <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">,</span> FAIL <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span> <span class="tok-x">}</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> exactly one byte </span></em><em><span class="tok-c">*/</span></em></code></pre><p>It pays where the size is a contract, as in protocol structs (chapter 47).</p><p><strong>Atomic types and typeof.</strong></p><pre><code data-lang="text">atomic-type-specifier:
+    _Atomic ( type-name )
+
+typeof-specifier:
+    typeof ( typeof-specifier-argument )
+    typeof_unqual ( typeof-specifier-argument )
+
+typeof-specifier-argument:
+    expression
+    type-name</code></pre><p>That <code>_Atomic</code> appears in two places is easy to confuse — used as a <strong>qualifier</strong> it is <code>_Atomic int x;</code>, and as a <strong>type specifier</strong> <code>_Atomic(int) x;</code> (chapter 78).</p><p><code>typeof</code> was used as a GCC extension for over thirty years and became standard in C23. <code>typeof_unqual</code> is the edition with <code>const</code> and <code>volatile</code> stripped off, which is especially useful when making a temporary variable inside a macro.</p><p><strong>Declarators — that structure of chapter 59.</strong></p><pre><code data-lang="text">declarator:
+    pointer_opt direct-declarator
+
+direct-declarator:
+    identifier attribute-specifier-sequence_opt
+    ( declarator )
+    array-declarator attribute-specifier-sequence_opt
+    function-declarator attribute-specifier-sequence_opt
+
+array-declarator:
+    direct-declarator [ type-qualifier-list_opt assignment-expression_opt ]
+    direct-declarator [ static type-qualifier-list_opt assignment-expression ]
+    direct-declarator [ type-qualifier-list static assignment-expression ]
+    direct-declarator [ type-qualifier-list_opt * ]
+
+function-declarator:
+    direct-declarator ( parameter-type-list_opt )
+
+pointer:
+    * attribute-specifier-sequence_opt type-qualifier-list_opt
+    * attribute-specifier-sequence_opt type-qualifier-list_opt pointer
+
+type-qualifier-list:
+    type-qualifier
+    type-qualifier-list type-qualifier
+
+parameter-type-list:
+    parameter-list
+    parameter-list , ...
+    ...
+
+parameter-list:
+    parameter-declaration
+    parameter-list , parameter-declaration
+
+parameter-declaration:
+    attribute-specifier-sequence_opt declaration-specifiers declarator
+    attribute-specifier-sequence_opt declaration-specifiers
+        abstract-declarator_opt</code></pre><p>The reading learned by hand in chapter 59 is in these rules. <code>*</code> attaches <strong>in front</strong> (<code>pointer_opt direct-declarator</code>), <code>[]</code> and <code>()</code> attach <strong>behind</strong> (both <code>array-declarator</code> and <code>function-declarator</code> begin with <code>direct-declarator</code>), and binding with parentheses makes what is inside a declarator first (<code>( declarator )</code>). That the rule “the right is stronger than the left” came from the shape of the grammar can be confirmed here.</p><p>The four lines of <code>array-declarator</code> hold the special syntax of array parameters (chapter 38).</p><ul><li>The <code>static</code> of the second and third lines — <code>void f(int a[static 10])</code> is the contract “there are at least 10”.</li><li>The <code>*</code> of the fourth line — <code>int a[*]</code> is the “array of variable length” notation used only in a prototype.</li><li><code>type-qualifier-list</code> — <code>void f(int a[const 10])</code> is the notation for qualifying (what is really) the pointer in a parameter position.</li></ul><p>The third line of <code>parameter-type-list</code> (<code>...</code> alone) is C23′s change. Now variadic arguments can be taken with no named parameter at all, as in <code>int f(...)</code> (the partner of chapter 57′s relaxation of <code>va_start</code>).</p><p>One thing more — <strong>the old-style (K&amp;R) function definition has vanished from the grammar.</strong> The <code>identifier-list</code> that existed up to C17 (<code>int f(a, b) int a, b; { }</code>) was removed in C23, and empty parentheses <code>f()</code> now mean “takes no arguments” (the same as <code>f(void)</code>) (chapter 12).</p><p><strong>Type names and abstract declarators.</strong></p><pre><code data-lang="text">type-name:
+    specifier-qualifier-list abstract-declarator_opt
+
+abstract-declarator:
+    pointer
+    pointer_opt direct-abstract-declarator
+
+direct-abstract-declarator:
+    ( abstract-declarator )
+    array-abstract-declarator attribute-specifier-sequence_opt
+    function-abstract-declarator attribute-specifier-sequence_opt
+
+array-abstract-declarator:
+    direct-abstract-declarator_opt [ type-qualifier-list_opt
+        assignment-expression_opt ]
+    direct-abstract-declarator_opt [ static type-qualifier-list_opt
+        assignment-expression ]
+    direct-abstract-declarator_opt [ type-qualifier-list static
+        assignment-expression ]
+    direct-abstract-declarator_opt [ * ]
+
+function-abstract-declarator:
+    direct-abstract-declarator_opt ( parameter-type-list_opt )
+
+typedef-name:
+    identifier</code></pre><p>An <strong>abstract declarator</strong> is a declarator with the name left out — the one written in casts and in <code>sizeof</code>. The knack stated in chapter 59 (“lay a name in the place where the name ought to be and read”) is expressed in the grammar like this: the abstract declarator is the edition with nothing where <code>identifier</code> was in the declarator rules.</p><p><strong>Initialisation.</strong></p><pre><code data-lang="text">braced-initializer:
+    { }
+    { initializer-list }
+    { initializer-list , }
+
+initializer:
+    assignment-expression
+    braced-initializer
+
+initializer-list:
+    designation_opt initializer
+    initializer-list , designation_opt initializer
+
+designation:
+    designator-list =
+
+designator-list:
+    designator
+    designator-list designator
+
+designator:
+    [ constant-expression ]
+    . identifier</code></pre><p>The empty braces <code>{ }</code> of the first line are C23′s addition. Formerly <code>{0}</code> had to be written; now <code>struct point p = { };</code> says “all zero”.</p><p>That <code>designator-list</code> is a repetition permits nested designated initialisation.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> config c <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span> <span class="tok-x">.</span>net<span class="tok-x">.</span>port <strong><span class="tok-x">=</span></strong> <span class="tok-n">8080</span><span class="tok-x">,</span> <span class="tok-x">.</span>paths<span class="tok-x">[</span><span class="tok-n">2</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">"</span><span class="tok-s">/tmp</span><span class="tok-s">"</span> <span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>The <strong>named-argument</strong> idiom seen in chapter 46 stands on this rule.</p><p><strong>Static assertions and attributes.</strong></p><pre><code data-lang="text">static_assert-declaration:
+    static_assert ( constant-expression , string-literal ) ;
+    static_assert ( constant-expression ) ;
+
+attribute-specifier-sequence:
+    attribute-specifier-sequence_opt attribute-specifier
+
+attribute-specifier:
+    [ [ attribute-list ] ]
+
+attribute-list:
+    attribute_opt
+    attribute-list , attribute_opt
+
+attribute:
+    attribute-token attribute-argument-clause_opt
+
+attribute-token:
+    standard-attribute
+    attribute-prefixed-token
+
+standard-attribute:
+    identifier
+
+attribute-prefixed-token:
+    attribute-prefix :: identifier
+
+attribute-prefix:
+    identifier
+
+attribute-argument-clause:
+    ( balanced-token-sequence_opt )
+
+balanced-token-sequence:
+    balanced-token
+    balanced-token-sequence balanced-token
+
+balanced-token:
+    ( balanced-token-sequence_opt )
+    [ balanced-token-sequence_opt ]
+    { balanced-token-sequence_opt }
+    any token other than a parenthesis, a bracket or a brace</code></pre><p><code>static_assert(cond);</code> without a message is C23′s addition (chapter 74).</p><p>The attribute syntax came over from C++ and C23 brought it formally into the language. What the standard settles are <code>[[deprecated]]</code>, <code>[[fallthrough]]</code>, <code>[[maybe_unused]]</code>, <code>[[nodiscard]]</code>, <code>[[noreturn]]</code>, <code>[[unsequenced]]</code> and <code>[[reproducible]]</code>, while compiler extensions attach a prefix and are written like <code>[[gnu::packed]]</code>. The <code>[[nodiscard]]</code> seen in chapter 85 is a product of this syntax.</p><p>Thanks to <code>balanced-token</code> leaving it open as “any token so long as the brackets match”, the arguments of an extension attribute the standard does not know pass grammatically too — <strong>ignoring</strong> an unknown attribute is the standard’s prescription.</p><h4>A.2.3 Statements</h4><pre><code data-lang="text">statement:
+    labeled-statement
+    unlabeled-statement
+
+unlabeled-statement:
+    expression-statement
+    attribute-specifier-sequence_opt primary-block
+    attribute-specifier-sequence_opt jump-statement
+
+primary-block:
+    compound-statement
+    selection-statement
+    iteration-statement
+
+secondary-block:
+    statement
+
+label:
+    attribute-specifier-sequence_opt identifier :
+    attribute-specifier-sequence_opt case constant-expression :
+    attribute-specifier-sequence_opt default :
+
+labeled-statement:
+    label statement
+
+compound-statement:
+    { block-item-list_opt }
+
+block-item-list:
+    block-item
+    block-item-list block-item
+
+block-item:
+    declaration
+    unlabeled-statement
+    label
+
+expression-statement:
+    expression_opt ;
+    attribute-specifier-sequence expression ;
+
+selection-statement:
+    if ( expression ) secondary-block
+    if ( expression ) secondary-block else secondary-block
+    switch ( expression ) secondary-block
+
+iteration-statement:
+    while ( expression ) secondary-block
+    do secondary-block while ( expression ) ;
+    for ( expression_opt ; expression_opt ; expression_opt ) secondary-block
+    for ( declaration expression_opt ; expression_opt ) secondary-block
+
+jump-statement:
+    goto identifier ;
+    continue ;
+    break ;
+    return expression_opt ;</code></pre><p>C23 restructured the statement grammar. Formerly <code>labeled-statement</code> bound label and statement into one lump; now <code>label</code> is taken out separately and put into <code>block-item</code> as well. The effect is one — <strong>a label may sit at the end of a block.</strong></p><pre><code data-lang="c"><strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
+    <strong><span class="tok-x">...</span></strong>
+cleanup<span class="tok-x">:</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> a syntax error up to C17 (a statement had to follow) </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span></code></pre><p>The <code>goto cleanup</code> idiom seen in chapter 74 no longer needs a forced <code>;</code> after the last label.</p><p>There is more to read in the rest.</p><p><strong>① The empty statement comes out of <code>expression_opt ;</code>.</strong> Write only a <code>;</code> and it is a statement.</p><p><strong>② That <code>for</code> has two lines</strong> is the result of C99′s allowing a declaration in the first place (<code>for (int i = 0; …)</code>). That the scope of that declaration is inside the loop is settled not by the grammar but by the semantic rules (chapter 43).</p><p><strong>③ That <code>if</code>’s <code>else</code> is optional</strong> is the source of the dangling <code>else</code> problem. By the grammar alone <code>if (a) if (b) x; else y;</code> is ambiguous, and the standard settles in a separate sentence that “it attaches to the nearest <code>if</code>”. It is why chapter 31 recommended braces.</p><p><strong>④ A <code>case</code> label’s value is a <code>constant-expression</code></strong> — so a variable cannot come there, while chapter 80′s <code>constexpr</code> constants can.</p><h4>A.2.4 External definitions</h4><pre><code data-lang="text">translation-unit:
+    external-declaration
+    translation-unit external-declaration
+
+external-declaration:
+    function-definition
+    declaration
+
+function-definition:
+    attribute-specifier-sequence_opt declaration-specifiers declarator
+        function-body
+
+function-body:
+    compound-statement</code></pre><p>The <strong>translation unit</strong> seen in chapter 53 appears here as the grammar’s start symbol. One file, having finished preprocessing, is held against this rule.</p><p>Two things are visible in <code>function-definition</code>. First, a definition has <strong>one declarator</strong> only — so several functions cannot be defined at once, as in <code>int f(void), g(void) { }</code>. Second, the body must be a compound statement — so one function is always a block wrapped in braces.</p><h3>A.3 Preprocessing directives</h3><pre><code data-lang="text">preprocessing-file:
+    group_opt
+
+group:
+    group-part
+    group group-part
+
+group-part:
+    if-section
+    control-line
+    text-line
+    # non-directive
+
+if-section:
+    if-group elif-groups_opt else-group_opt endif-line
+
+if-group:
+    # if constant-expression new-line group_opt
+    # ifdef identifier new-line group_opt
+    # ifndef identifier new-line group_opt
+
+elif-groups:
+    elif-group
+    elif-groups elif-group
+
+elif-group:
+    # elif constant-expression new-line group_opt
+    # elifdef identifier new-line group_opt
+    # elifndef identifier new-line group_opt
+
+else-group:
+    # else new-line group_opt
+
+endif-line:
+    # endif new-line
+
+control-line:
+    # include pp-tokens new-line
+    # embed pp-tokens new-line
+    # define identifier replacement-list new-line
+    # define identifier lparen identifier-list_opt ) replacement-list new-line
+    # define identifier lparen ... ) replacement-list new-line
+    # define identifier lparen identifier-list , ... ) replacement-list new-line
+    # undef identifier new-line
+    # line pp-tokens new-line
+    # error pp-tokens_opt new-line
+    # warning pp-tokens_opt new-line
+    # pragma pp-tokens_opt new-line
+    # new-line
+
+text-line:
+    pp-tokens_opt new-line
+
+non-directive:
+    pp-tokens new-line
+
+lparen:
+    a ( character not immediately preceded by white space
+
+replacement-list:
+    pp-tokens_opt
+
+pp-tokens:
+    preprocessing-token
+    pp-tokens preprocessing-token
+
+new-line:
+    the new-line character
+
+identifier-list:
+    identifier
+    identifier-list , identifier</code></pre><p>Here is “the second language that does not know C’s grammar” seen in chapter 56. Three things come out of the rules.</p><p><strong>① Why <code>lparen</code> is defined separately.</strong> The condition “a <code>(</code> not immediately preceded by white space” divides function-like macros from object-like macros.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">F</span></strong><span class="tok-x">(</span>x<span class="tok-x">)</span><span class="tok-p"> </span><span class="tok-x">(</span><span class="tok-x">(</span><span class="tok-p">x</span><span class="tok-x">)</span><strong><span class="tok-x">+</span></strong><span class="tok-n">1</span><span class="tok-x">)</span><span class="tok-p">      </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> function-like — F(3) is substituted </span></em><em><span class="tok-c">*/</span></em>
+<strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><span class="tok-p">G</span><span class="tok-p"> </span><span class="tok-x">(</span><span class="tok-p">x</span><span class="tok-x">)</span><span class="tok-p"> </span><span class="tok-x">(</span><span class="tok-x">(</span><span class="tok-p">x</span><span class="tok-x">)</span><strong><span class="tok-x">+</span></strong><span class="tok-n">1</span><span class="tok-x">)</span><span class="tok-p">     </span><em><span class="tok-c">/*</span></em><em><span class="tok-c"> object-like — G is replaced by "(x) ((x)+1)" </span></em><em><span class="tok-c">*/</span></em></code></pre><p>It is a rare place where one space changes the meaning, and a mine every beginner steps on once.</p><p><strong>② <code># new-line</code> (the null directive) is legal.</strong> A line with only <code>#</code> does nothing.</p><p><strong>③ C23 added three.</strong> <code>#elifdef</code>/<code>#elifndef</code> (formerly one had to write <code>#elif defined(X)</code>), <code>#warning</code> (the standardisation of an old practice), and <code>#embed</code>.</p><p><strong><code>#embed</code> and the conditional-inspection operators.</strong></p><pre><code data-lang="text">pp-parameter:
+    pp-parameter-name pp-parameter-clause_opt
+
+pp-parameter-name:
+    pp-standard-parameter
+    pp-prefixed-parameter
+
+pp-standard-parameter:
+    identifier
+
+pp-prefixed-parameter:
+    identifier :: identifier
+
+pp-parameter-clause:
+    ( pp-balanced-token-sequence_opt )
+
+pp-balanced-token-sequence:
+    pp-balanced-token
+    pp-balanced-token-sequence pp-balanced-token
+
+pp-balanced-token:
+    ( pp-balanced-token-sequence_opt )
+    [ pp-balanced-token-sequence_opt ]
+    { pp-balanced-token-sequence_opt }
+    any pp-token other than a parenthesis, a bracket or a brace
+
+pp-parameters:
+    pp-parameter
+    pp-parameters pp-parameter
+
+defined-macro-expression:
+    defined identifier
+    defined ( identifier )
+
+h-preprocessing-token:
+    any preprocessing-token other than >
+
+h-pp-tokens:
+    h-preprocessing-token
+    h-pp-tokens h-preprocessing-token
+
+header-name-tokens:
+    string-literal
+    &lt; h-pp-tokens >
+
+has-include-expression:
+    __has_include ( header-name )
+    __has_include ( header-name-tokens )
+
+has-embed-expression:
+    __has_embed ( header-name pp-parameters_opt )
+    __has_embed ( header-name-tokens pp-parameters_opt )
+
+has-c-attribute-express:
+    __has_c_attribute ( pp-tokens )
+
+va-opt-replacement:
+    __VA_OPT__ ( pp-tokens_opt )</code></pre><p><strong><code>#embed</code></strong> may be C23′s most practical addition. It plants a file’s <strong>contents</strong> in place as a list of integers.</p><pre><code data-lang="c"><strong><span class="tok-k">static</span></strong> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">unsigned</span></strong> <strong><span class="tok-t">char</span></strong> logo<span class="tok-x">[</span><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-x">{</span>
+#embed <span class="tok-s">"</span><span class="tok-s">logo.png</span><span class="tok-s">"</span>
+<span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>Formerly this work required generating source with a separate tool (something like <code>xxd -i</code>) and wedging it into the build. It is common where fonts, icons and certificates go into firmware. The parameter syntax (<code>limit(…)</code>, <code>prefix(…)</code>, <code>if_empty(…)</code>) is the <code>pp-parameter</code> above, and extensions attach a prefix such as <code>gnu::</code>.</p><p><strong><code>__has_include</code></strong> is the one already used in chapter 79 — it asks whether a header exists and takes another road if not. <code>__has_c_attribute</code> asks about attribute support and <code>__has_embed</code> about whether <code>#embed</code> is possible.</p><p><strong><code>__VA_OPT__</code></strong> is the helper for variadic macros C23 brought in. It puts something in “only when the variadic arguments are not empty”.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">LOG</span></strong><span class="tok-x">(</span>fmt<span class="tok-x">,</span><span class="tok-p"> </span><strong><span class="tok-x">...</span></strong><span class="tok-x">)</span><span class="tok-p"> </span><strong>printf</strong><strong><span class="tok-x">(</span></strong><strong>fmt </strong><strong>__VA_OPT__</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">,</span></strong><strong><span class="tok-x">)</span></strong><strong> __VA_ARGS__</strong><strong><span class="tok-x">)</span></strong>
+<strong>LOG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">hi</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> printf("hi")     — no comma attaches </span></em><em><span class="tok-c">*/</span></em>
+<strong>LOG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">42</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> printf("%d", 42) — a comma attaches </span></em><em><span class="tok-c">*/</span></em></code></pre><p>The place that leaned on a GCC extension (<code>, ##__VA_ARGS__</code>) because of the comma left over when there are no arguments has been tidied into the standard. proven’s formatting macros seen in chapter 89 use this.</p><h3>What the grammar cannot answer</h3><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The type-name problem and the lexer hack</p><p>The ambiguity seen in chapter 16 shows this grammar’s limit.</p><pre><code data-lang="c">A <strong><span class="tok-x">*</span></strong> B<span class="tok-x">;</span></code></pre><p>By the grammar alone this may be an <strong>expression statement</strong> (the product of A and B) or a <strong>declaration</strong> (a pointer B to A). Two rules accept the same token sequence. C resolves this conflict outside the grammar — it decides by looking at whether <code>A</code> <strong>has already been declared</strong> as a type name made with <code>typedef</code>. So a C parser cannot work by the grammar alone and must converse with the name table (the symbol table) — the implementation practice called the “lexer hack” came from here.</p><p>The grammar settles the shape and semantic analysis settles the rest — this one line explains why a compiler is divided into several stages (chapter 16).</p></div><p>Organising what the grammar does not settle gives this.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>what the grammar settles</strong></th><th><strong>what is settled outside the grammar</strong></th></tr><tr><td>whether an arrangement of tokens is legal</td><td>what a name refers to (scope, linkage)</td></tr><tr><td>what binds to what (precedence)</td><td>the order in time of evaluation (chapters 20 and 33)</td></tr><tr><td>that an expression comes in the <code>case</code> place</td><td>the constraint that it be constant</td></tr><tr><td>the shape of a declaration</td><td>whether the types match</td></tr><tr><td>the two possible readings of <code>A * B;</code></td><td>whether <code>A</code> is a type name</td></tr></table></div><p class="float-caption">Table 97.3</p></figure><h3>How to find the grammar in the standard document</h3><p>In the C standard (and in the freely obtainable drafts, see appendix D) the grammar is in two places. Each section of the body carries the rules that section treats, and <strong>annex A</strong> gathers the whole grammar in one place — the annex this appendix has followed. When confirming in practice “may this be written in this place”, opening the annex is quicker; when you want to know “why”, read the corresponding section of the body and its constraints clause.</p><div class="dev recap"><p class="dev-label">Recap</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>to remember</strong></th><th><strong>the point</strong></th></tr><tr><td>BNF</td><td><code>::=</code>, <code>|</code>, nonterminals and terminals. repetition by recursion</td></tr><tr><td>EBNF</td><td><code>[ ]</code> option, <code>{ }</code> repetition, <code>( )</code> grouping — written without recursion</td></tr><tr><td>the C standard’s notation</td><td>indented lines are alternatives, <code>_opt</code> may be omitted, <code>one of</code> lists terminals</td></tr><tr><td>two layers</td><td>lexical grammar (making tokens) + phrase structure grammar (weaving them). preprocessing is separate</td></tr><tr><td>the expression hierarchy</td><td>the precedence table is a summary of this hierarchy. assignment is right-associative, its left side a unary expression</td></tr><tr><td>the declarator rules</td><td><code>*</code> in front, <code>[]</code> and <code>()</code> behind — the ground of chapter 59′s reading</td></tr><tr><td>C23′s changes</td><td><code>_BitInt</code>, binary literals, digit separators, <code>enum : T</code>, empty <code>{ }</code>, label position, <code>#embed</code>, <code>__VA_OPT__</code></td></tr><tr><td>the grammar’s limit</td><td><code>A * B;</code> — it divides only if the type name is known</td></tr></table></div><p class="float-caption">Table 97.4</p></figure></div>
+<div class="nav"><a href="sec103.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="sec105.html">Next →</a></div>
 </div></main></body></html>
