@@ -12,12 +12,12 @@
 > 생겼는지에서 출발해, C23을 기본값으로 삼고, 마지막 부에서
 > [proven](https://github.com/rubidus-api) C 라이브러리로 이어진다.
 
-- **현재 판**: v0.31.0 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.31.0/proven_c_book-v0.31.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.31.0/proven_c_book-v0.31.0-en.pdf)
+- **현재 판**: v0.32.0 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.32.0/proven_c_book-v0.32.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.32.0/proven_c_book-v0.32.0-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.31.0/proven_c_book-v0.31.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.31.0/proven_c_book-v0.31.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.31.0/proven_c_book-v0.31.0-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.31.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.31.0-en.pdf)
-- 13부 96장 + 부록 A~E + 찾아보기 — 한국어판 700쪽, 영어판 751쪽
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.32.0/proven_c_book-v0.32.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.32.0/proven_c_book-v0.32.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.32.0/proven_c_book-v0.32.0-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.32.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.32.0-en.pdf)
+- 13부 96장 + 부록 A~E + 찾아보기 — 한국어판 701쪽, 영어판 751쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 어떤 책인가
@@ -84,8 +84,9 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
 장이 그 장에 기댄다. 뒤 장에 기대는 자리가 있으면 붉은 점선으로 드러난다.
 
 - 표로 보기 — [DEPENDENCIES.md](docs/DEPENDENCIES.md) · [English](docs/DEPENDENCIES-en.md)
-- 더 잔 눈금 — [절 단위 지도](docs/SECTIONS.md): 490개 절의 앞질러 참조·난이도·성격·분량
-- 다시 만들기 — `python3 scripts/make-depgraph.py`, `python3 scripts/section-map.py`
+- 더 잔 눈금 — [절 단위 지도](docs/SECTIONS.md): 499개 절의 앞질러 참조·난이도·성격·분량
+- 용어 — [한국어–영어 대조표](docs/TERMS.md): 개념어 209개와 그 정의 장
+- 다시 만들기 — `python3 scripts/make-depgraph.py`, `scripts/section-map.py`, `scripts/check-terms.py`
 
 ## 예제 직접 돌려 보기
 

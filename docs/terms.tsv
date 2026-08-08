@@ -1,0 +1,153 @@
+# 용어 사전 — 한국어 개념어와 그 원어 (RFC-0019)
+# 형식: 한국어<TAB>영어.  영어를 비우면 「병기하지 않는 것」으로 본다
+#       (키워드·약어·고유명사·이미 영어인 이름).
+# 이 파일은 check-terms.py 가 원고에서 뽑은 사전에 얹는 *정본*이다.
+
+# ── 병기하지 않는 것: 키워드·함수·약어·규격 이름 ─────────────
+bool	
+const	
+volatile	
+typedef	
+nullptr	
+nodiscard	
+assert	
+main	
+fork	
+bss	
+localeconv	
+introsort	
+UTF-8	
+UTF-16	
+UTF-32	
+JSON	
+IEEE 754	
+BCP 47	
+ISO 3166	
+ISO 4217	
+ISO 639	
+Duff's device	
+NUL 문자	
+임베디드	
+
+# ── 기계와 실행 ───────────────────────────────────────────
+메모리 주소	memory address
+메모리 구역	memory region
+비트	bit
+바이트	byte
+워드	word
+엔디안	endianness
+정렬	alignment
+캐시 라인	cache line
+지역성	locality
+파이프라인	pipeline
+분기 예측	branch prediction
+멀티코어	multicore
+거짓 공유	false sharing
+추상 기계	abstract machine
+프로세스	process
+스택	stack
+힙	heap
+스택 크기	stack size
+프리스탠딩	freestanding
+종료 상태	exit status
+표준 출력	standard output
+스트림	stream
+리다이렉션	redirection
+
+# ── 번역과 도구 ───────────────────────────────────────────
+컴파일 과정	compilation
+번역 단계	translation phase
+번역 단위	translation unit
+전처리기	preprocessor
+링크	linking
+연결	linkage
+헤더 파일	header file
+디버거	debugger
+경고 옵션	warning option
+컴파일러 최적화	compiler optimization
+표준 라이브러리	standard library
+
+# ── 타입과 값 ─────────────────────────────────────────────
+변수	variable
+수식	expression
+대입	assignment
+정수 타입	integer type
+부동소수점	floating point
+불리언	boolean
+부호 확장	sign extension
+오버플로	overflow
+암묵적 변환	implicit conversion
+정수 승격	integer promotion
+통상 산술 변환	usual arithmetic conversions
+시프트	shift
+나눗셈	division
+실수 비교	floating-point comparison
+서식 문자열	format string
+복합 리터럴	compound literal
+선언 읽기	reading declarations
+
+# ── 기억과 자료 ───────────────────────────────────────────
+포인터	pointer
+역참조	dereference
+널 포인터	null pointer
+배열	array
+다차원 배열	multidimensional array
+문자열	string
+구조체	struct
+공용체	union
+패딩	padding
+유연 배열 멤버	flexible array member
+저장 기간	storage duration
+유효범위	scope
+동적 할당	dynamic allocation
+할당자	allocator
+단편화	fragmentation
+해시 맵	hash map
+
+# ── 흐름과 함수 ───────────────────────────────────────────
+조건문	conditional statement
+반복문	loop
+중첩 루프	nested loop
+재귀	recursion
+가변 인자	variadic arguments
+비지역 점프	non-local jump
+코루틴	coroutine
+
+# ── 계약과 회색지대 ───────────────────────────────────────
+부수효과	side effect
+시퀀스 포인트	sequence point
+엄격한 앨리어싱	strict aliasing
+데이터 경쟁	data race
+원자적 연산	atomic operation
+이름 충돌	name collision
+
+# ── 문자와 로케일 ─────────────────────────────────────────
+문자 집합	character set
+문자 분류	character classification
+와이드 문자	wide character
+로케일	locale
+입력 해석	input parsing
+스캐너	scanner
+
+# ── 되살린 것: 조사로 끝나 오탐되기 쉬운 정상 용어 ────────────
+셸	shell
+터미널	terminal
+힙	heap
+손잡이	handle
+깃	git
+
+# ── 다어절 정식 용어(조각으로 오인되지 않게 사전에 올린다) ────
+정의되지 않은 동작	undefined behavior
+표준 입출력	standard I/O
+명령행 인자	command-line argument
+부동소수점 예외	floating-point exception
+경계 검사	bounds checking
+
+# ── 사전에서 제외: 정규식이 문 조각 ─────────────────────
+!관대한 기계	
+!구조체의 채움	
+!넣기	
+!선언 읽기	
+!에서도 값	
+!이 구현	
+
