@@ -6,6 +6,38 @@ This project follows Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.37.0] - 2026-08-09
+
+### Added
+- **본문의 일화에 1차 자료 URL을 달았다**(저자 지시: "일화 같은게 있다면 인터넷
+  자료에서 그 URL을 찾아 참고문헌에 … 인용 형식 하나 정해서 그걸 그대로 엄격하게
+  지키면서. 각주로도 넣고 참고문헌으로도").
+  - ★ **인용 서식을 참고문헌 첫머리에 못박았다** — *ACM 참고문헌 서식*. 자료 종류
+    여섯(책·학술 발표·기술 보고서·규격·보안 권고/CVE·온라인 글)마다 적는 순서를
+    표로 고정했고, 세 규칙을 명시했다: *연도는 그 판의 연도 · URL 은 되도록 1차
+    자료 · 본문 각주와 목록이 같은 자료를 가리킨다.* 항목 끝에 인용한 장을 적는다.
+  - ★ **여덟 건 전부 URL 을 실제로 확인하고 실었다**(HTTP 200 확인). 검색 결과를
+    그대로 믿지 않고 응답 코드를 확인했으며, **죽은 URL 하나는 교체했다** —
+    `debian.org/security/2008/dsa-1571` 이 404 라 공식 발표 메일
+    (`lists.debian.org/debian-security-announce/2008/msg00152.html`)로 바꾸고,
+    추적 항목(`security-tracker.debian.org`)을 함께 달았다.
+  - 실은 자료 목록:
+    - **아리안 5** — ARIANE 5 Flight 501 Failure: Report by the Inquiry Board.
+      1996. ESA/CNES. (29장)
+    - **goto fail** — CVE-2014-1266. 2014. NVD, NIST. (31장)
+    - **모리스 웜** — Eugene H. Spafford. 1988. *The Internet Worm Program: An
+      Analysis*. CSD-TR-823, Purdue University. ★ 저자 본인이 올려 둔 사본. (42·64장)
+    - **형식 문자열** — Tim Newsham. 2000. *Format String Attacks*. Guardent.
+      + 분류는 CWE-134. (61·64장)
+    - **알고리즘 복잡도 공격** — Crosby and Wallach. 2003. USENIX Security. (84·91장)
+    - **데비안 OpenSSL 난수** — DSA-1571-1 (CVE-2008-0166). 2008. (92장)
+    - **커널 VLA 제거** — Kees Cook. 2018. LKML + LWN 배경 기사. (38장)
+    - **커널 `-fno-strict-aliasing`** — 커널 최상위 `Makefile` 자체를 1차 확인처로.
+      ★ "리누스가 어디선가 말했다"가 아니라 *지금도 그렇게 빌드된다는 사실*을
+      확인할 수 있는 자리를 가리켰다. (13·17장)
+  - 본문 여덟 자리에 각주를 달았고(양판 16곳), 참고문헌의 「이 책이 인용한 사건들」
+    절을 서식에 맞춰 전면 재작성해 각 항목에 *무슨 일이었는지* 한두 줄을 붙였다.
+
 ## [v0.36.0] - 2026-08-09
 
 ### Added
