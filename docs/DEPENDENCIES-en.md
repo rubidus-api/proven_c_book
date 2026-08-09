@@ -178,7 +178,7 @@ None. Every chapter leans only on chapters before it.
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
 | 84 | The five bugs shipped for fifty years | 51, 42, 61 | 85, 86 |
-| 85 | Getting started — there is nothing to install | 54, 84 | — |
+| 85 | Getting started with proven | 54, 84 | — |
 | 86 | Errors are values | 51, 84 | 94 |
 | 87 | The foundation — bytes, views, and arithmetic that does not overflow | 37, 38, 80 | 91, 94 |
 | 88 | Allocation is a parameter | 45, 83 | 94 |
