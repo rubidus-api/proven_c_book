@@ -9,10 +9,10 @@
 /* 반환값의 네 갈래를 사람 말로 옮긴다 */
 static const char *explain(size_t r)
 {
-    if (r == 0)           return "널 문자를 만났다(0을 돌려준다)";
-    if (r == (size_t)-1)  return "부정한 시퀀스 (errno=EILSEQ)";
-    if (r == (size_t)-2)  return "아직 한 글자가 안 됐다 — 더 필요하다";
-    return "이만큼의 바이트를 먹고 한 글자를 만들었다";
+    if (r == 0)           return "hit the null character (returns 0)";
+    if (r == (size_t)-1)  return "invalid sequence (errno=EILSEQ)";
+    if (r == (size_t)-2)  return "not a whole character yet - more bytes needed";
+    return "consumed this many bytes and produced one character";
 }
 
 static void walk(const char *label, const char *s, size_t len)
@@ -20,7 +20,7 @@ static void walk(const char *label, const char *s, size_t len)
     mbstate_t st;
     memset(&st, 0, sizeof st);      /* 초기 변환 상태 */
 
-    printf("\n[%s] 바이트 %zu개:", label, len);
+    printf("\n[%s] %zu bytes:", label, len);
     for (size_t i = 0; i < len; i++) printf(" %02X", (unsigned char)s[i]);
     puts("");
 
@@ -30,7 +30,7 @@ static void walk(const char *label, const char *s, size_t len)
         errno = 0;
         size_t r = mbrtowc(&wc, s + pos, len - pos, &st);
 
-        printf("  위치 %zu: mbrtowc → ", pos);
+        printf("  at %zu: mbrtowc -> ", pos);
         if (r == (size_t)-1)      printf("(size_t)-1   ");
         else if (r == (size_t)-2) printf("(size_t)-2   ");
         else                      printf("%-12zu", r);
@@ -50,28 +50,28 @@ int main(void)
     /* 이 예제는 UTF-8 로케일이 필요하다 — 없으면 그 사실을 밝히고 끝낸다 */
     const char *loc = setlocale(LC_CTYPE, "C.UTF-8");
     if (!loc) loc = setlocale(LC_CTYPE, "en_US.UTF-8");
-    if (!loc) { puts("UTF-8 로케일이 없다 — 이 시연은 건너뛴다"); return 0; }
+    if (!loc) { puts("no UTF-8 locale - skipping this demonstration"); return 0; }
     printf("LC_CTYPE=%s, MB_CUR_MAX=%zu\n", loc, (size_t)MB_CUR_MAX);
 
-    walk("아스키 두 글자", "Hi", 2);
-    walk("한글 한 글자", "한", 3);
-    walk("BMP 밖 이모지", "\xF0\x9F\x98\x80", 4);
+    walk("two ASCII characters", "Hi", 2);
+    walk("one Hangul syllable", "한", 3);
+    walk("an emoji outside the BMP", "\xF0\x9F\x98\x80", 4);
 
     /* 잘린 문자: 세 바이트 중 둘만 준다 → (size_t)-2 */
-    walk("잘린 한 글자", "\xED\x95", 2);
+    walk("a character cut in half", "\xED\x95", 2);
 
     /* 부정한 시퀀스: 후행 바이트로 시작 → (size_t)-1 */
-    walk("부정한 시퀀스", "\x9C\x41", 2);
+    walk("an invalid sequence", "\x9C\x41", 2);
 
     /* 상태는 이어진다: 잘린 조각을 두 번에 나눠 넣어도 이어 붙는다 */
-    puts("\n[스트림처럼 조각으로 들어올 때] \"한\"을 2+1 바이트로 나눠 넣는다");
+    puts("\n[when it arrives in pieces, as from a stream] feeding \"한\" as 2+1 bytes");
     mbstate_t st;
     memset(&st, 0, sizeof st);
     wchar_t wc = 0;
     size_t r1 = mbrtowc(&wc, "\xED\x95", 2, &st);
-    printf("  1차(2바이트): %s\n", explain(r1));
+    printf("  first pass (2 bytes): %s\n", explain(r1));
     size_t r2 = mbrtowc(&wc, "\x9C", 1, &st);
-    printf("  2차(1바이트): %s → U+%04lX\n", explain(r2), (unsigned long)wc);
-    puts("  mbstate_t 가 '어디까지 봤는지'를 들고 있어서 이어 붙는다.");
+    printf("  second pass (1 byte): %s -> U+%04lX\n", explain(r2), (unsigned long)wc);
+    puts("  mbstate_t remembers how far it has seen, so the pieces join up.");
     return 0;
 }

@@ -45,19 +45,19 @@ int main(void)
 {
     int x = 1, y = 2;
 
-    puts("[do { } while (0) — 매크로가 한 문장이 된다]");
-    if (x < y) SWAP(x, y); else puts("  (여기 오지 않는다)");
-    printf("  교환 뒤: x=%d y=%d   ← if/else 사이에서도 깨지지 않는다\n", x, y);
+    puts("[do { } while (0) - a macro becomes one statement]");
+    if (x < y) SWAP(x, y); else puts("  (we never get here)");
+    printf("  after the swap: x=%d y=%d   <- it does not break between if and else\n", x, y);
 
-    LOG("값 %d 와 %d", x, y);
+    LOG("values %d and %d", x, y);
 
-    puts("\n[for 의 몸통으로 써도 중괄호 없이 안전하다]");
+    puts("\n[safe as the body of a for, even without braces]");
     for (int i = 0; i < 2; i++)
-        LOG("반복 %d", i);
+        LOG("round %d", i);
 
-    puts("\n[goto 로 정리 지점 모으기]");
-    printf("  둘 다 성공: %s\n", build(16, false) ? "ok" : "실패");
-    printf("  둘째에서 실패: %s  ← 첫째만 되돌리고 빠져나왔다\n",
-           build(16, true) ? "ok" : "실패");
+    puts("\n[gathering cleanup with goto]");
+    printf("  both succeeded: %s\n", build(16, false) ? "ok" : "failed");
+    printf("  second one failed: %s  <- only the first was undone before leaving\n",
+           build(16, true) ? "ok" : "failed");
     return 0;
 }

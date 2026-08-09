@@ -16,13 +16,13 @@ typedef enum { OK, BAD_LEAD, BAD_TRAIL, TRUNCATED, OVERLONG, SURROGATE, TOO_BIG 
 static const char *why(verdict v)
 {
     switch (v) {
-    case OK:        return "정상";
-    case BAD_LEAD:  return "선행 바이트가 될 수 없는 값";
-    case BAD_TRAIL: return "후행 바이트가 10xxxxxx 가 아니다";
-    case TRUNCATED: return "필요한 바이트가 모자란다";
-    case OVERLONG:  return "과잉 인코딩 — 더 짧게 적을 수 있는 값";
-    case SURROGATE: return "서러게이트(U+D800~DFFF)는 인코딩할 수 없다";
-    case TOO_BIG:   return "U+10FFFF 를 넘는다";
+    case OK:        return "ok";
+    case BAD_LEAD:  return "a value that cannot be a lead byte";
+    case BAD_TRAIL: return "a trail byte that is not 10xxxxxx";
+    case TRUNCATED: return "not enough bytes";
+    case OVERLONG:  return "overlong encoding - the value could be written shorter";
+    case SURROGATE: return "surrogates (U+D800-DFFF) cannot be encoded";
+    case TOO_BIG:   return "beyond U+10FFFF";
     }
     return "?";
 }
@@ -69,10 +69,10 @@ static void scan(const char *label, const unsigned char *s, size_t n)
         size_t len = 0;
         verdict v = decode(s + pos, n - pos, &cp, &len);
         if (v == OK) {
-            printf("  %zu바이트 → U+%04lX\n", len, cp);
+            printf("  %zu bytes -> U+%04lX\n", len, cp);
             pos += len;
         } else {
-            printf("  거절: %s\n", why(v));
+            printf("  rejected: %s\n", why(v));
             pos += 1;                /* 한 바이트만 버리고 다시 맞춘다 */
             break;
         }
@@ -82,23 +82,23 @@ static void scan(const char *label, const unsigned char *s, size_t n)
 int main(void)
 {
     /* 정상 */
-    scan("아스키", (const unsigned char *)"Hi", 2);
-    scan("한글 '한'", (const unsigned char *)"\xED\x95\x9C", 3);
-    scan("이모지", (const unsigned char *)"\xF0\x9F\x98\x80", 4);
+    scan("ASCII", (const unsigned char *)"Hi", 2);
+    scan("the Hangul syllable '한'", (const unsigned char *)"\xED\x95\x9C", 3);
+    scan("emoji", (const unsigned char *)"\xF0\x9F\x98\x80", 4);
 
     /* 거절해야 하는 것들 */
-    scan("후행 바이트로 시작", (const unsigned char *)"\x9C", 1);
-    scan("잘린 세 바이트", (const unsigned char *)"\xED\x95", 2);
-    scan("후행이 아닌 바이트", (const unsigned char *)"\xED\x41\x9C", 3);
-    scan("과잉 인코딩 C0 80", (const unsigned char *)"\xC0\x80", 2);
-    scan("서러게이트 ED A0 80", (const unsigned char *)"\xED\xA0\x80", 3);
-    scan("범위 초과 F5 80 80 80", (const unsigned char *)"\xF5\x80\x80\x80", 4);
+    scan("starts with a trail byte", (const unsigned char *)"\x9C", 1);
+    scan("three bytes cut short", (const unsigned char *)"\xED\x95", 2);
+    scan("a byte that is not a trail byte", (const unsigned char *)"\xED\x41\x9C", 3);
+    scan("overlong encoding C0 80", (const unsigned char *)"\xC0\x80", 2);
+    scan("surrogate ED A0 80", (const unsigned char *)"\xED\xA0\x80", 3);
+    scan("out of range F5 80 80 80", (const unsigned char *)"\xF5\x80\x80\x80", 4);
 
-    puts("\n자기동기화 확인 — 아무 바이트나 짚어도 글자 경계를 찾을 수 있다:");
+    puts("\nself-synchronization - point at any byte and you can find the character boundary:");
     const unsigned char *s = (const unsigned char *)"a한글b";
     size_t n = strlen((const char *)s);
     for (size_t i = 0; i < n; i++)
-        printf("  바이트 %zu (%02X): %s\n", i, s[i],
-               (s[i] & 0xC0) == 0x80 ? "글자 중간" : "글자 시작");
+        printf("  byte %zu (%02X): %s\n", i, s[i],
+               (s[i] & 0xC0) == 0x80 ? "inside a character" : "start of a character");
     return 0;
 }

@@ -53,27 +53,27 @@ static struct pos find_return(int target)
 static void show(const char *how, struct pos p)
 {
     if (p.found) printf("  %-16s (%d, %d)\n", how, p.row, p.col);
-    else         printf("  %-16s 없음\n", how);
+    else         printf("  %-16s none\n", how);
 }
 
 int main(void)
 {
-    puts("[62 를 찾는다 — 세 방식이 같은 답을 낸다]");
-    show("① 플래그", find_flag(62));
+    puts("[looking for 62 - three ways, same answer]");
+    show("① flag", find_flag(62));
     show("② goto",   find_goto(62));
-    show("③ 함수+return", find_return(62));
+    show("③ function + return", find_return(62));
 
-    puts("\n[없는 값(100)을 찾으면]");
-    show("① 플래그", find_flag(100));
+    puts("\n[looking for a value that is not there (100)]");
+    show("① flag", find_flag(100));
     show("② goto",   find_goto(100));
-    show("③ 함수+return", find_return(100));
+    show("③ function + return", find_return(100));
 
-    puts("\n[break 는 한 겹만 벗는다 — 그래서 위의 장치가 필요하다]");
+    puts("\n[break peels off one layer only - hence the devices above]");
     int visited = 0;
     for (int i = 0; i < ROWS; i++)
         for (int j = 0; j < COLS; j++) { visited++; if (grid[i][j] == 62) break; }
-    printf("  안쪽에서만 break: 칸을 %d 개 훑었다 (전체 %d 개)\n",
+    printf("  break in the inner loop only: visited %d cells (of %d)\n",
            visited, ROWS * COLS);
-    puts("  → 안쪽 루프만 끝났을 뿐 바깥 루프는 계속 돌았다.");
+    puts("  -> only the inner loop ended; the outer one kept going.");
     return 0;
 }

@@ -13,7 +13,7 @@ static void by_param(int p[5])     /* [5] 라고 적어도 포인터다 */
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wsizeof-array-argument"
 #endif
-    printf("  함수 안 sizeof p        = %zu  (포인터 하나)\n", sizeof p);
+    printf("  inside the function sizeof p = %zu  (one pointer)\n", sizeof p);
 #if defined(__GNUC__)
 #  pragma GCC diagnostic pop
 #endif
@@ -21,32 +21,32 @@ static void by_param(int p[5])     /* [5] 라고 적어도 포인터다 */
 
 int main(void)
 {
-    puts("① 무엇을 담는가 — 크기로 드러난다");
+    puts("① what does it hold - the size tells you");
     printf("  sizeof arr = %zu   sizeof ptr = %zu\n", sizeof arr, sizeof ptr);
-    printf("  원소 수: sizeof arr / sizeof arr[0] = %zu\n",
+    printf("  element count: sizeof arr / sizeof arr[0] = %zu\n",
            sizeof arr / sizeof arr[0]);
 
-    puts("\n② 같은 주소, 다른 타입 — +1 이 건너뛰는 폭이 다르다");
+    puts("\n② same address, different type - +1 skips a different width");
     printf("  arr      = %p\n", (void *)arr);
-    printf("  &arr[0]  = %p   (같다)\n", (void *)&arr[0]);
-    printf("  &arr     = %p   (같다 — 그러나 타입이 int(*)[5] 다)\n", (void *)&arr);
-    printf("  arr  + 1 = %p   (+%td 바이트)\n",
+    printf("  &arr[0]  = %p   (the same)\n", (void *)&arr[0]);
+    printf("  &arr     = %p   (the same - but its type is int(*)[5])\n", (void *)&arr);
+    printf("  arr  + 1 = %p   (+%td bytes)\n",
            (void *)(arr + 1), (char *)(arr + 1) - (char *)arr);
-    printf("  &arr + 1 = %p   (+%td 바이트 — 배열 통째로 건너뛴다)\n",
+    printf("  &arr + 1 = %p   (+%td bytes - it skips the whole array)\n",
            (void *)(&arr + 1), (char *)(&arr + 1) - (char *)arr);
 
-    puts("\n③ 누가 옮겨 다닐 수 있는가");
+    puts("\n③ which one can move");
     ptr = ptr + 2;                 /* 포인터는 옮길 수 있다 */
-    printf("  ptr 를 두 칸 옮기니 *ptr = %d\n", *ptr);
+    printf("  moving ptr two slots gives *ptr = %d\n", *ptr);
     /* arr = ptr;  <- 배열 이름은 수정 가능한 좌변값이 아니다: 컴파일 오류 */
     ptr = arr;
 
-    puts("\n④ 첨자는 포인터 오프셋이다 — 그래서 뒤집어도 된다");
+    puts("\n④ a subscript is a pointer offset - which is why it can be reversed");
     printf("  arr[3] = %d,  *(arr + 3) = %d,  3[arr] = %d\n",
            arr[3], *(arr + 3), 3[arr]);
 
-    puts("\n⑤ 함수에 넘기면 크기가 사라진다");
-    printf("  부르기 전 sizeof arr    = %zu\n", sizeof arr);
+    puts("\n⑤ pass it to a function and the size disappears");
+    printf("  sizeof arr before the call = %zu\n", sizeof arr);
     by_param(arr);
 
     return 0;

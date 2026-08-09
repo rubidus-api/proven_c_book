@@ -8,7 +8,7 @@ struct tight { int   b; char  a; char  c; };   /* 큰 것부터 */
 
 int main(void)
 {
-    printf("멤버 크기의 합: %zu + %zu + %zu = %zu바이트\n",
+    printf("sum of the member sizes: %zu + %zu + %zu = %zu bytes\n",
            sizeof(char), sizeof(int), sizeof(char),
            sizeof(char) * 2 + sizeof(int));
 
@@ -27,7 +27,7 @@ int main(void)
            offsetof(struct tight, c));
 
     /* 배치를 그림처럼 그려 본다: 멤버가 차지한 칸은 이름으로, 빈자리는 . 으로 */
-    puts("\n칸별 배치 (숫자는 오프셋, 점은 패딩):");
+    puts("\nlayout cell by cell (numbers are offsets, dots are padding):");
     for (size_t i = 0; i < sizeof(struct loose); i++) {
         char mark = '.';
         if (i == offsetof(struct loose, a)) mark = 'a';
@@ -36,7 +36,7 @@ int main(void)
         else if (i == offsetof(struct loose, c)) mark = 'c';
         printf("%c", mark);
     }
-    printf("   ← loose (%zu바이트)\n", sizeof(struct loose));
+    printf("   <- loose (%zu bytes)\n", sizeof(struct loose));
     for (size_t i = 0; i < sizeof(struct tight); i++) {
         char mark = '.';
         if (i < sizeof(int)) mark = 'b';
@@ -44,10 +44,10 @@ int main(void)
         else if (i == offsetof(struct tight, c)) mark = 'c';
         printf("%c", mark);
     }
-    printf("       ← tight (%zu바이트)\n", sizeof(struct tight));
+    printf("       <- tight (%zu bytes)\n", sizeof(struct tight));
 
     /* 배열로 늘어놓으면 차이가 곱해진다 */
-    printf("\n원소 100만 개일 때: loose %zu MiB, tight %zu MiB\n",
+    printf("\nwith a million elements: loose %zu MiB, tight %zu MiB\n",
            sizeof(struct loose) * 1000000u / (1024 * 1024),
            sizeof(struct tight) * 1000000u / (1024 * 1024));
     return 0;

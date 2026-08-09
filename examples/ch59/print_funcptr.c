@@ -38,36 +38,36 @@ static const char *name_of(binop f)
 {
     for (size_t i = 0; i < sizeof ops / sizeof *ops; i++)
         if (ops[i].fn == f) return ops[i].name;      /* 함수 포인터 비교는 합법 */
-    return "(모르는 함수)";
+    return "(unknown function)";
 }
 
 int main(void)
 {
-    printf("sizeof(함수 포인터) = %zu, sizeof(void *) = %zu\n\n",
+    printf("sizeof(function pointer) = %zu, sizeof(void *) = %zu\n\n",
            sizeof(binop), sizeof(void *));
 
-    puts("[길 ①] 바이트로 떠서 인쇄 — 이식성은 있지만 사람에게는 수수께끼다");
+    puts("[road 1] print the bytes - portable, but a riddle to a human");
     char buf[2 + 2 * sizeof(binop) + 1];
     fmt_funcptr(buf, sizeof buf, add);
-    printf("  add 의 주소 문자열 길이: %zu글자 (값은 실행마다 달라 싣지 않는다)\n",
+    printf("  length of the address string for add: %zu characters (the value differs per run, so it is not shown)\n",
            strlen(buf));
-    printf("  \"0x\" 로 시작하는가: %s\n", strncmp(buf, "0x", 2) == 0 ? "예" : "아니오");
+    printf("  does it start with \"0x\": %s\n", strncmp(buf, "0x", 2) == 0 ? "yes" : "no");
 
-    puts("\n[길 ②] 이름표로 인쇄 — 로그에 남길 것은 이쪽이다");
+    puts("\n[road 2] print the label - this is what belongs in a log");
     binop chosen[] = { mul, add, sub };
     for (size_t i = 0; i < sizeof chosen / sizeof *chosen; i++)
-        printf("  호출 %zu: %s(7, 3) = %d\n",
+        printf("  call %zu: %s(7, 3) = %d\n",
                i, name_of(chosen[i]), chosen[i](7, 3));
 
-    puts("\n[함수 포인터끼리의 비교는 계약 안이다]");
+    puts("\n[comparing function pointers is inside the contract]");
     binop f = add, g = add, h = sub;
-    printf("  같은 함수를 가리키면 같은가: %s\n", f == g ? "예" : "아니오");
-    printf("  다른 함수면 다른가:         %s\n", f != h ? "예" : "아니오");
-    puts("  그래서 '어느 함수인가'는 주소를 인쇄하지 않고도 알아낼 수 있다.");
+    printf("  same function, so equal: %s\n", f == g ? "yes" : "no");
+    printf("  different function, so unequal: %s\n", f != h ? "yes" : "no");
+    puts("  so 'which function is this' can be answered without printing an address.");
 
-    puts("\n[하면 안 되는 것]");
-    puts("  printf(\"%p\", f);          ← 함수 포인터를 %p 에 넘기는 것: 계약 밖");
-    puts("  printf(\"%p\", (void *)f);  ← 표준 밖(POSIX 에서는 통한다). -Wpedantic 이 잡는다");
-    puts("  printf(\"%p\", (void *)&f); ← 컴파일은 되지만 *변수의 주소*다. 원하던 값이 아니다");
+    puts("\n[what not to do]");
+    puts("  printf(\"%p\", f);          <- passing a function pointer to %p: outside the contract");
+    puts("  printf(\"%p\", (void *)f);  <- outside ISO C (POSIX allows it). -Wpedantic catches it");
+    puts("  printf(\"%p\", (void *)&f); <- compiles, but that is *the address of the variable*, not what you wanted");
     return 0;
 }

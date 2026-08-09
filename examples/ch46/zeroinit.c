@@ -16,9 +16,9 @@ static void dump(const char *tag, const struct config *c)
 {
     printf("%s retries=%d path=%s ratio=%g in.k=%d in.note=%s name[0]=%d\n",
            tag, c->retries,
-           c->path == NULL ? "널" : "널 아님",
+           c->path == NULL ? "null" : "not null",
            c->ratio, c->in.k,
-           c->in.note == NULL ? "널" : "널 아님",
+           c->in.note == NULL ? "null" : "not null",
            c->name[0]);
 }
 
@@ -28,7 +28,7 @@ static void bytes(const char *tag, const void *p, size_t n)
     size_t zero = 0;
     for (size_t i = 0; i < n; i++)
         zero += (b[i] == 0);
-    printf("%s %zu바이트 중 0인 바이트 %zu개\n", tag, n, zero);
+    printf("%s %zu bytes, %zu of them zero\n", tag, n, zero);
 }
 
 int main(void)
@@ -47,10 +47,10 @@ int main(void)
        표준이 같다고 보장하지 않는다. */
     struct config m;
     memset(&m, 0, sizeof m);
-    printf("memset 뒤 path 가 널인가: %s (이 구현에서)\n",
-           m.path == NULL ? "그렇다" : "아니다");
+    printf("is path null after memset: %s (on this implementation)\n",
+           m.path == NULL ? "yes" : "no");
 
-    printf("\nsizeof(struct config) = %zu, 멤버 크기 합 = %zu — 차이가 패딩이다\n",
+    printf("\nsizeof(struct config) = %zu, sum of member sizes = %zu - the difference is padding\n",
            sizeof(struct config),
            sizeof(int) + sizeof(char *) + sizeof(double)
            + sizeof(struct inner) + 4);

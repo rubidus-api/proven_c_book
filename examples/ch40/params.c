@@ -7,7 +7,7 @@ static void take_2d(int (*m)[3], size_t rows)
 {
     printf("  int m[][3]  → int (*m)[3] : sizeof m = %zu, sizeof *m = %zu\n",
            sizeof m, sizeof *m);
-    printf("  m[1][2] = %d   (행 하나가 %zu 바이트)\n", m[1][2], sizeof *m);
+    printf("  m[1][2] = %d   (one row is %zu bytes)\n", m[1][2], sizeof *m);
     (void)rows;
 }
 
@@ -33,15 +33,15 @@ int main(void)
     int  wide[2][4] = { { 1, 1, 1, 1 }, { 2, 2, 2, 2 } };
     char *names[]   = { "hana", "dul" };
 
-    puts("① 배열의 배열을 넘긴다");
+    puts("① passing an array of arrays");
     take_2d(grid, 2);
 
-    puts("\n② 포인터의 배열을 넘긴다");
+    puts("\n② passing an array of pointers");
     take_argvish(names);
 
-    puts("\n③ 크기를 함께 넘기면 폭이 달라도 같은 함수가 받는다");
+    puts("\n③ pass the sizes too and one function takes any width");
     printf("  sum_2d(2,3,grid) = %ld\n", sum_2d(2, 3, grid));
-    printf("  sum_2d(2,4,wide) = %ld   <- take_2d 로는 못 받는 모양이다\n",
+    printf("  sum_2d(2,4,wide) = %ld   <- a shape take_2d cannot accept\n",
            sum_2d(2, 4, wide));
 
     return 0;

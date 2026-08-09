@@ -10,7 +10,7 @@
    그러지 않으면 0xED 가 FFFFFFED 로 늘어나 보인다. */
 #define DUMP(label, arr)                                                     \
     do {                                                                     \
-        printf("  %-10s 요소 %zu바이트 × %zu개:", (label),                   \
+        printf("  %-10s %zu elements of %zu bytes: ", (label),                   \
                sizeof (arr)[0], sizeof (arr) / sizeof (arr)[0]);             \
         for (size_t i = 0; i < sizeof (arr) / sizeof (arr)[0]; i++)          \
             printf(" %0*llX", (int)(sizeof (arr)[0] * 2),                    \
@@ -21,15 +21,15 @@
 
 int main(void)
 {
-    puts("[문자 상수] 같은 'A' 를 다섯 가지로 적으면");
-    printf("  %-14s 타입 크기 %zu, 값 %d\n",  "'A'",   sizeof('A'), 'A');
-    printf("  %-14s 타입 크기 %zu, 값 %ld\n", "L'A'",  sizeof(L'A'), (long)L'A');
-    printf("  %-14s 타입 크기 %zu, 값 %u\n",  "u'A'",  sizeof(u'A'), (unsigned)u'A');
-    printf("  %-14s 타입 크기 %zu, 값 %u\n",  "U'A'",  sizeof(U'A'), (unsigned)U'A');
-    printf("  %-14s 타입 크기 %zu, 값 %u\n",  "u8'A'", sizeof(u8'A'), (unsigned)u8'A');
-    puts("  ('A' 는 int 다 — C 에서 문자 상수의 타입은 char 가 아니다)");
+    puts("[character constants] the same 'A' written five ways");
+    printf("  %-14s type size %zu, value %d\n",  "'A'",   sizeof('A'), 'A');
+    printf("  %-14s type size %zu, value %ld\n", "L'A'",  sizeof(L'A'), (long)L'A');
+    printf("  %-14s type size %zu, value %u\n",  "u'A'",  sizeof(u'A'), (unsigned)u'A');
+    printf("  %-14s type size %zu, value %u\n",  "U'A'",  sizeof(U'A'), (unsigned)U'A');
+    printf("  %-14s type size %zu, value %u\n",  "u8'A'", sizeof(u8'A'), (unsigned)u8'A');
+    puts("  ('A' is an int - in C a character constant is not a char)");
 
-    puts("\n[문자열] \"한\" 하나를 다섯 가지로 적으면");
+    puts("\n[strings] the single character \"한\" written five ways");
     static const char     s_plain[] =   "한";
     static const char8_t  s_u8[]    = u8"한";
     static const char16_t s_u16[]   =  u"한";
@@ -41,7 +41,7 @@ int main(void)
     DUMP("char32_t", s_u32);
     DUMP("wchar_t",  s_wide);
 
-    puts("\n[BMP 밖의 글자] U+1F600 (웃는 얼굴)");
+    puts("\n[a character outside the BMP] U+1F600 (a smiling face)");
     static const char     e_plain[] =   "\U0001F600";
     static const char16_t e_u16[]   =  u"\U0001F600";
     static const char32_t e_u32[]   =  U"\U0001F600";
@@ -50,20 +50,20 @@ int main(void)
     DUMP("char16_t", e_u16);   /* ← 두 요소가 된다: 서러게이트 쌍 */
     DUMP("char32_t", e_u32);
     DUMP("wchar_t",  e_wide);
-    puts("  char16_t 만 요소가 둘이다 — 16비트로는 담기지 않아 쌍으로 쪼갠다.");
+    puts("  only char16_t needs two elements - it does not fit in 16 bits, so it splits into a pair.");
 
-    puts("\n[구현이 밝히는 것]");
+    puts("\n[what the implementation declares]");
 #ifdef __STDC_ISO_10646__
-    printf("  __STDC_ISO_10646__ = %ldL — wchar_t 값이 유니코드 코드포인트다\n",
+    printf("  __STDC_ISO_10646__ = %ldL - wchar_t values are Unicode code points\n",
            (long)__STDC_ISO_10646__);
 #else
-    puts("  __STDC_ISO_10646__ 없음 — wchar_t 인코딩은 구현이 정한다(윈도가 그렇다)");
+    puts("  __STDC_ISO_10646__ absent - the wchar_t encoding is up to the implementation (as on Windows)");
 #endif
 #ifdef __STDC_UTF_16__
-    puts("  __STDC_UTF_16__  = 1 — char16_t 는 UTF-16 이다");
+    puts("  __STDC_UTF_16__  = 1 - char16_t is UTF-16");
 #endif
 #ifdef __STDC_UTF_32__
-    puts("  __STDC_UTF_32__  = 1 — char32_t 는 UTF-32 이다");
+    puts("  __STDC_UTF_32__  = 1 - char32_t is UTF-32");
 #endif
     printf("  sizeof(wchar_t) = %zu, WCHAR_MIN = %ld, WCHAR_MAX = %lld\n",
            sizeof(wchar_t), (long)WCHAR_MIN, (long long)WCHAR_MAX);

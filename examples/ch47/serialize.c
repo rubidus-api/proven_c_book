@@ -13,7 +13,7 @@ static void dump(const char *label, const unsigned char *b, size_t n)
 {
     printf("  %-16s", label);
     for (size_t i = 0; i < n; i++) printf(" %02X", b[i]);
-    printf("   (%zu바이트)\n", n);
+    printf("   (%zu bytes)\n", n);
 }
 
 /* ── 올바른 방법: 바이트 순서를 내가 정한다 ─────────────────────
@@ -50,7 +50,7 @@ static int decode(const unsigned char *in, size_t len, struct record *r)
 
 int main(void)
 {
-    printf("struct record: sizeof = %zu (멤버 합은 %zu)\n\n",
+    printf("struct record: sizeof = %zu (members add up to %zu)\n\n",
            sizeof(struct record),
            sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint16_t));
 
@@ -60,31 +60,31 @@ int main(void)
     memset(&r, 0xAA, sizeof r);      /* 자리를 더럽혀 두고 */
     r.kind = 1; r.id = 0x01020304; r.flags = 0x0506;   /* 멤버만 채운다 */
 
-    puts("[통째로 내보내면]");
-    dump("바이트", (const unsigned char *)&r, sizeof r);
-    puts("  → AA 가 보이는 자리가 패딩이다. 값을 정한 적이 없는데 함께 나간다.");
-    puts("    (여기서는 흉내 냈지만, 실제로도 초기화되지 않은 값이 새어 나간다)");
+    puts("[dumping it whole]");
+    dump("bytes", (const unsigned char *)&r, sizeof r);
+    puts("  -> where you see AA is padding. Nobody set those bytes, and out they go.");
+    puts("    (faked here, but in reality uninitialized bytes leak just like this)");
 
-    puts("\n[필드별로 직렬화하면]");
+    puts("\n[serializing field by field]");
     unsigned char buf[16];
     size_t n = encode(buf, &r);
-    dump("바이트", buf, n);
-    puts("  → 패딩이 없고, 순서를 내가 정했다(여기서는 빅 엔디안).");
+    dump("bytes", buf, n);
+    puts("  -> no padding, and the order is mine to choose (big endian here).");
 
     struct record back;
     if (decode(buf, n, &back))
-        printf("  다시 읽으면: kind=%u id=0x%08X flags=0x%04X — %s\n",
+        printf("  reading it back: kind=%u id=0x%08X flags=0x%04X - %s\n",
                back.kind, back.id, back.flags,
                (back.kind == r.kind && back.id == r.id && back.flags == r.flags)
-               ? "원본과 같다" : "다르다");
+               ? "same as the original" : "different");
 
-    puts("\n[같은 값인데 통째 비교는 왜 위험한가]");
+    puts("\n[same values - so why is comparing the whole thing dangerous]");
     struct record a, b;
     memset(&a, 0x00, sizeof a);
     memset(&b, 0xFF, sizeof b);      /* 패딩만 다르게 */
     a.kind = b.kind = 1; a.id = b.id = 42; a.flags = b.flags = 7;
-    printf("  멤버는 모두 같다. memcmp = %d  ← 0 이 아니면 '다르다'는 뜻\n",
+    printf("  every member is equal. memcmp = %d  <- nonzero means 'different'\n",
            memcmp(&a, &b, sizeof a) != 0 ? 1 : 0);
-    puts("  그래서 구조체 비교는 멤버별로 한다.");
+    puts("  which is why structs are compared member by member.");
     return 0;
 }

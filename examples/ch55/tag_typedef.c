@@ -43,21 +43,21 @@ int main(void)
     node b = { .value = 2, .next = nullptr };
     node a = { .value = 1, .next = &b };
 
-    puts("[태그와 typedef 이름은 다른 이름 공간이라 같은 철자를 쓸 수 있다]");
+    puts("[tags and typedef names are different name spaces, so the spelling can be shared]");
     for (node *p = &a; p; p = p->next)
         printf("  node %d\n", p->value);
 
-    puts("\n[열거 상수는 보통 식별자다 — 변수와 같은 마당]");
+    puts("\n[enumeration constants are ordinary identifiers - the same space as variables]");
     printf("  enum color: %s %s %s\n", name_of(red), name_of(green), name_of(blue));
-    puts("  그래서 int red; 는 컴파일 오류다 — 접두어(STATUS_OK)가 관행인 이유");
+    puts("  which is why int red; is a compile error - hence the habit of prefixes (STATUS_OK)");
 
-    puts("\n[태그 마당은 struct·union·enum 이 함께 쓴다 — 하나뿐이다]");
+    puts("\n[struct, union and enum share one tag space - there is only one]");
     struct handle h = { .code = 7 };
     enum   status e = STATUS_BUSY;
     printf("  struct handle.code = %d, enum status = %d\n", h.code, (int)e);
-    puts("  struct status 로는 못 짓는다 — enum status 가 이미 그 태그를 차지했다");
+    puts("  you cannot declare struct status - enum status already took that tag");
 
-    puts("\n[그러나 보통 식별자는 태그와 다른 마당이다]");
-    printf("  변수 status = %d 가 태그 status 와 나란히 산다\n", status);
+    puts("\n[but ordinary identifiers live in a different space from tags]");
+    printf("  the variable status = %d lives beside the tag status\n", status);
     return 0;
 }

@@ -50,7 +50,7 @@ static void measure(const char *label, const char *s)
     }
     (void)prev;
 
-    printf("  바이트 %2zu  코드포인트 %2zu  보이는 글자 %2zu   %s\n",
+    printf("  bytes %2zu  code points %2zu  visible characters %2zu   %s\n",
            bytes, cps, clusters, label);
 }
 
@@ -58,27 +58,27 @@ int main(void)
 {
     const char *loc = setlocale(LC_CTYPE, "C.UTF-8");
     if (!loc) loc = setlocale(LC_CTYPE, "en_US.UTF-8");
-    if (!loc) { puts("UTF-8 로케일이 없다 — 이 시연은 건너뛴다"); return 0; }
+    if (!loc) { puts("no UTF-8 locale - skipping this demonstration"); return 0; }
 
-    puts("[같은 글자를 두 가지로 적을 수 있다]");
-    measure("\"가\" 완성형 U+AC00",            "\uAC00");
-    measure("\"가\" 조합형 U+1100 U+1161",     "\u1100\u1161");
-    measure("\"e\\u0301\" 결합 악센트",        "e\u0301");
-    measure("\"\\u00E9\" 미리 합쳐진 글자",    "\u00E9");
+    puts("[the same letter can be written two ways]");
+    measure("\"가\" precomposed U+AC00",            "\uAC00");
+    measure("\"가\" decomposed U+1100 U+1161",     "\u1100\u1161");
+    measure("\"e\\u0301\" a combining accent",        "e\u0301");
+    measure("\"\\u00E9\" a precomposed letter",    "\u00E9");
 
-    puts("\n[이모지는 여러 코드포인트가 한 글자로 보인다]");
-    measure("웃는 얼굴",              "\U0001F600");
-    measure("가족(ZWJ 로 이어 붙임)", "\U0001F468\u200D\U0001F469\u200D\U0001F467");
-    measure("태극기(지역 표시자 둘)", "\U0001F1F0\U0001F1F7");
-    measure("손 흔들기 + 피부색",     "\U0001F44B\U0001F3FD");
+    puts("\n[an emoji can be several code points that look like one character]");
+    measure("a smiling face",              "\U0001F600");
+    measure("a family (joined with ZWJ)", "\U0001F468\u200D\U0001F469\u200D\U0001F467");
+    measure("a flag (two regional indicators)", "\U0001F1F0\U0001F1F7");
+    measure("a waving hand + skin tone",     "\U0001F44B\U0001F3FD");
 
-    puts("\n[문장 하나]");
+    puts("\n[one sentence]");
     measure("\"Hello, 세계!\"", "Hello, 세계!");
 
-    puts("\n결론: '글자 수'를 묻기 전에 *어느 층의 수*인지 정해야 한다.");
-    puts("  바이트 = 저장·전송의 단위,  코드포인트 = 유니코드의 단위,");
-    puts("  그래핌 클러스터 = 커서가 한 번에 지나가는 단위(UAX #29).");
-    puts("위의 셈은 자주 쓰는 네 규칙만 추린 간이 판이다 — 완전한 판정은");
-    puts("ICU 같은 전용 라이브러리의 몫이다.");
+    puts("\nin short: before asking for a 'character count', decide *which layer* you are counting.");
+    puts("  bytes = the unit of storage and transmission,  code points = the unit of Unicode,");
+    puts("  grapheme clusters = what the cursor steps over at once (UAX #29).");
+    puts("the count above is a simplified version using four common rules - a complete decision");
+    puts("belongs to a dedicated library such as ICU.");
     return 0;
 }

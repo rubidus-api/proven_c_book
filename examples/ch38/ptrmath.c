@@ -12,7 +12,7 @@ int main(void)
     struct point  s[4];
 
     /* ── ① 같은 +1 인데 움직인 폭이 다르다 ─────────────────────── */
-    printf("타입          sizeof   (p+1) - p 바이트\n");
+    printf("type          sizeof   (p+1) - p bytes\n");
     printf("char           %2zu       %td\n",
            sizeof c[0], (char *)(c + 1) - (char *)c);
     printf("int            %2zu       %td\n",
@@ -24,13 +24,13 @@ int main(void)
 
     /* 바이트 단위로 움직이려면 문자 포인터로 캐스트한다 */
     int *p = a;
-    printf("\np + 1        은 %d 을 가리킨다\n", *(p + 1));
-    printf("(char*)p + 1 은 a[0] 의 두 번째 바이트다 (역참조하면 값이 아니라 표현의 조각)\n");
+    printf("\np + 1        points at %d\n", *(p + 1));
+    printf("(char*)p + 1 is the second byte of a[0] (dereference it and you get a piece of the representation, not a value)\n");
 
     /* ── ② 포인터 뺄셈은 원소 개수를 준다 ──────────────────────── */
     ptrdiff_t gap = &a[4] - &a[1];
-    printf("\n&a[4] - &a[1]        = %td  (바이트가 아니라 원소 수)\n", gap);
-    printf("바이트로 세면        = %td\n",
+    printf("\n&a[4] - &a[1]        = %td  (elements, not bytes)\n", gap);
+    printf("counted in bytes     = %td\n",
            (char *)&a[4] - (char *)&a[1]);
 
     /* ── ③ 첨자는 산술의 당의정이다 ────────────────────────────── */
@@ -39,11 +39,11 @@ int main(void)
 
     /* ── ④ 마지막 다음 자리는 만들어도 되지만 따라가면 안 된다 ─── */
     int *end = a + 8;                 /* one-past-the-end — 합법 */
-    printf("\n끝 다음 주소까지의 원소 수: %td (역참조는 하지 않는다)\n", end - a);
+    printf("\nelements up to one-past-the-end: %td (never dereferenced)\n", end - a);
 
     int count = 0;
     for (int *q = a; q != end; q++)   /* 표준 관용구: != end 로 멈춘다 */
         count += (*q != 0);
-    printf("0 이 아닌 원소: %d 개\n", count);
+    printf("nonzero elements: %d\n", count);
     return 0;
 }

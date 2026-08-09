@@ -29,11 +29,11 @@ int main(void)
         thrd_join(t[i], NULL);
 
     long expected = (long)THREADS * BUMPS;
-    printf("기대한 값 : %ld\n", expected);
-    printf("보호 없음 : %ld%s\n", plain, plain == expected ? "" : "  <- 잃어버렸다");
-    printf("원자적    : %ld\n", (long)safe);
+    printf("expected  : %ld\n", expected);
+    printf("unprotected: %ld%s\n", plain, plain == expected ? "" : "  <- we lost some");
+    printf("atomic    : %ld\n", (long)safe);
 
-    printf("\natomic_long 은 잠금 없이 되는가? %s\n",
-           atomic_is_lock_free(&safe) ? "예" : "아니오");
+    printf("\nis atomic_long lock-free? %s\n",
+           atomic_is_lock_free(&safe) ? "yes" : "no");
     return 0;
 }

@@ -21,12 +21,12 @@
 int main(void)
 {
     /* ── ① 리터럴은 배열이다 ─────────────────────────────────── */
-    printf("sizeof \"abcdef\" = %zu  (여섯 글자 + NUL)\n", sizeof "abcdef");
-    printf("sizeof \"\"       = %zu  (빈 문자열도 NUL 한 칸)\n", sizeof "");
+    printf("sizeof \"abcdef\" = %zu  (six characters + NUL)\n", sizeof "abcdef");
+    printf("sizeof \"\"       = %zu  (even an empty string has its NUL)\n", sizeof "");
 
     /* 배열이므로 첨자를 붙일 수 있다 — 38장의 a[i] == *(a+i) 그대로 */
     printf("\"abcdef\"[3] = %c\n", "abcdef"[3]);
-    printf("3[\"abcdef\"] = %c   ← 첨자가 교환된다(같은 뜻이다)\n", 3["abcdef"]);
+    printf("3[\"abcdef\"] = %c   <- the subscript can be swapped (it means the same)\n", 3["abcdef"]);
 
     /* ── ② 인접한 리터럴은 하나로 이어진다 ───────────────────── */
     printf("%s\n", "abc" "def");                 /* -> "abcdef" */
@@ -34,14 +34,14 @@ int main(void)
 
     /* 긴 문장을 줄 나눠 적을 때 — 역슬래시 없이도 된다 */
     const char *help =
-        "사용법: tool [옵션] 파일\n"
-        "  -v   자세히\n"
-        "  -o   출력 파일\n";
+        "usage: tool [options] file\n"
+        "  -v   verbose\n"
+        "  -o   output file\n";
     printf("%s", help);
 
     /* ── ③ 조각을 이름으로 두고 조립하기 ─────────────────────── */
     puts(PROGRAM_TITLE);
-    printf("숫자에서 조립: %s\n", VERSION_FROM_NUMBERS);
+    printf("assembled from digits: %s\n", VERSION_FROM_NUMBERS);
 
     int    id   = 7;
     double temp = 36.5;
@@ -54,14 +54,14 @@ int main(void)
     /* ── ④ 접두사 — 인코딩을 정하는 글자 ─────────────────────── */
     printf("sizeof \"AB\"  = %zu (char)\n",    sizeof "AB");
     printf("sizeof u8\"AB\" = %zu (UTF-8)\n",  sizeof u8"AB");
-    printf("sizeof L\"AB\"  = %zu (wchar_t %zu바이트)\n",
+    printf("sizeof L\"AB\"  = %zu (wchar_t is %zu bytes)\n",
            sizeof L"AB", sizeof(wchar_t));
     printf("sizeof u\"AB\"  = %zu (UTF-16)\n", sizeof u"AB");
     printf("sizeof U\"AB\"  = %zu (UTF-32)\n", sizeof U"AB");
 
     /* 접두사가 있는 것과 없는 것을 이어 붙이면 있는 쪽을 따른다 */
     const wchar_t *w = L"wide" " and narrow";
-    printf("L\"wide\" \" and narrow\" -> 길이 %zu (와이드 문자열이 된다)\n",
+    printf("L\"wide\" \" and narrow\" -> length %zu (the result is a wide string)\n",
            wcslen(w));
     return 0;
 }

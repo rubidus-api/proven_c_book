@@ -5,33 +5,33 @@ static const char *name_of(proven_err_t e)
 {
     switch (e) {
     case PROVEN_OK:                   return "PROVEN_OK";
-    case PROVEN_ERR_NOMEM:            return "NOMEM (기억이 모자람)";
-    case PROVEN_ERR_OUT_OF_BOUNDS:    return "OUT_OF_BOUNDS (그릇 밖)";
-    case PROVEN_ERR_INVALID_ENCODING: return "INVALID_ENCODING (인코딩이 깨짐)";
-    case PROVEN_ERR_INVALID_ARG:      return "INVALID_ARG (인자가 계약 밖)";
-    case PROVEN_ERR_IO:               return "IO (바깥 세계의 실패)";
-    case PROVEN_ERR_NOT_FOUND:        return "NOT_FOUND (없음)";
-    case PROVEN_ERR_INVALID_STATE:    return "INVALID_STATE (지금 할 수 없음)";
-    case PROVEN_ERR_NEED_MORE:        return "NEED_MORE (입력이 더 필요)";
-    case PROVEN_ERR_OVERFLOW:         return "OVERFLOW (계산이 넘침)";
-    case PROVEN_ERR_UNSUPPORTED:      return "UNSUPPORTED (이 환경엔 없음)";
-    case PROVEN_ERR_AGAIN:            return "AGAIN (지금은 말고 다시)";
-    case PROVEN_ERR_EOF:              return "EOF (끝에 닿음)";
-    case PROVEN_ERR_BUSY:             return "BUSY (남이 쓰는 중)";
-    case PROVEN_ERR_PERMISSION:       return "PERMISSION (권한 없음)";
-    case PROVEN_ERR_INVALID_FORMAT:   return "INVALID_FORMAT (형식이 틀림)";
+    case PROVEN_ERR_NOMEM:            return "NOMEM (out of memory)";
+    case PROVEN_ERR_OUT_OF_BOUNDS:    return "OUT_OF_BOUNDS (outside the buffer)";
+    case PROVEN_ERR_INVALID_ENCODING: return "INVALID_ENCODING (broken encoding)";
+    case PROVEN_ERR_INVALID_ARG:      return "INVALID_ARG (argument outside the contract)";
+    case PROVEN_ERR_IO:               return "IO (the outside world failed)";
+    case PROVEN_ERR_NOT_FOUND:        return "NOT_FOUND (not there)";
+    case PROVEN_ERR_INVALID_STATE:    return "INVALID_STATE (cannot do that now)";
+    case PROVEN_ERR_NEED_MORE:        return "NEED_MORE (more input needed)";
+    case PROVEN_ERR_OVERFLOW:         return "OVERFLOW (the arithmetic overflowed)";
+    case PROVEN_ERR_UNSUPPORTED:      return "UNSUPPORTED (not in this environment)";
+    case PROVEN_ERR_AGAIN:            return "AGAIN (not now, try again)";
+    case PROVEN_ERR_EOF:              return "EOF (reached the end)";
+    case PROVEN_ERR_BUSY:             return "BUSY (someone else is using it)";
+    case PROVEN_ERR_PERMISSION:       return "PERMISSION (not allowed)";
+    case PROVEN_ERR_INVALID_FORMAT:   return "INVALID_FORMAT (wrong format)";
     }
-    return "(알 수 없음)";
+    return "(unknown)";
 }
 
 int main(void)
 {
-    proven_println("― 에러 코드 전수 ―");
+    proven_println("-- every error code --");
     for (int i = PROVEN_OK; i <= PROVEN_ERR_INVALID_FORMAT; i++)
         proven_println("{:>2}  {}", PROVEN_ARG(i), PROVEN_ARG(name_of((proven_err_t)i)));
 
     proven_println("");
-    proven_println("― 실제로 어떤 코드가 돌아오는가 ―");
+    proven_println("-- which codes actually come back --");
 
     /* ① 그릇이 모자라다 → OUT_OF_BOUNDS */
     proven_byte_t small[8];

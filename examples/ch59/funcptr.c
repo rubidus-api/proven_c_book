@@ -13,7 +13,7 @@ int main(void)
     /* ① 함수 이름은 값으로 쓰이는 순간 포인터로 무너진다 */
     int (*p)(int, int) = add;     /* & 없이도 된다 */
     int (*q)(int, int) = &add;    /* & 를 붙여도 같다 */
-    printf("add == &add : %s\n", p == q ? "같다" : "다르다");
+    printf("add == &add : %s\n", p == q ? "same" : "different");
 
     /* ② 별표를 아무리 붙여도 결과는 같다 — 역참조가 다시 무너지기 때문 */
     printf("p(2,3)=%d  (*p)(2,3)=%d  (***p)(2,3)=%d  (*******p)(2,3)=%d\n",
@@ -37,7 +37,7 @@ int main(void)
     int v[] = { 5, 2, 9, 1 };
     int cmp(const void *a, const void *b);   /* 아래에 정의 */
     qsort(v, 4, sizeof v[0], cmp);
-    printf("정렬: %d %d %d %d\n", v[0], v[1], v[2], v[3]);
+    printf("sorted: %d %d %d %d\n", v[0], v[1], v[2], v[3]);
     return 0;
 }
 

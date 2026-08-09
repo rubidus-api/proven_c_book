@@ -47,19 +47,19 @@ int main(void)
         for (size_t i = 0; i < N; i++) order[k++] = i * N + j;
     stats col = scan(&m[0][0], order, (size_t)N * N);
 
-    printf("64x64 double 행렬을 4096번 읽는다. 캐시 라인 %d바이트,\n", LINE);
-    printf("한 줄에 double %zu개가 들어간다.\n\n", (size_t)LINE / sizeof(double));
+    printf("reading a 64x64 double matrix 4096 times. Cache line %d bytes,\n", LINE);
+    printf("which holds %zu doubles.\n\n", (size_t)LINE / sizeof(double));
 
-    printf("%-14s %14s %18s\n", "순회", "만진 라인 수", "직전과 같은 라인");
-    printf("%-14s %14zu %18zu\n", "행 우선 ij", row.lines_touched, row.same_line_hits);
-    printf("%-14s %14zu %18zu\n", "열 우선 ji", col.lines_touched, col.same_line_hits);
+    printf("%-14s %14s %18s\n", "traversal", "lines touched", "same line as before");
+    printf("%-14s %14zu %18zu\n", "row-major ij", row.lines_touched, row.same_line_hits);
+    printf("%-14s %14zu %18zu\n", "column-major ji", col.lines_touched, col.same_line_hits);
 
-    printf("\n두 순회가 만지는 라인의 총수는 같다 — 같은 자료를 다 읽으니까.\n");
-    printf("갈리는 것은 *연속성*이다. 행 우선은 %zu번을 직전과 같은 라인에서\n",
+    printf("\nboth traversals touch the same number of lines - they read the same data.\n");
+    printf("what differs is *locality*. Row-major is served from the previous line %zu times\n",
            row.same_line_hits);
-    printf("해결하고, 열 우선은 %zu번뿐이다. 열 우선은 한 걸음이 %zu바이트라\n",
+    printf("out of the total, column-major only %zu times. Column-major steps %zu bytes\n",
            col.same_line_hits, (size_t)N * sizeof(double));
-    printf("매번 다른 라인으로 건너뛴다.\n");
+    printf("each time, so it jumps to a different line every time.\n");
 
     free(order);
     return 0;

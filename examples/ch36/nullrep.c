@@ -14,7 +14,7 @@ static void dump(const char *how, const void *pobj, size_t n)
         printf(" %02X", b[i]);
         if (b[i] != 0) all_zero = 0;
     }
-    printf("   모든 비트 0 인가: %s\n", all_zero ? "그렇다" : "아니다");
+    printf("   all bits zero: %s\n", all_zero ? "yes" : "no");
 }
 
 struct node {
@@ -25,15 +25,15 @@ struct node {
 
 int main(void)
 {
-    printf("이 구현의 포인터 크기: %zu바이트\n\n", sizeof(int *));
+    printf("pointer size on this implementation: %zu bytes\n\n", sizeof(int *));
 
     /* ① 세 가지 표기는 모두 '널 포인터 상수'다 — 문법의 층 */
-    puts("[같은 널을 세 가지로 적어 담아 본다]");
+    puts("[the same null written three ways]");
     int *a = 0;          dump("int *a = 0;",       &a, sizeof a);
     int *b = NULL;       dump("int *b = NULL;",    &b, sizeof b);
     int *c = nullptr;    dump("int *c = nullptr;", &c, sizeof c);
-    printf("  셋이 서로 같은가: %s\n",
-           (a == b && b == c) ? "그렇다 — 표준이 약속한다" : "아니다");
+    printf("  are all three equal: %s\n",
+           (a == b && b == c) ? "yes - the standard promises it" : "no");
 
     /* 0L 과 (void *)0 도 널 포인터 상수다. 반면 '값이 0인 변수'는 아니다:
          const int zero = 0;
@@ -42,38 +42,38 @@ int main(void)
     int *e = (void *)0;  dump("int *e = (void *)0;", &e, sizeof e);
 
     /* ② 비교와 대입은 언제나 옳다 — 기계 속 표현이 무엇이든 */
-    puts("\n[비교는 표현과 무관하게 성립한다]");
-    printf("  a == 0      : %s\n", a == 0       ? "참" : "거짓");
-    printf("  a == NULL   : %s\n", a == NULL    ? "참" : "거짓");
-    printf("  a == nullptr: %s\n", a == nullptr ? "참" : "거짓");
-    printf("  !a          : %s\n", !a           ? "참" : "거짓");
+    puts("\n[comparison holds whatever the representation]");
+    printf("  a == 0      : %s\n", a == 0       ? "true" : "false");
+    printf("  a == NULL   : %s\n", a == NULL    ? "true" : "false");
+    printf("  a == nullptr: %s\n", a == nullptr ? "true" : "false");
+    printf("  !a          : %s\n", !a           ? "true" : "false");
 
     /* ③ 구조체를 0 으로 채우는 두 가지 방법 — 뜻이 다르다 */
-    puts("\n[구조체를 '비우는' 두 방법]");
+    puts("\n[two ways to 'empty' a struct]");
     struct node x = { 0 };              /* 값의 층: 널 포인터와 0.0 을 약속 */
     struct node y;
     memset(&y, 0, sizeof y);            /* 표현의 층: 모든 비트를 0 으로 */
 
-    dump("{ 0 } 의 next", &x.next, sizeof x.next);
-    dump("memset 의 next", &y.next, sizeof y.next);
-    printf("  x.next == nullptr : %s   ← 표준이 약속한다\n",
-           x.next == nullptr ? "참" : "거짓");
-    printf("  x.weight == 0.0   : %s   ← 표준이 약속한다\n",
-           x.weight == 0.0 ? "참" : "거짓");
-    printf("  y.next == nullptr : %s   ← 이 구현에서 그럴 뿐이다\n",
-           y.next == nullptr ? "참" : "거짓");
+    dump("next of { 0 }", &x.next, sizeof x.next);
+    dump("next of memset", &y.next, sizeof y.next);
+    printf("  x.next == nullptr : %s   <- the standard promises it\n",
+           x.next == nullptr ? "true" : "false");
+    printf("  x.weight == 0.0   : %s   <- the standard promises it\n",
+           x.weight == 0.0 ? "true" : "false");
+    printf("  y.next == nullptr : %s   <- true on this implementation, that is all\n",
+           y.next == nullptr ? "true" : "false");
 
     /* ④ calloc 도 '모든 비트 0' 쪽이다 */
-    puts("\n[calloc 이 주는 것도 비트 0 이다]");
+    puts("\n[what calloc gives is all-bits-zero too]");
     int **arr = calloc(4, sizeof *arr);
     if (!arr) { perror("calloc"); return 1; }
-    dump("calloc 의 arr[0]", &arr[0], sizeof arr[0]);
-    printf("  arr[0] == nullptr : %s   ← 이 구현에서 그럴 뿐이다\n",
-           arr[0] == nullptr ? "참" : "거짓");
+    dump("arr[0] of calloc", &arr[0], sizeof arr[0]);
+    printf("  arr[0] == nullptr : %s   <- true on this implementation, that is all\n",
+           arr[0] == nullptr ? "true" : "false");
     free(arr);
 
-    puts("\n정리: 소스에 적는 0 은 *표기*이고, 기억에 담기는 비트는 *표현*이다.");
-    puts("      비교·대입은 표기의 층이라 어디서나 옳고,");
-    puts("      memset·calloc 은 표현의 층이라 널을 약속하지 않는다.");
+    puts("\nin short: the 0 you write in the source is *notation*; what lands in memory is *representation*.");
+    puts("        comparison and assignment live at the notation layer, so they are always right,");
+    puts("        while memset and calloc live at the representation layer and promise no null.");
     return 0;
 }

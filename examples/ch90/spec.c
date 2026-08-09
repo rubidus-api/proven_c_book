@@ -22,11 +22,11 @@ int main(void)
     proven_byte_t buf[256];
 
     /* ── ① 정렬과 채움 ───────────────────────────────────────── */
-    proven_println("|{:>8}|{:<8}|{:^8}|  (오른쪽·왼쪽·가운데)",
+    proven_println("|{:>8}|{:<8}|{:^8}|  (right, left, centre)",
                    PROVEN_ARG("ab"), PROVEN_ARG("ab"), PROVEN_ARG("ab"));
-    proven_println("|{:*>8}|{:-<8}|{:.^8}|  (채움 문자를 앞에 적는다)",
+    proven_println("|{:*>8}|{:-<8}|{:.^8}|  (the fill character goes first)",
                    PROVEN_ARG("ab"), PROVEN_ARG("ab"), PROVEN_ARG("ab"));
-    proven_println("|{:08}|{:+}|{:+}|      (0 채움, 부호 강제)",
+    proven_println("|{:08}|{:+}|{:+}|      (zero fill, forced sign)",
                    PROVEN_ARG(42), PROVEN_ARG(42), PROVEN_ARG(-42));
 
     /* ── ② 진법과 대체 형식 ──────────────────────────────────── */
@@ -38,27 +38,27 @@ int main(void)
     proven_println("{} {:.2} {:.0} {:f} {:e} {:g}",
                    PROVEN_ARG(3.14159), PROVEN_ARG(3.14159), PROVEN_ARG(3.14159),
                    PROVEN_ARG(3.14159), PROVEN_ARG(3.14159), PROVEN_ARG(3.14159));
-    proven_println("아주 큰 수/작은 수: {} {}",
+    proven_println("very large and very small: {} {}",
                    PROVEN_ARG(1e20), PROVEN_ARG(5e-7));
 
     /* ── ④ 중괄호 자체 ───────────────────────────────────────── */
-    proven_println("중괄호는 {{ 와 }} 로 적는다");
+    proven_println("braces are written {{ and }}");
 
     /* ── ⑤ 사용자 타입 ───────────────────────────────────────── */
     frac_t half = { .num = 1, .den = 2 };
     proven_arg_t a = proven_arg_custom(&half, render_frac);
-    proven_println("사용자 타입: {} (폭도 먹는다: |{:>8}|)",
+    proven_println("a user type: {} (it honours the width too: |{:>8}|)",
                    PROVEN_ARG(a), PROVEN_ARG(a));
 
     /* ── ⑥ 세 갈래의 형식화 — 거부 / 자름 / 성장 ─────────────── */
     proven_u8str_t small = proven_u8str_borrow(buf, 8);   /* 내용 7바이트까지 */
 
-    proven_fmt_result_t r1 = proven_u8str_append_fmt(&small, "{}", PROVEN_ARG("가나다라마바사아"));
+    proven_fmt_result_t r1 = proven_u8str_append_fmt(&small, "{}", PROVEN_ARG("abcdefgh"));
     proven_println("append_fmt        err={} written={} required={}",
                    PROVEN_ARG((int)r1.err), PROVEN_ARG(r1.written), PROVEN_ARG(r1.required));
 
     proven_fmt_result_t r2 = proven_u8str_append_fmt_trunc(&small, "{}", PROVEN_ARG("abcdefghij"));
-    proven_println("append_fmt_trunc  err={} written={} required={} 내용=\"{}\"",
+    proven_println("append_fmt_trunc  err={} written={} required={} contents=\"{}\"",
                    PROVEN_ARG((int)r2.err), PROVEN_ARG(r2.written), PROVEN_ARG(r2.required),
                    PROVEN_ARG(proven_u8str_as_view(&small)));
 
@@ -67,17 +67,17 @@ int main(void)
     if (proven_is_ok(made.err)) {
         proven_u8str_t g = made.value;
         proven_fmt_result_t r3 = proven_u8str_append_fmt_grow(alloc, &g, "{} {} {}",
-                                                              PROVEN_ARG("자라난다"),
+                                                              PROVEN_ARG("it grows"),
                                                               PROVEN_ARG(2026),
                                                               PROVEN_ARG(true));
-        proven_println("append_fmt_grow   err={} 내용=\"{}\"",
+        proven_println("append_fmt_grow   err={} contents=\"{}\"",
                        PROVEN_ARG((int)r3.err), PROVEN_ARG(proven_u8str_as_view(&g)));
         proven_u8str_destroy(alloc, &g);
     }
 
     /* ── ⑦ 표 그리기 — 폭 지정의 실제 쓸모 ───────────────────── */
     proven_println("");
-    proven_println("{:<10}{:>6}{:>9}", PROVEN_ARG("이름"), PROVEN_ARG("개수"), PROVEN_ARG("비율"));
+    proven_println("{:<10}{:>6}{:>9}", PROVEN_ARG("name"), PROVEN_ARG("count"), PROVEN_ARG("ratio"));
     proven_println("{:-<25}", PROVEN_ARG(""));
     const char *names[] = { "alpha", "beta", "gamma" };
     int         counts[] = { 7, 128, 3 };

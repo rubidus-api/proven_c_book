@@ -54,7 +54,7 @@ int main(void)
     (void)fails();
     int before = errno;
     raise(SIGUSR1);
-    printf("errno 를 챙기지 않는 처리기: 신호 전 %d(%s) → 신호 뒤 %d(%s)\n",
+    printf("a handler that does not save errno: before %d(%s) -> after %d(%s)\n",
            before, strerror(before), errno, strerror(errno));
 
     /* ② 저장·복원 */
@@ -62,7 +62,7 @@ int main(void)
     (void)fails();
     before = errno;
     raise(SIGUSR1);
-    printf("errno 를 챙기는 처리기:     신호 전 %d(%s) → 신호 뒤 %d(%s)\n",
+    printf("a handler that does save errno:     before %d(%s) -> after %d(%s)\n",
            before, strerror(before), errno, strerror(errno));
 
     /* ③ 계산 도중에 끼어들어도 결과가 같다.
@@ -71,16 +71,16 @@ int main(void)
     hits = 0;
     long quiet = compute(0);            /* 신호 없이 */
     long hit   = compute(500);          /* 한복판에서 한 번 맞고 */
-    printf("\n조용히 계산한 값 = %ld\n", quiet);
-    printf("500회째에 신호를 맞고 계산한 값 = %ld  (처리기 호출 %d회)\n",
+    printf("\nvalue computed undisturbed = %ld\n", quiet);
+    printf("value computed while hit by a signal at iteration 500 = %ld  (handler called %d times)\n",
            hit, (int)hits);
-    puts(quiet == hit ? "같다 — 커널이 레지스터 전부를 저장했다가 되돌려 주었다"
-                      : "다르다 — 이럴 리가 없다");
+    puts(quiet == hit ? "the same - the kernel saved every register and gave them back"
+                      : "different - this should not happen");
 
-    puts("\nsetjmp/longjmp 와의 차이가 여기 있다(77장):");
-    puts("  신호: 커널이 *전체* 레지스터 집합을 저장했다가 복원한다 →");
-    puts("        수식 한복판으로 되돌아와도 계산이 이어진다.");
-    puts("  longjmp: jmp_buf 에는 *피호출자 보존* 레지스터만 들어간다 →");
-    puts("        나머지 레지스터에 있던 지역 변수는 옛 값으로 되돌아간다.");
+    puts("\nthis is where it differs from setjmp/longjmp (chapter 77):");
+    puts("  a signal: the kernel saves and restores the *whole* register set ->");
+    puts("        you can return into the middle of an expression and the arithmetic continues.");
+    puts("  longjmp: a jmp_buf holds only the *callee-saved* registers ->");
+    puts("        locals that lived in the other registers snap back to their old values.");
     return 0;
 }

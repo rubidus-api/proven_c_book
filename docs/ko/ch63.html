@@ -355,7 +355,7 @@ with a 4-byte buffer:
     <strong>fputs</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">10</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">20</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">30</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong>fclose</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">틀린 판 — while (!feof(f)):</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the wrong version - while (!feof(f)):</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     f <strong><span class="tok-x">=</span></strong> <strong>fopen</strong><strong><span class="tok-x">(</span></strong><strong>path</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">r</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>f<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
     <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong><strong>feof</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
@@ -365,7 +365,7 @@ with a 4-byte buffer:
     <span class="tok-x">}</span>
     <strong>fclose</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">올바른 판 — 읽기의 반환값으로 제어:</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">the right version - driven by the return value of the read:</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     f <strong><span class="tok-x">=</span></strong> <strong>fopen</strong><strong><span class="tok-x">(</span></strong><strong>path</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">r</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span><strong><span class="tok-x">!</span></strong>f<span class="tok-x">)</span> <strong><span class="tok-k">return</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span>
     <strong><span class="tok-t">int</span></strong> v<span class="tok-x">;</span>
@@ -377,12 +377,12 @@ with a 4-byte buffer:
     <strong>remove</strong><strong><span class="tok-x">(</span></strong><strong>path</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
-</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>틀린 판 — while (!feof(f)):
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>the wrong version - while (!feof(f)):
   read 10
   read 20
   read 30
   read 30
-올바른 판 — 읽기의 반환값으로 제어:
+the right version - driven by the return value of the read:
   read 10
   read 20
   read 30

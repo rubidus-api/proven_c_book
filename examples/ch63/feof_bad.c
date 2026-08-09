@@ -10,7 +10,7 @@ int main(void)
     fputs("10\n20\n30\n", f);
     fclose(f);
 
-    printf("틀린 판 — while (!feof(f)):\n");
+    printf("the wrong version - while (!feof(f)):\n");
     f = fopen(path, "r");
     if (!f) return 1;
     while (!feof(f)) {
@@ -20,7 +20,7 @@ int main(void)
     }
     fclose(f);
 
-    printf("올바른 판 — 읽기의 반환값으로 제어:\n");
+    printf("the right version - driven by the return value of the read:\n");
     f = fopen(path, "r");
     if (!f) return 1;
     int v;

@@ -19,7 +19,7 @@ static void *volatile sink;      /* 최적화가 할당을 지우지 못하게 �
 int main(void)
 {
     /* ── ① 정렬: 무엇을 담을지 모르므로 가장 엄격한 정렬로 준다 ── */
-    printf("max_align_t 의 정렬  = %zu 바이트\n", alignof(max_align_t));
+    printf("alignment of max_align_t = %zu bytes\n", alignof(max_align_t));
 
     size_t misaligned = 0;
     void *p[8];
@@ -27,8 +27,8 @@ int main(void)
         p[i] = malloc(1);                    /* 1바이트만 요청해도 */
         if ((uintptr_t)p[i] % alignof(max_align_t) != 0) misaligned++;
     }
-    printf("1바이트 요청 8회 중 기본 정렬을 어긴 것: %zu 개\n", misaligned);
-    printf("이웃한 두 블록의 주소 간격: %td 바이트 (1을 요청했는데도)\n",
+    printf("of 8 one-byte requests, ones breaking the default alignment: %zu\n", misaligned);
+    printf("address gap between two neighbouring blocks: %td bytes (though 1 was asked for)\n",
            (char *)p[1] - (char *)p[0]);
     for (int i = 0; i < 8; i++) free(p[i]);
 
@@ -67,10 +67,10 @@ int main(void)
     }
     double t_stack = seconds_since(t0);
 
-    printf("\n%d 회 반복\n", N);
-    printf("  매번 malloc + free : %7.4f 초  (회당 %5.1f ns)\n", t_alloc, t_alloc / N * 1e9);
-    printf("  한 번 빌려 재사용   : %7.4f 초  (회당 %5.1f ns)\n", t_reuse, t_reuse / N * 1e9);
-    printf("  스택 배열           : %7.4f 초  (회당 %5.1f ns)\n", t_stack, t_stack / N * 1e9);
-    printf("\n(합계 %llu — 계산이 지워지지 않게 쓰는 값)\n", acc);
+    printf("\n%d iterations\n", N);
+    printf("  malloc + free every time : %7.4f s  (%5.1f ns each)\n", t_alloc, t_alloc / N * 1e9);
+    printf("  borrow once and reuse    : %7.4f s  (%5.1f ns each)\n", t_reuse, t_reuse / N * 1e9);
+    printf("  a stack array            : %7.4f s  (%5.1f ns each)\n", t_stack, t_stack / N * 1e9);
+    printf("\n(total %llu - a value we use so the work is not optimized away)\n", acc);
     return 0;
 }

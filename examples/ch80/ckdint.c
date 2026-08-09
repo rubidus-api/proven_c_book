@@ -10,7 +10,7 @@ static void *alloc_array(size_t n, size_t sz)
 {
     size_t bytes;
     if (ckd_mul(&bytes, n, sz)) {       /* 참이면 넘쳤다 */
-        printf("  크기 계산이 넘쳤다 - 할당하지 않는다\n");
+        printf("  the size arithmetic overflowed - nothing is allocated\n");
         return NULL;
     }
     return malloc(bytes);
@@ -22,27 +22,27 @@ int main(void)
     int r;
     bool over = ckd_add(&r, INT_MAX, 1);
     printf("INT_MAX = %d\n", INT_MAX);
-    printf("ckd_add(INT_MAX, 1)  넘침? %s   r = %d (감아 돈 값)\n", over ? "예" : "아니오", r);
+    printf("ckd_add(INT_MAX, 1)  overflow? %s   r = %d (the wrapped value)\n", over ? "yes" : "no", r);
 
     over = ckd_add(&r, 1, 2);
-    printf("ckd_add(1, 2)        넘침? %s   r = %d\n", over ? "예" : "아니오", r);
+    printf("ckd_add(1, 2)        overflow? %s   r = %d\n", over ? "yes" : "no", r);
 
     /* 타입이 섞여도 수학적 값으로 판정한다 */
     signed char c;
     over = ckd_add(&c, 200, 100);
-    printf("signed char <- 300   넘침? %s   c = %d\n", over ? "예" : "아니오", c);
+    printf("signed char <- 300   overflow? %s   c = %d\n", over ? "yes" : "no", c);
 
     /* 부호 없는 뺄셈: 감아 도는 것은 정의된 동작이지만, 여기서도 "넘쳤다"고 알린다 */
     unsigned u;
     over = ckd_sub(&u, 3u, 5u);
-    printf("unsigned  <- 3 - 5   넘침? %s   u = %u\n", over ? "예" : "아니오", u);
+    printf("unsigned  <- 3 - 5   overflow? %s   u = %u\n", over ? "yes" : "no", u);
 
-    printf("\n할당 계산\n");
+    printf("\nsize arithmetic for an allocation\n");
     void *ok = alloc_array(1000, sizeof(int));
-    printf("  1000 x %zu -> %s\n", sizeof(int), ok ? "할당됨" : "거부됨");
+    printf("  1000 x %zu -> %s\n", sizeof(int), ok ? "allocated" : "refused");
     free(ok);
     void *bad = alloc_array(SIZE_MAX / 2, sizeof(int));
-    printf("  SIZE_MAX/2 x %zu -> %s\n", sizeof(int), bad ? "할당됨" : "거부됨");
+    printf("  SIZE_MAX/2 x %zu -> %s\n", sizeof(int), bad ? "allocated" : "refused");
     free(bad);
     return 0;
 }

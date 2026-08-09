@@ -4,12 +4,12 @@
 #include <stdio.h>
 
 /* 문자열 멤버: 비어 있으면 눈에 보이게 표시한다 */
-static const char *str(const char *s) { return (s && *s) ? s : "(빈 문자열)"; }
+static const char *str(const char *s) { return (s && *s) ? s : "(empty string)"; }
 
 /* char 멤버: CHAR_MAX 는 "이 로케일은 정하지 않았다"는 뜻이다 */
 static void show_char(const char *name, char v)
 {
-    if (v == CHAR_MAX) printf("  %-20s CHAR_MAX (정해지지 않음)\n", name);
+    if (v == CHAR_MAX) printf("  %-20s CHAR_MAX (not specified)\n", name);
     else               printf("  %-20s %d\n", name, v);
 }
 
@@ -19,7 +19,7 @@ static void show_char(const char *name, char v)
 static void show_grouping(const char *name, const char *g)
 {
     printf("%-20s ", name);
-    if (!*g) { puts("(빈 문자열 — 자리 묶음 없음)"); return; }
+    if (!*g) { puts("(empty string - no grouping)"); return; }
     for (const char *p = g; *p; p++) {
         if (*p == CHAR_MAX) printf("CHAR_MAX ");
         else                printf("%d ", *p);
@@ -31,12 +31,12 @@ static void dump_all(void)
 {
     struct lconv *L = localeconv();
 
-    puts("[비통화 숫자]");
+    puts("[non-monetary numbers]");
     printf("  %-20s \"%s\"\n", "decimal_point", str(L->decimal_point));
     printf("  %-20s \"%s\"\n", "thousands_sep", str(L->thousands_sep));
     show_grouping("  grouping", L->grouping);
 
-    puts("[통화 숫자]");
+    puts("[monetary numbers]");
     printf("  %-20s \"%s\"\n", "mon_decimal_point", str(L->mon_decimal_point));
     printf("  %-20s \"%s\"\n", "mon_thousands_sep", str(L->mon_thousands_sep));
     show_grouping("  mon_grouping", L->mon_grouping);
@@ -47,7 +47,7 @@ static void dump_all(void)
     show_char("frac_digits", L->frac_digits);
     show_char("int_frac_digits", L->int_frac_digits);
 
-    puts("[통화 표기의 조립 규칙]");
+    puts("[rules for assembling a monetary amount]");
     show_char("p_cs_precedes", L->p_cs_precedes);
     show_char("p_sep_by_space", L->p_sep_by_space);
     show_char("p_sign_posn", L->p_sign_posn);
@@ -60,11 +60,11 @@ static void dump_all(void)
 static void compare_row(const char *name)
 {
     if (!setlocale(LC_ALL, name)) {
-        printf("  %-14s (이 기계에 없음)\n", name);
+        printf("  %-14s (not on this machine)\n", name);
         return;
     }
     struct lconv *L = localeconv();
-    printf("  %-14s 소수점 \"%s\"  천단위 \"%s\"  통화 \"%s\"  ISO \"%s\"\n",
+    printf("  %-14s point \"%s\"  thousands \"%s\"  currency \"%s\"  ISO \"%s\"\n",
            name, str(L->decimal_point), str(L->thousands_sep),
            str(L->currency_symbol), str(L->int_curr_symbol));
 }
@@ -72,10 +72,10 @@ static void compare_row(const char *name)
 int main(void)
 {
     /* 시작 로케일은 "C" 다. 표준이 이 값들을 직접 규정한다(§7.11). */
-    puts("=== \"C\" 로케일 — 표준이 규정한 값 ===");
+    puts("=== the \"C\" locale - the values the standard prescribes ===");
     dump_all();
 
-    puts("\n=== 로케일별 비교 ===");
+    puts("\n=== comparing locales ===");
     static const char *names[] = {
         "C", "en_US.UTF-8", "ko_KR.UTF-8", "de_DE.UTF-8",
         "fr_FR.UTF-8", "ja_JP.UTF-8", "en_IN.UTF-8",
@@ -84,25 +84,25 @@ int main(void)
         compare_row(names[i]);
 
     /* 자리 묶음이 3자리 고정이 아닌 로케일이 있다 — 인도식 표기 */
-    puts("\n=== 자리 묶음은 3자리 고정이 아니다 ===");
+    puts("\n=== grouping is not always three digits ===");
     static const char *grp[] = { "C", "en_US.UTF-8", "en_IN.UTF-8" };
     for (size_t i = 0; i < sizeof grp / sizeof *grp; i++) {
         if (!setlocale(LC_ALL, grp[i])) {
-            printf("  %-14s (이 기계에 없음)\n", grp[i]);
+            printf("  %-14s (not on this machine)\n", grp[i]);
             continue;
         }
         printf("  %-14s ", grp[i]);
         show_grouping("grouping", localeconv()->grouping);
     }
-    puts("  → en_IN 의 3,2 는 \"오른쪽부터 3자리, 그 뒤로는 2자리씩\" —");
-    puts("    12345678 이 1,23,45,678 로 묶인다(라크·크로르 셈법).");
+    puts("  -> en_IN's 3,2 means \"three digits from the right, then two at a time\" -");
+    puts("    12345678 groups as 1,23,45,678 (the lakh and crore system).");
 
     /* 소수점이 바뀌면 printf 와 strtod 가 함께 바뀐다 */
-    puts("\n=== LC_NUMERIC 이 printf 를 바꾼다 ===");
+    puts("\n=== LC_NUMERIC changes printf ===");
     static const char *num_locales[] = { "C", "de_DE.UTF-8", "fr_FR.UTF-8" };
     for (size_t i = 0; i < sizeof num_locales / sizeof *num_locales; i++) {
         if (!setlocale(LC_NUMERIC, num_locales[i])) {
-            printf("  %-14s (이 기계에 없음)\n", num_locales[i]);
+            printf("  %-14s (not on this machine)\n", num_locales[i]);
             continue;
         }
         printf("  %-14s printf(\"%%.2f\", 1234.5) → %.2f\n",

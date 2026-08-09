@@ -21,14 +21,14 @@ struct parse_i64 {
 static struct parse_i64 parse_int(const char *text)
 {
     struct parse_i64 r = { .ok = false, .value = 0, .rest = text, .why = "" };
-    if (!text) { r.why = "입력이 없다"; return r; }
+    if (!text) { r.why = "empty input"; return r; }
 
     errno = 0;
     char *end = nullptr;
     long long v = strtoll(text, &end, 10);
 
-    if (end == text)                 { r.why = "수로 시작하지 않는다";  return r; }
-    if (errno == ERANGE)             { r.why = "이 타입에 담기지 않는다"; r.rest = end; return r; }
+    if (end == text)                 { r.why = "does not start with a number";  return r; }
+    if (errno == ERANGE)             { r.why = "does not fit in this type"; r.rest = end; return r; }
 
     r.ok = true; r.value = v; r.rest = end; r.why = "";
     return r;
@@ -38,10 +38,10 @@ static void show(const char *text)
 {
     struct parse_i64 r = parse_int(text);
     if (r.ok)
-        printf("  %-24s → 성공: %lld, 남은 입력: \"%s\"\n",
+        printf("  %-24s -> ok: %lld, input left: \"%s\"\n",
                text, r.value, r.rest);
     else
-        printf("  %-24s → 실패: %s\n", text, r.why);
+        printf("  %-24s -> failed: %s\n", text, r.why);
 }
 
 /* 잘림을 오류로 다루는 복사 — "잘렸지만 성공"을 남기지 않는다 */
@@ -56,13 +56,13 @@ static bool copy_line(char *dst, size_t cap, const char *src)
 
 int main(void)
 {
-    puts("[① 실패를 값으로 돌려준다 — 성공 여부와 값을 갈라서]");
+    puts("[1: return the failure as a value - success and value kept apart]");
     show("42");
-    show("  42 그리고 나머지");
-    show("마흔둘");
+    show("  42 and then some");
+    show("forty-two");
     show("999999999999999999999999");
 
-    puts("\n[② 어디까지 읽었는지 알려준다]");
+    puts("\n[2: say how far you read]");
     const char *csv = "10,20,30";
     long long sum = 0;
     const char *p = csv;
@@ -74,24 +74,24 @@ int main(void)
         if (*p == ',') p++;
         else break;
     }
-    printf("  \"%s\" 의 합 = %lld  ← rest 가 있어 이어 읽을 수 있다\n", csv, sum);
+    printf("  sum of \"%s\" = %lld  <- rest lets you keep reading\n", csv, sum);
 
-    puts("\n[③ 잘림을 성공으로 치지 않는다]");
+    puts("\n[3: truncation does not count as success]");
     char small[8];
     printf("  \"hello\" → %s\n",
-           copy_line(small, sizeof small, "hello") ? "성공" : "실패(잘림)");
+           copy_line(small, sizeof small, "hello") ? "ok" : "failed (truncated)");
     printf("  \"hello, world\" → %s\n",
-           copy_line(small, sizeof small, "hello, world") ? "성공" : "실패(잘림)");
+           copy_line(small, sizeof small, "hello, world") ? "ok" : "failed (truncated)");
 
-    puts("\n[④ 실패하면 출력 인자를 건드리지 않는다]");
+    puts("\n[4: on failure, leave the output argument alone]");
     long long keep = -1;
-    struct parse_i64 bad = parse_int("없는 수");
+    struct parse_i64 bad = parse_int("not a number");
     if (bad.ok) keep = bad.value;
-    printf("  실패한 뒤 원래 값이 그대로인가: %s (keep = %lld)\n",
-           keep == -1 ? "예" : "아니오", keep);
+    printf("  is the original value still there after the failure: %s (keep = %lld)\n",
+           keep == -1 ? "yes" : "no", keep);
 
-    puts("\n[⑤ 확인을 잊으면 컴파일러가 말하게 한다]");
-    puts("  parse_int 와 copy_line 에는 [[nodiscard]] 가 붙어 있다.");
-    puts("  반환값을 버리면 경고가 난다 — 실패 확인을 잊는 사고를 막는다.");
+    puts("\n[5: let the compiler speak when you forget to check]");
+    puts("  parse_int and copy_line are marked [[nodiscard]].");
+    puts("  dropping the return value warns - that stops you forgetting to check for failure.");
     return 0;
 }

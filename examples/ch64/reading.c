@@ -23,7 +23,7 @@ static void read_fixed(void)
     while (fgets(buf, sizeof buf, f)) {
         int complete = strchr(buf, '\n') != NULL;
         if (complete) buf[strcspn(buf, "\n")] = '\0';
-        printf("  [%s]%s\n", buf, complete ? "" : "   <- 잘림(줄이 이어짐)");
+        printf("  [%s]%s\n", buf, complete ? "" : "   <- cut (the line continues)");
     }
     fclose(f);
 }
@@ -54,10 +54,10 @@ int main(void)
 {
     make_file();
 
-    printf("고정 8바이트 버퍼:\n");
+    printf("a fixed 8-byte buffer:\n");
     read_fixed();
 
-    printf("늘려 가며 읽기:\n");
+    printf("growing the buffer as we read:\n");
     FILE *f = fopen(PATH, "r");
     if (f) {
         char *line;

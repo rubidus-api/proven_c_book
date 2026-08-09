@@ -27,7 +27,7 @@ static void run(const char *where, proven_allocator_t alloc)
     proven_u8str_t s;
     proven_err_t e = make_list(alloc, 6, &s);
     if (!proven_is_ok(e)) {
-        proven_println("{:<8} 실패(코드 {})", PROVEN_ARG(where), PROVEN_ARG((int)e));
+        proven_println("{:<8} failed (code {})", PROVEN_ARG(where), PROVEN_ARG((int)e));
         return;
     }
     proven_println("{:<8} {}", PROVEN_ARG(where), PROVEN_ARG(proven_u8str_as_view(&s)));
@@ -45,12 +45,12 @@ int main(void)
         (proven_mem_mut_t){ .ptr = backing, .size = sizeof backing });
     run("arena", proven_arena_as_allocator(&arena));
 
-    proven_println("  아레나 사용량: {} / {} 바이트",
+    proven_println("  arena in use: {} / {} bytes",
                    PROVEN_ARG(arena.offset), PROVEN_ARG(arena.backing.size));
 
     /* 아레나의 해제는 개별이 아니라 통째로다 */
     proven_arena_reset(&arena);
-    proven_println("  리셋 뒤 사용량: {} (개별 해제는 아무 일도 하지 않았다)",
+    proven_println("  in use after reset: {} (freeing individually did nothing)",
                    PROVEN_ARG(arena.offset));
 
     /* ── ③ 풀 — 같은 크기 조각을 돌려 쓴다 ─────────────────────── */
@@ -71,7 +71,7 @@ int main(void)
         (proven_mem_mut_t){ .ptr = backing, .size = 64 });
     proven_u8str_t s;
     proven_err_t e = make_list(proven_arena_as_allocator(&tiny), 6, &s);
-    proven_println("64바이트 아레나 -> 코드 {} (붕괴가 아니라 거부)",
+    proven_println("a 64-byte arena -> code {} (refused, not a collapse)",
                    PROVEN_ARG((int)e));
     return 0;
 }

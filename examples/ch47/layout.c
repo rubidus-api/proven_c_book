@@ -16,7 +16,7 @@ struct nested { struct loose inner; int tag; };
 static void report(const char *name, size_t size, size_t align,
                    size_t oa, size_t ob, size_t oc)
 {
-    printf("%-8s 크기 %2zu  정렬 %2zu   오프셋 a=%zu b=%zu c=%zu\n",
+    printf("%-8s size %2zu  align %2zu   offsets a=%zu b=%zu c=%zu\n",
            name, size, align, oa, ob, oc);
 }
 
@@ -29,15 +29,15 @@ int main(void)
     report("packed", sizeof(struct packed), alignof(struct packed),
            offsetof(struct packed, a), offsetof(struct packed, b), offsetof(struct packed, c));
 
-    printf("\ncacheline 크기 %zu  정렬 %zu\n",
+    printf("\ncacheline size %zu  align %zu\n",
            sizeof(struct cacheline), alignof(struct cacheline));
-    printf("nested    크기 %zu  inner 오프셋 %zu  tag 오프셋 %zu\n",
+    printf("nested    size %zu  inner offset %zu  tag offset %zu\n",
            sizeof(struct nested), offsetof(struct nested, inner),
            offsetof(struct nested, tag));
 
     /* 멤버 세 개의 크기 합과 구조체 크기의 차이 = 패딩 바이트 수 */
     size_t members = sizeof(char) + sizeof(int) + sizeof(char);
-    printf("\nloose: 멤버 합 %zu, 실제 %zu -> 패딩 %zu 바이트\n",
+    printf("\nloose: members %zu, actual %zu -> padding %zu bytes\n",
            members, sizeof(struct loose), sizeof(struct loose) - members);
     return 0;
 }

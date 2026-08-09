@@ -24,7 +24,7 @@ int main(void)
                    PROVEN_ARG(arr.len), PROVEN_ARG(arr.cap), PROVEN_ARG(arr.elem_size));
 
     /* 훑기는 인덱스로 — 포인터를 들고 다니지 않는다 */
-    proven_print("       내용:");
+    proven_print("       contents:");
     for (proven_size_t i = 0; i < arr.len; i++)
         proven_print(" {}", PROVEN_ARG(*PROVEN_ARRAY_GET(&arr, int, i)));
     proven_println("");
@@ -42,19 +42,19 @@ int main(void)
         proven_list_push_back(&list, &items[i].link);
 
     proven_list_node_t *node, *tmp;
-    proven_print("list   앞에서부터:");
+    proven_print("list   from the front:");
     PROVEN_LIST_FOR_EACH(node, &list) {
         task_t *t = PROVEN_LIST_ENTRY(node, task_t, link);
         proven_print(" {}", PROVEN_ARG(t->id));
     }
-    proven_println("  (노드가 자료 안에 있으므로 할당이 필요 없다)");
+    proven_println("  (the node lives inside the data, so no allocation is needed)");
 
     /* 훑으면서 떼어내려면 SAFE 판을 쓴다 */
     PROVEN_LIST_FOR_EACH_SAFE(node, tmp, &list) {
         task_t *t = PROVEN_LIST_ENTRY(node, task_t, link);
         if (t->id == 20) proven_list_remove(node);
     }
-    proven_print("       20 을 뗀 뒤:");
+    proven_print("       after removing 20:");
     PROVEN_LIST_FOR_EACH(node, &list) {
         proven_print(" {}", PROVEN_ARG(PROVEN_LIST_ENTRY(node, task_t, link)->id));
     }
@@ -68,12 +68,12 @@ int main(void)
 
         int five = 5;
         proven_err_t full = proven_ring_push(&ring, &five);
-        proven_println("ring   가득 찬 뒤 push -> err={} (덮지 않고 알린다)",
+        proven_println("ring   push when full -> err={} (it tells you instead of overwriting)",
                        PROVEN_ARG((int)full));
 
         int v = 0;
         (void)proven_ring_pop(&ring, &v);
-        proven_println("       pop -> {} (가장 먼저 넣은 것)", PROVEN_ARG(v));
+        proven_println("       pop -> {} (the one put in first)", PROVEN_ARG(v));
         proven_ring_destroy(&ring);
     }
 
@@ -90,9 +90,9 @@ int main(void)
                         (proven_map_key_t){ .str = PROVEN_LIT("beta") });
         proven_println("map    get(\"beta\") -> {}",
                        PROVEN_ARG(found ? *found : -1));
-        proven_println("       get(\"없음\") -> {} (없으면 널)",
+        proven_println("       get(\"absent\") -> {} (null when there is none)",
                        PROVEN_ARG((bool)(proven_map_get(&map,
-                            (proven_map_key_t){ .str = PROVEN_LIT("없음") }) == nullptr)));
+                            (proven_map_key_t){ .str = PROVEN_LIT("absent") }) == nullptr)));
         proven_map_destroy(&map);
     }
     return 0;

@@ -22,11 +22,11 @@ static void row(const char *locale, const char *fmt)
     struct tm t = fixed_time();
 
     if (!setlocale(LC_TIME, locale)) {
-        printf("  %-14s (이 기계에 없음)\n", locale);
+        printf("  %-14s (not on this machine)\n", locale);
         return;
     }
     size_t n = strftime(buf, sizeof buf, fmt, &t);
-    if (n == 0) { printf("  %-14s (버퍼 부족)\n", locale); return; }
+    if (n == 0) { printf("  %-14s (buffer too small)\n", locale); return; }
     printf("  %-14s %s\n", locale, buf);
 }
 
@@ -37,14 +37,14 @@ int main(void)
         "fr_FR.UTF-8", "ja_JP.UTF-8",
     };
     static const struct { const char *fmt, *what; } cases[] = {
-        { "%c",       "%c  — 로케일이 정한 '날짜와 시각' 표기" },
-        { "%x",       "%x  — 로케일이 정한 날짜 표기" },
-        { "%X",       "%X  — 로케일이 정한 시각 표기" },
-        { "%A %B",    "%A %B — 요일과 달의 전체 이름" },
-        { "%a %b",    "%a %b — 요일과 달의 줄임 이름" },
-        { "%p %I:%M", "%p %I:%M — 오전/오후와 12시간제" },
-        { "%F %T",    "%F %T — ISO 8601. *로케일과 무관하다*" },
-        { "%Y-%m-%d", "%Y-%m-%d — 숫자 서식도 로케일과 무관하다" },
+        { "%c",       "%c  - the locale's own 'date and time' form" },
+        { "%x",       "%x  - the locale's own date form" },
+        { "%X",       "%X  - the locale's own time form" },
+        { "%A %B",    "%A %B - full names of the weekday and the month" },
+        { "%a %b",    "%a %b - abbreviated names of the weekday and the month" },
+        { "%p %I:%M", "%p %I:%M - am/pm and the 12-hour clock" },
+        { "%F %T",    "%F %T - ISO 8601. *independent of the locale*" },
+        { "%Y-%m-%d", "%Y-%m-%d - a numeric format, also independent of the locale" },
     };
 
     for (size_t c = 0; c < sizeof cases / sizeof *cases; c++) {
@@ -54,7 +54,7 @@ int main(void)
     }
 
     /* 시간대는 로케일이 아니라 TZ 환경 변수가 정한다 — 흔한 혼동이다. */
-    puts("\n시간대는 LC_TIME 이 아니라 TZ 가 정한다:");
+    puts("\nthe time zone comes from TZ, not from LC_TIME:");
     setlocale(LC_TIME, "C");
     struct tm t = fixed_time();
     char buf[128];

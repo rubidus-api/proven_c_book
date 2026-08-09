@@ -28,11 +28,11 @@ static void serve(void)
     for (;;) {
         if (reload_requested) {
             reload_requested = 0;
-            printf("  설정을 다시 읽는다(SIGUSR1)\n");
+            printf("  re-reading the configuration (SIGUSR1)\n");
             fflush(stdout);
         }
         if (stop_requested) {
-            printf("  정리하고 내려간다(%d번 처리한 뒤)\n", served);
+            printf("  cleaning up and going down (after handling %d)\n", served);
             return;
         }
         served++;
@@ -48,13 +48,13 @@ int main(void)
     if (signal(SIGUSR1, on_signal) == SIG_ERR) return 1;
     if (signal(SIGTERM, on_signal) == SIG_ERR) return 1;
 
-    puts("서버 루프 시작");
+    puts("server loop starting");
     fflush(stdout);   /* 처리기의 write 는 버퍼를 거치지 않는다 — 순서를 맞춘다 */
     serve();
-    printf("마지막으로 받은 신호 번호 = %d\n", (int)last_signal);
+    printf("number of the last signal received = %d\n", (int)last_signal);
 
     /* 처리기가 남기고 간 것은 '깃발' 하나다 — 그 값으로 밖에서 일한다.
        인쇄도, 파일 닫기도, free 도 전부 여기서 한다. */
-    puts("루프 밖에서 정리 완료");
+    puts("cleanup finished outside the loop");
     return 0;
 }

@@ -20,16 +20,16 @@ typedef handler        *handler_ptr;    /* 포인터 to 그 함수              
 typedef handler_ptr     table4[4];      /* 배열[4] of 그 포인터            */
 
 /* 두 길로 만든 타입이 정말 같은지 컴파일 시간에 검사한다 */
-static_assert(sizeof(table4) == sizeof(table), "같은 타입이어야 한다");
+static_assert(sizeof(table4) == sizeof(table), "they must be the same type");
 
 static char *shout(int n)  { (void)n; return "shout"; }
 static char *quiet(int n)  { (void)n; return "quiet"; }
 
 int main(void)
 {
-    printf("int  *pa[3]  : 전체 %zu, 원소 %zu  -> 포인터 %zu 개\n",
+    printf("int  *pa[3]  : whole %zu, element %zu  -> %zu pointers\n",
            sizeof pa, sizeof pa[0], sizeof pa / sizeof pa[0]);
-    printf("int (*ap)[3] : 전체 %zu, 가리키는 것 %zu\n",
+    printf("int (*ap)[3] : whole %zu, pointee %zu\n",
            sizeof ap, sizeof *ap);
 
     /* ③ 을 실제로 채워 쓴다 */
@@ -39,10 +39,10 @@ int main(void)
 
     /* ④ 의 typedef 로 만든 변수도 같은 자리에 그대로 들어간다 */
     table4 other = { quiet, shout };
-    printf("other[0](3) = %s   (typedef 로 만든 같은 타입)\n", other[0](3));
+    printf("other[0](3) = %s   (the same type, made with a typedef)\n", other[0](3));
 
     /* 식별자가 없는 형태(추상 선언자): 캐스트와 sizeof 에서 쓴다 */
-    printf("sizeof(char *(*)(int)) = %zu   (이름 없는 함수 포인터 타입)\n",
+    printf("sizeof(char *(*)(int)) = %zu   (an unnamed function pointer type)\n",
            sizeof(char *(*)(int)));
     return 0;
 }

@@ -27,9 +27,9 @@ struct task {
 
 int main(void)
 {
-    puts("[익명 멤버]");
+    puts("[anonymous members]");
     struct tagged t = { .kind = 1, .i = 42 };
-    printf("  t.kind = %u, t.i = %d   ← t.u.i 가 아니라 t.i 로 쓴다\n",
+    printf("  t.kind = %u, t.i = %d   <- written t.i, not t.u.i\n",
            t.kind, t.i);
     printf("  sizeof(struct tagged) = %zu\n", sizeof t);
 
@@ -45,11 +45,11 @@ int main(void)
     size_t i = 0;
     for (struct link *p = &a.node; p; p = p->next, i++) {
         struct task *task = CONTAINER_OF(p, struct task, node);
-        printf("  고리에서 되찾은 작업: \"%s\"(우선순위 %d) — 원본과 같은 주소인가: %s\n",
-               task->name, task->priority, task == expect[i] ? "예" : "아니오");
+        printf("  task recovered from the link: \"%s\" (priority %d) - same address as the original: %s\n",
+               task->name, task->priority, task == expect[i] ? "yes" : "no");
     }
 
-    puts("\n  고리는 자료를 모른다. 그래서 같은 목록 코드가 어떤 구조체에도 붙는다");
-    puts("  — 제12부의 침습적 목록이 이 한 줄 위에 서 있다.");
+    puts("\n  the link knows nothing about the data, so the same list code fits any struct");
+    puts("  - the intrusive list of part 12 stands on this one line.");
     return 0;
 }

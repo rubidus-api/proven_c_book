@@ -10,7 +10,7 @@ static proven_u8str_view_t as_text(proven_mem_view_t v)
 
 static void show(const char *label, proven_mem_view_t v)
 {
-    proven_println("{:<14} size={} 내용=\"{}\"",
+    proven_println("{:<14} size={} contents=\"{}\"",
                    PROVEN_ARG(label), PROVEN_ARG(v.size), PROVEN_ARG(as_text(v)));
 }
 
@@ -29,16 +29,16 @@ int main(void)
     /* 쓰기 뷰로는 고칠 수 있고, 읽기 뷰로는 고칠 수 없다(컴파일 오류) */
     mut.ptr[0] = 'A';
 
-    proven_println("sizeof(mem_view_t)={} (포인터 + 길이)",
+    proven_println("sizeof(mem_view_t)={} (pointer + length)",
                    PROVEN_ARG(sizeof(proven_mem_view_t)));
-    show("전체 뷰", view);
+    show("whole view", view);
 
     /* ── ② 자르기 — 검사판과 무검사판 ─────────────────────────── */
     proven_result_mem_view_t ok = proven_mem_view_slice_checked(view, 3, 5);
     if (proven_is_ok(ok.err)) show("slice(3,5)", ok.value);
 
     proven_result_mem_view_t bad = proven_mem_view_slice_checked(view, 12, 9);
-    proven_println("slice(12,9)     -> err={} (자르지 않고 거부)",
+    proven_println("slice(12,9)     -> err={} (refused, not clamped)",
                    PROVEN_ARG((int)bad.err));
 
     /* 경계를 이미 확인한 뜨거운 루프에서는 무검사판을 쓴다.
@@ -53,20 +53,20 @@ int main(void)
     proven_println("copy 5 into 8   -> err={}", PROVEN_ARG((int)e1));
 
     proven_err_t e2 = proven_mem_copy(dst, sizeof dst, view);   /* 15 > 8 */
-    proven_println("copy 15 into 8  -> err={} (넘치면 아예 안 쓴다)",
+    proven_println("copy 15 into 8  -> err={} (on overflow it writes nothing at all)",
                    PROVEN_ARG((int)e2));
 
     /* 겹치는 영역은 move 로. 65장의 memcpy/memmove 구분이 여기서도 같다 */
     proven_err_t e3 = proven_mem_move(storage + 2, 13,
                                       proven_mem_view_slice_unchecked(view, 0, 5));
-    show("move 후 원본", (proven_mem_view_t){ .ptr = storage, .size = 7 });
+    show("source after move", (proven_mem_view_t){ .ptr = storage, .size = 7 });
     proven_println("move overlap    -> err={}", PROVEN_ARG((int)e3));
 
     /* ── ④ 포인터가 그 덩어리 안에 있는가 ────────────────────── */
     proven_size_t off = 0;
     bool inside = proven_range_contains_ptr(storage, sizeof storage,
                                             storage + 4, 2, &off);
-    proven_println("storage+4 는 안에 있는가? {} (offset {})",
+    proven_println("is storage+4 inside? {} (offset {})",
                    PROVEN_ARG(inside), PROVEN_ARG(off));
 
     /* ── ⑤ 정렬 ──────────────────────────────────────────────── */
@@ -74,7 +74,7 @@ int main(void)
                    PROVEN_ARG(proven_mem_align_up(13, 8)),
                    PROVEN_ARG(proven_mem_align_up(16, 8)),
                    PROVEN_ARG((proven_size_t)PROVEN_MAX_ALIGN));
-    proven_println("is_pow2(8)={} is_pow2(12)={} (정렬은 2의 거듭제곱이어야)",
+    proven_println("is_pow2(8)={} is_pow2(12)={} (an alignment must be a power of two)",
                    PROVEN_ARG(proven_is_pow2(8)), PROVEN_ARG(proven_is_pow2(12)));
     return 0;
 }

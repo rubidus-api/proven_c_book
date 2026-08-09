@@ -16,20 +16,20 @@ static void try_strtol(const char *s)
     char *end;
     long v = strtol(s, &end, 10);
 
-    if (end == s)                 printf("  strtol(\"%s\"): 숫자가 아님\n", s);
-    else if (errno == ERANGE)     printf("  strtol(\"%s\"): 범위 밖 (ERANGE)\n", s);
-    else if (*end != '\0')        printf("  strtol(\"%s\"): %ld, 남은 글자 [%s]\n", s, v, end);
-    else                          printf("  strtol(\"%s\"): %ld (온전)\n", s, v);
+    if (end == s)                 printf("  strtol(\"%s\"): not a number\n", s);
+    else if (errno == ERANGE)     printf("  strtol(\"%s\"): out of range (ERANGE)\n", s);
+    else if (*end != '\0')        printf("  strtol(\"%s\"): %ld, characters left [%s]\n", s, v, end);
+    else                          printf("  strtol(\"%s\"): %ld (clean)\n", s, v);
 }
 
 int main(void)
 {
     const char *cases[] = { "42", "abc", "42abc", "99999999999999999999", " 7", "" };
 
-    printf("atoi — 실패와 0 을 구별할 수 없다:\n");
+    printf("atoi - it cannot tell failure from 0:\n");
     for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) try_atoi(cases[i]);
 
-    printf("strtol — 무엇이 잘못됐는지 말해 준다:\n");
+    printf("strtol - it tells you what went wrong:\n");
     for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) try_strtol(cases[i]);
 
     printf("LONG_MAX = %ld\n", LONG_MAX);

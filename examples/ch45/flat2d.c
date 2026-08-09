@@ -21,14 +21,14 @@ int main(void)
 {
     const size_t rows = 3, cols = 4;
     int *g = alloc_grid(rows, cols);
-    if (!g) { puts("할당 실패"); return 1; }
+    if (!g) { puts("allocation failed"); return 1; }
 
     /* ── ① 채우기와 읽기 — 첨자는 매크로 하나로 ─────────────── */
     for (size_t i = 0; i < rows; i++)
         for (size_t j = 0; j < cols; j++)
             AT(g, cols, i, j) = (int)(i * 10 + j);
 
-    printf("행 우선으로 담은 3x4:\n");
+    printf("a 3x4 stored row-major:\n");
     for (size_t i = 0; i < rows; i++) {
         printf("  ");
         for (size_t j = 0; j < cols; j++)
@@ -37,18 +37,18 @@ int main(void)
     }
 
     /* ── ② 기억은 한 줄로 이어져 있다 ───────────────────────── */
-    printf("\n같은 기억을 1차원으로 훑으면: ");
+    printf("\nwalking the same memory as one dimension: ");
     for (size_t k = 0; k < rows * cols; k++)
         printf(k ? " %d" : "%d", g[k]);
-    printf("\n(진짜 2차원 배열 int m[3][4] 의 배치와 같다 — 행 우선)\n");
+    printf("\n(the same layout as a real 2-D array int m[3][4] - row-major)\n");
 
     /* ── ③ 흔한 사고: 행과 열을 바꿔 쓰기 ───────────────────── */
-    printf("\nAT(g, cols, 1, 2) = %d   (2행 3번째)\n", AT(g, cols, 1, 2));
-    printf("AT(g, cols, 2, 1) = %d   (3행 2번째 — 다른 칸이다)\n", AT(g, cols, 2, 1));
+    printf("\nAT(g, cols, 1, 2) = %d   (row 2, third element)\n", AT(g, cols, 1, 2));
+    printf("AT(g, cols, 2, 1) = %d   (row 3, second element - a different cell)\n", AT(g, cols, 2, 1));
 
     /* ── ④ 넘치는 크기 요청은 거절된다 ──────────────────────── */
     int *huge = alloc_grid((size_t)-1 / 2, 8);
-    printf("\n터무니없는 크기 요청: %s\n", huge ? "할당됨" : "계산이 넘쳐 거절");
+    printf("\nan absurd size request: %s\n", huge ? "allocated" : "the multiplication overflowed, refused");
     free(huge);
 
     free(g);

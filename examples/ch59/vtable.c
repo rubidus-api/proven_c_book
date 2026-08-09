@@ -34,12 +34,12 @@ static double rect_area(const struct shape *s)
 }
 static void generic_describe(const struct shape *s)
 {
-    printf("  %-6s 넓이 %.2f\n", s->vt->name, s->vt->area(s));
+    printf("  %-6s area %.2f\n", s->vt->name, s->vt->area(s));
 }
 
 /* ④ 표는 상수이고 타입마다 하나 — 인스턴스는 포인터만 갖는다 */
-static const struct shape_vtable circle_vt = { "원",   circle_area, generic_describe };
-static const struct shape_vtable rect_vt   = { "사각", rect_area,   generic_describe };
+static const struct shape_vtable circle_vt = { "circle",   circle_area, generic_describe };
+static const struct shape_vtable rect_vt   = { "rect", rect_area,   generic_describe };
 
 static struct circle make_circle(double r) { return (struct circle){ { &circle_vt }, r }; }
 static struct rect   make_rect(double w, double h) { return (struct rect){ { &rect_vt }, w, h }; }
@@ -55,8 +55,8 @@ int main(void)
         objs[i]->vt->describe(objs[i]);
 
     /* ⑥ 비용을 눈으로 본다 */
-    printf("객체 크기: circle=%zu, rect=%zu (표 포인터 %zu 바이트 포함)\n",
+    printf("object size: circle=%zu, rect=%zu (including the %zu-byte table pointer)\n",
            sizeof(struct circle), sizeof(struct rect), sizeof(void *));
-    printf("표 크기  : %zu (타입마다 하나만 존재)\n", sizeof(struct shape_vtable));
+    printf("table size : %zu (one per type, no more)\n", sizeof(struct shape_vtable));
     return 0;
 }

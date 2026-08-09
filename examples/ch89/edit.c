@@ -18,7 +18,7 @@ int main(void)
         proven_u8str_create_from_view(alloc, PROVEN_LIT("hello world"));
     if (!proven_is_ok(r.err)) return 1;
     proven_u8str_t s = r.value;
-    show("만든 직후", &s);
+    show("just created", &s);
 
     /* ── ② 가운데에 끼우기 ────────────────────────────────────── */
     proven_err_t e = proven_u8str_insert_grow(alloc, &s, 5, PROVEN_LIT(","));
@@ -34,7 +34,7 @@ int main(void)
 
     /* 없는 것을 바꾸라고 하면 아무 일도 하지 않고 성공한다 */
     e = proven_u8str_replace_first(&s, 0, PROVEN_LIT("zzz"), PROVEN_LIT("!"));
-    proven_println("없는 것 바꾸기     -> err={} (그대로 두고 성공)",
+    proven_println("replacing something absent -> err={} (left alone, and it succeeds)",
                    PROVEN_ARG((int)e));
 
     /* ── ⑤ 구간 지우기 ───────────────────────────────────────── */
@@ -43,26 +43,26 @@ int main(void)
 
     /* ── ⑥ 되쓰기 — 버퍼는 그대로 두고 내용만 비운다 ──────────── */
     e = proven_u8str_reset(&s);
-    show("reset 뒤", &s);
+    show("after reset", &s);
 
-    e = proven_u8str_append(&s, PROVEN_LIT("다시 쓴다"));
-    show("다시 채운 뒤", &s);
-    proven_println("(reset 은 재할당 없이 되쓰기 위한 것 — 프레임마다 새로 짓는 코드에)");
+    e = proven_u8str_append(&s, PROVEN_LIT("written again"));
+    show("after refilling", &s);
+    proven_println("(reset is for rewriting without reallocating - for code that rebuilds every frame)");
 
     /* ── ⑦ 미리 잡아 두기 ────────────────────────────────────── */
     e = proven_u8str_reserve(alloc, &s, 256);
-    proven_println("reserve(256)      -> err={} (아레나에서 특히 값을 한다)",
+    proven_println("reserve(256)      -> err={} (worth especially much on an arena)",
                    PROVEN_ARG((int)e));
 
     /* ── ⑧ 조회 연산들 ───────────────────────────────────────── */
     proven_u8str_view_t v = proven_u8str_as_view(&s);
-    proven_println("starts_with(\"다시\")={} ends_with(\"쓴다\")={} find(\"쓴\")={}",
-                   PROVEN_ARG((bool)proven_u8str_view_starts_with(v, PROVEN_LIT("다시"))),
-                   PROVEN_ARG((bool)proven_u8str_view_ends_with(v, PROVEN_LIT("쓴다"))),
-                   PROVEN_ARG(proven_u8str_view_find(v, 0, PROVEN_LIT("쓴"))));
+    proven_println("starts_with(\"written\")={} ends_with(\"again\")={} find(\"ten\")={}",
+                   PROVEN_ARG((bool)proven_u8str_view_starts_with(v, PROVEN_LIT("written"))),
+                   PROVEN_ARG((bool)proven_u8str_view_ends_with(v, PROVEN_LIT("again"))),
+                   PROVEN_ARG(proven_u8str_view_find(v, 0, PROVEN_LIT("ten"))));
 
-    proven_size_t nf = proven_u8str_view_find(v, 0, PROVEN_LIT("없음"));
-    proven_println("못 찾으면 {} (PROVEN_INDEX_NOT_FOUND)",
+    proven_size_t nf = proven_u8str_view_find(v, 0, PROVEN_LIT("absent"));
+    proven_println("when it is not found: {} (PROVEN_INDEX_NOT_FOUND)",
                    PROVEN_ARG((bool)(nf == PROVEN_INDEX_NOT_FOUND)));
 
     proven_u8str_destroy(alloc, &s);

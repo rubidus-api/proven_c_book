@@ -17,7 +17,7 @@ int main(void)
     for (int i = 0; i < 4; i++) buf[i] = i * i;
 
     /* ③ 문자 상수의 타입: C 에서는 int 다 */
-    printf("sizeof('a') = %zu  (C++ 에서는 1 이 나온다)\n", sizeof('a'));
+    printf("sizeof('a') = %zu  (in C++ this is 1)\n", sizeof('a'));
 
     /* ④ 순서를 바꾼 지정 초기화 — C99 는 허용 */
     struct point p = { .y = 2, .x = 1 };

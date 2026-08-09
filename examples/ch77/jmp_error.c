@@ -25,15 +25,15 @@ static error_ctx *current;          /* 지금 활성인 문맥(전역 하나) */
 /* 깊은 곳의 함수들 — 오류를 값으로 돌려주지 않는다 */
 static int parse_header(const char *s)
 {
-    if (strncmp(s, "IMG", 3) != 0) throw_error(2, "매직이 맞지 않는다");
+    if (strncmp(s, "IMG", 3) != 0) throw_error(2, "the magic number does not match");
     return 3;
 }
 
 static int parse_size(const char *s)
 {
     int n = atoi(s);
-    if (n <= 0)      throw_error(3, "크기가 0 이하다");
-    if (n > 1000000) throw_error(4, "크기가 너무 크다");
+    if (n <= 0)      throw_error(3, "the size is zero or less");
+    if (n > 1000000) throw_error(4, "the size is too large");
     return n;
 }
 
@@ -52,10 +52,10 @@ static int load_image(const char *text, char *err, size_t errcap)
     if (setjmp(ctx.env) == 0) {
         int off = parse_header(text);
         int n   = parse_size(text + off);
-        printf("  성공: 크기 %d\n", n);
+        printf("  ok: size %d\n", n);
         result = n;
     } else {
-        snprintf(err, errcap, "%s (코드 %d)", ctx.message, ctx.code);
+        snprintf(err, errcap, "%s (code %d)", ctx.message, ctx.code);
         result = -1;
     }
 
@@ -69,14 +69,14 @@ int main(void)
     const char *cases[] = { "IMG640", "BMP640", "IMG0", "IMG9999999" };
     for (size_t i = 0; i < sizeof cases / sizeof *cases; i++) {
         char err[96] = "";
-        printf("입력 \"%s\":\n", cases[i]);
+        printf("input \"%s\":\n", cases[i]);
         int rc = load_image(cases[i], err, sizeof err);
-        if (rc < 0) printf("  실패: %s\n", err);
+        if (rc < 0) printf("  failed: %s\n", err);
     }
 
-    puts("\n이 무늬가 성립하는 조건 셋:");
-    puts("  ① 자원을 푸는 자리가 setjmp 를 부른 함수 안에 *한 군데* 모여 있다");
-    puts("  ② longjmp 를 건너는 지역 변수에 volatile 이 붙어 있다");
-    puts("  ③ setjmp 를 부른 함수가 아직 살아 있는 동안에만 longjmp 한다");
+    puts("\nthree conditions make this pattern work:");
+    puts("  ① every release of a resource sits in *one place*, inside the function that called setjmp");
+    puts("  ② locals that must survive the longjmp are declared volatile");
+    puts("  ③ longjmp happens only while the function that called setjmp is still alive");
     return 0;
 }

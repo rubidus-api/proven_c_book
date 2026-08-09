@@ -8,7 +8,7 @@ int main(void)
     /* 조건 연산자의 타입은 *컴파일 시간에 하나로* 정해진다.
        두 가지가 int 와 double 이면 결과는 언제나 double 이다. */
     printf("sizeof(int)=%zu sizeof(double)=%zu\n", sizeof i, sizeof d);
-    printf("sizeof(1 ? i : d) = %zu  (조건이 참이어도 double)\n", sizeof(1 ? i : d));
+    printf("sizeof(1 ? i : d) = %zu  (double even when the condition is true)\n", sizeof(1 ? i : d));
     printf("value  (1 ? i : d) = %.1f\n", 1 ? i : d);   /* 7 이 아니라 7.0 */
 
     /* 부호가 섞이면 통상 산술 변환이 그대로 적용된다.

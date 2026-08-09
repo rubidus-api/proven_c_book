@@ -15,7 +15,7 @@ static void draw_(struct draw_opts o)
     int w = o.width  ? o.width  : 80;
     int h = o.height ? o.height : 24;
     printf("  %3dx%-3d grid=%-5s title=%s\n", w, h,
-           o.grid ? "true" : "false", o.title ? o.title : "(없음)");
+           o.grid ? "true" : "false", o.title ? o.title : "(none)");
 }
 /* 호출자가 중괄호를 적지 않아도 되게 감싼다 */
 #define draw(...) draw_((struct draw_opts){ __VA_ARGS__ })
@@ -41,28 +41,28 @@ static int total_raw(int cell[8])     /* 배열 매개변수는 포인터로 무
 
 int main(void)
 {
-    puts("이름으로 넘기기 (순서 무관, 빠뜨려도 됨)");
-    draw(.title = "차트", .height = 20, .width = 40);
+    puts("passing by name (any order, some may be left out)");
+    draw(.title = "chart", .height = 20, .width = 40);
     draw(.grid = true);
     draw();                                     /* 전부 기본값 */
 
     /* 복합 리터럴은 주소를 얻을 수 있고, 수명은 이 블록의 끝까지다 */
-    struct draw_opts *p = &(struct draw_opts){ .width = 5, .title = "임시" };
-    printf("  임시 구조체의 주소로 접근: width=%d title=%s\n", p->width, p->title);
+    struct draw_opts *p = &(struct draw_opts){ .width = 5, .title = "temporary" };
+    printf("  reaching it through the address of a compound literal: width=%d title=%s\n", p->width, p->title);
 
-    puts("\n배열을 값으로 / 포인터로");
+    puts("\narrays by value / by pointer");
     struct row r = { .cell = { 1, 2, 3, 4, 5, 6, 7, 8 } };
 
     /* 호출과 원본 읽기를 반드시 갈라 적는다 - 한 표현식에 섞으면 순서가 없다 */
     int t1 = total(r);
-    printf("  값으로  : 합 %2d,  호출 뒤 원본 cell[0] = %d\n", t1, r.cell[0]);
+    printf("  by value  : sum %2d,  after the call cell[0] = %d\n", t1, r.cell[0]);
     int t2 = total_raw(r.cell);
-    printf("  포인터로: 합 %2d,  호출 뒤 원본 cell[0] = %d\n", t2, r.cell[0]);
+    printf("  by pointer: sum %2d,  after the call cell[0] = %d\n", t2, r.cell[0]);
 
     /* 구조체 대입도 통째 복사다 — 배열 멤버까지 */
     struct row copy = r;
     copy.cell[1] = -1;
-    printf("  대입 사본 수정 뒤 원본 cell[1] = %d, 사본 cell[1] = %d\n",
+    printf("  after changing the assigned copy: original cell[1] = %d, copy cell[1] = %d\n",
            r.cell[1], copy.cell[1]);
     return 0;
 }

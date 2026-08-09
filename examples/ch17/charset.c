@@ -17,31 +17,31 @@ int main(void)
     const char    *plain = "가";      /* 리터럴 인코딩 — 구현이 정한다 */
     const char8_t *utf8  = u8"가";    /* 언제나 UTF-8 — 표준이 못박는다 */
 
-    puts("[문자열 리터럴의 바이트]");
-    dump("\"가\"   (리터럴 인코딩)", plain, strlen(plain));
-    dump("u8\"가\" (항상 UTF-8)", (const char *)utf8, strlen((const char *)utf8));
+    puts("[bytes of a string literal]");
+    dump("\"가\"   (literal encoding)", plain, strlen(plain));
+    dump("u8\"가\" (always UTF-8)", (const char *)utf8, strlen((const char *)utf8));
 
-    puts("\n[넓은 문자 리터럴의 코드 단위]");
+    puts("\n[code units of wide character literals]");
     printf("  u\"가\"[0] = U+%04X   (char16_t, UTF-16)\n",  (unsigned)u"가"[0]);
     printf("  U\"가\"[0] = U+%04X   (char32_t, UTF-32)\n",  (unsigned)U"가"[0]);
-    printf("  L\"가\"[0] = U+%04X   (wchar_t, %zu바이트)\n",
+    printf("  L\"가\"[0] = U+%04X   (wchar_t, %zu bytes)\n",
            (unsigned)L"가"[0], sizeof(wchar_t));
 
-    puts("\n[구현이 무엇을 보장한다고 말하는가]");
+    puts("\n[what the implementation claims to guarantee]");
 #ifdef __STDC_ISO_10646__
-    printf("  __STDC_ISO_10646__ = %ldL  → wchar_t 가 유니코드다\n",
+    printf("  __STDC_ISO_10646__ = %ldL  -> wchar_t is Unicode\n",
            (long)__STDC_ISO_10646__);
 #else
-    puts("  __STDC_ISO_10646__ 정의 안 됨 → wchar_t 인코딩은 구현 정의");
+    puts("  __STDC_ISO_10646__ not defined -> wchar_t encoding is implementation-defined");
 #endif
 #ifdef __STDC_UTF_16__
-    printf("  __STDC_UTF_16__    = %d      → char16_t 가 UTF-16\n", __STDC_UTF_16__);
+    printf("  __STDC_UTF_16__    = %d      -> char16_t is UTF-16\n", __STDC_UTF_16__);
 #endif
 #ifdef __STDC_UTF_32__
-    printf("  __STDC_UTF_32__    = %d      → char32_t 가 UTF-32\n", __STDC_UTF_32__);
+    printf("  __STDC_UTF_32__    = %d      -> char32_t is UTF-32\n", __STDC_UTF_32__);
 #endif
 
-    puts("\n[기본 문자 집합은 흔들리지 않는다]");
+    puts("\n[the basic character set does not move]");
     printf("  'A' = %d, '0' = %d, sizeof \"A\" = %zu\n", 'A', '0', sizeof "A");
     return 0;
 }

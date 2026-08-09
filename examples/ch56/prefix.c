@@ -38,19 +38,19 @@ const struct textbuf_api textbuf = {
 int main(void)
 {
     textbuf.reset();
-    puts("[모듈 하나가 내미는 외부 이름은 `textbuf` 하나뿐이다]");
-    printf("  push(\"hello \") -> %s\n", textbuf.push("hello ") ? "ok" : "실패");
-    printf("  push(\"world\")  -> %s\n", textbuf.push("world")  ? "ok" : "실패");
+    puts("[this module exposes exactly one external name: `textbuf`]");
+    printf("  push(\"hello \") -> %s\n", textbuf.push("hello ") ? "ok" : "failed");
+    printf("  push(\"world\")  -> %s\n", textbuf.push("world")  ? "ok" : "failed");
     printf("  text()         -> \"%s\"\n", textbuf.text());
 
     char big[80];
     memset(big, 'A', sizeof big - 1);
     big[sizeof big - 1] = '\0';
-    printf("  긴 문자열 push -> %s (잘림을 성공으로 치지 않는다)\n",
-           textbuf.push(big) ? "ok" : "실패");
+    printf("  pushing a long string -> %s (truncation does not count as success)\n",
+           textbuf.push(big) ? "ok" : "failed");
 
-    puts("\n[접두어 규약 — 큰 프로젝트의 관행]");
-    puts("  sqlite3_ / curl_ / SSL_ / g_ / SDL_ … 타입·매크로에도 같은 접두어를");
-    puts("  붙인다. 접두어는 C 에 없는 이름 공간을 사람이 손으로 대신하는 것이다.");
+    puts("\n[the prefix convention - what large projects do]");
+    puts("  sqlite3_ / curl_ / SSL_ / g_ / SDL_ ... the same prefix goes on types and macros");
+    puts("  too. A prefix is a name space that C lacks, supplied by hand.");
     return 0;
 }

@@ -6,14 +6,14 @@ static int calls;
 static int where(void)      /* 좌변의 자리를 정하는 계산도 '평가'된다 */
 {
     calls++;
-    printf("  where() 호출 — 좌변의 자리를 정한다\n");
+    printf("  where() called - it picks the slot on the left\n");
     return 1;
 }
 
 static int what(void)
 {
     calls++;
-    printf("  what() 호출 — 우변의 값을 만든다\n");
+    printf("  what() called - it makes the value on the right\n");
     return 42;
 }
 
@@ -31,17 +31,17 @@ int main(void)
     printf("p = q = r = 5    ->  p=%d q=%d r=%d\n", p, q, r);
 
     /* ── ② 좌변도 평가된다 ──────────────────────────────────── */
-    puts("\na[where()] = what(); 을 실행한다:");
+    puts("\nrunning a[where()] = what(); :");
     calls = 0;
     a[where()] = what();
-    printf("  두 함수가 모두 불렸다(호출 %d회), a[1]=%d\n", calls, a[1]);
-    puts("  둘 중 어느 쪽이 먼저 불리는지는 표준이 정하지 않는다(미지정).");
+    printf("  both functions ran (%d calls), a[1]=%d\n", calls, a[1]);
+    puts("  which one runs first is unspecified by the standard.");
 
     /* ── ③ 복합 대입은 왼쪽을 한 번만 평가한다 ──────────────── */
-    puts("\na[where()] += 1; 을 실행한다:");
+    puts("\nrunning a[where()] += 1; :");
     calls = 0;
     a[where()] += 1;
-    printf("  where() 호출 횟수: %d회 (풀어 쓴 a[where()] = a[where()] + 1 이면 2회)\n",
+    printf("  where() call count: %d (spelled out as a[where()] = a[where()] + 1 it would be 2)\n",
            calls);
     printf("  a[1] = %d\n", a[1]);
 
@@ -49,7 +49,7 @@ int main(void)
     char c;
     int wide = 321;
     int back = (c = (char)wide);      /* 좁혔다가 다시 넓히면 원래 값이 아니다 */
-    printf("\nchar c = (char)321 -> c=%d, (c = ...) 의 값 = %d\n", c, back);
+    printf("\nchar c = (char)321 -> c=%d, value of (c = ...) = %d\n", c, back);
 
     double d;
     int truncated = (int)(d = 3.9);   /* 실수 → 정수는 0 쪽으로 버린다 */
@@ -60,6 +60,6 @@ int main(void)
     a[i] = 10;
     i++;                              /* 한 수식에 섞지 않는다 */
     a[i] = 20;
-    printf("\n안전한 형태: a[0]=%d a[1]=%d i=%d\n", a[0], a[1], i);
+    printf("\nthe safe form: a[0]=%d a[1]=%d i=%d\n", a[0], a[1], i);
     return 0;
 }

@@ -31,29 +31,29 @@ int main(void)
 {
     int a[3][4] = { {1,2,3,4}, {5,6,7,8}, {9,10,11,12} };
 
-    printf("① 고정 폭   sum_fixed(a)      = %d\n", sum_fixed(a));
-    printf("② VLA 매개변수 sum_vla(3,4,a) = %d\n", sum_vla(3, 4, a));
+    printf("① fixed width    sum_fixed(a)      = %d\n", sum_fixed(a));
+    printf("② VLA parameter  sum_vla(3,4,a)    = %d\n", sum_vla(3, 4, a));
 
     /* 행 포인터 배열을 만들어 같은 자료를 가리키게 한다 */
     int *rowp[3] = { a[0], a[1], a[2] };
-    printf("③ 행 포인터 sum_rows(3,4,rowp) = %d\n\n", sum_rows(3, 4, rowp));
+    printf("③ row pointers   sum_rows(3,4,rowp) = %d\n\n", sum_rows(3, 4, rowp));
 
     /* 배치의 차이를 눈으로 */
-    printf("배치가 다르다:\n");
-    printf("  a      : int[3][4]  — 기억 한 덩어리 %zu바이트, 간접 참조 0회\n", sizeof a);
-    printf("  rowp   : int*[3]    — 포인터 %zu바이트 + 각 행, 간접 참조 1회\n", sizeof rowp);
+    printf("the layouts differ:\n");
+    printf("  a      : int[3][4]  - one block of %zu bytes, 0 indirections\n", sizeof a);
+    printf("  rowp   : int*[3]    - %zu bytes of pointers plus the rows, 1 indirection\n", sizeof rowp);
 
     /* 행 교환의 비용이 갈린다 */
     int *tmp = rowp[0]; rowp[0] = rowp[2]; rowp[2] = tmp;  /* 포인터 두 개만 바뀐다 */
-    printf("\n행 포인터를 맞바꾸면 자료는 그대로인데 순서가 바뀐다: ");
+    printf("\nswapping row pointers leaves the data alone and changes the order: ");
     for (size_t j = 0; j < 4; j++) printf("%d ", rowp[0][j]);
-    printf("\n  (2차원 배열에서 같은 일을 하려면 16바이트를 실제로 옮겨야 한다)\n");
+    printf("\n  (doing the same to a 2-D array would really move 16 bytes)\n");
 
     /* 들쭉날쭉한 행 — 2차원 배열로는 못 하는 배치 */
     int r0[] = { 1 }, r1[] = { 2, 3, 4 };
     int *jag[2] = { r0, r1 };
     size_t len[2] = { 1, 3 };
-    printf("\n들쭉날쭉한 행(jagged): ");
+    printf("\njagged rows: ");
     for (size_t i = 0; i < 2; i++)
         for (size_t j = 0; j < len[i]; j++) printf("%d ", jag[i][j]);
     printf("\n");

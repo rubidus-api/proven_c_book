@@ -21,12 +21,12 @@ static void on_signal(int sig, siginfo_t *info, void *ctx)
 static const char *code_name(int code)
 {
     switch (code) {
-    case SI_USER:   return "SI_USER(kill/raise 로 사람이 보냄)";
+    case SI_USER:   return "SI_USER (sent by a person, via kill/raise)";
     case SI_QUEUE:  return "SI_QUEUE(sigqueue)";
-    case SI_TIMER:  return "SI_TIMER(타이머)";
-    case SI_KERNEL: return "SI_KERNEL(커널이 보냄)";
-    case -6:        return "SI_TKILL(같은 스레드가 raise 로 보냄, 리눅스)";
-    default:        return "구현이 정한 그 밖의 값";
+    case SI_TIMER:  return "SI_TIMER (a timer)";
+    case SI_KERNEL: return "SI_KERNEL (sent by the kernel)";
+    case -6:        return "SI_TKILL (raise from the same thread, Linux)";
+    default:        return "some other implementation-defined value";
     }
 }
 
@@ -42,13 +42,13 @@ int main(void)
     struct sigaction old;
     if (sigaction(SIGUSR1, &sa, &old) != 0) return 1;
 
-    printf("sigaction 으로 SIGUSR1 설치. 이전 처리기: %s\n",
-           old.sa_handler == SIG_DFL ? "SIG_DFL" : "있음");
+    printf("SIGUSR1 installed with sigaction. Previous handler: %s\n",
+           old.sa_handler == SIG_DFL ? "SIG_DFL" : "there was one");
 
     /* 세 번 보낸다 — signal() 과 달리 처리기가 *남아 있다* */
     for (int i = 0; i < 3; i++) (void)raise(SIGUSR1);
-    printf("세 번 raise 한 뒤 처리 횟수 = %d (처리기가 유지된다)\n", (int)hits);
-    printf("  보낸 이가 자기 자신인가? %s\n", from_self ? "그렇다" : "아니다");
+    printf("after raising three times, handled = %d (the handler stays installed)\n", (int)hits);
+    printf("  was the sender ourselves? %s\n", from_self ? "yes" : "no");
     printf("  si_code = %d → %s\n", (int)last_code, code_name((int)last_code));
 
     /* ── 신호를 잠시 막아 두기(블록) ─────────────────────────── */
@@ -59,19 +59,19 @@ int main(void)
 
     int before = (int)hits;
     (void)raise(SIGUSR1);               /* 막혀 있으므로 대기 상태가 된다 */
-    printf("\n막아 둔 채 raise: 처리 횟수 %d → %d (아직 처리되지 않음)\n",
+    printf("\nraise while blocked: handled %d -> %d (not delivered yet)\n",
            before, (int)hits);
 
     sigset_t pending;
     sigpending(&pending);
-    printf("  대기 중인가? %s\n",
-           sigismember(&pending, SIGUSR1) ? "그렇다" : "아니다");
+    printf("  is it pending? %s\n",
+           sigismember(&pending, SIGUSR1) ? "yes" : "no");
 
     sigprocmask(SIG_SETMASK, &prev, nullptr);   /* 풀면 그 자리에서 배달된다 */
-    printf("  막기를 푼 직후 처리 횟수 = %d\n", (int)hits);
+    printf("  right after unblocking, handled = %d\n", (int)hits);
 
     /* ── 구조체 안을 들여다보기 ──────────────────────────────── */
-    printf("\nstruct sigaction 의 크기 = %zu바이트, sigset_t = %zu바이트\n",
+    printf("\nsizeof(struct sigaction) = %zu bytes, sigset_t = %zu bytes\n",
            sizeof(struct sigaction), sizeof(sigset_t));
     printf("SA_RESTART=0x%x, SA_SIGINFO=0x%x, SA_NOCLDWAIT=0x%x\n",
            (unsigned)SA_RESTART, (unsigned)SA_SIGINFO, (unsigned)SA_NOCLDWAIT);

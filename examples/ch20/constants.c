@@ -6,12 +6,12 @@
 
 int main(void)
 {
-    puts("[정수 상수 — 네 가지 진법과 자리 구분자(C23)]");
+    puts("[integer constants - four bases and digit separators (C23)]");
     printf("  1234        = %d\n", 1234);          /* 10진 */
-    printf("  0755        = %d   ← 0 으로 시작하면 8진\n", 0755);
+    printf("  0755        = %d   <- a leading 0 means octal\n", 0755);
     printf("  0xFF        = %d\n", 0xFF);
-    printf("  0b1010      = %d   ← C23 의 2진\n", 0b1010);
-    printf("  1'000'000   = %d   ← C23 의 자리 구분자\n", 1'000'000);
+    printf("  0b1010      = %d   <- binary, new in C23\n", 0b1010);
+    printf("  1'000'000   = %d   <- digit separators, new in C23\n", 1'000'000);
     printf("  0b11'10'11'01 = %d\n", 0b11'10'11'01);
 
     puts("\n[접미어가 타입을 정한다]");

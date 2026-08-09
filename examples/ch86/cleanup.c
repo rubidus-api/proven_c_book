@@ -79,12 +79,12 @@ static void run(int budget)
     proven_err_t e = join_two(alloc, PROVEN_LIT("world"), PROVEN_LIT("hello, "), &out);
 
     if (proven_is_ok(e)) {
-        proven_println("budget={} -> ok: \"{}\"  (남은 예산 {})",
+        proven_println("budget={} -> ok: \"{}\"  (budget left {})",
                        PROVEN_ARG(budget), PROVEN_ARG(proven_u8str_as_view(&out)),
                        PROVEN_ARG(ctx.budget));
         proven_u8str_destroy(alloc, &out);
     } else {
-        proven_println("budget={} -> 실패(코드 {}) — 잡았던 것은 전부 반납됐다",
+        proven_println("budget={} -> failed (code {}) - everything taken was given back",
                        PROVEN_ARG(budget), PROVEN_ARG((int)e));
     }
 }

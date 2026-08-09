@@ -28,7 +28,7 @@ static void split_by_shift(uint16_t w)
     unsigned cho  = (w >> 10) & 0x1f;
     unsigned jung = (w >>  5) & 0x1f;
     unsigned jong =  w        & 0x1f;
-    printf("  시프트/마스크: 표시비트=%u 초성=%2u(%-2s) 중성=%2u(%-3s) 종성=%2u(%s)\n",
+    printf("  shift/mask: mark=%u lead=%2u(%-2s) vowel=%2u(%-3s) tail=%2u(%s)\n",
            (unsigned)(w >> 15), cho, CHO[cho] ? CHO[cho] : "?",
            jung, JUNG[jung] ? JUNG[jung] : "?",
            jong, JONG[jong] ? JONG[jong] : "?");
@@ -56,18 +56,18 @@ int main(void)
     puts("한:");   split_by_shift(HAN);
 
     union johab u = { .raw = GA };
-    printf("\n비트 필드로 본 '가': mark=%u 초성=%u 중성=%u 종성=%u\n",
+    printf("\n'가' seen through bit fields: mark=%u lead=%u vowel=%u tail=%u\n",
            u.f.mark, u.f.cho, u.f.jung, u.f.jong);
-    puts("  (이 컴파일러에서는 시프트/마스크와 같은 값이 나왔다.");
-    puts("   비트를 낮은 자리부터 채우는 구현이라 그렇고, 표준의 약속은 아니다.)");
+    puts("  (on this compiler it came out the same as the shift/mask version.");
+    puts("   That is because this implementation fills bits from the low end; the standard does not promise it.)");
 
     /* ③ 둘째 바이트가 ASCII 와 겹친다 — 조합형의 유명한 함정 */
     unsigned char bytes[3] = { (unsigned char)(GA >> 8),
                                (unsigned char)(GA & 0xff), 0 };
-    printf("\n'가' 의 두 바이트: %02X %02X\n", bytes[0], bytes[1]);
-    printf("  둘째 바이트 0x%02X 는 ASCII '%c' 다 — 바이트 단위로 'a' 를 찾으면\n",
+    printf("\nthe two bytes of '가': %02X %02X\n", bytes[0], bytes[1]);
+    printf("  the second byte 0x%02X is ASCII '%c' - so searching for 'a' byte by byte\n",
            bytes[1], bytes[1]);
-    printf("  글자 속을 잘못 짚는다: strchr 결과 = %s\n",
-           strchr((char *)bytes, 'a') ? "찾음(오검출)" : "못 찾음");
+    printf("  lands inside a character: strchr result = %s\n",
+           strchr((char *)bytes, 'a') ? "found (false positive)" : "not found");
     return 0;
 }

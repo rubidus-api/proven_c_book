@@ -26,23 +26,23 @@ int main(void)
     char pad[10];
     memset(pad, 'X', sizeof pad);
     copy_into(pad, sizeof pad, "abc");
-    dump("짧은 원본:", pad, sizeof pad);
+    dump("short source:", pad, sizeof pad);
 
     /* ② 딱 맞거나 넘치면 NUL 을 붙이지 않는다 — 문자열이 아니게 된다 */
     char tight[4];
     memset(tight, 'X', sizeof tight);
     copy_into(tight, sizeof tight, "abcd");
-    dump("딱 맞을 때:", tight, sizeof tight);
-    printf("               NUL 이 없다 — 이대로 %%s 로 찍으면 계약 밖이다\n");
+    dump("an exact fit:", tight, sizeof tight);
+    printf("               there is no NUL - printing this with %%s is outside the contract\n");
 
     /* ③ 안전하게 쓰려면 마지막 칸을 손으로 닫는다 */
     char safe[4];
     copy_into(safe, sizeof safe - 1, "abcd");
     safe[sizeof safe - 1] = '\0';
-    printf("직접 닫기    : [%s]\n", safe);
+    printf("terminated by hand: [%s]\n", safe);
 
     /* ④ 잘렸는지 알려면 결국 길이를 따로 재야 한다 */
     const char *src = "abcd";
-    printf("잘림 여부    : %s\n", strlen(src) >= sizeof safe ? "잘렸다" : "온전하다");
+    printf("truncated?         : %s\n", strlen(src) >= sizeof safe ? "yes, it was cut" : "no, it is whole");
     return 0;
 }

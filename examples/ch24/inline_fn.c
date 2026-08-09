@@ -21,11 +21,11 @@ int main(void)
           다만 주소를 얻는 순간 「어딘가에 실물이 하나 있어야」 한다. */
     int (*f)(int) = square;
     int (*g)(int) = cube;
-    printf("③ 포인터로 부르기: f(6)=%d  g(2)=%d\n", f(6), g(2));
+    printf("③ calling through a pointer: f(6)=%d  g(2)=%d\n", f(6), g(2));
 
     /* ④ inline 은 「이렇게 해 달라」는 부탁일 뿐, 약속이 아니다.
           컴파일러는 펼칠 수도 있고 안 펼칠 수도 있다. */
-    printf("④ 같은 답이 나온다 — 펼쳤든 안 펼쳤든: %d %d\n", square(4), f(4));
+    printf("④ same answer, inlined or not: %d %d\n", square(4), f(4));
 
     return 0;
 }

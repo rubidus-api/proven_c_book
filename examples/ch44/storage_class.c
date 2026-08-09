@@ -18,14 +18,14 @@ int main(void)
     auto int local = 4;            /* C17 까지의 뜻: 자동 저장 기간(기본값) */
     register int hot = 5;          /* 옛 부탁. 주소는 못 얻는다 */
     constexpr int fixed = 6;       /* C23 — 컴파일 시간 상수 */
-    static_assert(fixed == 6, "constexpr 는 상수식이다");
+    static_assert(fixed == 6, "constexpr is a constant expression");
 
     printf("file_only=%d shared=%d per_thread=%d local=%d hot=%d fixed=%d\n",
            file_only, shared, per_thread, local, hot, fixed);
     /* 한 문장에 여러 번 부르면 평가 순서가 미지정이라 순서가 뒤집힌다(34장).
        그래서 한 줄에 하나씩 부른다. */
     int b1 = bump(), b2 = bump(), b3 = bump();
-    printf("bump() 세 번: %d %d %d   <- static 지역은 살아남는다\n", b1, b2, b3);
+    printf("bump() three times: %d %d %d   <- a static local survives\n", b1, b2, b3);
 
     /* static extern int bad;   <- 오류: multiple storage classes            */
     /* int *p = &hot;           <- 오류: address of register variable        */

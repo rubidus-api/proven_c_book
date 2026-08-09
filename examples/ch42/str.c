@@ -12,6 +12,6 @@ int main(void)
     }
     printf("\n");
 
-    printf("sizeof greet = %zu (NUL 종단 포함)\n", sizeof greet);
+    printf("sizeof greet = %zu (including the NUL terminator)\n", sizeof greet);
     return 0;
 }

@@ -27,18 +27,18 @@ static void dump(const char *label, double d)
     unsigned expo = (unsigned)((u >> 52) & 0x7FFu);
     uint64_t frac = u & 0xFFFFFFFFFFFFFu;
 
-    printf("%-12s %016" PRIx64 "  부호 %u  지수 %4u(=%+5d)  가수 %013" PRIx64,
+    printf("%-12s %016" PRIx64 "  sign %u  exponent %4u(=%+5d)  significand %013" PRIx64,
            label, u, sign, expo,
            expo == 0 ? -1022 : (int)expo - 1023, frac);
 
-    if (expo == 0x7FF)      printf("  <- %s", frac ? "NaN" : "무한대");
-    else if (expo == 0)     printf("  <- %s", frac ? "비정규수" : "영");
+    if (expo == 0x7FF)      printf("  <- %s", frac ? "NaN" : "infinity");
+    else if (expo == 0)     printf("  <- %s", frac ? "subnormal" : "zero");
     printf("\n");
 }
 
 int main(void)
 {
-    puts("── double 의 비트 (부호 1 + 지수 11 + 가수 52) ──");
+    puts("-- the bits of a double (sign 1 + exponent 11 + significand 52) --");
     dump("1.0", 1.0);
     dump("-1.0", -1.0);
     dump("0.5", 0.5);
@@ -51,30 +51,30 @@ int main(void)
     dump("inf", INFINITY);
     dump("NaN", NAN);
 
-    puts("\n── 0.1 + 0.2 와 0.3 은 비트가 다르다 ──");
+    puts("\n-- 0.1 + 0.2 and 0.3 have different bits --");
     printf("0.1+0.2 = %.20f\n", 0.1 + 0.2);
     printf("0.3     = %.20f\n", 0.3);
-    printf("차이의 비트: %016" PRIx64 " vs %016" PRIx64 "  (마지막 1비트)\n",
+    printf("bits of the difference: %016" PRIx64 " vs %016" PRIx64 "  (the last bit)\n",
            bits_of(0.1 + 0.2), bits_of(0.3));
 
-    puts("\n── 1.0 에서 한 눈금(ULP) 움직이면 가수의 끝자리가 1 오른다 ──");
+    puts("\n-- one step (ULP) up from 1.0 raises the last bit of the significand --");
     double one = 1.0;
     double next = nextafter(1.0, 2.0);
     printf("1.0        %016" PRIx64 "\n", bits_of(one));
-    printf("다음 값    %016" PRIx64 "  차이 %.17g\n", bits_of(next), next - one);
-    printf("DBL_EPSILON 과 같은가? %s\n",
-           (next - one) == 0x1p-52 ? "그렇다" : "아니다");
+    printf("next value %016" PRIx64 "  difference %.17g\n", bits_of(next), next - one);
+    printf("same as DBL_EPSILON? %s\n",
+           (next - one) == 0x1p-52 ? "yes" : "no");
 
-    puts("\n── float 은 같은 구조를 좁게 쓴다 (부호 1 + 지수 8 + 가수 23) ──");
+    puts("\n-- a float uses the same structure, narrower (sign 1 + exponent 8 + significand 23) --");
     float f = 0.1f;
     uint32_t fu = bits_of_f(f);
-    printf("0.1f       %08" PRIx32 "  부호 %u  지수 %3u(=%+4d)  가수 %06" PRIx32 "\n",
+    printf("0.1f       %08" PRIx32 "  sign %u  exponent %3u(=%+4d)  significand %06" PRIx32 "\n",
            fu, fu >> 31, (fu >> 23) & 0xFFu, (int)((fu >> 23) & 0xFFu) - 127,
            fu & 0x7FFFFFu);
-    printf("(double)0.1f 를 다시 찍으면 %.17g — float 로 좁힌 흔적이 남는다\n",
+    printf("printing (double)0.1f again gives %.17g - the narrowing to float leaves a trace\n",
            (double)f);
 
-    puts("\n── 정규수의 바닥을 지나면 비정규수가 된다 ──");
+    puts("\n-- below the smallest normal number you get subnormals --");
     double small = 0x1p-1022;          /* 가장 작은 정규수 */
     dump("2^-1022", small);
     dump("half", small / 2);           /* 비정규수 */

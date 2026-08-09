@@ -52,27 +52,27 @@ int main(void)
 {
     /* ① signal 은 *이전 핸들러*를 돌려준다 — 그래서 반환 타입이 함수 포인터다 */
     handler_t *old = signal(SIGINT, on_int);
-    printf("signal 은 이전 핸들러를 돌려준다: %s\n",
-           old == SIG_ERR ? "SIG_ERR" : "이전 값 있음");
+    printf("signal returns the previous handler: %s\n",
+           old == SIG_ERR ? "SIG_ERR" : "there was one");
     (void)signal(SIGINT, old == SIG_ERR ? SIG_DFL : old);
 
     /* ② 같은 무늬 — 설치하고, 이전 것을 돌려받는다 */
-    puts("\nX11 식 오류 핸들러 설치:");
+    puts("\ninstalling an X11-style error handler:");
     int (*prev)(Display *, XErrorEvent *) = set_error_handler(my_error_handler);
-    printf("  이전 핸들러: %s\n", prev ? "있음" : "없음(첫 설치)");
+    printf("  previous handler: %s\n", prev ? "present" : "none (first install)");
     Display d = { 0 };
     XErrorEvent e = { .code = 42 };
     error_handler_t *prev2 = set_error_handler2(my_error_handler);  /* typedef 판 */
-    printf("  typedef 판도 같은 일을 한다: 이전 핸들러 %s\n",
-           prev2 == my_error_handler ? "동일" : "다름");
+    printf("  the typedef version does the same: previous handler %s\n",
+           prev2 == my_error_handler ? "identical" : "different");
     my_error_handler(&d, &e);
 
     /* ③ 명령 표 */
-    printf("\n명령 표: add(3,4)=%d, mul(3,4)=%d\n", table[0](3, 4), table[1](3, 4));
+    printf("\ncommand table: add(3,4)=%d, mul(3,4)=%d\n", table[0](3, 4), table[1](3, 4));
 
     /* ④ 배열을 가리키는 포인터 */
     int (*g)[4] = rows();
-    printf("배열을 가리키는 포인터: g[2][1] = %d (한 걸음 %zu바이트)\n",
+    printf("pointer to an array: g[2][1] = %d (one step is %zu bytes)\n",
            g[2][1], sizeof *g);
     return 0;
 }

@@ -36,9 +36,9 @@ static void report(const char *name, unsigned long cp)
     char cpname[16];
     snprintf(cpname, sizeof cpname, "U+%04lX", cp);
     printf("  %-9s → ", cpname);
-    if (n == 0)      printf("담을 수 없다               ");
-    else if (n == 1) printf("%04X        한 단위          ", u16[0]);
-    else             printf("%04X %04X   되돌리면 U+%04lX", u16[0], u16[1],
+    if (n == 0)      printf("cannot be represented    ");
+    else if (n == 1) printf("%04X        one unit         ", u16[0]);
+    else             printf("%04X %04X   back again U+%04lX", u16[0], u16[1],
                              from_pair(u16[0], u16[1]));
     printf("  %s\n", name);
 }
@@ -62,39 +62,39 @@ static void lengths(const char *label, const char *utf8)
         char16_t tmp[2];
         u16units += (size_t)to_utf16((unsigned long)wc, tmp);
     }
-    printf("  UTF-8 %2zu바이트  코드포인트 %zu개  UTF-16 %zu단위   %s\n",
+    printf("  UTF-8 %2zu bytes  code points %zu  UTF-16 %zu units   %s\n",
            bytes, cps, u16units, label);
 }
 
 int main(void)
 {
-    puts("[코드포인트 → UTF-16]");
+    puts("[code point -> UTF-16]");
     report("'A'", 0x41);
     report("'한'", 0xD55C);
-    report("U+FFFD 대체 문자", 0xFFFD);
-    report("서러게이트 자체 D800", 0xD800);
-    report("이모지 U+1F600", 0x1F600);
-    report("한자 확장 U+2A6B2", 0x2A6B2);
-    report("유니코드 마지막", 0x10FFFF);
-    report("범위 밖", 0x110000);
+    report("U+FFFD replacement character", 0xFFFD);
+    report("a surrogate itself, D800", 0xD800);
+    report("emoji U+1F600", 0x1F600);
+    report("CJK extension U+2A6B2", 0x2A6B2);
+    report("last of Unicode", 0x10FFFF);
+    report("out of range", 0x110000);
 
-    puts("\n계산은 이렇게 나온다 (U+1F600):");
+    puts("\nthe arithmetic goes like this (U+1F600):");
     unsigned long v = 0x1F600UL - 0x10000UL;
-    printf("  0x1F600 - 0x10000 = 0x%05lX (20비트)\n", v);
-    printf("  상위 10비트 0x%03lX + 0xD800 = 0x%04lX\n", v >> 10, 0xD800UL + (v >> 10));
-    printf("  하위 10비트 0x%03lX + 0xDC00 = 0x%04lX\n",
+    printf("  0x1F600 - 0x10000 = 0x%05lX (20 bits)\n", v);
+    printf("  high 10 bits 0x%03lX + 0xD800 = 0x%04lX\n", v >> 10, 0xD800UL + (v >> 10));
+    printf("  low  10 bits 0x%03lX + 0xDC00 = 0x%04lX\n",
            v & 0x3FF, 0xDC00UL + (v & 0x3FF));
 
     const char *loc = setlocale(LC_CTYPE, "C.UTF-8");
     if (!loc) loc = setlocale(LC_CTYPE, "en_US.UTF-8");
-    if (!loc) { puts("\nUTF-8 로케일이 없어 길이 시연은 건너뛴다"); return 0; }
+    if (!loc) { puts("\nno UTF-8 locale, so the length demonstration is skipped"); return 0; }
 
-    puts("\n[같은 문자열의 세 가지 길이]");
+    puts("\n[three lengths of the same string]");
     lengths("\"Hi\"", "Hi");
     lengths("\"한글\"", "한글");
-    lengths("이모지 하나", "\xF0\x9F\x98\x80");
-    lengths("섞인 것", "a한\xF0\x9F\x98\x80");
-    printf("  이 구현의 wchar_t: %zu바이트 → UTF-32. 윈도는 2바이트 → UTF-16.\n",
+    lengths("one emoji", "\xF0\x9F\x98\x80");
+    lengths("mixed", "a한\xF0\x9F\x98\x80");
+    printf("  wchar_t here is %zu bytes -> UTF-32. On Windows it is 2 bytes -> UTF-16.\n",
            sizeof(wchar_t));
     return 0;
 }

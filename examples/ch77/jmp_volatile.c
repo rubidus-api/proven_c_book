@@ -21,24 +21,24 @@ int main(void)
         plain   = 2;                     /* setjmp 와 longjmp 사이에서 바꾼다 */
         guarded = 2;
         statik  = 2;
-        puts("셋 다 2 로 바꾼 뒤 longjmp 한다");
+        puts("setting all three to 2, then longjmp");
         fail();
     }
 
-    printf("\nlongjmp 로 돌아온 뒤:\n");
-    printf("  plain   (자동, 비 volatile) = %d   ← 표준은 값을 보장하지 않는다\n",
+    printf("\nafter coming back through longjmp:\n");
+    printf("  plain   (automatic, not volatile) = %d   <- the standard guarantees nothing\n",
            plain);
-    printf("  guarded (자동, volatile)    = %d   ← 보장된다\n", guarded);
-    printf("  statik  (정적)              = %d   ← 보장된다\n", statik);
+    printf("  guarded (automatic, volatile)     = %d   <- guaranteed\n", guarded);
+    printf("  statik  (static)                  = %d   <- guaranteed\n", statik);
 
 #ifdef __OPTIMIZE__
-    puts("\n(최적화가 켜진 빌드다. plain 이 1 로 되돌아간 것을 보라 —");
-    puts(" 컴파일러가 그 변수를 레지스터에 두었기 때문이다.)");
+    puts("\n(this build has optimization on. Notice that plain went back to 1 -");
+    puts(" the compiler had kept that variable in a register.)");
 #else
-    puts("\n(최적화가 꺼진 빌드다. plain 도 2 로 보이지만 보장이 아니다 —");
-    puts(" 같은 코드를 -O2 로 빌드하면 1 이 나온다. 직접 확인했다.)");
+    puts("\n(this build has optimization off. plain reads 2 as well, but that is not guaranteed -");
+    puts(" build the same code with -O2 and it prints 1. We checked.)");
 #endif
-    puts("규칙은 하나다: longjmp 를 건너 살아남아야 하는 지역 변수에는");
-    puts("volatile 을 붙인다.");
+    puts("the rule is one line: a local that must survive a longjmp gets");
+    puts("volatile.");
     return 0;
 }

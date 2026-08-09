@@ -18,24 +18,24 @@ int main(void)
     struct node *c = (struct node *)malloc(4 * sizeof *c);
     if (!c) { free(a); free(b); return 1; }
 
-    printf("셋이 확보한 크기는 같다: %zu, %zu, %zu 바이트\n",
+    printf("all three reserve the same size: %zu, %zu, %zu bytes\n",
            4 * sizeof *a, 4 * sizeof(struct node), 4 * sizeof *c);
 
-    puts("\n[sizeof *p 는 p 를 읽지 않는다 — 평가되지 않는 피연산자]");
+    puts("\n[sizeof *p does not read p - an unevaluated operand]");
     struct node *nul = NULL;
-    printf("  p 가 널이어도 sizeof *p = %zu 로 계산된다\n", sizeof *nul);
-    puts("  크기는 *타입*에서 나오지 값에서 나오지 않기 때문이다.");
+    printf("  even with p null, sizeof *p works out to %zu\n", sizeof *nul);
+    puts("  the size comes from the *type*, not from the value.");
 
-    puts("\n[이름을 두 번 적으면 어긋날 수 있다]");
+    puts("\n[write the name twice and the two can drift apart]");
     puts("  struct node *p = (struct node *)malloc(n * sizeof(struct gadget));");
-    puts("  ↑ 타입 이름이 두 곳에 있으니 한쪽만 고치는 사고가 가능하다.");
-    puts("  sizeof *p 로 적으면 그 사고를 *쓸 수가 없다*.");
+    puts("  ^ the type name is in two places, so it is possible to fix only one.");
+    puts("  written as sizeof *p, that mistake *cannot be written*.");
 
-    puts("\n[두 표기가 함께 지는 위험 — 곱셈의 넘침]");
+    puts("\n[a risk both spellings carry - overflow in the multiplication]");
     size_t huge = (size_t)-1 / sizeof(struct node) + 1;
-    printf("  huge * sizeof *a 는 감아 돌아 %zu 가 된다\n", (size_t)(huge * sizeof *a));
-    puts("  → malloc 이 '아주 작은' 크기로 성공할 수 있다. 개수를 먼저 검사하거나,");
-    puts("     곱셈을 스스로 검사하는 calloc(개수, 크기) 를 쓴다.");
+    printf("  huge * sizeof *a wraps around to %zu\n", (size_t)(huge * sizeof *a));
+    puts("  -> malloc can then succeed with a 'tiny' size. Check the count first, or");
+    puts("     use calloc(count, size), which checks the multiplication itself.");
 
     free(a); free(b); free(c);
     return 0;

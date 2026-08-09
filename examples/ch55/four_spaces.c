@@ -25,7 +25,7 @@ static int show(x v, struct point p)
     return 0;
 
 x:  /* 레이블 x */
-    puts("음수라 레이블 x 로 왔다");
+    puts("negative, so we came to label x");
     return 1;
 }
 
@@ -36,8 +36,8 @@ int main(void)
     struct x b = { .x = -1, .y = 0 };   /* 태그 x */
     struct point p = { .x = 3, .y = 4 };
 
-    puts("[네 이름 공간에 같은 철자 x 가 동시에 산다]");
-    puts("  ① 레이블 x   ② 태그 struct x   ③ 멤버 x   ④ typedef 이름 x");
+    puts("[the same spelling x lives in four name spaces at once]");
+    puts("  ① label x   ② tag struct x   ③ member x   ④ typedef name x");
     puts("");
 
     (void)show(a, p);
@@ -45,7 +45,7 @@ int main(void)
 
     /* 이름을 찾는 자리(문법적 문맥)가 이름 공간을 고른다.
        struct 뒤 → 태그, . 뒤 → 멤버, goto 뒤 → 레이블, 그 밖 → 보통 식별자. */
-    printf("\nsizeof(x) = %zu, sizeof(struct x) = %zu  (같은 타입이다)\n",
+    printf("\nsizeof(x) = %zu, sizeof(struct x) = %zu  (the same type)\n",
            sizeof(x), sizeof(struct x));
     return 0;
 }

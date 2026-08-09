@@ -310,7 +310,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
     <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><strong>fgets</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> buf</strong><strong><span class="tok-x">,</span></strong><strong> f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
         <strong><span class="tok-t">int</span></strong> complete <strong><span class="tok-x">=</span></strong> <strong>strchr</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">'</span></strong><strong><span class="tok-x">)</span></strong> <strong><span class="tok-x">!=</span></strong> <span class="tok-n">NULL</span><span class="tok-x">;</span>
         <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>complete<span class="tok-x">)</span> buf<span class="tok-x">[</span><strong>strcspn</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">'</span><span class="tok-n">\0</span><span class="tok-s">'</span><span class="tok-x">;</span>
-        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  [</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">]</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> buf</strong><strong><span class="tok-x">,</span></strong><strong> complete </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">   &lt;- 잘림(줄이 이어짐)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+        <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">  [</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-s">]</span></strong><strong><span class="tok-s">%s</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> buf</strong><strong><span class="tok-x">,</span></strong><strong> complete </strong><strong><span class="tok-x">?</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">"</span></strong><strong> </strong><strong><span class="tok-x">:</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">   &lt;- cut (the line continues)</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <span class="tok-x">}</span>
     <strong>fclose</strong><strong><span class="tok-x">(</span></strong><strong>f</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 <span class="tok-x">}</span>
@@ -341,10 +341,10 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <span class="tok-x">{</span>
     <strong>make_file</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">고정 8바이트 버퍼:</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">a fixed 8-byte buffer:</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong>read_fixed</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 
-    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">늘려 가며 읽기:</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
+    <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">growing the buffer as we read:</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     FILE <strong><span class="tok-x">*</span></strong>f <strong><span class="tok-x">=</span></strong> <strong>fopen</strong><strong><span class="tok-x">(</span></strong><strong>PATH</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">r</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>f<span class="tok-x">)</span> <span class="tok-x">{</span>
         <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>line<span class="tok-x">;</span>
@@ -357,15 +357,15 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
     <strong>remove</strong><strong><span class="tok-x">(</span></strong><strong>PATH</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
-</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>고정 8바이트 버퍼:
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>a fixed 8-byte buffer:
   [short]
-  [a line ]   &lt;- 잘림(줄이 이어짐)
-  [that is]   &lt;- 잘림(줄이 이어짐)
-  [ defini]   &lt;- 잘림(줄이 이어짐)
-  [tely to]   &lt;- 잘림(줄이 이어짐)
+  [a line ]   &lt;- cut (the line continues)
+  [that is]   &lt;- cut (the line continues)
+  [ defini]   &lt;- cut (the line continues)
+  [tely to]   &lt;- cut (the line continues)
   [o long]
   [end]
-늘려 가며 읽기:
+growing the buffer as we read:
   [short] (5 bytes)
   [a line that is definitely too long] (34 bytes)
   [end] (3 bytes)
