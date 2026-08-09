@@ -12,12 +12,12 @@
 > 생겼는지에서 출발해, C23을 기본값으로 삼고, 마지막 부에서
 > [proven](https://github.com/rubidus-api) C 라이브러리로 이어진다.
 
-- **현재 판**: v0.38.0 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.38.0/proven_c_book-v0.38.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.38.0/proven_c_book-v0.38.0-en.pdf)
+- **현재 판**: v0.39.0 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.39.0/proven_c_book-v0.39.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.39.0/proven_c_book-v0.39.0-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.38.0/proven_c_book-v0.38.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.38.0/proven_c_book-v0.38.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.38.0/proven_c_book-v0.38.0-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.38.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.38.0-en.pdf)
-- 13부 97장 + 부록 A~E + 찾아보기 — 한국어판 734쪽, 영어판 788쪽
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.39.0/proven_c_book-v0.39.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.39.0/proven_c_book-v0.39.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.39.0/proven_c_book-v0.39.0-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.39.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.39.0-en.pdf)
+- 13부 97장 + 부록 A~E + 찾아보기 — 한국어판 737쪽, 영어판 790쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 어떤 책인가
