@@ -28,8 +28,9 @@ FLOATS = (
     ("figure-svg", '<figure class="fig">'),
     # ★ 2026-08-09: Typst 의 HTML 내보내기가 각주 *본문*을 버리는 것을 발견했다
     #   (0.15.1 — 참조 13개에 본문 1개). 그래서 출처 주석은 `#footnote` 가 아니라
-    #   lib.typ 의 `note()` 를 쓴다. 이 줄이 그 규율을 지킨다.
-    ("note", 'class="src-note"'),
+    #   lib.typ 의 `note()` 를 쓴다. HTML 에서는 wrap-html.py 가 그것을 장 끝의
+    #   「주」로 옮기면서 본문에 위첨자 `fnref` 를 남긴다 — 그 자국을 센다.
+    ("note", 'class="fnref"'),
 )
 
 

@@ -37,9 +37,21 @@ main p { text-indent: 1em; }
 .demo-src p, .demo-out p, pre, pre p,
 .dev-label, p.dev-label { text-indent: 0; }
 /* 출처 주석 — PDF 의 각주에 해당한다(lib.typ 의 note). Typst 의 HTML 내보내기가
-   각주 본문을 버리므로 여기서는 본문 안의 작은 글씨로 편다. */
+   각주 본문을 버리므로 lib.typ 이 본문에 펴 두고, wrap-html.py 의 collect_notes 가
+   번호를 매겨 장 끝의 「주」로 옮긴다. 아래 .src-note 는 혹시 옮겨지지 않은 것이
+   있을 때의 대비책이다. */
 .src-note { font-size: .86em; color: var(--muted, #666); }
 .src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
 /* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
 .dev p { text-indent: 0; }
 .dev p + p { text-indent: 1em; }
@@ -313,7 +325,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>기대한 값 : 800000
-보호 없음 : 282772  &lt;- 잃어버렸다
+보호 없음 : 273236  &lt;- 잃어버렸다
 원자적    : 800000
 
 atomic_long 은 잠금 없이 되는가? 예
