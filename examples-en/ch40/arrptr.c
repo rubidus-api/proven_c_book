@@ -23,7 +23,7 @@ int main(void)
 {
     puts("(1) What does it hold?  The size gives it away");
     printf("  sizeof arr = %zu   sizeof ptr = %zu\n", sizeof arr, sizeof ptr);
-    printf("  원소 수: sizeof arr / sizeof arr[0] = %zu\n",
+    printf("  element count: sizeof arr / sizeof arr[0] = %zu\n",
            sizeof arr / sizeof arr[0]);
 
     puts("\n(2) Same address, different type - +1 steps by a different width");

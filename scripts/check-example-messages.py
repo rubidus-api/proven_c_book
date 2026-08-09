@@ -2,8 +2,10 @@
 """예제 소스의 입출력 메시지는 영어여야 한다 (저자 지시 2026-08-10).
 
 주석은 한국어 그대로 둔다 --- 한국어판 독자가 읽는 설명이기 때문이다. 그러나
-*프로그램이 찍는 글자*는 다르다. 같은 예제가 한국어판과 영어판에 함께 실리고,
-캡처된 출력도 두 판이 같은 것을 쓴다. 출력이 한국어면 영어판이 반쪽이 된다.
+*프로그램이 찍는 글자*는 다르다 --- 출력은 소스의 일부이고, 다른 언어 화자가
+그 예제를 실행했을 때 읽을 수 있어야 한다. 저자가 정한 규칙이다.
+
+(영어판은 `examples-en/` 이라는 자체 트리를 쓴다. 두 트리 모두 검사한다.)
 
   ★ 주석 = 한국어  /  문자열 리터럴(=입출력 메시지) = 영어
 
@@ -22,7 +24,7 @@ import re
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-EXAMPLES = ROOT / "examples"
+TREES = (ROOT / "examples", ROOT / "examples-en")
 ALLOW = ROOT / "docs" / "example-hangul-allow.tsv"
 HAN = re.compile(r"[가-힣ㄱ-ㅎㅏ-ㅣ]")
 
@@ -78,16 +80,19 @@ def allow_files():
 def main() -> int:
     allowed = allow_files()
     bad, spared, checked = [], 0, 0
-    for f in sorted(EXAMPLES.rglob("*.[ch]")):
+    for tree in TREES:
+      if not tree.exists():
+        continue
+      for f in sorted(tree.rglob("*.[ch]")):
         checked += 1
-        rel = str(f.relative_to(EXAMPLES))
+        rel = str(f.relative_to(tree))
         for ln, s in literals(f.read_text(encoding="utf-8")):
             if not HAN.search(s):
                 continue
-            if rel in allowed:
+            if rel in allowed:   # 표본 파일은 두 트리 모두 같다
                 spared += 1
             else:
-                bad.append((rel, ln, s))
+                bad.append((f"{tree.name}/{rel}", ln, s))
 
     show = bad if "--list" in sys.argv else bad[:20]
     for rel, ln, s in show:
