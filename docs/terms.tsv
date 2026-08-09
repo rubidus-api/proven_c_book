@@ -155,3 +155,7 @@ NUL 문자
 우선순위 규칙	precedence rule
 가로채기	interpositioning
 위치 독립 코드	position-independent code
+함수 지정자	function specifier
+타입 한정자	type qualifier
+저장 클래스 지정자	storage-class specifier
+정렬 지정자	alignment specifier

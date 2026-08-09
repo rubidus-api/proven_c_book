@@ -4,7 +4,7 @@
 (RFC-0019). 이 표는 `scripts/check-terms.py` 가 원고에서 생성하며,
 한국어–영어 용어 대조표를 겸한다.
 
-- 용어 **216개**
+- 용어 **220개**
 - 어긋난 곳 **0건** — 없다
 
 ## 용어 대조표
@@ -173,9 +173,11 @@
 | 잠금 없음 | lock-free | 79 | 절 제목 | 79 | 79 |
 | 재귀 | recursion | 33 | 절 제목 | 33 | 33 |
 | 저장 기간 | storage duration | 44 | 절 제목 | 44 | 44 |
+| 저장 클래스 지정자 | storage-class specifier | 44 | 절 제목 | 44 | 44 |
 | 전처리기 | preprocessor | 19 | 굵은 강조 | 16 | 57 |
 | 정규화 | normalization | 68 | 절 제목 | 9 | 9 |
 | 정렬 | alignment | 6 | 절 제목 | 6 | 6, 87 |
+| 정렬 지정자 | alignment specifier | 47 | 절 제목 | 47 | 47 |
 | 정수 승격 | integer promotion | 29 | 절 제목 | 29 | 29 |
 | 정수 타입 | integer type | 27 | 절 제목 | 27 | 27 |
 | 정의되지 않은 동작 | undefined behavior | 49 | 절 제목 | 12 | 52 |
@@ -197,10 +199,11 @@
 | 컴파일러 | — | 13 | 절 제목 | 16 | 18 |
 | 컴파일러 최적화 | compiler optimization | 11 | 첫 등장 | 11 | 13 |
 | 코루틴 | coroutine | 93 | 절 제목 | 93 | 93 |
-| 크기 | sign-magnitude | 27 | 절 제목 | 7 | 27 |
+| 크기 | sign-magnitude | 26 | 절 제목 | 7 | 27 |
 | 키워드 | keyword | 11 | 첫 등장 | 11 | 11 |
 | 키워드(keyword) | — | 11 | 첫 등장 | — | 11 |
 | 타입 | — | 23 | 절 제목 | 27 | 26 |
+| 타입 한정자 | type qualifier | 26 | 굵은 강조 | 26 | 26 |
 | 타입도 범위 | scope | 81 | 첫 등장 | 81 | 81 |
 | 터미널 | terminal | 10 | 절 제목 | 10 | 10 |
 | 통상 산술 변환 | usual arithmetic conversions | 29 | 절 제목 | 29 | 29 |
@@ -222,6 +225,7 @@
 | 할당자 | allocator | 83 | 절 제목 | 83 | 83, 88 |
 | 함수 | function | 26 | 절 제목 | 26 | 26 |
 | 함수 원형 | function prototype | 24 | 첫 등장 | 24 | 24 |
+| 함수 지정자 | function specifier | 24 | 굵은 강조 | 24 | 24 |
 | 함수(function) | — | 26 | 첫 등장 | — | 26 |
 | 해시 맵 | hash map | 91 | 절 제목 | 91 | 91 |
 | 헤더 파일 | header file | 24 | 첫 등장 | 24 | 24 |
