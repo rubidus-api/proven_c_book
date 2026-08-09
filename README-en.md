@@ -14,11 +14,11 @@ those who have just finished a first textbook.
 > default, and ends as a manual for the
 > [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.37.0 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.37.0/proven_c_book-v0.37.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.37.0/proven_c_book-v0.37.0-ko.pdf)
+- **Current edition**: v0.37.1 — **draft**
+- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.37.1/proven_c_book-v0.37.1-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.37.1/proven_c_book-v0.37.1-ko.pdf)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.37.0/proven_c_book-v0.37.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.37.0/proven_c_book-v0.37.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.37.0/proven_c_book-v0.37.0-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.37.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.37.0-ko.pdf)
+- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.37.1/proven_c_book-v0.37.1-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.37.1/proven_c_book-v0.37.1-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.37.1/proven_c_book-v0.37.1-all.zip)
+- Copies inside the repository: [en PDF](dist/proven_c_book-v0.37.1-en.pdf) · [ko PDF](dist/proven_c_book-v0.37.1-ko.pdf)
 - 13 parts, 97 chapters, appendices A–E and an index — 780 pages in English, 728 in Korean.
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 

@@ -6,6 +6,23 @@ This project follows Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.37.1] - 2026-08-09
+
+### Fixed
+- ★★ **웹판이 각주 본문을 통째로 잃고 있었다** — v0.37.0 을 올린 직후 라이브
+  페이지를 확인하다 발견했다. PDF 에는 출처가 다 들어가 있는데 HTML 에는 없었다.
+  - 원인: **Typst 0.15.1 의 HTML 내보내기가 각주 *참조*만 내보내고 *본문*을
+    버린다.** 통짜 HTML 을 직접 뽑아 세어 확인했다 — `doc-noteref` 13개에
+    `doc-endnote` **1개**. 장별 분할 이전 단계에서 이미 사라져 있었다.
+    (Typst 스스로 "html export is under active development and incomplete" 라고
+    경고하는 영역이다.)
+  - 처방: `lib.typ` 에 **`note()` 장치 신설**. PDF 에서는 그대로 각주이고,
+    HTML 에서는 `<span class="src-note">` 로 본문 안에 작은 글씨로 편다.
+    v0.37.0 에서 넣은 출처 각주 **26곳(양판)을 전부 이 장치로 옮겼다.**
+  - ★ **재발 방지**: `check-editions.py` 의 장치 대조 목록에 `note` 를 넣었다.
+    앞으로 출처가 HTML 에서 사라지면 릴리스 게이트가 막는다. 아울러 이 검사가
+    `#장치(` 형태만 세고 `#장치[` 형태를 놓치던 것도 함께 고쳤다.
+
 ## [v0.37.0] - 2026-08-09
 
 ### Added

@@ -26,6 +26,10 @@ FLOATS = (
     ("dtable", '<figure class="tbl">'),
     ("memrow", 'class="memrow"'),
     ("figure-svg", '<figure class="fig">'),
+    # ★ 2026-08-09: Typst 의 HTML 내보내기가 각주 *본문*을 버리는 것을 발견했다
+    #   (0.15.1 — 참조 13개에 본문 1개). 그래서 출처 주석은 `#footnote` 가 아니라
+    #   lib.typ 의 `note()` 를 쓴다. 이 줄이 그 규율을 지킨다.
+    ("note", 'class="src-note"'),
 )
 
 
@@ -45,9 +49,10 @@ def translated_list():
 def float_counts(edition, web):
     src = {}
     for name, _ in FLOATS:
+        # 장치는 `#name(` 로도 `#name[` 로도 불린다 — 둘 다 센다.
+        pat = r"#" + re.escape(name) + r"[(\[]"
         src[name] = sum(
-            len(re.findall(r"#" + re.escape(name) + r"\(",
-                           pathlib.Path(f).read_text(encoding="utf-8")))
+            len(re.findall(pat, pathlib.Path(f).read_text(encoding="utf-8")))
             for f in glob.glob(str(ROOT / edition / "**" / "*.typ"), recursive=True))
     out = {}
     pages = glob.glob(str(ROOT / "docs" / web / "*.html"))
