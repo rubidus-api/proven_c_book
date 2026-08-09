@@ -1,0 +1,20 @@
+# 비유 낱말 허용 목록 (RFC-0022)
+#
+# `check-metaphor.py` 가 잡는 낱말 중, *그 자리에서는 옳다*고 저자가 판단한 것만
+# 여기에 올린다. 형식: 파일<TAB>낱말<TAB>왜 옳은가
+#
+# ★ 새 자리를 올리기 전에 RFC-0022 §2.1 의 원칙을 먼저 읽을 것.
+#   「지도」는 *지리*를 말할 때만 쓴다. C 에는 지리가 없다.
+#   공간에 놓인 것 = 배치 / 갈래로 나뉜 것 = 갈래 /
+#   판세를 훑는 것 = 지형 / 먼저 그려 두는 큰 틀 = 밑그림
+#
+# 영어판의 map 은 아래 세 부류가 기본 허용이라 여기 적지 않아도 된다
+#   (스크립트가 정규식으로 거른다).
+#   · 자료구조     — hash map, proven_map_*, map lookup, the map copies …
+#   · 시스템 호출   — mmap, memory-mapped, mapped
+#   · 링커 산출물   — map file
+#   · 동사          — map A onto B, maps the whole …
+#
+# 예외는 적을수록 좋다. 올릴 때는 왜 옳은지를 셋째 칸에 반드시 적는다.
+ch38.typ	maps	동사 — "element-wise arithmetic maps onto that addressing mode". 비유가 아니다
+ch91.typ	map	자료구조 — proven 의 해시맵을 가리킨다("counts with a map")

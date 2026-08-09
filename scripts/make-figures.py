@@ -505,11 +505,11 @@ def fig_type_tree(L):
 
 FIGS = {
     "regions": (fig_regions, {
-        "ko": dict(title="한 프로그램의 기억 지도", names=["코드", "정적 구역", "힙 (창고)", "스택 (작업대)"],
+        "ko": dict(title="한 프로그램의 기억 배치", names=["코드", "정적 구역", "힙 (창고)", "스택 (작업대)"],
                    subs=["명령들 · 읽기 전용", "전역 · 프로그램 내내", "빌리고 돌려준다", "함수가 도는 동안"],
                    grow_stack="스택은 이쪽으로 자란다", grow_heap="힙은 이쪽으로 자란다",
                    low="낮은 주소", high="높은 주소"),
-        "en": dict(title="the memory map of one program", names=["code", "static", "heap", "stack"],
+        "en": dict(title="the memory layout of one program", names=["code", "static", "heap", "stack"],
                    subs=["instructions · read only", "globals · whole program", "borrowed and returned",
                          "while a function runs"],
                    grow_stack="the stack grows this way", grow_heap="the heap grows this way",

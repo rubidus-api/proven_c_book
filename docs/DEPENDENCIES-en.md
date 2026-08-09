@@ -88,7 +88,7 @@ None. Every chapter leans only on chapters before it.
 
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
-| 26 | The map of types — how the standard divides them | 23, 6, 8 | 27, 29 |
+| 26 | The families of types — how the standard divides them | 23, 6, 8 | 27, 29 |
 | 27 | Integers — a world of finite numbers | 26, 7, 23 | 28, 29, 67, 80 |
 | 28 | Integer operations — division, bits | 7, 27 | 29 |
 | 29 | Implicit conversions — promotion and the usual arithmetic conversions | 26, 27, 28 | 30, 34, 58 |
@@ -150,7 +150,7 @@ None. Every chapter leans only on chapters before it.
 
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
-| 62 | The whole map of the standard library | 61 | 78 |
+| 62 | The standard library at a glance | 61 | 78 |
 | 63 | Streams in reality — `<stdio.h>` ① | 10, 22 | 64, 69, 71, 92 |
 | 64 | The traps of reading and writing — `<stdio.h>` ② | 63, 43 | 78 |
 | 65 | Strings and memory — `<string.h>` | 42, 38 | — |
@@ -170,7 +170,7 @@ None. Every chapter leans only on chapters before it.
 | 79 | Operations that do not split — `<stdatomic.h>` | 11, 44 | 93 |
 | 80 | How to ask about overflow — `<stdckdint.h>` | 27, 52 | 87 |
 | 81 | From macro to keyword — `bool`, `nullptr` and their companions | 78, 30 | — |
-| 82 | A program's map of memory — operating systems and embedded | 44, 2 | 83, 93, 96 |
+| 82 | A program's memory layout — operating systems and embedded | 44, 2 | 83, 93, 96 |
 | 83 | Inside the allocator — the heap, alternative allocators, alternative standard libraries | 45, 82 | 88 |
 
 ### Part XII — proven — fundamentals, verified
