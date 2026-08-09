@@ -67,7 +67,7 @@ int main(void)
            before, strerror(before), errno, strerror(errno));
 
     /* (3) the result is the same even when a signal cuts in.
-       This implementation reverts to SIG_DFL after handling (chapter 75),
+       This implementation reverts to SIG_DFL after handling (chapter 76),
        so the handler is installed again. */
     signal(SIGUSR1, careful);
     hits = 0;
@@ -79,7 +79,7 @@ int main(void)
     puts(quiet == hit ? "the same - the kernel saved and restored every register"
                       : "different - this should not happen");
 
-    puts("\nHere is the difference from setjmp/longjmp (chapter 76):");
+    puts("\nHere is the difference from setjmp/longjmp (chapter 77):");
     puts("  signal:  the kernel saves and restores the *whole* register set ->");
     puts("           returning into the middle of an expression just works.");
     puts("  longjmp: jmp_buf holds only the *callee-saved* registers ->");

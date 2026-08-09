@@ -4,7 +4,7 @@
 /* 낱말을 세어 정렬해 찍는다 — 맵과 배열과 정렬을 한 번에 */
 typedef struct { proven_u8str_view_t word; int count; } entry_t;
 
-/* 비교자는 전순서여야 한다: 동점도 일관되게 갈라 준다 (52장의 반례를 피한다) */
+/* 비교자는 전순서여야 한다: 동점도 일관되게 갈라 준다 (53장의 반례를 피한다) */
 static int by_count_desc(const void *a, const void *b)
 {
     const entry_t *x = a, *y = b;

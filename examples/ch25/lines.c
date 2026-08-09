@@ -24,6 +24,6 @@ int main(void)
 
     puts("\n[읽기가 끝나는 두 가지 이유]");
     puts("  fgets 가 NULL 을 돌려주면 '더 읽을 것이 없거나(EOF) 오류'다.");
-    puts("  둘을 가르는 것은 feof 와 ferror 인데, 정식 취급은 62장에 있다.");
+    puts("  둘을 가르는 것은 feof 와 ferror 인데, 정식 취급은 63장에 있다.");
     return 0;
 }

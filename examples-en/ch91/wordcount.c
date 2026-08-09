@@ -4,7 +4,7 @@
 /* Words counted, sorted and printed — a map, an array and a sort at once */
 typedef struct { proven_u8str_view_t word; int count; } entry_t;
 
-/* a comparator must be a total order: ties are broken consistently too (avoiding chapter 52's counterexample) */
+/* a comparator must be a total order: ties are broken consistently too (avoiding chapter 53's counterexample) */
 static int by_count_desc(const void *a, const void *b)
 {
     const entry_t *x = a, *y = b;

@@ -24,6 +24,6 @@ int main(void)
 
     puts("\n[two reasons reading ends]");
     puts("  fgets returning NULL means 'nothing left (EOF), or an error'.");
-    puts("  feof and ferror tell them apart; chapter 62 treats them properly.");
+    puts("  feof and ferror tell them apart; chapter 63 treats them properly.");
     return 0;
 }

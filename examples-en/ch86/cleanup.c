@@ -1,5 +1,5 @@
 /* How not to leak a resource on a failure path — everything gathered in one
-   place and released in reverse. The `goto cleanup` idiom of chapter 74 meeting
+   place and released in reverse. The `goto cleanup` idiom of chapter 75 meeting
    proven's error values. */
 #include <proven.h>
 

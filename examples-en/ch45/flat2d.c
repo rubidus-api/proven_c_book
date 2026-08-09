@@ -4,11 +4,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* The subscript macro: every argument wrapped in parentheses (chapter 56), and the
+/* The subscript macro: every argument wrapped in parentheses (chapter 57), and the
    product raised to size_t. i and j are evaluated once, so side effects are safe. */
 #define AT(p, cols, i, j)  ((p)[(size_t)(i) * (size_t)(cols) + (size_t)(j)])
 
-/* The size computation can overflow — if it does, no allocation is attempted (ch. 51, 79). */
+/* The size computation can overflow — if it does, no allocation is attempted (ch. 52, 80). */
 static int *alloc_grid(size_t rows, size_t cols)
 {
     size_t cells, bytes;

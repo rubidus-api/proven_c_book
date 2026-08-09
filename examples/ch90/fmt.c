@@ -27,7 +27,7 @@ int main(void)
     printf("into 8 bytes: %s (err=%d)\n",
            proven_is_ok(r2.err) ? "ok" : "refused", (int)r2.err);
 
-    /* 정렬과 자릿수 — 51장의 폭/정밀도에 해당한다 */
+    /* 정렬과 자릿수 — 52장의 폭/정밀도에 해당한다 */
     proven_u8str_t line = proven_u8str_borrow(buf, sizeof buf);
     (void)proven_u8str_reset(&line);
     proven_fmt_result_t r3 = proven_u8str_append_fmt(&line, "|{:>10}|{:<10}|{:.3}|",

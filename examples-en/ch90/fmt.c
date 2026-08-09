@@ -27,7 +27,7 @@ int main(void)
     printf("into 8 bytes: %s (err=%d)\n",
            proven_is_ok(r2.err) ? "ok" : "refused", (int)r2.err);
 
-    /* alignment and digits — the width and precision of chapter 51 */
+    /* alignment and digits — the width and precision of chapter 52 */
     proven_u8str_t line = proven_u8str_borrow(buf, sizeof buf);
     (void)proven_u8str_reset(&line);
     proven_fmt_result_t r3 = proven_u8str_append_fmt(&line, "|{:>10}|{:<10}|{:.3}|",

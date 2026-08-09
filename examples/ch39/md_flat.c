@@ -28,7 +28,7 @@ int main(void)
 {
     const size_t rows = 4, cols = 5;
 
-    /* 한 덩어리로 잡는다 — 곱셈부터 넘침을 본다(85장의 감각) */
+    /* 한 덩어리로 잡는다 — 곱셈부터 넘침을 본다(86장의 감각) */
     size_t n;
     if (__builtin_mul_overflow(rows, cols, &n)) return 1;
     double *m = malloc(n * sizeof *m);
