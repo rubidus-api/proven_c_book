@@ -6,6 +6,15 @@ This project follows Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.42.1] - 2026-08-10
+
+### Changed
+- **제12부의 이름을 「proven — 검증된 기본기」에서 「proven — 새로운 안정적인
+  기반」으로 바꾸었다**(저자 지시).
+  - 영어판 제목도 그 문구를 그대로 옮긴 것이었으므로 함께 맞췄다 ---
+    `Part XII — proven — fundamentals, verified` → `a new, stable foundation`.
+  - 목차·러닝헤드·README 의 부 목록·`docs/DEPENDENCIES{,-en}.md` 까지 따라간다.
+
 ## [v0.42.0] - 2026-08-10
 
 ### Added

@@ -173,7 +173,7 @@ None. Every chapter leans only on chapters before it.
 | 82 | A program's memory layout — operating systems and embedded | 44, 2 | 83, 93, 96 |
 | 83 | Inside the allocator — the heap, alternative allocators, alternative standard libraries | 45, 82 | 88 |
 
-### Part XII — proven — fundamentals, verified
+### Part XII — proven — a new, stable foundation
 
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|

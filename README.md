@@ -12,11 +12,11 @@
 > 생겼는지에서 출발해, C23을 기본값으로 삼고, 마지막 부에서
 > [proven](https://github.com/rubidus-api) C 라이브러리로 이어진다.
 
-- **현재 판**: v0.42.0 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.42.0/proven_c_book-v0.42.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.42.0/proven_c_book-v0.42.0-en.pdf)
+- **현재 판**: v0.42.1 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.42.1/proven_c_book-v0.42.1-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.42.1/proven_c_book-v0.42.1-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.42.0/proven_c_book-v0.42.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.42.0/proven_c_book-v0.42.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.42.0/proven_c_book-v0.42.0-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.42.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.42.0-en.pdf)
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.42.1/proven_c_book-v0.42.1-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.42.1/proven_c_book-v0.42.1-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.42.1/proven_c_book-v0.42.1-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.42.1-ko.pdf) · [en PDF](dist/proven_c_book-v0.42.1-en.pdf)
 - 13부 97장 + 부록 A~E + 찾아보기 — 한국어판 740쪽, 영어판 792쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
@@ -48,7 +48,7 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
 | 8~9부 | 자료의 모양과 깊은 구석 | 공용체와 표현 / 실수 — 근사의 수학 / **정의되지 않은 동작** |
 | 10부 | 구성 | **이름의 세계 — 네 이름 공간과 세 축** / **이름 충돌을 다루는 법 — 접두어에서 `namespace`까지** / 전처리기와 번역 단계 / 함수를 값으로 |
 | 11부 | **표준 라이브러리 정독** | 스트림의 실제 / 신호 `<signal.h>` / 비지역 점프 `<setjmp.h>` / 로케일 두 장 / 와이드 문자 두 장 / 실무의 유니코드 / 할당자의 속 |
-| 12부 | **proven — 검증된 기본기** | 50년째 출하되는 다섯 가지 버그 / 에러는 값이다 / 할당은 매개변수다 / 세 판으로 짜 보기 — 간이 JSON |
+| 12부 | **proven — 새로운 안정적인 기반** | 50년째 출하되는 다섯 가지 버그 / 에러는 값이다 / 할당은 매개변수다 / 세 판으로 짜 보기 — 간이 JSON |
 | 13부 | 닫으며 | 실전의 C / 임베디드의 도구 상자 / 모던 C 총정리 |
 
 부록은 연산자 조회표, `printf`·`scanf` 서식 완전 정리, 암묵 변환 요약, 더
