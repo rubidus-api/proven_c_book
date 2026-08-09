@@ -349,11 +349,11 @@ buf<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]
   원소 수: sizeof arr / sizeof arr[0] = 5
 
 ② 같은 주소, 다른 타입 — +1 이 건너뛰는 폭이 다르다
-  arr      = 0x557a6d9b3020
-  &amp;arr[0]  = 0x557a6d9b3020   (같다)
-  &amp;arr     = 0x557a6d9b3020   (같다 — 그러나 타입이 int(*)[5] 다)
-  arr  + 1 = 0x557a6d9b3024   (+4 바이트)
-  &amp;arr + 1 = 0x557a6d9b3034   (+20 바이트 — 배열 통째로 건너뛴다)
+  arr      = 0x55863c339020
+  &amp;arr[0]  = 0x55863c339020   (같다)
+  &amp;arr     = 0x55863c339020   (같다 — 그러나 타입이 int(*)[5] 다)
+  arr  + 1 = 0x55863c339024   (+4 바이트)
+  &amp;arr + 1 = 0x55863c339034   (+20 바이트 — 배열 통째로 건너뛴다)
 
 ③ 누가 옮겨 다닐 수 있는가
   ptr 를 두 칸 옮기니 *ptr = 30

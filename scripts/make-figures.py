@@ -14,6 +14,44 @@ import pathlib
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FONT = "Noto Sans CJK KR, Noto Sans, sans-serif"
 
+# ── 글자 폭 재기 ─────────────────────────────────────────────
+# 상자에 글자가 삐져나오는 사고를 막으려면 *재야* 한다. 실제 글꼴로 재고,
+# 글꼴이나 PIL 이 없으면 어림값으로 물러선다 --- 그림 생성이 빌드를 막으면 안 된다.
+_FONT_FILES = {
+    False: ROOT.parent / "toolchains/fonts/noto-cjk-kr/NotoSansCJKkr-Regular.otf",
+    True: ROOT.parent / "toolchains/fonts/noto-cjk-kr/NotoSansCJKkr-Bold.otf",
+}
+_font_cache = {}
+
+
+def _loaded(size, bold):
+    key = (round(size, 2), bold)
+    if key not in _font_cache:
+        try:
+            from PIL import ImageFont
+            _font_cache[key] = ImageFont.truetype(str(_FONT_FILES[bold]), int(size * 4))
+        except Exception:
+            _font_cache[key] = None
+    return _font_cache[key]
+
+
+def text_width(s, size, bold=False):
+    """글자의 그려질 폭(SVG 단위). 실제 글꼴로 재는 것이 원칙이다."""
+    f = _loaded(size, bold)
+    if f is not None:
+        return f.getlength(s) / 4
+    # 물러선 어림: 한글·한자·가나는 전각, 그 밖은 반각보다 조금 좁게
+    wide = sum(1 for c in s if ord(c) > 0x2E80)
+    return (wide * 1.0 + (len(s) - wide) * 0.55) * size
+
+
+def fit_width(labels, size, bold=False, pad=14, minimum=0):
+    """이 글자들을 모두 담는 상자 폭. 양판을 함께 넘겨 *넓은 쪽*에 맞춘다."""
+    if isinstance(labels, str):
+        labels = [labels]
+    return max(minimum, max(text_width(t, size, bold) for t in labels) + pad)
+
+
 HEAD = ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" '
         'width="{w}" height="{h}" font-family="{f}">'
         '<rect width="{w}" height="{h}" fill="none"/>')
@@ -71,25 +109,32 @@ def fig_regions(L):
 
 # ── F3. IEEE 754 비트 배치 (8장) ──────────────────────────────
 def fig_ieee(L):
-    w, h = 760, 250
+    w, h = 760, 290
     out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
     left, full = 40, 680
 
     def row(y, bits, label):
-        out.append(text(left, y - 8, label, 12.5, "bold", anchor="start"))
+        out.append(text(left, y - 44, label, 12.5, "bold", anchor="start"))
         x = left
         for width_bits, name, hatched in bits:
             bw = full * width_bits / sum(b[0] for b in bits)
             out.append(box(x, y, bw, 46, fill="url(#hatch)" if hatched else "none"))
-            out.append(text(x + bw / 2, y + 21, name, 12.5, "bold"))
+            # ★ 부호 비트처럼 칸이 1비트뿐이면 이름이 칸보다 넓다. 억지로 넣으면
+            #   글자가 옆 칸을 침범하므로, 그럴 때만 이름을 칸 위로 빼고 지시선을 단다.
+            if text_width(name, 12.5, True) + 4 <= bw:
+                out.append(text(x + bw / 2, y + 21, name, 12.5, "bold"))
+            else:
+                out.append(text(x + bw / 2, y - 22, name, 11, "bold"))
+                out.append(f'<line x1="{x + bw/2}" y1="{y - 18}" x2="{x + bw/2}" '
+                           f'y2="{y - 3}" stroke="#111" stroke-width="1"/>')
             out.append(text(x + bw / 2, y + 38, f"{width_bits}", 11, fill="#444"))
             x += bw
 
-    row(50, [(1, L["sign"], False), (8, L["exp"], True), (23, L["frac"], False)],
+    row(62, [(1, L["sign"], False), (8, L["exp"], True), (23, L["frac"], False)],
         f'float — 32 {L["bit"]}')
-    row(150, [(1, L["sign"], False), (11, L["exp"], True), (52, L["frac"], False)],
+    row(190, [(1, L["sign"], False), (11, L["exp"], True), (52, L["frac"], False)],
         f'double — 64 {L["bit"]}')
-    out.append(text(left, 228, L["note"], 11.5, anchor="start", fill="#444"))
+    out.append(text(left, 268, L["note"], 11.5, anchor="start", fill="#444"))
     out.append(TAIL)
     return "".join(out)
 
@@ -475,9 +520,13 @@ def fig_type_tree(L):
     o.append(arrow(130, 180, 95, 206)); o.append(arrow(165, 180, 215, 206))
 
     # 정수 = char + 부호 있는/없는 + 열거
-    for i, key in enumerate(("chars", "signed", "unsigned", "enums")):
-        o.append(box(20, 258 + i*30, 150, 24))
-        o.append(text(95, 275 + i*30, L[key], 10))
+    # ★ 상자 폭은 손으로 적지 않는다 --- 글자를 재서 맞춘다. 판마다 그림을 따로
+    #   만드므로 폭도 그 판의 라벨에 맞춘다(영어가 길면 영어판 상자가 넓어진다).
+    int_keys = ("chars", "signed", "unsigned", "enums")
+    iw = fit_width([L[k] for k in int_keys], 10, minimum=150)
+    for i, key in enumerate(int_keys):
+        o.append(box(20, 258 + i*30, iw, 24))
+        o.append(text(20 + iw/2, 275 + i*30, L[key], 10))
     o.append(arrow(90, 234, 90, 256))
 
     # 겹치는 이름들 — 점선 상자로 '이 묶음도 이름이 있다'
@@ -493,10 +542,12 @@ def fig_type_tree(L):
     # 파생 타입 묶음
     o.append(box(545, 152, 195, 28)); o.append(text(642, 171, L["derived"], 12))
     o.append(arrow(560, 122, 620, 150))
-    for i, key in enumerate(("d1", "d2", "d3")):
-        o.append(box(555, 196 + i*30, 175, 24))
-        o.append(text(642, 213 + i*30, L[key], 10))
-    o.append(arrow(642, 180, 642, 194))
+    d_keys = ("d1", "d2", "d3")
+    dw = fit_width([L[k] for k in d_keys], 10, minimum=175)
+    for i, key in enumerate(d_keys):
+        o.append(box(W - 30 - dw, 196 + i*30, dw, 24))
+        o.append(text(W - 30 - dw/2, 213 + i*30, L[key], 10))
+    o.append(arrow(W - 30 - dw/2, 180, W - 30 - dw/2, 194))
 
     o.append(text(W/2, H-14, L["note"], 10.5))
     o.append(TAIL)
