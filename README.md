@@ -17,6 +17,11 @@
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
 - **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.52.3/proven_c_book-v0.52.3-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.52.3/proven_c_book-v0.52.3-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.52.3/proven_c_book-v0.52.3-all.zip)
 - 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.52.3-ko.pdf) · [en PDF](dist/proven_c_book-v0.52.3-en.pdf)
+- **서식 예시(style specimen)** — 책에 쓰이는 모든 장치를 한자리에 모아 둔 견본이다.
+  각 요소 옆에 그 이름(웹은 CSS 선택자, 텍스트 판은 함수 이름)이 붙어 있다.
+  판을 내지 않고도 늘 최신이다:
+  [웹](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
+  [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
 - 13부 97장 + 부록 A~E + 찾아보기 — 한국어판 740쪽, 영어판 792쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
