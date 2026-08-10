@@ -153,7 +153,8 @@ figure.tbl { text-align:center; }
   padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
-.prereq .dev-label, .deepqa .dev-label, .organizer .dev-label, .questions .dev-label {
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
   text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
   color:var(--fg); margin-bottom:.45rem; }
 /* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
@@ -285,7 +286,7 @@ pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospac
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="ch39.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch41.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch40.html">English</a>
 <a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
 <main><div class="wrap">
-<h2 id="loc-40">40 배열과 포인터 — 언제 같고 언제 다른가</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>38장 배열 · 무너짐과 포인터 산술</div><div>39장 다차원 배열 · 배열의 배열과 매개변수</div><div>35장 객체, 주소, 포인터 · 주소와 <code>sizeof</code></div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>38장에서 “배열의 이름은 첫 원소의 주소로 무너진다”고 배웠고, 39장에서는 2차원 배열 매개변수가 <code>int (*)[N]</code>이 된다고 배웠다. 그런데 그 둘을 배운 지금, “배열과 포인터는 같은 것인가”라는 물음에 한 문장으로 답할 수 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 아직 못 한다. 그리고 그것이 이 장이 있는 이유다. 지금까지 우리는 <strong>무너짐이 일어나는 자리</strong>를 하나씩 배웠다. 그러나 실무에서 사고를 내는 것은 그 반대 — <strong>무너지지 않는 자리</strong>와 <strong>무너진 뒤에 잃은 것</strong>이다. 조각은 다 모였으니, 이제 하나의 그림으로 닫을 차례다.</p></div></div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-138"></span>C에서 가장 널리 퍼진 오해 하나를 정면으로 끝낸다 — “배열은 포인터다”. 왜 그 말이 그토록 자주 참처럼 보이는지, 어디서 무너지는지, 그리고 파일 경계를 넘는 순간 무슨 일이 벌어지는지를 실물로 본다. 다섯 축의 대조, <span id="idx-entry-139"></span>무너짐의 세 규칙과 무너지지 않는 자리들, 매개변수 변환이 한 겹만 일어난다는 사실, 그리고 C가 못 하는 일과 C99가 그것을 어떻게 반쯤 풀었는지까지.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>규칙 ③ 때문에 <code>int p[5]</code>라고 적어도 포인터가 된다면, 그 <code>[5]</code>는 아무 뜻도 없는가?</li><li><code>sizeof arr / sizeof arr[0]</code>로 원소 수를 세는 관용구를 자주 보는데, 이것이 위험한 경우가 있다고 들었다.</li><li>그러면 <code>void f(int m[][3])</code>과 <code>void f(int (*m)[3])</code>은 완전히 같은 것인가?</li></ol></div></div><div></div><h3>40.1 왜 이 장이 따로 필요한가</h3><p>앞의 두 장을 읽고도 이 장이 남는 이유부터 밝혀야 한다. 새로운 문법은 하나도 나오지 않는다. 이 장이 하는 일은 <strong>이미 배운 조각을 한자리에 모아 규칙으로 닫는 것</strong>이다. 그럴 값이 있는가?</p><p>있다. <strong>“배열은 포인터다”는 C에서 가장 널리 퍼진 오해이고, 동시에 가장 늦게 발각되는 오해</strong>이기 때문이다.</p><h4>40.1.1 왜 이 오해는 이렇게 질긴가</h4><p>틀린 말이 널리 퍼지려면 <strong>자주 맞아야</strong> 한다. 이 말이 정확히 그렇다.</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> buf<span class="tok-x">[</span><span class="tok-n">64</span><span class="tok-x">]</span><span class="tok-x">;</span>
+<h2 id="loc-40">40 배열과 포인터 — 언제 같고 언제 다른가</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>38장 배열 · 무너짐과 포인터 산술</div><div>39장 다차원 배열 · 배열의 배열과 매개변수</div><div>35장 객체, 주소, 포인터 · 주소와 <code>sizeof</code></div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>38장에서 “배열의 이름은 첫 원소의 주소로 무너진다”고 배웠고, 39장에서는 2차원 배열 매개변수가 <code>int (*)[N]</code>이 된다고 배웠다. 그런데 그 둘을 배운 지금, “배열과 포인터는 같은 것인가”라는 물음에 한 문장으로 답할 수 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 아직 못 한다. 그리고 그것이 이 장이 있는 이유다. 지금까지 우리는 <strong>무너짐이 일어나는 자리</strong>를 하나씩 배웠다. 그러나 실무에서 사고를 내는 것은 그 반대 — <strong>무너지지 않는 자리</strong>와 <strong>무너진 뒤에 잃은 것</strong>이다. 조각은 다 모였으니, 이제 하나의 그림으로 닫을 차례다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">38·39장을 지난 지금이, 「배열은 포인터다」라는 오해를 끝낼 수 있는 유일한 자리다. 더 일찍이면 대조할 재료가 없고, 더 늦으면 이미 그 오해 위에 코드를 쌓은 뒤다. 이 장이 따로 서 있는 것 자체가 이 책의 판단이다 — 이 오해는 곁가지 상자 하나로 처리할 크기가 아니다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-144"></span>C에서 가장 널리 퍼진 오해 하나를 정면으로 끝낸다 — “배열은 포인터다”. 왜 그 말이 그토록 자주 참처럼 보이는지, 어디서 무너지는지, 그리고 파일 경계를 넘는 순간 무슨 일이 벌어지는지를 실물로 본다. 다섯 축의 대조, <span id="idx-entry-145"></span>무너짐의 세 규칙과 무너지지 않는 자리들, 매개변수 변환이 한 겹만 일어난다는 사실, 그리고 C가 못 하는 일과 C99가 그것을 어떻게 반쯤 풀었는지까지.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>규칙 ③ 때문에 <code>int p[5]</code>라고 적어도 포인터가 된다면, 그 <code>[5]</code>는 아무 뜻도 없는가?</li><li><code>sizeof arr / sizeof arr[0]</code>로 원소 수를 세는 관용구를 자주 보는데, 이것이 위험한 경우가 있다고 들었다.</li><li>그러면 <code>void f(int m[][3])</code>과 <code>void f(int (*m)[3])</code>은 완전히 같은 것인가?</li></ol></div></div><div></div><h3>40.1 왜 이 장이 따로 필요한가</h3><p>앞의 두 장을 읽고도 이 장이 남는 이유부터 밝혀야 한다. 새로운 문법은 하나도 나오지 않는다. 이 장이 하는 일은 <strong>이미 배운 조각을 한자리에 모아 규칙으로 닫는 것</strong>이다. 그럴 값이 있는가?</p><p>있다. <strong>“배열은 포인터다”는 C에서 가장 널리 퍼진 오해이고, 동시에 가장 늦게 발각되는 오해</strong>이기 때문이다.</p><h4>40.1.1 왜 이 오해는 이렇게 질긴가</h4><p>틀린 말이 널리 퍼지려면 <strong>자주 맞아야</strong> 한다. 이 말이 정확히 그렇다.</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> buf<span class="tok-x">[</span><span class="tok-n">64</span><span class="tok-x">]</span><span class="tok-x">;</span>
 <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> buf<span class="tok-x">;</span>
 
 <strong>strlen</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 된다 </span></em><em><span class="tok-c">*/</span></em>
@@ -349,11 +350,11 @@ buf<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]
   element count: sizeof arr / sizeof arr[0] = 5
 
 ② same address, different type - +1 skips a different width
-  arr      = 0x5633d893e020
-  &amp;arr[0]  = 0x5633d893e020   (the same)
-  &amp;arr     = 0x5633d893e020   (the same - but its type is int(*)[5])
-  arr  + 1 = 0x5633d893e024   (+4 bytes)
-  &amp;arr + 1 = 0x5633d893e034   (+20 bytes - it skips the whole array)
+  arr      = 0x55a7ef4f7020
+  &amp;arr[0]  = 0x55a7ef4f7020   (the same)
+  &amp;arr     = 0x55a7ef4f7020   (the same - but its type is int(*)[5])
+  arr  + 1 = 0x55a7ef4f7024   (+4 bytes)
+  &amp;arr + 1 = 0x55a7ef4f7034   (+20 bytes - it skips the whole array)
 
 ③ which one can move
   moving ptr two slots gives *ptr = 30
