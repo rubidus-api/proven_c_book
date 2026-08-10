@@ -191,11 +191,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
    서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
    영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
 .dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
 .dev > .dev-label { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
-.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:0; }
-.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -212,12 +217,15 @@ figure.tbl { text-align:center; }
      여백이 겹쳐 들쭉날쭉해진다. */
 .dev.open { border:none; border-radius:0; background:none;
   padding:0; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
-.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open > .open-body > * { margin:.4rem 0; }
 .dev.open > .open-body > *:first-child { margin-top:0; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
@@ -241,12 +249,13 @@ figure.tbl { text-align:center; }
 .qa-box { border:none; margin:1.15rem 0; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
 .qa-box .qa-q { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0; }
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
 .qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
 .dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -276,7 +285,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem; text-indent:0;
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
   border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -305,7 +314,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern > .dev-label { border-left-style:dashed; }
-.dev.platform > .dev-label { border-left-style:double; border-left-width:6px; }
+
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
@@ -431,7 +440,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-in"><p class="demo-head">표준 입력으로 준 것</p><div class="demo-body"><pre><code>12
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>month 12: winter
-</code></pre></div></div><p>읽는 법 — <code>switch (month)</code>가 값을 하나 들고 판에 들어서면, 실행은 그 값과 일치하는 <code>case</code> 이름표로 <strong>건너뛴다</strong>. 그리고 여기가 switch의 가장 중요한 성질이다: <code>case</code>는 담장이 아니라 <strong>이름표</strong>라서, 일단 건너뛴 뒤에는 다음 <code>case</code>를 지나쳐 <strong>아래로 계속 흐른다</strong>. 이 흐름을 <strong>폴스루</strong>(fall-through)라 부르고, 멈추고 싶은 자리에 <code>break</code>(판을 나가라)를 명시한다.</p><p>폴스루는 양날이다. 시연처럼 여러 값이 한 답을 공유하게 묶는 데는 제격이지만(12·1·2월이 겨울 하나로), <code>break</code>를 <strong>잊으면</strong> 의도치 않은 갈래까지 흘러 들어가는 고전적 사고가 된다 — 그래서 컴파일러 경고와 C23의 명시 표기(<code>[[fallthrough]]</code> — “의도된 흐름임”을 적는 문서)가 이 자리를 지킨다. <code>default</code>는 어느 이름표에도 안 맞을 때의 갈래다 — “그런 달은 없다”처럼, <strong>예상 밖의 값을 잡는 그물</strong>로 항상 두는 것이 관행이다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>표준이 든 기묘한 예 — 도달하지 않는 선언</p><p><code>case</code> 이름표가 담장이 아니라는 성질을 극단까지 밀면 이상한 코드가 가능해진다. 다음은 C 표준이 <code>switch</code> 절의 예제로 직접 든 것이다.</p><pre><code data-lang="c"><strong><span class="tok-k">switch</span></strong> <span class="tok-x">(</span>expr<span class="tok-x">)</span> <span class="tok-x">{</span>
+</code></pre></div></div><p>읽는 법 — <code>switch (month)</code>가 값을 하나 들고 판에 들어서면, 실행은 그 값과 일치하는 <code>case</code> 이름표로 <strong>건너뛴다</strong>. 그리고 여기가 switch의 가장 중요한 성질이다: <code>case</code>는 담장이 아니라 <strong>이름표</strong>라서, 일단 건너뛴 뒤에는 다음 <code>case</code>를 지나쳐 <strong>아래로 계속 흐른다</strong>. 이 흐름을 <strong>폴스루</strong>(fall-through)라 부르고, 멈추고 싶은 자리에 <code>break</code>(판을 나가라)를 명시한다.</p><p>폴스루는 양날이다. 시연처럼 여러 값이 한 답을 공유하게 묶는 데는 제격이지만(12·1·2월이 겨울 하나로), <code>break</code>를 <strong>잊으면</strong> 의도치 않은 갈래까지 흘러 들어가는 고전적 사고가 된다 — 그래서 컴파일러 경고와 C23의 명시 표기(<code>[[fallthrough]]</code> — “의도된 흐름임”을 적는 문서)가 이 자리를 지킨다. <code>default</code>는 어느 이름표에도 안 맞을 때의 갈래다 — “그런 달은 없다”처럼, <strong>예상 밖의 값을 잡는 그물</strong>로 항상 두는 것이 관행이다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>표준이 든 기묘한 예 — 도달하지 않는 선언</p><div class="dev-body"><p><code>case</code> 이름표가 담장이 아니라는 성질을 극단까지 밀면 이상한 코드가 가능해진다. 다음은 C 표준이 <code>switch</code> 절의 예제로 직접 든 것이다.</p><pre><code data-lang="c"><strong><span class="tok-k">switch</span></strong> <span class="tok-x">(</span>expr<span class="tok-x">)</span> <span class="tok-x">{</span>
     <strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ← 여기로는 아무도 오지 않는다 </span></em><em><span class="tok-c">*/</span></em>
     <strong>f</strong><strong><span class="tok-x">(</span></strong><strong>i</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>               <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ← 여기도 </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">case</span></strong> <span class="tok-n">0</span><span class="tok-x">:</span>
@@ -439,6 +448,6 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 아래로 흘러 들어간다 </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">default</span></strong><span class="tok-x">:</span>
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
-<span class="tok-x">}</span></code></pre><p><code>switch</code>에 들어서면 실행은 <strong>일치하는 이름표로 곧장 건너뛴다</strong>. 그래서 블록 맨 앞의 두 줄은 어떤 값에서도 실행되지 않는다. 그런데 <code>i</code>라는 변수는 <strong>존재한다</strong> — 블록에 들어선 이상 그 블록의 지역 변수는 자리를 얻기 때문이다(44장의 자동 저장 기간).</p><p>결과가 기묘하다. <code>expr</code>이 0이면 <code>case 0:</code>으로 뛰어 <code>i = 17</code>이 실행되고 17이 찍히지만, <strong>0이 아니면</strong> <code>default:</code>로 곧장 뛰므로 <code>i</code>는 <strong>한 번도 초기화되지 않은 채</strong> 읽힌다 — 52장에서 정식으로 다룰 미정값 읽기다. 초기화하는 줄이 눈앞에 버젓이 적혀 있는데도 그렇다.</p><p>이 예제가 표준에 있는 이유는 “이렇게 쓰라”가 아니라 <strong><code>case</code>가 이름표일 뿐이라는 사실의 귀결</strong>을 못박기 위해서다. 실무의 규칙은 둘이다 — <strong><code>switch</code> 블록 맨 앞에 선언을 두지 않는다</strong>, 그리고 <strong><code>case</code> 안에서 변수를 선언해야 하면 중괄호로 블록을 만든다</strong>(그러지 않으면 컴파일러가 “case 이름표를 건너뛰는 초기화”라고 거절하기도 한다).</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>if</code>의 사다리로도 다 되는데, <code>switch</code>가 굳이 필요한 이유는 무엇인가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 둘의 차이는 표현력이 아니라 <strong>의도의 전달</strong>이다. switch는 “하나의 값을 여러 상수와 맞춰 본다”는 의도를 문법으로 못박아서, 읽는 사람과 컴파일러 모두에게 구조가 보인다 — 컴파일러는 그 구조를 이용해 점프 표 같은 빠른 코드로 바꾸기도 하고(13장의 편집자가 좋아하는 모양이다), 경고 기능은 “열거된 값 중 빠진 case”를 짚어 줄 수 있다. 값 하나로 갈라서면 switch, 범위·복합 조건이면 if 사다리 — 도구를 의도에 맞추는 것이다. 그리고 다음 장에서, 이 폴스루라는 성질을 극한까지 악용(?)한 전설의 코드를 드디어 만난다.</p></div></div><p>갈림길을 배웠다 — 그러나 프로그램의 진짜 힘은 갈라서는 것이 아니라 <strong>되풀이하는 것</strong>에서 나온다. 4장에서 “단순한 걸음도 수십억 번이면”이라 <span id="idx-entry-120"></span><span id="idx-entry-121"></span>했던 그 반복을, 다음 장에서 손에 넣는다.</p><section class="chapter-notes" role="doc-endnotes"><h2>주</h2><ol><li id="ch31-fn-1">CVE-2014-1266. 2014. National Vulnerability Database, NIST. <a href="https://nvd.nist.gov/vuln/detail/CVE-2014-1266"><code>nvd.nist.gov/vuln/detail/CVE-2014-1266</code></a> <a class="fnback" href="#ch31-fnref-1" aria-label="본문으로 돌아가기" title="본문으로 돌아가기">&#8617;</a></li></ol></section>
+<span class="tok-x">}</span></code></pre><p><code>switch</code>에 들어서면 실행은 <strong>일치하는 이름표로 곧장 건너뛴다</strong>. 그래서 블록 맨 앞의 두 줄은 어떤 값에서도 실행되지 않는다. 그런데 <code>i</code>라는 변수는 <strong>존재한다</strong> — 블록에 들어선 이상 그 블록의 지역 변수는 자리를 얻기 때문이다(44장의 자동 저장 기간).</p><p>결과가 기묘하다. <code>expr</code>이 0이면 <code>case 0:</code>으로 뛰어 <code>i = 17</code>이 실행되고 17이 찍히지만, <strong>0이 아니면</strong> <code>default:</code>로 곧장 뛰므로 <code>i</code>는 <strong>한 번도 초기화되지 않은 채</strong> 읽힌다 — 52장에서 정식으로 다룰 미정값 읽기다. 초기화하는 줄이 눈앞에 버젓이 적혀 있는데도 그렇다.</p><p>이 예제가 표준에 있는 이유는 “이렇게 쓰라”가 아니라 <strong><code>case</code>가 이름표일 뿐이라는 사실의 귀결</strong>을 못박기 위해서다. 실무의 규칙은 둘이다 — <strong><code>switch</code> 블록 맨 앞에 선언을 두지 않는다</strong>, 그리고 <strong><code>case</code> 안에서 변수를 선언해야 하면 중괄호로 블록을 만든다</strong>(그러지 않으면 컴파일러가 “case 이름표를 건너뛰는 초기화”라고 거절하기도 한다).</p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>if</code>의 사다리로도 다 되는데, <code>switch</code>가 굳이 필요한 이유는 무엇인가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 둘의 차이는 표현력이 아니라 <strong>의도의 전달</strong>이다. switch는 “하나의 값을 여러 상수와 맞춰 본다”는 의도를 문법으로 못박아서, 읽는 사람과 컴파일러 모두에게 구조가 보인다 — 컴파일러는 그 구조를 이용해 점프 표 같은 빠른 코드로 바꾸기도 하고(13장의 편집자가 좋아하는 모양이다), 경고 기능은 “열거된 값 중 빠진 case”를 짚어 줄 수 있다. 값 하나로 갈라서면 switch, 범위·복합 조건이면 if 사다리 — 도구를 의도에 맞추는 것이다. 그리고 다음 장에서, 이 폴스루라는 성질을 극한까지 악용(?)한 전설의 코드를 드디어 만난다.</p></div></div><p>갈림길을 배웠다 — 그러나 프로그램의 진짜 힘은 갈라서는 것이 아니라 <strong>되풀이하는 것</strong>에서 나온다. 4장에서 “단순한 걸음도 수십억 번이면”이라 <span id="idx-entry-120"></span><span id="idx-entry-121"></span>했던 그 반복을, 다음 장에서 손에 넣는다.</p><section class="chapter-notes" role="doc-endnotes"><h2>주</h2><ol><li id="ch31-fn-1">CVE-2014-1266. 2014. National Vulnerability Database, NIST. <a href="https://nvd.nist.gov/vuln/detail/CVE-2014-1266"><code>nvd.nist.gov/vuln/detail/CVE-2014-1266</code></a> <a class="fnback" href="#ch31-fnref-1" aria-label="본문으로 돌아가기" title="본문으로 돌아가기">&#8617;</a></li></ol></section>
 <div class="nav"><a href="ch30.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch32.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

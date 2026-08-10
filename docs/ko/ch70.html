@@ -191,11 +191,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
    서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
    영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
 .dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
 .dev > .dev-label { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
-.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:0; }
-.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -212,12 +217,15 @@ figure.tbl { text-align:center; }
      여백이 겹쳐 들쭉날쭉해진다. */
 .dev.open { border:none; border-radius:0; background:none;
   padding:0; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
-.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open > .open-body > * { margin:.4rem 0; }
 .dev.open > .open-body > *:first-child { margin-top:0; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
@@ -241,12 +249,13 @@ figure.tbl { text-align:center; }
 .qa-box { border:none; margin:1.15rem 0; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
 .qa-box .qa-q { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0; }
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
 .qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
 .dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -276,7 +285,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem; text-indent:0;
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
   border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -305,7 +314,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern > .dev-label { border-left-style:dashed; }
-.dev.platform > .dev-label { border-left-style:double; border-left-width:6px; }
+
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
@@ -565,7 +574,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
   first pass (2 bytes): not a whole character yet - more bytes needed
   second pass (1 byte): consumed this many bytes and produced one character -> U+D55C
   mbstate_t remembers how far it has seen, so the pieces join up.
-</code></pre></div></div><p>시연이 이 네 갈래를 차례로 보인다. 아스키는 1바이트씩, 한글은 3바이트를 한 번에, BMP 밖 이모지는 4바이트를 한 번에 먹는다. 잘린 조각에는 <code>(size_t)-2</code>, 후행 바이트로 시작하는 조각에는 <code>(size_t)-1</code>이 나온다.</p><p><strong>마지막 시연이 <code>mbstate_t</code>의 존재 이유를 그대로 보여 준다.</strong> “한”의 세 바이트를 2+1로 나눠 넣었더니, 첫 호출은 <code>(size_t)-2</code>를 돌려주고 둘째 호출에서 U+D55C가 완성됐다. 상태 객체가 「두 바이트까지 봤다」를 들고 있었기 때문이다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>(size_t)-2</code>는 오류다”</strong></p><p>아니다. <strong>정상적인 중간 상태</strong>다. 오류는 <code>(size_t)-1</code> 하나뿐이다.</p><p>이 둘을 뭉뚱그려 처리하면 스트림 처리기가 조각난 입력에서 멀쩡한 글자를 버리게 된다. 네트워크에서 4096바이트씩 읽는 코드라면 거의 매 버퍼의 끝에서 <code>(size_t)-2</code>를 만난다 — 그때 해야 할 일은 <strong>남은 바이트를 다음 버퍼 앞에 붙여 이어 읽는 것</strong>이지, 오류로 끊는 것이 아니다.</p><p>두 값이 모두 <code>(size_t)</code>의 큰 수라는 점도 함정이다. <code>int</code>에 받아 <code>&lt; 0</code>으로 견주면 구현에 따라 엉뚱해진다. <strong>반드시 <code>size_t</code>로 받아 <code>(size_t)-1</code>, <code>(size_t)-2</code>와 직접 견준다.</strong></p></div><h4 id="s70-5-1">70.5.1 문자열 통째로 — <code>mbsrtowcs</code></h4><div></div><p>한 글자씩이 아니라 문자열 전체를 옮길 때는 <code>mbsrtowcs</code>를 쓴다. 계약의 요령이 둘 있다.</p><pre><code data-lang="c">mbstate_t st<span class="tok-x">;</span>
+</code></pre></div></div><p>시연이 이 네 갈래를 차례로 보인다. 아스키는 1바이트씩, 한글은 3바이트를 한 번에, BMP 밖 이모지는 4바이트를 한 번에 먹는다. 잘린 조각에는 <code>(size_t)-2</code>, 후행 바이트로 시작하는 조각에는 <code>(size_t)-1</code>이 나온다.</p><p><strong>마지막 시연이 <code>mbstate_t</code>의 존재 이유를 그대로 보여 준다.</strong> “한”의 세 바이트를 2+1로 나눠 넣었더니, 첫 호출은 <code>(size_t)-2</code>를 돌려주고 둘째 호출에서 U+D55C가 완성됐다. 상태 객체가 「두 바이트까지 봤다」를 들고 있었기 때문이다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>(size_t)-2</code>는 오류다”</strong></p><div class="dev-body"><p>아니다. <strong>정상적인 중간 상태</strong>다. 오류는 <code>(size_t)-1</code> 하나뿐이다.</p><p>이 둘을 뭉뚱그려 처리하면 스트림 처리기가 조각난 입력에서 멀쩡한 글자를 버리게 된다. 네트워크에서 4096바이트씩 읽는 코드라면 거의 매 버퍼의 끝에서 <code>(size_t)-2</code>를 만난다 — 그때 해야 할 일은 <strong>남은 바이트를 다음 버퍼 앞에 붙여 이어 읽는 것</strong>이지, 오류로 끊는 것이 아니다.</p><p>두 값이 모두 <code>(size_t)</code>의 큰 수라는 점도 함정이다. <code>int</code>에 받아 <code>&lt; 0</code>으로 견주면 구현에 따라 엉뚱해진다. <strong>반드시 <code>size_t</code>로 받아 <code>(size_t)-1</code>, <code>(size_t)-2</code>와 직접 견준다.</strong></p></div></div><h4 id="s70-5-1">70.5.1 문자열 통째로 — <code>mbsrtowcs</code></h4><div></div><p>한 글자씩이 아니라 문자열 전체를 옮길 때는 <code>mbsrtowcs</code>를 쓴다. 계약의 요령이 둘 있다.</p><pre><code data-lang="c">mbstate_t st<span class="tok-x">;</span>
 <strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> utf8<span class="tok-x">;</span>                       <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 진행 위치를 담는 포인터 </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-t">size_t</span></strong> need <strong><span class="tok-x">=</span></strong> <strong>mbsrtowcs</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-n">NULL</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>p</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ① 필요한 길이를 먼저 묻는다 </span></em><em><span class="tok-c">*/</span></em>
@@ -574,6 +583,6 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 wchar_t <strong><span class="tok-x">*</span></strong>buf <strong><span class="tok-x">=</span></strong> <strong>malloc</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">(</span></strong><strong>need </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">)</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>buf</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 p <strong><span class="tok-x">=</span></strong> utf8<span class="tok-x">;</span>                                   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ② 포인터와 상태를 되돌리고 </span></em><em><span class="tok-c">*/</span></em>
 <strong>memset</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
-<strong>mbsrtowcs</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>p</strong><strong><span class="tok-x">,</span></strong><strong> need </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ③ 실제로 옮긴다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p><strong>첫 인자를 널로 주면 길이만 센다</strong> — 그래서 버퍼 크기를 미리 알 수 있다. 그리고 <code>s</code>가 <code>const char *</code>인 이유는, 변환이 도중에 멈췄을 때 <strong>어디까지 읽었는지</strong>를 호출자에게 돌려주기 위해서다. 옛 <code>mbstowcs</code>에는 이 기능이 없어 스트림 처리에 쓸 수 없었다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>변환은 로케일에 매여 있다</p><p>여기서 놓치기 쉬운 사실 하나. <code>mbrtowc</code>가 UTF-8을 이해하는 것은 <strong>지금 로케일이 UTF-8이기 때문</strong>이다. <code>LC_CTYPE</code>이 <code>"C"</code>이면 같은 바이트가 부정한 시퀀스가 된다.</p><p>그래서 와이드 문자를 쓰는 프로그램은 시작하자마자 <code>setlocale(LC_ALL, "")</code>을 불러야 하고, <strong>그 로케일이 UTF-8이 아닐 수도 있다</strong>는 사실을 감당해야 한다. 시연이 UTF-8 로케일을 명시적으로 찾고, 없으면 건너뛰는 이유가 이것이다.</p><p>「이 함수들은 인코딩을 고를 수 없다」는 제약이 실무에서 와이드 문자를 멀리하게 만든 큰 이유다. 프로그램이 다루려는 인코딩과 사용자의 로케일이 같아야 한다는 전제는 서버 프로그램에서 특히 지키기 어렵다.</p></div><div class="dev recap"><p class="dev-label">복습 정리</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요점</strong></th></tr><tr><td><code>wchar_t</code></td><td>정수 타입. 크기도 인코딩도 표준이 정하지 않는다</td></tr><tr><td>유니코드 보장</td><td><code>__STDC_ISO_10646__</code>이 정의되어야 코드포인트다</td></tr><tr><td>문자 상수</td><td><code>'A'</code>는 <code>int</code>. <code>u8</code>/<code>u</code>/<code>U</code>/<code>L</code> 네 접두사</td></tr><tr><td>BMP 밖</td><td><code>char16_t</code>만 요소가 둘이 된다(서러게이트)</td></tr><tr><td><code>MB_CUR_MAX</code></td><td>로케일에 따라 바뀐다. 상한은 <code>MB_LEN_MAX</code></td></tr><tr><td>변환 함수</td><td><code>r</code> 붙은 것(<code>mbrtowc</code>)을 쓴다</td></tr><tr><td><code>mbstate_t</code></td><td>0으로 채워 시작. 잘린 글자와 상태 있는 인코딩 때문</td></tr><tr><td>반환값</td><td><code>-2</code>는 오류가 아니라 “더 필요”</td></tr><tr><td>전제</td><td><code>LC_CTYPE</code>이 그 인코딩이어야 한다</td></tr></table></div><p class="float-caption">표 70.7</p></figure></div><p><code>wchar_t</code>의 계약과 변환의 과정을 보았다. 다음 장은 그 계약이 실제 플랫폼에서 어떻게 갈라졌는지다 — Windows의 2바이트, 리눅스의 4바이트, 그리고 UTF-16이 유니코드를 다 담지 못해 생긴 일들.</p>
+<strong>mbsrtowcs</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>p</strong><strong><span class="tok-x">,</span></strong><strong> need </strong><strong><span class="tok-x">+</span></strong><strong> </strong><strong><span class="tok-n">1</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">&amp;</span></strong><strong>st</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ③ 실제로 옮긴다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p><strong>첫 인자를 널로 주면 길이만 센다</strong> — 그래서 버퍼 크기를 미리 알 수 있다. 그리고 <code>s</code>가 <code>const char *</code>인 이유는, 변환이 도중에 멈췄을 때 <strong>어디까지 읽었는지</strong>를 호출자에게 돌려주기 위해서다. 옛 <code>mbstowcs</code>에는 이 기능이 없어 스트림 처리에 쓸 수 없었다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>변환은 로케일에 매여 있다</p><div class="dev-body"><p>여기서 놓치기 쉬운 사실 하나. <code>mbrtowc</code>가 UTF-8을 이해하는 것은 <strong>지금 로케일이 UTF-8이기 때문</strong>이다. <code>LC_CTYPE</code>이 <code>"C"</code>이면 같은 바이트가 부정한 시퀀스가 된다.</p><p>그래서 와이드 문자를 쓰는 프로그램은 시작하자마자 <code>setlocale(LC_ALL, "")</code>을 불러야 하고, <strong>그 로케일이 UTF-8이 아닐 수도 있다</strong>는 사실을 감당해야 한다. 시연이 UTF-8 로케일을 명시적으로 찾고, 없으면 건너뛰는 이유가 이것이다.</p><p>「이 함수들은 인코딩을 고를 수 없다」는 제약이 실무에서 와이드 문자를 멀리하게 만든 큰 이유다. 프로그램이 다루려는 인코딩과 사용자의 로케일이 같아야 한다는 전제는 서버 프로그램에서 특히 지키기 어렵다.</p></div></div><div class="dev recap"><p class="dev-label">복습 정리</p><div class="dev-body"><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요점</strong></th></tr><tr><td><code>wchar_t</code></td><td>정수 타입. 크기도 인코딩도 표준이 정하지 않는다</td></tr><tr><td>유니코드 보장</td><td><code>__STDC_ISO_10646__</code>이 정의되어야 코드포인트다</td></tr><tr><td>문자 상수</td><td><code>'A'</code>는 <code>int</code>. <code>u8</code>/<code>u</code>/<code>U</code>/<code>L</code> 네 접두사</td></tr><tr><td>BMP 밖</td><td><code>char16_t</code>만 요소가 둘이 된다(서러게이트)</td></tr><tr><td><code>MB_CUR_MAX</code></td><td>로케일에 따라 바뀐다. 상한은 <code>MB_LEN_MAX</code></td></tr><tr><td>변환 함수</td><td><code>r</code> 붙은 것(<code>mbrtowc</code>)을 쓴다</td></tr><tr><td><code>mbstate_t</code></td><td>0으로 채워 시작. 잘린 글자와 상태 있는 인코딩 때문</td></tr><tr><td>반환값</td><td><code>-2</code>는 오류가 아니라 “더 필요”</td></tr><tr><td>전제</td><td><code>LC_CTYPE</code>이 그 인코딩이어야 한다</td></tr></table></div><p class="float-caption">표 70.7</p></figure></div></div><p><code>wchar_t</code>의 계약과 변환의 과정을 보았다. 다음 장은 그 계약이 실제 플랫폼에서 어떻게 갈라졌는지다 — Windows의 2바이트, 리눅스의 4바이트, 그리고 UTF-16이 유니코드를 다 담지 못해 생긴 일들.</p>
 <div class="nav"><a href="ch69.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch71.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

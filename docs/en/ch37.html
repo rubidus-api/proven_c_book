@@ -191,11 +191,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
    서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
    영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
 .dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
 .dev > .dev-label { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
-.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:0; }
-.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -212,12 +217,15 @@ figure.tbl { text-align:center; }
      여백이 겹쳐 들쭉날쭉해진다. */
 .dev.open { border:none; border-radius:0; background:none;
   padding:0; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
-.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open > .open-body > * { margin:.4rem 0; }
 .dev.open > .open-body > *:first-child { margin-top:0; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
@@ -241,12 +249,13 @@ figure.tbl { text-align:center; }
 .qa-box { border:none; margin:1.15rem 0; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
 .qa-box .qa-q { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0; }
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
 .qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
 .dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -276,7 +285,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem; text-indent:0;
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
   border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -305,7 +314,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern > .dev-label { border-left-style:dashed; }
-.dev.platform > .dev-label { border-left-style:double; border-left-width:6px; }
+
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
@@ -377,6 +386,6 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>alignof(char)   = 1
 alignof(int)    = 4
 alignof(double) = 8
-</code></pre></div></div><h4 id="s37-1-1">37.1.1 The two privileges side by side</h4><div></div><p>Here we tidy up the two passages announced in chapter 35. They do different work.</p><figure class="tbl"><div class="tblwrap"><table><tr><th></th><th><strong><code>void *</code></strong></th><th><strong>the <code>char *</code> family</strong></th></tr><tr><td>what it forgets</td><td>it forgets the <strong>type</strong> pointed at</td><td>it forgets nothing — it sees the representation as it is</td></tr><tr><td>dereference</td><td>no (it does not know the size)</td><td>yes — one byte at a time</td></tr><tr><td>arithmetic</td><td>no (by the standard)</td><td>yes — in bytes</td></tr><tr><td>aliasing</td><td>not applicable</td><td><strong>it may read the representation of any object</strong> (the excepted passage)</td></tr><tr><td>round trip</td><td>object pointer ↔ <code>void *</code> returns the original value</td><td>reading bytes and recovering a pointer are different matters</td></tr></table></div><p class="float-caption">Table 37.1</p></figure><p>This is why <code>memcpy</code> takes <code>void *</code> in its prototype and copies bytes inside — <strong>it forgets the type on the way in and looks at bytes on the way through.</strong> That the standard requires <code>void *</code> and the character-type pointers to share a representation is for exactly this combination (chapter 35′s word-addressed machines).</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Since <code>char *</code> can pick an object apart, a pointer may be built out of the bytes”</strong></p><p>Two things are mixed up here. <strong>Reading</strong> is permitted — the representation of any object may be read byte by byte through <code>unsigned char *</code>. But assembling those bytes back into a pointer and <strong>making it point at another object</strong> is a separate matter, because the provenance attached to that pointer belongs to the original object — which is exactly the subject of the next section.</p><p>The practical conclusion is simple. To move a representation, move the <strong>value</strong> with <code>memcpy</code>; if a pointer is needed, obtain it again from the original object. An address assembled out of bytes mostly works on x86-64, but on a machine where pointers carry permissions, such as CHERI, it is stopped on the spot (chapter 35).</p></div><h3 id="s37-2">37.2 Provenance — the same number, a different origin</h3><div></div><p>Let us collect chapter 14′s foreshadowing as practical instinct. In the naive picture a pointer is only a number, so if the number is right it should be followable however it was made — but the contract of modern C is not like that. <strong>A pointer has an origin (provenance)</strong>: an invisible tag saying which object it derived from. Reduced to three practical rules.</p><ul><li><strong>Pointer arithmetic stays inside the object it was born in.</strong> Taking a pointer that started from one object’s address and pushing it (chapter 38) onto another</li></ul><span id="idx-entry-85"></span><p>object — even if the number really does coincide with that object — is outside the contract.</p><ul><li><strong>One past the end is permitted.</strong> Pointing at the slot “after” the end of an array (one-past-the-end) is legal (as long as you do not follow it). It is so useful in a loop’s ending condition that the standard carved out this place specially (in action in chapter 38).</li><li><strong>To treat it as a number, use the official channel.</strong> Converting a pointer to an integer to store or compute with it (such as chapter 6′s tagged pointers) has a road provided by the contract: going through the dedicated type <code>uintptr_t</code>.</li></ul><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Is it not common for code that breaks these rules to “run fine on my computer”?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> It is common — and that is why these rules are dangerous. What collects the price of a violation is not the machine but <strong>the compiler’s optimisation</strong> (chapter 13): it rearranges and caches on the premise that “a pointer does not point outside its origin”, so violating code <strong>silently</strong> behaves differently when the optimisation level or the compiler version changes. That “it ran just now” is not evidence of keeping the contract — that the criterion is chapter 14′s “is it correct on the abstract machine” — is this chapter’s conclusion, and chapter 52 shows the whole of this subject.</p></div></div><p>We have the rules of pointers too. Now we take these tools to contiguous memory — the array. The credit of <code>line[100]</code>, carried since chapter 25, is settled in the next chapter.</p>
+</code></pre></div></div><h4 id="s37-1-1">37.1.1 The two privileges side by side</h4><div></div><p>Here we tidy up the two passages announced in chapter 35. They do different work.</p><figure class="tbl"><div class="tblwrap"><table><tr><th></th><th><strong><code>void *</code></strong></th><th><strong>the <code>char *</code> family</strong></th></tr><tr><td>what it forgets</td><td>it forgets the <strong>type</strong> pointed at</td><td>it forgets nothing — it sees the representation as it is</td></tr><tr><td>dereference</td><td>no (it does not know the size)</td><td>yes — one byte at a time</td></tr><tr><td>arithmetic</td><td>no (by the standard)</td><td>yes — in bytes</td></tr><tr><td>aliasing</td><td>not applicable</td><td><strong>it may read the representation of any object</strong> (the excepted passage)</td></tr><tr><td>round trip</td><td>object pointer ↔ <code>void *</code> returns the original value</td><td>reading bytes and recovering a pointer are different matters</td></tr></table></div><p class="float-caption">Table 37.1</p></figure><p>This is why <code>memcpy</code> takes <code>void *</code> in its prototype and copies bytes inside — <strong>it forgets the type on the way in and looks at bytes on the way through.</strong> That the standard requires <code>void *</code> and the character-type pointers to share a representation is for exactly this combination (chapter 35′s word-addressed machines).</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Since <code>char *</code> can pick an object apart, a pointer may be built out of the bytes”</strong></p><div class="dev-body"><p>Two things are mixed up here. <strong>Reading</strong> is permitted — the representation of any object may be read byte by byte through <code>unsigned char *</code>. But assembling those bytes back into a pointer and <strong>making it point at another object</strong> is a separate matter, because the provenance attached to that pointer belongs to the original object — which is exactly the subject of the next section.</p><p>The practical conclusion is simple. To move a representation, move the <strong>value</strong> with <code>memcpy</code>; if a pointer is needed, obtain it again from the original object. An address assembled out of bytes mostly works on x86-64, but on a machine where pointers carry permissions, such as CHERI, it is stopped on the spot (chapter 35).</p></div></div><h3 id="s37-2">37.2 Provenance — the same number, a different origin</h3><div></div><p>Let us collect chapter 14′s foreshadowing as practical instinct. In the naive picture a pointer is only a number, so if the number is right it should be followable however it was made — but the contract of modern C is not like that. <strong>A pointer has an origin (provenance)</strong>: an invisible tag saying which object it derived from. Reduced to three practical rules.</p><ul><li><strong>Pointer arithmetic stays inside the object it was born in.</strong> Taking a pointer that started from one object’s address and pushing it (chapter 38) onto another</li></ul><span id="idx-entry-85"></span><p>object — even if the number really does coincide with that object — is outside the contract.</p><ul><li><strong>One past the end is permitted.</strong> Pointing at the slot “after” the end of an array (one-past-the-end) is legal (as long as you do not follow it). It is so useful in a loop’s ending condition that the standard carved out this place specially (in action in chapter 38).</li><li><strong>To treat it as a number, use the official channel.</strong> Converting a pointer to an integer to store or compute with it (such as chapter 6′s tagged pointers) has a road provided by the contract: going through the dedicated type <code>uintptr_t</code>.</li></ul><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Is it not common for code that breaks these rules to “run fine on my computer”?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> It is common — and that is why these rules are dangerous. What collects the price of a violation is not the machine but <strong>the compiler’s optimisation</strong> (chapter 13): it rearranges and caches on the premise that “a pointer does not point outside its origin”, so violating code <strong>silently</strong> behaves differently when the optimisation level or the compiler version changes. That “it ran just now” is not evidence of keeping the contract — that the criterion is chapter 14′s “is it correct on the abstract machine” — is this chapter’s conclusion, and chapter 52 shows the whole of this subject.</p></div></div><p>We have the rules of pointers too. Now we take these tools to contiguous memory — the array. The credit of <code>line[100]</code>, carried since chapter 25, is settled in the next chapter.</p>
 <div class="nav"><a href="ch36.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch38.html">Next →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

@@ -191,11 +191,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
    서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
    영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
 .dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
 .dev > .dev-label { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
-.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:0; }
-.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -212,12 +217,15 @@ figure.tbl { text-align:center; }
      여백이 겹쳐 들쭉날쭉해진다. */
 .dev.open { border:none; border-radius:0; background:none;
   padding:0; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
-.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open > .open-body > * { margin:.4rem 0; }
 .dev.open > .open-body > *:first-child { margin-top:0; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
@@ -241,12 +249,13 @@ figure.tbl { text-align:center; }
 .qa-box { border:none; margin:1.15rem 0; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
 .qa-box .qa-q { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0; }
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
 .qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
 .dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -276,7 +285,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem; text-indent:0;
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
   border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -305,7 +314,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern > .dev-label { border-left-style:dashed; }
-.dev.platform > .dev-label { border-left-style:double; border-left-width:6px; }
+
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
@@ -415,6 +424,6 @@ __STDC_VERSION__ = 202000L
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">char</span></strong> dst<span class="tok-x">[</span><span class="tok-n">8</span><span class="tok-x">]</span><span class="tok-x">;</span>
-errno_t e <strong><span class="tok-x">=</span></strong> <strong>strcpy_s</strong><strong><span class="tok-x">(</span></strong><strong>dst</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> dst</strong><strong><span class="tok-x">,</span></strong><strong> src</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 넘치면 오류 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>방향은 62장에서 우리가 정리한 “필요한 것”과 닮았다. 그런데 결과는 실패였다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>부속서 K가 채택되지 못한 이유</p><p>2015년, C 표준 위원회 문서 N1967 “Field Experience With Annex K”가 실태를 조사했다. 요지는 냉정했다 — <strong>널리 구현되지 않았고, 구현된 곳에서도 서로 다르게 동작하며, 실제 코드를 더 안전하게 만들었다는 증거가 없다</strong>.</p><p>구체적으로는 이런 사정들이었다.</p><ul><li><strong>Microsoft의 함수와 표준의 함수가 같지 않다.</strong> 이름은 같은데 인자와 동작이 어긋나는 경우가 있어, 한쪽에 맞춘 코드가 다른 쪽에서 깨졌다.</li><li><strong>glibc를 비롯한 주요 구현이 채택하지 않았다.</strong> 오늘까지도 그렇다 — 앞의 예제가 “이 구현에는 없다”를 찍은 이유다.</li><li><strong>제약 처리기라는 전역 상태</strong>가 라이브러리 사이에 충돌을 일으켰다.</li><li>기존 코드를 기계적으로 바꿔 놓았을 뿐, 실제 결함은 <strong>크기를 잘못 계산하는 자리</strong>에 남아 있었다.</li></ul><p>위원회는 부속서 K를 제거하자는 논의까지 갔고, 결국 남기되 사실상 권장하지 않는 상태로 정리됐다. “표준에 넣으면 안전해진다”는 기대가 현실에서 어떻게 어긋나는지 보여 주는 대표 사례다.</p></div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>_s</code> 붙은 함수를 쓰면 안전하다”</strong></p><p>세 가지를 확인해야 한다. 첫째, <strong>그 함수가 있는가</strong> — 표준 부속서 K는 선택이고 대부분의 유닉스 계열에 없다. 둘째, <strong>어느 쪽 판인가</strong> — 표준의 것과 Microsoft의 것이 다를 수 있다. 셋째, <strong>무엇이 안전해지는가</strong> — 크기를 받는다는 것이지, 여러분이 넘긴 크기가 옳다는 뜻이 아니다. <code>sizeof</code> 대신 <code>strlen</code>을 넘기는 실수는 <code>_s</code> 함수에서도 똑같이 사고다.</p><p>이식성 있는 코드에서 현실적인 선택은 지금도 이렇다 — 표준 안에서는 <code>snprintf</code>와 명시적 경계 검사, 플랫폼이 허용하면 <code>strlcpy</code> 계열, 그리고 반복되는 위험 지대에는 검사를 내장한 부품(제12부).</p></div><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Windows에서 만나는 <code>_s</code> 함수들</p><p>MSVC는 <code>strcpy_s</code>·<code>sprintf_s</code>·<code>fopen_s</code> 등을 오래전부터 제공하고, 기존 함수를 쓰면 <code>C4996</code> 경고를 낸다. 경고를 끄려면 <code>_CRT_SECURE_NO_WARNINGS</code>를 정의하는 것이 관행이다.</p><p>주의할 점은 <strong>이 함수들이 표준 부속서 K와 완전히 같지 않다</strong>는 것이다. 예를 들어 인자 검증 실패 시의 동작과 반환값 규칙이 다를 수 있다. 그래서 Windows 전용 코드가 아니라면 <code>_s</code> 계열에 기대지 않고, 크로스 플랫폼 프로젝트는 대개 자체 래퍼를 하나 두는 쪽을 택한다.</p></div><h3 id="s78-5">78.5 이 부가 남기는 것</h3><div></div><p>열 장에 걸쳐 표준 라이브러리를 걸었다. 함수 이름을 외우는 것이 목적이 아니었으므로, 남길 것은 몇 가지 태도다.</p><ol><li><strong>계약을 먼저 읽는다.</strong> 크기를 받는가, 실패를 어떻게 알리는가, 돌려준 포인터의 주인은 누구인가.</li><li><strong>반환값을 버리지 않는다.</strong> 특히 <code>fclose</code>·<code>snprintf</code>·<code>scanf</code> 계열.</li><li><strong>전역 상태를 의심한다.</strong> <code>errno</code>, 로케일, 정적 버퍼, 반올림 모드.</li><li><strong>표준에 있다고 안전한 것은 아니다.</strong> <code>gets</code>가 22년을 살아남았다.</li><li><strong>플랫폼 확장은 이득과 이식성을 저울질해서.</strong></li></ol><div class="dev recap"><p class="dev-label">복습 정리</p><p>판별 표.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>판</strong></th><th><strong>대표 보탬</strong></th><th><strong>실제로 쓰이는가</strong></th></tr><tr><td>C99</td><td><code>&lt;stdint.h></code>·<code>&lt;inttypes.h></code></td><td>예 — 사실상 필수</td></tr><tr><td>C99</td><td><code>&lt;complex.h></code></td><td>드물다</td></tr><tr><td>C11</td><td><code>&lt;stdatomic.h></code></td><td>예 — 동시성의 토대</td></tr><tr><td>C11</td><td><code>&lt;threads.h></code></td><td>드물다 — pthread가 우세</td></tr><tr><td>C11</td><td>부속서 K(<code>*_s</code>)</td><td>아니오 — 이 장의 이야기</td></tr><tr><td>C23</td><td><code>&lt;stdckdint.h></code></td><td>예 — 크기 계산의 정답</td></tr><tr><td>C23</td><td><code>&lt;stdbit.h></code></td><td>늘어나는 중</td></tr><tr><td>C23</td><td>키워드 승격(<code>bool</code>·<code>nullptr</code> 등)</td><td>예</td></tr></table></div><p class="float-caption">표 78.3</p></figure></div><p>판별 표의 아래 세 줄 — <code>&lt;stdatomic.h></code>, <code>&lt;stdckdint.h></code>, 키워드 승격 — 은 얼굴만 비쳤다. 이 부의 남은 세 장이 그 셋을 하나씩 자세히 다룬다. 동시성의 토대부터 시작한다.</p>
+errno_t e <strong><span class="tok-x">=</span></strong> <strong>strcpy_s</strong><strong><span class="tok-x">(</span></strong><strong>dst</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-k">sizeof</span></strong><strong> dst</strong><strong><span class="tok-x">,</span></strong><strong> src</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 넘치면 오류 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>방향은 62장에서 우리가 정리한 “필요한 것”과 닮았다. 그런데 결과는 실패였다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>부속서 K가 채택되지 못한 이유</p><div class="dev-body"><p>2015년, C 표준 위원회 문서 N1967 “Field Experience With Annex K”가 실태를 조사했다. 요지는 냉정했다 — <strong>널리 구현되지 않았고, 구현된 곳에서도 서로 다르게 동작하며, 실제 코드를 더 안전하게 만들었다는 증거가 없다</strong>.</p><p>구체적으로는 이런 사정들이었다.</p><ul><li><strong>Microsoft의 함수와 표준의 함수가 같지 않다.</strong> 이름은 같은데 인자와 동작이 어긋나는 경우가 있어, 한쪽에 맞춘 코드가 다른 쪽에서 깨졌다.</li><li><strong>glibc를 비롯한 주요 구현이 채택하지 않았다.</strong> 오늘까지도 그렇다 — 앞의 예제가 “이 구현에는 없다”를 찍은 이유다.</li><li><strong>제약 처리기라는 전역 상태</strong>가 라이브러리 사이에 충돌을 일으켰다.</li><li>기존 코드를 기계적으로 바꿔 놓았을 뿐, 실제 결함은 <strong>크기를 잘못 계산하는 자리</strong>에 남아 있었다.</li></ul><p>위원회는 부속서 K를 제거하자는 논의까지 갔고, 결국 남기되 사실상 권장하지 않는 상태로 정리됐다. “표준에 넣으면 안전해진다”는 기대가 현실에서 어떻게 어긋나는지 보여 주는 대표 사례다.</p></div></div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>_s</code> 붙은 함수를 쓰면 안전하다”</strong></p><div class="dev-body"><p>세 가지를 확인해야 한다. 첫째, <strong>그 함수가 있는가</strong> — 표준 부속서 K는 선택이고 대부분의 유닉스 계열에 없다. 둘째, <strong>어느 쪽 판인가</strong> — 표준의 것과 Microsoft의 것이 다를 수 있다. 셋째, <strong>무엇이 안전해지는가</strong> — 크기를 받는다는 것이지, 여러분이 넘긴 크기가 옳다는 뜻이 아니다. <code>sizeof</code> 대신 <code>strlen</code>을 넘기는 실수는 <code>_s</code> 함수에서도 똑같이 사고다.</p><p>이식성 있는 코드에서 현실적인 선택은 지금도 이렇다 — 표준 안에서는 <code>snprintf</code>와 명시적 경계 검사, 플랫폼이 허용하면 <code>strlcpy</code> 계열, 그리고 반복되는 위험 지대에는 검사를 내장한 부품(제12부).</p></div></div><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Windows에서 만나는 <code>_s</code> 함수들</p><div class="dev-body"><p>MSVC는 <code>strcpy_s</code>·<code>sprintf_s</code>·<code>fopen_s</code> 등을 오래전부터 제공하고, 기존 함수를 쓰면 <code>C4996</code> 경고를 낸다. 경고를 끄려면 <code>_CRT_SECURE_NO_WARNINGS</code>를 정의하는 것이 관행이다.</p><p>주의할 점은 <strong>이 함수들이 표준 부속서 K와 완전히 같지 않다</strong>는 것이다. 예를 들어 인자 검증 실패 시의 동작과 반환값 규칙이 다를 수 있다. 그래서 Windows 전용 코드가 아니라면 <code>_s</code> 계열에 기대지 않고, 크로스 플랫폼 프로젝트는 대개 자체 래퍼를 하나 두는 쪽을 택한다.</p></div></div><h3 id="s78-5">78.5 이 부가 남기는 것</h3><div></div><p>열 장에 걸쳐 표준 라이브러리를 걸었다. 함수 이름을 외우는 것이 목적이 아니었으므로, 남길 것은 몇 가지 태도다.</p><ol><li><strong>계약을 먼저 읽는다.</strong> 크기를 받는가, 실패를 어떻게 알리는가, 돌려준 포인터의 주인은 누구인가.</li><li><strong>반환값을 버리지 않는다.</strong> 특히 <code>fclose</code>·<code>snprintf</code>·<code>scanf</code> 계열.</li><li><strong>전역 상태를 의심한다.</strong> <code>errno</code>, 로케일, 정적 버퍼, 반올림 모드.</li><li><strong>표준에 있다고 안전한 것은 아니다.</strong> <code>gets</code>가 22년을 살아남았다.</li><li><strong>플랫폼 확장은 이득과 이식성을 저울질해서.</strong></li></ol><div class="dev recap"><p class="dev-label">복습 정리</p><div class="dev-body"><p>판별 표.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>판</strong></th><th><strong>대표 보탬</strong></th><th><strong>실제로 쓰이는가</strong></th></tr><tr><td>C99</td><td><code>&lt;stdint.h></code>·<code>&lt;inttypes.h></code></td><td>예 — 사실상 필수</td></tr><tr><td>C99</td><td><code>&lt;complex.h></code></td><td>드물다</td></tr><tr><td>C11</td><td><code>&lt;stdatomic.h></code></td><td>예 — 동시성의 토대</td></tr><tr><td>C11</td><td><code>&lt;threads.h></code></td><td>드물다 — pthread가 우세</td></tr><tr><td>C11</td><td>부속서 K(<code>*_s</code>)</td><td>아니오 — 이 장의 이야기</td></tr><tr><td>C23</td><td><code>&lt;stdckdint.h></code></td><td>예 — 크기 계산의 정답</td></tr><tr><td>C23</td><td><code>&lt;stdbit.h></code></td><td>늘어나는 중</td></tr><tr><td>C23</td><td>키워드 승격(<code>bool</code>·<code>nullptr</code> 등)</td><td>예</td></tr></table></div><p class="float-caption">표 78.3</p></figure></div></div><p>판별 표의 아래 세 줄 — <code>&lt;stdatomic.h></code>, <code>&lt;stdckdint.h></code>, 키워드 승격 — 은 얼굴만 비쳤다. 이 부의 남은 세 장이 그 셋을 하나씩 자세히 다룬다. 동시성의 토대부터 시작한다.</p>
 <div class="nav"><a href="ch77.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch79.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

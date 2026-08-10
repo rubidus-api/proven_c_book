@@ -191,11 +191,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
    서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
    영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
 .dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
 .dev > .dev-label { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
-.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:0; }
-.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -212,12 +217,15 @@ figure.tbl { text-align:center; }
      여백이 겹쳐 들쭉날쭉해진다. */
 .dev.open { border:none; border-radius:0; background:none;
   padding:0; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
-.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open > .open-body > * { margin:.4rem 0; }
 .dev.open > .open-body > *:first-child { margin-top:0; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
@@ -241,12 +249,13 @@ figure.tbl { text-align:center; }
 .qa-box { border:none; margin:1.15rem 0; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
 .qa-box .qa-q { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0; }
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
 .qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
 .dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -276,7 +285,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem; text-indent:0;
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
   border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -305,7 +314,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern > .dev-label { border-left-style:dashed; }
-.dev.platform > .dev-label { border-left-style:double; border-left-width:6px; }
+
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
@@ -370,11 +379,11 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
     <strong><span class="tok-t">int</span></strong> n <strong><span class="tok-x">=</span></strong> <span class="tok-n">2</span><span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 블록 유효범위 — 바깥의 n 을 가린다 </span></em><em><span class="tok-c">*/</span></em>
     <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> n <strong><span class="tok-x">=</span></strong> <span class="tok-n">3</span><span class="tok-x">;</span> <strong>use</strong><strong><span class="tok-x">(</span></strong><strong>n</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span> <span class="tok-x">}</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 여기서는 3 </span></em><em><span class="tok-c">*/</span></em>
     <strong>use</strong><strong><span class="tok-x">(</span></strong><strong>n</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>                 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 여기서는 2 </span></em><em><span class="tok-c">*/</span></em>
-<span class="tok-x">}</span></code></pre><h4 id="s44-1-3">44.1.3 연결 — 셋</h4><div></div><p>같은 이름이 여러 곳에 나올 때 <strong>하나의 같은 객체를 가리키는가</strong>를 정한다. 54장(여러 파일)의 밑바탕이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>연결</strong></th><th><strong>뜻</strong></th><th><strong>어떻게 되나</strong></th></tr><tr><td>외부(external)</td><td>번역 단위 <strong>전체를 가로질러</strong> 같은 것</td><td>파일 유효범위 기본값, <code>extern</code></td></tr><tr><td>내부(internal)</td><td><strong>이 번역 단위 안에서만</strong> 같은 것</td><td>파일 유효범위의 <code>static</code></td></tr><tr><td>없음(none)</td><td>선언마다 별개</td><td>블록 안의 보통 변수, 매개변수, <code>typedef</code> 이름</td></tr></table></div><p class="float-caption">표 44.4</p></figure><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span><code>static</code>의 두 얼굴을 같은 것으로 읽기</p><p>같은 낱말이 <strong>어디에 적히느냐</strong>에 따라 전혀 다른 일을 한다. 표준 용어로 보면 헷갈릴 여지가 없다.</p><pre><code data-lang="c">#<strong>idx</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">내부</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong>  <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> counter<span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 파일 유효범위: 연결을 *내부*로 (수명은 원래 정적) </span></em><em><span class="tok-c">*/</span></em>
+<span class="tok-x">}</span></code></pre><h4 id="s44-1-3">44.1.3 연결 — 셋</h4><div></div><p>같은 이름이 여러 곳에 나올 때 <strong>하나의 같은 객체를 가리키는가</strong>를 정한다. 54장(여러 파일)의 밑바탕이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>연결</strong></th><th><strong>뜻</strong></th><th><strong>어떻게 되나</strong></th></tr><tr><td>외부(external)</td><td>번역 단위 <strong>전체를 가로질러</strong> 같은 것</td><td>파일 유효범위 기본값, <code>extern</code></td></tr><tr><td>내부(internal)</td><td><strong>이 번역 단위 안에서만</strong> 같은 것</td><td>파일 유효범위의 <code>static</code></td></tr><tr><td>없음(none)</td><td>선언마다 별개</td><td>블록 안의 보통 변수, 매개변수, <code>typedef</code> 이름</td></tr></table></div><p class="float-caption">표 44.4</p></figure><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span><code>static</code>의 두 얼굴을 같은 것으로 읽기</p><div class="dev-body"><p>같은 낱말이 <strong>어디에 적히느냐</strong>에 따라 전혀 다른 일을 한다. 표준 용어로 보면 헷갈릴 여지가 없다.</p><pre><code data-lang="c">#<strong>idx</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">내부</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong>  <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> counter<span class="tok-x">;</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 파일 유효범위: 연결을 *내부*로 (수명은 원래 정적) </span></em><em><span class="tok-c">*/</span></em>
 
   <strong><span class="tok-t">void</span></strong> <strong>f</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span> <span class="tok-x">{</span>
       <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">int</span></strong> calls<span class="tok-x">;</span>      <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 블록 유효범위: 저장 기간을 *정적*으로 (연결은 없음) </span></em><em><span class="tok-c">*/</span></em>
-  <span class="tok-x">}</span></code></pre><p>첫 번째 <code>static</code>은 <strong>수명을 바꾸지 않는다</strong> — 파일 유효범위 변수는 어차피 정적 저장 기간이다. 바꾸는 것은 <strong>연결</strong>이고, 뜻은 “이 파일 밖에서는 이 이름을 못 쓴다”다. 두 번째 <code>static</code>은 <strong>연결과 무관하다</strong> — 지역 이름은 원래 연결이 없다. 바꾸는 것은 <strong>저장 기간</strong>이다.</p><p>한 문장으로 외우면 된다: <strong>파일 유효범위의 <code>static</code>은 숨기는 것, 블록 유효범위의 <code>static</code>은 살려 두는 것.</strong></p></div><h4 id="s44-1-4">44.1.4 저장 클래스 지정자 일곱 — 한자리에 모아 놓고</h4><div></div><span id="idx-entry-155"></span><p>이 자리에 올 수 있는 낱말은 C23 기준으로 <strong>일곱</strong>이고, 이것이 전부다. 여기가 그 목록을 모아 두는 자리다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch44/storage_class.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 저장 클래스 지정자가 정하는 것을 눈으로 확인한다.</span></em>
+  <span class="tok-x">}</span></code></pre><p>첫 번째 <code>static</code>은 <strong>수명을 바꾸지 않는다</strong> — 파일 유효범위 변수는 어차피 정적 저장 기간이다. 바꾸는 것은 <strong>연결</strong>이고, 뜻은 “이 파일 밖에서는 이 이름을 못 쓴다”다. 두 번째 <code>static</code>은 <strong>연결과 무관하다</strong> — 지역 이름은 원래 연결이 없다. 바꾸는 것은 <strong>저장 기간</strong>이다.</p><p>한 문장으로 외우면 된다: <strong>파일 유효범위의 <code>static</code>은 숨기는 것, 블록 유효범위의 <code>static</code>은 살려 두는 것.</strong></p></div></div><h4 id="s44-1-4">44.1.4 저장 클래스 지정자 일곱 — 한자리에 모아 놓고</h4><div></div><span id="idx-entry-155"></span><p>이 자리에 올 수 있는 낱말은 C23 기준으로 <strong>일곱</strong>이고, 이것이 전부다. 여기가 그 목록을 모아 두는 자리다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch44/storage_class.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 저장 클래스 지정자가 정하는 것을 눈으로 확인한다.</span></em>
 <em><span class="tok-c">   한 선언에 이 자리는 하나뿐이라는 규칙과, 그 유일한 예외도 함께 본다. </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
@@ -496,21 +505,21 @@ fresh_count: 1 1 1
     <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>heap2</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
-</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>code (function main)      : 0x55ee1f8491f1
-read-only string          : 0x55ee1f84a008
-global (initialized, data): 0x55ee1f84c028
-global (zero, bss)        : 0x55ee1f84c030
-static inside a function  : 0x55ee1f84c034
-heap (malloc 1)           : 0x55ee50ce22a0
-heap (malloc 2)           : 0x55ee50ce22f0
-stack (a local)           : 0x7ffe9d3fcfdc
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>code (function main)      : 0x559b0d80d1f1
+read-only string          : 0x559b0d80e008
+global (initialized, data): 0x559b0d810028
+global (zero, bss)        : 0x559b0d810030
+static inside a function  : 0x559b0d810034
+heap (malloc 1)           : 0x559b18d4f2a0
+heap (malloc 2)           : 0x559b18d4f2f0
+stack (a local)           : 0x7ffdd5f3899c
 
 gap between the two heap blocks: +80 bytes
-distance from stack to heap    : about 42.1 TiB (a 64-bit address space is that wide)
+distance from stack to heap    : about 42.4 TiB (a 64-bit address space is that wide)
 
-  a local one frame deeper : 0x7ffe9d3fcf8f
+  a local one frame deeper : 0x7ffdd5f3894f
   difference from the outer frame     : -76 bytes
   => the stack grows toward lower addresses
-</code></pre></div></div><p>읽는 법은 <strong>값이 아니라 순서</strong>다. 낮은 주소부터 이렇게 늘어선다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>구역</strong></th><th><strong>무엇이 사는가</strong></th><th><strong>수명</strong></th></tr><tr><td>코드</td><td>함수의 기계 명령</td><td>프로그램 내내(읽기 전용)</td></tr><tr><td>읽기 전용 자료</td><td>문자열 리터럴, <code>const</code> 자료</td><td>프로그램 내내(쓰면 붕괴)</td></tr><tr><td><code>data</code></td><td>초깃값이 있는 전역·<code>static</code></td><td>프로그램 내내</td></tr><tr><td><code>bss</code></td><td>초깃값이 없는(=0인) 전역·<code>static</code></td><td>프로그램 내내</td></tr><tr><td>힙</td><td><code>malloc</code>이 준 것(45장)</td><td>해제할 때까지</td></tr><tr><td>스택</td><td>지역 변수·매개변수·복귀 주소</td><td>함수가 끝날 때까지</td></tr></table></div><p class="float-caption">표 44.6</p></figure><p>예제가 확인해 준 것이 셋이다. <strong><code>data</code>와 <code>bss</code>가 나란히 있고</strong>, <strong>힙은 그 위쪽에서 커지며</strong>, <strong>스택은 아주 멀리 떨어진 높은 주소에서 아래로 자란다</strong> (예제의 마지막 세 줄이 프레임을 하나 더 쌓아 그 방향을 실측한다).</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>bss</code>라는 이상한 이름은 무엇인가? 그리고 <code>data</code>와 왜 나누는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 이름은 1950년대 어셈블러의 명령어 <code>Block Started by Symbol</code>의 약자다 — 뜻은 잊혔고 이름만 반세기를 건너왔다.</p><p>나누는 이유는 실용적이다. <code>int table[1000000];</code>처럼 <strong>초깃값이 0인</strong> 큰 전역을 생각해 보자. <code>data</code>에 넣으면 실행 파일 안에 0이 백만 개 들어가 파일이 4MB 커진다. <code>bss</code>에 넣으면 파일에는 <strong>“이만큼을 0으로 채워 달라”는 숫자 하나</strong>만 적히고, 실제 채우기는 프로그램이 시작될 때 일어난다. 그래서 <code>bss</code>의 변수는 “명시적으로 초기화하지 않아도 0”이라는 C의 약속을 공짜로 얻는다 — 그 0은 운영체제(또는 임베디드의 시작 코드)가 채워 준 것이다.</p></p></div></div><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>스택은 얼마나 큰가 — 리눅스와 윈도우</p><p><strong>C 표준에는 “스택”이라는 말도, 그 크기에 대한 약속도 없다.</strong> 자동 저장 기간만 정해 두고, 그것을 어디에 어떻게 놓을지는 구현에 맡긴다. 그래서 크기는 <strong>운영체제와 도구가</strong> 정한다.</p><ul><li><strong>리눅스</strong> — 주 스레드의 기본 한도는 대개 <strong>8 MiB</strong>다(<code>ulimit -s</code>로 확인· 변경한다. 이 책의 검증 기계도 8388608바이트였다). 필요하면 늘릴 수 있고, 스레드마다 만드는 스택은 <code>pthread_attr_setstacksize</code>로 따로 정한다.</li><li><p><strong>윈도우</strong> — 기본은 <strong>1 MiB</strong>다. 게다가 그중 실제로 확보(commit)되는 것은 처음 4 KiB뿐이고, 쓰는 만큼 늘어난다. 실행 파일을 만들 때 링커 옵션 <code>/STACK:예약[,커밋]</code>으로 바꾸고, 스레드는 <code>CreateThread</code>의 인자로 지정한다.</p><p>차이가 실무에서 드러나는 자리가 있다. 리눅스에서 잘 돌던 코드가 윈도우 에서 스택 넘침으로 죽는 것 — <strong>같은 코드, 여덟 배 좁은 그릇</strong>이기 때문이다. 큰 지역 배열(<code>char buf[2*1024*1024];</code>)이나 깊은 재귀가 그 후보다. 더 자세한 배치와 임베디드의 사정은 83장에서 다룬다.</p></li></ul></div><h3 id="s44-4">44.4 스택 — 호출의 장부</h3><div></div><p>자동 변수들이 사는 곳에는 이름이 있다 — <strong>스택</strong>(stack)이다. 함수를 부를 때마다 그 호출을 위한 칸 묶음(스택 프레임)이 얹히고, 함수가 끝나면 통째로 걷힌다. 프레임에는 지역 변수·매개변수와 함께 <strong>돌아갈 주소</strong>(복귀 주소)가 들어 있다 — 43장에서 이름만 스쳤던 “복귀 장부”의 정체다.</p><p>그림이 갖춰지면 두 가지가 한 번에 설명된다. 첫째, 33장의 재귀가 왜 겹겹이 쌓이는지 — 호출마다 프레임이 하나씩 얹히기 때문이다. 그리고 너무 깊이 재귀하면 스택 공간이 바닥나 프로그램이 붕괴한다(<strong>스택 오버플로</strong> — 무한 재귀의 대표 증상이다). 둘째, 43장의 경계 침범 공격이 왜 그토록 위험한지 — 스택에 놓인 배열을 넘쳐 쓰면 <strong>같은 프레임의 복귀 주소</strong>를 덮어쓸 수 있고, 그러면 함수가 끝날 때 공격자가 정한 곳으로 “돌아간다”. 배열 하나의 경계가 프로그램의 통제권과 이어져 있는 것이다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“함수가 끝나도 그 안의 변수를 가리키는 주소는 쓸 수 있다”</strong></p>포인터를 배운 직후 가장 흔한 사고이고, 무서운 점은 <strong>한동안 잘 도는 것처럼 보인다</strong>는 것이다. 함수가 끝나면 프레임이 걷히지만 — 그 자리의 비트가 즉시 지워지는 것은 아니라서, 죽은 변수의 주소를 따라가도 잠시는 예전 값이 읽힌다. 그러다 다른 함수가 그 자리를 프레임으로 쓰는 순간 값이 뒤바뀐다 — 시간이 지나서, 엉뚱한 곳에서 터지는 버그가 되는 것이다. 이런 주소를 <strong>댕글링 포인터</strong>(dangling pointer)라 하고, 규칙은 하나다: <strong>지역 변수의 주소는 그 함수보다 오래 살아서는 안 된다.</strong> 함수가 만든 결과를 오래 살려 보내려면 정적 수명을 쓰거나, 다음 장의 동적 메모리를 쓰거나, 호출자가 준 그릇에 채워 주는(35장의 <code>&amp;</code> 관용구) 셋 중 하나다. 17장의 ASan이 실행 중에 이 사고를 잡아 주는 대표 도구이기도 하다.</div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 전역 변수 — 함수 밖에 선언한 변수 — 도 정적 수명인가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 그렇다. 함수 밖의 변수는 정적 저장 기간을 갖고 프로그램 내내 산다. 다만 수명과 별개로 <strong>가시성</strong>의 문제가 붙는데 — 여러 파일에서 보이게 할지 이 파일에만 둘지를 정하는 것이 54장의 주제(연결)다. 그리고 실무의 권고는 오래된 것이다: <strong>전역 가변 상태는 최소로.</strong> 어디서든 바뀔 수 있는 값은 추적이 어렵고, 12장의 멀티코어 세계에서는 사고의 근원이 된다. 함수 안의 <code>static</code>도 같은 성질을 작게 가진 것이라(시연의 <code>issued</code>), 편리하지만 남용하지 않는 것이 관행이다.</p></div></div><p>기억의 배치에서 두 자리 — 스택(자동)과 정적 영역 — 를 익혔다. 남은 한 자리가 이 부의 마지막이다: 크기를 실행 중에 정하고, 원하는 만큼 살려 두는 기억. 다음 장의 동적 메모리다.</p>
+</code></pre></div></div><p>읽는 법은 <strong>값이 아니라 순서</strong>다. 낮은 주소부터 이렇게 늘어선다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>구역</strong></th><th><strong>무엇이 사는가</strong></th><th><strong>수명</strong></th></tr><tr><td>코드</td><td>함수의 기계 명령</td><td>프로그램 내내(읽기 전용)</td></tr><tr><td>읽기 전용 자료</td><td>문자열 리터럴, <code>const</code> 자료</td><td>프로그램 내내(쓰면 붕괴)</td></tr><tr><td><code>data</code></td><td>초깃값이 있는 전역·<code>static</code></td><td>프로그램 내내</td></tr><tr><td><code>bss</code></td><td>초깃값이 없는(=0인) 전역·<code>static</code></td><td>프로그램 내내</td></tr><tr><td>힙</td><td><code>malloc</code>이 준 것(45장)</td><td>해제할 때까지</td></tr><tr><td>스택</td><td>지역 변수·매개변수·복귀 주소</td><td>함수가 끝날 때까지</td></tr></table></div><p class="float-caption">표 44.6</p></figure><p>예제가 확인해 준 것이 셋이다. <strong><code>data</code>와 <code>bss</code>가 나란히 있고</strong>, <strong>힙은 그 위쪽에서 커지며</strong>, <strong>스택은 아주 멀리 떨어진 높은 주소에서 아래로 자란다</strong> (예제의 마지막 세 줄이 프레임을 하나 더 쌓아 그 방향을 실측한다).</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>bss</code>라는 이상한 이름은 무엇인가? 그리고 <code>data</code>와 왜 나누는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 이름은 1950년대 어셈블러의 명령어 <code>Block Started by Symbol</code>의 약자다 — 뜻은 잊혔고 이름만 반세기를 건너왔다.</p><p>나누는 이유는 실용적이다. <code>int table[1000000];</code>처럼 <strong>초깃값이 0인</strong> 큰 전역을 생각해 보자. <code>data</code>에 넣으면 실행 파일 안에 0이 백만 개 들어가 파일이 4MB 커진다. <code>bss</code>에 넣으면 파일에는 <strong>“이만큼을 0으로 채워 달라”는 숫자 하나</strong>만 적히고, 실제 채우기는 프로그램이 시작될 때 일어난다. 그래서 <code>bss</code>의 변수는 “명시적으로 초기화하지 않아도 0”이라는 C의 약속을 공짜로 얻는다 — 그 0은 운영체제(또는 임베디드의 시작 코드)가 채워 준 것이다.</p></p></div></div><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>스택은 얼마나 큰가 — 리눅스와 윈도우</p><div class="dev-body"><p><strong>C 표준에는 “스택”이라는 말도, 그 크기에 대한 약속도 없다.</strong> 자동 저장 기간만 정해 두고, 그것을 어디에 어떻게 놓을지는 구현에 맡긴다. 그래서 크기는 <strong>운영체제와 도구가</strong> 정한다.</p><ul><li><strong>리눅스</strong> — 주 스레드의 기본 한도는 대개 <strong>8 MiB</strong>다(<code>ulimit -s</code>로 확인· 변경한다. 이 책의 검증 기계도 8388608바이트였다). 필요하면 늘릴 수 있고, 스레드마다 만드는 스택은 <code>pthread_attr_setstacksize</code>로 따로 정한다.</li><li><p><strong>윈도우</strong> — 기본은 <strong>1 MiB</strong>다. 게다가 그중 실제로 확보(commit)되는 것은 처음 4 KiB뿐이고, 쓰는 만큼 늘어난다. 실행 파일을 만들 때 링커 옵션 <code>/STACK:예약[,커밋]</code>으로 바꾸고, 스레드는 <code>CreateThread</code>의 인자로 지정한다.</p><p>차이가 실무에서 드러나는 자리가 있다. 리눅스에서 잘 돌던 코드가 윈도우 에서 스택 넘침으로 죽는 것 — <strong>같은 코드, 여덟 배 좁은 그릇</strong>이기 때문이다. 큰 지역 배열(<code>char buf[2*1024*1024];</code>)이나 깊은 재귀가 그 후보다. 더 자세한 배치와 임베디드의 사정은 83장에서 다룬다.</p></li></ul></div></div><h3 id="s44-4">44.4 스택 — 호출의 장부</h3><div></div><p>자동 변수들이 사는 곳에는 이름이 있다 — <strong>스택</strong>(stack)이다. 함수를 부를 때마다 그 호출을 위한 칸 묶음(스택 프레임)이 얹히고, 함수가 끝나면 통째로 걷힌다. 프레임에는 지역 변수·매개변수와 함께 <strong>돌아갈 주소</strong>(복귀 주소)가 들어 있다 — 43장에서 이름만 스쳤던 “복귀 장부”의 정체다.</p><p>그림이 갖춰지면 두 가지가 한 번에 설명된다. 첫째, 33장의 재귀가 왜 겹겹이 쌓이는지 — 호출마다 프레임이 하나씩 얹히기 때문이다. 그리고 너무 깊이 재귀하면 스택 공간이 바닥나 프로그램이 붕괴한다(<strong>스택 오버플로</strong> — 무한 재귀의 대표 증상이다). 둘째, 43장의 경계 침범 공격이 왜 그토록 위험한지 — 스택에 놓인 배열을 넘쳐 쓰면 <strong>같은 프레임의 복귀 주소</strong>를 덮어쓸 수 있고, 그러면 함수가 끝날 때 공격자가 정한 곳으로 “돌아간다”. 배열 하나의 경계가 프로그램의 통제권과 이어져 있는 것이다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“함수가 끝나도 그 안의 변수를 가리키는 주소는 쓸 수 있다”</strong></p><div class="dev-body">포인터를 배운 직후 가장 흔한 사고이고, 무서운 점은 <strong>한동안 잘 도는 것처럼 보인다</strong>는 것이다. 함수가 끝나면 프레임이 걷히지만 — 그 자리의 비트가 즉시 지워지는 것은 아니라서, 죽은 변수의 주소를 따라가도 잠시는 예전 값이 읽힌다. 그러다 다른 함수가 그 자리를 프레임으로 쓰는 순간 값이 뒤바뀐다 — 시간이 지나서, 엉뚱한 곳에서 터지는 버그가 되는 것이다. 이런 주소를 <strong>댕글링 포인터</strong>(dangling pointer)라 하고, 규칙은 하나다: <strong>지역 변수의 주소는 그 함수보다 오래 살아서는 안 된다.</strong> 함수가 만든 결과를 오래 살려 보내려면 정적 수명을 쓰거나, 다음 장의 동적 메모리를 쓰거나, 호출자가 준 그릇에 채워 주는(35장의 <code>&amp;</code> 관용구) 셋 중 하나다. 17장의 ASan이 실행 중에 이 사고를 잡아 주는 대표 도구이기도 하다.</div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 전역 변수 — 함수 밖에 선언한 변수 — 도 정적 수명인가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 그렇다. 함수 밖의 변수는 정적 저장 기간을 갖고 프로그램 내내 산다. 다만 수명과 별개로 <strong>가시성</strong>의 문제가 붙는데 — 여러 파일에서 보이게 할지 이 파일에만 둘지를 정하는 것이 54장의 주제(연결)다. 그리고 실무의 권고는 오래된 것이다: <strong>전역 가변 상태는 최소로.</strong> 어디서든 바뀔 수 있는 값은 추적이 어렵고, 12장의 멀티코어 세계에서는 사고의 근원이 된다. 함수 안의 <code>static</code>도 같은 성질을 작게 가진 것이라(시연의 <code>issued</code>), 편리하지만 남용하지 않는 것이 관행이다.</p></div></div><p>기억의 배치에서 두 자리 — 스택(자동)과 정적 영역 — 를 익혔다. 남은 한 자리가 이 부의 마지막이다: 크기를 실행 중에 정하고, 원하는 만큼 살려 두는 기억. 다음 장의 동적 메모리다.</p>
 <div class="nav"><a href="ch43.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch45.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

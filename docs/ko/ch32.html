@@ -191,11 +191,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
    서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
    영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
 .dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
 .dev > .dev-label { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
-.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:0; }
-.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -212,12 +217,15 @@ figure.tbl { text-align:center; }
      여백이 겹쳐 들쭉날쭉해진다. */
 .dev.open { border:none; border-radius:0; background:none;
   padding:0; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
-.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open > .open-body > * { margin:.4rem 0; }
 .dev.open > .open-body > *:first-child { margin-top:0; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
@@ -241,12 +249,13 @@ figure.tbl { text-align:center; }
 .qa-box { border:none; margin:1.15rem 0; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
 .qa-box .qa-q { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0; }
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
 .qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
 .dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -276,7 +285,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem; text-indent:0;
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
   border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -305,7 +314,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern > .dev-label { border-left-style:dashed; }
-.dev.platform > .dev-label { border-left-style:double; border-left-width:6px; }
+
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
@@ -380,7 +389,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>sum of 1..100 = 5050
-</code></pre></div></div><p><code>for (int i = 1; i &lt;= 100; i += 1)</code>을 세 칸으로 읽는다 — <strong>시작</strong>(<code>int i = 1</code>: 루프 변수를 만들고), <strong>조건</strong>(<code>i &lt;= 100</code>: 돌기 전마다 검사), <strong>갱신</strong>(<code>i += 1</code>: 한 바퀴 끝날 때마다 실행). 새 연산자 <code>+=</code>는 23장 대입의 줄임꼴로 <code>i = i + 1</code>과 같고, 더 줄인 <code>i++</code>(증가 연산자)도 같은 일을 한다 — 관용적으로 <code>for (...; i++)</code> 꼴을 가장 많이 보게 된다. (<code>++</code>에는 앞에 붙는 꼴과 뒤에 붙는 꼴, 그리고 수식 안에서의 미묘한 사정이 있는데 — 다음 장의 시퀀스 포인트 이야기와 함께 다룬다.)</p><p><strong><code>do-while</code></strong> — 블록을 <strong>먼저</strong> 한 번 실행하고 조건을 검사하는 형태다 (<code>do { ... } while (조건);</code>). “최소 한 번은 해야 하는 일”(메뉴를 먼저 보여 주고 반복 여부를 묻는 류)에 쓰이고, 셋 중 등장 빈도가 가장 낮다.</p><div class="dev mathbox"><p class="dev-label">수학.<span style="white-space: pre-wrap">&#x20;&#x20;</span>루프 불변식 — 반복을 증명하는 눈</p><p>루프를 “옳게” 읽는 도구가 하나 있다 — <strong>불변식</strong>(invariant): 매 바퀴의 같은 지점에서 항상 성립하는 명제다. 시연의 루프라면, 몸통에 들어설 때마다</p><math display="block"><mtext>sum</mtext><mo>=</mo><mn>1</mn><mo>+</mo><mn>2</mn><mo>+</mo><mi>⋯</mi><mo>+</mo><mrow><mo>(</mo><mrow><mi>𝑖</mi><mo>−</mo><mn>1</mn></mrow><mo>)</mo></mrow></math><p>이 성립한다(첫 바퀴에는 빈 합 = 0). 몸통이 <code>sum += i</code>를 하면 등식의 오른쪽이 <math><mi>⋯</mi><mo>+</mo><mi>𝑖</mi></math>까지 자라고, 갱신이 <math><mi>𝑖</mi></math>를 올리면 다시 같은 꼴이 된다 — 불변식이 <strong>유지</strong>된다. 루프가 끝나는 순간은 <math><mi>𝑖</mi><mo>=</mo><mn>101</mn></math>이므로, 불변식에 대입하면 sum = 1 + … + 100. 즉 [불변식 + 종료 조건 = 루프의 정확성 증명]이다. 매번 이렇게 적진 않더라도, “이 루프에서 변하지 않는 사실이 무엇인가”를 묻는 습관은 루프 버그의 대부분 — 하나 모자라게/많게 도는 off-by-one — 을 잡아 주는 눈이 된다. 계약 으로서의 코드라는 관점(51장)의 첫 연습이기도 하다.</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 조건이 영영 거짓이 안 되면 어떻게 되는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 무한 루프다 — 프로그램이 그 자리를 영원히 돈다. 대개는 갱신을 잊은 버그의 결과지만, 의도적인 무한 루프(<code>while (true)</code>)도 어엿한 관용구다 — 서버처럼 “끝나지 않는 것이 정상”인 프로그램의 뼈대가 그것이고, 안에서 조건을 보아 <code>break</code>(루프 탈출 — switch의 그 break와 같은 낱말이다)로 나온다. 위험한 것은 무한 루프 자체가 아니라 <strong>의도치 않은</strong> 무한 루프다.</p></div></div><h3 id="s32-2">32.2 재회 — Duff’s device</h3><div></div><p>12장에서 예약한 전설을 만날 시간이다. 이제 우리는 switch의 폴스루 (31장)와 루프(이 장)를 모두 알고 있다.</p><p>1983년, 루카스필름의 Tom Duff는 데이터를 장치로 복사하는 루프가 너무 느려 고심하고 있었다. 한 바퀴마다 드는 살림 비용(조건 검사·갱신)을 줄이려 여덟 개씩 묶어 처리(언롤링)하되 — 개수가 8의 배수가 아닐 때의 나머지 처리를, 그는 아무도 상상 못 한 방법으로 해결했다:</p><pre><code data-lang="c"><strong><span class="tok-k">switch</span></strong> <span class="tok-x">(</span>count <strong><span class="tok-x">%</span></strong> <span class="tok-n">8</span><span class="tok-x">)</span> <span class="tok-x">{</span>
+</code></pre></div></div><p><code>for (int i = 1; i &lt;= 100; i += 1)</code>을 세 칸으로 읽는다 — <strong>시작</strong>(<code>int i = 1</code>: 루프 변수를 만들고), <strong>조건</strong>(<code>i &lt;= 100</code>: 돌기 전마다 검사), <strong>갱신</strong>(<code>i += 1</code>: 한 바퀴 끝날 때마다 실행). 새 연산자 <code>+=</code>는 23장 대입의 줄임꼴로 <code>i = i + 1</code>과 같고, 더 줄인 <code>i++</code>(증가 연산자)도 같은 일을 한다 — 관용적으로 <code>for (...; i++)</code> 꼴을 가장 많이 보게 된다. (<code>++</code>에는 앞에 붙는 꼴과 뒤에 붙는 꼴, 그리고 수식 안에서의 미묘한 사정이 있는데 — 다음 장의 시퀀스 포인트 이야기와 함께 다룬다.)</p><p><strong><code>do-while</code></strong> — 블록을 <strong>먼저</strong> 한 번 실행하고 조건을 검사하는 형태다 (<code>do { ... } while (조건);</code>). “최소 한 번은 해야 하는 일”(메뉴를 먼저 보여 주고 반복 여부를 묻는 류)에 쓰이고, 셋 중 등장 빈도가 가장 낮다.</p><div class="dev mathbox"><p class="dev-label">수학.<span style="white-space: pre-wrap">&#x20;&#x20;</span>루프 불변식 — 반복을 증명하는 눈</p><div class="dev-body"><p>루프를 “옳게” 읽는 도구가 하나 있다 — <strong>불변식</strong>(invariant): 매 바퀴의 같은 지점에서 항상 성립하는 명제다. 시연의 루프라면, 몸통에 들어설 때마다</p><math display="block"><mtext>sum</mtext><mo>=</mo><mn>1</mn><mo>+</mo><mn>2</mn><mo>+</mo><mi>⋯</mi><mo>+</mo><mrow><mo>(</mo><mrow><mi>𝑖</mi><mo>−</mo><mn>1</mn></mrow><mo>)</mo></mrow></math><p>이 성립한다(첫 바퀴에는 빈 합 = 0). 몸통이 <code>sum += i</code>를 하면 등식의 오른쪽이 <math><mi>⋯</mi><mo>+</mo><mi>𝑖</mi></math>까지 자라고, 갱신이 <math><mi>𝑖</mi></math>를 올리면 다시 같은 꼴이 된다 — 불변식이 <strong>유지</strong>된다. 루프가 끝나는 순간은 <math><mi>𝑖</mi><mo>=</mo><mn>101</mn></math>이므로, 불변식에 대입하면 sum = 1 + … + 100. 즉 [불변식 + 종료 조건 = 루프의 정확성 증명]이다. 매번 이렇게 적진 않더라도, “이 루프에서 변하지 않는 사실이 무엇인가”를 묻는 습관은 루프 버그의 대부분 — 하나 모자라게/많게 도는 off-by-one — 을 잡아 주는 눈이 된다. 계약 으로서의 코드라는 관점(51장)의 첫 연습이기도 하다.</p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 조건이 영영 거짓이 안 되면 어떻게 되는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 무한 루프다 — 프로그램이 그 자리를 영원히 돈다. 대개는 갱신을 잊은 버그의 결과지만, 의도적인 무한 루프(<code>while (true)</code>)도 어엿한 관용구다 — 서버처럼 “끝나지 않는 것이 정상”인 프로그램의 뼈대가 그것이고, 안에서 조건을 보아 <code>break</code>(루프 탈출 — switch의 그 break와 같은 낱말이다)로 나온다. 위험한 것은 무한 루프 자체가 아니라 <strong>의도치 않은</strong> 무한 루프다.</p></div></div><h3 id="s32-2">32.2 재회 — Duff’s device</h3><div></div><p>12장에서 예약한 전설을 만날 시간이다. 이제 우리는 switch의 폴스루 (31장)와 루프(이 장)를 모두 알고 있다.</p><p>1983년, 루카스필름의 Tom Duff는 데이터를 장치로 복사하는 루프가 너무 느려 고심하고 있었다. 한 바퀴마다 드는 살림 비용(조건 검사·갱신)을 줄이려 여덟 개씩 묶어 처리(언롤링)하되 — 개수가 8의 배수가 아닐 때의 나머지 처리를, 그는 아무도 상상 못 한 방법으로 해결했다:</p><pre><code data-lang="c"><strong><span class="tok-k">switch</span></strong> <span class="tok-x">(</span>count <strong><span class="tok-x">%</span></strong> <span class="tok-n">8</span><span class="tok-x">)</span> <span class="tok-x">{</span>
 <strong><span class="tok-k">case</span></strong> <span class="tok-n">0</span><span class="tok-x">:</span> <strong><span class="tok-k">do</span></strong> <span class="tok-x">{</span> <strong><span class="tok-x">*</span></strong>to <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong>from<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
 <strong><span class="tok-k">case</span></strong> <span class="tok-n">7</span><span class="tok-x">:</span>      <strong><span class="tok-x">*</span></strong>to <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong>from<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>
 <strong><span class="tok-k">case</span></strong> <span class="tok-n">6</span><span class="tok-x">:</span>      <strong><span class="tok-x">*</span></strong>to <strong><span class="tok-x">=</span></strong> <strong><span class="tok-x">*</span></strong>from<strong><span class="tok-x">++</span></strong><span class="tok-x">;</span>

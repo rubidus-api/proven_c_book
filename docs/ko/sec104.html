@@ -191,11 +191,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
    서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
    영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
 .dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
 .dev > .dev-label { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
-.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:0; }
-.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -212,12 +217,15 @@ figure.tbl { text-align:center; }
      여백이 겹쳐 들쭉날쭉해진다. */
 .dev.open { border:none; border-radius:0; background:none;
   padding:0; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
-.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open > .open-body > * { margin:.4rem 0; }
 .dev.open > .open-body > *:first-child { margin-top:0; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
@@ -241,12 +249,13 @@ figure.tbl { text-align:center; }
 .qa-box { border:none; margin:1.15rem 0; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
 .qa-box .qa-q { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0; }
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
 .qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
 .dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -276,7 +285,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem; text-indent:0;
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
   border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -305,7 +314,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern > .dev-label { border-left-style:dashed; }
-.dev.platform > .dev-label { border-left-style:double; border-left-width:6px; }
+
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
@@ -1152,6 +1161,6 @@ va-opt-replacement:
 #embed <span class="tok-s">"</span><span class="tok-s">logo.png</span><span class="tok-s">"</span>
 <span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>그전에는 이 일을 하려고 별도 도구(<code>xxd -i</code> 같은)로 소스를 생성해 빌드에 끼워야 했다. 펌웨어에 폰트·아이콘·인증서를 넣는 자리에서 흔한 일이다. 매개변수 문법(<code>limit(…)</code>, <code>prefix(…)</code>, <code>if_empty(…)</code>)이 위의 <code>pp-parameter</code>이고, 확장은 <code>gnu::</code> 같은 접두사를 붙인다.</p><p><strong><code>__has_include</code></strong> 는 81장에서 이미 쓴 그것이다 — 헤더가 있는지 물어보고 없으면 다른 길로 간다. <code>__has_c_attribute</code>는 속성 지원 여부를, <code>__has_embed</code>는 <code>#embed</code> 가능 여부를 묻는다.</p><p><strong><code>__VA_OPT__</code></strong> 는 C23이 들인 가변 인자 매크로의 도우미다. “가변 인자가 비어 있지 않을 때만” 무언가를 넣는다.</p><pre><code data-lang="c"><strong><span class="tok-k">#define</span></strong><span class="tok-p"> </span><strong><span class="tok-p">LOG</span></strong><span class="tok-x">(</span>fmt<span class="tok-x">,</span><span class="tok-p"> </span><strong><span class="tok-x">...</span></strong><span class="tok-x">)</span><span class="tok-p"> </span><strong>printf</strong><strong><span class="tok-x">(</span></strong><strong>fmt </strong><strong>__VA_OPT__</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">,</span></strong><strong><span class="tok-x">)</span></strong><strong> __VA_ARGS__</strong><strong><span class="tok-x">)</span></strong>
 <strong>LOG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">hi</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>              <em><span class="tok-c">/*</span></em><em><span class="tok-c"> printf("hi")     — 쉼표가 안 붙는다 </span></em><em><span class="tok-c">*/</span></em>
-<strong>LOG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">42</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> printf("%d", 42) — 쉼표가 붙는다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>인자가 없을 때 남는 쉼표 때문에 GCC 확장(<code>, ##__VA_ARGS__</code>)에 기대던 자리가 표준으로 정리됐다. 91장에서 본 proven의 형식화 매크로가 이것을 쓴다.</p><h3 id="sx19">문법이 답하지 못하는 것</h3><div></div><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>타입 이름 문제와 렉서 해킹</p><p>16장에서 본 모호함이 이 문법의 한계를 보여 준다.</p><pre><code data-lang="c">A <strong><span class="tok-x">*</span></strong> B<span class="tok-x">;</span></code></pre><p>문법만 보면 이것은 <strong>식 문장</strong>(A와 B의 곱)일 수도, <strong>선언</strong>(A를 가리키는 포인터 B)일 수도 있다. 두 규칙이 같은 토큰 열을 받아들이는 것이다. C는 이 충돌을 문법 밖에서 해결한다 — <code>A</code>가 <code>typedef</code>로 만든 타입 이름 으로 <strong>이미 선언되어 있는가</strong>를 보고 정한다. 그래서 C 파서는 문법만으로는 동작할 수 없고, 이름표(심벌 테이블)와 대화해야 한다(“lexer hack”이라 불리는 구현 관행이 여기서 나왔다).</p><p>문법은 형태를 정하고, 의미 분석이 나머지를 정한다 — 컴파일러가 왜 여러 단계로 나뉘는지(16장)를 이 한 줄이 설명한다.</p></div><p>문법이 정하지 않는 것을 정리하면 이렇다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>문법이 정하는 것</strong></th><th><strong>문법 밖에서 정하는 것</strong></th></tr><tr><td>토큰의 배열이 합법인가</td><td>이름이 무엇을 가리키는가(유효범위·연결)</td></tr><tr><td>무엇이 무엇에 묶이는가(우선순위)</td><td>평가의 시간 순서(20·33장)</td></tr><tr><td><code>case</code> 자리에 식이 온다는 것</td><td>그 식이 상수여야 한다는 제약</td></tr><tr><td>선언의 형태</td><td>타입이 서로 맞는가</td></tr><tr><td><code>A * B;</code>의 두 가지 해석 가능성</td><td><code>A</code>가 타입 이름인지 여부</td></tr></table></div><p class="float-caption">표 98.3</p></figure><h3 id="sx20">표준 문서에서 문법을 찾는 법</h3><div></div><p>C 표준(그리고 무료로 받을 수 있는 초안, 부록 D 참고)에는 문법이 두 자리에 있다. 본문의 각 절에 그 절이 다루는 규칙이 붙어 있고, <strong>부속서 A</strong>에 전체 문법이 한데 모여 있다 — 이 부록이 따라간 그 부속서다. 실무에서 “이 자리에 이렇게 적어도 되는가”를 확인할 때는 부속서를 펴는 것이 빠르고, “왜 그런가”를 알고 싶으면 본문의 해당 절과 그 제약 조항을 읽는다.</p><div class="dev recap"><p class="dev-label">복습 정리</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>BNF</td><td><code>::=</code>, <code>|</code>, 비단말과 단말. 반복은 재귀로</td></tr><tr><td>EBNF</td><td><code>[ ]</code> 선택, <code>{ }</code> 반복, <code>( )</code> 묶음 — 재귀 없이 적는다</td></tr><tr><td>C 표준의 표기</td><td>들여쓴 줄이 대안, <code>_opt</code>는 생략 가능, <code>one of</code>는 단말 나열</td></tr><tr><td>두 층</td><td>어휘 문법(토큰 만들기) + 구문 문법(토큰 엮기). 전처리는 별도</td></tr><tr><td>식의 계층</td><td>우선순위 표는 이 계층의 요약. 대입은 우결합, 좌변은 단항 식</td></tr><tr><td>선언자 규칙</td><td><code>*</code>는 앞, <code>[]</code>·<code>()</code>는 뒤 — 60장 독법의 근거</td></tr><tr><td>C23의 변화</td><td><code>_BitInt</code>·2진 리터럴·자릿수 구분자·<code>enum : T</code>·빈 <code>{ }</code>·라벨 위치·<code>#embed</code>·<code>__VA_OPT__</code></td></tr><tr><td>문법의 한계</td><td><code>A * B;</code> — 타입 이름을 알아야 갈린다</td></tr></table></div><p class="float-caption">표 98.4</p></figure></div>
+<strong>LOG</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-n">42</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> printf("%d", 42) — 쉼표가 붙는다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>인자가 없을 때 남는 쉼표 때문에 GCC 확장(<code>, ##__VA_ARGS__</code>)에 기대던 자리가 표준으로 정리됐다. 91장에서 본 proven의 형식화 매크로가 이것을 쓴다.</p><h3 id="sx19">문법이 답하지 못하는 것</h3><div></div><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>타입 이름 문제와 렉서 해킹</p><div class="dev-body"><p>16장에서 본 모호함이 이 문법의 한계를 보여 준다.</p><pre><code data-lang="c">A <strong><span class="tok-x">*</span></strong> B<span class="tok-x">;</span></code></pre><p>문법만 보면 이것은 <strong>식 문장</strong>(A와 B의 곱)일 수도, <strong>선언</strong>(A를 가리키는 포인터 B)일 수도 있다. 두 규칙이 같은 토큰 열을 받아들이는 것이다. C는 이 충돌을 문법 밖에서 해결한다 — <code>A</code>가 <code>typedef</code>로 만든 타입 이름 으로 <strong>이미 선언되어 있는가</strong>를 보고 정한다. 그래서 C 파서는 문법만으로는 동작할 수 없고, 이름표(심벌 테이블)와 대화해야 한다(“lexer hack”이라 불리는 구현 관행이 여기서 나왔다).</p><p>문법은 형태를 정하고, 의미 분석이 나머지를 정한다 — 컴파일러가 왜 여러 단계로 나뉘는지(16장)를 이 한 줄이 설명한다.</p></div></div><p>문법이 정하지 않는 것을 정리하면 이렇다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>문법이 정하는 것</strong></th><th><strong>문법 밖에서 정하는 것</strong></th></tr><tr><td>토큰의 배열이 합법인가</td><td>이름이 무엇을 가리키는가(유효범위·연결)</td></tr><tr><td>무엇이 무엇에 묶이는가(우선순위)</td><td>평가의 시간 순서(20·33장)</td></tr><tr><td><code>case</code> 자리에 식이 온다는 것</td><td>그 식이 상수여야 한다는 제약</td></tr><tr><td>선언의 형태</td><td>타입이 서로 맞는가</td></tr><tr><td><code>A * B;</code>의 두 가지 해석 가능성</td><td><code>A</code>가 타입 이름인지 여부</td></tr></table></div><p class="float-caption">표 98.3</p></figure><h3 id="sx20">표준 문서에서 문법을 찾는 법</h3><div></div><p>C 표준(그리고 무료로 받을 수 있는 초안, 부록 D 참고)에는 문법이 두 자리에 있다. 본문의 각 절에 그 절이 다루는 규칙이 붙어 있고, <strong>부속서 A</strong>에 전체 문법이 한데 모여 있다 — 이 부록이 따라간 그 부속서다. 실무에서 “이 자리에 이렇게 적어도 되는가”를 확인할 때는 부속서를 펴는 것이 빠르고, “왜 그런가”를 알고 싶으면 본문의 해당 절과 그 제약 조항을 읽는다.</p><div class="dev recap"><p class="dev-label">복습 정리</p><div class="dev-body"><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>기억할 것</strong></th><th><strong>요지</strong></th></tr><tr><td>BNF</td><td><code>::=</code>, <code>|</code>, 비단말과 단말. 반복은 재귀로</td></tr><tr><td>EBNF</td><td><code>[ ]</code> 선택, <code>{ }</code> 반복, <code>( )</code> 묶음 — 재귀 없이 적는다</td></tr><tr><td>C 표준의 표기</td><td>들여쓴 줄이 대안, <code>_opt</code>는 생략 가능, <code>one of</code>는 단말 나열</td></tr><tr><td>두 층</td><td>어휘 문법(토큰 만들기) + 구문 문법(토큰 엮기). 전처리는 별도</td></tr><tr><td>식의 계층</td><td>우선순위 표는 이 계층의 요약. 대입은 우결합, 좌변은 단항 식</td></tr><tr><td>선언자 규칙</td><td><code>*</code>는 앞, <code>[]</code>·<code>()</code>는 뒤 — 60장 독법의 근거</td></tr><tr><td>C23의 변화</td><td><code>_BitInt</code>·2진 리터럴·자릿수 구분자·<code>enum : T</code>·빈 <code>{ }</code>·라벨 위치·<code>#embed</code>·<code>__VA_OPT__</code></td></tr><tr><td>문법의 한계</td><td><code>A * B;</code> — 타입 이름을 알아야 갈린다</td></tr></table></div><p class="float-caption">표 98.4</p></figure></div></div>
 <div class="nav"><a href="sec103.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec105.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

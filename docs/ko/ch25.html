@@ -191,11 +191,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
    서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
    영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
 .dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
 .dev > .dev-label { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
-.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:0; }
-.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -212,12 +217,15 @@ figure.tbl { text-align:center; }
      여백이 겹쳐 들쭉날쭉해진다. */
 .dev.open { border:none; border-radius:0; background:none;
   padding:0; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
-.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open > .open-body > * { margin:.4rem 0; }
 .dev.open > .open-body > *:first-child { margin-top:0; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
@@ -241,12 +249,13 @@ figure.tbl { text-align:center; }
 .qa-box { border:none; margin:1.15rem 0; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
 .qa-box .qa-q { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0; }
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
 .qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
 .dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -276,7 +285,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem; text-indent:0;
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
   border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -305,7 +314,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern > .dev-label { border-left-style:dashed; }
-.dev.platform > .dev-label { border-left-style:double; border-left-width:6px; }
+
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
@@ -424,6 +433,6 @@ bye
 [two reasons reading stops]
   when fgets returns NULL it is either end of file or an error.
   feof and ferror tell them apart; chapter 63 covers that properly.
-</code></pre></div></div><h4 id="s25-2-1">25.2.1 잘렸는지는 어떻게 아는가</h4><div></div><p>시연의 가운데 두 줄이 그 답이다. 그릇보다 긴 줄이 들어오면 <code>fgets</code> 는 <strong>그릇이 차는 데까지만</strong> 담고 돌아온다 — 그리고 그때는 <strong>끝에 개행이 없다.</strong></p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>그릇 끝의 모습</strong></th><th><strong>뜻</strong></th></tr><tr><td><code>… \n</code> 으로 끝난다</td><td>줄 하나를 온전히 받았다</td></tr><tr><td>개행 없이 끝난다</td><td><strong>줄이 잘렸다</strong> — 나머지는 아직 띠에 남아 있고, 다음 <code>fgets</code> 가 그 뒤를 이어 받는다</td></tr></table></div><p class="float-caption">표 25.2</p></figure><p>즉 <strong>「끝에 개행이 있는가」가 잘림의 신호</strong>다. 시연에서 긴 한 줄이 세 번에 나뉘어 들어온 것이 그 증거다.</p><p>그래서 실무의 관용구가 둘이다.</p><pre><code data-lang="c">line<span class="tok-x">[</span><strong>strcspn</strong><strong><span class="tok-x">(</span></strong><strong>line</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">'</span><span class="tok-n">\0</span><span class="tok-s">'</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 개행이 있으면 떼어 낸다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>첫째는 <strong>개행 떼기</strong>다. 위 한 줄이 관용구인데, <code>strcspn</code>(42장)은 「<code>\n</code> 이 처음 나오는 자리」를 돌려주므로 그 자리에 NUL 을 놓으면 개행이 사라진다. 개행이 없으면 문자열의 끝을 가리키므로 아무 일도 일어나지 않는다 — 한 줄로 두 경우가 다 처리된다.</p><p>둘째는 <strong>잘림을 오류로 다루기</strong>다. 「잘렸지만 성공」을 성공으로 넘기면 잘린 이름으로 파일을 찾는 사고가 뒤따른다 — 43장에서 다섯 규율의 하나로 정식으로 다룬다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그릇은 얼마나 크게 잡아야 하는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 정답은 없고, 판단의 기준이 있다.</p><p><strong>사람이 치는 한 줄</strong>이라면 넉넉히 잡는다 — 이름·경로·명령이라면 256이나 1024가 흔한 선택이다. 시연이 16으로 잡은 것은 잘림을 <strong>보이려고</strong> 일부러 작게 한 것이다.</p><p><strong>줄 길이에 상한이 없다면</strong> 그릇을 키우는 것으로는 끝나지 않는다. 그때는 잘림을 검사해 이어 붙이거나(반복해서 <code>fgets</code>), 줄 길이만큼 그릇을 늘려 주는 도구를 쓴다 — POSIX 의 <code>getline</code> 이 그것인데 표준 C 에는 없다(66장).</p><p>기억할 것은 하나다. <strong>크기를 넘겨받는 함수를 쓰는 한, 그릇이 작아서 생기는 일은 「잘림」이지 「넘침」이 아니다.</strong> 잘림은 검사할 수 있고, 넘침은 프로그램이 무너진다.</p></p></div></div><h3 id="s25-3">25.3 해석은 실패할 수 있다</h3><div></div><p>출력과 달리, 입력에는 본질적인 새 문제가 하나 있다 — <strong>상대가 무엇을 보낼지 모른다.</strong> <code>7</code>을 기대했는데 <code>일곱</code>이 올 수 있다. 그래서 <code>sscanf</code>의 반환값은 <strong>해석에 성공한 값의 개수</strong>다 — 위 예제라면 성공 시 1, 실패 시 0이다.</p><p>지금의 우리는 이 반환값을 확인하고도 “성공이면 이 길, 실패면 저 길”로 갈라설 문법 — 분기 — 이 없다. 그래서 위 예제는 반환값을 버렸고, <code>n</code>을 0으로 초기화해 두는 것(23장의 습관)으로 실패 시의 바닥을 깔아 두었다. 갈림길은 다음 부(30장)에서 생기고, “실패를 값으로 알리고 반드시 확인한다”는 규율은 51장에서 정식으로 세운다 — 입력 검사는 그 규율의 첫 실전이 될 것이다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“입력은 키보드에서 온다”</strong></p>대개 그렇지만, 본질은 아니다 — 입력은 <strong>표준 입력 스트림</strong>에서 온다 (10장). 사실 방금의 시연이 그 증거다: 이 책의 예제 검증 기계에는 키보드를 두드리는 사람이 없다 — 위 실행의 입력 <code>7</code>은 파일에 담겨 표준 입력의 띠로 흘러 들어간 것이다(리다이렉션). 22장의 출력이 화면행이 아니듯 입력도 키보드행이 아니라서, 같은 프로그램이 사람과의 대화에도, 파일 처리에도, 프로그램들의 연결에도 고치지 않고 쓰인다. 스트림 설계의 힘이 입력 쪽에서도 반복되는 것이다.</div><h3 id="s25-4">25.4 제5부를 닫으며</h3><div></div><p>이름을 만드는 법을 다 배웠다 — 값의 이름(23장), 일의 이름(24장), 그리고 바깥세상에서 값을 받아 이름에 담는 법(25장)까지. 15장의 외상 장부는 청산되었고, 새로 진 외상은 정확히 둘 — 줄 그릇(<code>char line[100]</code>, 38장에서)과 자리 표시(<code>&amp;</code>, 35장에서) — 뿐이며, 둘 다 청산 기일이 적혀 있다.</p><p>무엇보다, 이제 프로그램이 <strong>대화</strong>할 수 있게 됐다. 받아서, 계산하고, 답한다 — 다음 부에서는 그 계산 자체를 벼린다: 정수의 세계를 정면으로 다루고(27·28장), 비교하고 판단하고(30·31장), 반복하고(32장), 함수의 의미를 완성한다(33장). 값과 흐름의 부다.</p>
+</code></pre></div></div><h4 id="s25-2-1">25.2.1 잘렸는지는 어떻게 아는가</h4><div></div><p>시연의 가운데 두 줄이 그 답이다. 그릇보다 긴 줄이 들어오면 <code>fgets</code> 는 <strong>그릇이 차는 데까지만</strong> 담고 돌아온다 — 그리고 그때는 <strong>끝에 개행이 없다.</strong></p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>그릇 끝의 모습</strong></th><th><strong>뜻</strong></th></tr><tr><td><code>… \n</code> 으로 끝난다</td><td>줄 하나를 온전히 받았다</td></tr><tr><td>개행 없이 끝난다</td><td><strong>줄이 잘렸다</strong> — 나머지는 아직 띠에 남아 있고, 다음 <code>fgets</code> 가 그 뒤를 이어 받는다</td></tr></table></div><p class="float-caption">표 25.2</p></figure><p>즉 <strong>「끝에 개행이 있는가」가 잘림의 신호</strong>다. 시연에서 긴 한 줄이 세 번에 나뉘어 들어온 것이 그 증거다.</p><p>그래서 실무의 관용구가 둘이다.</p><pre><code data-lang="c">line<span class="tok-x">[</span><strong>strcspn</strong><strong><span class="tok-x">(</span></strong><strong>line</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> <span class="tok-s">'</span><span class="tok-n">\0</span><span class="tok-s">'</span><span class="tok-x">;</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 개행이 있으면 떼어 낸다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>첫째는 <strong>개행 떼기</strong>다. 위 한 줄이 관용구인데, <code>strcspn</code>(42장)은 「<code>\n</code> 이 처음 나오는 자리」를 돌려주므로 그 자리에 NUL 을 놓으면 개행이 사라진다. 개행이 없으면 문자열의 끝을 가리키므로 아무 일도 일어나지 않는다 — 한 줄로 두 경우가 다 처리된다.</p><p>둘째는 <strong>잘림을 오류로 다루기</strong>다. 「잘렸지만 성공」을 성공으로 넘기면 잘린 이름으로 파일을 찾는 사고가 뒤따른다 — 43장에서 다섯 규율의 하나로 정식으로 다룬다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그릇은 얼마나 크게 잡아야 하는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 정답은 없고, 판단의 기준이 있다.</p><p><strong>사람이 치는 한 줄</strong>이라면 넉넉히 잡는다 — 이름·경로·명령이라면 256이나 1024가 흔한 선택이다. 시연이 16으로 잡은 것은 잘림을 <strong>보이려고</strong> 일부러 작게 한 것이다.</p><p><strong>줄 길이에 상한이 없다면</strong> 그릇을 키우는 것으로는 끝나지 않는다. 그때는 잘림을 검사해 이어 붙이거나(반복해서 <code>fgets</code>), 줄 길이만큼 그릇을 늘려 주는 도구를 쓴다 — POSIX 의 <code>getline</code> 이 그것인데 표준 C 에는 없다(66장).</p><p>기억할 것은 하나다. <strong>크기를 넘겨받는 함수를 쓰는 한, 그릇이 작아서 생기는 일은 「잘림」이지 「넘침」이 아니다.</strong> 잘림은 검사할 수 있고, 넘침은 프로그램이 무너진다.</p></p></div></div><h3 id="s25-3">25.3 해석은 실패할 수 있다</h3><div></div><p>출력과 달리, 입력에는 본질적인 새 문제가 하나 있다 — <strong>상대가 무엇을 보낼지 모른다.</strong> <code>7</code>을 기대했는데 <code>일곱</code>이 올 수 있다. 그래서 <code>sscanf</code>의 반환값은 <strong>해석에 성공한 값의 개수</strong>다 — 위 예제라면 성공 시 1, 실패 시 0이다.</p><p>지금의 우리는 이 반환값을 확인하고도 “성공이면 이 길, 실패면 저 길”로 갈라설 문법 — 분기 — 이 없다. 그래서 위 예제는 반환값을 버렸고, <code>n</code>을 0으로 초기화해 두는 것(23장의 습관)으로 실패 시의 바닥을 깔아 두었다. 갈림길은 다음 부(30장)에서 생기고, “실패를 값으로 알리고 반드시 확인한다”는 규율은 51장에서 정식으로 세운다 — 입력 검사는 그 규율의 첫 실전이 될 것이다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“입력은 키보드에서 온다”</strong></p><div class="dev-body">대개 그렇지만, 본질은 아니다 — 입력은 <strong>표준 입력 스트림</strong>에서 온다 (10장). 사실 방금의 시연이 그 증거다: 이 책의 예제 검증 기계에는 키보드를 두드리는 사람이 없다 — 위 실행의 입력 <code>7</code>은 파일에 담겨 표준 입력의 띠로 흘러 들어간 것이다(리다이렉션). 22장의 출력이 화면행이 아니듯 입력도 키보드행이 아니라서, 같은 프로그램이 사람과의 대화에도, 파일 처리에도, 프로그램들의 연결에도 고치지 않고 쓰인다. 스트림 설계의 힘이 입력 쪽에서도 반복되는 것이다.</div></div><h3 id="s25-4">25.4 제5부를 닫으며</h3><div></div><p>이름을 만드는 법을 다 배웠다 — 값의 이름(23장), 일의 이름(24장), 그리고 바깥세상에서 값을 받아 이름에 담는 법(25장)까지. 15장의 외상 장부는 청산되었고, 새로 진 외상은 정확히 둘 — 줄 그릇(<code>char line[100]</code>, 38장에서)과 자리 표시(<code>&amp;</code>, 35장에서) — 뿐이며, 둘 다 청산 기일이 적혀 있다.</p><p>무엇보다, 이제 프로그램이 <strong>대화</strong>할 수 있게 됐다. 받아서, 계산하고, 답한다 — 다음 부에서는 그 계산 자체를 벼린다: 정수의 세계를 정면으로 다루고(27·28장), 비교하고 판단하고(30·31장), 반복하고(32장), 함수의 의미를 완성한다(33장). 값과 흐름의 부다.</p>
 <div class="nav"><a href="ch24.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch26.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

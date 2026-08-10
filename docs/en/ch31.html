@@ -191,11 +191,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
    서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
    영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
 .dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
 .dev > .dev-label { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
-.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:0; }
-.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -212,12 +217,15 @@ figure.tbl { text-align:center; }
      여백이 겹쳐 들쭉날쭉해진다. */
 .dev.open { border:none; border-radius:0; background:none;
   padding:0; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
-.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open > .open-body > * { margin:.4rem 0; }
 .dev.open > .open-body > *:first-child { margin-top:0; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
@@ -241,12 +249,13 @@ figure.tbl { text-align:center; }
 .qa-box { border:none; margin:1.15rem 0; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
 .qa-box .qa-q { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0; }
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
 .qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
 .dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -276,7 +285,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem; text-indent:0;
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
   border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -305,7 +314,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern > .dev-label { border-left-style:dashed; }
-.dev.platform > .dev-label { border-left-style:double; border-left-width:6px; }
+
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
@@ -431,7 +440,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-in"><p class="demo-head">Given on standard input</p><div class="demo-body"><pre><code>12
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>month 12: winter
-</code></pre></div></div><p>How to read it — when <code>switch (month)</code> steps onto the board holding one value, execution <strong>jumps</strong> to the <code>case</code> label matching that value. And here is switch’s most important property: a <code>case</code> is not a fence but a <strong>label</strong>, so once jumped to it <strong>keeps flowing downward</strong>, past the next <code>case</code>. This flow is called <strong>fall-through</strong>, and where you want to stop you write <code>break</code> (leave the board) explicitly.</p><p>Fall-through cuts both ways. It is ideal for binding several values to one answer as in the demonstration (December, January and February into a single winter), but <strong>forget</strong> the <code>break</code> and it becomes the classic accident of flowing into an unintended branch — so compiler warnings and C23′s explicit notation (<code>[[fallthrough]]</code> — documentation saying “this flow is intended”) guard this place. <code>default</code> is the branch for when no label matches — always keeping it, as <strong>a net that catches unexpected values</strong> (“there is no such month”), is the practice.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>A curious example the standard gives — a declaration nobody reaches</p><p>Push the property that a <code>case</code> label is not a fence to its extreme and strange code becomes possible. The following is one the C standard gives directly as an example in its <code>switch</code> clause.</p><pre><code data-lang="c"><strong><span class="tok-k">switch</span></strong> <span class="tok-x">(</span>expr<span class="tok-x">)</span> <span class="tok-x">{</span>
+</code></pre></div></div><p>How to read it — when <code>switch (month)</code> steps onto the board holding one value, execution <strong>jumps</strong> to the <code>case</code> label matching that value. And here is switch’s most important property: a <code>case</code> is not a fence but a <strong>label</strong>, so once jumped to it <strong>keeps flowing downward</strong>, past the next <code>case</code>. This flow is called <strong>fall-through</strong>, and where you want to stop you write <code>break</code> (leave the board) explicitly.</p><p>Fall-through cuts both ways. It is ideal for binding several values to one answer as in the demonstration (December, January and February into a single winter), but <strong>forget</strong> the <code>break</code> and it becomes the classic accident of flowing into an unintended branch — so compiler warnings and C23′s explicit notation (<code>[[fallthrough]]</code> — documentation saying “this flow is intended”) guard this place. <code>default</code> is the branch for when no label matches — always keeping it, as <strong>a net that catches unexpected values</strong> (“there is no such month”), is the practice.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>A curious example the standard gives — a declaration nobody reaches</p><div class="dev-body"><p>Push the property that a <code>case</code> label is not a fence to its extreme and strange code becomes possible. The following is one the C standard gives directly as an example in its <code>switch</code> clause.</p><pre><code data-lang="c"><strong><span class="tok-k">switch</span></strong> <span class="tok-x">(</span>expr<span class="tok-x">)</span> <span class="tok-x">{</span>
     <strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">4</span><span class="tok-x">;</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ← nobody comes here </span></em><em><span class="tok-c">*/</span></em>
     <strong>f</strong><strong><span class="tok-x">(</span></strong><strong>i</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>               <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ← nor here </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">case</span></strong> <span class="tok-n">0</span><span class="tok-x">:</span>
@@ -439,6 +448,6 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
     <em><span class="tok-c">/*</span></em><em><span class="tok-c"> falls through </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">default</span></strong><span class="tok-x">:</span>
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%d</span></strong><strong><span class="tok-n">\n</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> i</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
-<span class="tok-x">}</span></code></pre><p>On entering a <code>switch</code>, execution <strong>jumps straight to the matching label</strong>. So the two lines at the head of the block are executed for no value at all. And yet the variable <code>i</code> <strong>exists</strong> — once the block has been entered, that block’s local variables get their places (chapter 44′s automatic storage duration).</p><p>The result is curious. If <code>expr</code> is 0 it jumps to <code>case 0:</code>, <code>i = 17</code> runs and 17 is printed; but <strong>if it is not 0</strong> it jumps straight to <code>default:</code> and <code>i</code> is read <strong>never having been initialised</strong> — the reading of an indeterminate value that chapter 52 treats properly. And that with the initialising line sitting there in plain sight.</p><p>This example is in the standard not to say “write it this way” but to pin down <strong>the consequence of a <code>case</code> being merely a label</strong>. The rules in practice are two — <strong>do not put a declaration at the head of a <code>switch</code> block</strong>, and <strong>if a variable must be declared inside a <code>case</code>, make a block with braces</strong> (otherwise the compiler may refuse it as an initialisation jumped over by a case label).</p></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> An <code>if</code> ladder can do it all, so why is <code>switch</code> needed at all?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> The difference between them is not expressive power but <strong>conveying intent</strong>. switch pins down in syntax the intent of “matching one value against several constants”, so the structure is visible both to the reader and to the compiler — the compiler may use that structure to produce fast code such as a jump table (a shape chapter 13′s editor likes), and the warning features can point out “a case missing from an enumeration”. Fork on a single value, use switch; on ranges or compound conditions, an if ladder — fitting the tool to the intent. And in the next chapter we finally meet the legendary code that abused (?) this fall-through property to its limit.</p></div></div><p>We have learned the fork — but a program’s real power comes not from forking but from <strong>repeating</strong>. The repetition of which chapter 4 said “even simple steps, <span id="idx-entry-73"></span>taken billions of times”, is taken into our hands in the next chapter.</p><section class="chapter-notes" role="doc-endnotes"><h2>Notes</h2><ol><li id="ch31-fn-1">CVE-2014-1266. 2014. National Vulnerability Database, NIST. <a href="https://nvd.nist.gov/vuln/detail/CVE-2014-1266"><code>nvd.nist.gov/vuln/detail/CVE-2014-1266</code></a> <a class="fnback" href="#ch31-fnref-1" aria-label="back to text" title="back to text">&#8617;</a></li></ol></section>
+<span class="tok-x">}</span></code></pre><p>On entering a <code>switch</code>, execution <strong>jumps straight to the matching label</strong>. So the two lines at the head of the block are executed for no value at all. And yet the variable <code>i</code> <strong>exists</strong> — once the block has been entered, that block’s local variables get their places (chapter 44′s automatic storage duration).</p><p>The result is curious. If <code>expr</code> is 0 it jumps to <code>case 0:</code>, <code>i = 17</code> runs and 17 is printed; but <strong>if it is not 0</strong> it jumps straight to <code>default:</code> and <code>i</code> is read <strong>never having been initialised</strong> — the reading of an indeterminate value that chapter 52 treats properly. And that with the initialising line sitting there in plain sight.</p><p>This example is in the standard not to say “write it this way” but to pin down <strong>the consequence of a <code>case</code> being merely a label</strong>. The rules in practice are two — <strong>do not put a declaration at the head of a <code>switch</code> block</strong>, and <strong>if a variable must be declared inside a <code>case</code>, make a block with braces</strong> (otherwise the compiler may refuse it as an initialisation jumped over by a case label).</p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> An <code>if</code> ladder can do it all, so why is <code>switch</code> needed at all?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> The difference between them is not expressive power but <strong>conveying intent</strong>. switch pins down in syntax the intent of “matching one value against several constants”, so the structure is visible both to the reader and to the compiler — the compiler may use that structure to produce fast code such as a jump table (a shape chapter 13′s editor likes), and the warning features can point out “a case missing from an enumeration”. Fork on a single value, use switch; on ranges or compound conditions, an if ladder — fitting the tool to the intent. And in the next chapter we finally meet the legendary code that abused (?) this fall-through property to its limit.</p></div></div><p>We have learned the fork — but a program’s real power comes not from forking but from <strong>repeating</strong>. The repetition of which chapter 4 said “even simple steps, <span id="idx-entry-73"></span>taken billions of times”, is taken into our hands in the next chapter.</p><section class="chapter-notes" role="doc-endnotes"><h2>Notes</h2><ol><li id="ch31-fn-1">CVE-2014-1266. 2014. National Vulnerability Database, NIST. <a href="https://nvd.nist.gov/vuln/detail/CVE-2014-1266"><code>nvd.nist.gov/vuln/detail/CVE-2014-1266</code></a> <a class="fnback" href="#ch31-fnref-1" aria-label="back to text" title="back to text">&#8617;</a></li></ol></section>
 <div class="nav"><a href="ch30.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch32.html">Next →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

@@ -191,11 +191,16 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
    서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
    영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
 .dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
 .dev > .dev-label { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
-.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:0; }
-.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -212,12 +217,15 @@ figure.tbl { text-align:center; }
      여백이 겹쳐 들쭉날쭉해진다. */
 .dev.open { border:none; border-radius:0; background:none;
   padding:0; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
-.dev.open > .open-body { margin:.5rem 0 0; padding:0; }
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open > .open-body > * { margin:.4rem 0; }
 .dev.open > .open-body > *:first-child { margin-top:0; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
@@ -241,12 +249,13 @@ figure.tbl { text-align:center; }
 .qa-box { border:none; margin:1.15rem 0; }
 .qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
 .qa-box .qa-q { border-left:4px solid var(--fg);
-  padding:.05rem 0 .2rem .7rem; margin:0; }
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
 .qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
-  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
 .dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -276,7 +285,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem; text-indent:0;
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
   border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
@@ -305,7 +314,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
 .dev.antipattern > .dev-label { border-left-style:dashed; }
-.dev.platform > .dev-label { border-left-style:double; border-left-width:6px; }
+
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
@@ -481,6 +490,6 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 [5: let the compiler speak when you forget to check]
   parse_int and copy_line are marked [[nodiscard]].
   dropping the return value warns - that stops you forgetting to check for failure.
-</code></pre></div></div><span id="idx-entry-150"></span><p>시연의 <code>parse_int</code>가 그 다섯을 한 함수에 담았다. 하나씩 읽는다.</p><h4 id="s43-3-1">43.3.1 ① 실패를 값으로 돌려준다</h4><div></div><p>「성공했는가」와 「값은 무엇인가」를 <strong>갈라서</strong> 돌려준다. <code>atoi</code>처럼 값 하나만 돌려주면 실패를 표현할 자리가 없고, <code>scanf</code>처럼 개수로 알리면 <strong>무엇이 실패했는지</strong>가 남지 않는다.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> parse_i64 <span class="tok-x">{</span> <strong><span class="tok-t">bool</span></strong> ok<span class="tok-x">;</span> <strong><span class="tok-t">long</span></strong> <strong><span class="tok-t">long</span></strong> value<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>rest<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>why<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>구조체를 값으로 돌려주는 것이 부담스러워 보일 수 있지만, 이 크기는 대개 레지스터 두어 개에 실린다(47장). <strong>실패를 타입에 적어 두는 값</strong>이 그보다 훨씬 크다.</p><h4 id="s43-3-2">43.3.2 ② 확인을 잊으면 컴파일러가 말하게 한다</h4><div></div><p>C23의 <code>[[nodiscard]]</code>를 붙이면 <strong>반환값을 버리는 코드에 경고</strong>가 난다.</p><pre><code data-lang="c"><span class="tok-x">[</span><span class="tok-x">[</span>nodiscard<span class="tok-x">]</span><span class="tok-x">]</span> <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">struct</span></strong> parse_i64 <strong>parse_int</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">const</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>text</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p>「확인해야 한다」를 문서가 아니라 <strong>컴파일러의 일</strong>로 옮기는 것이다. 사람이 기억해야 하는 규칙은 언젠가 잊히고, 잊힌 자리가 바로 사고가 나는 자리다.</p><h4 id="s43-3-3">43.3.3 ③ 어디까지 읽었는지 알려준다</h4><div></div><p><code>strtol</code>의 <code>endptr</code>이 좋은 선례다. <strong>해석이 멈춘 자리</strong>를 함께 돌려주면 두 가지가 가능해진다 — 이어서 읽기(시연의 <code>10,20,30</code> 합산)와, 오류가 난 자리를 사람에게 가리켜 보이기(「3번째 글자에서 막혔습니다」).</p><h4 id="s43-3-4">43.3.4 ④ 잘림을 성공으로 치지 않는다</h4><div></div><p>가장 자주 어겨지는 규율이다. 「그릇에 안 들어가서 잘라 넣었다」를 성공으로 돌려주면, 잘린 이름으로 파일을 찾고 잘린 주소로 접속하는 사고가 뒤따른다.</p><p>시연의 <code>copy_line</code>은 <strong>들어가지 않으면 아무것도 하지 않고 실패</strong>를 돌려준다. <code>strncpy</code>가 잘림을 알려 주지 않아 생긴 오랜 문제(64장)의 교훈이 이것이다.</p><h4 id="s43-3-5">43.3.5 ⑤ 실패하면 출력 인자를 건드리지 않는다</h4><div></div><p>실패했을 때 결과 자리에 반쯤 채워진 값이 남으면, 그 값을 쓰는 코드가 생긴다. <strong>실패하면 아무것도 바꾸지 않는다</strong>를 계약으로 정하고 문서에 적는다 — 시연의 마지막 부분이 그것을 확인한다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>scanf</code>의 반환값만 확인하면 안전하다”</strong></p><p>절반만 맞다. 개수 확인은 <strong>변환이 몇 개나 성공했는지</strong>를 알려 줄 뿐, 위의 규율 ③④⑤를 대신하지 못한다.</p><ul><li><strong>어디서 멈췄는지</strong> 알 수 없다 — 남은 입력을 다시 읽을 방법이 마땅치 않다.</li><li><code>%s</code>에 <strong>폭을 적지 않으면</strong> 그릇 크기를 모른 채 쓴다(넘침). <code>%9s</code>처럼 폭을 반드시 적는다.</li><li>실패했을 때 <strong>어떤 인자가 이미 채워졌는지</strong> 계약이 흐릿하다.</li></ul><p>그래서 실무의 관행은 「줄 단위로 읽고(<code>fgets</code>), 그 줄을 직접 해석한다」다. 이 장의 다섯 규율이 그 「직접 해석」의 골격이다.</p></div><h3 id="s43-4">43.4 이 규율을 부품으로 굳히면</h3><div></div><p>같은 규율을 함수마다 손으로 다시 지으면 결국 어딘가에서 빠뜨린다. 그래서 실무의 다음 단계는 <strong>규율을 부품으로 굳히는 것</strong>이다 — 실패가 값으로 드러나고, 경계가 언제나 검사되며, 확인을 잊으면 컴파일러가 말해 주는 형태로.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 표준 라이브러리만으로는 부족하다는 말인가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 부족하다기보다 <strong>매번 다시 지어야 한다</strong>는 것이 문제다. 표준 라이브러리는 1970~80년대의 관행을 그대로 안고 있고(64·65장에서 본다), 위의 다섯 규율 중 어느 것도 기본값으로 주지 않는다. 그래서 실무의 코드베이스는 예외 없이 <strong>자기만의 얇은 층</strong>을 얹는다 — 문자열, 입력 해석, 수 변환에 안전한 껍데기를 씌우는 층이다.</p><p>그 층을 라이브러리로 만들어 두면 팀 전체가 같은 규율 위에 서게 된다. 이 책도 그 예를 하나 준비해 두었다 — 저자가 만든 <code>proven</code>이고, <strong>제12부</strong>가 그 설계와 사용법을 다룬다. 특히 87장 「에러는 값이다」가 이 장의 ①②를, 90장 「문자열과 텍스트」가 ③④를 라이브러리 차원에서 다시 다룬다.</p><p>중요한 것은 어느 라이브러리를 쓰느냐가 아니라 <strong>규율을 부품에 새겨 두었는가</strong>다. 같은 사상의 다른 부품을 골라도, 직접 만들어도 좋다.</p></p></div></div><p>입력의 안전을 갖췄다. 그런데 이 장에서 “함수 호출의 복귀 장부”라는 말이 설명 없이 지나갔다 — 기억의 어디에 무엇이 살고, 언제 태어나고 죽는가. 다음 장이 그 답 — 수명과 저장 기간 — 이다.</p>
+</code></pre></div></div><span id="idx-entry-150"></span><p>시연의 <code>parse_int</code>가 그 다섯을 한 함수에 담았다. 하나씩 읽는다.</p><h4 id="s43-3-1">43.3.1 ① 실패를 값으로 돌려준다</h4><div></div><p>「성공했는가」와 「값은 무엇인가」를 <strong>갈라서</strong> 돌려준다. <code>atoi</code>처럼 값 하나만 돌려주면 실패를 표현할 자리가 없고, <code>scanf</code>처럼 개수로 알리면 <strong>무엇이 실패했는지</strong>가 남지 않는다.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> parse_i64 <span class="tok-x">{</span> <strong><span class="tok-t">bool</span></strong> ok<span class="tok-x">;</span> <strong><span class="tok-t">long</span></strong> <strong><span class="tok-t">long</span></strong> value<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>rest<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>why<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span></code></pre><p>구조체를 값으로 돌려주는 것이 부담스러워 보일 수 있지만, 이 크기는 대개 레지스터 두어 개에 실린다(47장). <strong>실패를 타입에 적어 두는 값</strong>이 그보다 훨씬 크다.</p><h4 id="s43-3-2">43.3.2 ② 확인을 잊으면 컴파일러가 말하게 한다</h4><div></div><p>C23의 <code>[[nodiscard]]</code>를 붙이면 <strong>반환값을 버리는 코드에 경고</strong>가 난다.</p><pre><code data-lang="c"><span class="tok-x">[</span><span class="tok-x">[</span>nodiscard<span class="tok-x">]</span><span class="tok-x">]</span> <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">struct</span></strong> parse_i64 <strong>parse_int</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">const</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong>text</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><p>「확인해야 한다」를 문서가 아니라 <strong>컴파일러의 일</strong>로 옮기는 것이다. 사람이 기억해야 하는 규칙은 언젠가 잊히고, 잊힌 자리가 바로 사고가 나는 자리다.</p><h4 id="s43-3-3">43.3.3 ③ 어디까지 읽었는지 알려준다</h4><div></div><p><code>strtol</code>의 <code>endptr</code>이 좋은 선례다. <strong>해석이 멈춘 자리</strong>를 함께 돌려주면 두 가지가 가능해진다 — 이어서 읽기(시연의 <code>10,20,30</code> 합산)와, 오류가 난 자리를 사람에게 가리켜 보이기(「3번째 글자에서 막혔습니다」).</p><h4 id="s43-3-4">43.3.4 ④ 잘림을 성공으로 치지 않는다</h4><div></div><p>가장 자주 어겨지는 규율이다. 「그릇에 안 들어가서 잘라 넣었다」를 성공으로 돌려주면, 잘린 이름으로 파일을 찾고 잘린 주소로 접속하는 사고가 뒤따른다.</p><p>시연의 <code>copy_line</code>은 <strong>들어가지 않으면 아무것도 하지 않고 실패</strong>를 돌려준다. <code>strncpy</code>가 잘림을 알려 주지 않아 생긴 오랜 문제(64장)의 교훈이 이것이다.</p><h4 id="s43-3-5">43.3.5 ⑤ 실패하면 출력 인자를 건드리지 않는다</h4><div></div><p>실패했을 때 결과 자리에 반쯤 채워진 값이 남으면, 그 값을 쓰는 코드가 생긴다. <strong>실패하면 아무것도 바꾸지 않는다</strong>를 계약으로 정하고 문서에 적는다 — 시연의 마지막 부분이 그것을 확인한다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>scanf</code>의 반환값만 확인하면 안전하다”</strong></p><div class="dev-body"><p>절반만 맞다. 개수 확인은 <strong>변환이 몇 개나 성공했는지</strong>를 알려 줄 뿐, 위의 규율 ③④⑤를 대신하지 못한다.</p><ul><li><strong>어디서 멈췄는지</strong> 알 수 없다 — 남은 입력을 다시 읽을 방법이 마땅치 않다.</li><li><code>%s</code>에 <strong>폭을 적지 않으면</strong> 그릇 크기를 모른 채 쓴다(넘침). <code>%9s</code>처럼 폭을 반드시 적는다.</li><li>실패했을 때 <strong>어떤 인자가 이미 채워졌는지</strong> 계약이 흐릿하다.</li></ul><p>그래서 실무의 관행은 「줄 단위로 읽고(<code>fgets</code>), 그 줄을 직접 해석한다」다. 이 장의 다섯 규율이 그 「직접 해석」의 골격이다.</p></div></div><h3 id="s43-4">43.4 이 규율을 부품으로 굳히면</h3><div></div><p>같은 규율을 함수마다 손으로 다시 지으면 결국 어딘가에서 빠뜨린다. 그래서 실무의 다음 단계는 <strong>규율을 부품으로 굳히는 것</strong>이다 — 실패가 값으로 드러나고, 경계가 언제나 검사되며, 확인을 잊으면 컴파일러가 말해 주는 형태로.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 그러면 표준 라이브러리만으로는 부족하다는 말인가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 부족하다기보다 <strong>매번 다시 지어야 한다</strong>는 것이 문제다. 표준 라이브러리는 1970~80년대의 관행을 그대로 안고 있고(64·65장에서 본다), 위의 다섯 규율 중 어느 것도 기본값으로 주지 않는다. 그래서 실무의 코드베이스는 예외 없이 <strong>자기만의 얇은 층</strong>을 얹는다 — 문자열, 입력 해석, 수 변환에 안전한 껍데기를 씌우는 층이다.</p><p>그 층을 라이브러리로 만들어 두면 팀 전체가 같은 규율 위에 서게 된다. 이 책도 그 예를 하나 준비해 두었다 — 저자가 만든 <code>proven</code>이고, <strong>제12부</strong>가 그 설계와 사용법을 다룬다. 특히 87장 「에러는 값이다」가 이 장의 ①②를, 90장 「문자열과 텍스트」가 ③④를 라이브러리 차원에서 다시 다룬다.</p><p>중요한 것은 어느 라이브러리를 쓰느냐가 아니라 <strong>규율을 부품에 새겨 두었는가</strong>다. 같은 사상의 다른 부품을 골라도, 직접 만들어도 좋다.</p></p></div></div><p>입력의 안전을 갖췄다. 그런데 이 장에서 “함수 호출의 복귀 장부”라는 말이 설명 없이 지나갔다 — 기억의 어디에 무엇이 살고, 언제 태어나고 죽는가. 다음 장이 그 답 — 수명과 저장 기간 — 이다.</p>
 <div class="nav"><a href="ch42.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch44.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>
