@@ -273,8 +273,8 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
-  padding:0; }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -303,11 +303,11 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
   border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
-.dev.mathbox > p, .dev.platform > p, .dev.recap > p,
-.dev.misconception > div, .dev.realcase > div, .dev.antipattern > div,
-.dev.mathbox > div, .dev.platform > div, .dev.recap > div,
-.dev.recap > figure, .dev.mathbox > figure {
+/* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
+   padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
+   (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
+.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
    쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
