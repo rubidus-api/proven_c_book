@@ -85,26 +85,17 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
 .bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
-/* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
-   전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
-   권장(35~45자)의 두세 배다. 줄이 길면 줄 끝에서 다음 줄 머리로 돌아오는 눈의
-   복귀 도약이 어긋나 같은 줄을 두 번 읽거나 한 줄을 건너뛴다.
-   그렇다고 전부를 가두지는 않는다: 코드·표·도해는 넓을수록 좋다. 그래서
-   *본문만* 가두고 넓어야 할 것은 밖으로 넘치게 둔다. */
-:root { --measure: 40rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다.
+   (2026-08-10: 40rem 으로 가둬 봤으나 저자가 「모양이 깨졌다」며 되돌리라고
+   했다. 줄 길이 문제는 D4 의 *독자가 고르는 폭*으로 푼다.) */
 .wrap { width:100%; max-width:none; margin:0; }
-.wrap > * { max-width:var(--measure); margin-left:auto; margin-right:auto; }
-/* 넓어야 하는 것들은 재갈을 풀어 준다 */
-.wrap > .demo, .wrap > .tblwrap, .wrap > figure, .wrap > .figwrap,
-.wrap > pre, .wrap > .toc, .wrap > .toc-full, .wrap > table,
-.wrap > .cover, .wrap > .nav, .wrap > .chapter-notes {
-  max-width:min(72rem, 100%); }
-h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
 h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
 h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
-     border-left:4px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
 p { margin:.9rem 0; } a { color:var(--link); }
 /* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
    (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
@@ -194,8 +185,17 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
 
-.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
-       border-left:3px solid var(--box-rule); border-radius:0; }
+/* ── 왼쪽 세로선 규율 (저자 지시 2026-08-10) ─────────────────
+   네 변 상자는 좌우 안쪽 여백이 양쪽에서 폭을 갉는다. 왼쪽 세로선 하나로
+   영역만 표시하고 오른쪽은 열어 둔다. 제목 쪽 선이 내용 쪽보다 굵고, 둘은
+   서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
+   영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
+.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:0; }
+.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -210,10 +210,10 @@ figure.tbl { text-align:center; }
    ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
      칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
      여백이 겹쳐 들쭉날쭉해진다. */
-.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
@@ -226,8 +226,8 @@ figure.tbl { text-align:center; }
 .dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
 .dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
-.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
-  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .why .dev-label,
@@ -237,16 +237,17 @@ figure.tbl { text-align:center; }
 /* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 
-/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
-.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
-.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
-  background:none; }
-.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 문답 — 질문 쪽 선이 굵고, 답 쪽이 가늘고, 둘 사이가 떨어져 있다 */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
-.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
 .dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
@@ -363,9 +364,9 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">19장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch18.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch20.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch19.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s19-1"><span class="tf-no">19.1</span>주석 — 사람만 읽는 글</a><a class="lv3" href="#s19-2"><span class="tf-no">19.2</span>문장 — 한 걸음, 그리고 세미콜론</a><a class="lv3" href="#s19-3"><span class="tf-no">19.3</span>블록 — 문장들의 묶음</a><a class="lv3" href="#s19-4"><span class="tf-no">19.4</span>문장이 아닌 줄 — #의 세계</a><a class="lv3" href="#s19-5"><span class="tf-no">19.5</span>종합 — 두 문장짜리 프로그램</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-19">19 프로그램의 구조</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>15장 헬로 월드 · 헬로 월드가 담고 있던 것들</div><div>13장 컴파일러 최적화 · 추상 기계의 계약</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>4장에서 기계는 “메모리에서 다음 할 일을 가져와 그대로 하는” 반복 이라고 했다. 그러면 소스 코드 쪽에서 그 “할 일 하나”에 해당하는 것은 무엇인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>문장</strong>(statement)이다. C 프로그램의 몸통은 문장들의 목록이고, 실행이란 그 목록을 위에서 아래로 한 문장씩 해치우는 것이다 — 4장의 계산 모델이 소스 코드에 그대로 비친 모습이다. 물론 13장에서 배웠듯 컴파일러가 속사정을 재배열할 수는 있지만, <strong>겉보기 결과</strong>는 언제나 “위에서 아래로 한 문장씩”과 같도록 보장된다. 그래서 독자는 안심하고 이 그림으로 읽으면 된다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">4부의 목표는 하나뿐이다 — 15장의 헬로 월드를 <strong>완전히</strong> 읽어 내는 것. 그 목표를 넷으로 쪼갠 첫 조각이 뼈대다. 주석·문장·블록을 먼저 놓는 것은 나머지 세 장이 전부 「문장 안에서 일어나는 일」이기 때문이다. 담을 그릇을 먼저 만들고 안을 채운다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">제4부의 목표는 하나다 — 15장의 헬로 월드 한 편을 <strong>완전히</strong> 읽어 내는 <span id="idx-entry-83"></span>것. 그 첫걸음으로 프로그램의 뼈대를 익힌다: 주석, 문장, 블록, 그리고 <code>#include</code> 줄이 문장이 아닌 이유까지. 이 장이 끝나면 C 소스의 겉모양이 더는 낯설지 않다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>왜 줄 끝을 문장 끝으로 삼지 않았는가? 세미콜론을 매번 찍는 것은 번거로운데.</li></ol></div></div><div></div><h3 id="s19-1">19.1 주석 — 사람만 읽는 글</h3><p>뼈대를 보기 전에, 뼈대가 <strong>아닌</strong> 것부터 치운다. 소스 코드에는 컴파일러가 완전히 무시하는 글— <strong>주석</strong>(comment) — 을 적을 수 있다. 두 가지 표기가 있다:</p><pre><code data-lang="c"><em><span class="tok-c">//</span></em><em><span class="tok-c"> 이 표기는 여기부터 줄 끝까지가 주석이다</span></em>
+<h2 id="loc-19">19 프로그램의 구조</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>15장 헬로 월드 · 헬로 월드가 담고 있던 것들</div><div>13장 컴파일러 최적화 · 추상 기계의 계약</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>4장에서 기계는 “메모리에서 다음 할 일을 가져와 그대로 하는” 반복 이라고 했다. 그러면 소스 코드 쪽에서 그 “할 일 하나”에 해당하는 것은 무엇인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>문장</strong>(statement)이다. C 프로그램의 몸통은 문장들의 목록이고, 실행이란 그 목록을 위에서 아래로 한 문장씩 해치우는 것이다 — 4장의 계산 모델이 소스 코드에 그대로 비친 모습이다. 물론 13장에서 배웠듯 컴파일러가 속사정을 재배열할 수는 있지만, <strong>겉보기 결과</strong>는 언제나 “위에서 아래로 한 문장씩”과 같도록 보장된다. 그래서 독자는 안심하고 이 그림으로 읽으면 된다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">4부의 목표는 하나뿐이다 — 15장의 헬로 월드를 <strong>완전히</strong> 읽어 내는 것. 그 목표를 넷으로 쪼갠 첫 조각이 뼈대다. 주석·문장·블록을 먼저 놓는 것은 나머지 세 장이 전부 「문장 안에서 일어나는 일」이기 때문이다. 담을 그릇을 먼저 만들고 안을 채운다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">제4부의 목표는 하나다 — 15장의 헬로 월드 한 편을 <strong>완전히</strong> 읽어 내는 <span id="idx-entry-83"></span>것. 그 첫걸음으로 프로그램의 뼈대를 익힌다: 주석, 문장, 블록, 그리고 <code>#include</code> 줄이 문장이 아닌 이유까지. 이 장이 끝나면 C 소스의 겉모양이 더는 낯설지 않다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>왜 줄 끝을 문장 끝으로 삼지 않았는가? 세미콜론을 매번 찍는 것은 번거로운데.</li></ol></div></div><div></div><h3 id="s19-1">19.1 주석 — 사람만 읽는 글</h3><div></div><p>뼈대를 보기 전에, 뼈대가 <strong>아닌</strong> 것부터 치운다. 소스 코드에는 컴파일러가 완전히 무시하는 글— <strong>주석</strong>(comment) — 을 적을 수 있다. 두 가지 표기가 있다:</p><pre><code data-lang="c"><em><span class="tok-c">//</span></em><em><span class="tok-c"> 이 표기는 여기부터 줄 끝까지가 주석이다</span></em>
 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이 표기는 여는 쪽과 닫는 쪽 사이가 주석이다 —</span></em>
-<em><span class="tok-c">   여러 줄에 걸칠 수 있다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>주석은 기계에게는 없는 것이고, 사람에게는 문서다. 이 책의 예제에도 설명을 주석으로 달아 두었다 — 코드와 함께 읽으면 된다.</p><h3 id="s19-2">19.2 문장 — 한 걸음, 그리고 세미콜론</h3><p><strong>문장</strong>은 프로그램의 한 걸음이다. 15장에서 본 <code>printf(...)</code> 줄과 <code>return 0</code> 줄이 각각 문장 하나다. 그리고 C에서 문장의 끝은 <strong>세미콜론</strong> <code>;</code>이 표시한다 — 우리글의 마침표다.</p><p>여기서 중요한 규칙 하나. <strong>C에서 줄바꿈은 문장의 끝이 아니다.</strong> 문장이 어디서 끝나는지는 오직 세미콜론이 정하고, 줄바꿈과 들여쓰기는 전부 사람 눈을 위한 정리 정돈일 뿐이다. 이런 언어를 <strong>자유 형식</strong>(free-form) 언어라 한다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 왜 줄 끝을 문장 끝으로 삼지 않았는가? 세미콜론을 매번 찍는 것은 번거로운데.</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 긴 문장 때문이다. 문장 하나가 길어져 여러 줄로 나눠 적고 싶을 때, “줄 끝 = 문장 끝”인 언어는 이어짐 표시 같은 예외 장치가 필요해진다. C는 반대쪽을 택했다 — 끝을 세미콜론으로 명시하고, 줄바꿈은 완전히 자유롭게 두는 것이다. 10장의 펀치카드를 기억하면 맛이 더 살아난다 — “한 장 = 한 줄”이라는 물리적 제약의 시대를 지나며, 언어는 줄이라는 형식에서 뜻을 독립시키는 쪽으로 진화했다.</p></div></div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“한 줄에 한 문장씩 쓰는 것이 C의 규칙이다”</strong></p>그럴듯하다 — 잘 쓰인 코드가 대개 그렇게 생겼으니까. 그러나 그것은 <strong>관행</strong>이지 규칙이 아니다. 문법상으로는 한 줄에 문장 여럿을 몰아 적어도 되고, 문장 하나를 다섯 줄에 걸쳐 적어도 된다. 컴파일러에게는 전부 같은 프로그램이다. 그런데도 “한 줄에 한 문장, 블록 안은 들여쓰기”라는 관행이 반세기를 살아남은 이유는 단순하다 — 코드는 기계보다 사람이 훨씬 자주 읽기 때문이다. 이 책의 예제도 그 관행을 따른다: 문법이 허락하는 자유와, 관행이 권하는 절제를 구별하는 것 — 이것도 C 공부의 일부다.</div><h3 id="s19-3">19.3 블록 — 문장들의 묶음</h3><p>문장 여럿을 중괄호 <code>{ }</code>로 감싼 것이 <strong>블록</strong>(block)이다. 15장에서 본 <code>main</code> 뒤의 담장이 바로 블록이었다 — <code>main</code>이 할 일의 목록을 하나로 묶은 것이다. 블록은 “여기부터 여기까지가 한 묶음”이라는 문법적 괄호로, 앞으로 만날 거의 모든 구조(조건, 반복, 함수)가 블록을 부품으로 쓴다. 지금은 “문장 목록의 포장 단위” 하나로 충분하다.</p><h3 id="s19-4">19.4 문장이 아닌 줄 — <code>#</code>의 세계</h3><p>이제 15장 첫 줄의 마지막 비밀이다. <code>#include &lt;stdio.h></code> 끝에는 세미콜론이 <strong>없다</strong>. 문장이라면 마침표가 있어야 할 텐데 — 없는 이유는 간단하다. <strong>문장이 아니기 때문이다.</strong></p><p>16장의 릴레이를 떠올리면 된다. <code>#</code>으로 시작하는 줄은 첫 주자인 <strong>전처리기</strong>에게 하는 말이고, 전처리기는 C 문법이 아니라 <strong>줄</strong> 단위로 일하는 텍스트 도구다. 그래서 <code>#</code> 줄의 문법은 C의 문장 규칙과 아예 다르다 — 세미콜론 대신 줄 끝이 지시의 끝이고, 관례상 파일 맨 위에 모여 산다. 한 소스 파일 안에 사실 <strong>두 개의 언어</strong>(전처리 지시의 언어와 C)가 함께 있는 셈이다. 낯설지만, 역사를 아는 우리에게는 사연이 보이는 구조다 — 전처리기는 별도의 일꾼으로 태어나 지금까지 남았다.</p><h3 id="s19-5">19.5 종합 — 두 문장짜리 프로그램</h3><p>이 장의 재료를 전부 넣은 변형을 하나 시연한다. 15장 헬로 월드에서 바뀐 것은 하나 — 문장이 둘이 됐다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch19/two.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">//</span></em><em><span class="tok-c"> 한 문장씩, 위에서 아래로 차례로 실행된다.</span></em>
+<em><span class="tok-c">   여러 줄에 걸칠 수 있다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p>주석은 기계에게는 없는 것이고, 사람에게는 문서다. 이 책의 예제에도 설명을 주석으로 달아 두었다 — 코드와 함께 읽으면 된다.</p><h3 id="s19-2">19.2 문장 — 한 걸음, 그리고 세미콜론</h3><div></div><p><strong>문장</strong>은 프로그램의 한 걸음이다. 15장에서 본 <code>printf(...)</code> 줄과 <code>return 0</code> 줄이 각각 문장 하나다. 그리고 C에서 문장의 끝은 <strong>세미콜론</strong> <code>;</code>이 표시한다 — 우리글의 마침표다.</p><p>여기서 중요한 규칙 하나. <strong>C에서 줄바꿈은 문장의 끝이 아니다.</strong> 문장이 어디서 끝나는지는 오직 세미콜론이 정하고, 줄바꿈과 들여쓰기는 전부 사람 눈을 위한 정리 정돈일 뿐이다. 이런 언어를 <strong>자유 형식</strong>(free-form) 언어라 한다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 왜 줄 끝을 문장 끝으로 삼지 않았는가? 세미콜론을 매번 찍는 것은 번거로운데.</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 긴 문장 때문이다. 문장 하나가 길어져 여러 줄로 나눠 적고 싶을 때, “줄 끝 = 문장 끝”인 언어는 이어짐 표시 같은 예외 장치가 필요해진다. C는 반대쪽을 택했다 — 끝을 세미콜론으로 명시하고, 줄바꿈은 완전히 자유롭게 두는 것이다. 10장의 펀치카드를 기억하면 맛이 더 살아난다 — “한 장 = 한 줄”이라는 물리적 제약의 시대를 지나며, 언어는 줄이라는 형식에서 뜻을 독립시키는 쪽으로 진화했다.</p></div></div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“한 줄에 한 문장씩 쓰는 것이 C의 규칙이다”</strong></p>그럴듯하다 — 잘 쓰인 코드가 대개 그렇게 생겼으니까. 그러나 그것은 <strong>관행</strong>이지 규칙이 아니다. 문법상으로는 한 줄에 문장 여럿을 몰아 적어도 되고, 문장 하나를 다섯 줄에 걸쳐 적어도 된다. 컴파일러에게는 전부 같은 프로그램이다. 그런데도 “한 줄에 한 문장, 블록 안은 들여쓰기”라는 관행이 반세기를 살아남은 이유는 단순하다 — 코드는 기계보다 사람이 훨씬 자주 읽기 때문이다. 이 책의 예제도 그 관행을 따른다: 문법이 허락하는 자유와, 관행이 권하는 절제를 구별하는 것 — 이것도 C 공부의 일부다.</div><h3 id="s19-3">19.3 블록 — 문장들의 묶음</h3><div></div><p>문장 여럿을 중괄호 <code>{ }</code>로 감싼 것이 <strong>블록</strong>(block)이다. 15장에서 본 <code>main</code> 뒤의 담장이 바로 블록이었다 — <code>main</code>이 할 일의 목록을 하나로 묶은 것이다. 블록은 “여기부터 여기까지가 한 묶음”이라는 문법적 괄호로, 앞으로 만날 거의 모든 구조(조건, 반복, 함수)가 블록을 부품으로 쓴다. 지금은 “문장 목록의 포장 단위” 하나로 충분하다.</p><h3 id="s19-4">19.4 문장이 아닌 줄 — <code>#</code>의 세계</h3><div></div><p>이제 15장 첫 줄의 마지막 비밀이다. <code>#include &lt;stdio.h></code> 끝에는 세미콜론이 <strong>없다</strong>. 문장이라면 마침표가 있어야 할 텐데 — 없는 이유는 간단하다. <strong>문장이 아니기 때문이다.</strong></p><p>16장의 릴레이를 떠올리면 된다. <code>#</code>으로 시작하는 줄은 첫 주자인 <strong>전처리기</strong>에게 하는 말이고, 전처리기는 C 문법이 아니라 <strong>줄</strong> 단위로 일하는 텍스트 도구다. 그래서 <code>#</code> 줄의 문법은 C의 문장 규칙과 아예 다르다 — 세미콜론 대신 줄 끝이 지시의 끝이고, 관례상 파일 맨 위에 모여 산다. 한 소스 파일 안에 사실 <strong>두 개의 언어</strong>(전처리 지시의 언어와 C)가 함께 있는 셈이다. 낯설지만, 역사를 아는 우리에게는 사연이 보이는 구조다 — 전처리기는 별도의 일꾼으로 태어나 지금까지 남았다.</p><h3 id="s19-5">19.5 종합 — 두 문장짜리 프로그램</h3><div></div><p>이 장의 재료를 전부 넣은 변형을 하나 시연한다. 15장 헬로 월드에서 바뀐 것은 하나 — 문장이 둘이 됐다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch19/two.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">//</span></em><em><span class="tok-c"> 한 문장씩, 위에서 아래로 차례로 실행된다.</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>

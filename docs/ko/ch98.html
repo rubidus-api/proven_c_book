@@ -85,26 +85,17 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
 .bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
-/* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
-   전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
-   권장(35~45자)의 두세 배다. 줄이 길면 줄 끝에서 다음 줄 머리로 돌아오는 눈의
-   복귀 도약이 어긋나 같은 줄을 두 번 읽거나 한 줄을 건너뛴다.
-   그렇다고 전부를 가두지는 않는다: 코드·표·도해는 넓을수록 좋다. 그래서
-   *본문만* 가두고 넓어야 할 것은 밖으로 넘치게 둔다. */
-:root { --measure: 40rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다.
+   (2026-08-10: 40rem 으로 가둬 봤으나 저자가 「모양이 깨졌다」며 되돌리라고
+   했다. 줄 길이 문제는 D4 의 *독자가 고르는 폭*으로 푼다.) */
 .wrap { width:100%; max-width:none; margin:0; }
-.wrap > * { max-width:var(--measure); margin-left:auto; margin-right:auto; }
-/* 넓어야 하는 것들은 재갈을 풀어 준다 */
-.wrap > .demo, .wrap > .tblwrap, .wrap > figure, .wrap > .figwrap,
-.wrap > pre, .wrap > .toc, .wrap > .toc-full, .wrap > table,
-.wrap > .cover, .wrap > .nav, .wrap > .chapter-notes {
-  max-width:min(72rem, 100%); }
-h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
 h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
 h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
-     border-left:4px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
 p { margin:.9rem 0; } a { color:var(--link); }
 /* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
    (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
@@ -194,8 +185,17 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
 
-.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
-       border-left:3px solid var(--box-rule); border-radius:0; }
+/* ── 왼쪽 세로선 규율 (저자 지시 2026-08-10) ─────────────────
+   네 변 상자는 좌우 안쪽 여백이 양쪽에서 폭을 갉는다. 왼쪽 세로선 하나로
+   영역만 표시하고 오른쪽은 열어 둔다. 제목 쪽 선이 내용 쪽보다 굵고, 둘은
+   서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
+   영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
+.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:0; }
+.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -210,10 +210,10 @@ figure.tbl { text-align:center; }
    ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
      칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
      여백이 겹쳐 들쭉날쭉해진다. */
-.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
@@ -226,8 +226,8 @@ figure.tbl { text-align:center; }
 .dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
 .dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
-.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
-  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .why .dev-label,
@@ -237,16 +237,17 @@ figure.tbl { text-align:center; }
 /* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 
-/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
-.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
-.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
-  background:none; }
-.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 문답 — 질문 쪽 선이 굵고, 답 쪽이 가늘고, 둘 사이가 떨어져 있다 */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
-.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
 .dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
@@ -363,6 +364,6 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">98장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch97.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="sec100.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch98.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s98-1"><span class="tf-no">98.1</span>회고 — 이미 써 온 C23</a><a class="lv3" href="#s98-2"><span class="tf-no">98.2</span>모던 C 관행 — 한 장의 지침</a><a class="lv3" href="#s98-3"><span class="tf-no">98.3</span>다음에 읽을 책, 그리고 표준 문서</a><a class="lv3" href="#s98-4"><span class="tf-no">98.4</span>마지막으로</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-98">98 모던 C 총정리</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>52장 정의되지 않은 동작 · 정의되지 않은 동작</div><div>51장 오류와 계약 · 계약</div><div>96장 실전의 C · 실전의 도구</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>1장에서 이 책은 “옛 어법의 관성으로 쓰인 입문서가 아니라 오늘의 C에서 출발하는 입문서”를 표방했다. 그러면 이 책을 다 읽은 지금, 독자가 배운 C는 옛 C와 무엇이 다른가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 문법의 목록이 다른 것이 아니라 <strong>기준이 다르다.</strong> 옛 어법의 책은 “이렇게 쓰면 동작한다”를 가르치고, 이 책은 “이렇게 쓰면 계약 안이다”를 가르쳤다 — 초기화하고 쓰기(23장), 경계와 크기를 함께 다루기(38장), 실패를 값으로 확인하기(51장), 계약 밖의 지름길을 피하기(52장), 도구로 검사하기(17장). C23의 새 문법들은 그 기준을 <strong>더 쉽게 지키게</strong> 해 주는 도구로 등장했다. 아래 회고가 그 목록이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">마지막 장이 「모던 C 총정리」인 것은 이 책이 C23 을 <strong>따로 가르치지 않았기</strong> 때문이다. 새 표준의 기능을 특별 취급하지 않고 당연한 것처럼 써 왔으니, 마지막에 한 번 모아 「지금까지 쓴 것 중 이것들이 새것이다」라고 짚어 주어야 한다. 그것이 이 순서가 만든 빚이자, 여기서 갚는 빚이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">마지막 장이다. 96장에서 실전의 지형까지 둘러보았으니, 이제 지나온 길을 정리한다. 이 책에서 자연스럽게 써 온 C23의 얼굴들을 모아 회고 하고, 모던 C의 관행을 한 장의 지침으로 정리하며, 여기서 어디로 갈 수 있는지 이야기한다. 전권 회고 문답으로 책을 닫는다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>여기서 어디로 가면 좋은가?</li></ol></div></div><div></div><h3 id="s98-1">98.1 회고 — 이미 써 온 C23</h3><p>이 책은 새 표준을 따로 소개하지 않고, 필요한 자리에서 자연스럽게 썼다. 모아 보면 이만큼이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>C23의 것</strong></th><th><strong>처음 만난 곳</strong></th><th><strong>무엇을 쉽게 만들었나</strong></th></tr><tr><td><code>bool</code>·<code>true</code>·<code>false</code> 키워드</td><td>30장</td><td>헤더 없이 판단을 값으로</td></tr><tr><td><code>nullptr</code></td><td>36장</td><td><code>NULL</code>의 모호함 제거</td></tr><tr><td>2의 보수 확정</td><td>7장</td><td>부호 표현의 이식성 고민 종료</td></tr><tr><td><code>[[nodiscard]]</code></td><td>37·51장</td><td>실패 확인을 잊는 실수를 컴파일러가 차단</td></tr><tr><td><code>[[fallthrough]]</code></td><td>31장</td><td>switch 폴스루의 의도를 문서로</td></tr><tr><td><code>ckd_add</code> 계열</td><td>52장</td><td>오버플로를 UB가 아니라 값으로</td></tr><tr><td><code>alignof</code></td><td>37장</td><td>정렬 요구를 언어 차원에서 질의</td></tr><tr><td>삼중자 제거</td><td>9장</td><td>문자 코드 시대의 흉터 정리</td></tr><tr><td><code>va_start</code>의 완화</td><td>58장</td><td>가변 인자의 군더더기 제거</td></tr></table></div><p class="float-caption">표 98.1</p></figure><p>한 방향이 보인다 — <strong>계약을 더 명시적으로, 실수를 더 빨리 잡히게.</strong> 1장에서 “C 자신도 변화의 조짐을 보이고 있다”고 한 것의 구체적 내용이 이 표다.</p><h3 id="s98-2">98.2 모던 C 관행 — 한 장의 지침</h3><p>이 책 전체를 실무 수칙으로 압축하면 이렇다.</p><p><strong>빌드와 도구.</strong> 경고를 켠다(<code>-Wall -Wextra</code>). 시험 실행은 새니타이저와 함께(ASan·UBSan). 가능하면 두 컴파일러로 교차 검증한다(17장).</p><p><strong>선언과 타입.</strong> 선언과 동시에 초기화한다. 바꾸지 않을 것은 <code>const</code>로 둔다. 크기가 계약인 자리에는 <code>&lt;stdint.h></code>의 고정 폭 타입을 쓴다. 크기·인덱스는 <code>size_t</code> 계열로 일관되게(29장의 부호 섞임 함정).</p><p><strong>기억.</strong> 경계는 언제나 명시적으로 — 배열과 길이는 함께 다닌다. 포인터는 쓰기 전에 유효성을 확인한다. 동적 할당은 소유자를 정하고, 해제 후에는 포인터를 비운다. 가능하면 자동 수명으로 해결한다(38·45장).</p><p><strong>오류.</strong> 실패는 값으로 알리고, 반환값은 확인한다. 내부 불변식은 assert, 바깥에서 온 것은 실행 중 검사(51장).</p><p><strong>계약.</strong> “내 컴퓨터에서 돌았다”가 아니라 “추상 기계 위에서 옳은가”로 판단한다(12·52장).</p><p><strong>부품.</strong> 표준 라이브러리의 계약을 알고 고르고, 반복되는 위험 지대에는 검사가 내장된 부품을 얹는다(61장·제12부).</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 여기서 어디로 가면 좋은가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 세 갈래를 권한다. <strong>깊이</strong> — 이 책이 문을 열어 둔 곳들: 자료구조와 알고리즘(46장의 연결 구조), 동시성(12장의 멀티코어와 C11 원자), 시스템 프로그래밍(파일·네트워크는 플랫폼 API의 세계다). <strong>너비</strong> — 이웃 언어들: C++·Rust·Zig를 볼 때, 이 책에서 배운 기억·계약·표현의 감각이 그대로 통역된다(1장에서 예고한 대로다). <strong>실전</strong> — 96장에서 이름을 든 프로젝트들의 소스를 직접 읽는 것. SQLite나 curl 같은 잘 쓰인 C 코드는 이 책의 모든 주제가 실물로 살아 있는 교재다.</p><p>그리고 표준 문서 자체가 이제 읽을 수 있는 텍스트가 되었다는 것도 기억해 둘 만하다 — “계약서”라는 관점으로 보면, 그 무뚝뚝한 문서가 왜 그렇게 쓰였는지 이해된다.</p></p></div></div><h3 id="s98-3">98.3 다음에 읽을 책, 그리고 표준 문서</h3><p>여기서 멈추지 않을 독자를 위해 읽을거리를 따로 모아 두었다 — <strong>부록 D</strong>가 그것이다. C는 입문서 다음 칸이 유난히 비어 있는 언어인데, 최근 몇 해 사이 그 칸을 메우는 책들이 나오고 있다. 부록에는 그 책들의 장단점과 함께, 이 책이 내내 “계약서”라 불러 온 표준 문서를 실제로 구하는 방법 (구입과 무료 초안 내려받기)을 적어 두었다.</p><h3 id="s98-4">98.4 마지막으로</h3><p>이 책은 4장에서 컴퓨터를 세 부품으로 그리는 것으로 시작했다. 그 그림은 곧 정직하게 무너졌고 — 기억은 사다리가 되고, 실행은 겹쳐지고, 편집자가 끼어들었다 — 그 자리에 남은 것이 <strong>계약</strong>이었다. C를 안다는 것은 문법을 외우는 일이 아니라 그 계약을 읽을 줄 아는 일이라는 것, 이 책이 하고 싶었던 말은 그것 하나다.</p><p>읽는 것만으로 여기까지 온 독자에게, 이제 남은 것은 하나뿐이다 — 읽은 것을 자기 코드로 써 보는 것. 좋은 여정이 되기를.</p>
+<h2 id="loc-98">98 모던 C 총정리</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>52장 정의되지 않은 동작 · 정의되지 않은 동작</div><div>51장 오류와 계약 · 계약</div><div>96장 실전의 C · 실전의 도구</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>1장에서 이 책은 “옛 어법의 관성으로 쓰인 입문서가 아니라 오늘의 C에서 출발하는 입문서”를 표방했다. 그러면 이 책을 다 읽은 지금, 독자가 배운 C는 옛 C와 무엇이 다른가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 문법의 목록이 다른 것이 아니라 <strong>기준이 다르다.</strong> 옛 어법의 책은 “이렇게 쓰면 동작한다”를 가르치고, 이 책은 “이렇게 쓰면 계약 안이다”를 가르쳤다 — 초기화하고 쓰기(23장), 경계와 크기를 함께 다루기(38장), 실패를 값으로 확인하기(51장), 계약 밖의 지름길을 피하기(52장), 도구로 검사하기(17장). C23의 새 문법들은 그 기준을 <strong>더 쉽게 지키게</strong> 해 주는 도구로 등장했다. 아래 회고가 그 목록이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">마지막 장이 「모던 C 총정리」인 것은 이 책이 C23 을 <strong>따로 가르치지 않았기</strong> 때문이다. 새 표준의 기능을 특별 취급하지 않고 당연한 것처럼 써 왔으니, 마지막에 한 번 모아 「지금까지 쓴 것 중 이것들이 새것이다」라고 짚어 주어야 한다. 그것이 이 순서가 만든 빚이자, 여기서 갚는 빚이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">마지막 장이다. 96장에서 실전의 지형까지 둘러보았으니, 이제 지나온 길을 정리한다. 이 책에서 자연스럽게 써 온 C23의 얼굴들을 모아 회고 하고, 모던 C의 관행을 한 장의 지침으로 정리하며, 여기서 어디로 갈 수 있는지 이야기한다. 전권 회고 문답으로 책을 닫는다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>여기서 어디로 가면 좋은가?</li></ol></div></div><div></div><h3 id="s98-1">98.1 회고 — 이미 써 온 C23</h3><div></div><p>이 책은 새 표준을 따로 소개하지 않고, 필요한 자리에서 자연스럽게 썼다. 모아 보면 이만큼이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>C23의 것</strong></th><th><strong>처음 만난 곳</strong></th><th><strong>무엇을 쉽게 만들었나</strong></th></tr><tr><td><code>bool</code>·<code>true</code>·<code>false</code> 키워드</td><td>30장</td><td>헤더 없이 판단을 값으로</td></tr><tr><td><code>nullptr</code></td><td>36장</td><td><code>NULL</code>의 모호함 제거</td></tr><tr><td>2의 보수 확정</td><td>7장</td><td>부호 표현의 이식성 고민 종료</td></tr><tr><td><code>[[nodiscard]]</code></td><td>37·51장</td><td>실패 확인을 잊는 실수를 컴파일러가 차단</td></tr><tr><td><code>[[fallthrough]]</code></td><td>31장</td><td>switch 폴스루의 의도를 문서로</td></tr><tr><td><code>ckd_add</code> 계열</td><td>52장</td><td>오버플로를 UB가 아니라 값으로</td></tr><tr><td><code>alignof</code></td><td>37장</td><td>정렬 요구를 언어 차원에서 질의</td></tr><tr><td>삼중자 제거</td><td>9장</td><td>문자 코드 시대의 흉터 정리</td></tr><tr><td><code>va_start</code>의 완화</td><td>58장</td><td>가변 인자의 군더더기 제거</td></tr></table></div><p class="float-caption">표 98.1</p></figure><p>한 방향이 보인다 — <strong>계약을 더 명시적으로, 실수를 더 빨리 잡히게.</strong> 1장에서 “C 자신도 변화의 조짐을 보이고 있다”고 한 것의 구체적 내용이 이 표다.</p><h3 id="s98-2">98.2 모던 C 관행 — 한 장의 지침</h3><div></div><p>이 책 전체를 실무 수칙으로 압축하면 이렇다.</p><p><strong>빌드와 도구.</strong> 경고를 켠다(<code>-Wall -Wextra</code>). 시험 실행은 새니타이저와 함께(ASan·UBSan). 가능하면 두 컴파일러로 교차 검증한다(17장).</p><p><strong>선언과 타입.</strong> 선언과 동시에 초기화한다. 바꾸지 않을 것은 <code>const</code>로 둔다. 크기가 계약인 자리에는 <code>&lt;stdint.h></code>의 고정 폭 타입을 쓴다. 크기·인덱스는 <code>size_t</code> 계열로 일관되게(29장의 부호 섞임 함정).</p><p><strong>기억.</strong> 경계는 언제나 명시적으로 — 배열과 길이는 함께 다닌다. 포인터는 쓰기 전에 유효성을 확인한다. 동적 할당은 소유자를 정하고, 해제 후에는 포인터를 비운다. 가능하면 자동 수명으로 해결한다(38·45장).</p><p><strong>오류.</strong> 실패는 값으로 알리고, 반환값은 확인한다. 내부 불변식은 assert, 바깥에서 온 것은 실행 중 검사(51장).</p><p><strong>계약.</strong> “내 컴퓨터에서 돌았다”가 아니라 “추상 기계 위에서 옳은가”로 판단한다(12·52장).</p><p><strong>부품.</strong> 표준 라이브러리의 계약을 알고 고르고, 반복되는 위험 지대에는 검사가 내장된 부품을 얹는다(61장·제12부).</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 여기서 어디로 가면 좋은가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 세 갈래를 권한다. <strong>깊이</strong> — 이 책이 문을 열어 둔 곳들: 자료구조와 알고리즘(46장의 연결 구조), 동시성(12장의 멀티코어와 C11 원자), 시스템 프로그래밍(파일·네트워크는 플랫폼 API의 세계다). <strong>너비</strong> — 이웃 언어들: C++·Rust·Zig를 볼 때, 이 책에서 배운 기억·계약·표현의 감각이 그대로 통역된다(1장에서 예고한 대로다). <strong>실전</strong> — 96장에서 이름을 든 프로젝트들의 소스를 직접 읽는 것. SQLite나 curl 같은 잘 쓰인 C 코드는 이 책의 모든 주제가 실물로 살아 있는 교재다.</p><p>그리고 표준 문서 자체가 이제 읽을 수 있는 텍스트가 되었다는 것도 기억해 둘 만하다 — “계약서”라는 관점으로 보면, 그 무뚝뚝한 문서가 왜 그렇게 쓰였는지 이해된다.</p></p></div></div><h3 id="s98-3">98.3 다음에 읽을 책, 그리고 표준 문서</h3><div></div><p>여기서 멈추지 않을 독자를 위해 읽을거리를 따로 모아 두었다 — <strong>부록 D</strong>가 그것이다. C는 입문서 다음 칸이 유난히 비어 있는 언어인데, 최근 몇 해 사이 그 칸을 메우는 책들이 나오고 있다. 부록에는 그 책들의 장단점과 함께, 이 책이 내내 “계약서”라 불러 온 표준 문서를 실제로 구하는 방법 (구입과 무료 초안 내려받기)을 적어 두었다.</p><h3 id="s98-4">98.4 마지막으로</h3><div></div><p>이 책은 4장에서 컴퓨터를 세 부품으로 그리는 것으로 시작했다. 그 그림은 곧 정직하게 무너졌고 — 기억은 사다리가 되고, 실행은 겹쳐지고, 편집자가 끼어들었다 — 그 자리에 남은 것이 <strong>계약</strong>이었다. C를 안다는 것은 문법을 외우는 일이 아니라 그 계약을 읽을 줄 아는 일이라는 것, 이 책이 하고 싶었던 말은 그것 하나다.</p><p>읽는 것만으로 여기까지 온 독자에게, 이제 남은 것은 하나뿐이다 — 읽은 것을 자기 코드로 써 보는 것. 좋은 여정이 되기를.</p>
 <div class="nav"><a href="ch97.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec100.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

@@ -85,26 +85,17 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
 .bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
-/* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
-   전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
-   권장(35~45자)의 두세 배다. 줄이 길면 줄 끝에서 다음 줄 머리로 돌아오는 눈의
-   복귀 도약이 어긋나 같은 줄을 두 번 읽거나 한 줄을 건너뛴다.
-   그렇다고 전부를 가두지는 않는다: 코드·표·도해는 넓을수록 좋다. 그래서
-   *본문만* 가두고 넓어야 할 것은 밖으로 넘치게 둔다. */
-:root { --measure: 40rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다.
+   (2026-08-10: 40rem 으로 가둬 봤으나 저자가 「모양이 깨졌다」며 되돌리라고
+   했다. 줄 길이 문제는 D4 의 *독자가 고르는 폭*으로 푼다.) */
 .wrap { width:100%; max-width:none; margin:0; }
-.wrap > * { max-width:var(--measure); margin-left:auto; margin-right:auto; }
-/* 넓어야 하는 것들은 재갈을 풀어 준다 */
-.wrap > .demo, .wrap > .tblwrap, .wrap > figure, .wrap > .figwrap,
-.wrap > pre, .wrap > .toc, .wrap > .toc-full, .wrap > table,
-.wrap > .cover, .wrap > .nav, .wrap > .chapter-notes {
-  max-width:min(72rem, 100%); }
-h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
 h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
 h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
-     border-left:4px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
 p { margin:.9rem 0; } a { color:var(--link); }
 /* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
    (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
@@ -194,8 +185,17 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
 
-.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
-       border-left:3px solid var(--box-rule); border-radius:0; }
+/* ── 왼쪽 세로선 규율 (저자 지시 2026-08-10) ─────────────────
+   네 변 상자는 좌우 안쪽 여백이 양쪽에서 폭을 갉는다. 왼쪽 세로선 하나로
+   영역만 표시하고 오른쪽은 열어 둔다. 제목 쪽 선이 내용 쪽보다 굵고, 둘은
+   서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
+   영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
+.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:0; }
+.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -210,10 +210,10 @@ figure.tbl { text-align:center; }
    ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
      칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
      여백이 겹쳐 들쭉날쭉해진다. */
-.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
@@ -226,8 +226,8 @@ figure.tbl { text-align:center; }
 .dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
 .dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
-.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
-  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .why .dev-label,
@@ -237,16 +237,17 @@ figure.tbl { text-align:center; }
 /* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 
-/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
-.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
-.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
-  background:none; }
-.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 문답 — 질문 쪽 선이 굵고, 답 쪽이 가늘고, 둘 사이가 떨어져 있다 */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
-.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
 .dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
@@ -363,9 +364,9 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 19 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch18.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch20.html" title="Next" aria-label="Next">→</a></span><a href="toc.html">Detailed contents</a><a href="../ko/ch19.html">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s19-1"><span class="tf-no">19.1</span>Comments — writing only humans read</a><a class="lv3" href="#s19-2"><span class="tf-no">19.2</span>Statements — one step, and the semicolon</a><a class="lv3" href="#s19-3"><span class="tf-no">19.3</span>Blocks — a bundle of statements</a><a class="lv3" href="#s19-4"><span class="tf-no">19.4</span>Lines that are not statements — the world of #</a><a class="lv3" href="#s19-5"><span class="tf-no">19.5</span>Putting it together — a two-statement program</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-19">19 The structure of a program</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 15, Hello world · what hello world already contained</div><div>chapter 13, Compiler optimisation · the contract of the abstract machine</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 4 said the machine is a repetition of “fetching the next thing to do from memory and doing it.” Then what, on the source-code side, corresponds to one of those things to do?</p><div class="qa-a"><p><span class="dev-label">A.</span> The <strong>statement</strong>. The body of a C program is a list of statements, and execution is working through that list from top to bottom, one statement at a time — chapter 4′s model of computation reflected directly in source code. Of course, as chapter 13 taught, the compiler may rearrange the inner business; but the <strong>observable result</strong> is guaranteed to be the same as “one statement at a time, top to bottom.” So the reader may safely read with this picture.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">Part 4 has exactly one goal — to read chapter 15′s hello world <strong>completely</strong>. Split into four pieces, the first is the skeleton. Comments, statements and blocks come first because the remaining three chapters are all about <strong>what happens inside a statement</strong>. Make the vessel, then fill it.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">Part IV has one goal — to read one piece of chapter 15′s hello world <strong>completely</strong>. The first step is the skeleton of a program: comments, statements, blocks, and why the <code>#include</code> line is not a statement. By the end of this chapter the outward appearance of C source is no longer strange.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why not take the end of a line as the end of a statement? Typing a semicolon every time is a nuisance.</li></ol></div></div><div></div><h3 id="s19-1">19.1 Comments — writing only humans read</h3><p>Before looking at the skeleton, let us clear away what is <strong>not</strong> skeleton. Source code may contain text the compiler entirely ignores — <strong>comments</strong>. There are two notations:</p><pre><code data-lang="c"><em><span class="tok-c">//</span></em><em><span class="tok-c"> this notation makes the rest of the line a comment</span></em>
+<h2 id="loc-19">19 The structure of a program</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 15, Hello world · what hello world already contained</div><div>chapter 13, Compiler optimisation · the contract of the abstract machine</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 4 said the machine is a repetition of “fetching the next thing to do from memory and doing it.” Then what, on the source-code side, corresponds to one of those things to do?</p><div class="qa-a"><p><span class="dev-label">A.</span> The <strong>statement</strong>. The body of a C program is a list of statements, and execution is working through that list from top to bottom, one statement at a time — chapter 4′s model of computation reflected directly in source code. Of course, as chapter 13 taught, the compiler may rearrange the inner business; but the <strong>observable result</strong> is guaranteed to be the same as “one statement at a time, top to bottom.” So the reader may safely read with this picture.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">Part 4 has exactly one goal — to read chapter 15′s hello world <strong>completely</strong>. Split into four pieces, the first is the skeleton. Comments, statements and blocks come first because the remaining three chapters are all about <strong>what happens inside a statement</strong>. Make the vessel, then fill it.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">Part IV has one goal — to read one piece of chapter 15′s hello world <strong>completely</strong>. The first step is the skeleton of a program: comments, statements, blocks, and why the <code>#include</code> line is not a statement. By the end of this chapter the outward appearance of C source is no longer strange.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why not take the end of a line as the end of a statement? Typing a semicolon every time is a nuisance.</li></ol></div></div><div></div><h3 id="s19-1">19.1 Comments — writing only humans read</h3><div></div><p>Before looking at the skeleton, let us clear away what is <strong>not</strong> skeleton. Source code may contain text the compiler entirely ignores — <strong>comments</strong>. There are two notations:</p><pre><code data-lang="c"><em><span class="tok-c">//</span></em><em><span class="tok-c"> this notation makes the rest of the line a comment</span></em>
 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> this notation makes everything between the opening and closing a comment —</span></em>
-<em><span class="tok-c">   it can span several lines </span></em><em><span class="tok-c">*/</span></em></code></pre><p>To the machine a comment does not exist; to a human it is documentation. The examples in this book carry their explanations as comments — read them along with the code.</p><h3 id="s19-2">19.2 Statements — one step, and the semicolon</h3><p>A <strong>statement</strong> is one step of a program. The <code>printf(...)</code> line and the <code>return 0</code> line of chapter 15 are each one statement. And in C the end of a statement is marked by a <strong>semicolon</strong> <code>;</code> — the full stop of our writing.</p><p>One important rule here. <strong>In C a line break is not the end of a statement.</strong> Where a statement ends is decided solely by the semicolon; line breaks and indentation are entirely tidiness for human eyes. A language like this is called <strong>free-form</strong>.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why not take the end of a line as the end of a statement? Typing a semicolon every time is a nuisance.</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Because of long statements. When one statement grows long and you want to write it over several lines, a language in which “end of line = end of statement” needs an exception device such as a continuation marker. C took the other side — mark the end explicitly with a semicolon and leave line breaks entirely free. Remember chapter 10′s punched cards and the flavour deepens: passing through an era whose physical constraint was “one card = one line”, languages evolved towards making meaning independent of the line as a form.</p></div></div><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Writing one statement per line is a rule of C”</strong></p>Plausible — well-written code mostly looks like that. But that is <strong>practice</strong>, not a rule. Grammatically you may crowd several statements onto one line, or spread one statement over five. To the compiler they are all the same program. <span id="idx-entry-53"></span>And yet the practice of “one statement per line, indent inside a block” has survived half a century for a simple reason — code is read far more often by humans than by machines. This book’s examples follow that practice too: distinguishing the freedom the grammar allows from the restraint the practice advises is itself part of studying C.</div><h3 id="s19-3">19.3 Blocks — a bundle of statements</h3><p>Several statements wrapped in braces <code>{ }</code> are a <strong>block</strong>. The fence after <code>main</code> in chapter 15 was exactly that — the list of things <code>main</code> does, bound into one. A block is a grammatical bracket meaning “from here to here is one bundle”, and nearly every structure we meet from now on (conditions, loops, functions) uses blocks as a component. For now “the packaging unit of a statement list” is enough.</p><h3 id="s19-4">19.4 Lines that are not statements — the world of <code>#</code></h3><p>Now the last secret of chapter 15′s first line. There is <strong>no</strong> semicolon at the end of <code>#include &lt;stdio.h></code>. If it were a statement there ought to be a full stop — and the reason there is none is simple. <strong>It is not a statement.</strong></p><p>Recall the relay of chapter 16. A line beginning with <code>#</code> is speech addressed to the first runner, the <strong>preprocessor</strong>, and the preprocessor is a text tool that works not by C’s grammar but by <strong>lines</strong>. So the grammar of a <code>#</code> line is entirely different from C’s statement rules — the end of the line, not a semicolon, ends the directive, and by convention they live gathered at the top of the file. There are in fact <strong>two languages</strong> inside one source file (the language of preprocessing directives, and C). Strange, but for us who know the history the reason is visible — the preprocessor was born as a separate worker and has remained one.</p><h3 id="s19-5">19.5 Putting it together — a two-statement program</h3><p>Here is a variation containing all this chapter’s material. Only one thing changed from chapter 15′s hello world — there are now two statements.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch19/two.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">//</span></em><em><span class="tok-c"> One statement at a time, top to bottom, in order.</span></em>
+<em><span class="tok-c">   it can span several lines </span></em><em><span class="tok-c">*/</span></em></code></pre><p>To the machine a comment does not exist; to a human it is documentation. The examples in this book carry their explanations as comments — read them along with the code.</p><h3 id="s19-2">19.2 Statements — one step, and the semicolon</h3><div></div><p>A <strong>statement</strong> is one step of a program. The <code>printf(...)</code> line and the <code>return 0</code> line of chapter 15 are each one statement. And in C the end of a statement is marked by a <strong>semicolon</strong> <code>;</code> — the full stop of our writing.</p><p>One important rule here. <strong>In C a line break is not the end of a statement.</strong> Where a statement ends is decided solely by the semicolon; line breaks and indentation are entirely tidiness for human eyes. A language like this is called <strong>free-form</strong>.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why not take the end of a line as the end of a statement? Typing a semicolon every time is a nuisance.</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Because of long statements. When one statement grows long and you want to write it over several lines, a language in which “end of line = end of statement” needs an exception device such as a continuation marker. C took the other side — mark the end explicitly with a semicolon and leave line breaks entirely free. Remember chapter 10′s punched cards and the flavour deepens: passing through an era whose physical constraint was “one card = one line”, languages evolved towards making meaning independent of the line as a form.</p></div></div><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“Writing one statement per line is a rule of C”</strong></p>Plausible — well-written code mostly looks like that. But that is <strong>practice</strong>, not a rule. Grammatically you may crowd several statements onto one line, or spread one statement over five. To the compiler they are all the same program. <span id="idx-entry-53"></span>And yet the practice of “one statement per line, indent inside a block” has survived half a century for a simple reason — code is read far more often by humans than by machines. This book’s examples follow that practice too: distinguishing the freedom the grammar allows from the restraint the practice advises is itself part of studying C.</div><h3 id="s19-3">19.3 Blocks — a bundle of statements</h3><div></div><p>Several statements wrapped in braces <code>{ }</code> are a <strong>block</strong>. The fence after <code>main</code> in chapter 15 was exactly that — the list of things <code>main</code> does, bound into one. A block is a grammatical bracket meaning “from here to here is one bundle”, and nearly every structure we meet from now on (conditions, loops, functions) uses blocks as a component. For now “the packaging unit of a statement list” is enough.</p><h3 id="s19-4">19.4 Lines that are not statements — the world of <code>#</code></h3><div></div><p>Now the last secret of chapter 15′s first line. There is <strong>no</strong> semicolon at the end of <code>#include &lt;stdio.h></code>. If it were a statement there ought to be a full stop — and the reason there is none is simple. <strong>It is not a statement.</strong></p><p>Recall the relay of chapter 16. A line beginning with <code>#</code> is speech addressed to the first runner, the <strong>preprocessor</strong>, and the preprocessor is a text tool that works not by C’s grammar but by <strong>lines</strong>. So the grammar of a <code>#</code> line is entirely different from C’s statement rules — the end of the line, not a semicolon, ends the directive, and by convention they live gathered at the top of the file. There are in fact <strong>two languages</strong> inside one source file (the language of preprocessing directives, and C). Strange, but for us who know the history the reason is visible — the preprocessor was born as a separate worker and has remained one.</p><h3 id="s19-5">19.5 Putting it together — a two-statement program</h3><div></div><p>Here is a variation containing all this chapter’s material. Only one thing changed from chapter 15′s hello world — there are now two statements.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch19/two.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">//</span></em><em><span class="tok-c"> One statement at a time, top to bottom, in order.</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>

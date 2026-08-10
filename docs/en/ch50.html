@@ -85,26 +85,17 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
 .bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
-/* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
-   전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
-   권장(35~45자)의 두세 배다. 줄이 길면 줄 끝에서 다음 줄 머리로 돌아오는 눈의
-   복귀 도약이 어긋나 같은 줄을 두 번 읽거나 한 줄을 건너뛴다.
-   그렇다고 전부를 가두지는 않는다: 코드·표·도해는 넓을수록 좋다. 그래서
-   *본문만* 가두고 넓어야 할 것은 밖으로 넘치게 둔다. */
-:root { --measure: 40rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다.
+   (2026-08-10: 40rem 으로 가둬 봤으나 저자가 「모양이 깨졌다」며 되돌리라고
+   했다. 줄 길이 문제는 D4 의 *독자가 고르는 폭*으로 푼다.) */
 .wrap { width:100%; max-width:none; margin:0; }
-.wrap > * { max-width:var(--measure); margin-left:auto; margin-right:auto; }
-/* 넓어야 하는 것들은 재갈을 풀어 준다 */
-.wrap > .demo, .wrap > .tblwrap, .wrap > figure, .wrap > .figwrap,
-.wrap > pre, .wrap > .toc, .wrap > .toc-full, .wrap > table,
-.wrap > .cover, .wrap > .nav, .wrap > .chapter-notes {
-  max-width:min(72rem, 100%); }
-h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
 h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
 h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
-     border-left:4px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
 p { margin:.9rem 0; } a { color:var(--link); }
 /* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
    (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
@@ -194,8 +185,17 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
 
-.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
-       border-left:3px solid var(--box-rule); border-radius:0; }
+/* ── 왼쪽 세로선 규율 (저자 지시 2026-08-10) ─────────────────
+   네 변 상자는 좌우 안쪽 여백이 양쪽에서 폭을 갉는다. 왼쪽 세로선 하나로
+   영역만 표시하고 오른쪽은 열어 둔다. 제목 쪽 선이 내용 쪽보다 굵고, 둘은
+   서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
+   영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
+.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:0; }
+.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -210,10 +210,10 @@ figure.tbl { text-align:center; }
    ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
      칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
      여백이 겹쳐 들쭉날쭉해진다. */
-.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
@@ -226,8 +226,8 @@ figure.tbl { text-align:center; }
 .dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
 .dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
-.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
-  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .why .dev-label,
@@ -237,16 +237,17 @@ figure.tbl { text-align:center; }
 /* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 
-/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
-.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
-.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
-  background:none; }
-.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 문답 — 질문 쪽 선이 굵고, 답 쪽이 가늘고, 둘 사이가 떨어져 있다 */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
-.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
 .dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
@@ -363,7 +364,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 50 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch49.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch51.html" title="Next" aria-label="Next">→</a></span><a href="toc.html">Detailed contents</a><a href="../ko/ch50.html">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s50-1"><span class="tf-no">50.1</span>Choosing a type, and comparing</a><a class="lv3" href="#s50-2"><span class="tf-no">50.2</span>Special values — infinity and NaN</a><a class="lv4" href="#s50-2-1"><span class="tf-no">50.2.1</span>Opening the bits directly</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-50">50 Real numbers — the mathematics of approximation</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 8, Representing numbers · the contract called IEEE 754</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 8 said <code>0.1 + 0.2</code> and <code>0.3</code> are neighbours one final bit (1 ulp) apart, and that comparison must change into “are they close enough?”. Then how is the criterion of “enough” — the epsilon — decided?</p><div class="qa-a"><p><span class="dev-label">A.</span> That it must vary with the size of the values is the lesson of chapter 8′s third incident. Near 0 the ticks are dense so a small fixed value will do, but around <math><msup><mn>10</mn><mn>16</mn></msup></math> the tick spacing itself exceeds 1 and the same criterion becomes meaningless. So practice keeps two — <strong>absolute error</strong> (for near 0) and <strong>relative error</strong> (proportional to size). This chapter’s demonstration shows both side by side.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The approximation learned on paper in chapter 8 comes down into C code forty-two chapters later. The long wait is because saying the right way to compare floats requires operators and conversions (chapters 49 and 29) to be in place. Being in part 9 has the same reason: this is not new syntax but <strong>a deep corner of what is already known</strong>.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">The world of approximation learned on the page in chapter 8 finally comes down <span id="idx-entry-111"></span>into C code. Choosing between <code>float</code> and <code>double</code>, the correct way to compare (epsilon — absolute and relative), and the special values (infinity, NaN). Chapter 8′s three incidents are confirmed by execution results.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Should real numbers then not be used for things like money?</li></ol></div></div><div></div><h3 id="s50-1">50.1 Choosing a type, and comparing</h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch50/eps.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">math.h</span><span class="tok-s">></span>
+<h2 id="loc-50">50 Real numbers — the mathematics of approximation</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 8, Representing numbers · the contract called IEEE 754</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 8 said <code>0.1 + 0.2</code> and <code>0.3</code> are neighbours one final bit (1 ulp) apart, and that comparison must change into “are they close enough?”. Then how is the criterion of “enough” — the epsilon — decided?</p><div class="qa-a"><p><span class="dev-label">A.</span> That it must vary with the size of the values is the lesson of chapter 8′s third incident. Near 0 the ticks are dense so a small fixed value will do, but around <math><msup><mn>10</mn><mn>16</mn></msup></math> the tick spacing itself exceeds 1 and the same criterion becomes meaningless. So practice keeps two — <strong>absolute error</strong> (for near 0) and <strong>relative error</strong> (proportional to size). This chapter’s demonstration shows both side by side.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The approximation learned on paper in chapter 8 comes down into C code forty-two chapters later. The long wait is because saying the right way to compare floats requires operators and conversions (chapters 49 and 29) to be in place. Being in part 9 has the same reason: this is not new syntax but <strong>a deep corner of what is already known</strong>.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">The world of approximation learned on the page in chapter 8 finally comes down <span id="idx-entry-111"></span>into C code. Choosing between <code>float</code> and <code>double</code>, the correct way to compare (epsilon — absolute and relative), and the special values (infinity, NaN). Chapter 8′s three incidents are confirmed by execution results.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Should real numbers then not be used for things like money?</li></ol></div></div><div></div><h3 id="s50-1">50.1 Choosing a type, and comparing</h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch50/eps.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">math.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> absolute error: used for comparisons near 0 </span></em><em><span class="tok-c">*/</span></em>
@@ -399,7 +400,7 @@ compare with absolute eps? 1
 0.29999999999999998890
 1e16 + 1 == 1e16 ?      1  (gap wider than 1)
 compare with relative eps? 1
-</code></pre></div></div><p>The first three lines are the execution check of chapter 8′s first incident — <code>==</code> is false, and printed to twenty digits the two numbers diverge at the end. Use <code>near_abs</code> (absolute error) and it becomes true.</p><p>The latter part checks the third incident (absorption) — add 1 to <math><msup><mn>10</mn><mn>16</mn></msup></math> and the value is unchanged, because at that size the gap between representable neighbours is already wider than 1 (chapter 8′s tick calculation). Here the right tool is not absolute error but <code>near_rel</code> (relative error).</p><p>Reduced to practical rules there are three. <strong>The default is <code>double</code></strong> — as chapter 8 showed, the room in precision is of a different order, and <code>float</code> is chosen only where memory and bandwidth are tight. <strong>Do not use <code>==</code></strong> — code asking whether two reals are equal is almost always suspect (there are exceptions, such as comparing against an integer or against 0, but they must be judged consciously). <strong>The tolerance comes from the problem</strong> — it is decided by looking at the nature of the calculation and the size of the values; there is no magic constant.</p><h3 id="s50-2">50.2 Special values — infinity and NaN</h3><p>IEEE 754 (chapter 8) defines special values besides ordinary numbers. <strong>Infinity</strong> (positive and negative) comes out of overflow or division by zero, and <strong>NaN</strong> (Not a Number) means “not a number” — the result of an undefinable operation such as <math><mfrac><mn>0</mn><mn>0</mn></mfrac></math> or the square root of a negative.</p><p>One thing has to be stated exactly here. Integer division by zero is outside the contract (chapter 28), and floating-point division by zero is commonly said to “be defined and give infinity”. <strong>That, however, is not a promise of the C language itself.</strong> The standard’s rule for division leaves the behaviour undefined when the second operand is zero — for reals as much as for integers. Infinity appears in implementations that support IEC 60559 (that is, IEEE 754) semantics. In such an implementation, dividing a finite non-zero value by zero gives a signed infinity and raises the divide-by-zero exception, while <math><mfrac><mn>0</mn><mn>0</mn></mfrac></math> falls on the NaN side. Today’s mainstream compilers on x86-64 and AArch64 behave that way, but it is not something the standard forces on every implementation.</p><div class="dev platform"><p class="dev-label">Platform note. Where this distinction actually bites</p><p>The mark by which an implementation declares that it follows IEC 60559 for binary floating point is <code>__STDC_IEC_60559_BFP__</code> (BFP = binary floating point). Where that macro is defined, annex F semantics are a contract and the behaviour above may be expected. Decimal floating point is marked separately, by <code>__STDC_IEC_60559_DFP__</code>.</p><p>It must not be confused with the similarly named <code>__STDC_IEC_60559_BF16_TYPES__</code> — that is a <strong>separate</strong> feature mark, about whether bfloat16 types are provided, and has nothing to do with the semantics of ordinary binary floating-point operations. And note further that <strong>a type having the same format as IEC 60559 and the operations following annex F are two different questions</strong> — the former is what <code>__STDC_IEC_60559_TYPES__</code> speaks to; what is needed here is the latter. Where it does not — some embedded toolchains, and builds that deliberately switch annex F semantics off with something like <code>-ffast-math</code> — the guarantee of infinity and NaN goes away. <strong>Portable code screens out a zero divisor first.</strong></p></div><h4 id="s50-2-1">50.2.1 Opening the bits directly</h4><p>Having seen the layout in chapter 8, we now print the bits of real values and check them. To move a representation we use <code>memcpy</code> rather than a union — by chapter 48′s rule that is the safest passage for “moving a value”, and compilers mostly make the copy disappear.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch50/bits.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Opening up a real number — how sign, exponent and fraction really sit in it.</span></em>
+</code></pre></div></div><p>The first three lines are the execution check of chapter 8′s first incident — <code>==</code> is false, and printed to twenty digits the two numbers diverge at the end. Use <code>near_abs</code> (absolute error) and it becomes true.</p><p>The latter part checks the third incident (absorption) — add 1 to <math><msup><mn>10</mn><mn>16</mn></msup></math> and the value is unchanged, because at that size the gap between representable neighbours is already wider than 1 (chapter 8′s tick calculation). Here the right tool is not absolute error but <code>near_rel</code> (relative error).</p><p>Reduced to practical rules there are three. <strong>The default is <code>double</code></strong> — as chapter 8 showed, the room in precision is of a different order, and <code>float</code> is chosen only where memory and bandwidth are tight. <strong>Do not use <code>==</code></strong> — code asking whether two reals are equal is almost always suspect (there are exceptions, such as comparing against an integer or against 0, but they must be judged consciously). <strong>The tolerance comes from the problem</strong> — it is decided by looking at the nature of the calculation and the size of the values; there is no magic constant.</p><h3 id="s50-2">50.2 Special values — infinity and NaN</h3><div></div><p>IEEE 754 (chapter 8) defines special values besides ordinary numbers. <strong>Infinity</strong> (positive and negative) comes out of overflow or division by zero, and <strong>NaN</strong> (Not a Number) means “not a number” — the result of an undefinable operation such as <math><mfrac><mn>0</mn><mn>0</mn></mfrac></math> or the square root of a negative.</p><p>One thing has to be stated exactly here. Integer division by zero is outside the contract (chapter 28), and floating-point division by zero is commonly said to “be defined and give infinity”. <strong>That, however, is not a promise of the C language itself.</strong> The standard’s rule for division leaves the behaviour undefined when the second operand is zero — for reals as much as for integers. Infinity appears in implementations that support IEC 60559 (that is, IEEE 754) semantics. In such an implementation, dividing a finite non-zero value by zero gives a signed infinity and raises the divide-by-zero exception, while <math><mfrac><mn>0</mn><mn>0</mn></mfrac></math> falls on the NaN side. Today’s mainstream compilers on x86-64 and AArch64 behave that way, but it is not something the standard forces on every implementation.</p><div class="dev platform"><p class="dev-label">Platform note. Where this distinction actually bites</p><p>The mark by which an implementation declares that it follows IEC 60559 for binary floating point is <code>__STDC_IEC_60559_BFP__</code> (BFP = binary floating point). Where that macro is defined, annex F semantics are a contract and the behaviour above may be expected. Decimal floating point is marked separately, by <code>__STDC_IEC_60559_DFP__</code>.</p><p>It must not be confused with the similarly named <code>__STDC_IEC_60559_BF16_TYPES__</code> — that is a <strong>separate</strong> feature mark, about whether bfloat16 types are provided, and has nothing to do with the semantics of ordinary binary floating-point operations. And note further that <strong>a type having the same format as IEC 60559 and the operations following annex F are two different questions</strong> — the former is what <code>__STDC_IEC_60559_TYPES__</code> speaks to; what is needed here is the latter. Where it does not — some embedded toolchains, and builds that deliberately switch annex F semantics off with something like <code>-ffast-math</code> — the guarantee of infinity and NaN goes away. <strong>Portable code screens out a zero divisor first.</strong></p></div><h4 id="s50-2-1">50.2.1 Opening the bits directly</h4><div></div><p>Having seen the layout in chapter 8, we now print the bits of real values and check them. To move a representation we use <code>memcpy</code> rather than a union — by chapter 48′s rule that is the safest passage for “moving a value”, and compilers mostly make the copy disappear.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch50/bits.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Opening up a real number — how sign, exponent and fraction really sit in it.</span></em>
 <em><span class="tok-c">   Type punning goes through memcpy, not a union (the rule of chapters 37 and 48). </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">inttypes.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">math.h</span><span class="tok-s">></span>

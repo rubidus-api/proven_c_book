@@ -85,26 +85,17 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
 .bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
-/* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
-   전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
-   권장(35~45자)의 두세 배다. 줄이 길면 줄 끝에서 다음 줄 머리로 돌아오는 눈의
-   복귀 도약이 어긋나 같은 줄을 두 번 읽거나 한 줄을 건너뛴다.
-   그렇다고 전부를 가두지는 않는다: 코드·표·도해는 넓을수록 좋다. 그래서
-   *본문만* 가두고 넓어야 할 것은 밖으로 넘치게 둔다. */
-:root { --measure: 40rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다.
+   (2026-08-10: 40rem 으로 가둬 봤으나 저자가 「모양이 깨졌다」며 되돌리라고
+   했다. 줄 길이 문제는 D4 의 *독자가 고르는 폭*으로 푼다.) */
 .wrap { width:100%; max-width:none; margin:0; }
-.wrap > * { max-width:var(--measure); margin-left:auto; margin-right:auto; }
-/* 넓어야 하는 것들은 재갈을 풀어 준다 */
-.wrap > .demo, .wrap > .tblwrap, .wrap > figure, .wrap > .figwrap,
-.wrap > pre, .wrap > .toc, .wrap > .toc-full, .wrap > table,
-.wrap > .cover, .wrap > .nav, .wrap > .chapter-notes {
-  max-width:min(72rem, 100%); }
-h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
 h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
 h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
-     border-left:4px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
 p { margin:.9rem 0; } a { color:var(--link); }
 /* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
    (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
@@ -194,8 +185,17 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
 
-.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
-       border-left:3px solid var(--box-rule); border-radius:0; }
+/* ── 왼쪽 세로선 규율 (저자 지시 2026-08-10) ─────────────────
+   네 변 상자는 좌우 안쪽 여백이 양쪽에서 폭을 갉는다. 왼쪽 세로선 하나로
+   영역만 표시하고 오른쪽은 열어 둔다. 제목 쪽 선이 내용 쪽보다 굵고, 둘은
+   서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
+   영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
+.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:0; }
+.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -210,10 +210,10 @@ figure.tbl { text-align:center; }
    ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
      칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
      여백이 겹쳐 들쭉날쭉해진다. */
-.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
@@ -226,8 +226,8 @@ figure.tbl { text-align:center; }
 .dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
 .dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
-.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
-  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .why .dev-label,
@@ -237,16 +237,17 @@ figure.tbl { text-align:center; }
 /* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 
-/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
-.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
-.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
-  background:none; }
-.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 문답 — 질문 쪽 선이 굵고, 답 쪽이 가늘고, 둘 사이가 떨어져 있다 */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
-.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
 .dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
@@ -363,6 +364,6 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">부록 C ▾</button><span class="sp"></span><span class="bar-nav"><a href="sec101.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="sec103.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="sec01.html#sx1"><span class="tf-no"></span>정수 승격</a><a class="lv3" href="sec01.html#sx2"><span class="tf-no"></span>통상 산술 변환 (두 피연산자의 공통 타입)</a><a class="lv3" href="sec105.html#sx3"><span class="tf-no"></span>가변 인자의 기본 진급</a><a class="lv3" href="sec105.html#sx4"><span class="tf-no"></span>정수 변환 등급 (변환 규칙의 기준자)</a><a class="lv3" href="sec105.html#sx5"><span class="tf-no"></span>어떤 변환이 어떤 위험을 부르는가</a><a class="lv3" href="sec105.html#sx6"><span class="tf-no"></span>조용한 변환이 일어나는 자리 목록</a><a class="lv3" href="sec105.html#sx7"><span class="tf-no"></span>그 밖의 자주 만나는 변환</a></div></div>
 <main><div class="wrap">
-<h2>부록 C — 암묵 변환 요약</h2><p>29장의 규칙을 표로 압축한 것이다.</p><h3 id="sx1">정수 승격</h3><p><code>bool</code>, <code>char</code>, <code>signed char</code>, <code>unsigned char</code>, <code>short</code>, <code>unsigned short</code>, 비트 필드가 산술에 참여하면:</p><ul><li>값들이 전부 <code>int</code>에 담기면 → <code>int</code></li><li>아니면 → <code>unsigned int</code></li></ul><p>즉 <strong>산술은 int보다 좁은 타입 위에서 일어나지 않는다.</strong></p><h3 id="sx2">통상 산술 변환 (두 피연산자의 공통 타입)</h3><ol><li value="1">한쪽이 <code>long double</code> → 둘 다 <code>long double</code></li><li value="2">아니고 한쪽이 <code>double</code> → 둘 다 <code>double</code></li><li value="3">아니고 한쪽이 <code>float</code> → 둘 다 <code>float</code></li><li value="4"><p>둘 다 정수 → 각각 정수 승격 후:</p><ul><li>부호가 같으면 → 더 넓은 쪽</li><li>부호 없는 쪽이 더 넓거나 같으면 → <strong>부호 없는 쪽</strong></li><li>부호 있는 쪽이 더 넓고 상대 값을 다 담으면 → 부호 있는 쪽</li><li>그 밖 → 부호 있는 쪽의 부호 없는 판</li></ul></li></ol><p>실무 요약: <strong>섞이면 넓은 쪽으로, 폭이 같으면 부호 없는 쪽이 이긴다.</strong> 부호 섞인 비교는 피한다(경고를 켜 두면 컴파일러가 짚어 준다).</p><h3 id="sx3">가변 인자의 기본 진급</h3><p>원형에 타입이 없는 자리(<code>...</code>)로 넘어가는 인자:</p><ul><li><code>float</code> → <code>double</code></li><li><code>bool</code>·<code>char</code>·<code>short</code> 계열 → <code>int</code>(또는 <code>unsigned int</code>)</li></ul><p>그래서 <code>printf</code>에 float 전용 서식이 없고, <code>%f</code>가 double을 받는다 (19·25·58장).</p><h3 id="sx4">정수 변환 등급 (변환 규칙의 기준자)</h3><p>통상 산술 변환이 “더 넓은 쪽”을 고를 때 쓰는 순서다. 위가 높다.</p><pre><code data-lang="text">long long  >  long  >  int  >  short  >  char / signed char / unsigned char  >  bool</code></pre><p>세 가지를 구별해 두어야 한다.</p><p><strong>① <code>char</code>·<code>signed char</code>·<code>unsigned char</code>는 서로 등급이 같다.</strong> 셋은 폭이 같으므로 하나의 칸에 든다.</p><p><strong>② <code>bool</code>의 등급은 그보다 낮다.</strong> 표준이 <code>bool</code>을 모든 부호 있는 정수 타입보다 낮은 등급으로 못박았다.</p><p><strong>③ 등급은 폭이 아니다.</strong> 같은 폭이면 부호 없는 쪽과 부호 있는 쪽의 등급은 같고, 그때 통상 산술 변환에서 <strong>부호 없는 쪽이 이긴다</strong>. 그래서 <code>-1 &lt; 1u</code>가 거짓이 된다 — <code>-1</code>이 거대한 부호 없는 값으로 바뀌기 때문이다(29장). 폭이 같아도 등급이 다를 수 있고(구현이 확장 정수 타입을 두는 경우), 등급이 같아도 부호가 결과를 가른다.</p><h3 id="sx5">어떤 변환이 어떤 위험을 부르는가</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>변환</strong></th><th><strong>일어나는 일</strong></th><th><strong>위험</strong></th></tr><tr><td>부호 있는 → 부호 없는</td><td>2의 보수 값이 그대로 재해석된다</td><td>음수가 거대한 값이 된다</td></tr><tr><td>부호 없는 → 부호 있는</td><td>담기면 그대로, 아니면 구현 정의</td><td>경계에서 값이 바뀐다</td></tr><tr><td>넓은 정수 → 좁은 부호 없는 정수</td><td><math><msup><mn>2</mn><mi>𝑁</mi></msup></math> 로 나눈 나머지(정의됨)</td><td>조용한 값 손실</td></tr><tr><td>넓은 정수 → 좁은 부호 있는 정수</td><td>들어가면 그대로, 아니면 <strong>구현 정의</strong></td><td>C23 에서도 그렇다</td></tr><tr><td>정수 → 실수</td><td>가까운 값으로 반올림</td><td>큰 정수에서 정밀도 손실(8장)</td></tr><tr><td>실수 → 정수</td><td>소수부를 버린다(0 방향)</td><td>범위 밖이면 계약 밖</td></tr><tr><td><code>double</code> → <code>float</code></td><td>정밀도를 줄인다</td><td>반올림 오차</td></tr><tr><td>포인터 → <code>void *</code></td><td>무손실</td><td>타입 정보만 잃는다</td></tr><tr><td><code>void *</code> → 다른 포인터</td><td>무손실</td><td>정렬이 맞지 않으면 계약 밖(37장)</td></tr><tr><td>정수 → 포인터</td><td>구현 정의</td><td>출처(provenance)를 잃는다(14장)</td></tr></table></div><p class="float-caption">표 98.1</p></figure><h3 id="sx6">조용한 변환이 일어나는 자리 목록</h3><p>암묵 변환은 다음 자리에서 <strong>묻지 않고</strong> 일어난다.</p><ul><li>산술 연산의 두 피연산자 사이(통상 산술 변환)</li><li>대입의 오른쪽 → 왼쪽 타입</li><li>함수 인자 → 매개변수 타입(원형이 있을 때)</li><li><code>return</code>의 값 → 반환 타입</li><li>조건 자리(<code>if</code>, <code>while</code>, <code>?:</code>의 조건) → <code>bool</code> 판정</li><li><code>...</code>로 넘어가는 인자(기본 진급)</li><li>배열·함수 이름이 값으로 쓰일 때(포인터로 무너짐)</li></ul><h3 id="sx7">그 밖의 자주 만나는 변환</h3><ul><li><strong>축소</strong>(넓은 → 좁은 정수): <strong>부호 없는</strong> 목적 타입이면 <math><msup><mn>2</mn><mi>𝑁</mi></msup></math> 으로 나눈 나머지가 되고(정의된 동작), <strong>부호 있는</strong> 목적 타입이면 값이 들어갈 때만 그대로이고 아니면 구현 정의다(7장). 실제 구현이 대개 상위 비트를 버리는 것은 사실이지만, 그것은 <strong>구현의 선택이지 언어의 보장이 아니다</strong> — C23이 2의 보수를 못박은 뒤에도 이 조항은 그대로다.</li><li><strong>실수 → 정수</strong>: 소수부를 버린다(0을 향해). 범위를 벗어나면 계약 밖이다.</li><li><strong>배열 → 포인터</strong>: 대부분의 문맥에서 첫 원소 주소로 무너진다. 예외는 <code>sizeof</code>의 피연산자일 때, 단항 <code>&amp;</code>의 피연산자일 때, 그리고 문자열 리터럴로 배열을 초기화할 때다(38·42장). <code>alignof</code>는 <strong>타입 이름</strong>만 받으므로 이 목록에 들어가지 않는다.</li><li><strong>함수 → 포인터</strong>: 함수 이름은 함수 포인터로 무너진다.</li></ul>
+<h2>부록 C — 암묵 변환 요약</h2><div></div><p>29장의 규칙을 표로 압축한 것이다.</p><h3 id="sx1">정수 승격</h3><div></div><p><code>bool</code>, <code>char</code>, <code>signed char</code>, <code>unsigned char</code>, <code>short</code>, <code>unsigned short</code>, 비트 필드가 산술에 참여하면:</p><ul><li>값들이 전부 <code>int</code>에 담기면 → <code>int</code></li><li>아니면 → <code>unsigned int</code></li></ul><p>즉 <strong>산술은 int보다 좁은 타입 위에서 일어나지 않는다.</strong></p><h3 id="sx2">통상 산술 변환 (두 피연산자의 공통 타입)</h3><div></div><ol><li value="1">한쪽이 <code>long double</code> → 둘 다 <code>long double</code></li><li value="2">아니고 한쪽이 <code>double</code> → 둘 다 <code>double</code></li><li value="3">아니고 한쪽이 <code>float</code> → 둘 다 <code>float</code></li><li value="4"><p>둘 다 정수 → 각각 정수 승격 후:</p><ul><li>부호가 같으면 → 더 넓은 쪽</li><li>부호 없는 쪽이 더 넓거나 같으면 → <strong>부호 없는 쪽</strong></li><li>부호 있는 쪽이 더 넓고 상대 값을 다 담으면 → 부호 있는 쪽</li><li>그 밖 → 부호 있는 쪽의 부호 없는 판</li></ul></li></ol><p>실무 요약: <strong>섞이면 넓은 쪽으로, 폭이 같으면 부호 없는 쪽이 이긴다.</strong> 부호 섞인 비교는 피한다(경고를 켜 두면 컴파일러가 짚어 준다).</p><h3 id="sx3">가변 인자의 기본 진급</h3><div></div><p>원형에 타입이 없는 자리(<code>...</code>)로 넘어가는 인자:</p><ul><li><code>float</code> → <code>double</code></li><li><code>bool</code>·<code>char</code>·<code>short</code> 계열 → <code>int</code>(또는 <code>unsigned int</code>)</li></ul><p>그래서 <code>printf</code>에 float 전용 서식이 없고, <code>%f</code>가 double을 받는다 (19·25·58장).</p><h3 id="sx4">정수 변환 등급 (변환 규칙의 기준자)</h3><div></div><p>통상 산술 변환이 “더 넓은 쪽”을 고를 때 쓰는 순서다. 위가 높다.</p><pre><code data-lang="text">long long  >  long  >  int  >  short  >  char / signed char / unsigned char  >  bool</code></pre><p>세 가지를 구별해 두어야 한다.</p><p><strong>① <code>char</code>·<code>signed char</code>·<code>unsigned char</code>는 서로 등급이 같다.</strong> 셋은 폭이 같으므로 하나의 칸에 든다.</p><p><strong>② <code>bool</code>의 등급은 그보다 낮다.</strong> 표준이 <code>bool</code>을 모든 부호 있는 정수 타입보다 낮은 등급으로 못박았다.</p><p><strong>③ 등급은 폭이 아니다.</strong> 같은 폭이면 부호 없는 쪽과 부호 있는 쪽의 등급은 같고, 그때 통상 산술 변환에서 <strong>부호 없는 쪽이 이긴다</strong>. 그래서 <code>-1 &lt; 1u</code>가 거짓이 된다 — <code>-1</code>이 거대한 부호 없는 값으로 바뀌기 때문이다(29장). 폭이 같아도 등급이 다를 수 있고(구현이 확장 정수 타입을 두는 경우), 등급이 같아도 부호가 결과를 가른다.</p><h3 id="sx5">어떤 변환이 어떤 위험을 부르는가</h3><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>변환</strong></th><th><strong>일어나는 일</strong></th><th><strong>위험</strong></th></tr><tr><td>부호 있는 → 부호 없는</td><td>2의 보수 값이 그대로 재해석된다</td><td>음수가 거대한 값이 된다</td></tr><tr><td>부호 없는 → 부호 있는</td><td>담기면 그대로, 아니면 구현 정의</td><td>경계에서 값이 바뀐다</td></tr><tr><td>넓은 정수 → 좁은 부호 없는 정수</td><td><math><msup><mn>2</mn><mi>𝑁</mi></msup></math> 로 나눈 나머지(정의됨)</td><td>조용한 값 손실</td></tr><tr><td>넓은 정수 → 좁은 부호 있는 정수</td><td>들어가면 그대로, 아니면 <strong>구현 정의</strong></td><td>C23 에서도 그렇다</td></tr><tr><td>정수 → 실수</td><td>가까운 값으로 반올림</td><td>큰 정수에서 정밀도 손실(8장)</td></tr><tr><td>실수 → 정수</td><td>소수부를 버린다(0 방향)</td><td>범위 밖이면 계약 밖</td></tr><tr><td><code>double</code> → <code>float</code></td><td>정밀도를 줄인다</td><td>반올림 오차</td></tr><tr><td>포인터 → <code>void *</code></td><td>무손실</td><td>타입 정보만 잃는다</td></tr><tr><td><code>void *</code> → 다른 포인터</td><td>무손실</td><td>정렬이 맞지 않으면 계약 밖(37장)</td></tr><tr><td>정수 → 포인터</td><td>구현 정의</td><td>출처(provenance)를 잃는다(14장)</td></tr></table></div><p class="float-caption">표 98.1</p></figure><h3 id="sx6">조용한 변환이 일어나는 자리 목록</h3><div></div><p>암묵 변환은 다음 자리에서 <strong>묻지 않고</strong> 일어난다.</p><ul><li>산술 연산의 두 피연산자 사이(통상 산술 변환)</li><li>대입의 오른쪽 → 왼쪽 타입</li><li>함수 인자 → 매개변수 타입(원형이 있을 때)</li><li><code>return</code>의 값 → 반환 타입</li><li>조건 자리(<code>if</code>, <code>while</code>, <code>?:</code>의 조건) → <code>bool</code> 판정</li><li><code>...</code>로 넘어가는 인자(기본 진급)</li><li>배열·함수 이름이 값으로 쓰일 때(포인터로 무너짐)</li></ul><h3 id="sx7">그 밖의 자주 만나는 변환</h3><div></div><ul><li><strong>축소</strong>(넓은 → 좁은 정수): <strong>부호 없는</strong> 목적 타입이면 <math><msup><mn>2</mn><mi>𝑁</mi></msup></math> 으로 나눈 나머지가 되고(정의된 동작), <strong>부호 있는</strong> 목적 타입이면 값이 들어갈 때만 그대로이고 아니면 구현 정의다(7장). 실제 구현이 대개 상위 비트를 버리는 것은 사실이지만, 그것은 <strong>구현의 선택이지 언어의 보장이 아니다</strong> — C23이 2의 보수를 못박은 뒤에도 이 조항은 그대로다.</li><li><strong>실수 → 정수</strong>: 소수부를 버린다(0을 향해). 범위를 벗어나면 계약 밖이다.</li><li><strong>배열 → 포인터</strong>: 대부분의 문맥에서 첫 원소 주소로 무너진다. 예외는 <code>sizeof</code>의 피연산자일 때, 단항 <code>&amp;</code>의 피연산자일 때, 그리고 문자열 리터럴로 배열을 초기화할 때다(38·42장). <code>alignof</code>는 <strong>타입 이름</strong>만 받으므로 이 목록에 들어가지 않는다.</li><li><strong>함수 → 포인터</strong>: 함수 이름은 함수 포인터로 무너진다.</li></ul>
 <div class="nav"><a href="sec101.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec103.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

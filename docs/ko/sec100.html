@@ -85,26 +85,17 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
 .bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
-/* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
-   전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
-   권장(35~45자)의 두세 배다. 줄이 길면 줄 끝에서 다음 줄 머리로 돌아오는 눈의
-   복귀 도약이 어긋나 같은 줄을 두 번 읽거나 한 줄을 건너뛴다.
-   그렇다고 전부를 가두지는 않는다: 코드·표·도해는 넓을수록 좋다. 그래서
-   *본문만* 가두고 넓어야 할 것은 밖으로 넘치게 둔다. */
-:root { --measure: 40rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다.
+   (2026-08-10: 40rem 으로 가둬 봤으나 저자가 「모양이 깨졌다」며 되돌리라고
+   했다. 줄 길이 문제는 D4 의 *독자가 고르는 폭*으로 푼다.) */
 .wrap { width:100%; max-width:none; margin:0; }
-.wrap > * { max-width:var(--measure); margin-left:auto; margin-right:auto; }
-/* 넓어야 하는 것들은 재갈을 풀어 준다 */
-.wrap > .demo, .wrap > .tblwrap, .wrap > figure, .wrap > .figwrap,
-.wrap > pre, .wrap > .toc, .wrap > .toc-full, .wrap > table,
-.wrap > .cover, .wrap > .nav, .wrap > .chapter-notes {
-  max-width:min(72rem, 100%); }
-h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
 h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
 h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
-     border-left:4px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
 p { margin:.9rem 0; } a { color:var(--link); }
 /* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
    (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
@@ -194,8 +185,17 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
 
-.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
-       border-left:3px solid var(--box-rule); border-radius:0; }
+/* ── 왼쪽 세로선 규율 (저자 지시 2026-08-10) ─────────────────
+   네 변 상자는 좌우 안쪽 여백이 양쪽에서 폭을 갉는다. 왼쪽 세로선 하나로
+   영역만 표시하고 오른쪽은 열어 둔다. 제목 쪽 선이 내용 쪽보다 굵고, 둘은
+   서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
+   영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
+.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:0; }
+.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -210,10 +210,10 @@ figure.tbl { text-align:center; }
    ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
      칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
      여백이 겹쳐 들쭉날쭉해진다. */
-.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
@@ -226,8 +226,8 @@ figure.tbl { text-align:center; }
 .dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
 .dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
-.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
-  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .why .dev-label,
@@ -237,16 +237,17 @@ figure.tbl { text-align:center; }
 /* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 
-/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
-.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
-.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
-  background:none; }
-.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 문답 — 질문 쪽 선이 굵고, 답 쪽이 가늘고, 둘 사이가 떨어져 있다 */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
-.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
 .dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
@@ -363,6 +364,6 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">부록 A ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch98.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="sec101.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="sec01.html#sx1"><span class="tf-no"></span>우선순위와 결합</a><a class="lv3" href="sec01.html#sx2"><span class="tf-no"></span>자주 미끄러지는 자리들</a><a class="lv3" href="sec105.html#sx3"><span class="tf-no"></span>더 볼 곳</a></div></div>
 <main><div class="wrap">
-<h2>부록 A — 연산자 조회표</h2><p>연산자를 <strong>설명</strong>하는 곳은 본문 49장 「수식과 연산자」다. 그 장은 연산자마다 피연산자 제약·결과 타입·회색지대를 계약으로 적고, 규칙이 왜 그렇게 정해졌는지 까지 다룬다. 이 부록은 그 내용을 되풀이하지 않는다. 여기 있는 것은 <strong>코드를 읽다 막혔을 때 눈으로 훑을 한 장짜리 표</strong>뿐이다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트. 이 부록의 근거</p>ISO/IEC 9899:2024(C23)의 수식 조항(§6.5)과 대조해 적었다. 인용이 필요하면 부록 D의 안내대로 발행된 표준을 근거로 삼아야 한다.</div><h3 id="sx1">우선순위와 결합</h3><p>위쪽이 더 강하게 묶는다. <strong>결합 방향</strong>은 같은 세기의 연산자가 나란히 있을 때 어느 쪽부터 묶느냐다 — <code>a - b - c</code>가 <code>(a - b) - c</code>인 것은 왼쪽 결합이기 때문이고, <code>a = b = 0</code>이 <code>a = (b = 0)</code>인 것은 오른쪽 결합이기 때문이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>묶음</strong></th><th><strong>연산자</strong></th><th><strong>결합</strong></th><th><strong>결합이 그런 이유</strong></th></tr><tr><td>후위</td><td><code>() [] . -> ++(후위) --(후위)</code>, 복합 리터럴</td><td>왼→오</td><td><code>a.b.c</code>처럼 왼쪽부터 파고들어야 뜻이 선다</td></tr><tr><td>단항</td><td><code>++ -- + - ! ~ (타입) * &amp; sizeof alignof</code></td><td>오→왼</td><td>피연산자에 가장 가까운 것부터 붙는다: <code>- -x</code>, <code>*&amp;x</code></td></tr><tr><td>곱셈류</td><td><code>* / %</code></td><td>왼→오</td><td>산수의 관례</td></tr><tr><td>덧셈류</td><td><code>+ -</code></td><td>왼→오</td><td>뺄셈은 왼쪽 결합이라야 뜻이 맞는다</td></tr><tr><td>시프트</td><td><code>&lt;&lt; >></code></td><td>왼→오</td><td><code>a &lt;&lt; 1 &lt;&lt; 2</code>는 차례로 민다</td></tr><tr><td>관계</td><td><code>&lt; &lt;= > >=</code></td><td>왼→오</td><td>그래서 <code>x &lt; y &lt; z</code>가 수학과 달라진다</td></tr><tr><td>상등</td><td><code>== !=</code></td><td>왼→오</td><td></td></tr><tr><td>비트 AND</td><td><code>&amp;</code></td><td>왼→오</td><td></td></tr><tr><td>비트 XOR</td><td><code>^</code></td><td>왼→오</td><td></td></tr><tr><td>비트 OR</td><td><code>|</code></td><td>왼→오</td><td></td></tr><tr><td>논리 AND</td><td><code>&amp;&amp;</code></td><td>왼→오</td><td>단락 평가가 왼쪽부터라야 뜻이 산다</td></tr><tr><td>논리 OR</td><td><code>||</code></td><td>왼→오</td><td>같은 이유</td></tr><tr><td>조건</td><td><code>?:</code></td><td>오→왼</td><td><code>a ? b : c ? d : e</code>가 사다리로 읽힌다</td></tr><tr><td>대입</td><td><code>= += -= *= /= %= &amp;= ^= |= &lt;&lt;= >>=</code></td><td>오→왼</td><td><code>a = b = 0</code>이 “둘 다 0”이 되려면</td></tr><tr><td>쉼표</td><td><code>,</code></td><td>왼→오</td><td>왼쪽을 먼저 하고 버린다</td></tr></table></div><p class="float-caption">표 98.1</p></figure><h3 id="sx2">자주 미끄러지는 자리들</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>쓴 것</strong></th><th><strong>실제로 묶이는 방식</strong></th><th><strong>의도한 것이라면</strong></th></tr><tr><td><code>a &amp; b == c</code></td><td><code>a &amp; (b == c)</code></td><td><code>(a &amp; b) == c</code></td></tr><tr><td><code>a &lt;&lt; 1 + 2</code></td><td><code>a &lt;&lt; (1 + 2)</code></td><td><code>(a &lt;&lt; 1) + 2</code></td></tr><tr><td><code>*p++</code></td><td><code>*(p++)</code></td><td><code>(*p)++</code></td></tr><tr><td><code>*p.x</code></td><td><code>*(p.x)</code></td><td><code>(*p).x</code> 또는 <code>p->x</code></td></tr><tr><td><code>(int)x + y</code></td><td><code>((int)x) + y</code></td><td><code>(int)(x + y)</code></td></tr><tr><td><code>a = b = 0</code></td><td><code>a = (b = 0)</code></td><td>(그대로다 — 오른쪽 결합)</td></tr><tr><td><code>x &lt; y &lt; z</code></td><td><code>(x &lt; y) &lt; z</code></td><td><code>x &lt; y &amp;&amp; y &lt; z</code></td></tr><tr><td><code>!x &amp; y</code></td><td><code>(!x) &amp; y</code></td><td><code>!(x &amp; y)</code></td></tr><tr><td><code>sizeof a + 1</code></td><td><code>(sizeof a) + 1</code></td><td><code>sizeof(a + 1)</code></td></tr><tr><td><code>a ? b : c = d</code></td><td><code>(a ? b : c) = d</code>(대개 오류)</td><td><code>a ? b : (c = d)</code></td></tr></table></div><p class="float-caption">표 98.2</p></figure><p>특히 첫 두 줄은 C의 유명한 설계 흠으로 꼽힌다 — 비트 연산자가 비교 연산자보다 <strong>약하게</strong> 묶이는 것은 초기 C가 <code>&amp;&amp;</code>·<code>||</code>를 갖기 전의 흔적이다. 그래서 비트 검사에는 괄호가 사실상 필수다. 표준도 각주에서 <code>a&lt;b&lt;c</code>가 수학과 다르게 읽힌다는 것을 따로 짚어 둔다.</p><h3 id="sx3">더 볼 곳</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>찾는 것</strong></th><th><strong>갈 곳</strong></th></tr><tr><td>연산자별 계약(피연산자·결과·회색지대)</td><td>49장 「수식과 연산자」</td></tr><tr><td>대입과 부수효과, 평가 순서</td><td>34장</td></tr><tr><td>포인터 산술의 규칙</td><td>38장</td></tr><tr><td>UB·미지정·구현 정의의 구별</td><td>52장</td></tr><tr><td>구현이 정해 밝혀야 하는 항목들</td><td>부록 D</td></tr></table></div><p class="float-caption">표 98.3</p></figure>
+<h2>부록 A — 연산자 조회표</h2><div></div><p>연산자를 <strong>설명</strong>하는 곳은 본문 49장 「수식과 연산자」다. 그 장은 연산자마다 피연산자 제약·결과 타입·회색지대를 계약으로 적고, 규칙이 왜 그렇게 정해졌는지 까지 다룬다. 이 부록은 그 내용을 되풀이하지 않는다. 여기 있는 것은 <strong>코드를 읽다 막혔을 때 눈으로 훑을 한 장짜리 표</strong>뿐이다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트. 이 부록의 근거</p>ISO/IEC 9899:2024(C23)의 수식 조항(§6.5)과 대조해 적었다. 인용이 필요하면 부록 D의 안내대로 발행된 표준을 근거로 삼아야 한다.</div><h3 id="sx1">우선순위와 결합</h3><div></div><p>위쪽이 더 강하게 묶는다. <strong>결합 방향</strong>은 같은 세기의 연산자가 나란히 있을 때 어느 쪽부터 묶느냐다 — <code>a - b - c</code>가 <code>(a - b) - c</code>인 것은 왼쪽 결합이기 때문이고, <code>a = b = 0</code>이 <code>a = (b = 0)</code>인 것은 오른쪽 결합이기 때문이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>묶음</strong></th><th><strong>연산자</strong></th><th><strong>결합</strong></th><th><strong>결합이 그런 이유</strong></th></tr><tr><td>후위</td><td><code>() [] . -> ++(후위) --(후위)</code>, 복합 리터럴</td><td>왼→오</td><td><code>a.b.c</code>처럼 왼쪽부터 파고들어야 뜻이 선다</td></tr><tr><td>단항</td><td><code>++ -- + - ! ~ (타입) * &amp; sizeof alignof</code></td><td>오→왼</td><td>피연산자에 가장 가까운 것부터 붙는다: <code>- -x</code>, <code>*&amp;x</code></td></tr><tr><td>곱셈류</td><td><code>* / %</code></td><td>왼→오</td><td>산수의 관례</td></tr><tr><td>덧셈류</td><td><code>+ -</code></td><td>왼→오</td><td>뺄셈은 왼쪽 결합이라야 뜻이 맞는다</td></tr><tr><td>시프트</td><td><code>&lt;&lt; >></code></td><td>왼→오</td><td><code>a &lt;&lt; 1 &lt;&lt; 2</code>는 차례로 민다</td></tr><tr><td>관계</td><td><code>&lt; &lt;= > >=</code></td><td>왼→오</td><td>그래서 <code>x &lt; y &lt; z</code>가 수학과 달라진다</td></tr><tr><td>상등</td><td><code>== !=</code></td><td>왼→오</td><td></td></tr><tr><td>비트 AND</td><td><code>&amp;</code></td><td>왼→오</td><td></td></tr><tr><td>비트 XOR</td><td><code>^</code></td><td>왼→오</td><td></td></tr><tr><td>비트 OR</td><td><code>|</code></td><td>왼→오</td><td></td></tr><tr><td>논리 AND</td><td><code>&amp;&amp;</code></td><td>왼→오</td><td>단락 평가가 왼쪽부터라야 뜻이 산다</td></tr><tr><td>논리 OR</td><td><code>||</code></td><td>왼→오</td><td>같은 이유</td></tr><tr><td>조건</td><td><code>?:</code></td><td>오→왼</td><td><code>a ? b : c ? d : e</code>가 사다리로 읽힌다</td></tr><tr><td>대입</td><td><code>= += -= *= /= %= &amp;= ^= |= &lt;&lt;= >>=</code></td><td>오→왼</td><td><code>a = b = 0</code>이 “둘 다 0”이 되려면</td></tr><tr><td>쉼표</td><td><code>,</code></td><td>왼→오</td><td>왼쪽을 먼저 하고 버린다</td></tr></table></div><p class="float-caption">표 98.1</p></figure><h3 id="sx2">자주 미끄러지는 자리들</h3><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>쓴 것</strong></th><th><strong>실제로 묶이는 방식</strong></th><th><strong>의도한 것이라면</strong></th></tr><tr><td><code>a &amp; b == c</code></td><td><code>a &amp; (b == c)</code></td><td><code>(a &amp; b) == c</code></td></tr><tr><td><code>a &lt;&lt; 1 + 2</code></td><td><code>a &lt;&lt; (1 + 2)</code></td><td><code>(a &lt;&lt; 1) + 2</code></td></tr><tr><td><code>*p++</code></td><td><code>*(p++)</code></td><td><code>(*p)++</code></td></tr><tr><td><code>*p.x</code></td><td><code>*(p.x)</code></td><td><code>(*p).x</code> 또는 <code>p->x</code></td></tr><tr><td><code>(int)x + y</code></td><td><code>((int)x) + y</code></td><td><code>(int)(x + y)</code></td></tr><tr><td><code>a = b = 0</code></td><td><code>a = (b = 0)</code></td><td>(그대로다 — 오른쪽 결합)</td></tr><tr><td><code>x &lt; y &lt; z</code></td><td><code>(x &lt; y) &lt; z</code></td><td><code>x &lt; y &amp;&amp; y &lt; z</code></td></tr><tr><td><code>!x &amp; y</code></td><td><code>(!x) &amp; y</code></td><td><code>!(x &amp; y)</code></td></tr><tr><td><code>sizeof a + 1</code></td><td><code>(sizeof a) + 1</code></td><td><code>sizeof(a + 1)</code></td></tr><tr><td><code>a ? b : c = d</code></td><td><code>(a ? b : c) = d</code>(대개 오류)</td><td><code>a ? b : (c = d)</code></td></tr></table></div><p class="float-caption">표 98.2</p></figure><p>특히 첫 두 줄은 C의 유명한 설계 흠으로 꼽힌다 — 비트 연산자가 비교 연산자보다 <strong>약하게</strong> 묶이는 것은 초기 C가 <code>&amp;&amp;</code>·<code>||</code>를 갖기 전의 흔적이다. 그래서 비트 검사에는 괄호가 사실상 필수다. 표준도 각주에서 <code>a&lt;b&lt;c</code>가 수학과 다르게 읽힌다는 것을 따로 짚어 둔다.</p><h3 id="sx3">더 볼 곳</h3><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>찾는 것</strong></th><th><strong>갈 곳</strong></th></tr><tr><td>연산자별 계약(피연산자·결과·회색지대)</td><td>49장 「수식과 연산자」</td></tr><tr><td>대입과 부수효과, 평가 순서</td><td>34장</td></tr><tr><td>포인터 산술의 규칙</td><td>38장</td></tr><tr><td>UB·미지정·구현 정의의 구별</td><td>52장</td></tr><tr><td>구현이 정해 밝혀야 하는 항목들</td><td>부록 D</td></tr></table></div><p class="float-caption">표 98.3</p></figure>
 <div class="nav"><a href="ch98.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="sec101.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

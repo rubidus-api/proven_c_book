@@ -85,26 +85,17 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
 .bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
-/* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
-   전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
-   권장(35~45자)의 두세 배다. 줄이 길면 줄 끝에서 다음 줄 머리로 돌아오는 눈의
-   복귀 도약이 어긋나 같은 줄을 두 번 읽거나 한 줄을 건너뛴다.
-   그렇다고 전부를 가두지는 않는다: 코드·표·도해는 넓을수록 좋다. 그래서
-   *본문만* 가두고 넓어야 할 것은 밖으로 넘치게 둔다. */
-:root { --measure: 40rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다.
+   (2026-08-10: 40rem 으로 가둬 봤으나 저자가 「모양이 깨졌다」며 되돌리라고
+   했다. 줄 길이 문제는 D4 의 *독자가 고르는 폭*으로 푼다.) */
 .wrap { width:100%; max-width:none; margin:0; }
-.wrap > * { max-width:var(--measure); margin-left:auto; margin-right:auto; }
-/* 넓어야 하는 것들은 재갈을 풀어 준다 */
-.wrap > .demo, .wrap > .tblwrap, .wrap > figure, .wrap > .figwrap,
-.wrap > pre, .wrap > .toc, .wrap > .toc-full, .wrap > table,
-.wrap > .cover, .wrap > .nav, .wrap > .chapter-notes {
-  max-width:min(72rem, 100%); }
-h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
 h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
 h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
-     border-left:4px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
 p { margin:.9rem 0; } a { color:var(--link); }
 /* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
    (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
@@ -194,8 +185,17 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
 
-.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
-       border-left:3px solid var(--box-rule); border-radius:0; }
+/* ── 왼쪽 세로선 규율 (저자 지시 2026-08-10) ─────────────────
+   네 변 상자는 좌우 안쪽 여백이 양쪽에서 폭을 갉는다. 왼쪽 세로선 하나로
+   영역만 표시하고 오른쪽은 열어 둔다. 제목 쪽 선이 내용 쪽보다 굵고, 둘은
+   서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
+   영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
+.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:0; }
+.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -210,10 +210,10 @@ figure.tbl { text-align:center; }
    ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
      칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
      여백이 겹쳐 들쭉날쭉해진다. */
-.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
@@ -226,8 +226,8 @@ figure.tbl { text-align:center; }
 .dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
 .dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
-.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
-  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .why .dev-label,
@@ -237,16 +237,17 @@ figure.tbl { text-align:center; }
 /* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 
-/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
-.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
-.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
-  background:none; }
-.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 문답 — 질문 쪽 선이 굵고, 답 쪽이 가늘고, 둘 사이가 떨어져 있다 */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
-.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
 .dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
@@ -363,7 +364,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">21장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch20.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch22.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch21.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s21-1"><span class="tf-no">21.1</span>호출 — 이름을 부르면 일꾼이 뛴다</a><a class="lv3" href="#s21-2"><span class="tf-no">21.2</span>반환값 — 쓰거나, 버리거나</a><a class="lv3" href="#s21-3"><span class="tf-no">21.3</span>표준 라이브러리 — 미리 만들어진 일꾼들</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-21">21 함수 사용 — 부르는 법</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>20장 수식과 상수 · 수식은 값이 된다</div><div>19장 프로그램의 구조 · 함수라는 이름의 덩어리</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>20장 끝에서 “함수를 부르는 것 자체가 수식이고, 따라서 값이 된다”고 했다. 그러면 <code>printf("%d\n", 2 + 3 * 4)</code> 안의 수식 <code>2 + 3 * 4</code>가 계산된 값 14는 — 정확히 어디로 가는 것인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 함수의 입으로 들어간다. 함수를 부를 때 괄호 안에 적는 수식들의 값이 그 함수에게 <strong>재료</strong>로 전달되고, 함수는 그 재료로 제 일을 한 뒤 <strong>결과 값</strong>을 내놓는다. 재료를 인자, 결과를 반환값이라 부른다 — 이 두 낱말이 이 장의 전부다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">값을 적을 줄 알게 되었으니 남이 만든 일꾼을 부릴 차례다. 만드는 법(24장)을 미루고 부르는 법을 먼저 놓는 것이 이 책의 순서다 — 헬로 월드의 심장이 호출 한 줄이기 때문이다. 그리고 실무에서도 함수를 정의하기 전에 훨씬 많이 부른다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">함수를 <strong>만드는</strong> 법은 아직 멀었다(24장). 이 장은 <strong>부르는</strong> 법이다 — 호출, 인자, 반환값이라는 세 낱말을 익히고 나면, 헬로 월드의 심장 <code>printf("안녕, 세상!\n");</code> 이 완전한 문장으로 읽힌다. 남이 만든 일꾼을 부려 쓰는 것 — 프로그래밍의 절반은 사실 이것이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>버려도 되는 값이라면 애초에 왜 돌려주는가?</li><li><code>abs</code>는 항상 양수를 돌려주는가? 절댓값이니 당연할 것 같은데.</li></ol></div></div><div></div><h3 id="s21-1">21.1 호출 — 이름을 부르면 일꾼이 뛴다</h3><p>함수는 <strong>이름 붙은 일꾼</strong>이다. 어딘가에 일하는 방법(몸통)이 만들어져 있고, 우리는 이름만 부르면 된다. 부르는 문법은 이미 눈에 익었다:</p><pre><code data-lang="c"><strong>이름</strong><strong><span class="tok-x">(</span></strong><strong>재료1</strong><strong><span class="tok-x">,</span></strong><strong> 재료2</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">...</span></strong><strong><span class="tok-x">)</span></strong></code></pre><p>이것이 <strong>호출</strong>(call)이다. 호출이 실행되는 순서는 이렇다 — ① 괄호 안의 수식들이 먼저 평가되어 값이 되고, ② 그 값들이 함수에게 전달되며, ③ 함수의 몸통이 실행되고, ④ 함수가 내놓은 <strong>반환값</strong>이 호출 자리의 값이 된다. 마지막 항목이 20장의 복선 회수다: <strong>호출은 수식이다</strong> — 호출이 적힌 자리는, 실행이 끝나면 반환값 하나로 바뀐다고 읽으면 된다.</p><p>호출이 수식이므로, 호출을 호출의 재료로 넣을 수도 있다. 시연한다 — <span id="idx-entry-86"></span><code>abs</code>는 표준 라이브러리(standard library)의 일꾼으로, 정수 하나를 받아 그 절댓값을 돌려준다(<code>&lt;stdlib.h></code> 도구 상자에 산다 — 그래서 <code>#include</code>가 하나 더 붙었다).</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch21/call.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2 id="loc-21">21 함수 사용 — 부르는 법</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>20장 수식과 상수 · 수식은 값이 된다</div><div>19장 프로그램의 구조 · 함수라는 이름의 덩어리</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>20장 끝에서 “함수를 부르는 것 자체가 수식이고, 따라서 값이 된다”고 했다. 그러면 <code>printf("%d\n", 2 + 3 * 4)</code> 안의 수식 <code>2 + 3 * 4</code>가 계산된 값 14는 — 정확히 어디로 가는 것인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 함수의 입으로 들어간다. 함수를 부를 때 괄호 안에 적는 수식들의 값이 그 함수에게 <strong>재료</strong>로 전달되고, 함수는 그 재료로 제 일을 한 뒤 <strong>결과 값</strong>을 내놓는다. 재료를 인자, 결과를 반환값이라 부른다 — 이 두 낱말이 이 장의 전부다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">값을 적을 줄 알게 되었으니 남이 만든 일꾼을 부릴 차례다. 만드는 법(24장)을 미루고 부르는 법을 먼저 놓는 것이 이 책의 순서다 — 헬로 월드의 심장이 호출 한 줄이기 때문이다. 그리고 실무에서도 함수를 정의하기 전에 훨씬 많이 부른다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">함수를 <strong>만드는</strong> 법은 아직 멀었다(24장). 이 장은 <strong>부르는</strong> 법이다 — 호출, 인자, 반환값이라는 세 낱말을 익히고 나면, 헬로 월드의 심장 <code>printf("안녕, 세상!\n");</code> 이 완전한 문장으로 읽힌다. 남이 만든 일꾼을 부려 쓰는 것 — 프로그래밍의 절반은 사실 이것이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>버려도 되는 값이라면 애초에 왜 돌려주는가?</li><li><code>abs</code>는 항상 양수를 돌려주는가? 절댓값이니 당연할 것 같은데.</li></ol></div></div><div></div><h3 id="s21-1">21.1 호출 — 이름을 부르면 일꾼이 뛴다</h3><div></div><p>함수는 <strong>이름 붙은 일꾼</strong>이다. 어딘가에 일하는 방법(몸통)이 만들어져 있고, 우리는 이름만 부르면 된다. 부르는 문법은 이미 눈에 익었다:</p><pre><code data-lang="c"><strong>이름</strong><strong><span class="tok-x">(</span></strong><strong>재료1</strong><strong><span class="tok-x">,</span></strong><strong> 재료2</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">...</span></strong><strong><span class="tok-x">)</span></strong></code></pre><p>이것이 <strong>호출</strong>(call)이다. 호출이 실행되는 순서는 이렇다 — ① 괄호 안의 수식들이 먼저 평가되어 값이 되고, ② 그 값들이 함수에게 전달되며, ③ 함수의 몸통이 실행되고, ④ 함수가 내놓은 <strong>반환값</strong>이 호출 자리의 값이 된다. 마지막 항목이 20장의 복선 회수다: <strong>호출은 수식이다</strong> — 호출이 적힌 자리는, 실행이 끝나면 반환값 하나로 바뀐다고 읽으면 된다.</p><p>호출이 수식이므로, 호출을 호출의 재료로 넣을 수도 있다. 시연한다 — <span id="idx-entry-86"></span><code>abs</code>는 표준 라이브러리(standard library)의 일꾼으로, 정수 하나를 받아 그 절댓값을 돌려준다(<code>&lt;stdlib.h></code> 도구 상자에 산다 — 그래서 <code>#include</code>가 하나 더 붙었다).</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch21/call.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
@@ -372,6 +373,6 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>8
-</code></pre></div></div><p>읽는 순서 그대로다 — 안쪽 수식 <code>2 - 10</code>이 먼저 <math><mo>−</mo><mn>8</mn></math>이 되고, 그것이 <code>abs</code>의 재료로 들어가 반환값 <math><mn>8</mn></math>이 되고, 그 <math><mn>8</mn></math>이 다시 <code>printf</code>의 재료가 되어 찍혔다. <strong>안에서 바깥으로, 값이 릴레이된다</strong> — 수식과 호출이 겹겹이 쌓이는 C 코드를 읽는 기본 독법이다.</p><h3 id="s21-2">21.2 반환값 — 쓰거나, 버리거나</h3><p>모든 호출은 값이 된다고 했다. 그러면 헬로 월드의 <code>printf("안녕, 세상!\n");</code> 에서 반환값은 어디로 갔는가.</p><p><strong>버려졌다</strong> — 그리고 그것은 합법이다. 수식 뒤에 세미콜론을 찍으면 “수식을 평가하고, 값은 버리는” 문장(수식문)이 된다. <code>printf</code>도 반환값이 있다(찍은 글자 수를 돌려준다). 다만 우리는 대개 찍는 <strong>부수 효과</strong>가 목적이고 글자 수는 관심 밖이라, 값을 버리는 것이다. “함수를 부르는 문장”이란 사실 “호출 수식 + 값 버리기”였던 셈이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 버려도 되는 값이라면 애초에 왜 돌려주는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 쓰는 사람이 따로 있기 때문이다. 같은 일꾼이라도 부르는 쪽의 사정에 따라 결과가 필요할 수도, 부수 효과만 필요할 수도 있다 — 함수는 일단 결과를 내놓고, 쓸지 버릴지는 부르는 쪽이 정한다는 것이 C의 분업이다. 다만 이 관대함에는 그림자가 있다 — 반환값이 “성공했는지” 를 알리는 함수라면, 버리는 순간 실패를 놓친다. 오류를 값으로 알리는 C의 방식과 “버리면 안 되는 반환값”의 이야기는 51장의 주제다.</p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>abs</code>는 항상 양수를 돌려주는가? 절댓값이니 당연할 것 같은데.</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 거의 항상 — 그런데 정확히 한 곳에 함정이 있다. 7장에서 2의 보수의 유일한 비대칭을 배웠다: 가장 작은 음수(-128, 32비트라면 약 −21억)의 짝이 되는 양수가 <strong>없다</strong>. 그러면 그 수의 절댓값을 물으면 어떻게 되는가 — 담을 그릇이 없으므로, 계약 밖(정의되지 않은 동작)이다. “당연히 되겠지”의 딱 한 칸 바깥에 함정이 있는 것 — 7장의 비대칭이 실제 함수의 사용 설명서에까지 흔적을 남긴 사례다. 이런 경계 사냥은 52장의 주특기가 된다.</p></div></div><h3 id="s21-3">21.3 표준 라이브러리 — 미리 만들어진 일꾼들</h3><p><code>printf</code>도 <code>abs</code>도 우리가 만들지 않았다. C를 설치하면 따라오는 <strong>표준 라이브러리</strong> — 16장의 링크 단계에서 우리 프로그램에 이어지던 바로 그 꾸러미 — 의 일꾼들이다. 도구 상자(<code>&lt;stdio.h></code>, <code>&lt;stdlib.h></code> 등)마다 쓸 수 있는 일꾼의 명단(선언)이 들어 있고, <code>#include</code>로 명단을 가져오면 그 상자의 일꾼들을 부를 수 있게 된다.</p><p>표준 라이브러리에 어떤 상자가 있고 무엇이 들었는지는 62장에서 얼개를 펴고 훑는다. 지금 챙길 것은 감각 하나다 — <strong>프로그래밍의 절반은 남이 만든 함수를 부르는 일이다.</strong> 잘 만들어진 일꾼을 알아보고 바르게 부리는 것이 코드의 절반을 결정하고, 그래서 이 책의 후반(43장)에서 “어떤 일꾼을 쓸 것인가”가 다시 큰 주제가 된다.</p><p>이제 헬로 월드에서 남은 칸은 둘뿐이다 — <code>printf</code>의 따옴표 안 서식이 정확히 어떻게 동작하는지(다음 장), 그리고 <code>int main(void)</code>와 <code>return 0</code>의 정체(제5부). 다음 장에서 출력을 정면으로 다루며 제4부의 목표에 바짝 다가선다.</p>
+</code></pre></div></div><p>읽는 순서 그대로다 — 안쪽 수식 <code>2 - 10</code>이 먼저 <math><mo>−</mo><mn>8</mn></math>이 되고, 그것이 <code>abs</code>의 재료로 들어가 반환값 <math><mn>8</mn></math>이 되고, 그 <math><mn>8</mn></math>이 다시 <code>printf</code>의 재료가 되어 찍혔다. <strong>안에서 바깥으로, 값이 릴레이된다</strong> — 수식과 호출이 겹겹이 쌓이는 C 코드를 읽는 기본 독법이다.</p><h3 id="s21-2">21.2 반환값 — 쓰거나, 버리거나</h3><div></div><p>모든 호출은 값이 된다고 했다. 그러면 헬로 월드의 <code>printf("안녕, 세상!\n");</code> 에서 반환값은 어디로 갔는가.</p><p><strong>버려졌다</strong> — 그리고 그것은 합법이다. 수식 뒤에 세미콜론을 찍으면 “수식을 평가하고, 값은 버리는” 문장(수식문)이 된다. <code>printf</code>도 반환값이 있다(찍은 글자 수를 돌려준다). 다만 우리는 대개 찍는 <strong>부수 효과</strong>가 목적이고 글자 수는 관심 밖이라, 값을 버리는 것이다. “함수를 부르는 문장”이란 사실 “호출 수식 + 값 버리기”였던 셈이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 버려도 되는 값이라면 애초에 왜 돌려주는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 쓰는 사람이 따로 있기 때문이다. 같은 일꾼이라도 부르는 쪽의 사정에 따라 결과가 필요할 수도, 부수 효과만 필요할 수도 있다 — 함수는 일단 결과를 내놓고, 쓸지 버릴지는 부르는 쪽이 정한다는 것이 C의 분업이다. 다만 이 관대함에는 그림자가 있다 — 반환값이 “성공했는지” 를 알리는 함수라면, 버리는 순간 실패를 놓친다. 오류를 값으로 알리는 C의 방식과 “버리면 안 되는 반환값”의 이야기는 51장의 주제다.</p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>abs</code>는 항상 양수를 돌려주는가? 절댓값이니 당연할 것 같은데.</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 거의 항상 — 그런데 정확히 한 곳에 함정이 있다. 7장에서 2의 보수의 유일한 비대칭을 배웠다: 가장 작은 음수(-128, 32비트라면 약 −21억)의 짝이 되는 양수가 <strong>없다</strong>. 그러면 그 수의 절댓값을 물으면 어떻게 되는가 — 담을 그릇이 없으므로, 계약 밖(정의되지 않은 동작)이다. “당연히 되겠지”의 딱 한 칸 바깥에 함정이 있는 것 — 7장의 비대칭이 실제 함수의 사용 설명서에까지 흔적을 남긴 사례다. 이런 경계 사냥은 52장의 주특기가 된다.</p></div></div><h3 id="s21-3">21.3 표준 라이브러리 — 미리 만들어진 일꾼들</h3><div></div><p><code>printf</code>도 <code>abs</code>도 우리가 만들지 않았다. C를 설치하면 따라오는 <strong>표준 라이브러리</strong> — 16장의 링크 단계에서 우리 프로그램에 이어지던 바로 그 꾸러미 — 의 일꾼들이다. 도구 상자(<code>&lt;stdio.h></code>, <code>&lt;stdlib.h></code> 등)마다 쓸 수 있는 일꾼의 명단(선언)이 들어 있고, <code>#include</code>로 명단을 가져오면 그 상자의 일꾼들을 부를 수 있게 된다.</p><p>표준 라이브러리에 어떤 상자가 있고 무엇이 들었는지는 62장에서 얼개를 펴고 훑는다. 지금 챙길 것은 감각 하나다 — <strong>프로그래밍의 절반은 남이 만든 함수를 부르는 일이다.</strong> 잘 만들어진 일꾼을 알아보고 바르게 부리는 것이 코드의 절반을 결정하고, 그래서 이 책의 후반(43장)에서 “어떤 일꾼을 쓸 것인가”가 다시 큰 주제가 된다.</p><p>이제 헬로 월드에서 남은 칸은 둘뿐이다 — <code>printf</code>의 따옴표 안 서식이 정확히 어떻게 동작하는지(다음 장), 그리고 <code>int main(void)</code>와 <code>return 0</code>의 정체(제5부). 다음 장에서 출력을 정면으로 다루며 제4부의 목표에 바짝 다가선다.</p>
 <div class="nav"><a href="ch20.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch22.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

@@ -85,26 +85,17 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
 .bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
-/* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
-   전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
-   권장(35~45자)의 두세 배다. 줄이 길면 줄 끝에서 다음 줄 머리로 돌아오는 눈의
-   복귀 도약이 어긋나 같은 줄을 두 번 읽거나 한 줄을 건너뛴다.
-   그렇다고 전부를 가두지는 않는다: 코드·표·도해는 넓을수록 좋다. 그래서
-   *본문만* 가두고 넓어야 할 것은 밖으로 넘치게 둔다. */
-:root { --measure: 40rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다.
+   (2026-08-10: 40rem 으로 가둬 봤으나 저자가 「모양이 깨졌다」며 되돌리라고
+   했다. 줄 길이 문제는 D4 의 *독자가 고르는 폭*으로 푼다.) */
 .wrap { width:100%; max-width:none; margin:0; }
-.wrap > * { max-width:var(--measure); margin-left:auto; margin-right:auto; }
-/* 넓어야 하는 것들은 재갈을 풀어 준다 */
-.wrap > .demo, .wrap > .tblwrap, .wrap > figure, .wrap > .figwrap,
-.wrap > pre, .wrap > .toc, .wrap > .toc-full, .wrap > table,
-.wrap > .cover, .wrap > .nav, .wrap > .chapter-notes {
-  max-width:min(72rem, 100%); }
-h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
 h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
 h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
-     border-left:4px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
 p { margin:.9rem 0; } a { color:var(--link); }
 /* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
    (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
@@ -194,8 +185,17 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
 
-.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
-       border-left:3px solid var(--box-rule); border-radius:0; }
+/* ── 왼쪽 세로선 규율 (저자 지시 2026-08-10) ─────────────────
+   네 변 상자는 좌우 안쪽 여백이 양쪽에서 폭을 갉는다. 왼쪽 세로선 하나로
+   영역만 표시하고 오른쪽은 열어 둔다. 제목 쪽 선이 내용 쪽보다 굵고, 둘은
+   서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
+   영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
+.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:0; }
+.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -210,10 +210,10 @@ figure.tbl { text-align:center; }
    ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
      칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
      여백이 겹쳐 들쭉날쭉해진다. */
-.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
@@ -226,8 +226,8 @@ figure.tbl { text-align:center; }
 .dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
 .dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
-.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
-  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .why .dev-label,
@@ -237,16 +237,17 @@ figure.tbl { text-align:center; }
 /* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 
-/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
-.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
-.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
-  background:none; }
-.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 문답 — 질문 쪽 선이 굵고, 답 쪽이 가늘고, 둘 사이가 떨어져 있다 */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
-.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
 .dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
@@ -363,7 +364,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">29장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch28.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch30.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch29.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s29-1"><span class="tf-no">29.1</span>규칙 1 — 정수 승격</a><a class="lv3" href="#s29-2"><span class="tf-no">29.2</span>규칙 2 — 통상 산술 변환</a><a class="lv3" href="#s29-3"><span class="tf-no">29.3</span>규칙 3 — 가변 인자의 기본 진급</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-29">29 암묵적 변환(implicit conversion) — 승격과 통상 산술 변환</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>26장 타입의 갈래 · 산술 타입이라는 낱말</div><div>27장 정수 · 정수형마다 폭이 다르다</div><div>28장 정수의 연산 · 연산은 같은 타입끼리 일어난다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>7장에서 부호 확장(8→16비트 넓히기)을 배웠고, 28장 끝에서 “작은 그릇의 값은 계산 전에 자동으로 넓혀진다”고 스쳤다. 그러면 <code>char + char</code>의 결과 타입은 char인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 아니다 — int다. 그리고 이 사실이 이 장의 출발점이다. C의 산술 연산은 <strong>작은 정수 타입 위에서 일어나지 않는다</strong>. 계산 전에 모두 int(또는 더 큰 타입)로 넓힌 뒤 계산하고, 결과도 그 넓은 타입이다. 왜 그런지, 어디까지 그런지가 이 장의 내용이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">이 장이 30장의 비교보다 앞에 오는 것이 중요하다. 비교도, 산술도, 함수 호출도 전부 <strong>말없는 변환</strong>을 거치는데, 그것을 모르고 비교를 배우면 「왜 이 비교가 참인가」를 설명할 도리가 없다. 27·28장에서 폭이 다른 정수들을 만난 직후이자, 그것들이 서로 만나기 직전 — 여기가 유일하게 맞는 자리다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">C는 타입이 다른 값들을 만나게 하면 <strong>말없이</strong> 변환한다. 이 장은 그 <span id="idx-entry-112"></span>보이지 않는 변환들을 한자리에 모은다 — 정수 승격, 통상 산술 변환(usual arithmetic conversions), <span id="idx-entry-113"></span>그리고 가변 인자(variadic arguments)의 기본 진급까지. 흩어 놓으면 각각이 수수께끼지만, 모아 놓으면 하나의 규칙 체계다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>이 규칙들을 다 외워야 하는가?</li></ol></div></div><div></div><span id="idx-entry-114"></span><p>이 장이 내내 쓰는 낱말 — <strong>산술 타입</strong>, <strong>정수 타입</strong>, <strong>정수 승격(integer promotion)의 대상</strong> — 은 26장에서 정의한 그대로다. 헷갈리면 그 갈래를 다시 펴 보면 된다.</p><h3 id="s29-1">29.1 규칙 1 — 정수 승격</h3><p><strong>정수 승격</strong>(integer promotion): <code>char</code>, <code>short</code>, <code>bool</code>, 비트 필드처럼 int보다 작은 정수 타입의 값이 산술 연산에 참여하면, 계산 전에 <strong>int로 넓혀진다</strong>(int가 그 값들을 다 담을 수 있으면 int로, 아니면 unsigned int).</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch29/conv.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
+<h2 id="loc-29">29 암묵적 변환(implicit conversion) — 승격과 통상 산술 변환</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>26장 타입의 갈래 · 산술 타입이라는 낱말</div><div>27장 정수 · 정수형마다 폭이 다르다</div><div>28장 정수의 연산 · 연산은 같은 타입끼리 일어난다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>7장에서 부호 확장(8→16비트 넓히기)을 배웠고, 28장 끝에서 “작은 그릇의 값은 계산 전에 자동으로 넓혀진다”고 스쳤다. 그러면 <code>char + char</code>의 결과 타입은 char인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 아니다 — int다. 그리고 이 사실이 이 장의 출발점이다. C의 산술 연산은 <strong>작은 정수 타입 위에서 일어나지 않는다</strong>. 계산 전에 모두 int(또는 더 큰 타입)로 넓힌 뒤 계산하고, 결과도 그 넓은 타입이다. 왜 그런지, 어디까지 그런지가 이 장의 내용이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">이 장이 30장의 비교보다 앞에 오는 것이 중요하다. 비교도, 산술도, 함수 호출도 전부 <strong>말없는 변환</strong>을 거치는데, 그것을 모르고 비교를 배우면 「왜 이 비교가 참인가」를 설명할 도리가 없다. 27·28장에서 폭이 다른 정수들을 만난 직후이자, 그것들이 서로 만나기 직전 — 여기가 유일하게 맞는 자리다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">C는 타입이 다른 값들을 만나게 하면 <strong>말없이</strong> 변환한다. 이 장은 그 <span id="idx-entry-112"></span>보이지 않는 변환들을 한자리에 모은다 — 정수 승격, 통상 산술 변환(usual arithmetic conversions), <span id="idx-entry-113"></span>그리고 가변 인자(variadic arguments)의 기본 진급까지. 흩어 놓으면 각각이 수수께끼지만, 모아 놓으면 하나의 규칙 체계다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>이 규칙들을 다 외워야 하는가?</li></ol></div></div><div></div><span id="idx-entry-114"></span><p>이 장이 내내 쓰는 낱말 — <strong>산술 타입</strong>, <strong>정수 타입</strong>, <strong>정수 승격(integer promotion)의 대상</strong> — 은 26장에서 정의한 그대로다. 헷갈리면 그 갈래를 다시 펴 보면 된다.</p><h3 id="s29-1">29.1 규칙 1 — 정수 승격</h3><div></div><p><strong>정수 승격</strong>(integer promotion): <code>char</code>, <code>short</code>, <code>bool</code>, 비트 필드처럼 int보다 작은 정수 타입의 값이 산술 연산에 참여하면, 계산 전에 <strong>int로 넓혀진다</strong>(int가 그 값들을 다 담을 수 있으면 int로, 아니면 unsigned int).</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch29/conv.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
@@ -395,6 +396,6 @@ so -1 &lt; 1u is false
 7 / 2        = 3
 (double)7/2  = 3.5
 float 1.5f via %f = 1.500000  (promoted to double)
-</code></pre></div></div><p>첫 줄이 그 확인이다 — <code>signed char</code> 100끼리 더했는데 결과가 200이다. char에는 담기지 않는 값인데도 넘치지 않은 이유는, 덧셈이 char의 세계가 아니라 int의 세계에서 일어났기 때문이다.</p><p>이유는 기계에 있다(11장). CPU의 계산 회로와 레지스터는 워드 크기 근처의 정수를 다루도록 만들어져 있어서, 작은 타입만을 위한 별도 산술을 두는 것이 오히려 비효율이다. C는 그 현실을 언어 규칙으로 받아들였다 — 작은 타입은 <strong>저장의 단위</strong>이지 계산의 단위가 아니다.</p><h3 id="s29-2">29.2 규칙 2 — 통상 산술 변환</h3><span id="idx-entry-115"></span><p>승격 뒤에도 두 피연산자의 타입이 다르면, <strong>통상 산술 변환</strong>(usual arithmetic conversions)이 공통 타입 하나를 정한다. 실무에서 기억할 순서는 이렇다.</p><ul><li>한쪽이 실수면 실수 쪽으로 (<code>long double</code> > <code>double</code> > <code>float</code>).</li><li>둘 다 정수면 — 더 넓은 쪽으로. 폭이 같으면 <strong>부호 없는 쪽이 이긴다</strong>.</li></ul><p>정수끼리의 규칙을 표준의 순서대로 펼치면 네 단계다.</p><figure class="fig"><img src="figures/conversions.svg" alt="conversions" loading="lazy"><p class="float-caption">그림 29.1 — 네 단계를 순서대로 따른다. 대부분의 사고는 3번에서 난다.</p></figure><p>마지막 줄이 함정의 원천이다. 시연의 둘째 부분이 그 실물이다 — <code>-1</code>을 unsigned의 눈으로 읽으면 42억이 넘는 거대한 양수가 된다(7장의 모듈러 세계 그대로다). 그래서 <code>-1 &lt; 1u</code> 같은 비교는 직관과 반대로 <strong>거짓</strong>이 된다. 배열 인덱스나 크기 계산(<code>sizeof</code>의 결과는 부호 없는 <code>size_t</code>다!) 에서 부호 있는 값과 섞이면 조용히 사고가 나는 이유가 이것이다.</p><p>다행히 이 함정은 컴파일러가 잘 지킨다 — 17장에서 켜 둔 경고가 부호 섞인 비교를 지목해 준다(이 책의 예제 하나도 그 경고에 걸려 다시 쓰였다). 수칙으로 줄이면: <strong>부호 있는 것과 없는 것을 한 비교에 섞지 않는다.</strong> 크기·인덱스는 <code>size_t</code> 계열로 일관되게 쓰거나, 명시적 캐스트로 의도를 드러낸다.</p><h3 id="s29-3">29.3 규칙 3 — 가변 인자의 기본 진급</h3><p>세 번째 변환은 인자 개수가 정해지지 않은 함수 — <code>printf</code> 같은 <strong>가변 인자 함수</strong> — 에서 일어난다. 원형에 타입이 적혀 있지 않은 자리로 넘어 가는 인자에는 <strong>기본 진급</strong>(default argument promotions)이 적용된다: <code>float</code>는 <strong><code>double</code>로</strong>, 작은 정수 타입은 <strong>int로</strong> 넓혀진다.</p><p>시연의 마지막 줄이 그 확인이다 — <code>float</code> 값을 <code>%f</code>로 찍었는데 잘 나온다. 서식 <code>%f</code>는 사실 double을 기대하는데, float 인자가 진급해 double이 되어 도착했기 때문이다(그래서 printf에는 float 전용 서식이 아예 없다). 22장에서 배운 “서식과 재료의 계약”에 이 진급 규칙이 숨은 조항으로 들어 있는 셈이다 — 이 계약의 전모와 가변 인자 함수를 직접 만드는 법은 58장에서 정면으로 다룬다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>변환 하나가 날린 로켓 — 아리안 5, 1996</p>암묵·명시 변환이 얼마나 무거울 수 있는지 보여 주는 사건이 있다. 1996년 유럽우주국의 아리안 5 로켓이 첫 발사 37초 만에 폭발했다.<sup class="fnref" id="ch29-fnref-1"><a href="#ch29-fn-1" aria-label="주 1">1</a></sup> 조사 결과의 핵심은 한 줄의 변환이었다 — 관성 항법 장치가 수평 속도를 64비트 부동소수점으로 계산해 두고, 그 값을 <strong>16비트 부호 있는 정수로</strong> 옮겨 담는 코드가 있었다. 전작 아리안 4에서는 그 속도가 16비트 범위를 넘을 일이 없어 안전했지만, 더 빠른 아리안 5에서는 값이 그릇을 넘쳤다. 축소 변환의 실패(7장의 잘림)가 예외를 일으켰고, 그 예외가 처리되지 않은 채 항법 컴퓨터가 멈추자 로켓은 자세를 잃고 자폭했다. 손실은 수억 달러 규모였다. 재사용된 코드가 <strong>새로운 값의 범위</strong>를 만나는 순간 계약이 깨진 것 — “변환은 값을 바꾼다”는 이 장의 문장이 가장 비싸게 확인된 사례다.</div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“캐스트는 값을 바꾸지 않고 해석만 바꾼다”</strong></p>포인터 캐스트(37장)에서는 대체로 맞는 말이지만, <strong>산술 타입 사이의 캐스트는 값 자체를 바꾼다</strong>. <code>(int)3.9</code>는 3이 되고(소수부 버림), <code>(char)300</code>은 그릇에 안 들어가 잘리며(7장의 축소), <code>(unsigned)-1</code>은 거대한 양수가 된다. C의 캐스트는 “이 비트를 저 타입으로 읽어라”가 아니라 “이 값을 저 타입의 값으로 <strong>변환하라</strong>”는 뜻이다 — 비트를 그대로 두고 눈만 바꾸고 싶다면 48장의 공용체나 <code>memcpy</code>가 그 통로다. 두 요구를 같은 문법으로 쓰지 않는 것이 C의 몇 안 되는 친절이다.</div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 이 규칙들을 다 외워야 하는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 세 줄이면 충분하다 — <strong>작은 정수는 int로 승격된다, 섞이면 넓은 쪽· 부호 없는 쪽으로 간다, 가변 인자에서는 float가 double이 된다.</strong> 나머지 세부는 부록의 표에 두고, 실무에서는 두 습관이 규칙 암기를 대신한다: 경고를 켜 두는 것(17장), 그리고 <strong>의도가 있는 변환은 캐스트로 명시하는 것</strong>. 암묵 변환의 위험은 규칙의 복잡함이 아니라 그것이 <strong>보이지 않는다</strong>는 데 있으므로, 보이게 만드는 것이 최선의 방어다.</p></div></div><p>변환의 갈래를 갖췄다. 다음 장부터 흐름의 도구다 — 판단을 값으로 만드는 불리언과 비교부터.</p><section class="chapter-notes" role="doc-endnotes"><h2>주</h2><ol><li id="ch29-fn-1">ARIANE 5 Flight 501 Failure: Report by the Inquiry Board. 1996. European Space Agency / CNES, Paris. <a href="https://sci.esa.int/web/cluster/-/38889-ariane-501-report-by-board-of-inquiry"><code>sci.esa.int/web/cluster/-/38889</code></a> <a class="fnback" href="#ch29-fnref-1" aria-label="본문으로 돌아가기" title="본문으로 돌아가기">&#8617;</a></li></ol></section>
+</code></pre></div></div><p>첫 줄이 그 확인이다 — <code>signed char</code> 100끼리 더했는데 결과가 200이다. char에는 담기지 않는 값인데도 넘치지 않은 이유는, 덧셈이 char의 세계가 아니라 int의 세계에서 일어났기 때문이다.</p><p>이유는 기계에 있다(11장). CPU의 계산 회로와 레지스터는 워드 크기 근처의 정수를 다루도록 만들어져 있어서, 작은 타입만을 위한 별도 산술을 두는 것이 오히려 비효율이다. C는 그 현실을 언어 규칙으로 받아들였다 — 작은 타입은 <strong>저장의 단위</strong>이지 계산의 단위가 아니다.</p><h3 id="s29-2">29.2 규칙 2 — 통상 산술 변환</h3><div></div><span id="idx-entry-115"></span><p>승격 뒤에도 두 피연산자의 타입이 다르면, <strong>통상 산술 변환</strong>(usual arithmetic conversions)이 공통 타입 하나를 정한다. 실무에서 기억할 순서는 이렇다.</p><ul><li>한쪽이 실수면 실수 쪽으로 (<code>long double</code> > <code>double</code> > <code>float</code>).</li><li>둘 다 정수면 — 더 넓은 쪽으로. 폭이 같으면 <strong>부호 없는 쪽이 이긴다</strong>.</li></ul><p>정수끼리의 규칙을 표준의 순서대로 펼치면 네 단계다.</p><figure class="fig"><img src="figures/conversions.svg" alt="conversions" loading="lazy"><p class="float-caption">그림 29.1 — 네 단계를 순서대로 따른다. 대부분의 사고는 3번에서 난다.</p></figure><p>마지막 줄이 함정의 원천이다. 시연의 둘째 부분이 그 실물이다 — <code>-1</code>을 unsigned의 눈으로 읽으면 42억이 넘는 거대한 양수가 된다(7장의 모듈러 세계 그대로다). 그래서 <code>-1 &lt; 1u</code> 같은 비교는 직관과 반대로 <strong>거짓</strong>이 된다. 배열 인덱스나 크기 계산(<code>sizeof</code>의 결과는 부호 없는 <code>size_t</code>다!) 에서 부호 있는 값과 섞이면 조용히 사고가 나는 이유가 이것이다.</p><p>다행히 이 함정은 컴파일러가 잘 지킨다 — 17장에서 켜 둔 경고가 부호 섞인 비교를 지목해 준다(이 책의 예제 하나도 그 경고에 걸려 다시 쓰였다). 수칙으로 줄이면: <strong>부호 있는 것과 없는 것을 한 비교에 섞지 않는다.</strong> 크기·인덱스는 <code>size_t</code> 계열로 일관되게 쓰거나, 명시적 캐스트로 의도를 드러낸다.</p><h3 id="s29-3">29.3 규칙 3 — 가변 인자의 기본 진급</h3><div></div><p>세 번째 변환은 인자 개수가 정해지지 않은 함수 — <code>printf</code> 같은 <strong>가변 인자 함수</strong> — 에서 일어난다. 원형에 타입이 적혀 있지 않은 자리로 넘어 가는 인자에는 <strong>기본 진급</strong>(default argument promotions)이 적용된다: <code>float</code>는 <strong><code>double</code>로</strong>, 작은 정수 타입은 <strong>int로</strong> 넓혀진다.</p><p>시연의 마지막 줄이 그 확인이다 — <code>float</code> 값을 <code>%f</code>로 찍었는데 잘 나온다. 서식 <code>%f</code>는 사실 double을 기대하는데, float 인자가 진급해 double이 되어 도착했기 때문이다(그래서 printf에는 float 전용 서식이 아예 없다). 22장에서 배운 “서식과 재료의 계약”에 이 진급 규칙이 숨은 조항으로 들어 있는 셈이다 — 이 계약의 전모와 가변 인자 함수를 직접 만드는 법은 58장에서 정면으로 다룬다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>변환 하나가 날린 로켓 — 아리안 5, 1996</p>암묵·명시 변환이 얼마나 무거울 수 있는지 보여 주는 사건이 있다. 1996년 유럽우주국의 아리안 5 로켓이 첫 발사 37초 만에 폭발했다.<sup class="fnref" id="ch29-fnref-1"><a href="#ch29-fn-1" aria-label="주 1">1</a></sup> 조사 결과의 핵심은 한 줄의 변환이었다 — 관성 항법 장치가 수평 속도를 64비트 부동소수점으로 계산해 두고, 그 값을 <strong>16비트 부호 있는 정수로</strong> 옮겨 담는 코드가 있었다. 전작 아리안 4에서는 그 속도가 16비트 범위를 넘을 일이 없어 안전했지만, 더 빠른 아리안 5에서는 값이 그릇을 넘쳤다. 축소 변환의 실패(7장의 잘림)가 예외를 일으켰고, 그 예외가 처리되지 않은 채 항법 컴퓨터가 멈추자 로켓은 자세를 잃고 자폭했다. 손실은 수억 달러 규모였다. 재사용된 코드가 <strong>새로운 값의 범위</strong>를 만나는 순간 계약이 깨진 것 — “변환은 값을 바꾼다”는 이 장의 문장이 가장 비싸게 확인된 사례다.</div><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“캐스트는 값을 바꾸지 않고 해석만 바꾼다”</strong></p>포인터 캐스트(37장)에서는 대체로 맞는 말이지만, <strong>산술 타입 사이의 캐스트는 값 자체를 바꾼다</strong>. <code>(int)3.9</code>는 3이 되고(소수부 버림), <code>(char)300</code>은 그릇에 안 들어가 잘리며(7장의 축소), <code>(unsigned)-1</code>은 거대한 양수가 된다. C의 캐스트는 “이 비트를 저 타입으로 읽어라”가 아니라 “이 값을 저 타입의 값으로 <strong>변환하라</strong>”는 뜻이다 — 비트를 그대로 두고 눈만 바꾸고 싶다면 48장의 공용체나 <code>memcpy</code>가 그 통로다. 두 요구를 같은 문법으로 쓰지 않는 것이 C의 몇 안 되는 친절이다.</div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 이 규칙들을 다 외워야 하는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 세 줄이면 충분하다 — <strong>작은 정수는 int로 승격된다, 섞이면 넓은 쪽· 부호 없는 쪽으로 간다, 가변 인자에서는 float가 double이 된다.</strong> 나머지 세부는 부록의 표에 두고, 실무에서는 두 습관이 규칙 암기를 대신한다: 경고를 켜 두는 것(17장), 그리고 <strong>의도가 있는 변환은 캐스트로 명시하는 것</strong>. 암묵 변환의 위험은 규칙의 복잡함이 아니라 그것이 <strong>보이지 않는다</strong>는 데 있으므로, 보이게 만드는 것이 최선의 방어다.</p></div></div><p>변환의 갈래를 갖췄다. 다음 장부터 흐름의 도구다 — 판단을 값으로 만드는 불리언과 비교부터.</p><section class="chapter-notes" role="doc-endnotes"><h2>주</h2><ol><li id="ch29-fn-1">ARIANE 5 Flight 501 Failure: Report by the Inquiry Board. 1996. European Space Agency / CNES, Paris. <a href="https://sci.esa.int/web/cluster/-/38889-ariane-501-report-by-board-of-inquiry"><code>sci.esa.int/web/cluster/-/38889</code></a> <a class="fnback" href="#ch29-fnref-1" aria-label="본문으로 돌아가기" title="본문으로 돌아가기">&#8617;</a></li></ol></section>
 <div class="nav"><a href="ch28.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch30.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>

@@ -85,26 +85,17 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
 .bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
-/* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
-   전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
-   권장(35~45자)의 두세 배다. 줄이 길면 줄 끝에서 다음 줄 머리로 돌아오는 눈의
-   복귀 도약이 어긋나 같은 줄을 두 번 읽거나 한 줄을 건너뛴다.
-   그렇다고 전부를 가두지는 않는다: 코드·표·도해는 넓을수록 좋다. 그래서
-   *본문만* 가두고 넓어야 할 것은 밖으로 넘치게 둔다. */
-:root { --measure: 40rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다.
+   (2026-08-10: 40rem 으로 가둬 봤으나 저자가 「모양이 깨졌다」며 되돌리라고
+   했다. 줄 길이 문제는 D4 의 *독자가 고르는 폭*으로 푼다.) */
 .wrap { width:100%; max-width:none; margin:0; }
-.wrap > * { max-width:var(--measure); margin-left:auto; margin-right:auto; }
-/* 넓어야 하는 것들은 재갈을 풀어 준다 */
-.wrap > .demo, .wrap > .tblwrap, .wrap > figure, .wrap > .figwrap,
-.wrap > pre, .wrap > .toc, .wrap > .toc-full, .wrap > table,
-.wrap > .cover, .wrap > .nav, .wrap > .chapter-notes {
-  max-width:min(72rem, 100%); }
-h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
 h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
 h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
-h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem; padding-left:.55rem;
-     border-left:4px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
 p { margin:.9rem 0; } a { color:var(--link); }
 /* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
    (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
@@ -194,8 +185,17 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
 
-.dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
-       border-left:3px solid var(--box-rule); border-radius:0; }
+/* ── 왼쪽 세로선 규율 (저자 지시 2026-08-10) ─────────────────
+   네 변 상자는 좌우 안쪽 여백이 양쪽에서 폭을 갉는다. 왼쪽 세로선 하나로
+   영역만 표시하고 오른쪽은 열어 둔다. 제목 쪽 선이 내용 쪽보다 굵고, 둘은
+   서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
+   영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0 0 .32rem; }
+.dev > *:not(.dev-label) { border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:0; }
+.dev > *:not(.dev-label) + *:not(.dev-label) { margin-top:.3rem; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
 .float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
@@ -210,10 +210,10 @@ figure.tbl { text-align:center; }
    ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
      칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
      여백이 겹쳐 들쭉날쭉해진다. */
-.dev.open { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:.75rem 0; }
-.dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
@@ -226,8 +226,8 @@ figure.tbl { text-align:center; }
 .dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
 .dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
 /* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
-.dev.open .qa-a { border:none; border-left:2px solid var(--muted);
-  padding:.1rem 0 .1rem .7rem; margin:.4rem 0; }
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
    (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
 .prereq .dev-label, .deepqa .dev-label, .why .dev-label,
@@ -237,16 +237,17 @@ figure.tbl { text-align:center; }
 /* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 
-/* 문답 — 한 상자 안에서 가로선 하나로 갈린다 */
-.qa-box { border:1px solid var(--fg); margin:1.15rem 0; }
-.qa-box .dev { margin:0; border:none; border-radius:0; padding:.6rem .9rem;
-  background:none; }
-.qa-box .qa-a { border-top:1px solid var(--fg); }
+/* 문답 — 질문 쪽 선이 굵고, 답 쪽이 가늘고, 둘 사이가 떨어져 있다 */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.05rem 0 .2rem .7rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
 /* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
-.dev.recap { border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:1.15rem 0; }
-.dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
-  text-indent:0; border-bottom:1px solid var(--fg);
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem;
+  text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
 .dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
@@ -363,7 +364,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">23장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch22.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch24.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch23.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s23-1"><span class="tf-no">23.1</span>선언 — 타입, 이름, 그리고 첫 값</a><a class="lv3" href="#s23-2"><span class="tf-no">23.2</span>대입 — 상태를 바꾸는 부수효과</a><a class="lv3" href="#s23-3"><span class="tf-no">23.3</span>const — 바꾸지 않겠다는 약속</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-23">23 변수 선언</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>5장 워드와 주소 · 주소와 칸</div><div>19장 프로그램의 구조 · 선언이 놓이는 자리</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>5장에서 메모리는 번호(주소) 붙은 사물함들이라 했다. 그런데 지금까지 쓴 C 코드에는 주소가 한 번도 등장하지 않았다 — 그러면 프로그램은 사물함을 어떻게 쓰고 있었던 것인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 이름을 통해서다. C에서 <strong>변수</strong>를 선언한다는 것은 “사물함 몇 칸을 잡고, 거기에 사람이 읽을 이름을 붙이는” 일이다. 번호(주소)는 컴파일러가 관리하고, 우리는 이름으로 부른다 — 이름은 주소의 사람용 별명이다. 이 장에서 그 이름을 만드는 법을 배우고, 별명 뒤의 진짜 주소를 다시 만나는 것은 제7부(35장)다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">5부의 제목이 「이름을 만드는 법」인 이유가 여기서 드러난다. 4부까지는 남이 만든 이름만 썼다 — 이제 내가 만든다. 변수를 함수보다 먼저 두는 것은 함수의 매개변수와 반환값이 결국 변수이기 때문이고, 무엇보다 대입 <code>=</code> 를 여기서 정확히 못박아야 34장까지 이어지는 오해가 애초에 생기지 않는다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-89"></span>제5부의 주제는 “이름을 만드는 법”이다. 그 첫걸음으로 변수를 선언한다 — 타입과 이름을 약속하고, 값을 담고, 바꾸는 것까지. 연산자 하나가 새로 합류한다: 대입(assignment) <code>=</code>. 그리고 이 <code>=</code>가 수학의 등호가 <strong>아니라는</strong> 것이 이 장의 가장 중요한 문장이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>타입 이야기에서 <code>int</code>가 “약 ±21억”이라 했는데 — 정확한 크기가 기계마다 다르다는 뜻인가? 7장에서 배운 8비트, 16비트 이야기는 어디로 갔는가?</li></ol></div></div><div></div><h3 id="s23-1">23.1 선언 — 타입, 이름, 그리고 첫 값</h3><p>변수 선언의 문법은 이미 여러 번 스쳐 본 모양이다:</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> apples <strong><span class="tok-x">=</span></strong> <span class="tok-n">12</span><span class="tok-x">;</span></code></pre><p>세 부분으로 읽는다 — <strong>타입</strong>(<code>int</code>), <strong>이름</strong>(<code>apples</code>), 그리고 <strong>초기화</strong> (<code>= 12</code>). 뜻은: “정수를 담는 칸을 잡고, apples라 부르기로 하고, 첫 값으로 12를 담아라.”</p><p><strong>타입</strong>은 두 가지를 약속한다. 첫째, <strong>값의 집합</strong> — <code>int</code>는 부호 있는 정수의 그릇으로, 흔한 기계에서 32비트, 즉 7장의 2의 보수 세계에서 약 ±21억 범위다. <code>double</code>이라 적으면 8장의 64비트 부동소수점 그릇이 된다. 둘째, <strong>연산의 약속</strong> — 그 이름에 무엇을 해도 되는지(정수 산술인지 근사 산술인지)가 타입에서 나온다. 5장에서 “덩어리를 아는 것은 읽는 쪽”이라 했는데, C에서는 <strong>타입이 바로 그 읽는 눈</strong>이다.</p><p><strong>이름</strong>은 자유롭게 짓되 문법이 정한 틀 안에서다 — 글자·숫자·밑줄로 이루어지고 숫자로 시작할 수 없다. 좋은 이름은 문법이 아니라 사람을 위한 것이다: <code>a</code>보다 <code>apples</code>가 반년 뒤의 자신에게 친절하다.</p><p><strong>초기화</strong>는 관행이 아니라 이 책의 규칙이다. <strong>선언할 때 반드시 첫 값을 담아라.</strong> 초기화 없이 선언만 한 변수의 칸에는 그 자리에 우연히 남아 있던 쓰레기 비트가 들어 있고(5장 — 칸은 언제나 무언가로 차 있다), 그것을 읽는 것은 대표적인 사고 경로다. 정식 취급은 43장에서 하되, 습관은 지금부터 들인다.</p><h3 id="s23-2">23.2 대입 — 상태를 바꾸는 부수효과</h3><p>선언된 변수의 값은 <strong>대입</strong>(<code>=</code>)으로 바꾼다. 20장의 배분표에 예고됐던 연산자가 드디어 합류하는 것이다. 시연부터:</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch23/var.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2 id="loc-23">23 변수 선언</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>5장 워드와 주소 · 주소와 칸</div><div>19장 프로그램의 구조 · 선언이 놓이는 자리</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>5장에서 메모리는 번호(주소) 붙은 사물함들이라 했다. 그런데 지금까지 쓴 C 코드에는 주소가 한 번도 등장하지 않았다 — 그러면 프로그램은 사물함을 어떻게 쓰고 있었던 것인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 이름을 통해서다. C에서 <strong>변수</strong>를 선언한다는 것은 “사물함 몇 칸을 잡고, 거기에 사람이 읽을 이름을 붙이는” 일이다. 번호(주소)는 컴파일러가 관리하고, 우리는 이름으로 부른다 — 이름은 주소의 사람용 별명이다. 이 장에서 그 이름을 만드는 법을 배우고, 별명 뒤의 진짜 주소를 다시 만나는 것은 제7부(35장)다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">5부의 제목이 「이름을 만드는 법」인 이유가 여기서 드러난다. 4부까지는 남이 만든 이름만 썼다 — 이제 내가 만든다. 변수를 함수보다 먼저 두는 것은 함수의 매개변수와 반환값이 결국 변수이기 때문이고, 무엇보다 대입 <code>=</code> 를 여기서 정확히 못박아야 34장까지 이어지는 오해가 애초에 생기지 않는다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-89"></span>제5부의 주제는 “이름을 만드는 법”이다. 그 첫걸음으로 변수를 선언한다 — 타입과 이름을 약속하고, 값을 담고, 바꾸는 것까지. 연산자 하나가 새로 합류한다: 대입(assignment) <code>=</code>. 그리고 이 <code>=</code>가 수학의 등호가 <strong>아니라는</strong> 것이 이 장의 가장 중요한 문장이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>타입 이야기에서 <code>int</code>가 “약 ±21억”이라 했는데 — 정확한 크기가 기계마다 다르다는 뜻인가? 7장에서 배운 8비트, 16비트 이야기는 어디로 갔는가?</li></ol></div></div><div></div><h3 id="s23-1">23.1 선언 — 타입, 이름, 그리고 첫 값</h3><div></div><p>변수 선언의 문법은 이미 여러 번 스쳐 본 모양이다:</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> apples <strong><span class="tok-x">=</span></strong> <span class="tok-n">12</span><span class="tok-x">;</span></code></pre><p>세 부분으로 읽는다 — <strong>타입</strong>(<code>int</code>), <strong>이름</strong>(<code>apples</code>), 그리고 <strong>초기화</strong> (<code>= 12</code>). 뜻은: “정수를 담는 칸을 잡고, apples라 부르기로 하고, 첫 값으로 12를 담아라.”</p><p><strong>타입</strong>은 두 가지를 약속한다. 첫째, <strong>값의 집합</strong> — <code>int</code>는 부호 있는 정수의 그릇으로, 흔한 기계에서 32비트, 즉 7장의 2의 보수 세계에서 약 ±21억 범위다. <code>double</code>이라 적으면 8장의 64비트 부동소수점 그릇이 된다. 둘째, <strong>연산의 약속</strong> — 그 이름에 무엇을 해도 되는지(정수 산술인지 근사 산술인지)가 타입에서 나온다. 5장에서 “덩어리를 아는 것은 읽는 쪽”이라 했는데, C에서는 <strong>타입이 바로 그 읽는 눈</strong>이다.</p><p><strong>이름</strong>은 자유롭게 짓되 문법이 정한 틀 안에서다 — 글자·숫자·밑줄로 이루어지고 숫자로 시작할 수 없다. 좋은 이름은 문법이 아니라 사람을 위한 것이다: <code>a</code>보다 <code>apples</code>가 반년 뒤의 자신에게 친절하다.</p><p><strong>초기화</strong>는 관행이 아니라 이 책의 규칙이다. <strong>선언할 때 반드시 첫 값을 담아라.</strong> 초기화 없이 선언만 한 변수의 칸에는 그 자리에 우연히 남아 있던 쓰레기 비트가 들어 있고(5장 — 칸은 언제나 무언가로 차 있다), 그것을 읽는 것은 대표적인 사고 경로다. 정식 취급은 43장에서 하되, 습관은 지금부터 들인다.</p><h3 id="s23-2">23.2 대입 — 상태를 바꾸는 부수효과</h3><div></div><p>선언된 변수의 값은 <strong>대입</strong>(<code>=</code>)으로 바꾼다. 20장의 배분표에 예고됐던 연산자가 드디어 합류하는 것이다. 시연부터:</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch23/var.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
 <span class="tok-x">{</span>
@@ -376,6 +377,6 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>apples: 12
 apples: 15
-</code></pre></div></div><p>셋째 문장 <code>apples = apples + 3;</code>을 정확히 읽는 것이 이 장의 핵심이다. 읽는 순서는 — ① 오른쪽 수식 <code>apples + 3</code>을 평가한다(지금 값 12를 읽어 15를 얻는다), ② 그 값을 왼쪽 이름의 칸에 <strong>담는다</strong>(원래 있던 12는 덮여 사라진다). 즉 <code>=</code>는 “같다”가 아니라 <strong>“오른쪽을 계산해 왼쪽에 담아라”라는 지시</strong>다. 값이 바뀌는 것 — 이것이 20장에서 예고한, 출력 말고 두 번째로 만나는 <strong>부수효과(side effect)</strong>다: 대입은 변수의 <strong>상태</strong>를 바꾼다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>x = x + 1</code>은 말이 안 되는 식이다 — 어떤 수도 자기 더하기 1과 같을 수 없으니까”</strong></p>수학의 눈으로는 백번 옳다 — 등식으로 읽으면 해가 없는 식이다. 이 오개념의 뿌리는 <code>=</code> 기호의 재활용이다. C의 <code>=</code>는 등호가 아니라 <strong>담기 지시</strong>라서, <code>x = x + 1</code>은 “x의 지금 값에 1을 더해, 그 결과를 x에 도로 담아라” — 즉 x를 1 키우라는 멀쩡한 명령이다. 오른쪽의 <code>x</code>는 <strong>읽을 때의 값</strong>(옛 값)이고 왼쪽의 <code>x</code>는 <strong>담을 곳</strong>(칸)이라는 것 — 같은 이름이 자리에 따라 값과 장소로 다르게 읽히는 이 구별이 C 읽기의 기본기다. 참고로 “같은가?”를 묻는 진짜 비교는 다른 기호(<code>==</code>, 30장)가 맡는다 — 기호를 나눠 쓴 이유가 바로 이 혼동 때문이다.</div><h3 id="s23-3">23.3 const — 바꾸지 않겠다는 약속</h3><p>바꿀 일이 없는 값에는 선언에 <code>const</code>를 붙인다:</p><pre><code data-lang="c"><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> max_floor <strong><span class="tok-x">=</span></strong> <span class="tok-n">63</span><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이 이름의 값은 앞으로 바뀌지 않는다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p><code>const</code>가 붙은 이름에 대입하려 하면 컴파일러가 오류로 막는다. 이것은 자물쇠라기보다 <strong>문서</strong>다 — “이 값은 변하지 않음”을 컴파일러와 다음 읽는 사람 모두에게 알리는 것이다. 바뀌지 않는 것이 많은 코드일수록 읽기 쉽고 사고가 적다 — 그래서 현대적 관행은 “일단 <code>const</code>로 선언하고, 바꿔야 할 것만 뺀다”에 가깝다. 이 책의 예제도 그 감각을 따른다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 타입 이야기에서 <code>int</code>가 “약 ±21억”이라 했는데 — 정확한 크기가 기계마다 다르다는 뜻인가? 7장에서 배운 8비트, 16비트 이야기는 어디로 갔는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 정확한 관찰이다. <code>int</code>의 크기는 표준이 “최소한 이만큼”만 정하고 구체 크기는 플랫폼에 맡긴 타입이다 — 지금 주류 환경에서는 32비트가 사실상의 표준이다. 7장의 8비트·16비트 그릇들, 그리고 “크기를 정확히 못박고 싶을 때”의 타입들(<code>int32_t</code> 같은)은 27장에서 정수 타입 가족 전체를 소개하며 정리한다. 이 부에서는 <code>int</code> 하나로 충분하다 — 나선형 원칙대로, 가족 상봉은 필요해질 때 한다.</p></div></div><p>이름을 만들었고, 값을 담았고, 바꾸는 법도 배웠다. 그런데 15장부터 끌고 온 외상 장부에는 아직 두 줄이 남아 있다 — <code>int main(void)</code>와 <code>return 0</code>. 둘 다 <strong>함수</strong>의 문법이다. 변수에 이름을 붙였으니, 다음 장에서는 <strong>일</strong>에 이름을 붙인다 — 함수를 스스로 만드는 법, 그리고 외상 장부의 완전한 청산이다.</p>
+</code></pre></div></div><p>셋째 문장 <code>apples = apples + 3;</code>을 정확히 읽는 것이 이 장의 핵심이다. 읽는 순서는 — ① 오른쪽 수식 <code>apples + 3</code>을 평가한다(지금 값 12를 읽어 15를 얻는다), ② 그 값을 왼쪽 이름의 칸에 <strong>담는다</strong>(원래 있던 12는 덮여 사라진다). 즉 <code>=</code>는 “같다”가 아니라 <strong>“오른쪽을 계산해 왼쪽에 담아라”라는 지시</strong>다. 값이 바뀌는 것 — 이것이 20장에서 예고한, 출력 말고 두 번째로 만나는 <strong>부수효과(side effect)</strong>다: 대입은 변수의 <strong>상태</strong>를 바꾼다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“<code>x = x + 1</code>은 말이 안 되는 식이다 — 어떤 수도 자기 더하기 1과 같을 수 없으니까”</strong></p>수학의 눈으로는 백번 옳다 — 등식으로 읽으면 해가 없는 식이다. 이 오개념의 뿌리는 <code>=</code> 기호의 재활용이다. C의 <code>=</code>는 등호가 아니라 <strong>담기 지시</strong>라서, <code>x = x + 1</code>은 “x의 지금 값에 1을 더해, 그 결과를 x에 도로 담아라” — 즉 x를 1 키우라는 멀쩡한 명령이다. 오른쪽의 <code>x</code>는 <strong>읽을 때의 값</strong>(옛 값)이고 왼쪽의 <code>x</code>는 <strong>담을 곳</strong>(칸)이라는 것 — 같은 이름이 자리에 따라 값과 장소로 다르게 읽히는 이 구별이 C 읽기의 기본기다. 참고로 “같은가?”를 묻는 진짜 비교는 다른 기호(<code>==</code>, 30장)가 맡는다 — 기호를 나눠 쓴 이유가 바로 이 혼동 때문이다.</div><h3 id="s23-3">23.3 const — 바꾸지 않겠다는 약속</h3><div></div><p>바꿀 일이 없는 값에는 선언에 <code>const</code>를 붙인다:</p><pre><code data-lang="c"><strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">int</span></strong> max_floor <strong><span class="tok-x">=</span></strong> <span class="tok-n">63</span><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이 이름의 값은 앞으로 바뀌지 않는다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p><code>const</code>가 붙은 이름에 대입하려 하면 컴파일러가 오류로 막는다. 이것은 자물쇠라기보다 <strong>문서</strong>다 — “이 값은 변하지 않음”을 컴파일러와 다음 읽는 사람 모두에게 알리는 것이다. 바뀌지 않는 것이 많은 코드일수록 읽기 쉽고 사고가 적다 — 그래서 현대적 관행은 “일단 <code>const</code>로 선언하고, 바꿔야 할 것만 뺀다”에 가깝다. 이 책의 예제도 그 감각을 따른다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 타입 이야기에서 <code>int</code>가 “약 ±21억”이라 했는데 — 정확한 크기가 기계마다 다르다는 뜻인가? 7장에서 배운 8비트, 16비트 이야기는 어디로 갔는가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 정확한 관찰이다. <code>int</code>의 크기는 표준이 “최소한 이만큼”만 정하고 구체 크기는 플랫폼에 맡긴 타입이다 — 지금 주류 환경에서는 32비트가 사실상의 표준이다. 7장의 8비트·16비트 그릇들, 그리고 “크기를 정확히 못박고 싶을 때”의 타입들(<code>int32_t</code> 같은)은 27장에서 정수 타입 가족 전체를 소개하며 정리한다. 이 부에서는 <code>int</code> 하나로 충분하다 — 나선형 원칙대로, 가족 상봉은 필요해질 때 한다.</p></div></div><p>이름을 만들었고, 값을 담았고, 바꾸는 법도 배웠다. 그런데 15장부터 끌고 온 외상 장부에는 아직 두 줄이 남아 있다 — <code>int main(void)</code>와 <code>return 0</code>. 둘 다 <strong>함수</strong>의 문법이다. 변수에 이름을 붙였으니, 다음 장에서는 <strong>일</strong>에 이름을 붙인다 — 함수를 스스로 만드는 법, 그리고 외상 장부의 완전한 청산이다.</p>
 <div class="nav"><a href="ch22.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch24.html">다음 →</a></div>
 </div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>
