@@ -4,7 +4,7 @@
 (RFC-0019). 이 표는 `scripts/check-terms.py` 가 원고에서 생성하며,
 한국어–영어 용어 대조표를 겸한다.
 
-- 용어 **227개**
+- 용어 **229개**
 - 어긋난 곳 **0건** — 없다
 
 ## 용어 대조표
@@ -143,7 +143,7 @@
 | 아레나 | arena | 84 | 절 제목 | 84 | 89 |
 | 암묵적 변환 | implicit conversion | 29 | 첫 등장 | 29 | 91 |
 | 엄격한 앨리어싱 | strict aliasing | 13 | 절 제목 | 13 | 13 |
-| 없음 | none | 80 | 절 제목 | 44 | 80 |
+| 없음 | none | 80 | 절 제목 | 34 | 80 |
 | 엔디안 | endianness | 5 | 절 제목 | 5 | 5 |
 | 역참조 | dereference | 35 | 굵은 강조 | 35 | 35 |
 | 역참조(dereference) | — | 35 | 첫 등장 | — | 35 |
@@ -161,6 +161,7 @@
 | 원자적 연산 | atomic operation | 3 | 첫 등장 | 3 | 80 |
 | 위치 독립 코드 | position-independent code | 54 | 절 제목 | 54 | 54 |
 | 유니코드 | — | 9 | 절 제목 | 12 | 9 |
+| 유래 | provenance | 86 | 절 제목 | 86 | 86 |
 | 유연 배열 멤버 | flexible array member | 46 | 절 제목 | 46 | 46 |
 | 유효범위 | scope | 44 | 절 제목 | 44 | 44 |
 | 의 보수 | ones' complement | 7 | 첫 등장 | 7 | 7 |
@@ -192,6 +193,7 @@
 | 조건문 | conditional statement | 30 | 첫 등장 | 30 | 30 |
 | 조건문(conditional statement) | — | 30 | 첫 등장 | — | 30 |
 | 종료 상태 | exit status | 3 | 굵은 강조 | 3 | 53 |
+| 좌값 | lvalue | 34 | 첫 등장 | 34 | 34 |
 | 중단점 | breakpoint | 17 | 첫 등장 | 17 | 17 |
 | 중첩 루프 | nested loop | 41 | 절 제목 | 41 | 41 |
 | 지역성 | locality | 40 | 굵은 강조 | 11 | 11 |

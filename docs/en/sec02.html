@@ -476,13 +476,16 @@ h1, h2, h3, h4, .colophon > div {
 .qa-box > .qa-a,
 .qa-box > .qa-q { border-left-color:#d5d5d5; }
 
+/* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="here-at">A note on t…</span><span class="sp"></span><span class="bar-nav"><a href="sec01.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch01.html" title="Next" aria-label="Next">→</a></span><a href="toc.html">Detailed contents</a><a href="../ko/">Ko</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="here-at">A note on t…</span><span class="sp"></span><span class="bar-nav"><a href="sec01.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch01.html" title="Next" aria-label="Next">→</a></span><a class="bar-toc" href="toc.html" title="Detailed contents" aria-label="Detailed contents">▤</a><a href="../ko/">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div>
 <main><div class="wrap">
 <h2>A note on this translation</h2><div></div><p>The Korean edition is the original. This English edition is translated from it chapter by chapter, and <strong>chapter numbers are kept identical to the original</strong>, so a cross-reference to “chapter 62” means the same chapter in both editions. All 13 parts, 97 chapters, appendices A–E and the index are now translated.</p><p>The two editions are kept in step mechanically: <code>scripts/sync-status.py</code> records the hash of the Korean source each translated file was made from, and every build reports any chapter whose original has changed since, so a change on one side surfaces as a stale entry on the other. <code>scripts/check-xrefs.py</code> compares the chapter cross-references of the two editions and reports any that have drifted apart. Per-chapter status is in <code>TRANSLATION.md</code> in the repository.</p><p>The Korean edition is at:</p><ul><li>Web — <a href="https://rubidus-api.github.io/proven_c_book/ko/">rubidus-api.github.io/proven_c_book/ko/</a></li><li>PDF — the <code>ko</code> asset of the current release</li></ul>

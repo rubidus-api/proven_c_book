@@ -12,17 +12,17 @@
 > 생겼는지에서 출발해, C23을 기본값으로 삼고, 마지막 부에서
 > [proven](https://github.com/rubidus-api) C 라이브러리로 이어진다.
 
-- **현재 판**: v0.53.0 — **초안(draft)**
-- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.53.0/proven_c_book-v0.53.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.53.0/proven_c_book-v0.53.0-en.pdf)
+- **현재 판**: v0.54.0 — **초안(draft)**
+- **PDF 바로 받기** — [한국어 PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.54.0/proven_c_book-v0.54.0-ko.pdf) · [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.54.0/proven_c_book-v0.54.0-en.pdf)
 - **웹으로 읽기** — [한국어](https://rubidus-api.github.io/proven_c_book/ko/) · [English](https://rubidus-api.github.io/proven_c_book/en/)
-- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.53.0/proven_c_book-v0.53.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.53.0/proven_c_book-v0.53.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.53.0/proven_c_book-v0.53.0-all.zip)
-- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.53.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.53.0-en.pdf)
+- **묶음(zip)** — [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.54.0/proven_c_book-v0.54.0-ko.zip) · [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.54.0/proven_c_book-v0.54.0-en.zip) · [전체](https://github.com/rubidus-api/proven_c_book/releases/download/v0.54.0/proven_c_book-v0.54.0-all.zip)
+- 저장소 안 사본: [ko PDF](dist/proven_c_book-v0.54.0-ko.pdf) · [en PDF](dist/proven_c_book-v0.54.0-en.pdf)
 - **서식 예시(style specimen)** — 책에 쓰이는 모든 장치를 한자리에 모아 둔 견본이다.
   각 요소 옆에 그 이름(웹은 CSS 선택자, 텍스트 판은 함수 이름)이 붙어 있다.
   판을 내지 않고도 늘 최신이다:
   [웹](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13부 97장 + 부록 A~E + 찾아보기 — 한국어판 859쪽, 영어판 913쪽
+- 13부 98장 + 부록 A~F + 찾아보기 — 한국어판 861쪽, 영어판 914쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 어떤 책인가
@@ -61,7 +61,7 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
 
 ## 이 책이 다른 점
 
-- **인쇄된 실행 결과는 전부 실제 출력이다.** 예제 157개를 매 빌드마다
+- **인쇄된 실행 결과는 전부 실제 출력이다.** 예제 160개를 매 빌드마다
   컴파일·실행해 그 출력을 지면에 싣는다(GCC 기준, Clang으로 교차 검증).
   사람이 옮겨 적은 출력은 한 줄도 없다.
 - **주장을 재려고 코드를 돌린다.** "`-O2`에서는 `longjmp` 뒤에 비 `volatile`
@@ -77,6 +77,12 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
   검토했으며, 예제는 기계가 매번 실제로 돌려 검증한다 — 누가 썼든 *돌지 않는
   코드는 이 책에 실리지 않는다*.
 
+> **검증이 뜻하는 범위.** 위의 검증은 *예제가 이 환경에서 빌드되고 돌며, 지면의
+> 출력이 그 실행에서 나왔다*는 사실까지다(x86-64 리눅스, GCC 기준·Clang 교차).
+> 이는 책의 모든 서술에 대한 표준 적합성 감사도, 보안 감사도, 대규모 실사용
+> 검증도 아니다. 서술의 근거는 표준 조항과 1차 자료로 따로 대며, 함께 실린
+> proven 라이브러리의 검증 범위와 한계는 86·94장에 표로 적어 두었다.
+
 ## 장 사이의 의존 관계
 
 각 장 서두의 「먼저 알아야 할 것」이 곧 의존 선언이라, 그것을 그대로 뽑아 관계도로
@@ -84,7 +90,7 @@ C에는 오랜 역사가 남긴 흉터가 있다. 널 포인터가 왜 「0인�
 
 [![장 사이의 의존 관계](docs/dependency-graph.svg)](docs/DEPENDENCIES.md)
 
-가로축이 1장부터 97장까지이고, 호 하나가 의존 하나다 — 왼쪽(기댄 곳)에서
+가로축이 1장부터 98장까지이고, 호 하나가 의존 하나다 — 왼쪽(기댄 곳)에서
 오른쪽(그 장)으로 걸린다. 호가 길수록 멀리서 끌어오는 것이고, 점이 클수록 여러
 장이 그 장에 기댄다. 뒤 장에 기대는 자리가 있으면 붉은 점선으로 드러난다.
 
@@ -116,7 +122,7 @@ CC=clang scripts/verify-examples.sh     # 다른 컴파일러로 교차 검증
 ```
 dist/        배포물 — PDF(ko·en)와 zip 묶음
 docs/        GitHub Pages 가 서비스하는 HTML 판 (ko/, en/)
-examples/    본문에 실리는 예제 157개 — 전부 검증된 것
+examples/    본문에 실리는 예제 160개 — 전부 검증된 것
 examples-en/ 같은 예제의 영어판 (주석·문자열·출력이 영어)
 scripts/     예제 검증 스크립트
 vendor/      proven 라이브러리 스냅샷 (예제 링크용)

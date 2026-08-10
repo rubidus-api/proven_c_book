@@ -14,17 +14,17 @@ those who have just finished a first textbook.
 > default, and ends as a manual for the
 > [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.53.0 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.53.0/proven_c_book-v0.53.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.53.0/proven_c_book-v0.53.0-ko.pdf)
+- **Current edition**: v0.54.0 — **draft**
+- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.54.0/proven_c_book-v0.54.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.54.0/proven_c_book-v0.54.0-ko.pdf)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.53.0/proven_c_book-v0.53.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.53.0/proven_c_book-v0.53.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.53.0/proven_c_book-v0.53.0-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.53.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.53.0-ko.pdf)
+- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.54.0/proven_c_book-v0.54.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.54.0/proven_c_book-v0.54.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.54.0/proven_c_book-v0.54.0-all.zip)
+- Copies inside the repository: [en PDF](dist/proven_c_book-v0.54.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.54.0-ko.pdf)
 - **Style specimen** — every device the book uses, gathered in one place, with each
   element labelled by its own name (CSS selector on the web, function name in the
   typeset edition). Always current, independently of releases:
   [web](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13 parts, 97 chapters, appendices A–E and an index — 793 pages in English, 740 in Korean.
+- 13 parts, 98 chapters, appendices A–F and an index — 914 pages in English, 861 in Korean.
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## What kind of book is this
@@ -67,7 +67,7 @@ documents, and the complete C grammar in EBNF.
 
 ## What makes it different
 
-- **Every printed output is real.** All 157 listings are compiled and run on
+- **Every printed output is real.** All 160 listings are compiled and run on
   every build and their output is pasted into the page (GCC, cross-checked with
   Clang). Not one line of output was copied by hand.
 - **Claims are measured by running code.** Statements such as "at `-O2` a
@@ -86,6 +86,14 @@ documents, and the complete C grammar in EBNF.
   goes in were decided and reviewed by the author, and the listings are verified
   by a machine on every build — whoever wrote it, *code that does not run does
   not go into this book.*
+
+> **What that verification covers.** It reaches exactly this far: *the examples
+> build and run in this environment, and the output on the page came from that
+> run* (x86-64 Linux, GCC as the base with Clang as a cross-check). It is not an
+> audit of the book's prose against the standard, not a security audit, and not
+> validation by large-scale real use. The prose is grounded separately, in clauses
+> of the standard and primary sources; the verified scope and the limits of the
+> bundled proven library are tabulated in chapters 86 and 94.
 
 ## Dependencies between chapters
 
@@ -130,7 +138,7 @@ CC=clang scripts/verify-examples.sh     # cross-check with another compiler
 ```
 dist/        Distribution — PDFs (ko, en) and zip bundles
 docs/        The HTML edition served by GitHub Pages (ko/, en/)
-examples/    The 157 listings that appear in the book — all verified
+examples/    The 160 listings that appear in the book — all verified
 examples-en/ The same listings in English (comments, strings, output)
 scripts/     Listing verification scripts
 vendor/      A snapshot of the proven library (for linking the listings)

@@ -472,3 +472,6 @@ h1, h2, h3, h4, .colophon > div {
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
 .qa-box > .qa-q { border-left-color:#d5d5d5; }
+
+/* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
