@@ -2,6 +2,39 @@
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Appendix C — Implicit conversions in summary — Proven C Book</title><style>
+/* ── 글꼴을 직접 싣는다 (RFC-0026 D2, 저자 지시 2026-08-10) ────────
+   전에는 @font-face 가 하나도 없어, CSS 가 적어 둔 이름이 방문자 기계에 없으면
+   대체 글꼴로 떨어졌다 --- 세리프 본문이 고딕으로 보이는 일이 흔했다.
+   이 책이 쓰는 갈래는 셋뿐이다: serif(본문) · sans-serif(제목·UI) · monospace(코드).
+   파일은 scripts/make-webfonts.sh 가 *이 책에 쓰인 글자만* 남겨 만든다.
+   font-display:swap --- 글꼴을 기다리느라 글이 안 보이는 일이 없게 한다. */
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
   --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
@@ -12,7 +45,7 @@
   --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
-       font-family:"Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+       font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 /* ── 상세 차례와 「이 장의 차례」 패널 (저자 지시 2026-08-10) ── */
 .here-btn { margin-left:.7rem; font:inherit; font-size:.92rem; cursor:pointer;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
@@ -44,13 +77,25 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
-       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+       font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
 .bar .sp { flex:1 1 auto; }
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
-/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다. */
+/* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
+   전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
+   권장(35~45자)의 두세 배다. 줄이 길면 줄 끝에서 다음 줄 머리로 돌아오는 눈의
+   복귀 도약이 어긋나 같은 줄을 두 번 읽거나 한 줄을 건너뛴다.
+   그렇다고 전부를 가두지는 않는다: 코드·표·도해는 넓을수록 좋다. 그래서
+   *본문만* 가두고 넓어야 할 것은 밖으로 넘치게 둔다. */
+:root { --measure: 40rem; }
 .wrap { width:100%; max-width:none; margin:0; }
-h1,h2,h3,h4 { font-family:"Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
+.wrap > * { max-width:var(--measure); margin-left:auto; margin-right:auto; }
+/* 넓어야 하는 것들은 재갈을 풀어 준다 */
+.wrap > .demo, .wrap > .tblwrap, .wrap > figure, .wrap > .figwrap,
+.wrap > pre, .wrap > .toc, .wrap > .toc-full, .wrap > table,
+.wrap > .cover, .wrap > .nav, .wrap > .chapter-notes {
+  max-width:min(72rem, 100%); }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35; }
 h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
 h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
      border-bottom:2px solid var(--fg); }
@@ -86,7 +131,7 @@ sup.fnref a::after  { content: "]"; }
 /* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
 .dev p:has(> span.dev-label:first-child) { text-indent: 0; }
 .chapter-head p { text-indent: 0; }
-pre,code,kbd { font-family:"D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 code { background:none; padding:0; font-size:.95em; }
 pre { background:none; border:1px solid var(--fg); border-radius:0;
       padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
@@ -117,7 +162,7 @@ th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; ver
    반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
 th { background:rgba(128,128,128,.16); font-weight:700;
      border-bottom:2px solid var(--fg);
-     font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+     font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 /* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
@@ -125,11 +170,11 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .memrow table.mem { display:inline-table; border-collapse:collapse;
   border:none; margin:0; width:auto; }
 .memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
-  font-family:"D2Coding",ui-monospace,monospace; font-size:.9rem;
+  font-family:"PCB Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
   text-align:center; background:none; }
 .memrow td.cell.hi { border-width:2px; }
 .memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
-  font-family:"D2Coding",ui-monospace,monospace; font-size:.82rem;
+  font-family:"PCB Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
   color:var(--muted); }
 /* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
 /* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
@@ -138,9 +183,9 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .demo { border:1px solid var(--fg); margin:1.15rem 0; }
 .demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
   border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
-.demo-src > .demo-head { font-family:"D2Coding",ui-monospace,monospace; }
+.demo-src > .demo-head { font-family:"PCB Mono","D2Coding",ui-monospace,monospace; }
 .demo-in > .demo-head, .demo-out > .demo-head {
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .demo > .demo-body { padding:0; }
 .demo > .demo-body pre { border:none; border-radius:0; margin:0;
   padding:.6rem .9rem; }
@@ -148,13 +193,13 @@ ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
 .dev { margin:1.15rem 0; padding:.75rem .95rem; background:none;
        border-left:3px solid var(--box-rule); border-radius:0; }
 /* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
-.float-caption { text-align:center; font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+.float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
 figure { margin:1.2rem 0; }
 figure.tbl table { margin-bottom:.2rem; }
 figure.tbl { text-align:center; }
 .dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
-.dev-label { font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+.dev-label { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
              font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
 /* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
    가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
@@ -165,7 +210,7 @@ figure.tbl { text-align:center; }
   padding:0 .9rem .55rem; margin:.75rem 0; }
 .dev.open > .dev-label { margin:0 -.9rem .5rem; padding:.45rem .9rem;
   text-indent:0; border-bottom:1px solid var(--fg);
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
 /* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
 .dev.open > .open-body { margin:.5rem 0 0; padding:0; }
@@ -198,7 +243,7 @@ figure.tbl { text-align:center; }
   padding:0 .9rem .55rem; margin:1.15rem 0; }
 .dev.recap > .dev-label { margin:0 -.9rem .5rem; padding:.5rem .9rem;
   text-indent:0; border-bottom:1px solid var(--fg);
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
 .dev.recap > p, .dev.recap > div, .dev.recap > figure { margin:.3rem 0;
   padding:0; }
@@ -209,7 +254,7 @@ figure.tbl { text-align:center; }
   display:inline; margin-bottom:0; }
 .qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
 .qa-q .dev-label, .qa-q .dev-label + p {
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   color:var(--fg); font-size:1rem; }
 .qa-a .dev-label { color:var(--muted); }
 .qa-a .dev-label + p { font-family:inherit; font-weight:400; }
@@ -227,7 +272,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.platform > .dev-label, .dev.recap > .dev-label {
   margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
   border-bottom:1px solid var(--fg);
-  font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
 .dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
 .dev.mathbox > p, .dev.platform > p, .dev.recap > p,
@@ -265,9 +310,9 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
          border:1px solid var(--fg); font-size:.8rem; font-weight:700;
-         font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+         font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .cover-meta { color:var(--muted); font-size:.9rem;
-              font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+              font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .cover-author { margin-top:1.1rem; font-size:1.05rem; }
 .cover-links { font-size:.87rem; }
 .cover-links a { margin:0 .6rem; }
@@ -275,13 +320,13 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .cover-blurb p { margin:.5rem 0; }
 .metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
   margin:.6rem 0 1rem; }
-.metalist dt { color:var(--muted); font-family:"Noto Sans CJK KR",system-ui,sans-serif;
+.metalist dt { color:var(--muted); font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
   font-size:.92rem; }
 .metalist dd { margin:0; }
 .colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
                  margin:1.2rem 0 1.8rem; font-size:.93rem; }
 .colophon-meta dt { color:var(--muted);
-                    font-family:"Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+                    font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
 .colophon-meta dd { margin:0; }
 .colophon { font-size:.93rem; }
 .colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
@@ -294,7 +339,7 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
 :root[data-theme="light"] figure.fig img { filter:none; }
 .toc { columns:24rem; column-gap:2.4rem; }
 .toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
-            font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+            font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
 .toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
@@ -302,18 +347,18 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
-       font-family:"Noto Sans CJK KR",system-ui,sans-serif; }
+       font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
 
-body { font-family:"Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="sec103.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="sec105.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">Contents of this chapter</button><span class="sp"></span><span class="bar-nav"><a href="sec103.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="sec105.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
+<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="sec107.html#sx1"><span class="tf-no"></span>Integer promotion</a><a class="lv3" href="sec107.html#sx2"><span class="tf-no"></span>The usual arithmetic conversions (the common type of two operands)</a><a class="lv3" href="sec107.html#sx3"><span class="tf-no"></span>The default promotions of variadic arguments</a><a class="lv3" href="sec107.html#sx4"><span class="tf-no"></span>Integer conversion rank (the criterion of the conversion rules)</a><a class="lv3" href="sec107.html#sx5"><span class="tf-no"></span>Which conversion calls down which danger</a><a class="lv3" href="sec107.html#sx6"><span class="tf-no"></span>A list of the places quiet conversions happen</a><a class="lv3" href="sec107.html#sx7"><span class="tf-no"></span>Other conversions often met</a></div></div>
 <main><div class="wrap">
-<h2>Appendix C — Implicit conversions in summary</h2><p>A compression of chapter 29′s rules into tables.</p><h3>Integer promotion</h3><p>When <code>bool</code>, <code>char</code>, <code>signed char</code>, <code>unsigned char</code>, <code>short</code>, <code>unsigned short</code> or a bit-field takes part in arithmetic:</p><ul><li>if all the values fit in an <code>int</code> → <code>int</code></li><li>otherwise → <code>unsigned int</code></li></ul><p>That is, <strong>arithmetic does not happen on a type narrower than int.</strong></p><h3>The usual arithmetic conversions (the common type of two operands)</h3><ol><li value="1">If one side is <code>long double</code> → both <code>long double</code></li><li value="2">Otherwise if one side is <code>double</code> → both <code>double</code></li><li value="3">Otherwise if one side is <code>float</code> → both <code>float</code></li><li value="4"><p>If both are integers → after promoting each:</p><ul><li>if the signedness is the same → the wider side</li><li>if the unsigned side is wider or equal → <strong>the unsigned side</strong></li><li>if the signed side is wider and holds all of the other’s values → the signed side</li><li>otherwise → the unsigned edition of the signed side</li></ul></li></ol><p>The practical summary: <strong>when they mix, to the wider side; when the widths are equal, the unsigned side wins.</strong> Avoid comparisons of mixed signedness (turn the warnings on and the compiler points them out).</p><h3>The default promotions of variadic arguments</h3><p>Arguments crossing into a place with no type in the prototype (<code>...</code>):</p><ul><li><code>float</code> → <code>double</code></li><li>the <code>bool</code>, <code>char</code> and <code>short</code> families → <code>int</code> (or <code>unsigned int</code>)</li></ul><p>So <code>printf</code> has no float-specific format, and <code>%f</code> takes a double (chapters 19, 25 and 58).</p><h3>Integer conversion rank (the criterion of the conversion rules)</h3><p>The order used when the usual arithmetic conversions choose “the wider side”. Higher is above.</p><pre><code data-lang="text">long long  >  long  >  int  >  short  >  char / signed char / unsigned char  >  bool</code></pre><p>Three things must be distinguished.</p><p><strong>① <code>char</code>, <code>signed char</code> and <code>unsigned char</code> have the same rank.</strong> Having the same width, the three sit in one slot.</p><p><strong>② <code>bool</code>’s rank is lower than those.</strong> The standard pins <code>bool</code> below every signed integer type in rank.</p><p><strong>③ Rank is not width.</strong> At the same width the ranks of the unsigned and the signed side are the same, and then <strong>the unsigned side wins</strong> in the usual arithmetic conversions. That is why <code>-1 &lt; 1u</code> is false — <code>-1</code> turns into a huge unsigned value (chapter 29). Ranks can differ at the same width (where an implementation provides extended integer types), and at the same rank the signedness settles the result.</p><h3>Which conversion calls down which danger</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>conversion</strong></th><th><strong>what happens</strong></th><th><strong>danger</strong></th></tr><tr><td>signed → unsigned</td><td>the two’s complement value is reinterpreted as it is</td><td>a negative becomes a huge value</td></tr><tr><td>unsigned → signed</td><td>as it is if it fits, otherwise implementation-defined</td><td>the value changes at the boundary</td></tr><tr><td>wide integer → narrow unsigned integer</td><td>the remainder modulo <math><msup><mn>2</mn><mi>𝑁</mi></msup></math> (defined)</td><td>quiet loss of value</td></tr><tr><td>wide integer → narrow signed integer</td><td>as it is if it fits, otherwise <strong>implementation-defined</strong></td><td>so it stands in C23 too</td></tr><tr><td>integer → real</td><td>rounded to the nearest value</td><td>loss of precision for large integers (chapter 8)</td></tr><tr><td>real → integer</td><td>the fractional part is discarded (towards 0)</td><td>outside the range it is outside the contract</td></tr><tr><td><code>double</code> → <code>float</code></td><td>the precision is reduced</td><td>rounding error</td></tr><tr><td>pointer → <code>void *</code></td><td>lossless</td><td>only the type information is lost</td></tr><tr><td><code>void *</code> → another pointer</td><td>lossless</td><td>outside the contract if the alignment does not match (chapter 37)</td></tr><tr><td>integer → pointer</td><td>implementation-defined</td><td>the provenance is lost (chapter 14)</td></tr></table></div><p class="float-caption">Table 99.1</p></figure><h3>A list of the places quiet conversions happen</h3><p>Implicit conversion happens <strong>without asking</strong> in the following places.</p><ul><li>Between the two operands of an arithmetic operation (the usual arithmetic conversions)</li><li>The right of an assignment → the left’s type</li><li>A function argument → the parameter’s type (when there is a prototype)</li><li>A <code>return</code>’s value → the return type</li><li>A condition place (the condition of <code>if</code>, <code>while</code>, <code>?:</code>) → judgement as <code>bool</code></li><li>Arguments crossing into <code>...</code> (the default promotions)</li><li>When an array or function name is used as a value (decay into a pointer)</li></ul><h3>Other conversions often met</h3><ul><li><strong>Narrowing</strong> (wide → narrow integer): to an <strong>unsigned</strong> destination it becomes the remainder modulo <math><msup><mn>2</mn><mi>𝑁</mi></msup></math> (defined behaviour), and to a <strong>signed</strong> destination it is as it is only if it fits and otherwise implementation-defined (chapter 7). That real implementations mostly discard the high bits is true, but <strong>that is the implementation’s choice, not the language’s guarantee</strong> — the clause stands even after C23 pinned down two’s complement.</li><li><strong>Real → integer</strong>: the fractional part is discarded (towards 0). Outside the range it is outside the contract.</li><li><strong>Array → pointer</strong>: in most contexts it decays into the address of the first element. The exceptions are being the operand of <code>sizeof</code>, being the operand of unary <code>&amp;</code>, and initialising an array from a string literal (chapters 38 and 42). <code>alignof</code> takes only <strong>a type name</strong>, so it does not belong in this list.</li><li><strong>Function → pointer</strong>: a function name decays into a function pointer.</li></ul>
+<h2>Appendix C — Implicit conversions in summary</h2><p>A compression of chapter 29′s rules into tables.</p><h3 id="sx1">Integer promotion</h3><p>When <code>bool</code>, <code>char</code>, <code>signed char</code>, <code>unsigned char</code>, <code>short</code>, <code>unsigned short</code> or a bit-field takes part in arithmetic:</p><ul><li>if all the values fit in an <code>int</code> → <code>int</code></li><li>otherwise → <code>unsigned int</code></li></ul><p>That is, <strong>arithmetic does not happen on a type narrower than int.</strong></p><h3 id="sx2">The usual arithmetic conversions (the common type of two operands)</h3><ol><li value="1">If one side is <code>long double</code> → both <code>long double</code></li><li value="2">Otherwise if one side is <code>double</code> → both <code>double</code></li><li value="3">Otherwise if one side is <code>float</code> → both <code>float</code></li><li value="4"><p>If both are integers → after promoting each:</p><ul><li>if the signedness is the same → the wider side</li><li>if the unsigned side is wider or equal → <strong>the unsigned side</strong></li><li>if the signed side is wider and holds all of the other’s values → the signed side</li><li>otherwise → the unsigned edition of the signed side</li></ul></li></ol><p>The practical summary: <strong>when they mix, to the wider side; when the widths are equal, the unsigned side wins.</strong> Avoid comparisons of mixed signedness (turn the warnings on and the compiler points them out).</p><h3 id="sx3">The default promotions of variadic arguments</h3><p>Arguments crossing into a place with no type in the prototype (<code>...</code>):</p><ul><li><code>float</code> → <code>double</code></li><li>the <code>bool</code>, <code>char</code> and <code>short</code> families → <code>int</code> (or <code>unsigned int</code>)</li></ul><p>So <code>printf</code> has no float-specific format, and <code>%f</code> takes a double (chapters 19, 25 and 58).</p><h3 id="sx4">Integer conversion rank (the criterion of the conversion rules)</h3><p>The order used when the usual arithmetic conversions choose “the wider side”. Higher is above.</p><pre><code data-lang="text">long long  >  long  >  int  >  short  >  char / signed char / unsigned char  >  bool</code></pre><p>Three things must be distinguished.</p><p><strong>① <code>char</code>, <code>signed char</code> and <code>unsigned char</code> have the same rank.</strong> Having the same width, the three sit in one slot.</p><p><strong>② <code>bool</code>’s rank is lower than those.</strong> The standard pins <code>bool</code> below every signed integer type in rank.</p><p><strong>③ Rank is not width.</strong> At the same width the ranks of the unsigned and the signed side are the same, and then <strong>the unsigned side wins</strong> in the usual arithmetic conversions. That is why <code>-1 &lt; 1u</code> is false — <code>-1</code> turns into a huge unsigned value (chapter 29). Ranks can differ at the same width (where an implementation provides extended integer types), and at the same rank the signedness settles the result.</p><h3 id="sx5">Which conversion calls down which danger</h3><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>conversion</strong></th><th><strong>what happens</strong></th><th><strong>danger</strong></th></tr><tr><td>signed → unsigned</td><td>the two’s complement value is reinterpreted as it is</td><td>a negative becomes a huge value</td></tr><tr><td>unsigned → signed</td><td>as it is if it fits, otherwise implementation-defined</td><td>the value changes at the boundary</td></tr><tr><td>wide integer → narrow unsigned integer</td><td>the remainder modulo <math><msup><mn>2</mn><mi>𝑁</mi></msup></math> (defined)</td><td>quiet loss of value</td></tr><tr><td>wide integer → narrow signed integer</td><td>as it is if it fits, otherwise <strong>implementation-defined</strong></td><td>so it stands in C23 too</td></tr><tr><td>integer → real</td><td>rounded to the nearest value</td><td>loss of precision for large integers (chapter 8)</td></tr><tr><td>real → integer</td><td>the fractional part is discarded (towards 0)</td><td>outside the range it is outside the contract</td></tr><tr><td><code>double</code> → <code>float</code></td><td>the precision is reduced</td><td>rounding error</td></tr><tr><td>pointer → <code>void *</code></td><td>lossless</td><td>only the type information is lost</td></tr><tr><td><code>void *</code> → another pointer</td><td>lossless</td><td>outside the contract if the alignment does not match (chapter 37)</td></tr><tr><td>integer → pointer</td><td>implementation-defined</td><td>the provenance is lost (chapter 14)</td></tr></table></div><p class="float-caption">Table 99.1</p></figure><h3 id="sx6">A list of the places quiet conversions happen</h3><p>Implicit conversion happens <strong>without asking</strong> in the following places.</p><ul><li>Between the two operands of an arithmetic operation (the usual arithmetic conversions)</li><li>The right of an assignment → the left’s type</li><li>A function argument → the parameter’s type (when there is a prototype)</li><li>A <code>return</code>’s value → the return type</li><li>A condition place (the condition of <code>if</code>, <code>while</code>, <code>?:</code>) → judgement as <code>bool</code></li><li>Arguments crossing into <code>...</code> (the default promotions)</li><li>When an array or function name is used as a value (decay into a pointer)</li></ul><h3 id="sx7">Other conversions often met</h3><ul><li><strong>Narrowing</strong> (wide → narrow integer): to an <strong>unsigned</strong> destination it becomes the remainder modulo <math><msup><mn>2</mn><mi>𝑁</mi></msup></math> (defined behaviour), and to a <strong>signed</strong> destination it is as it is only if it fits and otherwise implementation-defined (chapter 7). That real implementations mostly discard the high bits is true, but <strong>that is the implementation’s choice, not the language’s guarantee</strong> — the clause stands even after C23 pinned down two’s complement.</li><li><strong>Real → integer</strong>: the fractional part is discarded (towards 0). Outside the range it is outside the contract.</li><li><strong>Array → pointer</strong>: in most contexts it decays into the address of the first element. The exceptions are being the operand of <code>sizeof</code>, being the operand of unary <code>&amp;</code>, and initialising an array from a string literal (chapters 38 and 42). <code>alignof</code> takes only <strong>a type name</strong>, so it does not belong in this list.</li><li><strong>Function → pointer</strong>: a function name decays into a function pointer.</li></ul>
 <div class="nav"><a href="sec103.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="sec105.html">Next →</a></div>
-</div></main></body></html>
+</div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>
