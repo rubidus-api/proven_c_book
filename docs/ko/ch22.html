@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">22장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch21.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch23.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch22.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s22-1"><span class="tf-no">22.1</span>printf — 서식이 있는 출력</a><a class="lv3" href="#s22-2"><span class="tf-no">22.2</span>빈칸의 종류 — 값마다 다른 자리</a><a class="lv3" href="#s22-3"><span class="tf-no">22.3</span>자리를 맞추는 법 — 폭과 정밀도</a><a class="lv3" href="#s22-4"><span class="tf-no">22.4</span>출력의 창구는 하나가 아니다</a><a class="lv3" href="#s22-5"><span class="tf-no">22.5</span>짝 맞추기 — 서식과 재료의 계약</a><a class="lv3" href="#s22-6"><span class="tf-no">22.6</span>제4부를 닫으며 — 헬로 월드 재독</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-22">22 출력</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>10장 스트림의 기원 · 스트림의 기원</div><div>19장 프로그램의 구조 · 프로그램의 뼈대</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>10장에서 프린터 터미널은 <strong>행 버퍼링</strong> — 종이에 찍기 전에 한 줄이 모일 때까지 기다리는 것 — 이 자연스러웠다고 했다. 오늘의 <code>printf</code>에도 그 버릇이 남아 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <span id="idx-entry-87"></span>남아 있다 — 표준 출력이 터미널로 이어져 있을 때, 출력은 보통 <code>\n</code>을 만날 때까지 내부 창고(버퍼)에 모였다가 한 줄씩 흘러 나간다. 19장의 시연에서 <code>printf("Hello, ")</code>의 글자들이 두 번째 호출의 <code>\n</code>이 오고서야 화면에 나타났던 것이 바로 이것이다. 종이 타자기의 사정이 사라진 지 반세기 뒤에도, 그 리듬은 소프트웨어의 기본값으로 살아 있다 — 이 버릇이 실전에서 일으키는 소동(출력이 안 보여요!)과 다스리는 법은 입출력을 본격적으로 다룰 때 만난다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">4부의 마지막 조각이고, 여기서 목표가 달성된다. 출력을 맨 뒤에 둔 것은 <code>printf</code> 가 앞의 셋을 전부 쓰기 때문이다 — 문장(19장) 안에서, 상수(20장)를 재료로, 호출(21장)의 꼴로 일어난다. 그래서 이 장이 끝나면 헬로 월드에 남은 외상이 두 줄뿐이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-88"></span><code>printf</code>를 정면으로 다룬다 — 서식 문자열이라는 틀, <code>%d</code>와 <code>%s</code>라는 빈칸, 그리고 서식과 재료의 짝 맞추기까지. 이 장이 끝나면 제4부의 목표가 달성된다: 헬로 월드 한 편이 (두 줄의 외상만 남기고) 전부 아는 문장이 된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>화면에 찍힌 것이 왜 곧바로 안 보일 때가 있는가 — 프로그램이 멈춘 것처럼 보이다가 한꺼번에 쏟아지는 일이 있는데.</li><li>시연의 실행 결과에서 <code>stderr</code> 줄이 왜 맨 위에 나왔는가?</li></ol></div></div><div></div><h3 id="s22-1">22.1 printf — 서식이 있는 출력</h3><div></div><p><code>printf</code>라는 이름은 <strong>print formatted</strong> — “서식대로 찍어라” — 의 줄임이다. 첫 재료가 <strong>서식 문자열</strong>(format string)이고, 나머지 재료들이 서식의 빈칸에 끼워질 값들이다:</p><pre><code data-lang="c"><strong>printf</strong><strong><span class="tok-x">(</span></strong><strong>서식 문자열</strong><strong><span class="tok-x">,</span></strong><strong> 값1</strong><strong><span class="tok-x">,</span></strong><strong> 값2</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">...</span></strong><strong><span class="tok-x">)</span></strong></code></pre><p>서식 문자열은 <strong>틀</strong>이다. 보통 글자는 그대로 흘러 나가고, <code>%</code>로 시작하는 자리 — <strong>변환 지정</strong>(conversion specification) — 만 빈칸으로 취급되어, 뒤따르는 값이 글자로 바뀌어 끼워진다. 이 책의 최소 집합은 셋이다:</p><ul><li><code>%d</code> — 정수 값을 십진법 글자로 바꿔 끼운다 (decimal).</li><li><code>%s</code> — 문자열을 그대로 끼운다 (string).</li><li><code>%%</code> — 빈칸이 아니라, 퍼센트 글자 자체를 찍고 싶을 때.</li></ul><p>시연한다. 빈칸 둘에 값 둘이 순서대로 끼워진다:</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch22/fmt.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2>22 출력</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>10장 스트림의 기원 · 스트림의 기원</div><div>19장 프로그램의 구조 · 프로그램의 뼈대</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>10장에서 프린터 터미널은 <strong>행 버퍼링</strong> — 종이에 찍기 전에 한 줄이 모일 때까지 기다리는 것 — 이 자연스러웠다고 했다. 오늘의 <code>printf</code>에도 그 버릇이 남아 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <span id="idx-entry-87"></span>남아 있다 — 표준 출력이 터미널로 이어져 있을 때, 출력은 보통 <code>\n</code>을 만날 때까지 내부 창고(버퍼)에 모였다가 한 줄씩 흘러 나간다. 19장의 시연에서 <code>printf("Hello, ")</code>의 글자들이 두 번째 호출의 <code>\n</code>이 오고서야 화면에 나타났던 것이 바로 이것이다. 종이 타자기의 사정이 사라진 지 반세기 뒤에도, 그 리듬은 소프트웨어의 기본값으로 살아 있다 — 이 버릇이 실전에서 일으키는 소동(출력이 안 보여요!)과 다스리는 법은 입출력을 본격적으로 다룰 때 만난다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">4부의 마지막 조각이고, 여기서 목표가 달성된다. 출력을 맨 뒤에 둔 것은 <code>printf</code> 가 앞의 셋을 전부 쓰기 때문이다 — 문장(19장) 안에서, 상수(20장)를 재료로, 호출(21장)의 꼴로 일어난다. 그래서 이 장이 끝나면 헬로 월드에 남은 외상이 두 줄뿐이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-88"></span><code>printf</code>를 정면으로 다룬다 — 서식 문자열이라는 틀, <code>%d</code>와 <code>%s</code>라는 빈칸, 그리고 서식과 재료의 짝 맞추기까지. 이 장이 끝나면 제4부의 목표가 달성된다: 헬로 월드 한 편이 (두 줄의 외상만 남기고) 전부 아는 문장이 된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>화면에 찍힌 것이 왜 곧바로 안 보일 때가 있는가 — 프로그램이 멈춘 것처럼 보이다가 한꺼번에 쏟아지는 일이 있는데.</li><li>시연의 실행 결과에서 <code>stderr</code> 줄이 왜 맨 위에 나왔는가?</li></ol></div></div><div></div><h3 id="s22-1">22.1 printf — 서식이 있는 출력</h3><div></div><p><code>printf</code>라는 이름은 <strong>print formatted</strong> — “서식대로 찍어라” — 의 줄임이다. 첫 재료가 <strong>서식 문자열</strong>(format string)이고, 나머지 재료들이 서식의 빈칸에 끼워질 값들이다:</p><pre><code data-lang="c"><strong>printf</strong><strong><span class="tok-x">(</span></strong><strong>서식 문자열</strong><strong><span class="tok-x">,</span></strong><strong> 값1</strong><strong><span class="tok-x">,</span></strong><strong> 값2</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">...</span></strong><strong><span class="tok-x">)</span></strong></code></pre><p>서식 문자열은 <strong>틀</strong>이다. 보통 글자는 그대로 흘러 나가고, <code>%</code>로 시작하는 자리 — <strong>변환 지정</strong>(conversion specification) — 만 빈칸으로 취급되어, 뒤따르는 값이 글자로 바뀌어 끼워진다. 이 책의 최소 집합은 셋이다:</p><ul><li><code>%d</code> — 정수 값을 십진법 글자로 바꿔 끼운다 (decimal).</li><li><code>%s</code> — 문자열을 그대로 끼운다 (string).</li><li><code>%%</code> — 빈칸이 아니라, 퍼센트 글자 자체를 찍고 싶을 때.</li></ul><p>시연한다. 빈칸 둘에 값 둘이 순서대로 끼워진다:</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch22/fmt.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
 <span class="tok-x">{</span>

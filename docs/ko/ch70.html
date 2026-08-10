@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">70장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch69.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch71.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch70.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s70-1"><span class="tf-no">70.1</span>표준이 정한 것과 정하지 않은 것</a><a class="lv3" href="#s70-2"><span class="tf-no">70.2</span>다섯 가지 문자 상수와 문자열</a><a class="lv3" href="#s70-3"><span class="tf-no">70.3</span>MB_CUR_MAX와 MB_LEN_MAX</a><a class="lv3" href="#s70-4"><span class="tf-no">70.4</span>변환 함수의 세 층</a><a class="lv4" href="#s70-4-1"><span class="tf-no">70.4.1</span>mbstate_t가 왜 필요한가</a><a class="lv3" href="#s70-5"><span class="tf-no">70.5</span>mbrtowc — 한 단계씩 뜯어보기</a><a class="lv4" href="#s70-5-1"><span class="tf-no">70.5.1</span>문자열 통째로 — mbsrtowcs</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-70">70 와이드 문자 ① — <code>wchar_t</code>와 멀티바이트 변환</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>9장 문자와 텍스트 · 코드포인트와 인코딩</div><div>68장 로케일 ① · <code>LC_CTYPE</code></div><div>67장 문자 분류 · 바이트 판정의 한계</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>9장에서 UTF-8은 한 글자가 1~4바이트라고 했다. 그렇다면 “글자 하나를 담는 타입”을 만들면 되지 않는가? C에는 그런 것이 있는가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> 있다. 그것이 <code>wchar_t</code>이고, C95가 바로 그 발상으로 들여왔다 — <strong>한 글자를 한 단위로 담자.</strong> 문제는 그 발상이 30년 뒤의 현실과 어긋났다는 데 있다.</p><p>표준은 <code>wchar_t</code>의 <strong>크기도 인코딩도 정하지 않았다.</strong> “지원하는 로케일 중 가장 큰 확장 문자집합의 모든 원소를 서로 다른 코드로 표현할 수 있는 정수형”이라고만 했다. 그 결과 리눅스에서는 4바이트 UTF-32가 되었고 Windows에서는 2바이트 UTF-16이 되었다 — 그리고 뒤쪽에서는 「한 글자 = 한 단위」가 성립하지 않는다.</p><p>이 장은 그 타입의 정확한 계약과, 바이트열이 글자로 풀리는 과정을 한 단계씩 본다. 어긋남의 결과는 다음 장에서 본다.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">9장에서 배운 코드포인트와 인코딩이 마침내 C 의 타입과 함수로 내려온다. 예순 장을 기다린 것은 이 주제가 로케일(68장)에 통째로 기대기 때문이다. 순서를 뒤집으면 <code>mbrtowc</code> 가 무엇에 의존하는지 말할 수 없다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-209"></span><code>wchar_t</code>의 정체를 밑바닥까지 본다. 표준의 정의와 구현이 밝히는 매크로, 다섯 가지 문자 상수와 문자열의 타입·크기·바이트, <code>MB_CUR_MAX</code>와 <code>MB_LEN_MAX</code>의 차이, <code>mbstate_t</code>가 왜 필요한지, 그리고 <code>mbrtowc</code>가 바이트를 먹으며 글자를 만들어 내는 과정을 단계별 실측으로.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>소스 코드에 <code>"한"</code>이라고 적으면 어떤 바이트가 되는가?</li><li>UTF-8은 최대 4바이트인데 왜 <code>MB_CUR_MAX</code>가 6인가?</li></ol></div></div><div></div><h3 id="s70-1">70.1 표준이 정한 것과 정하지 않은 것</h3><div></div><p><code>wchar_t</code>는 <code>&lt;stddef.h></code>가 정의하는 정수 타입이다. 표준의 정의를 그대로 옮기면 <strong>“지원되는 로케일 중에서 지정된 가장 큰 확장 문자집합의 모든 원소에 대해 서로 다른 코드를 표현할 수 있는 정수 타입”</strong>이다.</p><p>여기에 없는 것을 보아야 한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>표준이 정한 것</strong></th><th><strong>정하지 않은 것</strong></th></tr><tr><td>정수 타입이다</td><td>몇 바이트인지</td></tr><tr><td>문자마다 다른 값을 가진다</td><td>부호가 있는지</td></tr><tr><td>기본 문자집합의 값은 양수</td><td>어떤 인코딩인지(유니코드인지도)</td></tr></table></div><p class="float-caption">표 70.1</p></figure><p>그래서 이식성 있는 코드는 <code>wchar_t</code>의 값을 유니코드 코드포인트로 <strong>가정할 수 없다</strong>. 대신 구현이 그 사실을 밝히는 매크로가 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>매크로</strong></th><th><strong>정의되어 있으면</strong></th></tr><tr><td><code>__STDC_ISO_10646__</code></td><td><code>wchar_t</code> 값이 ISO/IEC 10646(유니코드) 코드포인트와 같다. 값은 <code>yyyymmL</code> 꼴</td></tr><tr><td><code>__STDC_UTF_16__</code></td><td><code>char16_t</code>가 UTF-16이다</td></tr><tr><td><code>__STDC_UTF_32__</code></td><td><code>char32_t</code>가 UTF-32이다</td></tr><tr><td><code>__STDC_MB_MIGHT_NEQ_WC__</code></td><td>기본 문자집합의 문자라도 <code>'x'</code>와 <code>L'x'</code>의 값이 다를 수 있다</td></tr></table></div><p class="float-caption">표 70.2</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples/ch70/wide_lit.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 다섯 가지 문자 상수와 문자열 — 타입, 요소 크기, 그리고 실제 바이트. </span></em><em><span class="tok-c">*/</span></em>
+<h2>70 와이드 문자 ① — <code>wchar_t</code>와 멀티바이트 변환</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>9장 문자와 텍스트 · 코드포인트와 인코딩</div><div>68장 로케일 ① · <code>LC_CTYPE</code></div><div>67장 문자 분류 · 바이트 판정의 한계</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>9장에서 UTF-8은 한 글자가 1~4바이트라고 했다. 그렇다면 “글자 하나를 담는 타입”을 만들면 되지 않는가? C에는 그런 것이 있는가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> 있다. 그것이 <code>wchar_t</code>이고, C95가 바로 그 발상으로 들여왔다 — <strong>한 글자를 한 단위로 담자.</strong> 문제는 그 발상이 30년 뒤의 현실과 어긋났다는 데 있다.</p><p>표준은 <code>wchar_t</code>의 <strong>크기도 인코딩도 정하지 않았다.</strong> “지원하는 로케일 중 가장 큰 확장 문자집합의 모든 원소를 서로 다른 코드로 표현할 수 있는 정수형”이라고만 했다. 그 결과 리눅스에서는 4바이트 UTF-32가 되었고 Windows에서는 2바이트 UTF-16이 되었다 — 그리고 뒤쪽에서는 「한 글자 = 한 단위」가 성립하지 않는다.</p><p>이 장은 그 타입의 정확한 계약과, 바이트열이 글자로 풀리는 과정을 한 단계씩 본다. 어긋남의 결과는 다음 장에서 본다.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">9장에서 배운 코드포인트와 인코딩이 마침내 C 의 타입과 함수로 내려온다. 예순 장을 기다린 것은 이 주제가 로케일(68장)에 통째로 기대기 때문이다. 순서를 뒤집으면 <code>mbrtowc</code> 가 무엇에 의존하는지 말할 수 없다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-209"></span><code>wchar_t</code>의 정체를 밑바닥까지 본다. 표준의 정의와 구현이 밝히는 매크로, 다섯 가지 문자 상수와 문자열의 타입·크기·바이트, <code>MB_CUR_MAX</code>와 <code>MB_LEN_MAX</code>의 차이, <code>mbstate_t</code>가 왜 필요한지, 그리고 <code>mbrtowc</code>가 바이트를 먹으며 글자를 만들어 내는 과정을 단계별 실측으로.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>소스 코드에 <code>"한"</code>이라고 적으면 어떤 바이트가 되는가?</li><li>UTF-8은 최대 4바이트인데 왜 <code>MB_CUR_MAX</code>가 6인가?</li></ol></div></div><div></div><h3 id="s70-1">70.1 표준이 정한 것과 정하지 않은 것</h3><div></div><p><code>wchar_t</code>는 <code>&lt;stddef.h></code>가 정의하는 정수 타입이다. 표준의 정의를 그대로 옮기면 <strong>“지원되는 로케일 중에서 지정된 가장 큰 확장 문자집합의 모든 원소에 대해 서로 다른 코드를 표현할 수 있는 정수 타입”</strong>이다.</p><p>여기에 없는 것을 보아야 한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>표준이 정한 것</strong></th><th><strong>정하지 않은 것</strong></th></tr><tr><td>정수 타입이다</td><td>몇 바이트인지</td></tr><tr><td>문자마다 다른 값을 가진다</td><td>부호가 있는지</td></tr><tr><td>기본 문자집합의 값은 양수</td><td>어떤 인코딩인지(유니코드인지도)</td></tr></table></div><p class="float-caption">표 70.1</p></figure><p>그래서 이식성 있는 코드는 <code>wchar_t</code>의 값을 유니코드 코드포인트로 <strong>가정할 수 없다</strong>. 대신 구현이 그 사실을 밝히는 매크로가 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>매크로</strong></th><th><strong>정의되어 있으면</strong></th></tr><tr><td><code>__STDC_ISO_10646__</code></td><td><code>wchar_t</code> 값이 ISO/IEC 10646(유니코드) 코드포인트와 같다. 값은 <code>yyyymmL</code> 꼴</td></tr><tr><td><code>__STDC_UTF_16__</code></td><td><code>char16_t</code>가 UTF-16이다</td></tr><tr><td><code>__STDC_UTF_32__</code></td><td><code>char32_t</code>가 UTF-32이다</td></tr><tr><td><code>__STDC_MB_MIGHT_NEQ_WC__</code></td><td>기본 문자집합의 문자라도 <code>'x'</code>와 <code>L'x'</code>의 값이 다를 수 있다</td></tr></table></div><p class="float-caption">표 70.2</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples/ch70/wide_lit.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 다섯 가지 문자 상수와 문자열 — 타입, 요소 크기, 그리고 실제 바이트. </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>

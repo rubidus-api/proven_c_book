@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">51장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch50.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch52.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch51.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s51-1"><span class="tf-no">51.1</span>오류는 값이다 — C의 방식</a><a class="lv3" href="#s51-2"><span class="tf-no">51.2</span>계약을 코드로 — assert와 방어</a><a class="lv3" href="#s51-3"><span class="tf-no">51.3</span>const — 가장 값싼 계약</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-51">51 오류와 계약</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>33장 함수의 의미 · 함수가 실패를 알리는 방법</div><div>43장 안전한 입력 · 실패를 값으로 다루는 다섯 규율</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>33장 끝에서 <code>fact</code> 함수가 “암묵의 약속”(n은 0 이상, 13 이상이면 넘침) 위에 서 있다고 했다. 그런데 그 약속은 코드 어디에도 적혀 있지 않았다 — 그러면 그것은 존재하는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 존재하지만, <strong>지켜지지 않는 상태로</strong> 존재한다 — 그것이 문제의 핵심이다. 모든 함수에는 암묵의 계약이 있다: 어떤 입력에 대해 제대로 동작하는가 (전제조건), 성공하면 무엇을 보장하는가(후조건). 그 계약이 문서와 코드 어디에도 없으면, 계약 위반은 조용히 지나가 나중에 엉뚱한 곳에서 터진다. 이 장은 계약을 <strong>드러내는</strong> 방법들의 이야기다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">33장에서 심은 계약의 씨앗과 43장에서 세운 다섯 규율이 여기서 하나의 원리로 모인다. 이 장이 52장 바로 앞인 것이 중요하다 — 「계약이란 무엇인가」를 정해 두어야 「계약을 어기면 무슨 일이 일어나는가」를 말할 수 있기 때문이다. 두 장이 한 쌍이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-173"></span>33장에서 심은 계약의 씨앗이 자란다 — 함수는 무엇을 요구하고 무엇을 약속하는가(전제조건·후조건), 실패를 어떻게 알리는가(C의 방식: 오류는 값이다), 그리고 그 값을 반드시 확인하게 만드는 장치들까지. 43장에서 세운 다섯 규율이 여기서 원리로 정리된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>43장의 다섯 규율은 이 원리와 어떻게 이어지는가?</li></ol></div></div><div></div><h3 id="s51-1">51.1 오류는 값이다 — C의 방식</h3><div></div><p>많은 현대 언어가 실패를 위한 별도 통로(예외)를 갖고 있지만, C에는 없다. C에서 실패는 <strong>반환값으로 알린다</strong> — 함수의 결과 자체가 “성공했는가”를 담고 나오는 것이다. 관행은 세 갈래다.</p><ul><li><strong>성공/실패 불리언</strong> + 결과는 포인터로 받기(35장의 <code>&amp;</code> 관용구).</li><li><strong>특별한 값</strong>으로 실패 표시 — <code>malloc</code>의 널(45장), <code>fgets</code>의 널, 음수 반환 등.</li><li><strong>오류 코드</strong>를 돌려주고 0을 성공으로 — 시스템 호출 계열의 전통.</li></ul><p>첫 갈래를 시연으로 본다. 28장에서 배운 “0 나누기는 계약 밖”이라는 사실을, 함수 계약으로 다스리는 모습이다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch51/errval.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2>51 오류와 계약</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>33장 함수의 의미 · 함수가 실패를 알리는 방법</div><div>43장 안전한 입력 · 실패를 값으로 다루는 다섯 규율</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>33장 끝에서 <code>fact</code> 함수가 “암묵의 약속”(n은 0 이상, 13 이상이면 넘침) 위에 서 있다고 했다. 그런데 그 약속은 코드 어디에도 적혀 있지 않았다 — 그러면 그것은 존재하는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 존재하지만, <strong>지켜지지 않는 상태로</strong> 존재한다 — 그것이 문제의 핵심이다. 모든 함수에는 암묵의 계약이 있다: 어떤 입력에 대해 제대로 동작하는가 (전제조건), 성공하면 무엇을 보장하는가(후조건). 그 계약이 문서와 코드 어디에도 없으면, 계약 위반은 조용히 지나가 나중에 엉뚱한 곳에서 터진다. 이 장은 계약을 <strong>드러내는</strong> 방법들의 이야기다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">33장에서 심은 계약의 씨앗과 43장에서 세운 다섯 규율이 여기서 하나의 원리로 모인다. 이 장이 52장 바로 앞인 것이 중요하다 — 「계약이란 무엇인가」를 정해 두어야 「계약을 어기면 무슨 일이 일어나는가」를 말할 수 있기 때문이다. 두 장이 한 쌍이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-173"></span>33장에서 심은 계약의 씨앗이 자란다 — 함수는 무엇을 요구하고 무엇을 약속하는가(전제조건·후조건), 실패를 어떻게 알리는가(C의 방식: 오류는 값이다), 그리고 그 값을 반드시 확인하게 만드는 장치들까지. 43장에서 세운 다섯 규율이 여기서 원리로 정리된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>43장의 다섯 규율은 이 원리와 어떻게 이어지는가?</li></ol></div></div><div></div><h3 id="s51-1">51.1 오류는 값이다 — C의 방식</h3><div></div><p>많은 현대 언어가 실패를 위한 별도 통로(예외)를 갖고 있지만, C에는 없다. C에서 실패는 <strong>반환값으로 알린다</strong> — 함수의 결과 자체가 “성공했는가”를 담고 나오는 것이다. 관행은 세 갈래다.</p><ul><li><strong>성공/실패 불리언</strong> + 결과는 포인터로 받기(35장의 <code>&amp;</code> 관용구).</li><li><strong>특별한 값</strong>으로 실패 표시 — <code>malloc</code>의 널(45장), <code>fgets</code>의 널, 음수 반환 등.</li><li><strong>오류 코드</strong>를 돌려주고 0을 성공으로 — 시스템 호출 계열의 전통.</li></ul><p>첫 갈래를 시연으로 본다. 28장에서 배운 “0 나누기는 계약 밖”이라는 사실을, 함수 계약으로 다스리는 모습이다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch51/errval.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
 
 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 계약: divisor가 0이 아니어야 한다. 실패는 반환값으로 알린다. </span></em><em><span class="tok-c">*/</span></em>

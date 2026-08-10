@@ -28,8 +28,11 @@ ms=$(( ($(date +%s%N) - start) / 1000000 ))
 
 # 웹 판 견본 — 같은 장치를 HTML 로도 본다
 raw="$root/build/style-preview.raw.html"
+# ★ `--input mode=html` 을 빠뜨리면 장치들이 *조판 분기*를 타고 클래스 없는 맨
+#   <div> 로 나온다 --- 웹 견본이 통째로 밋밋해 보였던 까닭이다(저자 지적).
 if "$typst" compile --root "$root" --font-path "$fonts" --features html \
-       --format html "$root/book/style-specimen.typ" "$raw" 2>/dev/null; then
+       --format html --input mode=html --input lang=ko \
+       "$root/book/style-specimen.typ" "$raw" 2>/dev/null; then
   python3 "$root/scripts/style-preview-html.py" "$raw" "$html" "$root/styles/book.css"
   rm -f "$raw"
   web="· HTML build/style-preview.html"

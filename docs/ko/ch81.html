@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">81장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch80.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch82.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch81.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s81-1"><span class="tf-no">81.1</span>사후 검사라는 함정</a><a class="lv3" href="#s81-2"><span class="tf-no">81.2</span>C23의 답 — ckd_add·ckd_sub·ckd_mul</a><a class="lv3" href="#s81-3"><span class="tf-no">81.3</span>어디에 쓰는가 — 크기 계산이 첫 번째다</a><a class="lv3" href="#s81-4"><span class="tf-no">81.4</span>이 도구가 없는 곳에서</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-81">81 넘침을 묻는 법 — <code>&lt;stdckdint.h></code></h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>27장 정수 · 정수의 유한함</div><div>52장 정의되지 않은 동작 · 넘침은 계약 밖이다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>7장에서 부호 없는 넘침은 정의된 감아 돌기이고 부호 있는 넘침은 계약 밖이라 했고, 66장에서는 <code>calloc</code>이 원소 수와 크기의 곱을 검사한다고 했다. 그러면 곱셈이 넘치는지 우리가 직접 확인하려면 어떻게 적는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 바로 그 “직접 확인”이 반세기 동안 틀리게 적혀 온 코드다. 부호 있는 값에서는 <strong>넘친 뒤에 검사하는 것 자체가 이미 계약 밖</strong>이라 컴파일러가 검사 코드를 지워 버릴 수 있고(13장의 편집자), 부호 없는 값에서도 나눗셈을 끼운 관용구는 읽기 어렵고 틀리기 쉽다. C23은 이 자리를 언어 차원에서 정리했다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">27장에서 「정수는 유한하다」를 배웠고 52장에서 「넘침은 계약 밖」임을 배웠다. 이 장은 그 둘이 만든 문제에 C23 이 내놓은 답이다. 답을 문제보다 뒤에 두는 것은 당연하지만, <strong>쉰 장이나 뒤</strong>에 두는 것은 선택이다 — 손수 짠 검사가 왜 위험한지를 먼저 겪게 하려는 것이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-225"></span>C23이 들여온 검사 산술(checked arithmetic)을 익힌다. 왜 “계산한 뒤에 넘쳤는지 확인하는” 손수 짠 코드가 위험한지, <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code>이 정확히 무엇을 약속하는지, 그리고 기존 코드의 크기 계산을 어떻게 이 도구로 옮기는지까지 본다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>ckd_*</code>는 함수인가 매크로인가? 인자를 여러 번 평가하지는 않는가?</li></ol></div></div><div></div><h3 id="s81-1">81.1 사후 검사라는 함정</h3><div></div><p>가장 흔한 손수 짠 검사부터 본다.</p><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>더한 다음에 넘쳤는지 보기</p><div class="dev-body"><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> sum <strong><span class="tok-x">=</span></strong> a <strong><span class="tok-x">+</span></strong> b<span class="tok-x">;</span>
+<h2>81 넘침을 묻는 법 — <code>&lt;stdckdint.h></code></h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>27장 정수 · 정수의 유한함</div><div>52장 정의되지 않은 동작 · 넘침은 계약 밖이다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>7장에서 부호 없는 넘침은 정의된 감아 돌기이고 부호 있는 넘침은 계약 밖이라 했고, 66장에서는 <code>calloc</code>이 원소 수와 크기의 곱을 검사한다고 했다. 그러면 곱셈이 넘치는지 우리가 직접 확인하려면 어떻게 적는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 바로 그 “직접 확인”이 반세기 동안 틀리게 적혀 온 코드다. 부호 있는 값에서는 <strong>넘친 뒤에 검사하는 것 자체가 이미 계약 밖</strong>이라 컴파일러가 검사 코드를 지워 버릴 수 있고(13장의 편집자), 부호 없는 값에서도 나눗셈을 끼운 관용구는 읽기 어렵고 틀리기 쉽다. C23은 이 자리를 언어 차원에서 정리했다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">27장에서 「정수는 유한하다」를 배웠고 52장에서 「넘침은 계약 밖」임을 배웠다. 이 장은 그 둘이 만든 문제에 C23 이 내놓은 답이다. 답을 문제보다 뒤에 두는 것은 당연하지만, <strong>쉰 장이나 뒤</strong>에 두는 것은 선택이다 — 손수 짠 검사가 왜 위험한지를 먼저 겪게 하려는 것이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-225"></span>C23이 들여온 검사 산술(checked arithmetic)을 익힌다. 왜 “계산한 뒤에 넘쳤는지 확인하는” 손수 짠 코드가 위험한지, <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code>이 정확히 무엇을 약속하는지, 그리고 기존 코드의 크기 계산을 어떻게 이 도구로 옮기는지까지 본다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>ckd_*</code>는 함수인가 매크로인가? 인자를 여러 번 평가하지는 않는가?</li></ol></div></div><div></div><h3 id="s81-1">81.1 사후 검사라는 함정</h3><div></div><p>가장 흔한 손수 짠 검사부터 본다.</p><div class="dev antipattern"><p class="dev-label">반례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>더한 다음에 넘쳤는지 보기</p><div class="dev-body"><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> sum <strong><span class="tok-x">=</span></strong> a <strong><span class="tok-x">+</span></strong> b<span class="tok-x">;</span>
 <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>sum <strong><span class="tok-x">&lt;</span></strong> a<span class="tok-x">)</span> <span class="tok-x">{</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 넘쳤다 </span></em><em><span class="tok-c">*/</span></em> <span class="tok-x">}</span>        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> ← 이 검사가 사라질 수 있다 </span></em><em><span class="tok-c">*/</span></em></code></pre><p><code>a</code>와 <code>b</code>가 부호 있는 정수라면 <code>a + b</code>가 넘치는 순간 이미 정의되지 않은 동작이다. 그 뒤의 검사는 “넘치지 않았다면”이라는 전제 위에서만 뜻이 있으므로, 컴파일러는 <code>sum &lt; a</code>가 결코 참이 될 수 없다고 판단해 <strong>조건문을 통째로 지운다.</strong> 실제로 이 무늬 때문에 여러 프로젝트에서 검사가 조용히 사라졌고, 그중에는 보안 검사도 있었다.</p><p>부호 없는 값이라면 감아 돌기가 정의되어 있으므로 위 검사는 <strong>동작한다.</strong> 다만 곱셈으로 가면 그마저 까다로워진다.</p><pre><code data-lang="c"><strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>n <strong><span class="tok-x">!=</span></strong> <span class="tok-n">0</span> <strong><span class="tok-x">&amp;&amp;</span></strong> bytes <strong><span class="tok-x">/</span></strong> n <strong><span class="tok-x">!=</span></strong> sz<span class="tok-x">)</span> <span class="tok-x">{</span> <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 넘쳤다 </span></em><em><span class="tok-c">*/</span></em> <span class="tok-x">}</span>   <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 맞지만 읽기 어렵다 </span></em><em><span class="tok-c">*/</span></em></code></pre></div></div><p>그래서 컴파일러들이 저마다 확장을 내놓았다 — GCC와 Clang의 <code>__builtin_add_overflow</code> 계열, MSVC의 <code>SafeInt</code>, 여러 프로젝트의 자체 매크로. 잘 동작했지만 <strong>이식성이 없었고</strong>, 이식성을 확보하려면 프로젝트마다 같은 껍데기를 다시 짜야 했다. 65장의 <code>strlcpy</code> 이야기와 같은 무늬다 — 현실이 먼저 답을 찾고 표준이 뒤늦게 추인한다.</p><h3 id="s81-2">81.2 C23의 답 — <code>ckd_add</code>·<code>ckd_sub</code>·<code>ckd_mul</code></h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples/ch81/ckdint.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 넘침을 값이 아니라 "일어났는가"로 받는다 — C23 &lt;stdckdint.h> </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">limits.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdckdint.h</span><span class="tok-s">></span>

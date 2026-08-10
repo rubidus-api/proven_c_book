@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 73 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch72.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch74.html" title="Next" aria-label="Next">→</a></span><a href="toc.html">Detailed contents</a><a href="../ko/ch73.html">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s73-1"><span class="tf-no">73.1</span>The properties of NaN and infinity</a><a class="lv3" href="#s73-2"><span class="tf-no">73.2</span>Functions often got wrong</a><a class="lv3" href="#s73-3"><span class="tf-no">73.3</span>Rounding modes and floating-point exceptions — &amp;lt;fenv.h&gt;</a><a class="lv3" href="#s73-4"><span class="tf-no">73.4</span>Type-generic — &amp;lt;tgmath.h&gt;</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-73">73 Numbers — <code>&lt;math.h></code>, <code>&lt;fenv.h></code>, <code>&lt;tgmath.h></code></h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 50, Real numbers · the mathematics of approximation</div><div>chapter 8, Representing numbers · IEEE 754</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 50 said not to compare reals with <code>==</code>, and chapter 8 said 0.1 is not exactly representable. Then how does a mathematical function tell you when it receives “input it cannot calculate”?</p><div class="qa-a"><p><span class="dev-label">A.</span> There are two paths. It gives NaN or an infinity as the <strong>return value</strong>, and at the same time leaves the reason in <strong><code>errno</code></strong> — <code>EDOM</code> for outside the domain, <code>ERANGE</code> when the result exceeds the representable range. But an implementation <span id="idx-entry-153"></span>may choose to report through the floating-point exception flags (<code>&lt;fenv.h></code>) instead of <code>errno</code>, so to check portably you must be ready to look at both. In the field it is usually simpler to check the return value with <code>isnan</code> and <code>isinf</code>.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">On the floor laid twice, in chapter 8 (IEEE 754) and chapter 50 (the mathematics of approximation), the functions now stand. This is the third and final layer. The reason it comes only here: hidden global state such as the rounding mode cannot be explained without the word “contract” from chapter 51.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">We look at how real-number calculation reports failure. The mathematics of approximation learned in chapters 8 and 50 becomes the contract of functions here — calls outside the domain, results beyond the range, the properties of NaN and infinity, and the hidden global state called the rounding mode.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>How do the functions of <code>math.h</code> report failure — the return value alone cannot say?</li></ol></div></div><div></div><h3 id="s73-1">73.1 The properties of NaN and infinity</h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch73/math.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2>73 Numbers — <code>&lt;math.h></code>, <code>&lt;fenv.h></code>, <code>&lt;tgmath.h></code></h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 50, Real numbers · the mathematics of approximation</div><div>chapter 8, Representing numbers · IEEE 754</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 50 said not to compare reals with <code>==</code>, and chapter 8 said 0.1 is not exactly representable. Then how does a mathematical function tell you when it receives “input it cannot calculate”?</p><div class="qa-a"><p><span class="dev-label">A.</span> There are two paths. It gives NaN or an infinity as the <strong>return value</strong>, and at the same time leaves the reason in <strong><code>errno</code></strong> — <code>EDOM</code> for outside the domain, <code>ERANGE</code> when the result exceeds the representable range. But an implementation <span id="idx-entry-153"></span>may choose to report through the floating-point exception flags (<code>&lt;fenv.h></code>) instead of <code>errno</code>, so to check portably you must be ready to look at both. In the field it is usually simpler to check the return value with <code>isnan</code> and <code>isinf</code>.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">On the floor laid twice, in chapter 8 (IEEE 754) and chapter 50 (the mathematics of approximation), the functions now stand. This is the third and final layer. The reason it comes only here: hidden global state such as the rounding mode cannot be explained without the word “contract” from chapter 51.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">We look at how real-number calculation reports failure. The mathematics of approximation learned in chapters 8 and 50 becomes the contract of functions here — calls outside the domain, results beyond the range, the properties of NaN and infinity, and the hidden global state called the rounding mode.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>How do the functions of <code>math.h</code> report failure — the return value alone cannot say?</li></ol></div></div><div></div><h3 id="s73-1">73.1 The properties of NaN and infinity</h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch73/math.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">math.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">errno.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>

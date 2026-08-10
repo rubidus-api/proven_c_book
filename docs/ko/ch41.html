@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">41장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch40.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch42.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch41.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s41-1"><span class="tf-no">41.1</span>중첩 루프 — 다차원을 걷는 법</a><a class="lv3" href="#s41-2"><span class="tf-no">41.2</span>다중 루프에서 빠져나오기</a><a class="lv3" href="#s41-3"><span class="tf-no">41.3</span>goto 가 정당한 두 자리</a><a class="lv4" href="#s41-3-1"><span class="tf-no">41.3.1</span>자리 ① — 여러 겹의 루프를 한 번에 벗기</a><a class="lv4" href="#s41-3-2"><span class="tf-no">41.3.2</span>자리 ② — 오류 처리의 정리 지점 모으기</a><a class="lv3" href="#s41-4"><span class="tf-no">41.4</span>매크로를 한 문장으로 — do { } while (0)</a><a class="lv3" href="#s41-5"><span class="tf-no">41.5</span>그 밖의 관용구와 함정</a><a class="lv4" href="#s41-5-1"><span class="tf-no">41.5.1</span>역순 순회 — size_t 로는 i &gt;= 0 을 쓸 수 없다</a><a class="lv4" href="#s41-5-2"><span class="tf-no">41.5.2</span>나머지 관용구</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-41">41 반복의 기법 — 중첩, 탈출, 그리고 블록 만들기</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>32장 반복 — 루프와 불변식 · <code>while</code>·<code>for</code>·<code>do-while</code> 3형제</div><div>39장 다차원 배열 · 행과 열, 그리고 기억 속의 배치</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>32장에서 루프 3형제를 배웠고, 39장에서 2차원 배열을 배웠다. 그러면 <code>int a[1000][1000]</code>의 모든 칸을 더하는 코드를 두 가지로 적을 수 있다 — 행을 먼저 도는 것과 열을 먼저 도는 것. 두 코드는 <strong>같은 답</strong>을 낸다. 무엇이 다른가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> <strong>속도가 다르다 — 그것도 여덟 배쯤.</strong> 39장에서 본 대로 2차원 배열은 기억 속에 <strong>행이 먼저</strong> 늘어서 있고(행 우선 배치), 11장에서 본 대로 캐시는 <strong>이웃한 바이트를 함께</strong> 실어 온다. 행을 따라 걸으면 실어 온 줄을 알뜰히 쓰고, 열을 따라 걸으면 매 걸음 새 줄을 부른다.</p><p>루프를 배웠다는 것과 루프를 <strong>부릴 줄 안다</strong>는 것은 다르다. 이 장이 그 차이를 메운다.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">32장에서 루프의 문법을 배웠지만, 실전 기법은 <strong>다차원 배열을 만난 뒤</strong>라야 뜻이 있다 — 중첩 루프도 순회 순서도 39장 없이는 예를 들 수 없기 때문이다. 그래서 반복이 두 장으로 갈라져 6부와 7부에 나뉘어 있다. 이 배치가 이 책에서 가장 멀리 떨어진 짝이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-146"></span>루프의 실전 기법을 모은다 — 중첩 루프와 순회 순서(실측으로 확인한다), 다중 루프에서 빠져나오는 네 가지 방법과 그 우열, <code>goto</code>가 정당한 두 자리와 지켜야 할 규율, 매크로를 한 문장으로 만드는 <code>do { } while (0)</code>, 그리고 실무에서 반복해 만나는 관용구와 함정들. 32장이 「루프란 무엇인가」였다면 이 장은 「루프를 어떻게 부리는가」다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 언제나 안쪽에 마지막 첨자를 두면 되는가?</li><li><code>goto</code> 를 아예 금지한 규약(MISRA 등)에서는 어떻게 하는가?</li><li><code>while (0)</code> 이면 한 번도 안 도는 것 아닌가?</li><li><code>do-while</code> 에서 <code>continue</code> 는 어디로 가는가?</li></ol></div></div><div></div><h3 id="s41-1">41.1 중첩 루프 — 다차원을 걷는 법</h3><div></div><span id="idx-entry-147"></span><p>39장의 <code>int a[R][C]</code>는 기억 속에서 <strong>한 줄로</strong> 늘어서 있고, 그 순서는 행 우선이다 — <code>a[0][0] a[0][1] … a[0][C-1] a[1][0] …</code>. 중첩 루프의 순서는 그 줄 위를 <strong>어떤 보폭으로 걷느냐</strong>를 정한다.</p><pre><code data-lang="c"><strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> R<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 행 우선 — 이웃 칸으로 한 발씩 </span></em><em><span class="tok-c">*/</span></em>
+<h2>41 반복의 기법 — 중첩, 탈출, 그리고 블록 만들기</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>32장 반복 — 루프와 불변식 · <code>while</code>·<code>for</code>·<code>do-while</code> 3형제</div><div>39장 다차원 배열 · 행과 열, 그리고 기억 속의 배치</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>32장에서 루프 3형제를 배웠고, 39장에서 2차원 배열을 배웠다. 그러면 <code>int a[1000][1000]</code>의 모든 칸을 더하는 코드를 두 가지로 적을 수 있다 — 행을 먼저 도는 것과 열을 먼저 도는 것. 두 코드는 <strong>같은 답</strong>을 낸다. 무엇이 다른가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> <strong>속도가 다르다 — 그것도 여덟 배쯤.</strong> 39장에서 본 대로 2차원 배열은 기억 속에 <strong>행이 먼저</strong> 늘어서 있고(행 우선 배치), 11장에서 본 대로 캐시는 <strong>이웃한 바이트를 함께</strong> 실어 온다. 행을 따라 걸으면 실어 온 줄을 알뜰히 쓰고, 열을 따라 걸으면 매 걸음 새 줄을 부른다.</p><p>루프를 배웠다는 것과 루프를 <strong>부릴 줄 안다</strong>는 것은 다르다. 이 장이 그 차이를 메운다.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">32장에서 루프의 문법을 배웠지만, 실전 기법은 <strong>다차원 배열을 만난 뒤</strong>라야 뜻이 있다 — 중첩 루프도 순회 순서도 39장 없이는 예를 들 수 없기 때문이다. 그래서 반복이 두 장으로 갈라져 6부와 7부에 나뉘어 있다. 이 배치가 이 책에서 가장 멀리 떨어진 짝이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-146"></span>루프의 실전 기법을 모은다 — 중첩 루프와 순회 순서(실측으로 확인한다), 다중 루프에서 빠져나오는 네 가지 방법과 그 우열, <code>goto</code>가 정당한 두 자리와 지켜야 할 규율, 매크로를 한 문장으로 만드는 <code>do { } while (0)</code>, 그리고 실무에서 반복해 만나는 관용구와 함정들. 32장이 「루프란 무엇인가」였다면 이 장은 「루프를 어떻게 부리는가」다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 언제나 안쪽에 마지막 첨자를 두면 되는가?</li><li><code>goto</code> 를 아예 금지한 규약(MISRA 등)에서는 어떻게 하는가?</li><li><code>while (0)</code> 이면 한 번도 안 도는 것 아닌가?</li><li><code>do-while</code> 에서 <code>continue</code> 는 어디로 가는가?</li></ol></div></div><div></div><h3 id="s41-1">41.1 중첩 루프 — 다차원을 걷는 법</h3><div></div><span id="idx-entry-147"></span><p>39장의 <code>int a[R][C]</code>는 기억 속에서 <strong>한 줄로</strong> 늘어서 있고, 그 순서는 행 우선이다 — <code>a[0][0] a[0][1] … a[0][C-1] a[1][0] …</code>. 중첩 루프의 순서는 그 줄 위를 <strong>어떤 보폭으로 걷느냐</strong>를 정한다.</p><pre><code data-lang="c"><strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> R<span class="tok-x">;</span> i<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>          <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 행 우선 — 이웃 칸으로 한 발씩 </span></em><em><span class="tok-c">*/</span></em>
     <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> j <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> j <strong><span class="tok-x">&lt;</span></strong> C<span class="tok-x">;</span> j<strong><span class="tok-x">++</span></strong><span class="tok-x">)</span>
         sum <strong><span class="tok-x">+=</span></strong> a<span class="tok-x">[</span>i<span class="tok-x">]</span><span class="tok-x">[</span>j<span class="tok-x">]</span><span class="tok-x">;</span>
 

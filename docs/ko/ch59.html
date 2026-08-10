@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">59장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch58.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch60.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch59.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s59-1"><span class="tf-no">59.1</span>이름은 포인터로 무너진다</a><a class="lv3" href="#s59-2"><span class="tf-no">59.2</span>타입이 곧 계약이다</a><a class="lv3" href="#s59-3"><span class="tf-no">59.3</span>void *와 함수 포인터는 다른 세계다</a><a class="lv3" href="#s59-4"><span class="tf-no">59.4</span>함수 포인터를 인쇄하는 법</a><a class="lv4" href="#s59-4-1"><span class="tf-no">59.4.1</span>왜 %p에 넘길 수 없는가</a><a class="lv4" href="#s59-4-2"><span class="tf-no">59.4.2</span>이식성 있는 길 — 바이트로 떠서 찍기</a><a class="lv4" href="#s59-4-3"><span class="tf-no">59.4.3</span>가장 좋은 답 — 주소 대신 이름</a><a class="lv3" href="#s59-5"><span class="tf-no">59.5</span>디스패치 표 — switch 대신 배열</a><a class="lv3" href="#s59-6"><span class="tf-no">59.6</span>가상 함수 표 — C로 짓는 객체지향</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-59">59 함수를 값으로 — 함수 포인터</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>24장 함수 선언과 정의 · 함수의 이름</div><div>38장 배열 · 이름이 값으로 무너진다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>38장에서 배열 이름이 첫 원소의 주소로 무너진다고 했고, 58장에서는 가변 인자 함수가 타입 정보를 잃는다고 했다. 그러면 <strong>함수 이름</strong>은 수식에서 무엇으로 평가되는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>함수를 가리키는 포인터</strong>로 평가된다 — 배열과 같은 무너짐(decay)이 함수에도 있다. 예외는 <code>sizeof</code>와 <code>&amp;</code>의 피연산자일 때뿐인데, 함수에 <code>sizeof</code>를 쓰는 것은 애초에 금지이므로 사실상 <code>&amp;</code>만 예외다. 그리고 <code>&amp;함수</code>도 결국 같은 포인터를 준다. 그래서 <code>f</code>, <code>&amp;f</code>, <code>*f</code>가 전부 같은 값이 되는 기묘한 상황이 벌어진다 — 이 장의 첫 예제가 그것이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">함수를 값으로 다루려면 두 가지가 먼저다 — 함수 이름이 무엇으로 평가되는지(24장), 그리고 무너짐이라는 규칙(38장). 둘 다 지난 지금이 제자리다. 그리고 이 장은 다음 장으로 곧장 넘어간다: 함수 포인터를 만드는 순간 선언이 험해지고, 그것이 60장의 주제다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">지금까지 함수는 “부르는 것”이었다. 이 장에서는 함수를 <strong>값으로</strong> 다룬다 — 변수에 담고, 인자로 넘기고, 배열에 늘어놓는다. 그 과정에서 C의 오래된 규칙 하나(<strong>함수 이름은 포인터로 무너진다</strong>)와, 그 규칙이 만드는 기묘한 문법, 그리고 이 도구로 객체지향을 손수 짓는 방법까지 본다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 <code>dlsym</code>은 잘못 설계된 것인가? 오늘 POSIX 를 다시 만든다면 어떻게 할까?</li><li>그러면 애초에 <strong>아무 함수 포인터나 담는 범용 타입</strong> 하나를 정해 쓰면 되지 않나? 이를테면 <code>typedef void *(*generic_func_ptr_t)(void);</code> 처럼.</li><li>그러면 C++의 가상 함수와 무엇이 다른가?</li></ol></div></div><div></div><h3 id="s59-1">59.1 이름은 포인터로 무너진다</h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples/ch59/funcptr.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2>59 함수를 값으로 — 함수 포인터</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>24장 함수 선언과 정의 · 함수의 이름</div><div>38장 배열 · 이름이 값으로 무너진다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>38장에서 배열 이름이 첫 원소의 주소로 무너진다고 했고, 58장에서는 가변 인자 함수가 타입 정보를 잃는다고 했다. 그러면 <strong>함수 이름</strong>은 수식에서 무엇으로 평가되는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>함수를 가리키는 포인터</strong>로 평가된다 — 배열과 같은 무너짐(decay)이 함수에도 있다. 예외는 <code>sizeof</code>와 <code>&amp;</code>의 피연산자일 때뿐인데, 함수에 <code>sizeof</code>를 쓰는 것은 애초에 금지이므로 사실상 <code>&amp;</code>만 예외다. 그리고 <code>&amp;함수</code>도 결국 같은 포인터를 준다. 그래서 <code>f</code>, <code>&amp;f</code>, <code>*f</code>가 전부 같은 값이 되는 기묘한 상황이 벌어진다 — 이 장의 첫 예제가 그것이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">함수를 값으로 다루려면 두 가지가 먼저다 — 함수 이름이 무엇으로 평가되는지(24장), 그리고 무너짐이라는 규칙(38장). 둘 다 지난 지금이 제자리다. 그리고 이 장은 다음 장으로 곧장 넘어간다: 함수 포인터를 만드는 순간 선언이 험해지고, 그것이 60장의 주제다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">지금까지 함수는 “부르는 것”이었다. 이 장에서는 함수를 <strong>값으로</strong> 다룬다 — 변수에 담고, 인자로 넘기고, 배열에 늘어놓는다. 그 과정에서 C의 오래된 규칙 하나(<strong>함수 이름은 포인터로 무너진다</strong>)와, 그 규칙이 만드는 기묘한 문법, 그리고 이 도구로 객체지향을 손수 짓는 방법까지 본다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 <code>dlsym</code>은 잘못 설계된 것인가? 오늘 POSIX 를 다시 만든다면 어떻게 할까?</li><li>그러면 애초에 <strong>아무 함수 포인터나 담는 범용 타입</strong> 하나를 정해 쓰면 되지 않나? 이를테면 <code>typedef void *(*generic_func_ptr_t)(void);</code> 처럼.</li><li>그러면 C++의 가상 함수와 무엇이 다른가?</li></ol></div></div><div></div><h3 id="s59-1">59.1 이름은 포인터로 무너진다</h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples/ch59/funcptr.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 

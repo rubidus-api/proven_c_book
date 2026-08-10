@@ -28,8 +28,10 @@ pdf="$root/dist/proven_c_book-$ver-style-specimen.pdf"
     "$root/book/style-specimen.typ" "$pdf"
 
 raw="$root/build/style-specimen.raw.html"
+# ★ mode=html --- 이것이 없으면 장치가 조판 분기를 타 클래스가 붙지 않는다
 "$typst" compile --root "$root" --font-path "$fonts" --features html \
-    --format html "$root/book/style-specimen.typ" "$raw" 2>/dev/null
+    --format html --input mode=html --input lang=ko \
+    "$root/book/style-specimen.typ" "$raw" 2>/dev/null
 
 # ① 혼자 돌아다닐 판 --- 글꼴을 data: 로 심는다
 python3 "$root/scripts/style-preview-html.py" "$raw" \

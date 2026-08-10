@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">58장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch57.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch59.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch58.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s58-1"><span class="tf-no">58.1</span>네 개의 도구</a><a class="lv3" href="#s58-2"><span class="tf-no">58.2</span>기본 인자 승격 — ...을 건너는 값은 굵어진다</a><a class="lv3" href="#s58-3"><span class="tf-no">58.3</span>근본적 한계 — 함수는 아무것도 모른다</a><a class="lv3" href="#s58-4"><span class="tf-no">58.4</span>_Generic — 타입을 컴파일 시간에 붙잡기</a><a class="lv3" href="#s58-5"><span class="tf-no">58.5</span>proven의 PROVEN_ARG — 실물의 구조</a><a class="lv3" href="#s58-6"><span class="tf-no">58.6</span>역사 — varargs에서 stdarg로</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-58">58 가변 인자 함수</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>22장 출력 · printf 라는 가변 인자 함수</div><div>29장 암묵적 변환 · 기본 인자 승격</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p><span id="idx-entry-195"></span>29장에서 가변 인자로 넘어가는 값에는 기본 진급(float→double, 작은 정수→int)이 적용된다고 배웠다. 그런데 왜 하필 그 자리에만 특별한 진급 규칙이 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 받는 쪽이 <strong>타입을 모르기 때문이다.</strong> 보통의 함수는 원형(24장)에 인자 타입이 적혀 있어 컴파일러가 양쪽을 맞춰 준다. 그러나 가변 인자 자리는 원형에 <code>...</code>뿐이라 맞출 상대가 없다 — 그래서 “일단 다들 큰 타입으로 통일해서 보내자”는 약속으로 혼란을 줄인 것이다. 이 장은 그 “타입을 모르는 자리”에서 어떻게 값을 꺼내는지, 그리고 그 대가가 무엇인지의 이야기다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">22장부터 <code>printf</code> 를 써 왔으면서 그 비밀은 여기서야 연다. 미룬 이유는 두 가지가 갖춰져야 했기 때문이다 — 기본 인자 승격(29장)과 포인터(35장). 그리고 이 장이 59장 바로 앞인 것도 맞물린다: 가변 인자와 함수 포인터가 「타입 검사가 느슨해지는 두 자리」로 나란히 읽힌다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><code>printf</code>가 인자를 몇 개든 받을 수 있었던 비밀을 연다. <code>&lt;stdarg.h></code>의 네 도구, 이 장치가 왜 타입 안전하지 않은지, 그 역사(K&amp;R의 <code>varargs</code> 에서 C89의 <code>stdarg</code>, C23의 정리까지), 그리고 오늘의 대안까지. 22장의 “서식은 계약”이 왜 그토록 엄격한 계약이었는지가 여기서 밝혀진다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 <code>_Generic</code>으로 C에 제네릭이 생긴 것인가?</li><li><code>printf</code> 같은 서식 함수를 감싸는 내 함수를 만들려면 어떻게 하는가 — 예컨대 로그 함수?</li></ol></div></div><div></div><h3 id="s58-1">58.1 네 개의 도구</h3><div></div><p><code>&lt;stdarg.h></code>가 주는 것은 타입 하나와 매크로 셋이다 — <code>va_list</code>(읽개), <code>va_start</code>(시작), <code>va_arg</code>(하나 꺼내기), <code>va_end</code>(닫기). 시연으로 본다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch58/va.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdarg.h</span><span class="tok-s">></span>
+<h2>58 가변 인자 함수</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>22장 출력 · printf 라는 가변 인자 함수</div><div>29장 암묵적 변환 · 기본 인자 승격</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p><span id="idx-entry-195"></span>29장에서 가변 인자로 넘어가는 값에는 기본 진급(float→double, 작은 정수→int)이 적용된다고 배웠다. 그런데 왜 하필 그 자리에만 특별한 진급 규칙이 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 받는 쪽이 <strong>타입을 모르기 때문이다.</strong> 보통의 함수는 원형(24장)에 인자 타입이 적혀 있어 컴파일러가 양쪽을 맞춰 준다. 그러나 가변 인자 자리는 원형에 <code>...</code>뿐이라 맞출 상대가 없다 — 그래서 “일단 다들 큰 타입으로 통일해서 보내자”는 약속으로 혼란을 줄인 것이다. 이 장은 그 “타입을 모르는 자리”에서 어떻게 값을 꺼내는지, 그리고 그 대가가 무엇인지의 이야기다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">22장부터 <code>printf</code> 를 써 왔으면서 그 비밀은 여기서야 연다. 미룬 이유는 두 가지가 갖춰져야 했기 때문이다 — 기본 인자 승격(29장)과 포인터(35장). 그리고 이 장이 59장 바로 앞인 것도 맞물린다: 가변 인자와 함수 포인터가 「타입 검사가 느슨해지는 두 자리」로 나란히 읽힌다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><code>printf</code>가 인자를 몇 개든 받을 수 있었던 비밀을 연다. <code>&lt;stdarg.h></code>의 네 도구, 이 장치가 왜 타입 안전하지 않은지, 그 역사(K&amp;R의 <code>varargs</code> 에서 C89의 <code>stdarg</code>, C23의 정리까지), 그리고 오늘의 대안까지. 22장의 “서식은 계약”이 왜 그토록 엄격한 계약이었는지가 여기서 밝혀진다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 <code>_Generic</code>으로 C에 제네릭이 생긴 것인가?</li><li><code>printf</code> 같은 서식 함수를 감싸는 내 함수를 만들려면 어떻게 하는가 — 예컨대 로그 함수?</li></ol></div></div><div></div><h3 id="s58-1">58.1 네 개의 도구</h3><div></div><p><code>&lt;stdarg.h></code>가 주는 것은 타입 하나와 매크로 셋이다 — <code>va_list</code>(읽개), <code>va_start</code>(시작), <code>va_arg</code>(하나 꺼내기), <code>va_end</code>(닫기). 시연으로 본다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch58/va.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdarg.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 개수를 첫 인자로 받는 방식 — 스스로는 개수를 알 길이 없다 </span></em><em><span class="tok-c">*/</span></em>

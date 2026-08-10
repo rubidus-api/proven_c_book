@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">94장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch93.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch95.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch94.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s94-1"><span class="tf-no">94.1</span>스택리스 코루틴 — 스레드 없이 겹쳐 돌리기</a><a class="lv3" href="#s94-2"><span class="tf-no">94.2</span>작업 시스템 — 코어를 여럿 쓰기</a><a class="lv3" href="#s94-3"><span class="tf-no">94.3</span>스레드, 할당자, 그리고 출처</a><a class="lv3" href="#s94-4"><span class="tf-no">94.4</span>OS가 없을 때 — 프리스탠딩</a><a class="lv4" href="#s94-4-1"><span class="tf-no">94.4.1</span>실제 빌드 절차</a><a class="lv3" href="#s94-5"><span class="tf-no">94.5</span>이 라이브러리의 자리 — 무엇이고, 무엇이 아닌가</a><a class="lv4" href="#s94-5-1"><span class="tf-no">94.5.1</span>지금 무엇이 검증되었는가</a><a class="lv4" href="#s94-5-2"><span class="tf-no">94.5.2</span>안정성 — 지금은 무엇이 바뀔 수 있는가</a><a class="lv4" href="#s94-5-3"><span class="tf-no">94.5.3</span>아직 없는 것</a><a class="lv3" href="#s94-6"><span class="tf-no">94.6</span>언제 쓰지 않는 것이 나은가</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-94">94 경계 — 겹쳐 돌리기, 그리고 OS가 없을 때</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>80장 쪼개지지 않는 연산 · 쪼개지지 않는 연산</div><div>83장 프로그램의 기억 배치 · OS 가 없을 때</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>12장에서 클록의 한계 때문에 코어가 여럿이 됐고, 거짓 공유 같은 사고가 생긴다고 했다. 그러면 “동시에 여러 일을 한다”는 말에는 몇 가지 서로 다른 뜻이 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 적어도 둘이다. <strong>겹쳐 돌리기</strong>(concurrency)는 여러 일이 서로 기다리며 번갈아 진행하는 것으로, 코어가 하나여도 성립한다 — 입출력을 기다리는 동안 다른 일을 하는 서버가 그렇다. <strong>동시에 돌리기</strong>(parallelism)는 실제로 여러 코어가 같은 순간에 계산하는 것이다. 앞의 것은 <strong>구조</strong>의 문제이고 <span id="idx-entry-251"></span>뒤의 것은 <strong>성능</strong>의 문제다. 이 장의 코루틴(coroutine)은 앞을, 작업 시스템은 뒤를 다룬다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">12부의 경계선을 긋는 장이다. 겹쳐 돌리기와 OS 없는 환경을 한 장에 묶은 것은 둘 다 「앞의 여섯 장이 세운 가정이 어디서 깨지는가」를 묻기 때문이다. 80장(원자적 연산)과 83장(기억 배치)이 여기서 마지막으로 쓰인다. 그리고 지원 범위를 정직하게 적어 두는 자리이기도 하다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">제12부의 마지막 장이다. 여러 일을 겹쳐 돌리는 두 가지 방법(스택리스 <span id="idx-entry-252"></span>코루틴과 작업 시스템), 여러 갈래로 도는 프로그램에서 할당자와 포인터 출처가 왜 문제가 되는지, 그리고 운영체제가 아예 없는 자리에서 이 라이브러리가 어떤 모습이 되는지를 본다. 마지막 절은 <strong>언제 쓰지 않는 것이 나은가</strong>다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 이 부는 무엇을 위해 읽는 것인가?</li><li>그러면 이 부에서 배운 것 중 proven을 쓰지 않아도 남는 것은 무엇인가?</li></ol></div></div><div></div><h3 id="s94-1">94.1 스택리스 코루틴 — 스레드 없이 겹쳐 돌리기</h3><div></div><p>한 함수가 일을 하다 멈추고, 나중에 <strong>그 자리에서</strong> 다시 시작할 수 있으면 많은 것이 쉬워진다. 상태 기계를 손으로 짜는 대신 코드를 순서대로 쓸 수 있기 때문이다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch94/coro.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
+<h2>94 경계 — 겹쳐 돌리기, 그리고 OS가 없을 때</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>80장 쪼개지지 않는 연산 · 쪼개지지 않는 연산</div><div>83장 프로그램의 기억 배치 · OS 가 없을 때</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>12장에서 클록의 한계 때문에 코어가 여럿이 됐고, 거짓 공유 같은 사고가 생긴다고 했다. 그러면 “동시에 여러 일을 한다”는 말에는 몇 가지 서로 다른 뜻이 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 적어도 둘이다. <strong>겹쳐 돌리기</strong>(concurrency)는 여러 일이 서로 기다리며 번갈아 진행하는 것으로, 코어가 하나여도 성립한다 — 입출력을 기다리는 동안 다른 일을 하는 서버가 그렇다. <strong>동시에 돌리기</strong>(parallelism)는 실제로 여러 코어가 같은 순간에 계산하는 것이다. 앞의 것은 <strong>구조</strong>의 문제이고 <span id="idx-entry-251"></span>뒤의 것은 <strong>성능</strong>의 문제다. 이 장의 코루틴(coroutine)은 앞을, 작업 시스템은 뒤를 다룬다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">12부의 경계선을 긋는 장이다. 겹쳐 돌리기와 OS 없는 환경을 한 장에 묶은 것은 둘 다 「앞의 여섯 장이 세운 가정이 어디서 깨지는가」를 묻기 때문이다. 80장(원자적 연산)과 83장(기억 배치)이 여기서 마지막으로 쓰인다. 그리고 지원 범위를 정직하게 적어 두는 자리이기도 하다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">제12부의 마지막 장이다. 여러 일을 겹쳐 돌리는 두 가지 방법(스택리스 <span id="idx-entry-252"></span>코루틴과 작업 시스템), 여러 갈래로 도는 프로그램에서 할당자와 포인터 출처가 왜 문제가 되는지, 그리고 운영체제가 아예 없는 자리에서 이 라이브러리가 어떤 모습이 되는지를 본다. 마지막 절은 <strong>언제 쓰지 않는 것이 나은가</strong>다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 이 부는 무엇을 위해 읽는 것인가?</li><li>그러면 이 부에서 배운 것 중 proven을 쓰지 않아도 남는 것은 무엇인가?</li></ol></div></div><div></div><h3 id="s94-1">94.1 스택리스 코루틴 — 스레드 없이 겹쳐 돌리기</h3><div></div><p>한 함수가 일을 하다 멈추고, 나중에 <strong>그 자리에서</strong> 다시 시작할 수 있으면 많은 것이 쉬워진다. 상태 기계를 손으로 짜는 대신 코드를 순서대로 쓸 수 있기 때문이다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch94/coro.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">proven.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 스택리스 코루틴: 진행 상태를 구조체 한 칸에 담고, 매크로가 switch 로</span></em>

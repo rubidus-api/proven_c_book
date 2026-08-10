@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 22 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch21.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch23.html" title="Next" aria-label="Next">→</a></span><a href="toc.html">Detailed contents</a><a href="../ko/ch22.html">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s22-1"><span class="tf-no">22.1</span>printf — output with a format</a><a class="lv3" href="#s22-2"><span class="tf-no">22.2</span>Kinds of blank — a slot per kind of value</a><a class="lv3" href="#s22-3"><span class="tf-no">22.3</span>Lining things up — width and precision</a><a class="lv3" href="#s22-4"><span class="tf-no">22.4</span>Output has more than one window</a><a class="lv3" href="#s22-5"><span class="tf-no">22.5</span>Matching — the contract between format and materials</a><a class="lv3" href="#s22-6"><span class="tf-no">22.6</span>Closing Part IV — rereading hello world</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-22">22 Output</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 10, The origin of streams · the origin of streams</div><div>chapter 19, The structure of a program · the skeleton of a program</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 10 said that printing terminals naturally worked by <strong>line buffering</strong> — waiting until a line’s worth had gathered before striking the paper. Does today’s <code>printf</code> still carry that habit?</p><div class="qa-a"><p><span class="dev-label">A.</span> <span id="idx-entry-56"></span>It does — when standard output leads to a terminal, output usually gathers in an internal store (a buffer) until it meets a <code>\n</code> and then flows out a line at a time. In chapter 19′s demonstration, the characters of <code>printf("Hello, ")</code> appearing on screen only when the second call’s <code>\n</code> arrived was exactly this. Half a century after the circumstances of the paper typewriter disappeared, its rhythm lives on as software’s default — the commotion this habit causes in practice (“my output isn’t showing!”) and how to govern it are met when we take up input and output properly.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The last piece of part 4, and where its goal is met. Output comes last because <code>printf</code> uses all three preceding chapters at once — it happens inside a statement (19), with constants as material (20), in the shape of a call (21). So when this chapter ends, hello world has only two lines of debt left.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-57"></span><code>printf</code> faced head on — the frame called a format string, the blanks <code>%d</code> and <code>%s</code>, and matching the format against the materials. By the end of this chapter Part IV’s goal is achieved: one piece of hello world becomes, apart from two lines still on credit, all known sentences.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why is what was printed sometimes not visible at once — the program seems to hang and then everything pours out together?</li><li>Why did the <code>stderr</code> line come out at the top of the listing’s output?</li></ol></div></div><div></div><h3 id="s22-1">22.1 printf — output with a format</h3><div></div><p>The name <code>printf</code> is short for <strong>print formatted</strong> — “print it as the format says.” The first material is the <strong>format string</strong>, and the remaining materials are the values to be fitted into the format’s blanks:</p><pre><code data-lang="c"><strong>printf</strong><strong><span class="tok-x">(</span></strong><strong>format string</strong><strong><span class="tok-x">,</span></strong><strong> value1</strong><strong><span class="tok-x">,</span></strong><strong> value2</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">...</span></strong><strong><span class="tok-x">)</span></strong></code></pre><p>The format string is a <strong>frame</strong>. Ordinary characters flow straight out, and only the places beginning with <code>%</code> — a <strong>conversion specification</strong> — are treated as blanks, into which the following value is fitted, turned into characters. This book’s minimal set is three:</p><ul><li><code>%d</code> — turns an integer value into decimal characters and fits it in (decimal).</li><li><code>%s</code> — fits a string in as it is (string).</li><li><code>%%</code> — not a blank; used when you want to print the percent character itself.</li></ul><p>Here is the demonstration. Two values go into two blanks in order:</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch22/fmt.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2>22 Output</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 10, The origin of streams · the origin of streams</div><div>chapter 19, The structure of a program · the skeleton of a program</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 10 said that printing terminals naturally worked by <strong>line buffering</strong> — waiting until a line’s worth had gathered before striking the paper. Does today’s <code>printf</code> still carry that habit?</p><div class="qa-a"><p><span class="dev-label">A.</span> <span id="idx-entry-56"></span>It does — when standard output leads to a terminal, output usually gathers in an internal store (a buffer) until it meets a <code>\n</code> and then flows out a line at a time. In chapter 19′s demonstration, the characters of <code>printf("Hello, ")</code> appearing on screen only when the second call’s <code>\n</code> arrived was exactly this. Half a century after the circumstances of the paper typewriter disappeared, its rhythm lives on as software’s default — the commotion this habit causes in practice (“my output isn’t showing!”) and how to govern it are met when we take up input and output properly.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The last piece of part 4, and where its goal is met. Output comes last because <code>printf</code> uses all three preceding chapters at once — it happens inside a statement (19), with constants as material (20), in the shape of a call (21). So when this chapter ends, hello world has only two lines of debt left.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-57"></span><code>printf</code> faced head on — the frame called a format string, the blanks <code>%d</code> and <code>%s</code>, and matching the format against the materials. By the end of this chapter Part IV’s goal is achieved: one piece of hello world becomes, apart from two lines still on credit, all known sentences.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why is what was printed sometimes not visible at once — the program seems to hang and then everything pours out together?</li><li>Why did the <code>stderr</code> line come out at the top of the listing’s output?</li></ol></div></div><div></div><h3 id="s22-1">22.1 printf — output with a format</h3><div></div><p>The name <code>printf</code> is short for <strong>print formatted</strong> — “print it as the format says.” The first material is the <strong>format string</strong>, and the remaining materials are the values to be fitted into the format’s blanks:</p><pre><code data-lang="c"><strong>printf</strong><strong><span class="tok-x">(</span></strong><strong>format string</strong><strong><span class="tok-x">,</span></strong><strong> value1</strong><strong><span class="tok-x">,</span></strong><strong> value2</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">...</span></strong><strong><span class="tok-x">)</span></strong></code></pre><p>The format string is a <strong>frame</strong>. Ordinary characters flow straight out, and only the places beginning with <code>%</code> — a <strong>conversion specification</strong> — are treated as blanks, into which the following value is fitted, turned into characters. This book’s minimal set is three:</p><ul><li><code>%d</code> — turns an integer value into decimal characters and fits it in (decimal).</li><li><code>%s</code> — fits a string in as it is (string).</li><li><code>%%</code> — not a blank; used when you want to print the percent character itself.</li></ul><p>Here is the demonstration. Two values go into two blanks in order:</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch22/fmt.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
 <span class="tok-x">{</span>

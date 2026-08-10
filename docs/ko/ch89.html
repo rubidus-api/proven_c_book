@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">89장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch88.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch90.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch89.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s89-1"><span class="tf-no">89.1</span>할당자는 값이다</a><a class="lv3" href="#s89-2"><span class="tf-no">89.2</span>세 가지 출처를 갈아 끼우기</a><a class="lv3" href="#s89-3"><span class="tf-no">89.3</span>아레나 — 수명이 같은 것들을 한 번에</a><a class="lv3" href="#s89-4"><span class="tf-no">89.4</span>어느 것을 고를 것인가</a><a class="lv3" href="#s89-5"><span class="tf-no">89.5</span>소유와 빌림, 그리고 자기를 가리키는 상태</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-89">89 할당은 매개변수다</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>45장 동적 메모리 · 동적 메모리</div><div>84장 할당자의 속 · 할당자의 속</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>45장에서 <code>malloc</code>으로 얻은 기억은 누군가 정확히 한 번 <code>free</code>해야 하고, 그 “누군가”를 정하는 것이 프로그램의 설계라고 했다. 그러면 함수 하나만 보고 “이 함수가 기억을 할당하는가”를 알 방법이 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 표준 C에는 없다. <code>malloc</code>은 어디서든 부를 수 있으므로 어떤 함수든 몰래 할당할 수 있고, 시그니처는 그 사실을 말하지 않는다. proven의 답은 규칙 하나로 그 정보를 시그니처에 되돌리는 것이다 — <strong>할당자를 인자로 받지 않는 함수는 할당하지 않는다.</strong> 이 규칙이 지켜지면 시그니처를 읽는 것만 으로 “이 함수는 기억을 잡을 수 있다”를 알 수 있다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">어휘 다음이 기억의 출처다. 이 순서인 이유는 뒤의 모든 자료구조가 「어디서 기억을 얻는가」를 인자로 받기 때문이다 — 할당자를 나중에 설명하면 90장부터 매 함수 서명에 설명 없는 매개변수가 하나씩 붙는다. 45장과 84장에서 본 힙의 사정이 여기서 설계 결정으로 바뀐다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">85장의 넷째 버그 — 불분명한 소유권 — 에 대한 답이다. 기억의 출처를 값으로 다루는 <strong>할당자</strong>(allocator), 수명이 같은 것들을 한꺼번에 되돌리는 <span id="idx-entry-239"></span>아레나(arena), 그리고 소유와 빌림을 타입으로 가르는 규칙까지. 45장에서 배운 힙의 위험이 여기서 설계로 정리된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>heap</code>, <code>arena</code>, <code>pool</code> 말고 내가 직접 할당자를 만들 수도 있는가?</li><li>이게 왜 그렇게 중요한 성질인가? 어차피 대부분은 힙을 쓸 텐데.</li><li>그러면 대가는 무엇인가?</li></ol></div></div><div></div><h3 id="s89-1">89.1 할당자는 값이다</h3><div></div><p><code>proven_allocator_t</code>는 구조체 하나다 — 문맥 포인터와 함수 포인터 셋 (할당·재할당·해제). 특별한 전역도, 등록 절차도 없다. 그냥 값이라서 인자로 넘기고, 구조체에 담고, 함수에서 돌려줄 수 있다. 59장에서 본 <strong>가상 함수 표</strong>가 그대로 여기 있다.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
+<h2>89 할당은 매개변수다</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>45장 동적 메모리 · 동적 메모리</div><div>84장 할당자의 속 · 할당자의 속</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>45장에서 <code>malloc</code>으로 얻은 기억은 누군가 정확히 한 번 <code>free</code>해야 하고, 그 “누군가”를 정하는 것이 프로그램의 설계라고 했다. 그러면 함수 하나만 보고 “이 함수가 기억을 할당하는가”를 알 방법이 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 표준 C에는 없다. <code>malloc</code>은 어디서든 부를 수 있으므로 어떤 함수든 몰래 할당할 수 있고, 시그니처는 그 사실을 말하지 않는다. proven의 답은 규칙 하나로 그 정보를 시그니처에 되돌리는 것이다 — <strong>할당자를 인자로 받지 않는 함수는 할당하지 않는다.</strong> 이 규칙이 지켜지면 시그니처를 읽는 것만 으로 “이 함수는 기억을 잡을 수 있다”를 알 수 있다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">어휘 다음이 기억의 출처다. 이 순서인 이유는 뒤의 모든 자료구조가 「어디서 기억을 얻는가」를 인자로 받기 때문이다 — 할당자를 나중에 설명하면 90장부터 매 함수 서명에 설명 없는 매개변수가 하나씩 붙는다. 45장과 84장에서 본 힙의 사정이 여기서 설계 결정으로 바뀐다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">85장의 넷째 버그 — 불분명한 소유권 — 에 대한 답이다. 기억의 출처를 값으로 다루는 <strong>할당자</strong>(allocator), 수명이 같은 것들을 한꺼번에 되돌리는 <span id="idx-entry-239"></span>아레나(arena), 그리고 소유와 빌림을 타입으로 가르는 규칙까지. 45장에서 배운 힙의 위험이 여기서 설계로 정리된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>heap</code>, <code>arena</code>, <code>pool</code> 말고 내가 직접 할당자를 만들 수도 있는가?</li><li>이게 왜 그렇게 중요한 성질인가? 어차피 대부분은 힙을 쓸 텐데.</li><li>그러면 대가는 무엇인가?</li></ol></div></div><div></div><h3 id="s89-1">89.1 할당자는 값이다</h3><div></div><p><code>proven_allocator_t</code>는 구조체 하나다 — 문맥 포인터와 함수 포인터 셋 (할당·재할당·해제). 특별한 전역도, 등록 절차도 없다. 그냥 값이라서 인자로 넘기고, 구조체에 담고, 함수에서 돌려줄 수 있다. 59장에서 본 <strong>가상 함수 표</strong>가 그대로 여기 있다.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
     <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>ctx<span class="tok-x">;</span>                        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이 할당자의 상태(아레나면 아레나 자신) </span></em><em><span class="tok-c">*/</span></em>
     proven_alloc_fn_t   alloc_fn<span class="tok-x">;</span>
     proven_realloc_fn_t realloc_fn<span class="tok-x">;</span>

@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">25장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch24.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch26.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch25.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s25-1"><span class="tf-no">25.1</span>두 단계 — 읽고, 해석한다</a><a class="lv3" href="#s25-2"><span class="tf-no">25.2</span>fgets의 계약 — 무엇을 주고, 무엇은 말해 주지 않는가</a><a class="lv4" href="#s25-2-1"><span class="tf-no">25.2.1</span>잘렸는지는 어떻게 아는가</a><a class="lv3" href="#s25-3"><span class="tf-no">25.3</span>해석은 실패할 수 있다</a><a class="lv3" href="#s25-4"><span class="tf-no">25.4</span>제5부를 닫으며</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-25">25 입력</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>22장 출력 · 출력의 두 갈래</div><div>10장 스트림의 기원 · 스트림은 양방향이다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>10장에서 입력도 출력처럼 “문자가 한 줄씩 흐르는 띠”라 했고, 사람의 입력은 엔터로 끝나는 줄 단위가 자연스럽다고 했다(행 버퍼링). 그러면 프로그램이 입력을 받는 자연스러운 단위도 — 줄인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 바로 그렇다 — 그리고 그것이 이 장의 설계 원리다. 사람은 한 줄을 적고 엔터를 친다. 그러니 프로그램도 <strong>한 줄을 통째로</strong> 받아 온 다음, 그 안에서 필요한 값을 찾아 읽는 것이 흐름의 결을 따르는 방식이다. 글자의 띠에서 줄을 뜨는 일과, 뜬 줄을 해석하는 일 — 이 둘을 나누면 각각이 단순해진다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">입력을 출력(22장)보다 뒤에 둔 데는 이유가 있다 — 읽은 값을 <strong>담을 곳</strong>이 있어야 하는데, 그것이 23장의 변수다. 그리고 이 장은 일부러 절반만 갚는다: 안전한 입력의 나머지는 배열과 문자열을 배운 뒤인 43장의 몫이다. 위험을 여기서 예고만 하고 넘기는 것이 이 책이 택한 두 단계다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">22장의 예고를 완결한다 — 저장할 곳(변수)이 생겼으니 입력을 받는다. 이 책이 처음부터 가르치는 방식은 현대적 관행 그대로다: <strong>한 줄을 통째로 읽고, 그 줄을 해석한다.</strong> 읽기와 해석의 분리 — 이 두 단계 구조가 편리함과 안전함의 원천이다. <code>fgets</code> 가 정확히 무엇을 약속하고 무엇은 내 몫으로 남기는지(개행과 잘림), 그리고 해석이 실패할 때 무엇이 남는지까지 본다. 제5부가 여기서 완성된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>왜 두 단계로 나누는가? 입력에서 바로 <code>%d</code>를 읽어 주는 함수(<code>scanf</code>)도 있다고 들었는데.</li><li>그릇은 얼마나 크게 잡아야 하는가?</li></ol></div></div><div></div><h3 id="s25-1">25.1 두 단계 — 읽고, 해석한다</h3><div></div><p>시연부터 본다. 표준 입력에서 정수 하나를 받아 제곱을 알려 주는 프로그램이다. (이 실행에서 표준 입력으로 준 내용을 가운데 상자에 보였다.)</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch25/read.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
+<h2>25 입력</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>22장 출력 · 출력의 두 갈래</div><div>10장 스트림의 기원 · 스트림은 양방향이다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>10장에서 입력도 출력처럼 “문자가 한 줄씩 흐르는 띠”라 했고, 사람의 입력은 엔터로 끝나는 줄 단위가 자연스럽다고 했다(행 버퍼링). 그러면 프로그램이 입력을 받는 자연스러운 단위도 — 줄인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 바로 그렇다 — 그리고 그것이 이 장의 설계 원리다. 사람은 한 줄을 적고 엔터를 친다. 그러니 프로그램도 <strong>한 줄을 통째로</strong> 받아 온 다음, 그 안에서 필요한 값을 찾아 읽는 것이 흐름의 결을 따르는 방식이다. 글자의 띠에서 줄을 뜨는 일과, 뜬 줄을 해석하는 일 — 이 둘을 나누면 각각이 단순해진다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">입력을 출력(22장)보다 뒤에 둔 데는 이유가 있다 — 읽은 값을 <strong>담을 곳</strong>이 있어야 하는데, 그것이 23장의 변수다. 그리고 이 장은 일부러 절반만 갚는다: 안전한 입력의 나머지는 배열과 문자열을 배운 뒤인 43장의 몫이다. 위험을 여기서 예고만 하고 넘기는 것이 이 책이 택한 두 단계다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">22장의 예고를 완결한다 — 저장할 곳(변수)이 생겼으니 입력을 받는다. 이 책이 처음부터 가르치는 방식은 현대적 관행 그대로다: <strong>한 줄을 통째로 읽고, 그 줄을 해석한다.</strong> 읽기와 해석의 분리 — 이 두 단계 구조가 편리함과 안전함의 원천이다. <code>fgets</code> 가 정확히 무엇을 약속하고 무엇은 내 몫으로 남기는지(개행과 잘림), 그리고 해석이 실패할 때 무엇이 남는지까지 본다. 제5부가 여기서 완성된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>왜 두 단계로 나누는가? 입력에서 바로 <code>%d</code>를 읽어 주는 함수(<code>scanf</code>)도 있다고 들었는데.</li><li>그릇은 얼마나 크게 잡아야 하는가?</li></ol></div></div><div></div><h3 id="s25-1">25.1 두 단계 — 읽고, 해석한다</h3><div></div><p>시연부터 본다. 표준 입력에서 정수 하나를 받아 제곱을 알려 주는 프로그램이다. (이 실행에서 표준 입력으로 준 내용을 가운데 상자에 보였다.)</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch25/read.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>
 <span class="tok-x">{</span>

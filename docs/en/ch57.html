@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 57 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch56.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch58.html" title="Next" aria-label="Next">→</a></span><a href="toc.html">Detailed contents</a><a href="../ko/ch57.html">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s57-1"><span class="tf-no">57.1</span>Macros — turning a name into a stream of tokens</a><a class="lv4" href="#s57-1-1"><span class="tf-no">57.1.1</span>Parentheses — the first thing anyone using macros learns</a><a class="lv3" href="#s57-2"><span class="tf-no">57.2</span># — turning a token into a string (stringize)</a><a class="lv3" href="#s57-3"><span class="tf-no">57.3</span>## — joining two tokens into one (token paste)</a><a class="lv3" href="#s57-4"><span class="tf-no">57.4</span>Double expansion — why one layer does not unfold</a><a class="lv4" href="#s57-4-1"><span class="tf-no">57.4.1</span>The names first — four rules</a><a class="lv4" href="#s57-4-2"><span class="tf-no">57.4.2</span>Following the expansion by hand — a contrast of two lines</a><a class="lv4" href="#s57-4-3"><span class="tf-no">57.4.3</span>The standard’s own example — glue and xglue</a><a class="lv3" href="#s57-5"><span class="tf-no">57.5</span>The curious examples the standard gives</a><a class="lv4" href="#s57-5-1"><span class="tf-no">57.5.1</span>① Placemarkers — pasting an empty argument</a><a class="lv4" href="#s57-5-2"><span class="tf-no">57.5.2</span>② The expansion the standard declares “unspecified”</a><a class="lv4" href="#s57-5-3"><span class="tf-no">57.5.3</span>③ __VA_OPT__ — when is “empty” judged?</a><a class="lv3" href="#s57-6"><span class="tf-no">57.6</span>The X macro — several sets of code from one list</a><a class="lv3" href="#s57-7"><span class="tf-no">57.7</span>The translation phases — the eight steps the standard pins down</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-57">57 The preprocessor and the translation phases</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 16, The general shape of compilation · the first stage of translation</div><div>chapter 19, The structure of a program · where a macro sits</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 19 said lines beginning with <code>#</code> are not statements and have no <span id="idx-entry-131"></span>semicolon, and that the reason is “the preprocessor is a text tool working by lines, not by C’s grammar.” Then what does the preprocessor know of C?</p><div class="qa-a"><p><span class="dev-label">A.</span> Almost nothing — it knows neither types nor scopes nor functions. What it knows is only <strong>tokens</strong> (word-pieces that cannot be split further: names, numbers, operators, strings), and what it does is delete, insert and join tokens. This ignorance is the preprocessor’s power (it can produce any fragment of code whatever) and its danger (it upholds neither grammar nor meaning). This chapter sees the power and the danger together.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The layer chapter 16 passed over as “a text tool that does not know C” is now opened. The wait was not because macros are dangerous but because their danger is only visible once you know <strong>what they stand in for</strong> — with functions (chapter 24), constants (chapter 20) and types (chapter 46) all learned, one can finally say “do not use a macro for this”.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">We open head on the layer chapter 16 passed over as “a text tool that does not know C”. The identity of the macro, the principle and idioms of the two <span id="idx-entry-132"></span>operators <code>#</code> and <code>##</code>, their traps, and the whole of the <strong>translation phases</strong> the standard pins down for source becoming a program. It is the grammar of the “second language” living inside a C source file.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>How does <code>#include xstr(INCFILE(2).h)</code> become <code>"vers2.h"</code>?</li><li>I hear the standard has a worse example than these.</li><li>I hear there is a version that keeps the list in a separate file. What is different?</li><li>Then where is a syntax error inside a macro caught?</li></ol></div></div><div></div><h3 id="s57-1">57.1 Macros — turning a name into a stream of tokens</h3><div></div><p><code>#define NAME content</code> is the directive “from now on, when you meet the token NAME, replace it with content.” There is also a form taking arguments (<code>#define MAX(a,b) ...</code>), which looks like a function but is not — it is <strong>substitution, not a call</strong>, with neither type checking nor any guarantee about evaluation order.</p><h4 id="s57-1-1">57.1.1 Parentheses — the first thing anyone using macros learns</h4><div></div><p>With a function the argument arrives <strong>after being calculated into one value</strong>, but with a macro <strong>the tokens as written</strong> are planted into the body. So the operators inside the argument and the operators in the body meet in one place, and chapter 20′s precedence divides them. We see four traps together with their actual expansions.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch57/parens.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Why a macro's arguments must be wrapped in parentheses — the places where</span></em>
+<h2>57 The preprocessor and the translation phases</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 16, The general shape of compilation · the first stage of translation</div><div>chapter 19, The structure of a program · where a macro sits</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 19 said lines beginning with <code>#</code> are not statements and have no <span id="idx-entry-131"></span>semicolon, and that the reason is “the preprocessor is a text tool working by lines, not by C’s grammar.” Then what does the preprocessor know of C?</p><div class="qa-a"><p><span class="dev-label">A.</span> Almost nothing — it knows neither types nor scopes nor functions. What it knows is only <strong>tokens</strong> (word-pieces that cannot be split further: names, numbers, operators, strings), and what it does is delete, insert and join tokens. This ignorance is the preprocessor’s power (it can produce any fragment of code whatever) and its danger (it upholds neither grammar nor meaning). This chapter sees the power and the danger together.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The layer chapter 16 passed over as “a text tool that does not know C” is now opened. The wait was not because macros are dangerous but because their danger is only visible once you know <strong>what they stand in for</strong> — with functions (chapter 24), constants (chapter 20) and types (chapter 46) all learned, one can finally say “do not use a macro for this”.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">We open head on the layer chapter 16 passed over as “a text tool that does not know C”. The identity of the macro, the principle and idioms of the two <span id="idx-entry-132"></span>operators <code>#</code> and <code>##</code>, their traps, and the whole of the <strong>translation phases</strong> the standard pins down for source becoming a program. It is the grammar of the “second language” living inside a C source file.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>How does <code>#include xstr(INCFILE(2).h)</code> become <code>"vers2.h"</code>?</li><li>I hear the standard has a worse example than these.</li><li>I hear there is a version that keeps the list in a separate file. What is different?</li><li>Then where is a syntax error inside a macro caught?</li></ol></div></div><div></div><h3 id="s57-1">57.1 Macros — turning a name into a stream of tokens</h3><div></div><p><code>#define NAME content</code> is the directive “from now on, when you meet the token NAME, replace it with content.” There is also a form taking arguments (<code>#define MAX(a,b) ...</code>), which looks like a function but is not — it is <strong>substitution, not a call</strong>, with neither type checking nor any guarantee about evaluation order.</p><h4 id="s57-1-1">57.1.1 Parentheses — the first thing anyone using macros learns</h4><div></div><p>With a function the argument arrives <strong>after being calculated into one value</strong>, but with a macro <strong>the tokens as written</strong> are planted into the body. So the operators inside the argument and the operators in the body meet in one place, and chapter 20′s precedence divides them. We see four traps together with their actual expansions.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch57/parens.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Why a macro's arguments must be wrapped in parentheses — the places where</span></em>
 <em><span class="tok-c">   the intent and the expansion part ways. xstr() prints "what did it expand</span></em>
 <em><span class="tok-c">   into, then" alongside, so it can be checked. </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>

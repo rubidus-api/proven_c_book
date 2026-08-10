@@ -273,8 +273,12 @@ figure.tbl { text-align:center; }
   text-indent:0; border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
-.dev.recap > .dev-body > p, .dev.recap > .dev-body > div,
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
 .dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
 .deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
 /* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
    (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
@@ -306,7 +310,7 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 /* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
    padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
    (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
-.dev > .dev-body > p, .dev > .dev-body > div,
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
 .dev > .dev-body > figure, .dev > .open-body > p {
   margin:.35rem 0; padding:0; }
 /* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
@@ -332,9 +336,12 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
-.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.8rem;
-         border-bottom:1px solid var(--rule); }
-.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
 .cover p { margin:.45rem 0; }
 .cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
 .badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
@@ -371,13 +378,23 @@ figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); 
             font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .toc-part:first-child { margin-top:0; }
 .toc-front { margin-bottom:.4rem; }
-.toc-group { break-inside:avoid; padding-left:.85rem; border-left:1px solid var(--rule); }
-.toc a { display:block; padding:.28rem 0; text-decoration:none; border-bottom:1px solid var(--rule); }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
 .toc a:hover { text-decoration:underline; }
 .nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
        border-top:1px solid var(--rule); font-size:.9rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
 
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
@@ -388,7 +405,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">96장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch95.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch97.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch96.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s96-1"><span class="tf-no">96.1</span>make — 무엇을 다시 만들 것인가</a><a class="lv3" href="#s96-2"><span class="tf-no">96.2</span>git — 무엇이 언제 바뀌었나</a><a class="lv3" href="#s96-3"><span class="tf-no">96.3</span>도구 상자의 나머지 — 빌드, 관측, 검사</a><a class="lv4" href="#s96-3-1"><span class="tf-no">96.3.1</span>① 무엇을 어떻게 만들 것인가 — 빌드와 의존성</a><a class="lv4" href="#s96-3-2"><span class="tf-no">96.3.2</span>② 무엇이 잘못됐는가 — 디버거와 기록·재생</a><a class="lv4" href="#s96-3-3"><span class="tf-no">96.3.3</span>③ 어디가 느린가 — 프로파일러</a><a class="lv4" href="#s96-3-4"><span class="tf-no">96.3.4</span>④ 코드가 옳은가 — 검사와 시험</a><a class="lv4" href="#s96-3-5"><span class="tf-no">96.3.5</span>⑤ 사람이 읽기 좋은가 — 서식과 문서</a><a class="lv3" href="#s96-4"><span class="tf-no">96.4</span>오늘도 C로 도는 것들 — 그리고 왜</a><a class="lv3" href="#s96-5"><span class="tf-no">96.5</span>업계의 규약 — MISRA C와 그 이웃들</a><a class="lv4" href="#s96-5-1"><span class="tf-no">96.5.1</span>MISRA C — 자동차에서 나와 업계 전체로</a><a class="lv4" href="#s96-5-2"><span class="tf-no">96.5.2</span>이웃들 — 안전 규격과 코딩 규칙</a><a class="lv4" href="#s96-5-3"><span class="tf-no">96.5.3</span>무엇을 금지하는가 — 공통된 무늬</a><a class="lv3" href="#s96-6"><span class="tf-no">96.6</span>C와 C++ — 형제이지, 부모와 자식이 아니다</a><a class="lv3" href="#s96-7"><span class="tf-no">96.7</span>C 코드를 C++ 컴파일러에 넣으면</a><a class="lv3" href="#s96-8"><span class="tf-no">96.8</span>C++ 쪽의 시간은 더 빨리 흐른다</a><a class="lv3" href="#s96-9"><span class="tf-no">96.9</span>섞어 쓰는 법 — extern &quot;C&quot;</a><a class="lv3" href="#s96-10"><span class="tf-no">96.10</span>임베디드 — C의 본진</a><a class="lv3" href="#s96-11"><span class="tf-no">96.11</span>한계를 넘는 법 — 실전의 요령</a></div></div>
 <main><div class="wrap">
-<h2 id="loc-96">96 실전의 C — 도구, 프로젝트, 그리고 영역</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>54장 여러 파일 · 여러 파일의 프로젝트</div><div>17장 개발환경 구축 · 도구를 갖추기</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>54장에서 여러 파일 프로그램은 각 파일을 목적 파일로 만들어 두었다가 링크만 다시 하는 것이 관행이라 했다. 파일이 수백 개인 프로젝트에서 그 일을 사람이 손으로 할 수는 없을 텐데 — 무엇이 대신하는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>빌드 도구</strong>다. 파일 사이의 의존 관계를 적어 두면, 무엇이 바뀌었는지 보고 다시 만들 것만 골라 만들어 준다. C 세계의 고전이자 여전한 표준이 <code>make</code>이고, 이 장이 그 도구부터 시작한다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">13부는 책을 닫는 부이고, 그 첫 장이 지면 밖을 본다. 이 자리인 이유는 분명하다 — 언어를 다 배우기 전에 make 와 git 를 말하면 도구가 목적처럼 보이고, 다 배운 뒤에 말하면 「이제 어디로 가는가」의 답이 된다. 17장에서 도구를 깔았던 것과 짝을 이룬다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">책을 닫기 전에 지면 밖의 세계를 둘러본다. 실무의 두 필수 도구(make와 git), 오늘도 순수 C로 도는 대표 프로젝트들과 그들이 C를 고른 이유, 임베디드에서 C가 하는 일, 그리고 C의 한계를 실전에서 어떻게 넘는지 까지. 이 책이 가르친 언어가 실제로 어디에 서 있는지의 길잡이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>이 많은 도구를 언제 들여야 하는가?</li><li>그러면 나도 MISRA C를 따라야 하는가?</li><li>그러면 배우는 사람은 이 차이를 어떤 태도로 보아야 하는가?</li><li>이 책을 다 읽은 사람이 다음으로 만들어 볼 만한 것은 무엇인가?</li></ol></div></div><div></div><h3 id="s96-1">96.1 make — 무엇을 다시 만들 것인가</h3><div></div><p><code>make</code>의 착상은 한 줄이다 — <strong>결과물이 재료보다 오래됐으면 다시 만든다.</strong> 규칙을 적는 문법도 그 착상 그대로다:</p><pre><code data-lang="text">hello: hello.c greet.c greet.h      # 목표: 재료들
+<h2>96 실전의 C — 도구, 프로젝트, 그리고 영역</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>54장 여러 파일 · 여러 파일의 프로젝트</div><div>17장 개발환경 구축 · 도구를 갖추기</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>54장에서 여러 파일 프로그램은 각 파일을 목적 파일로 만들어 두었다가 링크만 다시 하는 것이 관행이라 했다. 파일이 수백 개인 프로젝트에서 그 일을 사람이 손으로 할 수는 없을 텐데 — 무엇이 대신하는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>빌드 도구</strong>다. 파일 사이의 의존 관계를 적어 두면, 무엇이 바뀌었는지 보고 다시 만들 것만 골라 만들어 준다. C 세계의 고전이자 여전한 표준이 <code>make</code>이고, 이 장이 그 도구부터 시작한다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">13부는 책을 닫는 부이고, 그 첫 장이 지면 밖을 본다. 이 자리인 이유는 분명하다 — 언어를 다 배우기 전에 make 와 git 를 말하면 도구가 목적처럼 보이고, 다 배운 뒤에 말하면 「이제 어디로 가는가」의 답이 된다. 17장에서 도구를 깔았던 것과 짝을 이룬다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">책을 닫기 전에 지면 밖의 세계를 둘러본다. 실무의 두 필수 도구(make와 git), 오늘도 순수 C로 도는 대표 프로젝트들과 그들이 C를 고른 이유, 임베디드에서 C가 하는 일, 그리고 C의 한계를 실전에서 어떻게 넘는지 까지. 이 책이 가르친 언어가 실제로 어디에 서 있는지의 길잡이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>이 많은 도구를 언제 들여야 하는가?</li><li>그러면 나도 MISRA C를 따라야 하는가?</li><li>그러면 배우는 사람은 이 차이를 어떤 태도로 보아야 하는가?</li><li>이 책을 다 읽은 사람이 다음으로 만들어 볼 만한 것은 무엇인가?</li></ol></div></div><div></div><h3 id="s96-1">96.1 make — 무엇을 다시 만들 것인가</h3><div></div><p><code>make</code>의 착상은 한 줄이다 — <strong>결과물이 재료보다 오래됐으면 다시 만든다.</strong> 규칙을 적는 문법도 그 착상 그대로다:</p><pre><code data-lang="text">hello: hello.c greet.c greet.h      # 목표: 재료들
   cc -Wall -Wextra -o hello hello.c greet.c    # 만드는 법(탭으로 시작)</code></pre><p><code>make hello</code>라고 부르면 파일들의 시각을 비교해, 필요할 때만 명령을 실행한다. 파일 하나만 고쳤을 때 전체를 다시 컴파일하지 않는 것 — 16장의 릴레이와 54장의 분할이 실무에서 시간을 아끼는 방식이 이것이다.</p><p>make는 1976년에 만들어져 지금도 쓰인다. 문법의 괴벽(명령 줄은 반드시 탭으로 시작해야 한다 — 만든 사람 스스로 “그때는 사용자가 열둘뿐이었다”고 회고한 실수다)까지 그대로 남았지만, “의존 관계를 적으면 필요한 것만 다시 만든다”는 착상은 이후 모든 빌드 도구의 뿌리가 됐다. 오늘의 큰 프로젝트는 CMake·Meson·Ninja 같은 도구를 얹어 쓰지만, 그 도구들이 결국 만들어 내는 것도 대개 make류의 규칙이다.</p><h3 id="s96-2">96.2 git — 무엇이 언제 바뀌었나</h3><div></div><span id="idx-entry-256"></span><p>두 번째 필수 도구는 <strong>버전 관리</strong>다. 코드의 모든 변경을 기록해 두고, 언제든 되돌리고, 여럿이 같은 코드를 고쳐도 합칠 수 있게 하는 도구 — 오늘의 사실상 표준이 <code>git</code>이다.</p><p>일상의 명령은 다섯이면 시작할 수 있다.</p><pre><code data-lang="text">$ git init                 # 이 폴더를 저장소로
 $ git add hello.c          # 기록할 변경을 고른다
 $ git commit -m "첫 프로그램"   # 이유와 함께 기록한다
