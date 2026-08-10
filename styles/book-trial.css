@@ -39,3 +39,8 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 /* 저작권·연락처 --- 두 칸짜리 표는 줄 사이가 벌어질수록 짝이 흩어진다 */
 .metalist { line-height:1.45; gap:.2rem 1.2rem; }
 .metalist dt, .metalist dd { margin:0; }
+
+/* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
+   (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
+.demo { border-color:#c8c8c8; }
+.demo > .demo-head { border-bottom-color:#c8c8c8; }
