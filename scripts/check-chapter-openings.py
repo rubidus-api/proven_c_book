@@ -4,6 +4,7 @@
 장 서두는 다음 다섯을 *이 순서로* 갖춘다.
 
     = N 장 제목
+    #chapter-toc()           ⓪ 이 장의 차례 (PDF 전용)
     #prereq(...)             ① 먼저 알아야 할 것        (1장 제외)
     #deepqa[...][...]        ② 인출 문답                 (1장 제외)
     #why[...]                ③ 이 장의 필요성과 맥락
@@ -35,6 +36,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 # (표시 이름, 원고에서 찾을 문자열, 1장에도 필요한가)
 DEVICES = [
+    ("chapter-toc", "#chapter-toc()", True),
     ("prereq", "#prereq(", False),
     ("deepqa", "#deepqa[", False),
     ("why", "#why[", True),
@@ -123,7 +125,7 @@ def main() -> int:
         for p in problems:
             print(f"  {p}", file=sys.stderr)
         return 1
-    print("check-chapter-openings: 모든 장이 서두 정형(기댄 것 → 인출 → 맥락 → 목표 → 질문)을 지킨다")
+    print("check-chapter-openings: 모든 장이 서두 정형(차례 → 기댄 것 → 인출 → 맥락 → 목표 → 질문)을 지킨다")
     return 0
 
 
