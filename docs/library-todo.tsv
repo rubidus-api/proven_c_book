@@ -1,0 +1,33 @@
+# 아직 요람에 쓰지 않은 헤더 (RFC-0025)
+#
+# check-library-tables.py 가 이 목록의 헤더는 검사에서 뺀다.
+# ★ 한 단계를 마칠 때마다 해당 줄을 지운다. 다 쓰면 이 파일이 비고,
+#   그때 게이트가 비로소 「전수」를 뜻한다.
+#
+# 헤더	단계	함수 행수
+stdio.h	L2	64
+stdlib.h	L3	57
+time.h	L4	18
+locale.h	L4	2
+signal.h	L4	2
+setjmp.h	L4	2
+assert.h	L4	1
+errno.h	L4	0
+wchar.h	L5	85
+wctype.h	L5	18
+uchar.h	L5	6
+math.h	L6	168
+fenv.h	L7	17
+complex.h	L7	22
+tgmath.h	L7	0
+stdatomic.h	L8	21
+threads.h	L8	25
+stdint.h	L9	0
+limits.h	L9	0
+float.h	L9	0
+stddef.h	L9	0
+stdbit.h	L9	0
+inttypes.h	L9	6
+stdarg.h	L9	4
+stdalign.h	L9	0
+stdbool.h	L9	0

@@ -1,0 +1,5136 @@
+{
+ "assert.h": {
+  "functions": [
+   {
+    "name": "assert",
+    "variants": [
+     "assert"
+    ],
+    "decl": "void assert (scalar expression);"
+   }
+  ],
+  "macros": [
+   "NDEBUG"
+  ],
+  "types": []
+ },
+ "complex.h": {
+  "functions": [
+   {
+    "name": "cabs",
+    "variants": [
+     "cabs",
+     "cabsf",
+     "cabsl"
+    ],
+    "decl": "double cabs (double complex z);"
+   },
+   {
+    "name": "cacos",
+    "variants": [
+     "cacos",
+     "cacosf",
+     "cacosl"
+    ],
+    "decl": "switch double complex cacos (double complex z);"
+   },
+   {
+    "name": "cacosh",
+    "variants": [
+     "cacosh",
+     "cacoshf",
+     "cacoshl"
+    ],
+    "decl": "double complex cacosh (double complex z);"
+   },
+   {
+    "name": "carg",
+    "variants": [
+     "carg",
+     "cargf",
+     "cargl"
+    ],
+    "decl": "double carg (double complex z);"
+   },
+   {
+    "name": "casin",
+    "variants": [
+     "casin",
+     "casinf",
+     "casinl"
+    ],
+    "decl": "double complex casin (double complex z);"
+   },
+   {
+    "name": "casinh",
+    "variants": [
+     "casinh",
+     "casinhf",
+     "casinhl"
+    ],
+    "decl": "double complex casinh (double complex z);"
+   },
+   {
+    "name": "catan",
+    "variants": [
+     "catan",
+     "catanf",
+     "catanl"
+    ],
+    "decl": "double complex catan (double complex z);"
+   },
+   {
+    "name": "catanh",
+    "variants": [
+     "catanh",
+     "catanhf",
+     "catanhl"
+    ],
+    "decl": "double complex catanh (double complex z);"
+   },
+   {
+    "name": "ccos",
+    "variants": [
+     "ccos",
+     "ccosf",
+     "ccosl"
+    ],
+    "decl": "double complex ccos (double complex z);"
+   },
+   {
+    "name": "ccosh",
+    "variants": [
+     "ccosh",
+     "ccoshf",
+     "ccoshl"
+    ],
+    "decl": "double complex ccosh (double complex z);"
+   },
+   {
+    "name": "cexp",
+    "variants": [
+     "cexp",
+     "cexpf",
+     "cexpl"
+    ],
+    "decl": "double complex cexp (double complex z);"
+   },
+   {
+    "name": "cimag",
+    "variants": [
+     "cimag",
+     "cimagf",
+     "cimagl"
+    ],
+    "decl": "double cimag (double complex z);"
+   },
+   {
+    "name": "clog",
+    "variants": [
+     "clog",
+     "clogf",
+     "clogl"
+    ],
+    "decl": "double complex clog (double complex z);"
+   },
+   {
+    "name": "conj",
+    "variants": [
+     "conj",
+     "conjf",
+     "conjl"
+    ],
+    "decl": "double complex conj (double complex z);"
+   },
+   {
+    "name": "cpow",
+    "variants": [
+     "cpow",
+     "cpowf",
+     "cpowl"
+    ],
+    "decl": "double complex cpow (double complex x, double complex y);"
+   },
+   {
+    "name": "cproj",
+    "variants": [
+     "cproj",
+     "cprojf",
+     "cprojl"
+    ],
+    "decl": "double complex cproj (double complex z);"
+   },
+   {
+    "name": "creal",
+    "variants": [
+     "creal",
+     "crealf",
+     "creall"
+    ],
+    "decl": "double creal (double complex z);"
+   },
+   {
+    "name": "csin",
+    "variants": [
+     "csin",
+     "csinf",
+     "csinl"
+    ],
+    "decl": "double complex csin (double complex z);"
+   },
+   {
+    "name": "csinh",
+    "variants": [
+     "csinh",
+     "csinhf",
+     "csinhl"
+    ],
+    "decl": "double complex csinh (double complex z);"
+   },
+   {
+    "name": "csqrt",
+    "variants": [
+     "csqrt",
+     "csqrtf",
+     "csqrtl"
+    ],
+    "decl": "double complex csqrt (double complex z);"
+   },
+   {
+    "name": "ctan",
+    "variants": [
+     "ctan",
+     "ctanf",
+     "ctanl"
+    ],
+    "decl": "double complex ctan (double complex z);"
+   },
+   {
+    "name": "ctanh",
+    "variants": [
+     "ctanh",
+     "ctanhf",
+     "ctanhl"
+    ],
+    "decl": "double complex ctanh (double complex z);"
+   }
+  ],
+  "macros": [
+   "CMPLX",
+   "CMPLXF",
+   "CMPLXL",
+   "CX_LIMITED_RANGE",
+   "STDC"
+  ],
+  "types": []
+ },
+ "ctype.h": {
+  "functions": [
+   {
+    "name": "isalnum",
+    "variants": [
+     "isalnum"
+    ],
+    "decl": "int isalnum (int c);"
+   },
+   {
+    "name": "isalpha",
+    "variants": [
+     "isalpha"
+    ],
+    "decl": "int isalpha (int c);"
+   },
+   {
+    "name": "isblank",
+    "variants": [
+     "isblank"
+    ],
+    "decl": "int isblank (int c);"
+   },
+   {
+    "name": "iscntrl",
+    "variants": [
+     "iscntrl"
+    ],
+    "decl": "int iscntrl (int c);"
+   },
+   {
+    "name": "isdigit",
+    "variants": [
+     "isdigit"
+    ],
+    "decl": "int isdigit (int c);"
+   },
+   {
+    "name": "isgraph",
+    "variants": [
+     "isgraph"
+    ],
+    "decl": "int isgraph (int c);"
+   },
+   {
+    "name": "islower",
+    "variants": [
+     "islower"
+    ],
+    "decl": "int islower (int c);"
+   },
+   {
+    "name": "isprint",
+    "variants": [
+     "isprint"
+    ],
+    "decl": "int isprint (int c);"
+   },
+   {
+    "name": "ispunct",
+    "variants": [
+     "ispunct"
+    ],
+    "decl": "int ispunct (int c);"
+   },
+   {
+    "name": "isspace",
+    "variants": [
+     "isspace"
+    ],
+    "decl": "int isspace (int c);"
+   },
+   {
+    "name": "isupper",
+    "variants": [
+     "isupper"
+    ],
+    "decl": "int isupper (int c);"
+   },
+   {
+    "name": "isxdigit",
+    "variants": [
+     "isxdigit"
+    ],
+    "decl": "int isxdigit (int c);"
+   },
+   {
+    "name": "tolower",
+    "variants": [
+     "tolower"
+    ],
+    "decl": "int tolower (int c);"
+   },
+   {
+    "name": "toupper",
+    "variants": [
+     "toupper"
+    ],
+    "decl": "int toupper (int c);"
+   }
+  ],
+  "macros": [],
+  "types": []
+ },
+ "errno.h": {
+  "functions": [],
+  "macros": [
+   "EDOM",
+   "EILSEQ",
+   "ERANGE"
+  ],
+  "types": [
+   "errno_t"
+  ]
+ },
+ "fenv.h": {
+  "functions": [
+   {
+    "name": "fe_dec_getround",
+    "variants": [
+     "fe_dec_getround"
+    ],
+    "decl": "direction int fe_dec_getround(void);"
+   },
+   {
+    "name": "fe_dec_setround",
+    "variants": [
+     "fe_dec_setround"
+    ],
+    "decl": "int fe_dec_setround(int rnd);"
+   },
+   {
+    "name": "feclearexcept",
+    "variants": [
+     "feclearexcept"
+    ],
+    "decl": "int feclearexcept (int excepts);"
+   },
+   {
+    "name": "fegetenv",
+    "variants": [
+     "fegetenv"
+    ],
+    "decl": "int fegetenv (fenv_t *envp);"
+   },
+   {
+    "name": "fegetexceptflag",
+    "variants": [
+     "fegetexceptflag"
+    ],
+    "decl": "int fegetexceptflag (fexcept_t *flagp, int excepts);"
+   },
+   {
+    "name": "fegetmode",
+    "variants": [
+     "fegetmode"
+    ],
+    "decl": "int fegetmode (femode_t *modep);"
+   },
+   {
+    "name": "fegetround",
+    "variants": [
+     "fegetround"
+    ],
+    "decl": "int fegetround (void);"
+   },
+   {
+    "name": "feholdexcept",
+    "variants": [
+     "feholdexcept"
+    ],
+    "decl": "int feholdexcept (fenv_t *envp);"
+   },
+   {
+    "name": "feraiseexcept",
+    "variants": [
+     "feraiseexcept"
+    ],
+    "decl": "int feraiseexcept (int excepts);"
+   },
+   {
+    "name": "fesetenv",
+    "variants": [
+     "fesetenv"
+    ],
+    "decl": "int fesetenv (const fenv_t *envp);"
+   },
+   {
+    "name": "fesetexcept",
+    "variants": [
+     "fesetexcept"
+    ],
+    "decl": "int fesetexcept (int excepts);"
+   },
+   {
+    "name": "fesetexceptflag",
+    "variants": [
+     "fesetexceptflag"
+    ],
+    "decl": "int fesetexceptflag (const fexcept_t *flagp, int excepts);"
+   },
+   {
+    "name": "fesetmode",
+    "variants": [
+     "fesetmode"
+    ],
+    "decl": "int fesetmode (const femode_t *modep);"
+   },
+   {
+    "name": "fesetround",
+    "variants": [
+     "fesetround"
+    ],
+    "decl": "int fesetround (int rnd);"
+   },
+   {
+    "name": "fetestexcept",
+    "variants": [
+     "fetestexcept"
+    ],
+    "decl": "int fetestexcept (int excepts);"
+   },
+   {
+    "name": "fetestexceptflag",
+    "variants": [
+     "fetestexceptflag"
+    ],
+    "decl": "int fetestexceptflag (const fexcept_t *flagp, int excepts);"
+   },
+   {
+    "name": "feupdateenv",
+    "variants": [
+     "feupdateenv"
+    ],
+    "decl": "int feupdateenv (const fenv_t *envp);"
+   }
+  ],
+  "macros": [
+   "FENV_ACCESS",
+   "FENV_DEC_ROUND",
+   "FENV_ROUND",
+   "FE_ALL_EXCEPT",
+   "FE_DEC_DOWNWARD",
+   "FE_DEC_TONEAREST",
+   "FE_DEC_TONEARESTFROMZERO",
+   "FE_DEC_TOWARDZERO",
+   "FE_DEC_UPWARD",
+   "FE_DFL_ENV",
+   "FE_DFL_MODE",
+   "FE_DIVBYZERO",
+   "FE_DOWNWARD",
+   "FE_DYNAMIC",
+   "FE_INEXACT",
+   "FE_INVALID",
+   "FE_OVERFLOW",
+   "FE_SNANS_ALWAYS_SIGNAL",
+   "FE_TONEAREST",
+   "FE_TONEARESTFROMZERO",
+   "FE_TOWARDZERO",
+   "FE_UNDERFLOW",
+   "FE_UPWARD",
+   "STDC"
+  ],
+  "types": [
+   "femode_t",
+   "fenv_t",
+   "fexcept_t"
+  ]
+ },
+ "float.h": {
+  "functions": [],
+  "macros": [
+   "CR_DECIMAL_DIG",
+   "DBL_DECIMAL_DIG",
+   "DBL_DIG",
+   "DBL_EPSILON",
+   "DBL_HAS_SUBNORM",
+   "DBL_IS_IEC_60559",
+   "DBL_MANT_DIG",
+   "DBL_MAX",
+   "DBL_MAX_10_EXP",
+   "DBL_MAX_EXP",
+   "DBL_MIN",
+   "DBL_MIN_10_EXP",
+   "DBL_MIN_EXP",
+   "DBL_NORM_MAX",
+   "DBL_SNAN",
+   "DBL_TRUE_MIN",
+   "DECIMAL_DIG",
+   "DECN_EPSILON",
+   "DECN_MANT_DIG",
+   "DECN_MAX",
+   "DECN_MAX_EXP",
+   "DECN_MIN",
+   "DECN_MIN_EXP",
+   "DECN_SNAN",
+   "DECN_TRUE_MIN",
+   "DEC_EVAL_METHOD",
+   "DEC_INFINITY",
+   "DEC_NAN",
+   "FLT_DECIMAL_DIG",
+   "FLT_DIG",
+   "FLT_EPSILON",
+   "FLT_EVAL_METHOD",
+   "FLT_HAS_SUBNORM",
+   "FLT_IS_IEC_60559",
+   "FLT_MANT_DIG",
+   "FLT_MAX",
+   "FLT_MAX_10_EXP",
+   "FLT_MAX_EXP",
+   "FLT_MIN",
+   "FLT_MIN_10_EXP",
+   "FLT_MIN_EXP",
+   "FLT_NORM_MAX",
+   "FLT_RADIX",
+   "FLT_ROUNDS",
+   "FLT_SNAN",
+   "FLT_TRUE_MIN",
+   "INFINITY",
+   "LDBL_DECIMAL_DIG",
+   "LDBL_DIG",
+   "LDBL_EPSILON",
+   "LDBL_HAS_SUBNORM",
+   "LDBL_IS_IEC_60559",
+   "LDBL_MANT_DIG",
+   "LDBL_MAX",
+   "LDBL_MAX_10_EXP",
+   "LDBL_MAX_EXP",
+   "LDBL_MIN",
+   "LDBL_MIN_10_EXP",
+   "LDBL_MIN_EXP",
+   "LDBL_NORM_MAX",
+   "LDBL_SNAN",
+   "LDBL_TRUE_MIN",
+   "NAN"
+  ],
+  "types": []
+ },
+ "inttypes.h": {
+  "functions": [
+   {
+    "name": "imaxabs",
+    "variants": [
+     "imaxabs"
+    ],
+    "decl": "SCNxFASTN SCNxMAX SCNxPTR intmax_t imaxabs (intmax_t j);"
+   },
+   {
+    "name": "imaxdiv",
+    "variants": [
+     "imaxdiv"
+    ],
+    "decl": "imaxdiv_t imaxdiv (intmax_t numer, intmax_t denom);"
+   },
+   {
+    "name": "strtoimax",
+    "variants": [
+     "strtoimax"
+    ],
+    "decl": "intmax_t strtoimax (const char * restrict nptr, char ** restrict endptr, int base);"
+   },
+   {
+    "name": "strtoumax",
+    "variants": [
+     "strtoumax"
+    ],
+    "decl": "uintmax_t strtoumax (const char * restrict nptr, char ** restrict endptr, int base);"
+   },
+   {
+    "name": "wcstoimax",
+    "variants": [
+     "wcstoimax"
+    ],
+    "decl": "intmax_t wcstoimax (const wchar_t *restrict nptr, wchar_t **restrict endptr, int base);"
+   },
+   {
+    "name": "wcstoumax",
+    "variants": [
+     "wcstoumax"
+    ],
+    "decl": "uintmax_t wcstoumax (const wchar_t *restrict nptr, wchar_t **restrict endptr, int base);"
+   }
+  ],
+  "macros": [
+   "PRIBFASTN",
+   "PRIBLEASTN",
+   "PRIBMAX",
+   "PRIBN",
+   "PRIBPTR",
+   "PRIXFASTN",
+   "PRIXLEASTN",
+   "PRIXMAX",
+   "PRIXN",
+   "PRIXPTR"
+  ],
+  "types": [
+   "imaxdiv_t",
+   "intmax_t",
+   "uintmax_t",
+   "wchar_t"
+  ]
+ },
+ "limits.h": {
+  "functions": [],
+  "macros": [
+   "BITINT_MAXWIDTH",
+   "BOOL_MAX",
+   "BOOL_WIDTH",
+   "CHAR_BIT",
+   "CHAR_MAX",
+   "CHAR_MIN",
+   "CHAR_WIDTH",
+   "INT_MAX",
+   "INT_MIN",
+   "INT_WIDTH",
+   "LLONG_MAX",
+   "LLONG_MIN",
+   "LLONG_WIDTH",
+   "LONG_MAX",
+   "LONG_MIN",
+   "LONG_WIDTH",
+   "MB_LEN_MAX",
+   "SCHAR_MAX",
+   "SCHAR_MIN",
+   "SCHAR_WIDTH",
+   "SHRT_MAX",
+   "SHRT_MIN",
+   "SHRT_WIDTH",
+   "UCHAR_MAX",
+   "UCHAR_WIDTH",
+   "UINT_MAX",
+   "UINT_WIDTH",
+   "ULLONG_MAX",
+   "ULLONG_WIDTH",
+   "ULONG_MAX",
+   "ULONG_WIDTH",
+   "USHRT_MAX",
+   "USHRT_WIDTH"
+  ],
+  "types": []
+ },
+ "locale.h": {
+  "functions": [
+   {
+    "name": "localeconv",
+    "variants": [
+     "localeconv"
+    ],
+    "decl": "struct lconv * localeconv(void);"
+   },
+   {
+    "name": "setlocale",
+    "variants": [
+     "setlocale"
+    ],
+    "decl": "char * setlocale(int category, const char *locale);"
+   }
+  ],
+  "macros": [
+   "LC_ALL",
+   "LC_COLLATE",
+   "LC_CTYPE",
+   "LC_MONETARY",
+   "LC_NUMERIC",
+   "LC_TIME",
+   "NULL"
+  ],
+  "types": []
+ },
+ "math.h": {
+  "functions": [
+   {
+    "name": "acos",
+    "variants": [
+     "acos",
+     "acosd128",
+     "acosd32",
+     "acosd64",
+     "acosf",
+     "acosl"
+    ],
+    "decl": "double acos (double x);"
+   },
+   {
+    "name": "acosh",
+    "variants": [
+     "acosh",
+     "acoshd128",
+     "acoshd32",
+     "acoshd64",
+     "acoshf",
+     "acoshl"
+    ],
+    "decl": "double acosh (double x);"
+   },
+   {
+    "name": "acospi",
+    "variants": [
+     "acospi",
+     "acospid128",
+     "acospid32",
+     "acospid64",
+     "acospif",
+     "acospil"
+    ],
+    "decl": "double acospi (double x);"
+   },
+   {
+    "name": "asin",
+    "variants": [
+     "asin",
+     "asind128",
+     "asind32",
+     "asind64",
+     "asinf",
+     "asinl"
+    ],
+    "decl": "double asin (double x);"
+   },
+   {
+    "name": "asinh",
+    "variants": [
+     "asinh",
+     "asinhd128",
+     "asinhd32",
+     "asinhd64",
+     "asinhf",
+     "asinhl"
+    ],
+    "decl": "double asinh (double x);"
+   },
+   {
+    "name": "asinpi",
+    "variants": [
+     "asinpi",
+     "asinpid128",
+     "asinpid32",
+     "asinpid64",
+     "asinpif",
+     "asinpil"
+    ],
+    "decl": "double asinpi (double x);"
+   },
+   {
+    "name": "atan",
+    "variants": [
+     "atan",
+     "atand128",
+     "atand32",
+     "atand64",
+     "atanf",
+     "atanl"
+    ],
+    "decl": "double atan (double x);"
+   },
+   {
+    "name": "atan2",
+    "variants": [
+     "atan2",
+     "atan2d128",
+     "atan2d32",
+     "atan2d64",
+     "atan2f",
+     "atan2l"
+    ],
+    "decl": "double atan2 (double y, double x);"
+   },
+   {
+    "name": "atan2pi",
+    "variants": [
+     "atan2pi",
+     "atan2pid128",
+     "atan2pid32",
+     "atan2pid64",
+     "atan2pif",
+     "atan2pil"
+    ],
+    "decl": "double atan2pi (double y, double x);"
+   },
+   {
+    "name": "atanh",
+    "variants": [
+     "atanh",
+     "atanhd128",
+     "atanhd32",
+     "atanhd64",
+     "atanhf",
+     "atanhl"
+    ],
+    "decl": "double atanh (double x);"
+   },
+   {
+    "name": "atanpi",
+    "variants": [
+     "atanpi",
+     "atanpid128",
+     "atanpid32",
+     "atanpid64",
+     "atanpif",
+     "atanpil"
+    ],
+    "decl": "double atanpi (double x);"
+   },
+   {
+    "name": "canonicalize",
+    "variants": [
+     "canonicalize",
+     "canonicalized128",
+     "canonicalized32",
+     "canonicalized64",
+     "canonicalizef",
+     "canonicalizel"
+    ],
+    "decl": "int canonicalize (double *cx, const double *x);"
+   },
+   {
+    "name": "cbrt",
+    "variants": [
+     "cbrt",
+     "cbrtd128",
+     "cbrtd32",
+     "cbrtd64",
+     "cbrtf",
+     "cbrtl"
+    ],
+    "decl": "double cbrt (double x);"
+   },
+   {
+    "name": "ceil",
+    "variants": [
+     "ceil",
+     "ceild128",
+     "ceild32",
+     "ceild64",
+     "ceilf",
+     "ceill"
+    ],
+    "decl": "double ceil (double x);"
+   },
+   {
+    "name": "compoundn",
+    "variants": [
+     "compoundn",
+     "compoundnd128",
+     "compoundnd32",
+     "compoundnd64",
+     "compoundnf",
+     "compoundnl"
+    ],
+    "decl": "double compoundn (double x, long long int n);"
+   },
+   {
+    "name": "copysign",
+    "variants": [
+     "copysign",
+     "copysignd128",
+     "copysignd32",
+     "copysignd64",
+     "copysignf",
+     "copysignl"
+    ],
+    "decl": "double copysign (double x, double y);"
+   },
+   {
+    "name": "cos",
+    "variants": [
+     "cos",
+     "cosd128",
+     "cosd32",
+     "cosd64",
+     "cosf",
+     "cosl"
+    ],
+    "decl": "double cos (double x);"
+   },
+   {
+    "name": "cosh",
+    "variants": [
+     "cosh",
+     "coshd128",
+     "coshd32",
+     "coshd64",
+     "coshf",
+     "coshl"
+    ],
+    "decl": "double cosh (double x);"
+   },
+   {
+    "name": "cospi",
+    "variants": [
+     "cospi",
+     "cospid128",
+     "cospid32",
+     "cospid64",
+     "cospif",
+     "cospil"
+    ],
+    "decl": "double cospi (double x);"
+   },
+   {
+    "name": "d32addd128",
+    "variants": [
+     "d32addd128"
+    ],
+    "decl": "_Decimal32 d32addd128 (_Decimal128 x, _Decimal128 y);"
+   },
+   {
+    "name": "d32addd64",
+    "variants": [
+     "d32addd64"
+    ],
+    "decl": "_Decimal32 d32addd64 (_Decimal64 x, _Decimal64 y);"
+   },
+   {
+    "name": "d32divd128",
+    "variants": [
+     "d32divd128"
+    ],
+    "decl": "_Decimal32 d32divd128 (_Decimal128 x, _Decimal128 y);"
+   },
+   {
+    "name": "d32divd64",
+    "variants": [
+     "d32divd64"
+    ],
+    "decl": "_Decimal32 d32divd64 (_Decimal64 x, _Decimal64 y);"
+   },
+   {
+    "name": "d32fmad128",
+    "variants": [
+     "d32fmad128"
+    ],
+    "decl": "_Decimal32 d32fmad128 (_Decimal128 x, _Decimal128 y, _Decimal128 z);"
+   },
+   {
+    "name": "d32fmad64",
+    "variants": [
+     "d32fmad64"
+    ],
+    "decl": "_Decimal32 d32fmad64 (_Decimal64 x, _Decimal64 y, _Decimal64 z);"
+   },
+   {
+    "name": "d32muld128",
+    "variants": [
+     "d32muld128"
+    ],
+    "decl": "_Decimal32 d32muld128 (_Decimal128 x, _Decimal128 y);"
+   },
+   {
+    "name": "d32muld64",
+    "variants": [
+     "d32muld64"
+    ],
+    "decl": "_Decimal32 d32muld64 (_Decimal64 x, _Decimal64 y);"
+   },
+   {
+    "name": "d32sqrtd128",
+    "variants": [
+     "d32sqrtd128"
+    ],
+    "decl": "_Decimal32 d32sqrtd128 (_Decimal128 x);"
+   },
+   {
+    "name": "d32sqrtd64",
+    "variants": [
+     "d32sqrtd64"
+    ],
+    "decl": "_Decimal32 d32sqrtd64 (_Decimal64 x);"
+   },
+   {
+    "name": "d32subd128",
+    "variants": [
+     "d32subd128"
+    ],
+    "decl": "_Decimal32 d32subd128 (_Decimal128 x, _Decimal128 y);"
+   },
+   {
+    "name": "d32subd64",
+    "variants": [
+     "d32subd64"
+    ],
+    "decl": "_Decimal32 d32subd64 (_Decimal64 x, _Decimal64 y);"
+   },
+   {
+    "name": "d64addd128",
+    "variants": [
+     "d64addd128"
+    ],
+    "decl": "_Decimal64 d64addd128 (_Decimal128 x, _Decimal128 y);"
+   },
+   {
+    "name": "d64divd128",
+    "variants": [
+     "d64divd128"
+    ],
+    "decl": "_Decimal64 d64divd128 (_Decimal128 x, _Decimal128 y);"
+   },
+   {
+    "name": "d64fmad128",
+    "variants": [
+     "d64fmad128"
+    ],
+    "decl": "_Decimal64 d64fmad128 (_Decimal128 x, _Decimal128 y, _Decimal128 z);"
+   },
+   {
+    "name": "d64muld128",
+    "variants": [
+     "d64muld128"
+    ],
+    "decl": "_Decimal64 d64muld128 (_Decimal128 x, _Decimal128 y);"
+   },
+   {
+    "name": "d64sqrtd128",
+    "variants": [
+     "d64sqrtd128"
+    ],
+    "decl": "_Decimal64 d64sqrtd128 (_Decimal128 x);"
+   },
+   {
+    "name": "d64subd128",
+    "variants": [
+     "d64subd128"
+    ],
+    "decl": "_Decimal64 d64subd128 (_Decimal128 x, _Decimal128 y);"
+   },
+   {
+    "name": "daddl",
+    "variants": [
+     "daddl"
+    ],
+    "decl": "double daddl (long double x, long double y);"
+   },
+   {
+    "name": "ddivl",
+    "variants": [
+     "ddivl"
+    ],
+    "decl": "double ddivl (long double x, long double y);"
+   },
+   {
+    "name": "decodebind128",
+    "variants": [
+     "decodebind128"
+    ],
+    "decl": "void decodebind128 (_Decimal128 * restrict xptr, const unsigned char encptr[restrict static 16]);"
+   },
+   {
+    "name": "decodebind32",
+    "variants": [
+     "decodebind32"
+    ],
+    "decl": "void decodebind32 (_Decimal32 * restrict xptr, const unsigned char encptr[restrict static 4]);"
+   },
+   {
+    "name": "decodebind64",
+    "variants": [
+     "decodebind64"
+    ],
+    "decl": "void decodebind64 (_Decimal64 * restrict xptr, const unsigned char encptr[restrict static 8]);"
+   },
+   {
+    "name": "decodedecd128",
+    "variants": [
+     "decodedecd128"
+    ],
+    "decl": "void decodedecd128 (_Decimal128 * restrict xptr, const unsigned char encptr[restrict static 16]);"
+   },
+   {
+    "name": "decodedecd32",
+    "variants": [
+     "decodedecd32"
+    ],
+    "decl": "void decodedecd32 (_Decimal32 * restrict xptr, const unsigned char encptr[restrict static 4]);"
+   },
+   {
+    "name": "decodedecd64",
+    "variants": [
+     "decodedecd64"
+    ],
+    "decl": "void decodedecd64 (_Decimal64 * restrict xptr, const unsigned char encptr[restrict static 8]);"
+   },
+   {
+    "name": "dfmal",
+    "variants": [
+     "dfmal"
+    ],
+    "decl": "double dfmal (long double x, long double y, long double z);"
+   },
+   {
+    "name": "dmull",
+    "variants": [
+     "dmull"
+    ],
+    "decl": "double dmull (long double x, long double y);"
+   },
+   {
+    "name": "dsqrtl",
+    "variants": [
+     "dsqrtl"
+    ],
+    "decl": "double dsqrtl (long double x);"
+   },
+   {
+    "name": "dsubl",
+    "variants": [
+     "dsubl"
+    ],
+    "decl": "double dsubl (long double x, long double y);"
+   },
+   {
+    "name": "encodebind128",
+    "variants": [
+     "encodebind128"
+    ],
+    "decl": "void encodebind128 (unsigned char encptr[restrict static 16], const_Decimal128 * restrict xptr);"
+   },
+   {
+    "name": "encodebind32",
+    "variants": [
+     "encodebind32"
+    ],
+    "decl": "void encodebind32 (unsigned char encptr[restrict static 4], const_Decimal32 * restrict xptr);"
+   },
+   {
+    "name": "encodebind64",
+    "variants": [
+     "encodebind64"
+    ],
+    "decl": "void encodebind64 (unsigned char encptr[restrict static 8], const_Decimal64 * restrict xptr);"
+   },
+   {
+    "name": "encodedecd128",
+    "variants": [
+     "encodedecd128"
+    ],
+    "decl": "void encodedecd128 (unsigned char encptr[restrict static 16], const_Decimal128 * restrict xptr);"
+   },
+   {
+    "name": "encodedecd32",
+    "variants": [
+     "encodedecd32"
+    ],
+    "decl": "void encodedecd32 (unsigned char encptr[restrict static 4], const_Decimal32 * restrict xptr);"
+   },
+   {
+    "name": "encodedecd64",
+    "variants": [
+     "encodedecd64"
+    ],
+    "decl": "void encodedecd64 (unsigned char encptr[restrict static 8], const_Decimal64 * restrict xptr);"
+   },
+   {
+    "name": "erf",
+    "variants": [
+     "erf",
+     "erfd128",
+     "erfd32",
+     "erfd64",
+     "erff",
+     "erfl"
+    ],
+    "decl": "double erf (double x);"
+   },
+   {
+    "name": "erfc",
+    "variants": [
+     "erfc",
+     "erfcd128",
+     "erfcd32",
+     "erfcd64",
+     "erfcf",
+     "erfcl"
+    ],
+    "decl": "double erfc (double x);"
+   },
+   {
+    "name": "exp",
+    "variants": [
+     "exp",
+     "expd128",
+     "expd32",
+     "expd64",
+     "expf",
+     "expl"
+    ],
+    "decl": "double exp (double x);"
+   },
+   {
+    "name": "exp10",
+    "variants": [
+     "exp10",
+     "exp10d128",
+     "exp10d32",
+     "exp10d64",
+     "exp10f",
+     "exp10l"
+    ],
+    "decl": "double exp10 (double x);"
+   },
+   {
+    "name": "exp10m1",
+    "variants": [
+     "exp10m1",
+     "exp10m1d128",
+     "exp10m1d32",
+     "exp10m1d64",
+     "exp10m1f",
+     "exp10m1l"
+    ],
+    "decl": "double exp10m1 (double x);"
+   },
+   {
+    "name": "exp2",
+    "variants": [
+     "exp2",
+     "exp2d128",
+     "exp2d32",
+     "exp2d64",
+     "exp2f",
+     "exp2l"
+    ],
+    "decl": "double exp2 (double x);"
+   },
+   {
+    "name": "exp2m1",
+    "variants": [
+     "exp2m1",
+     "exp2m1d128",
+     "exp2m1d32",
+     "exp2m1d64",
+     "exp2m1f",
+     "exp2m1l"
+    ],
+    "decl": "double exp2m1 (double x);"
+   },
+   {
+    "name": "expm1",
+    "variants": [
+     "expm1",
+     "expm1d128",
+     "expm1d32",
+     "expm1d64",
+     "expm1f",
+     "expm1l"
+    ],
+    "decl": "double expm1 (double x);"
+   },
+   {
+    "name": "fabs",
+    "variants": [
+     "fabs",
+     "fabsd128",
+     "fabsd32",
+     "fabsd64",
+     "fabsf",
+     "fabsl"
+    ],
+    "decl": "double fabs (double x);"
+   },
+   {
+    "name": "fadd",
+    "variants": [
+     "fadd",
+     "faddl"
+    ],
+    "decl": "float fadd (double x, double y);"
+   },
+   {
+    "name": "fdim",
+    "variants": [
+     "fdim",
+     "fdimd128",
+     "fdimd32",
+     "fdimd64",
+     "fdimf",
+     "fdiml"
+    ],
+    "decl": "double fdim (double x, double y);"
+   },
+   {
+    "name": "fdiv",
+    "variants": [
+     "fdiv",
+     "fdivl"
+    ],
+    "decl": "float fdiv (double x, double y);"
+   },
+   {
+    "name": "ffma",
+    "variants": [
+     "ffma",
+     "ffmal"
+    ],
+    "decl": "float ffma (double x, double y, double z);"
+   },
+   {
+    "name": "floor",
+    "variants": [
+     "floor",
+     "floord128",
+     "floord32",
+     "floord64",
+     "floorf",
+     "floorl"
+    ],
+    "decl": "double floor (double x);"
+   },
+   {
+    "name": "fma",
+    "variants": [
+     "fma",
+     "fmad128",
+     "fmad32",
+     "fmad64",
+     "fmaf",
+     "fmal"
+    ],
+    "decl": "double fma (double x, double y, double z);"
+   },
+   {
+    "name": "fmax",
+    "variants": [
+     "fmax",
+     "fmaxd128",
+     "fmaxd32",
+     "fmaxd64",
+     "fmaxf",
+     "fmaxl"
+    ],
+    "decl": "double fmax (double x, double y);"
+   },
+   {
+    "name": "fmaximum",
+    "variants": [
+     "fmaximum",
+     "fmaximumd128",
+     "fmaximumd32",
+     "fmaximumd64",
+     "fmaximumf",
+     "fmaximuml"
+    ],
+    "decl": "double fmaximum (double x, double y);"
+   },
+   {
+    "name": "fmaximum_mag",
+    "variants": [
+     "fmaximum_mag",
+     "fmaximum_magd128",
+     "fmaximum_magd32",
+     "fmaximum_magd64",
+     "fmaximum_magf",
+     "fmaximum_magl"
+    ],
+    "decl": "double fmaximum_mag(double x, double y);"
+   },
+   {
+    "name": "fmaximum_mag_num",
+    "variants": [
+     "fmaximum_mag_num",
+     "fmaximum_mag_numd128",
+     "fmaximum_mag_numd32",
+     "fmaximum_mag_numd64",
+     "fmaximum_mag_numf",
+     "fmaximum_mag_numl"
+    ],
+    "decl": "double fmaximum_mag_num(double x, double y);"
+   },
+   {
+    "name": "fmaximum_num",
+    "variants": [
+     "fmaximum_num",
+     "fmaximum_numd128",
+     "fmaximum_numd32",
+     "fmaximum_numd64",
+     "fmaximum_numf",
+     "fmaximum_numl"
+    ],
+    "decl": "double fmaximum_num(double x, double y);"
+   },
+   {
+    "name": "fmin",
+    "variants": [
+     "fmin",
+     "fmind128",
+     "fmind32",
+     "fmind64",
+     "fminf",
+     "fminl"
+    ],
+    "decl": "double fmin (double x, double y);"
+   },
+   {
+    "name": "fminimum",
+    "variants": [
+     "fminimum",
+     "fminimumd128",
+     "fminimumd32",
+     "fminimumd64",
+     "fminimumf",
+     "fminimuml"
+    ],
+    "decl": "double fminimum (double x, double y);"
+   },
+   {
+    "name": "fminimum_mag",
+    "variants": [
+     "fminimum_mag",
+     "fminimum_magd128",
+     "fminimum_magd32",
+     "fminimum_magd64",
+     "fminimum_magf",
+     "fminimum_magl"
+    ],
+    "decl": "double fminimum_mag(double x, double y);"
+   },
+   {
+    "name": "fminimum_mag_num",
+    "variants": [
+     "fminimum_mag_num",
+     "fminimum_mag_numd128",
+     "fminimum_mag_numd32",
+     "fminimum_mag_numd64",
+     "fminimum_mag_numf",
+     "fminimum_mag_numl"
+    ],
+    "decl": "double fminimum_mag_num(double x, double y);"
+   },
+   {
+    "name": "fminimum_num",
+    "variants": [
+     "fminimum_num",
+     "fminimum_numd128",
+     "fminimum_numd32",
+     "fminimum_numd64",
+     "fminimum_numf",
+     "fminimum_numl"
+    ],
+    "decl": "double fminimum_num(double x, double y);"
+   },
+   {
+    "name": "fmod",
+    "variants": [
+     "fmod",
+     "fmodd128",
+     "fmodd32",
+     "fmodd64",
+     "fmodf",
+     "fmodl"
+    ],
+    "decl": "double fmod (double x, double y);"
+   },
+   {
+    "name": "fmul",
+    "variants": [
+     "fmul",
+     "fmull"
+    ],
+    "decl": "float fmul (double x, double y);"
+   },
+   {
+    "name": "fpclassify",
+    "variants": [
+     "fpclassify"
+    ],
+    "decl": "switch int fpclassify (real-floating x);"
+   },
+   {
+    "name": "frexp",
+    "variants": [
+     "frexp",
+     "frexpd128",
+     "frexpd32",
+     "frexpd64",
+     "frexpf",
+     "frexpl"
+    ],
+    "decl": "double frexp (double value, int *p);"
+   },
+   {
+    "name": "fromfp",
+    "variants": [
+     "fromfp",
+     "fromfpd128",
+     "fromfpd32",
+     "fromfpd64",
+     "fromfpf",
+     "fromfpl"
+    ],
+    "decl": "double fromfp (double x, int rnd, unsigned int width);"
+   },
+   {
+    "name": "fromfpx",
+    "variants": [
+     "fromfpx",
+     "fromfpxd128",
+     "fromfpxd32",
+     "fromfpxd64",
+     "fromfpxf",
+     "fromfpxl"
+    ],
+    "decl": "double fromfpx (double x, int rnd, unsigned int width);"
+   },
+   {
+    "name": "fsqrt",
+    "variants": [
+     "fsqrt",
+     "fsqrtl"
+    ],
+    "decl": "float fsqrt (double x);"
+   },
+   {
+    "name": "fsub",
+    "variants": [
+     "fsub",
+     "fsubl"
+    ],
+    "decl": "float fsub (double x, double y);"
+   },
+   {
+    "name": "getpayload",
+    "variants": [
+     "getpayload",
+     "getpayloadd128",
+     "getpayloadd32",
+     "getpayloadd64",
+     "getpayloadf",
+     "getpayloadl"
+    ],
+    "decl": "double getpayload (const double *x);"
+   },
+   {
+    "name": "hypot",
+    "variants": [
+     "hypot",
+     "hypotd128",
+     "hypotd32",
+     "hypotd64",
+     "hypotf",
+     "hypotl"
+    ],
+    "decl": "double hypot (double x, double y);"
+   },
+   {
+    "name": "ilogb",
+    "variants": [
+     "ilogb",
+     "ilogbd128",
+     "ilogbd32",
+     "ilogbd64",
+     "ilogbf",
+     "ilogbl"
+    ],
+    "decl": "int ilogb (double x);"
+   },
+   {
+    "name": "iscanonical",
+    "variants": [
+     "iscanonical"
+    ],
+    "decl": "int iscanonical (real-floating x);"
+   },
+   {
+    "name": "iseqsig",
+    "variants": [
+     "iseqsig"
+    ],
+    "decl": "int iseqsig (real-floating x, real-floating y);"
+   },
+   {
+    "name": "isfinite",
+    "variants": [
+     "isfinite"
+    ],
+    "decl": "int isfinite (real-floating x);"
+   },
+   {
+    "name": "isgreater",
+    "variants": [
+     "isgreater"
+    ],
+    "decl": "int isgreater (real-floating x, real-floating y);"
+   },
+   {
+    "name": "isgreaterequal",
+    "variants": [
+     "isgreaterequal"
+    ],
+    "decl": "int isgreaterequal (real-floating x, real-floating y);"
+   },
+   {
+    "name": "isinf",
+    "variants": [
+     "isinf"
+    ],
+    "decl": "int isinf (real-floating x);"
+   },
+   {
+    "name": "isless",
+    "variants": [
+     "isless"
+    ],
+    "decl": "int isless (real-floating x, real-floating y);"
+   },
+   {
+    "name": "islessequal",
+    "variants": [
+     "islessequal"
+    ],
+    "decl": "int islessequal (real-floating x, real-floating y);"
+   },
+   {
+    "name": "islessgreater",
+    "variants": [
+     "islessgreater"
+    ],
+    "decl": "int islessgreater (real-floating x, real-floating y);"
+   },
+   {
+    "name": "isnan",
+    "variants": [
+     "isnan"
+    ],
+    "decl": "int isnan (real-floating x);"
+   },
+   {
+    "name": "isnormal",
+    "variants": [
+     "isnormal"
+    ],
+    "decl": "int isnormal (real-floating x);"
+   },
+   {
+    "name": "issignaling",
+    "variants": [
+     "issignaling"
+    ],
+    "decl": "int issignaling (real-floating x);"
+   },
+   {
+    "name": "issubnormal",
+    "variants": [
+     "issubnormal"
+    ],
+    "decl": "int issubnormal (real-floating x);"
+   },
+   {
+    "name": "isunordered",
+    "variants": [
+     "isunordered"
+    ],
+    "decl": "int isunordered (real-floating x, real-floating y);"
+   },
+   {
+    "name": "iszero",
+    "variants": [
+     "iszero"
+    ],
+    "decl": "int iszero (real-floating x);"
+   },
+   {
+    "name": "ldexp",
+    "variants": [
+     "ldexp",
+     "ldexpd128",
+     "ldexpd32",
+     "ldexpd64",
+     "ldexpf",
+     "ldexpl"
+    ],
+    "decl": "double ldexp (double x, int p);"
+   },
+   {
+    "name": "lgamma",
+    "variants": [
+     "lgamma",
+     "lgammad128",
+     "lgammad32",
+     "lgammad64",
+     "lgammaf",
+     "lgammal"
+    ],
+    "decl": "double lgamma (double x);"
+   },
+   {
+    "name": "llogb",
+    "variants": [
+     "llogb",
+     "llogbd128",
+     "llogbd32",
+     "llogbd64",
+     "llogbf",
+     "llogbl"
+    ],
+    "decl": "long int llogb (double x);"
+   },
+   {
+    "name": "llquantexpd128",
+    "variants": [
+     "llquantexpd128"
+    ],
+    "decl": "long long int llquantexpd128 (_Decimal128 x);"
+   },
+   {
+    "name": "llquantexpd32",
+    "variants": [
+     "llquantexpd32"
+    ],
+    "decl": "long long int llquantexpd32 (_Decimal32 x);"
+   },
+   {
+    "name": "llquantexpd64",
+    "variants": [
+     "llquantexpd64"
+    ],
+    "decl": "long long int llquantexpd64 (_Decimal64 x);"
+   },
+   {
+    "name": "llrint",
+    "variants": [
+     "llrint",
+     "llrintd128",
+     "llrintd32",
+     "llrintd64",
+     "llrintf",
+     "llrintl"
+    ],
+    "decl": "long long int llrint (double x);"
+   },
+   {
+    "name": "llround",
+    "variants": [
+     "llround",
+     "llroundd128",
+     "llroundd32",
+     "llroundd64",
+     "llroundf",
+     "llroundl"
+    ],
+    "decl": "long long int llround (double x);"
+   },
+   {
+    "name": "log",
+    "variants": [
+     "log",
+     "logd128",
+     "logd32",
+     "logd64",
+     "logf",
+     "logl"
+    ],
+    "decl": "double log (double x);"
+   },
+   {
+    "name": "log10",
+    "variants": [
+     "log10",
+     "log10d128",
+     "log10d32",
+     "log10d64",
+     "log10f",
+     "log10l"
+    ],
+    "decl": "double log10 (double x);"
+   },
+   {
+    "name": "log10p1",
+    "variants": [
+     "log10p1",
+     "log10p1d128",
+     "log10p1d32",
+     "log10p1d64",
+     "log10p1f",
+     "log10p1l"
+    ],
+    "decl": "double log10p1 (double x);"
+   },
+   {
+    "name": "log1p",
+    "variants": [
+     "log1p",
+     "log1pd128",
+     "log1pd32",
+     "log1pd64",
+     "log1pf",
+     "log1pl"
+    ],
+    "decl": "double log1p (double x);"
+   },
+   {
+    "name": "log2",
+    "variants": [
+     "log2",
+     "log2d128",
+     "log2d32",
+     "log2d64",
+     "log2f",
+     "log2l"
+    ],
+    "decl": "double log2 (double x);"
+   },
+   {
+    "name": "log2p1",
+    "variants": [
+     "log2p1",
+     "log2p1d128",
+     "log2p1d32",
+     "log2p1d64",
+     "log2p1f",
+     "log2p1l"
+    ],
+    "decl": "double log2p1 (double x);"
+   },
+   {
+    "name": "logb",
+    "variants": [
+     "logb",
+     "logbd128",
+     "logbd32",
+     "logbd64",
+     "logbf",
+     "logbl"
+    ],
+    "decl": "double logb (double x);"
+   },
+   {
+    "name": "logp1",
+    "variants": [
+     "logp1",
+     "logp1d128",
+     "logp1d32",
+     "logp1d64",
+     "logp1f",
+     "logp1l"
+    ],
+    "decl": "double logp1 (double x);"
+   },
+   {
+    "name": "lrint",
+    "variants": [
+     "lrint",
+     "lrintd128",
+     "lrintd32",
+     "lrintd64",
+     "lrintf",
+     "lrintl"
+    ],
+    "decl": "long int lrint (double x);"
+   },
+   {
+    "name": "lround",
+    "variants": [
+     "lround",
+     "lroundd128",
+     "lroundd32",
+     "lroundd64",
+     "lroundf",
+     "lroundl"
+    ],
+    "decl": "long int lround (double x);"
+   },
+   {
+    "name": "modf",
+    "variants": [
+     "modf",
+     "modfd128",
+     "modfd32",
+     "modfd64",
+     "modff",
+     "modfl"
+    ],
+    "decl": "double modf (double value, double *iptr);"
+   },
+   {
+    "name": "nan",
+    "variants": [
+     "nan",
+     "nand128",
+     "nand32",
+     "nand64",
+     "nanf",
+     "nanl"
+    ],
+    "decl": "double nan (const char *tagp);"
+   },
+   {
+    "name": "nearbyint",
+    "variants": [
+     "nearbyint",
+     "nearbyintd128",
+     "nearbyintd32",
+     "nearbyintd64",
+     "nearbyintf",
+     "nearbyintl"
+    ],
+    "decl": "double nearbyint (double x);"
+   },
+   {
+    "name": "nextafter",
+    "variants": [
+     "nextafter",
+     "nextafterd128",
+     "nextafterd32",
+     "nextafterd64",
+     "nextafterf",
+     "nextafterl"
+    ],
+    "decl": "double nextafter (double x, double y);"
+   },
+   {
+    "name": "nextdown",
+    "variants": [
+     "nextdown",
+     "nextdownd128",
+     "nextdownd32",
+     "nextdownd64",
+     "nextdownf",
+     "nextdownl"
+    ],
+    "decl": "double nextdown (double x);"
+   },
+   {
+    "name": "nexttoward",
+    "variants": [
+     "nexttoward",
+     "nexttowardd128",
+     "nexttowardd32",
+     "nexttowardd64",
+     "nexttowardf",
+     "nexttowardl"
+    ],
+    "decl": "double nexttoward (double x, long double y);"
+   },
+   {
+    "name": "nextup",
+    "variants": [
+     "nextup",
+     "nextupd128",
+     "nextupd32",
+     "nextupd64",
+     "nextupf",
+     "nextupl"
+    ],
+    "decl": "double nextup (double x);"
+   },
+   {
+    "name": "pow",
+    "variants": [
+     "pow",
+     "powd128",
+     "powd32",
+     "powd64",
+     "powf",
+     "powl"
+    ],
+    "decl": "double pow (double x, double y);"
+   },
+   {
+    "name": "pown",
+    "variants": [
+     "pown",
+     "pownd128",
+     "pownd32",
+     "pownd64",
+     "pownf",
+     "pownl"
+    ],
+    "decl": "double pown (double x, long long int n);"
+   },
+   {
+    "name": "powr",
+    "variants": [
+     "powr",
+     "powrd128",
+     "powrd32",
+     "powrd64",
+     "powrf",
+     "powrl"
+    ],
+    "decl": "double powr (double y, double x);"
+   },
+   {
+    "name": "quantized128",
+    "variants": [
+     "quantized128"
+    ],
+    "decl": "_Decimal128 quantized128 (_Decimal128 x, _Decimal128 y);"
+   },
+   {
+    "name": "quantized32",
+    "variants": [
+     "quantized32"
+    ],
+    "decl": "_Decimal32 quantized32 (_Decimal32 x, _Decimal32 y);"
+   },
+   {
+    "name": "quantized64",
+    "variants": [
+     "quantized64"
+    ],
+    "decl": "_Decimal64 quantized64 (_Decimal64 x, _Decimal64 y);"
+   },
+   {
+    "name": "quantumd128",
+    "variants": [
+     "quantumd128"
+    ],
+    "decl": "_Decimal128 quantumd128 (_Decimal128 x);"
+   },
+   {
+    "name": "quantumd32",
+    "variants": [
+     "quantumd32"
+    ],
+    "decl": "_Decimal32 quantumd32 (_Decimal32 x);"
+   },
+   {
+    "name": "quantumd64",
+    "variants": [
+     "quantumd64"
+    ],
+    "decl": "_Decimal64 quantumd64 (_Decimal64 x);"
+   },
+   {
+    "name": "remainder",
+    "variants": [
+     "remainder",
+     "remainderd128",
+     "remainderd32",
+     "remainderd64",
+     "remainderf",
+     "remainderl"
+    ],
+    "decl": "double remainder (double x, double y);"
+   },
+   {
+    "name": "remquo",
+    "variants": [
+     "remquo",
+     "remquof",
+     "remquol"
+    ],
+    "decl": "double remquo (double x, double y, int *quo);"
+   },
+   {
+    "name": "rint",
+    "variants": [
+     "rint",
+     "rintd128",
+     "rintd32",
+     "rintd64",
+     "rintf",
+     "rintl"
+    ],
+    "decl": "double rint (double x);"
+   },
+   {
+    "name": "rootn",
+    "variants": [
+     "rootn",
+     "rootnd128",
+     "rootnd32",
+     "rootnd64",
+     "rootnf",
+     "rootnl"
+    ],
+    "decl": "double rootn (double x, long long int n);"
+   },
+   {
+    "name": "round",
+    "variants": [
+     "round",
+     "roundd128",
+     "roundd32",
+     "roundd64",
+     "roundf",
+     "roundl"
+    ],
+    "decl": "double round (double x);"
+   },
+   {
+    "name": "roundeven",
+    "variants": [
+     "roundeven",
+     "roundevend128",
+     "roundevend32",
+     "roundevend64",
+     "roundevenf",
+     "roundevenl"
+    ],
+    "decl": "double roundeven (double x);"
+   },
+   {
+    "name": "rsqrt",
+    "variants": [
+     "rsqrt",
+     "rsqrtd128",
+     "rsqrtd32",
+     "rsqrtd64",
+     "rsqrtf",
+     "rsqrtl"
+    ],
+    "decl": "double rsqrt (double x);"
+   },
+   {
+    "name": "samequantumd128",
+    "variants": [
+     "samequantumd128"
+    ],
+    "decl": "bool samequantumd128 (_Decimal128 x, _Decimal128 y);"
+   },
+   {
+    "name": "samequantumd32",
+    "variants": [
+     "samequantumd32"
+    ],
+    "decl": "bool samequantumd32 (_Decimal32 x, _Decimal32 y);"
+   },
+   {
+    "name": "samequantumd64",
+    "variants": [
+     "samequantumd64"
+    ],
+    "decl": "bool samequantumd64 (_Decimal64 x, _Decimal64 y);"
+   },
+   {
+    "name": "scalbln",
+    "variants": [
+     "scalbln",
+     "scalblnd128",
+     "scalblnd32",
+     "scalblnd64",
+     "scalblnf",
+     "scalblnl"
+    ],
+    "decl": "double scalbln (double x, long int n);"
+   },
+   {
+    "name": "scalbn",
+    "variants": [
+     "scalbn",
+     "scalbnd128",
+     "scalbnd32",
+     "scalbnd64",
+     "scalbnf",
+     "scalbnl"
+    ],
+    "decl": "double scalbn (double x, int n);"
+   },
+   {
+    "name": "setpayload",
+    "variants": [
+     "setpayload",
+     "setpayloadd128",
+     "setpayloadd32",
+     "setpayloadd64",
+     "setpayloadf",
+     "setpayloadl"
+    ],
+    "decl": "int setpayload (double *res, double pl);"
+   },
+   {
+    "name": "setpayloadsig",
+    "variants": [
+     "setpayloadsig",
+     "setpayloadsigd128",
+     "setpayloadsigd32",
+     "setpayloadsigd64",
+     "setpayloadsigf",
+     "setpayloadsigl"
+    ],
+    "decl": "int setpayloadsig (double *res, double pl);"
+   },
+   {
+    "name": "signbit",
+    "variants": [
+     "signbit"
+    ],
+    "decl": "int signbit (real-floating x);"
+   },
+   {
+    "name": "sin",
+    "variants": [
+     "sin",
+     "sind128",
+     "sind32",
+     "sind64",
+     "sinf",
+     "sinl"
+    ],
+    "decl": "double sin (double x);"
+   },
+   {
+    "name": "sinh",
+    "variants": [
+     "sinh",
+     "sinhd128",
+     "sinhd32",
+     "sinhd64",
+     "sinhf",
+     "sinhl"
+    ],
+    "decl": "double sinh (double x);"
+   },
+   {
+    "name": "sinpi",
+    "variants": [
+     "sinpi",
+     "sinpid128",
+     "sinpid32",
+     "sinpid64",
+     "sinpif",
+     "sinpil"
+    ],
+    "decl": "double sinpi (double x);"
+   },
+   {
+    "name": "sqrt",
+    "variants": [
+     "sqrt",
+     "sqrtd128",
+     "sqrtd32",
+     "sqrtd64",
+     "sqrtf",
+     "sqrtl"
+    ],
+    "decl": "double sqrt (double x);"
+   },
+   {
+    "name": "tan",
+    "variants": [
+     "tan",
+     "tand128",
+     "tand32",
+     "tand64",
+     "tanf",
+     "tanl"
+    ],
+    "decl": "double tan (double x);"
+   },
+   {
+    "name": "tanh",
+    "variants": [
+     "tanh",
+     "tanhd128",
+     "tanhd32",
+     "tanhd64",
+     "tanhf",
+     "tanhl"
+    ],
+    "decl": "double tanh (double x);"
+   },
+   {
+    "name": "tanpi",
+    "variants": [
+     "tanpi",
+     "tanpid128",
+     "tanpid32",
+     "tanpid64",
+     "tanpif",
+     "tanpil"
+    ],
+    "decl": "double tanpi (double x);"
+   },
+   {
+    "name": "tgamma",
+    "variants": [
+     "tgamma",
+     "tgammad128",
+     "tgammad32",
+     "tgammad64",
+     "tgammaf",
+     "tgammal"
+    ],
+    "decl": "double tgamma (double x);"
+   },
+   {
+    "name": "totalorder",
+    "variants": [
+     "totalorder",
+     "totalorderd128",
+     "totalorderd32",
+     "totalorderd64",
+     "totalorderf",
+     "totalorderl"
+    ],
+    "decl": "int totalorder (const double *x, const double *y);"
+   },
+   {
+    "name": "totalordermag",
+    "variants": [
+     "totalordermag",
+     "totalordermagd128",
+     "totalordermagd32",
+     "totalordermagd64",
+     "totalordermagf",
+     "totalordermagl"
+    ],
+    "decl": "int totalordermag (const double *x, const double *y);"
+   },
+   {
+    "name": "trunc",
+    "variants": [
+     "trunc",
+     "truncd128",
+     "truncd32",
+     "truncd64",
+     "truncf",
+     "truncl"
+    ],
+    "decl": "double trunc (double x);"
+   },
+   {
+    "name": "ufromfp",
+    "variants": [
+     "ufromfp",
+     "ufromfpd128",
+     "ufromfpd32",
+     "ufromfpd64",
+     "ufromfpf",
+     "ufromfpl"
+    ],
+    "decl": "double ufromfp (double x, int rnd, unsigned int width);"
+   },
+   {
+    "name": "ufromfpx",
+    "variants": [
+     "ufromfpx",
+     "ufromfpxd128",
+     "ufromfpxd32",
+     "ufromfpxd64",
+     "ufromfpxf",
+     "ufromfpxl"
+    ],
+    "decl": "double ufromfpx (double x, int rnd, unsigned int width);"
+   }
+  ],
+  "macros": [
+   "DEC_INFINITY",
+   "DEC_NAN",
+   "FP_CONTRACT",
+   "FP_FAST_D32ADDD128",
+   "FP_FAST_D32ADDD64",
+   "FP_FAST_D32DIVD128",
+   "FP_FAST_D32DIVD64",
+   "FP_FAST_D32FMAD128",
+   "FP_FAST_D32FMAD64",
+   "FP_FAST_D32MULD128",
+   "FP_FAST_D32MULD64",
+   "FP_FAST_D32SQRTD128",
+   "FP_FAST_D32SQRTD64",
+   "FP_FAST_D32SUBD128",
+   "FP_FAST_D32SUBD64",
+   "FP_FAST_D64ADDD128",
+   "FP_FAST_D64DIVD128",
+   "FP_FAST_D64FMAD128",
+   "FP_FAST_D64MULD128",
+   "FP_FAST_D64SUBD128",
+   "FP_FAST_DADDL",
+   "FP_FAST_DDIVL",
+   "FP_FAST_DFMAL",
+   "FP_FAST_DMULL",
+   "FP_FAST_DSQRTL",
+   "FP_FAST_DSUBL",
+   "FP_FAST_FADD",
+   "FP_FAST_FADDL",
+   "FP_FAST_FDIV",
+   "FP_FAST_FDIVL",
+   "FP_FAST_FFMA",
+   "FP_FAST_FFMAL",
+   "FP_FAST_FMA",
+   "FP_FAST_FMAD128",
+   "FP_FAST_FMAD32",
+   "FP_FAST_FMAD64",
+   "FP_FAST_FMAF",
+   "FP_FAST_FMAL",
+   "FP_FAST_FMUL",
+   "FP_FAST_FMULL",
+   "FP_FAST_FSQRT",
+   "FP_FAST_FSQRTL",
+   "FP_FAST_FSUB",
+   "FP_FAST_FSUBL",
+   "FP_ILOGB0",
+   "FP_ILOGBNAN",
+   "FP_INFINITE",
+   "FP_INT_DOWNWARD",
+   "FP_INT_TONEAREST",
+   "FP_INT_TONEARESTFROMZERO",
+   "FP_INT_TOWARDZERO",
+   "FP_INT_UPWARD",
+   "FP_LLOGB0",
+   "FP_LLOGBNAN",
+   "FP_NAN",
+   "FP_NORMAL",
+   "FP_SUBNORMAL",
+   "FP_ZERO",
+   "HUGE_VAL",
+   "HUGE_VALF",
+   "HUGE_VALL",
+   "HUGE_VAL_D128",
+   "HUGE_VAL_D32",
+   "HUGE_VAL_D64",
+   "INFINITY",
+   "MATH_ERREXCEPT",
+   "MATH_ERRNO",
+   "NAN",
+   "STDC"
+  ],
+  "types": [
+   "double_t",
+   "float_t"
+  ]
+ },
+ "setjmp.h": {
+  "functions": [
+   {
+    "name": "longjmp",
+    "variants": [
+     "longjmp"
+    ],
+    "decl": "void longjmp (jmp_buf env, int val);"
+   },
+   {
+    "name": "setjmp",
+    "variants": [
+     "setjmp"
+    ],
+    "decl": "__STDC_VERSION_SETJMP_H__ jmp_buf int setjmp (jmp_buf env);"
+   }
+  ],
+  "macros": [],
+  "types": []
+ },
+ "signal.h": {
+  "functions": [
+   {
+    "name": "raise",
+    "variants": [
+     "raise"
+    ],
+    "decl": "int raise (int sig);"
+   },
+   {
+    "name": "void",
+    "variants": [
+     "void"
+    ],
+    "decl": "void (*func)(int)))(int);"
+   }
+  ],
+  "macros": [
+   "SIGABRT",
+   "SIGFPE",
+   "SIGILL",
+   "SIGINT",
+   "SIGSEGV",
+   "SIGTERM",
+   "SIG_DFL",
+   "SIG_ERR",
+   "SIG_IGN"
+  ],
+  "types": [
+   "sig_atomic_t"
+  ]
+ },
+ "stdalign.h": {
+  "functions": [],
+  "macros": [],
+  "types": []
+ },
+ "stdarg.h": {
+  "functions": [
+   {
+    "name": "va_arg",
+    "variants": [
+     "va_arg"
+    ],
+    "decl": "va_list __STDC_VERSION_STDARG_H__ type va_arg(va_list ap, type);"
+   },
+   {
+    "name": "va_copy",
+    "variants": [
+     "va_copy"
+    ],
+    "decl": "void va_copy(va_list dest, va_list src);"
+   },
+   {
+    "name": "va_end",
+    "variants": [
+     "va_end"
+    ],
+    "decl": "void va_end(va_list ap);"
+   },
+   {
+    "name": "va_start",
+    "variants": [
+     "va_start"
+    ],
+    "decl": "void va_start(va_list ap, ...);"
+   }
+  ],
+  "macros": [],
+  "types": []
+ },
+ "stdatomic.h": {
+  "functions": [
+   {
+    "name": "atomic_compare_exchange_strong",
+    "variants": [
+     "atomic_compare_exchange_strong"
+    ],
+    "decl": "bool atomic_compare_exchange_strong(volatile A *object, C *expected, C desired);"
+   },
+   {
+    "name": "atomic_compare_exchange_strong_explicit",
+    "variants": [
+     "atomic_compare_exchange_strong_explicit"
+    ],
+    "decl": "bool atomic_compare_exchange_strong_explicit(volatile A *object, C *expected, C desired, memory_order success, memory_order failure);"
+   },
+   {
+    "name": "atomic_compare_exchange_weak",
+    "variants": [
+     "atomic_compare_exchange_weak"
+    ],
+    "decl": "bool atomic_compare_exchange_weak(volatile A *object, C *expected, C desired);"
+   },
+   {
+    "name": "atomic_compare_exchange_weak_explicit",
+    "variants": [
+     "atomic_compare_exchange_weak_explicit"
+    ],
+    "decl": "bool atomic_compare_exchange_weak_explicit(volatile A *object, C *expected, C desired, memory_order success, memory_order failure);"
+   },
+   {
+    "name": "atomic_exchange",
+    "variants": [
+     "atomic_exchange"
+    ],
+    "decl": "C atomic_exchange(volatile A *object, C desired);"
+   },
+   {
+    "name": "atomic_exchange_explicit",
+    "variants": [
+     "atomic_exchange_explicit"
+    ],
+    "decl": "C atomic_exchange_explicit(volatile A *object, C desired, memory_order order);"
+   },
+   {
+    "name": "atomic_fetch_key",
+    "variants": [
+     "atomic_fetch_key"
+    ],
+    "decl": "C atomic_fetch_key(volatile A *object, M operand);"
+   },
+   {
+    "name": "atomic_fetch_key_explicit",
+    "variants": [
+     "atomic_fetch_key_explicit"
+    ],
+    "decl": "C atomic_fetch_key_explicit(volatile A *object, M operand, memory_order order);"
+   },
+   {
+    "name": "atomic_flag_clear",
+    "variants": [
+     "atomic_flag_clear"
+    ],
+    "decl": "void atomic_flag_clear(volatile atomic_flag *object);"
+   },
+   {
+    "name": "atomic_flag_clear_explicit",
+    "variants": [
+     "atomic_flag_clear_explicit"
+    ],
+    "decl": "void atomic_flag_clear_explicit(volatile atomic_flag *object, memory_order order);"
+   },
+   {
+    "name": "atomic_flag_test_and_set",
+    "variants": [
+     "atomic_flag_test_and_set"
+    ],
+    "decl": "bool atomic_flag_test_and_set(volatile atomic_flag *object);"
+   },
+   {
+    "name": "atomic_flag_test_and_set_explicit",
+    "variants": [
+     "atomic_flag_test_and_set_explicit"
+    ],
+    "decl": "bool atomic_flag_test_and_set_explicit(volatile atomic_flag *object, memory_order order);"
+   },
+   {
+    "name": "atomic_init",
+    "variants": [
+     "atomic_init"
+    ],
+    "decl": "atomic_ptrdiff_t atomic_intmax_t atomic_uintmax_t void atomic_init(volatile A *obj, C value);"
+   },
+   {
+    "name": "atomic_is_lock_free",
+    "variants": [
+     "atomic_is_lock_free"
+    ],
+    "decl": "bool atomic_is_lock_free(const volatile A *obj);"
+   },
+   {
+    "name": "atomic_load",
+    "variants": [
+     "atomic_load"
+    ],
+    "decl": "C atomic_load(const volatile A *object);"
+   },
+   {
+    "name": "atomic_load_explicit",
+    "variants": [
+     "atomic_load_explicit"
+    ],
+    "decl": "C atomic_load_explicit(const volatile A *object, memory_order order);"
+   },
+   {
+    "name": "atomic_signal_fence",
+    "variants": [
+     "atomic_signal_fence"
+    ],
+    "decl": "void atomic_signal_fence(memory_order order);"
+   },
+   {
+    "name": "atomic_store",
+    "variants": [
+     "atomic_store"
+    ],
+    "decl": "void atomic_store(volatile A *object, C desired);"
+   },
+   {
+    "name": "atomic_store_explicit",
+    "variants": [
+     "atomic_store_explicit"
+    ],
+    "decl": "void atomic_store_explicit(volatile A *object, C desired, memory_order order);"
+   },
+   {
+    "name": "atomic_thread_fence",
+    "variants": [
+     "atomic_thread_fence"
+    ],
+    "decl": "void atomic_thread_fence(memory_order order);"
+   },
+   {
+    "name": "kill_dependency",
+    "variants": [
+     "kill_dependency"
+    ],
+    "decl": "type kill_dependency(type y);"
+   }
+  ],
+  "macros": [
+   "ATOMIC_BOOL_LOCK_FREE",
+   "ATOMIC_CHAR16_T_LOCK_FREE",
+   "ATOMIC_CHAR32_T_LOCK_FREE",
+   "ATOMIC_CHAR8_T_LOCK_FREE",
+   "ATOMIC_CHAR_LOCK_FREE",
+   "ATOMIC_FLAG_INIT",
+   "ATOMIC_INT_LOCK_FREE",
+   "ATOMIC_LLONG_LOCK_FREE",
+   "ATOMIC_LONG_LOCK_FREE",
+   "ATOMIC_POINTER_LOCK_FREE",
+   "ATOMIC_SHORT_LOCK_FREE",
+   "ATOMIC_WCHAR_T_LOCK_FREE"
+  ],
+  "types": [
+   "atomic_char16_t",
+   "atomic_char32_t",
+   "atomic_char8_t",
+   "atomic_int_fast16_t",
+   "atomic_int_fast32_t",
+   "atomic_int_fast64_t",
+   "atomic_int_fast8_t",
+   "atomic_int_least16_t",
+   "atomic_int_least32_t",
+   "atomic_int_least64_t",
+   "atomic_int_least8_t",
+   "atomic_intmax_t",
+   "atomic_intptr_t",
+   "atomic_ptrdiff_t",
+   "atomic_size_t",
+   "atomic_uint_fast16_t",
+   "atomic_uint_fast32_t",
+   "atomic_uint_fast64_t",
+   "atomic_uint_fast8_t",
+   "atomic_uint_least16_t",
+   "atomic_uint_least32_t",
+   "atomic_uint_least64_t",
+   "atomic_uint_least8_t",
+   "atomic_uintmax_t",
+   "atomic_uintptr_t",
+   "atomic_wchar_t"
+  ]
+ },
+ "stdbit.h": {
+  "functions": [],
+  "macros": [],
+  "types": []
+ },
+ "stdbool.h": {
+  "functions": [],
+  "macros": [],
+  "types": []
+ },
+ "stdckdint.h": {
+  "functions": [
+   {
+    "name": "ckd_add",
+    "variants": [
+     "ckd_add"
+    ],
+    "decl": "__STDC_VERSION_STDCKDINT_H__ bool ckd_add(type1 *result, type2 a, type3 b);"
+   },
+   {
+    "name": "ckd_mul",
+    "variants": [
+     "ckd_mul"
+    ],
+    "decl": "bool ckd_mul(type1 *result, type2 a, type3 b);"
+   },
+   {
+    "name": "ckd_sub",
+    "variants": [
+     "ckd_sub"
+    ],
+    "decl": "bool ckd_sub(type1 *result, type2 a, type3 b);"
+   }
+  ],
+  "macros": [],
+  "types": []
+ },
+ "stddef.h": {
+  "functions": [],
+  "macros": [
+   "NULL"
+  ],
+  "types": [
+   "max_align_t",
+   "nullptr_t",
+   "ptrdiff_t",
+   "rsize_t",
+   "size_t",
+   "wchar_t"
+  ]
+ },
+ "stdint.h": {
+  "functions": [],
+  "macros": [
+   "INTMAX_C",
+   "INTMAX_MAX",
+   "INTMAX_MIN",
+   "INTMAX_WIDTH",
+   "INTN_C",
+   "INTN_MAX",
+   "INTN_MIN",
+   "INTN_WIDTH",
+   "INTPTR_MAX",
+   "INTPTR_MIN",
+   "INTPTR_WIDTH",
+   "INT_FASTN_MAX",
+   "INT_FASTN_MIN",
+   "INT_FASTN_WIDTH",
+   "INT_LEASTN_MAX",
+   "INT_LEASTN_MIN",
+   "INT_LEASTN_WIDTH",
+   "PTRDIFF_MAX",
+   "PTRDIFF_MIN",
+   "RSIZE_MAX",
+   "SIG_ATOMIC_MAX",
+   "SIG_ATOMIC_MIN",
+   "SIG_ATOMIC_WIDTH",
+   "SIZE_MAX",
+   "SIZE_WIDTH",
+   "UINTMAX_C",
+   "UINTMAX_MAX",
+   "UINTMAX_WIDTH",
+   "UINTN_C",
+   "UINTN_MAX",
+   "UINTN_WIDTH",
+   "UINTPTR_MAX",
+   "UINTPTR_WIDTH",
+   "UINT_FASTN_MAX",
+   "UINT_FASTN_WIDTH",
+   "UINT_LEASTN_MAX",
+   "UINT_LEASTN_WIDTH",
+   "WCHAR_MAX",
+   "WCHAR_MIN",
+   "WCHAR_WIDTH",
+   "WINT_MAX",
+   "WINT_MIN",
+   "WINT_WIDTH"
+  ],
+  "types": [
+   "intmax_t",
+   "intptr_t",
+   "uintmax_t",
+   "uintptr_t"
+  ]
+ },
+ "stdio.h": {
+  "functions": [
+   {
+    "name": "clearerr",
+    "variants": [
+     "clearerr"
+    ],
+    "decl": "void clearerr (FILE *stream);"
+   },
+   {
+    "name": "fclose",
+    "variants": [
+     "fclose"
+    ],
+    "decl": "int fclose (FILE *stream);"
+   },
+   {
+    "name": "feof",
+    "variants": [
+     "feof"
+    ],
+    "decl": "int feof (FILE *stream);"
+   },
+   {
+    "name": "ferror",
+    "variants": [
+     "ferror"
+    ],
+    "decl": "int ferror (FILE *stream);"
+   },
+   {
+    "name": "fflush",
+    "variants": [
+     "fflush"
+    ],
+    "decl": "int fflush (FILE *stream);"
+   },
+   {
+    "name": "fgetc",
+    "variants": [
+     "fgetc"
+    ],
+    "decl": "int fgetc (FILE *stream);"
+   },
+   {
+    "name": "fgetpos",
+    "variants": [
+     "fgetpos"
+    ],
+    "decl": "int fgetpos (FILE * restrict stream, fpos_t * restrict pos);"
+   },
+   {
+    "name": "fgets",
+    "variants": [
+     "fgets"
+    ],
+    "decl": "char * fgets(char * restrict s, int n, FILE * restrict stream);"
+   },
+   {
+    "name": "fopen",
+    "variants": [
+     "fopen"
+    ],
+    "decl": "* fopen(const char * restrict filename, const char * restrict mode);"
+   },
+   {
+    "name": "fopen_s",
+    "variants": [
+     "fopen_s"
+    ],
+    "decl": "errno_t fopen_s(FILE * restrict * restrict streamptr, const char * restrict filename, const char * restrict mode);"
+   },
+   {
+    "name": "fprintf",
+    "variants": [
+     "fprintf"
+    ],
+    "decl": "int fprintf (FILE * restrict stream, const char * restrict format, ...);"
+   },
+   {
+    "name": "fprintf_s",
+    "variants": [
+     "fprintf_s"
+    ],
+    "decl": "int fprintf_s(FILE * restrict stream, const char * restrict format, ...);"
+   },
+   {
+    "name": "fputc",
+    "variants": [
+     "fputc"
+    ],
+    "decl": "int fputc (int c, FILE *stream);"
+   },
+   {
+    "name": "fputs",
+    "variants": [
+     "fputs"
+    ],
+    "decl": "int fputs (const char * restrict s, FILE * restrict stream);"
+   },
+   {
+    "name": "fread",
+    "variants": [
+     "fread"
+    ],
+    "decl": "size_t fread (void * restrict ptr, size_t size, size_t nmemb, FILE * restrict stream);"
+   },
+   {
+    "name": "freopen",
+    "variants": [
+     "freopen"
+    ],
+    "decl": "* freopen(const char * restrict filename, const char * restrict mode, FILE * restrict stream);"
+   },
+   {
+    "name": "freopen_s",
+    "variants": [
+     "freopen_s"
+    ],
+    "decl": "errno_t freopen_s(FILE * restrict * restrict newstreamptr, const char * restrict filename, const char * restrict mode, FILE * restrict stream);"
+   },
+   {
+    "name": "fscanf",
+    "variants": [
+     "fscanf"
+    ],
+    "decl": "int fscanf (FILE * restrict stream, const char * restrict format, ...);"
+   },
+   {
+    "name": "fscanf_s",
+    "variants": [
+     "fscanf_s"
+    ],
+    "decl": "int fscanf_s(FILE * restrict stream, const char * restrict format, ...);"
+   },
+   {
+    "name": "fseek",
+    "variants": [
+     "fseek"
+    ],
+    "decl": "int fseek (FILE *stream, long int offset, int whence);"
+   },
+   {
+    "name": "fsetpos",
+    "variants": [
+     "fsetpos"
+    ],
+    "decl": "int fsetpos (FILE *stream, const fpos_t *pos);"
+   },
+   {
+    "name": "ftell",
+    "variants": [
+     "ftell"
+    ],
+    "decl": "long int ftell (FILE *stream);"
+   },
+   {
+    "name": "fwrite",
+    "variants": [
+     "fwrite"
+    ],
+    "decl": "size_t fwrite (const void * restrict ptr, size_t size, size_t nmemb, FILE * restrict stream);"
+   },
+   {
+    "name": "getc",
+    "variants": [
+     "getc"
+    ],
+    "decl": "int getc (FILE *stream);"
+   },
+   {
+    "name": "getchar",
+    "variants": [
+     "getchar"
+    ],
+    "decl": "int getchar (void);"
+   },
+   {
+    "name": "gets_s",
+    "variants": [
+     "gets_s"
+    ],
+    "decl": "char * gets_s(char *s, rsize_t n);"
+   },
+   {
+    "name": "perror",
+    "variants": [
+     "perror"
+    ],
+    "decl": "void perror (const char *s);"
+   },
+   {
+    "name": "printf",
+    "variants": [
+     "printf"
+    ],
+    "decl": "int printf (const char * restrict format, ...);"
+   },
+   {
+    "name": "printf_s",
+    "variants": [
+     "printf_s"
+    ],
+    "decl": "int printf_s(const char * restrict format, ...);"
+   },
+   {
+    "name": "putc",
+    "variants": [
+     "putc"
+    ],
+    "decl": "int putc (int c, FILE *stream);"
+   },
+   {
+    "name": "putchar",
+    "variants": [
+     "putchar"
+    ],
+    "decl": "int putchar (int c);"
+   },
+   {
+    "name": "puts",
+    "variants": [
+     "puts"
+    ],
+    "decl": "int puts (const char *s);"
+   },
+   {
+    "name": "remove",
+    "variants": [
+     "remove"
+    ],
+    "decl": "stdin stdout_PRINTF_NAN_LEN_MAX __STDC_VERSION_STDIO_H__ int remove (const char *filename);"
+   },
+   {
+    "name": "rename",
+    "variants": [
+     "rename"
+    ],
+    "decl": "int rename (const char *old, const char *new);"
+   },
+   {
+    "name": "rewind",
+    "variants": [
+     "rewind"
+    ],
+    "decl": "void rewind (FILE *stream);"
+   },
+   {
+    "name": "scanf",
+    "variants": [
+     "scanf"
+    ],
+    "decl": "int scanf (const char * restrict format, ...);"
+   },
+   {
+    "name": "scanf_s",
+    "variants": [
+     "scanf_s"
+    ],
+    "decl": "int scanf_s(const char * restrict format, ...);"
+   },
+   {
+    "name": "setbuf",
+    "variants": [
+     "setbuf"
+    ],
+    "decl": "void setbuf (FILE * restrict stream, char * restrict buf);"
+   },
+   {
+    "name": "setvbuf",
+    "variants": [
+     "setvbuf"
+    ],
+    "decl": "int setvbuf (FILE * restrict stream, char * restrict buf, int mode, size_t size);"
+   },
+   {
+    "name": "snprintf",
+    "variants": [
+     "snprintf"
+    ],
+    "decl": "int snprintf (char * restrict s, size_t n, const char * restrict format, ...);"
+   },
+   {
+    "name": "snprintf_s",
+    "variants": [
+     "snprintf_s"
+    ],
+    "decl": "int snprintf_s(char * restrict s, rsize_t n, const char * restrict format, ...);"
+   },
+   {
+    "name": "sprintf",
+    "variants": [
+     "sprintf"
+    ],
+    "decl": "int sprintf (char * restrict s, const char * restrict format, ...);"
+   },
+   {
+    "name": "sprintf_s",
+    "variants": [
+     "sprintf_s"
+    ],
+    "decl": "int sprintf_s(char * restrict s, rsize_t n, const char * restrict format, ...);"
+   },
+   {
+    "name": "sscanf",
+    "variants": [
+     "sscanf"
+    ],
+    "decl": "int sscanf (const char * restrict s, const char * restrict format, ...);"
+   },
+   {
+    "name": "sscanf_s",
+    "variants": [
+     "sscanf_s"
+    ],
+    "decl": "int sscanf_s(const char * restrict s, const char * restrict format, ...);"
+   },
+   {
+    "name": "tmpfile",
+    "variants": [
+     "tmpfile"
+    ],
+    "decl": "* tmpfile(void);"
+   },
+   {
+    "name": "tmpfile_s",
+    "variants": [
+     "tmpfile_s"
+    ],
+    "decl": "errno_t rsize_t errno_t tmpfile_s(FILE * restrict * restrict streamptr);"
+   },
+   {
+    "name": "tmpnam",
+    "variants": [
+     "tmpnam"
+    ],
+    "decl": "char * tmpnam(char *s);"
+   },
+   {
+    "name": "tmpnam_s",
+    "variants": [
+     "tmpnam_s"
+    ],
+    "decl": "errno_t tmpnam_s(char *s, rsize_t maxsize);"
+   },
+   {
+    "name": "ungetc",
+    "variants": [
+     "ungetc"
+    ],
+    "decl": "int ungetc (int c, FILE *stream);"
+   },
+   {
+    "name": "vfprintf",
+    "variants": [
+     "vfprintf"
+    ],
+    "decl": "int vfprintf (FILE * restrict stream, const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vfprintf_s",
+    "variants": [
+     "vfprintf_s"
+    ],
+    "decl": "int vfprintf_s(FILE * restrict stream, const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vfscanf",
+    "variants": [
+     "vfscanf"
+    ],
+    "decl": "int vfscanf (FILE * restrict stream, const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vfscanf_s",
+    "variants": [
+     "vfscanf_s"
+    ],
+    "decl": "int vfscanf_s(FILE * restrict stream, const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vprintf",
+    "variants": [
+     "vprintf"
+    ],
+    "decl": "int vprintf (const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vprintf_s",
+    "variants": [
+     "vprintf_s"
+    ],
+    "decl": "int vprintf_s(const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vscanf",
+    "variants": [
+     "vscanf"
+    ],
+    "decl": "int vscanf (const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vscanf_s",
+    "variants": [
+     "vscanf_s"
+    ],
+    "decl": "int vscanf_s(const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vsnprintf",
+    "variants": [
+     "vsnprintf"
+    ],
+    "decl": "int vsnprintf (char * restrict s, size_t n, const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vsnprintf_s",
+    "variants": [
+     "vsnprintf_s"
+    ],
+    "decl": "int vsnprintf_s(char * restrict s, rsize_t n, const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vsprintf",
+    "variants": [
+     "vsprintf"
+    ],
+    "decl": "int vsprintf (char * restrict s, const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vsprintf_s",
+    "variants": [
+     "vsprintf_s"
+    ],
+    "decl": "int vsprintf_s(char * restrict s, rsize_t n, const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vsscanf",
+    "variants": [
+     "vsscanf"
+    ],
+    "decl": "int vsscanf (const char * restrict s, const char * restrict format, va_list arg);"
+   },
+   {
+    "name": "vsscanf_s",
+    "variants": [
+     "vsscanf_s"
+    ],
+    "decl": "int vsscanf_s(const char * restrict s, const char * restrict format, va_list arg);"
+   }
+  ],
+  "macros": [
+   "BUFSIZ",
+   "EOF",
+   "FILE",
+   "FILENAME_MAX",
+   "FOPEN_MAX",
+   "NULL_IOFBF_IOLBF_IONBF",
+   "SEEK_CUR",
+   "SEEK_END",
+   "SEEK_SET",
+   "TMP_MAX",
+   "TMP_MAX_S"
+  ],
+  "types": [
+   "errno_t",
+   "fpos_t",
+   "rsize_t",
+   "size_t"
+  ]
+ },
+ "stdlib.h": {
+  "functions": [
+   {
+    "name": "abort",
+    "variants": [
+     "abort"
+    ],
+    "decl": "void abort (void);"
+   },
+   {
+    "name": "abort_handler_s",
+    "variants": [
+     "abort_handler_s"
+    ],
+    "decl": "void abort_handler_s(const char * restrict msg, void * restrict ptr, errno_t error );"
+   },
+   {
+    "name": "abs",
+    "variants": [
+     "abs"
+    ],
+    "decl": "int abs (int j);"
+   },
+   {
+    "name": "aligned_alloc",
+    "variants": [
+     "aligned_alloc"
+    ],
+    "decl": "void * aligned_alloc(size_t alignment, size_t size);"
+   },
+   {
+    "name": "at_quick_exit",
+    "variants": [
+     "at_quick_exit"
+    ],
+    "decl": "int at_quick_exit(void (*func)(void));"
+   },
+   {
+    "name": "atexit",
+    "variants": [
+     "atexit"
+    ],
+    "decl": "int atexit (void (*func)(void));"
+   },
+   {
+    "name": "atof",
+    "variants": [
+     "atof"
+    ],
+    "decl": "double atof (const char *nptr);"
+   },
+   {
+    "name": "atoi",
+    "variants": [
+     "atoi"
+    ],
+    "decl": "int atoi (const char *nptr);"
+   },
+   {
+    "name": "atol",
+    "variants": [
+     "atol",
+     "atoll"
+    ],
+    "decl": "long int atol (const char *nptr);"
+   },
+   {
+    "name": "bsearch",
+    "variants": [
+     "bsearch"
+    ],
+    "decl": "QVoid * bsearch(const void *key, QVoid *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));"
+   },
+   {
+    "name": "bsearch_s",
+    "variants": [
+     "bsearch_s"
+    ],
+    "decl": "QVoid * bsearch_s(const void *key, QVoid *base, rsize_t nmemb, rsize_t size, int (*compar)(const void *k, const void *y, void *context), void *context);"
+   },
+   {
+    "name": "call_once",
+    "variants": [
+     "call_once"
+    ],
+    "decl": "void call_once(once_flag *flag, void (*func)(void));"
+   },
+   {
+    "name": "calloc",
+    "variants": [
+     "calloc"
+    ],
+    "decl": "void * calloc(size_t nmemb, size_t size);"
+   },
+   {
+    "name": "div",
+    "variants": [
+     "div"
+    ],
+    "decl": "div_t div (int numer, int denom);"
+   },
+   {
+    "name": "exit",
+    "variants": [
+     "exit"
+    ],
+    "decl": "void exit (int status);"
+   },
+   {
+    "name": "free",
+    "variants": [
+     "free"
+    ],
+    "decl": "void free (void *ptr);"
+   },
+   {
+    "name": "free_aligned_sized",
+    "variants": [
+     "free_aligned_sized"
+    ],
+    "decl": "void free_aligned_sized(void *ptr, size_t alignment, size_t size);"
+   },
+   {
+    "name": "free_sized",
+    "variants": [
+     "free_sized"
+    ],
+    "decl": "void free_sized(void *ptr, size_t size);"
+   },
+   {
+    "name": "getenv",
+    "variants": [
+     "getenv"
+    ],
+    "decl": "char * getenv(const char *name);"
+   },
+   {
+    "name": "getenv_s",
+    "variants": [
+     "getenv_s"
+    ],
+    "decl": "errno_t getenv_s(size_t * restrict len, char * restrict value, rsize_t maxsize, const char * restrict name);"
+   },
+   {
+    "name": "ignore_handler_s",
+    "variants": [
+     "ignore_handler_s"
+    ],
+    "decl": "void ignore_handler_s(const char * restrict msg, void * restrict ptr, errno_t error );"
+   },
+   {
+    "name": "labs",
+    "variants": [
+     "labs"
+    ],
+    "decl": "long int labs (long int j);"
+   },
+   {
+    "name": "ldiv",
+    "variants": [
+     "ldiv"
+    ],
+    "decl": "ldiv_t ldiv (long int numer, long int denom);"
+   },
+   {
+    "name": "llabs",
+    "variants": [
+     "llabs"
+    ],
+    "decl": "long long int llabs (long long int j);"
+   },
+   {
+    "name": "lldiv",
+    "variants": [
+     "lldiv"
+    ],
+    "decl": "lldiv_t lldiv (long long int numer, long long int denom);"
+   },
+   {
+    "name": "malloc",
+    "variants": [
+     "malloc"
+    ],
+    "decl": "void * malloc(size_t size);"
+   },
+   {
+    "name": "mblen",
+    "variants": [
+     "mblen"
+    ],
+    "decl": "int mblen (const char *s, size_t n);"
+   },
+   {
+    "name": "mbstowcs",
+    "variants": [
+     "mbstowcs"
+    ],
+    "decl": "size_t mbstowcs (wchar_t * restrict pwcs, const char * restrict s, size_t n);"
+   },
+   {
+    "name": "mbstowcs_s",
+    "variants": [
+     "mbstowcs_s"
+    ],
+    "decl": "errno_t mbstowcs_s(size_t * restrict retval, wchar_t * restrict dst, rsize_t dstmax, const char * restrict src, rsize_t len);"
+   },
+   {
+    "name": "mbtowc",
+    "variants": [
+     "mbtowc"
+    ],
+    "decl": "int mbtowc (wchar_t * restrict pwc, const char * restrict s, size_t n);"
+   },
+   {
+    "name": "memalignment",
+    "variants": [
+     "memalignment"
+    ],
+    "decl": "size_t memalignment (const void *p);"
+   },
+   {
+    "name": "qsort",
+    "variants": [
+     "qsort"
+    ],
+    "decl": "void qsort (void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));"
+   },
+   {
+    "name": "qsort_s",
+    "variants": [
+     "qsort_s"
+    ],
+    "decl": "errno_t qsort_s(void *base, rsize_t nmemb, rsize_t size, int (*compar)(const void *x, const void *y, void *context), void *context);"
+   },
+   {
+    "name": "quick_exit",
+    "variants": [
+     "quick_exit"
+    ],
+    "decl": "void quick_exit(int status);"
+   },
+   {
+    "name": "rand",
+    "variants": [
+     "rand"
+    ],
+    "decl": "int rand (void);"
+   },
+   {
+    "name": "realloc",
+    "variants": [
+     "realloc"
+    ],
+    "decl": "void * realloc(void *ptr, size_t size);"
+   },
+   {
+    "name": "set_constraint_handler_s",
+    "variants": [
+     "set_constraint_handler_s"
+    ],
+    "decl": "errno_t rsize_t constraint_handler_t constraint_handler_t set_constraint_handler_s(constraint_handler_t handler);"
+   },
+   {
+    "name": "srand",
+    "variants": [
+     "srand"
+    ],
+    "decl": "void srand (unsigned int seed);"
+   },
+   {
+    "name": "strfromd",
+    "variants": [
+     "strfromd"
+    ],
+    "decl": "int strfromd (char * restrict s, size_t n, const char * restrict format, double fp);"
+   },
+   {
+    "name": "strfromd128",
+    "variants": [
+     "strfromd128"
+    ],
+    "decl": "int strfromd128 (char * restrict s, size_t n, const char * restrict format, _Decimal128 fp);"
+   },
+   {
+    "name": "strfromd32",
+    "variants": [
+     "strfromd32"
+    ],
+    "decl": "int strfromd32 (char * restrict s, size_t n, const char * restrict format, _Decimal32 fp);"
+   },
+   {
+    "name": "strfromd64",
+    "variants": [
+     "strfromd64"
+    ],
+    "decl": "int strfromd64 (char * restrict s, size_t n, const char * restrict format, _Decimal64 fp);"
+   },
+   {
+    "name": "strfromf",
+    "variants": [
+     "strfromf"
+    ],
+    "decl": "int strfromf (char * restrict s, size_t n, const char * restrict format, float fp);"
+   },
+   {
+    "name": "strfroml",
+    "variants": [
+     "strfroml"
+    ],
+    "decl": "int strfroml (char * restrict s, size_t n, const char * restrict format, long double fp);"
+   },
+   {
+    "name": "strtod",
+    "variants": [
+     "strtod"
+    ],
+    "decl": "double strtod (const char * restrict nptr, char ** restrict endptr);"
+   },
+   {
+    "name": "strtod128",
+    "variants": [
+     "strtod128"
+    ],
+    "decl": "_Decimal128 strtod128 (const char * restrict nptr, char ** restrict endptr);"
+   },
+   {
+    "name": "strtod32",
+    "variants": [
+     "strtod32"
+    ],
+    "decl": "_Decimal32 strtod32 (const char * restrict nptr, char ** restrict endptr);"
+   },
+   {
+    "name": "strtod64",
+    "variants": [
+     "strtod64"
+    ],
+    "decl": "_Decimal64 strtod64 (const char * restrict nptr, char ** restrict endptr);"
+   },
+   {
+    "name": "strtof",
+    "variants": [
+     "strtof"
+    ],
+    "decl": "float strtof (const char * restrict nptr, char ** restrict endptr);"
+   },
+   {
+    "name": "strtol",
+    "variants": [
+     "strtol",
+     "strtoll"
+    ],
+    "decl": "long int strtol (const char * restrict nptr, char ** restrict endptr, int base);"
+   },
+   {
+    "name": "strtold",
+    "variants": [
+     "strtold"
+    ],
+    "decl": "long double strtold (const char * restrict nptr, char ** restrict endptr);"
+   },
+   {
+    "name": "strtoul",
+    "variants": [
+     "strtoul",
+     "strtoull"
+    ],
+    "decl": "unsigned long int strtoul (const char * restrict nptr, char ** restrict endptr, int base);"
+   },
+   {
+    "name": "system",
+    "variants": [
+     "system"
+    ],
+    "decl": "int system (const char *string);"
+   },
+   {
+    "name": "wcstombs",
+    "variants": [
+     "wcstombs"
+    ],
+    "decl": "size_t wcstombs (char * restrict s, const wchar_t * restrict pwcs, size_t n);"
+   },
+   {
+    "name": "wcstombs_s",
+    "variants": [
+     "wcstombs_s"
+    ],
+    "decl": "errno_t wcstombs_s(size_t * restrict retval, char * restrict dst, rsize_t dstmax, const wchar_t * restrict src, rsize_t len);"
+   },
+   {
+    "name": "wctomb",
+    "variants": [
+     "wctomb"
+    ],
+    "decl": "int wctomb (char *s, wchar_t wc);"
+   },
+   {
+    "name": "wctomb_s",
+    "variants": [
+     "wctomb_s"
+    ],
+    "decl": "errno_t wctomb_s(int * restrict status, char * restrict s, rsize_t smax, wchar_t wc);"
+   }
+  ],
+  "macros": [
+   "EXIT_FAILURE",
+   "EXIT_SUCCESS",
+   "MB_CUR_MAX",
+   "NULL",
+   "ONCE_FLAG_INIT",
+   "RAND_MAX"
+  ],
+  "types": [
+   "constraint_handler_t",
+   "div_t",
+   "errno_t",
+   "ldiv_t",
+   "lldiv_t",
+   "rsize_t",
+   "size_t",
+   "wchar_t"
+  ]
+ },
+ "string.h": {
+  "functions": [
+   {
+    "name": "memccpy",
+    "variants": [
+     "memccpy"
+    ],
+    "decl": "void * memccpy(void * restrict s1, const void * restrict s2, int c, size_t n);"
+   },
+   {
+    "name": "memchr",
+    "variants": [
+     "memchr"
+    ],
+    "decl": "QVoid * memchr(QVoid *s, int c, size_t n);"
+   },
+   {
+    "name": "memcmp",
+    "variants": [
+     "memcmp"
+    ],
+    "decl": "int memcmp (const void *s1, const void *s2, size_t n);"
+   },
+   {
+    "name": "memcpy",
+    "variants": [
+     "memcpy"
+    ],
+    "decl": "void * memcpy(void * restrict s1, const void * restrict s2, size_t n);"
+   },
+   {
+    "name": "memcpy_s",
+    "variants": [
+     "memcpy_s"
+    ],
+    "decl": "errno_t rsize_t errno_t memcpy_s(void * restrict s1, rsize_t s1max, const void * restrict s2, rsize_t n);"
+   },
+   {
+    "name": "memmove",
+    "variants": [
+     "memmove"
+    ],
+    "decl": "void * memmove(void *s1, const void *s2, size_t n);"
+   },
+   {
+    "name": "memmove_s",
+    "variants": [
+     "memmove_s"
+    ],
+    "decl": "errno_t memmove_s(void *s1, rsize_t s1max, const void *s2, rsize_t n);"
+   },
+   {
+    "name": "memset",
+    "variants": [
+     "memset"
+    ],
+    "decl": "void * memset(void *s, int c, size_t n);"
+   },
+   {
+    "name": "memset_explicit",
+    "variants": [
+     "memset_explicit"
+    ],
+    "decl": "void * memset_explicit(void *s, int c, size_t n);"
+   },
+   {
+    "name": "memset_s",
+    "variants": [
+     "memset_s"
+    ],
+    "decl": "errno_t memset_s(void *s, rsize_t smax, int c, rsize_t n) errno_t strerror_s(char *s, rsize_t maxsize, errno_t errnum);"
+   },
+   {
+    "name": "strcat",
+    "variants": [
+     "strcat"
+    ],
+    "decl": "char * strcat(char * restrict s1, const char * restrict s2);"
+   },
+   {
+    "name": "strcat_s",
+    "variants": [
+     "strcat_s"
+    ],
+    "decl": "errno_t strcat_s(char * restrict s1, rsize_t s1max, const char * restrict s2);"
+   },
+   {
+    "name": "strchr",
+    "variants": [
+     "strchr"
+    ],
+    "decl": "QChar * strchr(QChar *s, int c);"
+   },
+   {
+    "name": "strcmp",
+    "variants": [
+     "strcmp"
+    ],
+    "decl": "int strcmp (const char *s1, const char *s2);"
+   },
+   {
+    "name": "strcoll",
+    "variants": [
+     "strcoll"
+    ],
+    "decl": "int strcoll (const char *s1, const char *s2);"
+   },
+   {
+    "name": "strcpy",
+    "variants": [
+     "strcpy"
+    ],
+    "decl": "char * strcpy(char * restrict s1, const char * restrict s2);"
+   },
+   {
+    "name": "strcpy_s",
+    "variants": [
+     "strcpy_s"
+    ],
+    "decl": "errno_t strcpy_s(char * restrict s1, rsize_t s1max, const char * restrict s2);"
+   },
+   {
+    "name": "strcspn",
+    "variants": [
+     "strcspn"
+    ],
+    "decl": "size_t strcspn (const char *s1, const char *s2);"
+   },
+   {
+    "name": "strdup",
+    "variants": [
+     "strdup"
+    ],
+    "decl": "char * strdup(const char *s);"
+   },
+   {
+    "name": "strerror",
+    "variants": [
+     "strerror"
+    ],
+    "decl": "char * strerror(int errnum);"
+   },
+   {
+    "name": "strerrorlen_s",
+    "variants": [
+     "strerrorlen_s"
+    ],
+    "decl": "size_t strerrorlen_s(errno_t errnum);"
+   },
+   {
+    "name": "strlen",
+    "variants": [
+     "strlen"
+    ],
+    "decl": "size_t strlen (const char *s);"
+   },
+   {
+    "name": "strncat",
+    "variants": [
+     "strncat"
+    ],
+    "decl": "char * strncat(char * restrict s1, const char * restrict s2, size_t n);"
+   },
+   {
+    "name": "strncat_s",
+    "variants": [
+     "strncat_s"
+    ],
+    "decl": "errno_t strncat_s(char * restrict s1, rsize_t s1max, const char * restrict s2, rsize_t n);"
+   },
+   {
+    "name": "strncmp",
+    "variants": [
+     "strncmp"
+    ],
+    "decl": "int strncmp (const char *s1, const char *s2, size_t n);"
+   },
+   {
+    "name": "strncpy",
+    "variants": [
+     "strncpy"
+    ],
+    "decl": "char * strncpy(char * restrict s1, const char * restrict s2, size_t n);"
+   },
+   {
+    "name": "strncpy_s",
+    "variants": [
+     "strncpy_s"
+    ],
+    "decl": "errno_t strncpy_s(char * restrict s1, rsize_t s1max, const char * restrict s2, rsize_t n);"
+   },
+   {
+    "name": "strndup",
+    "variants": [
+     "strndup"
+    ],
+    "decl": "char * strndup(const char *s, size_t n);"
+   },
+   {
+    "name": "strnlen_s",
+    "variants": [
+     "strnlen_s"
+    ],
+    "decl": "size_t strnlen_s(const char *s, size_t maxsize);"
+   },
+   {
+    "name": "strpbrk",
+    "variants": [
+     "strpbrk"
+    ],
+    "decl": "QChar * strpbrk(QChar *s1, const char *s2);"
+   },
+   {
+    "name": "strrchr",
+    "variants": [
+     "strrchr"
+    ],
+    "decl": "QChar * strrchr(QChar *s, int c);"
+   },
+   {
+    "name": "strspn",
+    "variants": [
+     "strspn"
+    ],
+    "decl": "size_t strspn (const char *s1, const char *s2);"
+   },
+   {
+    "name": "strstr",
+    "variants": [
+     "strstr"
+    ],
+    "decl": "QChar * strstr(QChar *s1, const char *s2);"
+   },
+   {
+    "name": "strtok",
+    "variants": [
+     "strtok"
+    ],
+    "decl": "char * strtok(char * restrict s1, const char * restrict s2);"
+   },
+   {
+    "name": "strtok_s",
+    "variants": [
+     "strtok_s"
+    ],
+    "decl": "char * strtok_s(char * restrict s1, rsize_t * restrict s1max, const char * restrict s2, char ** restrict ptr);"
+   },
+   {
+    "name": "strxfrm",
+    "variants": [
+     "strxfrm"
+    ],
+    "decl": "size_t strxfrm (char * restrict s1, const char * restrict s2, size_t n);"
+   }
+  ],
+  "macros": [
+   "NULL"
+  ],
+  "types": [
+   "errno_t",
+   "rsize_t",
+   "size_t"
+  ]
+ },
+ "tgmath.h": {
+  "functions": [],
+  "macros": [],
+  "types": []
+ },
+ "threads.h": {
+  "functions": [
+   {
+    "name": "call_once",
+    "variants": [
+     "call_once"
+    ],
+    "decl": "thrd_busy thrd_error thrd_nomem void call_once(once_flag *flag, void (*func)(void));"
+   },
+   {
+    "name": "cnd_broadcast",
+    "variants": [
+     "cnd_broadcast"
+    ],
+    "decl": "int cnd_broadcast(cnd_t *cond);"
+   },
+   {
+    "name": "cnd_destroy",
+    "variants": [
+     "cnd_destroy"
+    ],
+    "decl": "void cnd_destroy(cnd_t *cond);"
+   },
+   {
+    "name": "cnd_init",
+    "variants": [
+     "cnd_init"
+    ],
+    "decl": "int cnd_init(cnd_t *cond);"
+   },
+   {
+    "name": "cnd_signal",
+    "variants": [
+     "cnd_signal"
+    ],
+    "decl": "int cnd_signal(cnd_t *cond);"
+   },
+   {
+    "name": "cnd_timedwait",
+    "variants": [
+     "cnd_timedwait"
+    ],
+    "decl": "int cnd_timedwait(cnd_t * restrict cond, mtx_t * restrict mtx, const struct timespec * restrict ts);"
+   },
+   {
+    "name": "cnd_wait",
+    "variants": [
+     "cnd_wait"
+    ],
+    "decl": "int cnd_wait(cnd_t *cond, mtx_t *mtx);"
+   },
+   {
+    "name": "mtx_destroy",
+    "variants": [
+     "mtx_destroy"
+    ],
+    "decl": "void mtx_destroy(mtx_t *mtx);"
+   },
+   {
+    "name": "mtx_init",
+    "variants": [
+     "mtx_init"
+    ],
+    "decl": "int mtx_init(mtx_t *mtx, int type);"
+   },
+   {
+    "name": "mtx_lock",
+    "variants": [
+     "mtx_lock"
+    ],
+    "decl": "int mtx_lock(mtx_t *mtx);"
+   },
+   {
+    "name": "mtx_timedlock",
+    "variants": [
+     "mtx_timedlock"
+    ],
+    "decl": "int mtx_timedlock(mtx_t * restrict mtx, const struct timespec * restrict ts);"
+   },
+   {
+    "name": "mtx_trylock",
+    "variants": [
+     "mtx_trylock"
+    ],
+    "decl": "int mtx_trylock(mtx_t *mtx);"
+   },
+   {
+    "name": "mtx_unlock",
+    "variants": [
+     "mtx_unlock"
+    ],
+    "decl": "int mtx_unlock(mtx_t *mtx);"
+   },
+   {
+    "name": "thrd_create",
+    "variants": [
+     "thrd_create"
+    ],
+    "decl": "int thrd_create(thrd_t *thr, thrd_start_t func, void *arg);"
+   },
+   {
+    "name": "thrd_current",
+    "variants": [
+     "thrd_current"
+    ],
+    "decl": "thrd_t thrd_current(void);"
+   },
+   {
+    "name": "thrd_detach",
+    "variants": [
+     "thrd_detach"
+    ],
+    "decl": "int thrd_detach(thrd_t thr);"
+   },
+   {
+    "name": "thrd_equal",
+    "variants": [
+     "thrd_equal"
+    ],
+    "decl": "int thrd_equal(thrd_t thr0, thrd_t thr1);"
+   },
+   {
+    "name": "thrd_exit",
+    "variants": [
+     "thrd_exit"
+    ],
+    "decl": "void thrd_exit(int res);"
+   },
+   {
+    "name": "thrd_join",
+    "variants": [
+     "thrd_join"
+    ],
+    "decl": "int thrd_join(thrd_t thr, int *res);"
+   },
+   {
+    "name": "thrd_sleep",
+    "variants": [
+     "thrd_sleep"
+    ],
+    "decl": "int thrd_sleep(const struct timespec *duration, struct timespec *remaining);"
+   },
+   {
+    "name": "thrd_yield",
+    "variants": [
+     "thrd_yield"
+    ],
+    "decl": "void thrd_yield(void);"
+   },
+   {
+    "name": "tss_create",
+    "variants": [
+     "tss_create"
+    ],
+    "decl": "int tss_create(tss_t *key, tss_dtor_t dtor);"
+   },
+   {
+    "name": "tss_delete",
+    "variants": [
+     "tss_delete"
+    ],
+    "decl": "void tss_delete(tss_t key);"
+   },
+   {
+    "name": "tss_get",
+    "variants": [
+     "tss_get"
+    ],
+    "decl": "void * tss_get(tss_t key);"
+   },
+   {
+    "name": "tss_set",
+    "variants": [
+     "tss_set"
+    ],
+    "decl": "int tss_set(tss_t key, void *val);"
+   }
+  ],
+  "macros": [
+   "ONCE_FLAG_INIT",
+   "TSS_DTOR_ITERATIONS"
+  ],
+  "types": [
+   "cnd_t",
+   "mtx_t",
+   "thrd_start_t",
+   "thrd_t",
+   "tss_dtor_t",
+   "tss_t"
+  ]
+ },
+ "time.h": {
+  "functions": [
+   {
+    "name": "asctime",
+    "variants": [
+     "asctime"
+    ],
+    "decl": "char * asctime(const struct tm *timeptr);"
+   },
+   {
+    "name": "asctime_s",
+    "variants": [
+     "asctime_s"
+    ],
+    "decl": "errno_t rsize_t errno_t asctime_s(char *s, rsize_t maxsize, const struct tm *timeptr);"
+   },
+   {
+    "name": "clock",
+    "variants": [
+     "clock"
+    ],
+    "decl": "timespec struct tm clock_t clock (void);"
+   },
+   {
+    "name": "ctime",
+    "variants": [
+     "ctime"
+    ],
+    "decl": "char * ctime(const time_t *timer);"
+   },
+   {
+    "name": "ctime_s",
+    "variants": [
+     "ctime_s"
+    ],
+    "decl": "errno_t ctime_s(char *s, rsize_t maxsize, const time_t *timer);"
+   },
+   {
+    "name": "difftime",
+    "variants": [
+     "difftime"
+    ],
+    "decl": "double difftime (time_t time1, time_t time0);"
+   },
+   {
+    "name": "gmtime",
+    "variants": [
+     "gmtime"
+    ],
+    "decl": "struct tm * gmtime(const time_t *timer);"
+   },
+   {
+    "name": "gmtime_r",
+    "variants": [
+     "gmtime_r"
+    ],
+    "decl": "struct tm * gmtime_r(const time_t *timer, struct tm *buf);"
+   },
+   {
+    "name": "gmtime_s",
+    "variants": [
+     "gmtime_s"
+    ],
+    "decl": "struct tm * gmtime_s(const time_t * restrict timer, struct tm * restrict result);"
+   },
+   {
+    "name": "localtime",
+    "variants": [
+     "localtime"
+    ],
+    "decl": "struct tm * localtime(const time_t *timer);"
+   },
+   {
+    "name": "localtime_r",
+    "variants": [
+     "localtime_r"
+    ],
+    "decl": "struct tm * localtime_r(const time_t *timer, struct tm *buf);"
+   },
+   {
+    "name": "localtime_s",
+    "variants": [
+     "localtime_s"
+    ],
+    "decl": "struct tm * localtime_s(const time_t * restrict timer, struct tm * restrict result);"
+   },
+   {
+    "name": "mktime",
+    "variants": [
+     "mktime"
+    ],
+    "decl": "time_t mktime (struct tm *timeptr);"
+   },
+   {
+    "name": "strftime",
+    "variants": [
+     "strftime"
+    ],
+    "decl": "size_t strftime (char * restrict s, size_t maxsize, const char * restrict format, const struct tm * restrict timeptr);"
+   },
+   {
+    "name": "time",
+    "variants": [
+     "time"
+    ],
+    "decl": "* timer);"
+   },
+   {
+    "name": "timegm",
+    "variants": [
+     "timegm"
+    ],
+    "decl": "time_t timegm (struct tm *timeptr);"
+   },
+   {
+    "name": "timespec_get",
+    "variants": [
+     "timespec_get"
+    ],
+    "decl": "int timespec_get(struct timespec *ts, int base);"
+   },
+   {
+    "name": "timespec_getres",
+    "variants": [
+     "timespec_getres"
+    ],
+    "decl": "int timespec_getres(struct timespec *ts, int base);"
+   }
+  ],
+  "macros": [
+   "CLOCKS_PER_SEC",
+   "NULL",
+   "TIME_ACTIVE",
+   "TIME_MONOTONIC",
+   "TIME_THREAD_ACTIVE",
+   "TIME_UTC"
+  ],
+  "types": [
+   "clock_t",
+   "errno_t",
+   "rsize_t",
+   "size_t",
+   "time_t"
+  ]
+ },
+ "uchar.h": {
+  "functions": [
+   {
+    "name": "c16rtomb",
+    "variants": [
+     "c16rtomb"
+    ],
+    "decl": "size_t c16rtomb (char * restrict s, char16_t c16, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "c32rtomb",
+    "variants": [
+     "c32rtomb"
+    ],
+    "decl": "size_t c32rtomb (char * restrict s, char32_t c32, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "c8rtomb",
+    "variants": [
+     "c8rtomb"
+    ],
+    "decl": "size_t c8rtomb (char * restrict s, char8_t c8, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "mbrtoc16",
+    "variants": [
+     "mbrtoc16"
+    ],
+    "decl": "size_t mbrtoc16 (char16_t * restrict pc16, const char * restrict s, size_t n, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "mbrtoc32",
+    "variants": [
+     "mbrtoc32"
+    ],
+    "decl": "size_t mbrtoc32 (char32_t * restrict pc32, const char * restrict s, size_t n, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "mbrtoc8",
+    "variants": [
+     "mbrtoc8"
+    ],
+    "decl": "size_t mbrtoc8 (char8_t * restrict pc8, const char * restrict s, size_t n, mbstate_t * restrict ps);"
+   }
+  ],
+  "macros": [],
+  "types": [
+   "char16_t",
+   "char32_t",
+   "char8_t",
+   "mbstate_t",
+   "size_t"
+  ]
+ },
+ "wchar.h": {
+  "functions": [
+   {
+    "name": "btowc",
+    "variants": [
+     "btowc"
+    ],
+    "decl": "wint_t btowc (int c);"
+   },
+   {
+    "name": "fgetwc",
+    "variants": [
+     "fgetwc"
+    ],
+    "decl": "wint_t fgetwc (FILE *stream);"
+   },
+   {
+    "name": "fgetws",
+    "variants": [
+     "fgetws"
+    ],
+    "decl": "wchar_t * fgetws(wchar_t * restrict s, int n, FILE * restrict stream);"
+   },
+   {
+    "name": "fputwc",
+    "variants": [
+     "fputwc"
+    ],
+    "decl": "wint_t fputwc (wchar_t c, FILE *stream);"
+   },
+   {
+    "name": "fputws",
+    "variants": [
+     "fputws"
+    ],
+    "decl": "int fputws (const wchar_t * restrict s, FILE * restrict stream);"
+   },
+   {
+    "name": "fwide",
+    "variants": [
+     "fwide"
+    ],
+    "decl": "int fwide (FILE *stream, int mode);"
+   },
+   {
+    "name": "fwprintf",
+    "variants": [
+     "fwprintf"
+    ],
+    "decl": "int fwprintf (FILE * restrict stream, const wchar_t * restrict format, ...);"
+   },
+   {
+    "name": "fwprintf_s",
+    "variants": [
+     "fwprintf_s"
+    ],
+    "decl": "errno_t rsize_t int fwprintf_s(FILE * restrict stream, const wchar_t * restrict format, ...);"
+   },
+   {
+    "name": "fwscanf",
+    "variants": [
+     "fwscanf"
+    ],
+    "decl": "int fwscanf (FILE * restrict stream, const wchar_t * restrict format, ...);"
+   },
+   {
+    "name": "fwscanf_s",
+    "variants": [
+     "fwscanf_s"
+    ],
+    "decl": "int fwscanf_s(FILE * restrict stream, const wchar_t * restrict format, ...);"
+   },
+   {
+    "name": "getwc",
+    "variants": [
+     "getwc"
+    ],
+    "decl": "wint_t getwc (FILE *stream);"
+   },
+   {
+    "name": "getwchar",
+    "variants": [
+     "getwchar"
+    ],
+    "decl": "wint_t getwchar (void);"
+   },
+   {
+    "name": "mbrlen",
+    "variants": [
+     "mbrlen"
+    ],
+    "decl": "size_t mbrlen (const char * restrict s, size_t n, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "mbrtowc",
+    "variants": [
+     "mbrtowc"
+    ],
+    "decl": "size_t mbrtowc (wchar_t * restrict pwc, const char * restrict s, size_t n, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "mbsinit",
+    "variants": [
+     "mbsinit"
+    ],
+    "decl": "int mbsinit (const mbstate_t *ps);"
+   },
+   {
+    "name": "mbsrtowcs",
+    "variants": [
+     "mbsrtowcs"
+    ],
+    "decl": "size_t mbsrtowcs (wchar_t * restrict dst, const char ** restrict src, size_t len, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "mbsrtowcs_s",
+    "variants": [
+     "mbsrtowcs_s"
+    ],
+    "decl": "errno_t mbsrtowcs_s(size_t * restrict retval, wchar_t * restrict dst, rsize_t dstmax, const char ** restrict src, rsize_t len, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "putwc",
+    "variants": [
+     "putwc"
+    ],
+    "decl": "wint_t putwc (wchar_t c, FILE *stream);"
+   },
+   {
+    "name": "putwchar",
+    "variants": [
+     "putwchar"
+    ],
+    "decl": "wint_t putwchar (wchar_t c);"
+   },
+   {
+    "name": "snwprintf_s",
+    "variants": [
+     "snwprintf_s"
+    ],
+    "decl": "int snwprintf_s(wchar_t * restrict s, rsize_t n, const wchar_t * restrict format, ...);"
+   },
+   {
+    "name": "swprintf",
+    "variants": [
+     "swprintf"
+    ],
+    "decl": "int swprintf (wchar_t * restrict s, size_t n, const wchar_t * restrict format, ...);"
+   },
+   {
+    "name": "swprintf_s",
+    "variants": [
+     "swprintf_s"
+    ],
+    "decl": "int swprintf_s(wchar_t * restrict s, rsize_t n, const wchar_t * restrict format, ...);"
+   },
+   {
+    "name": "swscanf",
+    "variants": [
+     "swscanf"
+    ],
+    "decl": "int swscanf (const wchar_t * restrict s, const wchar_t * restrict format, ...);"
+   },
+   {
+    "name": "swscanf_s",
+    "variants": [
+     "swscanf_s"
+    ],
+    "decl": "int swscanf_s(const wchar_t * restrict s, const wchar_t * restrict format, ...);"
+   },
+   {
+    "name": "ungetwc",
+    "variants": [
+     "ungetwc"
+    ],
+    "decl": "wint_t ungetwc (wint_t c, FILE *stream);"
+   },
+   {
+    "name": "vfwprintf",
+    "variants": [
+     "vfwprintf"
+    ],
+    "decl": "int vfwprintf (FILE * restrict stream, const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "vfwprintf_s",
+    "variants": [
+     "vfwprintf_s"
+    ],
+    "decl": "int vfwprintf_s(FILE * restrict stream, const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "vfwscanf",
+    "variants": [
+     "vfwscanf"
+    ],
+    "decl": "int vfwscanf (FILE * restrict stream, const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "vfwscanf_s",
+    "variants": [
+     "vfwscanf_s"
+    ],
+    "decl": "int vfwscanf_s(FILE * restrict stream, const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "vsnwprintf_s",
+    "variants": [
+     "vsnwprintf_s"
+    ],
+    "decl": "int vsnwprintf_s(wchar_t * restrict s, rsize_t n, const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "vswprintf",
+    "variants": [
+     "vswprintf"
+    ],
+    "decl": "int vswprintf (wchar_t * restrict s, size_t n, const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "vswprintf_s",
+    "variants": [
+     "vswprintf_s"
+    ],
+    "decl": "int vswprintf_s(wchar_t * restrict s, rsize_t n, const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "vswscanf",
+    "variants": [
+     "vswscanf"
+    ],
+    "decl": "int vswscanf (const wchar_t * restrict s, const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "vswscanf_s",
+    "variants": [
+     "vswscanf_s"
+    ],
+    "decl": "int vswscanf_s(const wchar_t * restrict s, const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "vwprintf",
+    "variants": [
+     "vwprintf"
+    ],
+    "decl": "int vwprintf (const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "vwprintf_s",
+    "variants": [
+     "vwprintf_s"
+    ],
+    "decl": "int vwprintf_s(const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "vwscanf",
+    "variants": [
+     "vwscanf"
+    ],
+    "decl": "int vwscanf (const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "vwscanf_s",
+    "variants": [
+     "vwscanf_s"
+    ],
+    "decl": "int vwscanf_s(const wchar_t * restrict format, va_list arg);"
+   },
+   {
+    "name": "wcrtomb",
+    "variants": [
+     "wcrtomb"
+    ],
+    "decl": "size_t wcrtomb (char * restrict s, wchar_t wc, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "wcrtomb_s",
+    "variants": [
+     "wcrtomb_s"
+    ],
+    "decl": "errno_t wcrtomb_s(size_t * restrict retval, char * restrict s, rsize_t smax, wchar_t wc, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "wcscat",
+    "variants": [
+     "wcscat"
+    ],
+    "decl": "wchar_t * wcscat(wchar_t * restrict s1, const wchar_t * restrict s2);"
+   },
+   {
+    "name": "wcscat_s",
+    "variants": [
+     "wcscat_s"
+    ],
+    "decl": "errno_t wcscat_s(wchar_t * restrict s1, rsize_t s1max, const wchar_t * restrict s2);"
+   },
+   {
+    "name": "wcschr",
+    "variants": [
+     "wcschr"
+    ],
+    "decl": "QWchar_t * wcschr(QWchar_t *s, wchar_t c);"
+   },
+   {
+    "name": "wcscmp",
+    "variants": [
+     "wcscmp"
+    ],
+    "decl": "int wcscmp (const wchar_t *s1, const wchar_t *s2);"
+   },
+   {
+    "name": "wcscoll",
+    "variants": [
+     "wcscoll"
+    ],
+    "decl": "int wcscoll (const wchar_t *s1, const wchar_t *s2);"
+   },
+   {
+    "name": "wcscpy",
+    "variants": [
+     "wcscpy"
+    ],
+    "decl": "wchar_t * wcscpy(wchar_t * restrict s1, const wchar_t * restrict s2);"
+   },
+   {
+    "name": "wcscpy_s",
+    "variants": [
+     "wcscpy_s"
+    ],
+    "decl": "errno_t wcscpy_s(wchar_t * restrict s1, rsize_t s1max, const wchar_t * restrict s2);"
+   },
+   {
+    "name": "wcscspn",
+    "variants": [
+     "wcscspn"
+    ],
+    "decl": "size_t wcscspn (const wchar_t *s1, const wchar_t *s2);"
+   },
+   {
+    "name": "wcsftime",
+    "variants": [
+     "wcsftime"
+    ],
+    "decl": "size_t wcsftime (wchar_t * restrict s, size_t maxsize, const wchar_t * restrict format, const struct tm * restrict timeptr);"
+   },
+   {
+    "name": "wcslen",
+    "variants": [
+     "wcslen"
+    ],
+    "decl": "size_t wcslen (const wchar_t *s);"
+   },
+   {
+    "name": "wcsncat",
+    "variants": [
+     "wcsncat"
+    ],
+    "decl": "wchar_t * wcsncat(wchar_t * restrict s1, const wchar_t * restrict s2, size_t n);"
+   },
+   {
+    "name": "wcsncat_s",
+    "variants": [
+     "wcsncat_s"
+    ],
+    "decl": "errno_t wcsncat_s(wchar_t * restrict s1, rsize_t s1max, const wchar_t * restrict s2, rsize_t n);"
+   },
+   {
+    "name": "wcsncmp",
+    "variants": [
+     "wcsncmp"
+    ],
+    "decl": "int wcsncmp (const wchar_t *s1, const wchar_t *s2, size_t n);"
+   },
+   {
+    "name": "wcsncpy",
+    "variants": [
+     "wcsncpy"
+    ],
+    "decl": "wchar_t * wcsncpy(wchar_t * restrict s1, const wchar_t * restrict s2, size_t n);"
+   },
+   {
+    "name": "wcsncpy_s",
+    "variants": [
+     "wcsncpy_s"
+    ],
+    "decl": "errno_t wcsncpy_s(wchar_t * restrict s1, rsize_t s1max, const wchar_t * restrict s2, rsize_t n);"
+   },
+   {
+    "name": "wcsnlen_s",
+    "variants": [
+     "wcsnlen_s"
+    ],
+    "decl": "size_t wcsnlen_s(const wchar_t *s, size_t maxsize);"
+   },
+   {
+    "name": "wcspbrk",
+    "variants": [
+     "wcspbrk"
+    ],
+    "decl": "QWchar_t * wcspbrk(QWchar_t *s1, const wchar_t *s2);"
+   },
+   {
+    "name": "wcsrchr",
+    "variants": [
+     "wcsrchr"
+    ],
+    "decl": "QWchar_t * wcsrchr(QWchar_t *s, wchar_t c);"
+   },
+   {
+    "name": "wcsrtombs",
+    "variants": [
+     "wcsrtombs"
+    ],
+    "decl": "size_t wcsrtombs (char * restrict dst, const wchar_t ** restrict src, size_t len, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "wcsrtombs_s",
+    "variants": [
+     "wcsrtombs_s"
+    ],
+    "decl": "errno_t wcsrtombs_s(size_t * restrict retval, char * restrict dst, rsize_t dstmax, const wchar_t ** restrict src, rsize_t len, mbstate_t * restrict ps);"
+   },
+   {
+    "name": "wcsspn",
+    "variants": [
+     "wcsspn"
+    ],
+    "decl": "size_t wcsspn (const wchar_t *s1, const wchar_t *s2);"
+   },
+   {
+    "name": "wcsstr",
+    "variants": [
+     "wcsstr"
+    ],
+    "decl": "QWchar_t * wcsstr(QWchar_t *s1, const wchar_t *s2);"
+   },
+   {
+    "name": "wcstod",
+    "variants": [
+     "wcstod"
+    ],
+    "decl": "double wcstod (const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
+   },
+   {
+    "name": "wcstod128",
+    "variants": [
+     "wcstod128"
+    ],
+    "decl": "_Decimal128 wcstod128 (const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
+   },
+   {
+    "name": "wcstod32",
+    "variants": [
+     "wcstod32"
+    ],
+    "decl": "_Decimal32 wcstod32 (const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
+   },
+   {
+    "name": "wcstod64",
+    "variants": [
+     "wcstod64"
+    ],
+    "decl": "_Decimal64 wcstod64 (const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
+   },
+   {
+    "name": "wcstof",
+    "variants": [
+     "wcstof"
+    ],
+    "decl": "float wcstof (const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
+   },
+   {
+    "name": "wcstok",
+    "variants": [
+     "wcstok"
+    ],
+    "decl": "wchar_t * wcstok(wchar_t * restrict s1, const wchar_t * restrict s2, wchar_t ** restrict ptr);"
+   },
+   {
+    "name": "wcstok_s",
+    "variants": [
+     "wcstok_s"
+    ],
+    "decl": "wchar_t * wcstok_s(wchar_t * restrict s1, rsize_t * restrict s1max, const wchar_t * restrict s2, wchar_t ** restrict ptr);"
+   },
+   {
+    "name": "wcstol",
+    "variants": [
+     "wcstol",
+     "wcstoll"
+    ],
+    "decl": "long int wcstol (const wchar_t * restrict nptr, wchar_t ** restrict endptr, int base);"
+   },
+   {
+    "name": "wcstold",
+    "variants": [
+     "wcstold"
+    ],
+    "decl": "long double wcstold (const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
+   },
+   {
+    "name": "wcstoul",
+    "variants": [
+     "wcstoul",
+     "wcstoull"
+    ],
+    "decl": "unsigned long int wcstoul (const wchar_t * restrict nptr, wchar_t ** restrict endptr, int base);"
+   },
+   {
+    "name": "wcsxfrm",
+    "variants": [
+     "wcsxfrm"
+    ],
+    "decl": "size_t wcsxfrm (wchar_t * restrict s1, const wchar_t * restrict s2, size_t n);"
+   },
+   {
+    "name": "wctob",
+    "variants": [
+     "wctob"
+    ],
+    "decl": "int wctob (wint_t c);"
+   },
+   {
+    "name": "wmemchr",
+    "variants": [
+     "wmemchr"
+    ],
+    "decl": "QWchar_t * wmemchr(QWchar_t *s, wchar_t c, size_t n);"
+   },
+   {
+    "name": "wmemcmp",
+    "variants": [
+     "wmemcmp"
+    ],
+    "decl": "int wmemcmp (const wchar_t *s1, const wchar_t *s2, size_t n);"
+   },
+   {
+    "name": "wmemcpy",
+    "variants": [
+     "wmemcpy"
+    ],
+    "decl": "wchar_t * wmemcpy(wchar_t * restrict s1, const wchar_t * restrict s2, size_t n);"
+   },
+   {
+    "name": "wmemcpy_s",
+    "variants": [
+     "wmemcpy_s"
+    ],
+    "decl": "errno_t wmemcpy_s(wchar_t * restrict s1, rsize_t s1max, const wchar_t * restrict s2, rsize_t n);"
+   },
+   {
+    "name": "wmemmove",
+    "variants": [
+     "wmemmove"
+    ],
+    "decl": "wchar_t * wmemmove(wchar_t *s1, const wchar_t *s2, size_t n);"
+   },
+   {
+    "name": "wmemmove_s",
+    "variants": [
+     "wmemmove_s"
+    ],
+    "decl": "errno_t wmemmove_s(wchar_t *s1, rsize_t s1max, const wchar_t *s2, rsize_t n);"
+   },
+   {
+    "name": "wmemset",
+    "variants": [
+     "wmemset"
+    ],
+    "decl": "wchar_t * wmemset(wchar_t *s, wchar_t c, size_t n);"
+   },
+   {
+    "name": "wprintf",
+    "variants": [
+     "wprintf"
+    ],
+    "decl": "int wprintf (const wchar_t * restrict format, ...);"
+   },
+   {
+    "name": "wprintf_s",
+    "variants": [
+     "wprintf_s"
+    ],
+    "decl": "int wprintf_s(const wchar_t * restrict format, ...);"
+   },
+   {
+    "name": "wscanf",
+    "variants": [
+     "wscanf"
+    ],
+    "decl": "int wscanf (const wchar_t * restrict format, ...);"
+   },
+   {
+    "name": "wscanf_s",
+    "variants": [
+     "wscanf_s"
+    ],
+    "decl": "int wscanf_s(const wchar_t * restrict format, ...);"
+   }
+  ],
+  "macros": [
+   "FILE",
+   "NULL",
+   "WCHAR_MAX",
+   "WCHAR_MIN",
+   "WEOF"
+  ],
+  "types": [
+   "errno_t",
+   "mbstate_t",
+   "rsize_t",
+   "size_t",
+   "wchar_t",
+   "wint_t"
+  ]
+ },
+ "wctype.h": {
+  "functions": [
+   {
+    "name": "iswalnum",
+    "variants": [
+     "iswalnum"
+    ],
+    "decl": "int iswalnum (wint_t wc);"
+   },
+   {
+    "name": "iswalpha",
+    "variants": [
+     "iswalpha"
+    ],
+    "decl": "int iswalpha (wint_t wc);"
+   },
+   {
+    "name": "iswblank",
+    "variants": [
+     "iswblank"
+    ],
+    "decl": "int iswblank (wint_t wc);"
+   },
+   {
+    "name": "iswcntrl",
+    "variants": [
+     "iswcntrl"
+    ],
+    "decl": "int iswcntrl (wint_t wc);"
+   },
+   {
+    "name": "iswctype",
+    "variants": [
+     "iswctype"
+    ],
+    "decl": "int iswctype (wint_t wc, wctype_t desc);"
+   },
+   {
+    "name": "iswdigit",
+    "variants": [
+     "iswdigit"
+    ],
+    "decl": "int iswdigit (wint_t wc);"
+   },
+   {
+    "name": "iswgraph",
+    "variants": [
+     "iswgraph"
+    ],
+    "decl": "int iswgraph (wint_t wc);"
+   },
+   {
+    "name": "iswlower",
+    "variants": [
+     "iswlower"
+    ],
+    "decl": "int iswlower (wint_t wc);"
+   },
+   {
+    "name": "iswprint",
+    "variants": [
+     "iswprint"
+    ],
+    "decl": "int iswprint (wint_t wc);"
+   },
+   {
+    "name": "iswpunct",
+    "variants": [
+     "iswpunct"
+    ],
+    "decl": "int iswpunct (wint_t wc);"
+   },
+   {
+    "name": "iswspace",
+    "variants": [
+     "iswspace"
+    ],
+    "decl": "int iswspace (wint_t wc);"
+   },
+   {
+    "name": "iswupper",
+    "variants": [
+     "iswupper"
+    ],
+    "decl": "int iswupper (wint_t wc);"
+   },
+   {
+    "name": "iswxdigit",
+    "variants": [
+     "iswxdigit"
+    ],
+    "decl": "int iswxdigit (wint_t wc);"
+   },
+   {
+    "name": "towctrans",
+    "variants": [
+     "towctrans"
+    ],
+    "decl": "wint_t towctrans (wint_t wc, wctrans_t desc);"
+   },
+   {
+    "name": "towlower",
+    "variants": [
+     "towlower"
+    ],
+    "decl": "wint_t towlower (wint_t wc);"
+   },
+   {
+    "name": "towupper",
+    "variants": [
+     "towupper"
+    ],
+    "decl": "wint_t towupper (wint_t wc);"
+   },
+   {
+    "name": "wctrans",
+    "variants": [
+     "wctrans"
+    ],
+    "decl": "wctrans_t wctrans (const char *property);"
+   },
+   {
+    "name": "wctype",
+    "variants": [
+     "wctype"
+    ],
+    "decl": "wctype_t wctype (const char *property);"
+   }
+  ],
+  "macros": [
+   "WEOF"
+  ],
+  "types": [
+   "wctrans_t",
+   "wctype_t",
+   "wint_t"
+  ]
+ }
+}
