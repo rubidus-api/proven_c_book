@@ -268,15 +268,16 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
    가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
    ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
      오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+/* 같은 꼴을 쓰는 상자들 --- 네 변을 걷고 왼쪽 세로선만 남긴다
+   (저자 지시 2026-08-10). 소스 코드와 실행 결과(.demo)는 그대로 상자다. */
 .dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
 .dev.platform, .dev.recap {
-  border:1px solid var(--fg); border-radius:0; background:none;
-  padding:0 .9rem .55rem; margin:1.15rem 0; }
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  margin:0 -.9rem .5rem; padding:.45rem .9rem; text-indent:0;
-  border-bottom:1px solid var(--fg);
+  margin:0 0 .32rem; padding:.05rem 0 .2rem .7rem; text-indent:0;
+  border-left:4px solid var(--fg);
   font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
   font-size:.95rem; color:var(--fg); }
 .dev.misconception > p, .dev.realcase > p, .dev.antipattern > p,
@@ -303,8 +304,8 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev ul, .dev ol { padding-left:1.3rem; }
 .dev li { margin:.15rem 0; }
 /* 갈래는 테두리 모양으로 구별한다 */
-.dev.antipattern { border-style:dashed; }
-.dev.platform { border-style:double; }
+.dev.antipattern > .dev-label { border-left-style:dashed; }
+.dev.platform > .dev-label { border-left-style:double; border-left-width:6px; }
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
         margin:0 0 1.6rem; font-size:.9rem; }
@@ -428,11 +429,11 @@ buf<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]
   element count: sizeof arr / sizeof arr[0] = 5
 
 ② same address, different type - +1 skips a different width
-  arr      = 0x560fba821020
-  &amp;arr[0]  = 0x560fba821020   (the same)
-  &amp;arr     = 0x560fba821020   (the same - but its type is int(*)[5])
-  arr  + 1 = 0x560fba821024   (+4 bytes)
-  &amp;arr + 1 = 0x560fba821034   (+20 bytes - it skips the whole array)
+  arr      = 0x55692ab83020
+  &amp;arr[0]  = 0x55692ab83020   (the same)
+  &amp;arr     = 0x55692ab83020   (the same - but its type is int(*)[5])
+  arr  + 1 = 0x55692ab83024   (+4 bytes)
+  &amp;arr + 1 = 0x55692ab83034   (+20 bytes - it skips the whole array)
 
 ③ which one can move
   moving ptr two slots gives *ptr = 30
