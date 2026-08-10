@@ -552,11 +552,11 @@ buf<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]
   element count: sizeof arr / sizeof arr[0] = 5
 
 ② same address, different type - +1 skips a different width
-  arr      = 0x55aa09d01020
-  &amp;arr[0]  = 0x55aa09d01020   (the same)
-  &amp;arr     = 0x55aa09d01020   (the same - but its type is int(*)[5])
-  arr  + 1 = 0x55aa09d01024   (+4 bytes)
-  &amp;arr + 1 = 0x55aa09d01034   (+20 bytes - it skips the whole array)
+  arr      = 0x5631108d3020
+  &amp;arr[0]  = 0x5631108d3020   (the same)
+  &amp;arr     = 0x5631108d3020   (the same - but its type is int(*)[5])
+  arr  + 1 = 0x5631108d3024   (+4 bytes)
+  &amp;arr + 1 = 0x5631108d3034   (+20 bytes - it skips the whole array)
 
 ③ which one can move
   moving ptr two slots gives *ptr = 30
