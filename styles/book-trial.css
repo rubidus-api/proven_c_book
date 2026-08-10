@@ -68,3 +68,14 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 h1, h2, h3, h4, .colophon > div {
   border-color:#d5d5d5; }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
+
+/* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
+   위의 `.dev *`(하나) 나 `.dev > .open-body`(둘) 보다 세다. 그래서 서두 칸의
+   *내용* 세로선만 var(--box-rule)=#9a9a9a 로 남아 혼자 진했다(저자 지적).
+   같은 자리를 같은 힘으로 눌러 준다. */
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:#d5d5d5; }
