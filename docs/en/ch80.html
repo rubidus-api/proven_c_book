@@ -330,8 +330,10 @@ span.dev-label { display:inline; font-size:1rem; margin:0; }
 .dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
 .dev ul, .dev ol { padding-left:1.3rem; }
 .dev li { margin:.15rem 0; }
-/* 갈래는 테두리 모양으로 구별한다 */
-.dev.antipattern > .dev-label { border-left-style:dashed; }
+/* ★ 반례의 세로선도 실선이다(저자 지시 2026-08-10). 예전에는 점선으로 갈래를
+   구별했는데, 왼쪽 세로선 체계로 바꾼 뒤로는 그것만 따로 놀았다 --- 갈래는
+   선 모양이 아니라 표지 글(「반례.」)이 말한다. */
+.dev.antipattern > .dev-label { border-left-style:solid; }
 
 .dev.mathbox { font-size:.95rem; }
 .note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
@@ -445,7 +447,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">Output</p><div class="demo-body"><pre><code>expected   : 800000
-unprotected: 266551  &lt;- counts were lost
+unprotected: 269075  &lt;- counts were lost
 atomic     : 800000
 
 is atomic_long lock-free? yes

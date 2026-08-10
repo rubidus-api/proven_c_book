@@ -24,13 +24,13 @@ ver=$(grep -m1 'Current:' "$root/VERSION.md" | sed 's/.*\*\*\(v[0-9.]*\)\*\*.*/\
 mkdir -p "$root/dist" "$root/build"
 
 pdf="$root/dist/proven_c_book-$ver-style-specimen.pdf"
-"$typst" compile --root "$root" --font-path "$fonts" \
+"$typst" compile --root "$root" --font-path "$fonts" --input trial=1 \
     "$root/book/style-specimen.typ" "$pdf"
 
 raw="$root/build/style-specimen.raw.html"
 # ★ mode=html --- 이것이 없으면 장치가 조판 분기를 타 클래스가 붙지 않는다
 "$typst" compile --root "$root" --font-path "$fonts" --features html \
-    --format html --input mode=html --input lang=ko \
+    --format html --input mode=html --input lang=ko --input trial=1 \
     "$root/book/style-specimen.typ" "$raw" 2>/dev/null
 
 # ① 혼자 돌아다닐 판 --- 글꼴을 data: 로 심는다

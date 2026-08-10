@@ -35,6 +35,10 @@ inner = raw.read_text(encoding="utf-8")
 m = re.search(r"<body[^>]*>(.*)</body>", inner, re.S)
 body = m.group(1) if m else inner
 css = css_path.read_text(encoding="utf-8")
+# ★ 시험 중인 값은 견본에만 실린다 --- 책의 웹판은 book.css 만 쓴다.
+trial = css_path.parent / "book-trial.css"
+if trial.exists():
+    css += "\n" + trial.read_text(encoding="utf-8")
 
 if "font-prefix" in opts:
     css = css.replace('url("../fonts/', 'url("%s' % opts["font-prefix"])

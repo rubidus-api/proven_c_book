@@ -1,0 +1,27 @@
+/* ── 시험 중인 웹 조판 값 (저자 지시 2026-08-10) ──────────────────────
+ *
+ * ★ 이 파일은 *조판 견본에만* 실린다. 책의 웹판(docs/ko, docs/en)은
+ *   styles/book.css 만 쓴다. 「본문은 건드리지 말고 견본에서만 바꿔 보라」는
+ *   지시를 지키는 장치다 --- 견본에서 보고, 마음에 들면 그때 book.css 로
+ *   옮겨 적는다(그것이 채택이다).
+ *
+ * 지금 시험하는 것: 서두 칸의 표지·내용 여백과 본문의 숨. 일반적인 책에 견주면
+ * 우리 쪽이 빽빽했다.
+ */
+
+/* 서두 다섯 칸 --- 표지 줄이 선에 눌려 있었다 */
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+
+/* 장치 안의 글도 조금 넉넉하게 */
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+
+/* 본문 --- 줄 사이와 문단 사이 */
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
