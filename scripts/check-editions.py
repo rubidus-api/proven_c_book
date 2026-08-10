@@ -54,7 +54,9 @@ def float_counts(edition, web):
         pat = r"#" + re.escape(name) + r"[(\[]"
         src[name] = sum(
             len(re.findall(pat, pathlib.Path(f).read_text(encoding="utf-8")))
-            for f in glob.glob(str(ROOT / edition / "**" / "*.typ"), recursive=True))
+            for f in glob.glob(str(ROOT / edition / "**" / "*.typ"), recursive=True)
+            # 조판 견본은 책이 아니다 --- 세지 않는다(RFC-0027)
+            if not f.endswith(("style-specimen.typ", "style.typ")))
     out = {}
     pages = glob.glob(str(ROOT / "docs" / web / "*.html"))
     for name, marker in FLOATS:

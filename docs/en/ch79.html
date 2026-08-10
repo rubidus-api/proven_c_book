@@ -1,7 +1,21 @@
 <!doctype html>
 <html lang="en">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>79 Running in separate strands — &lt;threads.h&gt; — Proven C Book</title><style>
+<title>79 Running in separate strands — &lt;threads.h&gt; — Proven C Book</title><style>/* ── 웹 판의 조판 (RFC-0027, 저자 지시 2026-08-10) ────────────────
+ *
+ * 전에는 이 CSS 가 scripts/wrap-html.py 안의 문자열이었다. 디자인을 한 줄
+ * 고치려면 파이썬 파일을 열어야 했고, 무엇이 디자인이고 무엇이 생성 논리인지
+ * 섞여 있었다. 이제 갈라 둔다 --- 디자인은 여기, 생성은 거기.
+ *
+ * ★ 고치는 절차
+ *   1. 이 파일만 고친다.
+ *   2. scripts/style-preview.sh --- build/style-preview.html 을 본다(몇 초).
+ *   3. 괜찮으면 그때 scripts/build-html.sh 로 전체를 만든다.
+ *
+ * ★ 규율 하나: 장치는 *왼쪽 세로선*으로 영역을 말하고, 제목은 *가로 밑줄*로
+ *   경계를 말한다. 소스 코드와 실행 결과(.demo)만 네 변 상자를 쓴다.
+ */
+
 /* ── 글꼴을 직접 싣는다 (RFC-0026 D2, 저자 지시 2026-08-10) ────────
    전에는 @font-face 가 하나도 없어, CSS 가 적어 둔 이름이 방문자 기계에 없으면
    대체 글꼴로 떨어졌다 --- 세리프 본문이 고딕으로 보이는 일이 흔했다.
@@ -440,7 +454,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 
 [2] four threads bumping one counter, unprotected
   expected 800000
-  actual   253314   &lt;- updates were lost
+  actual   257617   &lt;- updates were lost
   (the number differs on every run --- that is what a race looks like)
 </code></pre></div></div><p>The first group of output is the whole vocabulary.</p><p><strong>A thread function has exactly one shape</strong> — <code>int (*)(void *)</code>. One argument in, one <code>int</code> out; if you need to pass several things, make a struct and hand over its address (chapter 46). The <code>int</code> it returns comes out through <code>thrd_join</code>’s second argument.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Function</strong></th><th><strong>What it does</strong></th><th><strong>Worth knowing</strong></th></tr><tr><td><code>thrd_create(&amp;t, fn, arg)</code></td><td>makes a strand and starts <code>fn(arg)</code> at once</td><td>returns <code>thrd_success</code>, <code>thrd_nomem</code> or <code>thrd_error</code> — <strong>which you must check</strong></td></tr><tr><td><code>thrd_join(t, &amp;rc)</code></td><td>waits for it and takes the return value</td><td>pass null if you do not want <code>rc</code></td></tr><tr><td><code>thrd_detach(t)</code></td><td>declares that you will not wait</td><td>a detached strand cannot be joined</td></tr><tr><td><code>thrd_current()</code></td><td>a handle on the current strand</td><td>compare only with <code>thrd_equal</code> — it is not an integer</td></tr><tr><td><code>thrd_yield()</code></td><td>gives up the slot</td><td>a hint, not a guarantee</td></tr><tr><td><code>thrd_sleep(&amp;dur, &amp;rem)</code></td><td>sleeps</td><td>two <code>struct timespec</code> (chapter 74)</td></tr><tr><td><code>thrd_exit(res)</code></td><td>ends this strand only</td><td>called in <code>main</code> it <strong>does not end the program</strong> — it waits for the others</td></tr></table></div><p class="float-caption">Table 80.1</p></figure><p>★ Do not treat a <code>thrd_t</code> as an integer. The standard does not say what it is, comparison goes through <code>thrd_equal</code> alone, and the standard offers no way to print one.</p><h3 id="s79-3">79.3 And then the value comes out wrong</h3><div></div><p>The second group of output is the most important screen in this chapter. Four strands each added 1 two hundred thousand times, so it should be 800,000; the five runs this book made gave between 230,000 and 290,000. <strong>Two of every three increments vanished.</strong></p><p>The cause is that one line is not one step.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>What <code>shared += 1</code> really does</strong></th><th><strong>When two strands overlap</strong></th></tr><tr><td><ol><li value="1">read the value from memory</li></ol></td><td>both read 100</td></tr><tr><td><ol><li value="2">add 1</li></ol></td><td>both make 101</td></tr><tr><td><ol><li value="3">write it back</li></ol></td><td>both write 101 — <strong>two additions, one increment</strong></td></tr></table></div><p class="float-caption">Table 80.2</p></figure><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“<code>+= 1</code> happens in one go, so it is safe”</strong></p><div class="dev-body"><p>Being one line in the source and being one step on the machine are separate things (chapter 13). And <strong>even one step would not be safe</strong> — each core holds its own cache (chapter 11), so even “who wrote first” is not settled.</p><p>★ In the standard’s words this is a <strong>data race</strong>, and a data race is undefined behaviour. Not “the value comes out a bit wrong” but <strong>anything at all may happen</strong> (chapter 52).</p></div></div><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>What trying to reproduce the race taught us — the compiler erased it first</p><div class="dev-body"><p>When this example was first written <strong>the value never came out wrong.</strong> Five runs, five times exactly 800000.</p><p>Not because there was no race but because there was <strong>no window for one</strong>. The compiler folded the two-hundred-thousand-turn loop into a single register and made it “add 200000 once” (chapter 13). Each strand touched memory effectively once, so there was nothing to overlap.</p><p>So the example’s <code>shared</code> was given a <code>volatile</code>. ★ <strong>Not to fix anything</strong> — to make every turn a real load and store so that <strong>the race could happen at all</strong>. <code>volatile</code> does not make the update safe. Why it does not is the first section of the next chapter.</p></div></div><h3 id="s79-4">79.4 Mutual exclusion — <code>mtx_*</code></h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch79/threads_sync.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Sleeping and waking — mutual exclusion, condition variables, once, per-strand. </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
