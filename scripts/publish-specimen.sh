@@ -15,14 +15,18 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 bash "$root/scripts/make-specimen.sh"
 
 cd "$root"
-if git diff --quiet -- docs/style-specimen.html; then
+# ★ `git diff` 는 *추적 중인* 파일만 본다 --- 처음 생긴 견본 PDF 를 「달라진 것이
+#   없다」고 넘겨 버렸다. status 로 본다(untracked 도 잡힌다).
+if [ -z "$(git status --porcelain -- docs/style-specimen.html docs/style-specimen.pdf)" ]; then
   echo "publish-specimen: 달라진 것이 없다 --- 올리지 않는다"
   exit 0
 fi
-git add docs/style-specimen.html book/style.typ book/style-specimen.typ \
+git add docs/style-specimen.html docs/style-specimen.pdf book/style.typ book/style-specimen.typ \
         styles/book-trial.css styles/book.css book/lib.typ 2>/dev/null || true
 git -c user.name=rubidus-api -c user.email=rubidus@gmail.com \
     commit -q -m "조판 견본 갱신 (시험 값)"
 tok=$(cat <workspace>/github-personal-access-token | tr -d '\n\r ')
 git push -q "https://x-access-token:$tok@github.com/rubidus-api/proven_c_book.git" main
-echo "publish-specimen: 올렸다 → https://rubidus-api.github.io/proven_c_book/style-specimen.html"
+echo "publish-specimen: 올렸다"
+echo "  웹  https://rubidus-api.github.io/proven_c_book/style-specimen.html"
+echo "  PDF https://rubidus-api.github.io/proven_c_book/style-specimen.pdf"

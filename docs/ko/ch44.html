@@ -398,6 +398,84 @@ code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
   padding:.05em .35em; border-radius:3px; white-space:nowrap;
   font-weight:400; letter-spacing:0; }
 
+/* ── 조판 값 --- 견본에서 시험해 채택한 것들 (저자 지시 2026-08-10) ─────
+ *
+ * 아래는 견본(style-specimen)에서 눈으로 확인한 뒤 책에 들인 값이다.
+ * 여백은 일반적인 책의 숨에 맞추고, 선은 색 하나(#d5d5d5)로 모았다
+ * --- 표만 예외다(격자는 옅으면 칸이 안 읽힌다).
+ */
+
+/* 서두 다섯 칸 --- 표지 줄이 선에 눌려 있었다 */
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+
+/* 장치 안의 글도 조금 넉넉하게 */
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+
+/* 본문 --- 줄 사이와 문단 사이 */
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+
+/* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
+   경계를 말하되 글자보다 앞서지 않게. */
+h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+
+/* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
+   (저자 지시 2026-08-10, 웹판 견본) */
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+
+/* 저작권·연락처 --- 두 칸짜리 표는 줄 사이가 벌어질수록 짝이 흩어진다 */
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+
+/* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
+   (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
+.demo { border-color:#d5d5d5; }
+.demo > .demo-head { border-bottom-color:#d5d5d5; }
+
+/* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
+ * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:#d5d5d5; }
+
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:#d5d5d5; }
+
+/* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
+   여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:#d5d5d5; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+
+/* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
+   위의 `.dev *`(하나) 나 `.dev > .open-body`(둘) 보다 세다. 그래서 서두 칸의
+   *내용* 세로선만 var(--box-rule)=#9a9a9a 로 남아 혼자 진했다(저자 지적).
+   같은 자리를 같은 힘으로 눌러 준다. */
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:#d5d5d5; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
@@ -538,19 +616,19 @@ fresh_count: 1 1 1
     <strong>free</strong><strong><span class="tok-x">(</span></strong><strong>heap2</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
-</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>code (function main)      : 0x55b7c1cc61f1
-read-only string          : 0x55b7c1cc7008
-global (initialized, data): 0x55b7c1cc9028
-global (zero, bss)        : 0x55b7c1cc9030
-static inside a function  : 0x55b7c1cc9034
-heap (malloc 1)           : 0x55b7c24c82a0
-heap (malloc 2)           : 0x55b7c24c82f0
-stack (a local)           : 0x7ffca754dfbc
+</code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>code (function main)      : 0x5556e2dab1f1
+read-only string          : 0x5556e2dac008
+global (initialized, data): 0x5556e2dae028
+global (zero, bss)        : 0x5556e2dae030
+static inside a function  : 0x5556e2dae034
+heap (malloc 1)           : 0x5556ed55c2a0
+heap (malloc 2)           : 0x5556ed55c2f0
+stack (a local)           : 0x7fff2d8ff84c
 
 gap between the two heap blocks: +80 bytes
-distance from stack to heap    : about 42.3 TiB (a 64-bit address space is that wide)
+distance from stack to heap    : about 42.7 TiB (a 64-bit address space is that wide)
 
-  a local one frame deeper : 0x7ffca754df6f
+  a local one frame deeper : 0x7fff2d8ff7ff
   difference from the outer frame     : -76 bytes
   => the stack grows toward lower addresses
 </code></pre></div></div><p>읽는 법은 <strong>값이 아니라 순서</strong>다. 낮은 주소부터 이렇게 늘어선다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>구역</strong></th><th><strong>무엇이 사는가</strong></th><th><strong>수명</strong></th></tr><tr><td>코드</td><td>함수의 기계 명령</td><td>프로그램 내내(읽기 전용)</td></tr><tr><td>읽기 전용 자료</td><td>문자열 리터럴, <code>const</code> 자료</td><td>프로그램 내내(쓰면 붕괴)</td></tr><tr><td><code>data</code></td><td>초깃값이 있는 전역·<code>static</code></td><td>프로그램 내내</td></tr><tr><td><code>bss</code></td><td>초깃값이 없는(=0인) 전역·<code>static</code></td><td>프로그램 내내</td></tr><tr><td>힙</td><td><code>malloc</code>이 준 것(45장)</td><td>해제할 때까지</td></tr><tr><td>스택</td><td>지역 변수·매개변수·복귀 주소</td><td>함수가 끝날 때까지</td></tr></table></div><p class="float-caption">표 44.6</p></figure><p>예제가 확인해 준 것이 셋이다. <strong><code>data</code>와 <code>bss</code>가 나란히 있고</strong>, <strong>힙은 그 위쪽에서 커지며</strong>, <strong>스택은 아주 멀리 떨어진 높은 주소에서 아래로 자란다</strong> (예제의 마지막 세 줄이 프레임을 하나 더 쌓아 그 방향을 실측한다).</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> <code>bss</code>라는 이상한 이름은 무엇인가? 그리고 <code>data</code>와 왜 나누는가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 이름은 1950년대 어셈블러의 명령어 <code>Block Started by Symbol</code>의 약자다 — 뜻은 잊혔고 이름만 반세기를 건너왔다.</p><p>나누는 이유는 실용적이다. <code>int table[1000000];</code>처럼 <strong>초깃값이 0인</strong> 큰 전역을 생각해 보자. <code>data</code>에 넣으면 실행 파일 안에 0이 백만 개 들어가 파일이 4MB 커진다. <code>bss</code>에 넣으면 파일에는 <strong>“이만큼을 0으로 채워 달라”는 숫자 하나</strong>만 적히고, 실제 채우기는 프로그램이 시작될 때 일어난다. 그래서 <code>bss</code>의 변수는 “명시적으로 초기화하지 않아도 0”이라는 C의 약속을 공짜로 얻는다 — 그 0은 운영체제(또는 임베디드의 시작 코드)가 채워 준 것이다.</p></p></div></div><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>스택은 얼마나 큰가 — 리눅스와 윈도우</p><div class="dev-body"><p><strong>C 표준에는 “스택”이라는 말도, 그 크기에 대한 약속도 없다.</strong> 자동 저장 기간만 정해 두고, 그것을 어디에 어떻게 놓을지는 구현에 맡긴다. 그래서 크기는 <strong>운영체제와 도구가</strong> 정한다.</p><ul><li><strong>리눅스</strong> — 주 스레드의 기본 한도는 대개 <strong>8 MiB</strong>다(<code>ulimit -s</code>로 확인· 변경한다. 이 책의 검증 기계도 8388608바이트였다). 필요하면 늘릴 수 있고, 스레드마다 만드는 스택은 <code>pthread_attr_setstacksize</code>로 따로 정한다.</li><li><p><strong>윈도우</strong> — 기본은 <strong>1 MiB</strong>다. 게다가 그중 실제로 확보(commit)되는 것은 처음 4 KiB뿐이고, 쓰는 만큼 늘어난다. 실행 파일을 만들 때 링커 옵션 <code>/STACK:예약[,커밋]</code>으로 바꾸고, 스레드는 <code>CreateThread</code>의 인자로 지정한다.</p><p>차이가 실무에서 드러나는 자리가 있다. 리눅스에서 잘 돌던 코드가 윈도우 에서 스택 넘침으로 죽는 것 — <strong>같은 코드, 여덟 배 좁은 그릇</strong>이기 때문이다. 큰 지역 배열(<code>char buf[2*1024*1024];</code>)이나 깊은 재귀가 그 후보다. 더 자세한 배치와 임베디드의 사정은 83장에서 다룬다.</p></li></ul></div></div><h3 id="s44-4">44.4 스택 — 호출의 장부</h3><div></div><p>자동 변수들이 사는 곳에는 이름이 있다 — <strong>스택</strong>(stack)이다. 함수를 부를 때마다 그 호출을 위한 칸 묶음(스택 프레임)이 얹히고, 함수가 끝나면 통째로 걷힌다. 프레임에는 지역 변수·매개변수와 함께 <strong>돌아갈 주소</strong>(복귀 주소)가 들어 있다 — 43장에서 이름만 스쳤던 “복귀 장부”의 정체다.</p><p>그림이 갖춰지면 두 가지가 한 번에 설명된다. 첫째, 33장의 재귀가 왜 겹겹이 쌓이는지 — 호출마다 프레임이 하나씩 얹히기 때문이다. 그리고 너무 깊이 재귀하면 스택 공간이 바닥나 프로그램이 붕괴한다(<strong>스택 오버플로</strong> — 무한 재귀의 대표 증상이다). 둘째, 43장의 경계 침범 공격이 왜 그토록 위험한지 — 스택에 놓인 배열을 넘쳐 쓰면 <strong>같은 프레임의 복귀 주소</strong>를 덮어쓸 수 있고, 그러면 함수가 끝날 때 공격자가 정한 곳으로 “돌아간다”. 배열 하나의 경계가 프로그램의 통제권과 이어져 있는 것이다.</p><div class="dev misconception"><p class="dev-label">흔한 오해. <strong>“함수가 끝나도 그 안의 변수를 가리키는 주소는 쓸 수 있다”</strong></p><div class="dev-body">포인터를 배운 직후 가장 흔한 사고이고, 무서운 점은 <strong>한동안 잘 도는 것처럼 보인다</strong>는 것이다. 함수가 끝나면 프레임이 걷히지만 — 그 자리의 비트가 즉시 지워지는 것은 아니라서, 죽은 변수의 주소를 따라가도 잠시는 예전 값이 읽힌다. 그러다 다른 함수가 그 자리를 프레임으로 쓰는 순간 값이 뒤바뀐다 — 시간이 지나서, 엉뚱한 곳에서 터지는 버그가 되는 것이다. 이런 주소를 <strong>댕글링 포인터</strong>(dangling pointer)라 하고, 규칙은 하나다: <strong>지역 변수의 주소는 그 함수보다 오래 살아서는 안 된다.</strong> 함수가 만든 결과를 오래 살려 보내려면 정적 수명을 쓰거나, 다음 장의 동적 메모리를 쓰거나, 호출자가 준 그릇에 채워 주는(35장의 <code>&amp;</code> 관용구) 셋 중 하나다. 17장의 ASan이 실행 중에 이 사고를 잡아 주는 대표 도구이기도 하다.</div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 전역 변수 — 함수 밖에 선언한 변수 — 도 정적 수명인가?</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 그렇다. 함수 밖의 변수는 정적 저장 기간을 갖고 프로그램 내내 산다. 다만 수명과 별개로 <strong>가시성</strong>의 문제가 붙는데 — 여러 파일에서 보이게 할지 이 파일에만 둘지를 정하는 것이 54장의 주제(연결)다. 그리고 실무의 권고는 오래된 것이다: <strong>전역 가변 상태는 최소로.</strong> 어디서든 바뀔 수 있는 값은 추적이 어렵고, 12장의 멀티코어 세계에서는 사고의 근원이 된다. 함수 안의 <code>static</code>도 같은 성질을 작게 가진 것이라(시연의 <code>issued</code>), 편리하지만 남용하지 않는 것이 관행이다.</p></div></div><p>기억의 배치에서 두 자리 — 스택(자동)과 정적 영역 — 를 익혔다. 남은 한 자리가 이 부의 마지막이다: 크기를 실행 중에 정하고, 원하는 만큼 살려 두는 기억. 다음 장의 동적 메모리다.</p>

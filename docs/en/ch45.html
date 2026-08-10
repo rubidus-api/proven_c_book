@@ -398,6 +398,84 @@ code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
   padding:.05em .35em; border-radius:3px; white-space:nowrap;
   font-weight:400; letter-spacing:0; }
 
+/* ── 조판 값 --- 견본에서 시험해 채택한 것들 (저자 지시 2026-08-10) ─────
+ *
+ * 아래는 견본(style-specimen)에서 눈으로 확인한 뒤 책에 들인 값이다.
+ * 여백은 일반적인 책의 숨에 맞추고, 선은 색 하나(#d5d5d5)로 모았다
+ * --- 표만 예외다(격자는 옅으면 칸이 안 읽힌다).
+ */
+
+/* 서두 다섯 칸 --- 표지 줄이 선에 눌려 있었다 */
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+
+/* 장치 안의 글도 조금 넉넉하게 */
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+
+/* 본문 --- 줄 사이와 문단 사이 */
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+
+/* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
+   경계를 말하되 글자보다 앞서지 않게. */
+h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+
+/* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
+   (저자 지시 2026-08-10, 웹판 견본) */
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+
+/* 저작권·연락처 --- 두 칸짜리 표는 줄 사이가 벌어질수록 짝이 흩어진다 */
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+
+/* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
+   (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
+.demo { border-color:#d5d5d5; }
+.demo > .demo-head { border-bottom-color:#d5d5d5; }
+
+/* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
+ * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:#d5d5d5; }
+
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:#d5d5d5; }
+
+/* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
+   여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:#d5d5d5; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+
+/* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
+   위의 `.dev *`(하나) 나 `.dev > .open-body`(둘) 보다 세다. 그래서 서두 칸의
+   *내용* 세로선만 var(--box-rule)=#9a9a9a 로 남아 혼자 진했다(저자 지적).
+   같은 자리를 같은 힘으로 눌러 준다. */
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:#d5d5d5; }
+
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
@@ -569,9 +647,9 @@ of 8 one-byte requests, ones breaking the default alignment: 0
 address gap between two neighbouring blocks: 32 bytes (for a request of 1)
 
 300000 iterations
-  malloc + free each time :  0.0046 s  ( 15.4 ns each)
-  borrowed once, reused   :  0.0008 s  (  2.7 ns each)
-  a stack array           :  0.0007 s  (  2.5 ns each)
+  malloc + free each time :  0.0039 s  ( 13.0 ns each)
+  borrowed once, reused   :  0.0006 s  (  2.1 ns each)
+  a stack array           :  0.0007 s  (  2.2 ns each)
 
 (total 114739248 — a value used so the computation is not erased)
 </code></pre></div></div><p>The question the first part of the example answers is this. You borrowed a mere one byte with <code>malloc(1)</code> — may that address sit just anywhere?</p><p>It may not. Because <code>malloc</code> hands out the place <strong>without knowing what will go in</strong>. A <code>double</code> may be placed there, or a pointer, or a large struct. So the standard promises this — <strong>an address returned by the <code>malloc</code> family satisfies the alignment suitable for any basic type.</strong> The name given to that “strictest basic alignment” is <code>max_align_t</code>, and on this machine it is 16 bytes (chapter 6′s alignment rule made flesh).</p><p>Two things follow.</p><p><strong>First, borrowing small does not mean the place is small.</strong> In the example eight one-byte borrowings gave neighbouring blocks 32 bytes apart. It is because of the space left over to satisfy alignment and the management information (size, status) the allocator attaches to each block. It means <strong>a program that borrows countless small pieces uses far more memory than it asked for</strong>, and that is why the arena and pool approaches we see later were born (chapter 84).</p><p><strong>Second, stricter alignment must be requested separately.</strong> SIMD instructions or hardware DMA sometimes require 64-byte or 4096-byte alignment, and for that there is C11′s <code>aligned_alloc(alignment, size)</code>. Two rules must be kept — the alignment must be a power of two, and in C11 <strong>the size had to be a multiple of the alignment</strong> (C23 lifted that restriction). What it returns is still given back with <code>free</code>.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The name of aligned allocation differs by platform</p><div class="dev-body">The standard’s <code>aligned_alloc</code> came in relatively recently (C11), and before that each platform used a different function — POSIX’s <code>posix_memalign</code>, Windows’s <code>_aligned_malloc</code> (and its partner <code>_aligned_free</code>; on Windows this must not be given back with <code>free</code>). When you meet these names in old code, read them as “an allocation with a stated alignment.”</div></div><h3 id="s45-4">45.4 The price of two cheap-looking lines — why allocation is expensive</h3><div></div><p>The latter part of the example repeats the same work three ways, 300,000 times, and measures the time. Borrowing and giving back every time is noticeably slower than reuse or the stack — a little over ten nanoseconds per round on this machine. The value itself differs by machine and allocator, but the fact of a <strong>two-orders-of-magnitude difference</strong> is the same everywhere.</p><p>Why is it expensive? <code>malloc</code> looks like the one line “give me slots” but is in fact one round trip to <strong>the warehouse management office</strong>.</p><ol><li><strong>Find a free piece of the right size.</strong> The allocator manages returned pieces in lists by size and picks a suitable one when a request comes. Searching the list, cutting a large piece when needed, putting the remainder back in the list — all of it is data-structure manipulation.</li><li><strong>Write management information.</strong> The size and status must be written per block so that <code>free</code> can later know “how many bytes this was.” So allocation involves <strong>writing</strong>.</li><li><strong>Ask the operating system when short.</strong> When the warehouse is empty it obtains more address space with a system call (<code>brk</code> or <code>mmap</code>). That means going into the kernel and back, which is far more expensive. Fortunately it does not happen often — the allocator takes plenty and cuts it up.</li><li><strong>With several threads, locks appear.</strong> The warehouse ledger is a shared resource, so contention between threads slows it (chapter 80′s story of races). That is why modern allocators keep a small cache per thread.</li><li><strong>The cache is cold.</strong> A freshly obtained address is usually not in the cache, so the first access is slow (chapter 11′s ladder). Conversely a reused buffer is already up in the cache — half the reason the reuse side is fast in the example is here.</li></ol><p>So a practical rule follows. <strong>Do not allocate inside a hot loop.</strong> Borrow once in advance and reuse, put what has a known size on the stack, or borrow many at once and cut them up. The last is the arena, and chapter 84 and Part XII are that story.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“<code>free</code> gives memory back to the operating system”</strong></p><div class="dev-body"><p>Mostly it does not. <code>free</code> is <strong>writing in the allocator’s ledger that “this piece may be used again”</strong>, not returning it to the operating system. So it is normal for a program’s memory usage in the task manager to stay the same after releasing a large piece of data — the allocator is holding it for the next request (large blocks are sometimes returned).</p><p>This fact explains two things. First, the common misunderstanding of “I freed the memory, so why does it not go down?” Second, the phenomenon of a long-running server holding memory <strong>even with no leak</strong> — pieces scattered so that a large lump cannot be formed: <strong>fragmentation</strong>. Chapter 84 faces it head on.</p></div></div><h3 id="s45-5">45.5 Borrowing in one dimension, using it as two</h3><div></div><p>Chapter 38 showed real multidimensional arrays such as <code>int m[3][4]</code>. But when the size is settled at run time that syntax cannot be used, and so the commonest shape in practice is <strong>to borrow one run and read it along two axes</strong>.</p><p>The heart of it is one line of arithmetic. Borrow <code>rows × cols</code> slots at once and find slot <code>(i, j)</code> as <code>i * cols + j</code>. That is exactly the layout of a real two-dimensional array (row-major, chapter 38) — so the performance is the same and the cache behaves the same way (chapter 11).</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch45/flat2d.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Allocating in one dimension and using it as two — the commonest shape in practice.</span></em>

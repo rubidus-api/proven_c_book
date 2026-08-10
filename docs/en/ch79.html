@@ -398,6 +398,84 @@ code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
   padding:.05em .35em; border-radius:3px; white-space:nowrap;
   font-weight:400; letter-spacing:0; }
 
+/* ── 조판 값 --- 견본에서 시험해 채택한 것들 (저자 지시 2026-08-10) ─────
+ *
+ * 아래는 견본(style-specimen)에서 눈으로 확인한 뒤 책에 들인 값이다.
+ * 여백은 일반적인 책의 숨에 맞추고, 선은 색 하나(#d5d5d5)로 모았다
+ * --- 표만 예외다(격자는 옅으면 칸이 안 읽힌다).
+ */
+
+/* 서두 다섯 칸 --- 표지 줄이 선에 눌려 있었다 */
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+
+/* 장치 안의 글도 조금 넉넉하게 */
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+
+/* 본문 --- 줄 사이와 문단 사이 */
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+
+/* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
+   경계를 말하되 글자보다 앞서지 않게. */
+h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+
+/* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
+   (저자 지시 2026-08-10, 웹판 견본) */
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+
+/* 저작권·연락처 --- 두 칸짜리 표는 줄 사이가 벌어질수록 짝이 흩어진다 */
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+
+/* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
+   (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
+.demo { border-color:#d5d5d5; }
+.demo > .demo-head { border-bottom-color:#d5d5d5; }
+
+/* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
+ * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:#d5d5d5; }
+
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:#d5d5d5; }
+
+/* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
+   여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:#d5d5d5; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+
+/* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
+   위의 `.dev *`(하나) 나 `.dev > .open-body`(둘) 보다 세다. 그래서 서두 칸의
+   *내용* 세로선만 var(--box-rule)=#9a9a9a 로 남아 혼자 진했다(저자 지적).
+   같은 자리를 같은 힘으로 눌러 준다. */
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:#d5d5d5; }
+
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
@@ -473,7 +551,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 
 [2] four threads bumping one counter, unprotected
   expected 800000
-  actual   329971   &lt;- updates were lost
+  actual   257255   &lt;- updates were lost
   (the number differs on every run --- that is what a race looks like)
 </code></pre></div></div><p>The first group of output is the whole vocabulary.</p><p><strong>A thread function has exactly one shape</strong> — <code>int (*)(void *)</code>. One argument in, one <code>int</code> out; if you need to pass several things, make a struct and hand over its address (chapter 46). The <code>int</code> it returns comes out through <code>thrd_join</code>’s second argument.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Function</strong></th><th><strong>What it does</strong></th><th><strong>Worth knowing</strong></th></tr><tr><td><code>thrd_create(&amp;t, fn, arg)</code></td><td>makes a strand and starts <code>fn(arg)</code> at once</td><td>returns <code>thrd_success</code>, <code>thrd_nomem</code> or <code>thrd_error</code> — <strong>which you must check</strong></td></tr><tr><td><code>thrd_join(t, &amp;rc)</code></td><td>waits for it and takes the return value</td><td>pass null if you do not want <code>rc</code></td></tr><tr><td><code>thrd_detach(t)</code></td><td>declares that you will not wait</td><td>a detached strand cannot be joined</td></tr><tr><td><code>thrd_current()</code></td><td>a handle on the current strand</td><td>compare only with <code>thrd_equal</code> — it is not an integer</td></tr><tr><td><code>thrd_yield()</code></td><td>gives up the slot</td><td>a hint, not a guarantee</td></tr><tr><td><code>thrd_sleep(&amp;dur, &amp;rem)</code></td><td>sleeps</td><td>two <code>struct timespec</code> (chapter 74)</td></tr><tr><td><code>thrd_exit(res)</code></td><td>ends this strand only</td><td>called in <code>main</code> it <strong>does not end the program</strong> — it waits for the others</td></tr></table></div><p class="float-caption">Table 80.1</p></figure><p>★ Do not treat a <code>thrd_t</code> as an integer. The standard does not say what it is, comparison goes through <code>thrd_equal</code> alone, and the standard offers no way to print one.</p><h3 id="s79-3">79.3 And then the value comes out wrong</h3><div></div><p>The second group of output is the most important screen in this chapter. Four strands each added 1 two hundred thousand times, so it should be 800,000; the five runs this book made gave between 230,000 and 290,000. <strong>Two of every three increments vanished.</strong></p><p>The cause is that one line is not one step.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>What <code>shared += 1</code> really does</strong></th><th><strong>When two strands overlap</strong></th></tr><tr><td><ol><li value="1">read the value from memory</li></ol></td><td>both read 100</td></tr><tr><td><ol><li value="2">add 1</li></ol></td><td>both make 101</td></tr><tr><td><ol><li value="3">write it back</li></ol></td><td>both write 101 — <strong>two additions, one increment</strong></td></tr></table></div><p class="float-caption">Table 80.2</p></figure><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“<code>+= 1</code> happens in one go, so it is safe”</strong></p><div class="dev-body"><p>Being one line in the source and being one step on the machine are separate things (chapter 13). And <strong>even one step would not be safe</strong> — each core holds its own cache (chapter 11), so even “who wrote first” is not settled.</p><p>★ In the standard’s words this is a <strong>data race</strong>, and a data race is undefined behaviour. Not “the value comes out a bit wrong” but <strong>anything at all may happen</strong> (chapter 52).</p></div></div><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>What trying to reproduce the race taught us — the compiler erased it first</p><div class="dev-body"><p>When this example was first written <strong>the value never came out wrong.</strong> Five runs, five times exactly 800000.</p><p>Not because there was no race but because there was <strong>no window for one</strong>. The compiler folded the two-hundred-thousand-turn loop into a single register and made it “add 200000 once” (chapter 13). Each strand touched memory effectively once, so there was nothing to overlap.</p><p>So the example’s <code>shared</code> was given a <code>volatile</code>. ★ <strong>Not to fix anything</strong> — to make every turn a real load and store so that <strong>the race could happen at all</strong>. <code>volatile</code> does not make the update safe. Why it does not is the first section of the next chapter.</p></div></div><h3 id="s79-4">79.4 Mutual exclusion — <code>mtx_*</code></h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch79/threads_sync.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> Sleeping and waking — mutual exclusion, condition variables, once, per-strand. </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>

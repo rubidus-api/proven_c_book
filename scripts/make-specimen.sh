@@ -19,18 +19,20 @@
 set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
 typst=${TYPST:-typst}
+command -v "$typst" >/dev/null 2>&1 || \
+  typst=<workspace>/usr/toolchains/typst/typst
 fonts=${FONT_PATH:-$root/../toolchains/fonts}
 ver=$(grep -m1 'Current:' "$root/VERSION.md" | sed 's/.*\*\*\(v[0-9.]*\)\*\*.*/\1/')
 mkdir -p "$root/dist" "$root/build"
 
 pdf="$root/dist/proven_c_book-$ver-style-specimen.pdf"
-"$typst" compile --root "$root" --font-path "$fonts" --input trial=1 \
+"$typst" compile --root "$root" --font-path "$fonts" --input trial=1 --input "ver=$ver 서식 예시" \
     "$root/book/style-specimen.typ" "$pdf"
 
 raw="$root/build/style-specimen.raw.html"
 # ★ mode=html --- 이것이 없으면 장치가 조판 분기를 타 클래스가 붙지 않는다
 "$typst" compile --root "$root" --font-path "$fonts" --features html \
-    --format html --input mode=html --input lang=ko --input trial=1 \
+    --format html --input mode=html --input lang=ko --input trial=1 --input "ver=$ver 서식 예시" \
     "$root/book/style-specimen.typ" "$raw" 2>/dev/null
 
 # ① 혼자 돌아다닐 판 --- 글꼴을 data: 로 심는다
@@ -41,6 +43,9 @@ python3 "$root/scripts/style-preview-html.py" "$raw" \
 python3 "$root/scripts/style-preview-html.py" "$raw" \
     "$root/docs/style-specimen.html" \
     "$root/styles/book.css" --font-prefix "fonts/"
+# ★ 텍스트 판 견본도 웹에 둔다 --- 릴리스를 내지 않고 보여 주려면 여기여야 한다
+#   (저자 지시 2026-08-10: 「견본만 다시 깃허브에 올려서 테스트」).
+cp "$pdf" "$root/docs/style-specimen.pdf"
 rm -f "$raw"
 
 pages=$(python3 -c "
