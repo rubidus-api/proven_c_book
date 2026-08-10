@@ -44,3 +44,20 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
 .demo { border-color:#c8c8c8; }
 .demo > .demo-head { border-bottom-color:#c8c8c8; }
+
+/* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
+ * 텍스트 판과 같은 값을 쓴다: 표지 줄 #a8a8a8 · 내용 칸 #cccccc.
+ * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:#a8a8a8; }
+
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:#cccccc; }
