@@ -443,7 +443,7 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .demo > .demo-head { border-bottom-color:#d5d5d5; }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #a8a8a8 · 내용 칸 #cccccc.
+ * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -451,13 +451,20 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#a8a8a8; }
+  border-left-color:#d5d5d5; }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#cccccc; }
+.deepqa .qa-a { border-left-color:#d5d5d5; }
+
+/* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
+   여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:#d5d5d5; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
 </style></head><body><main><div class="wrap"><header class="cover"><h1>Proven C Book</h1><p class="cover-sub">조판 견본 — 이 판의 서식을 한자리에</p><p><span class="badge">서식 예시(style specimen)</span></p><p class="cover-meta">이 판 · 표지는 cover-body / .cover</p><p class="cover-author">rubidus</p><p class="cover-links">rubidus@gmail.com github.com/rubidus-api/proven_c_book</p><div class="cover-blurb">표지의 각 줄에는 저마다 이름이 있다 — 제목 <code class="style-name">.cover h1</code>, 부제 <code class="style-name">.cover-sub</code>, 딱지 <code class="style-name">.badge</code>, 판 정보 <code class="style-name">.cover-meta</code>, 지은이 <code class="style-name">.cover-author</code>, 링크 <code class="style-name">.cover-links</code>, 그리고 이 소개글 <code class="style-name">.cover-blurb</code>.</div></header><p>차례 <code class="style-name">.toc / toc-row</code></p><div class="toc"><h4 class="toc-part">제1부 — 부의 제목은 이렇게 <code class="style-name">.toc-part / toc-part</code></h4><div class="toc-group"><a>1. 장 제목이 놓이는 줄</a> <a>1.1 절까지 편다 <code class="style-name">.toc a / toc-subrow</code></a> <a>1.2 점선은 흐리고 글자는 본문색이다</a> <a>2. 다음 장</a> <a>2.1 앞차례의 행간은 style.typ 이 정한다</a></div><h4 class="toc-part">부록과 찾아보기 <code class="style-name">.toc-group</code></h4><div class="toc-group"><a>부록 A. 이렇게 들어간다</a></div></div><h3>머리말 <code class="style-name">h2 / heading lv2</code></h3><div></div><p>이 자리는 번호가 없는 제목이다. 앞부속(머리말·저작권)과 뒤부속(부록·찾아보기)의 제목이 이 꼴을 쓴다. 본문 문단은 첫 줄을 한 글자 들여쓴다 <code class="style-name">p / set par(first-line-indent)</code>.</p><h3>저작권과 연락처</h3><div></div><dl class="metalist"><dt>지은이</dt><dd>rubidus</dd><dt>연락</dt><dd>rubidus@gmail.com</dd><dt>판</dt><dd>이 견본은 판마다 함께 나간다</dd><dt>이 표의 이름</dt><dd><code class="style-name">metalist / .metalist</code></dd></dl><h2>1 장 제목은 이렇게 보인다 <code class="style-name">h1 / heading lv1</code></h2><div></div><p>장 서두의 다섯 칸은 <strong>한 장치의 다섯 얼굴</strong>이다. 모두 <code>_open-block</code> 이 그리고, 갈래는 클래스로만 갈린다 — 표지 줄은 <code>p.dev-label</code>, 내용은 <code>div.open-body</code>. 아래 이름표는 각 칸의 표지 줄 <strong>안에</strong> 붙어 있다.</p><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것 <code class="style-name">prereq() → _open-block · div.dev.open.prereq > p.dev-label</code></p><div class="open-body"><div>1장 어딘가 · 기댄 개념 한 줄</div><div>2장 다른 곳 · 또 하나</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기 <code class="style-name">deepqa() → _open-block · div.dev.open.deepqa > p.dev-label</code></p><div class="open-body"><p>인출 문답의 질문은 이렇게 보인다. 굵은 왼쪽 선 아래 가는 선이 이어지는가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> 답은 이렇게. 문단이 둘일 때 선이 끊기지 않아야 한다.</p><p>두 번째 문단이다. 앞 문단과 같은 선 위에 이어져 있어야 한다.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락 <code class="style-name">why() → _open-block · div.dev.open.why > p.dev-label</code></p><div class="open-body">이 칸이 「이 장의 필요성과 맥락」이다. 표지 줄과 내용 사이에만 틈이 있고, 내용 안에서는 선이 이어진다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면 <code class="style-name">organizer() → _open-block · div.dev.open.organizer > p.dev-label</code></p><div class="open-body">「이 장이 끝나면」 칸. 서두 넷은 칸과 칸 사이에 가로선이 없어야 한다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문 <code class="style-name">chapter-questions() → _open-block · div.dev.open.questions > p.dev-label</code></p><div class="open-body"><ol class="qlist"><li>문답의 질문. 왼쪽 선이 굵은가? <code class="style-name">qa / .qa-box</code></li></ol></div></div><div></div><h3>1.1 절 제목 — 밑줄이 글자에 붙었는가 <code class="style-name">h2</code></h3><div></div><p>본문이다. 인라인 코드 <code>&lt;stdio.h></code> <code class="style-name">code / raw(block: false)</code> 가 둘레 글자보다 작아 보이지 않아야 한다. 줄 간격과 첫 줄 들여쓰기도 여기서 함께 본다. 각주는 이렇게 단다<span class="src-note">각주의 내용 <code class="style-name">note / .src-note → 장 끝의 「주」</code>. 텍스트 판에서는 이 쪽 아래에, 웹판에서는 장 끝에 모인다.</span> — 문장이 끊기지 않는다.</p><p>색인에 실을 낱말은 표시만 남기고 화면에는 아무것도 그리지 않는다<span id="idx-entry"></span> <code class="style-name">idx / metadata</code>.</p><h4>1.1.1 항 제목 — 더 가는 밑줄 <code class="style-name">h3</code></h4><div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 문답의 질문. 왼쪽 선이 굵은가? <code class="style-name">qa / .qa-box</code></p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> <code class="style-name">.qa-a</code> 선이 가늘어졌고, 질문과 답 사이가 떨어져 있는가?</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch33/fact.c</code></p><div class="demo-body"><pre><code data-lang="c"><span style="color: #d73948">#include</span> <span style="color: #198810">&lt;</span><span style="color: #198810">stdio.h</span><span style="color: #198810">></span>
 
 <span style="color: #d73948">int</span> <span style="color: #4b69c6">fact</span>(<span style="color: #d73948">int</span> n)
