@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">이 장의 차례</button><span class="sp"></span><span class="bar-nav"><a href="ch79.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch81.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch80.html">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s80-1"><span class="tf-no">80.1</span>잃어버린 갱신 — 눈으로 확인한다</a><a class="lv3" href="#s80-2"><span class="tf-no">80.2</span>volatile은 왜 답이 아닌가</a><a class="lv3" href="#s80-3"><span class="tf-no">80.3</span>원자적 타입과 연산</a><a class="lv3" href="#s80-4"><span class="tf-no">80.4</span>메모리 순서 — 건드리지 않는 것이 기본</a><a class="lv3" href="#s80-5"><span class="tf-no">80.5</span>잠금 없음(lock-free)이라는 말</a><a class="lv3" href="#s80-6"><span class="tf-no">80.6</span>쓸 자리와 쓰지 않을 자리</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">80장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch79.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch81.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch80.html">En</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s80-1"><span class="tf-no">80.1</span>잃어버린 갱신 — 눈으로 확인한다</a><a class="lv3" href="#s80-2"><span class="tf-no">80.2</span>volatile은 왜 답이 아닌가</a><a class="lv3" href="#s80-3"><span class="tf-no">80.3</span>원자적 타입과 연산</a><a class="lv3" href="#s80-4"><span class="tf-no">80.4</span>메모리 순서 — 건드리지 않는 것이 기본</a><a class="lv3" href="#s80-5"><span class="tf-no">80.5</span>잠금 없음(lock-free)이라는 말</a><a class="lv3" href="#s80-6"><span class="tf-no">80.6</span>쓸 자리와 쓰지 않을 자리</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-80">80 쪼개지지 않는 연산 — <code>&lt;stdatomic.h></code></h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>79장 갈래를 나누어 돌리기 · 갈래를 만들고, 경쟁을 눈으로 본 것</div><div>11장 기억의 분화 · 캐시와 기억의 층</div><div>44장 수명과 저장 기간 · 수명과 공유</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>12장에서 CPU가 한 박자에 여러 일을 하고 순서까지 바꿔 실행한다고 했고, 11장에서는 코어마다 자기 캐시를 들고 있다고 했다. 그러면 두 갈래가 같은 변수를 동시에 1씩 늘리면 — 결과는 2인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 아닐 수 있다. <code>x = x + 1</code>은 기계에게 한 걸음이 아니라 <strong>세 걸음</strong>(읽고, 더하고, 쓰고)이고, 두 갈래가 이 세 걸음을 서로 끼워 넣으면 둘이 같은 값을 읽어 같은 값을 쓴다 — 하나가 통째로 사라진다. 게다가 코어마다 캐시가 달라서 “썼는데 상대에게 안 보이는” 시차까지 겹친다. 이 장의 첫 예제가 그 손실을 실제로 세어 보인다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">11장에서 그린 기억의 사다리가 여기서 마지막 값을 한다 — 캐시와 층이 없으면 데이터 경쟁이 왜 「느려짐」이 아닌지 설명할 수 없다. 이 장을 라이브러리 정독 안에 둔 것도 뜻이 있다: 원자적 연산은 문법이 아니라 <strong>표준이 준 도구</strong>로 배우는 편이 오해가 적다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-220"></span>여러 갈래가 같은 기억을 동시에 만질 때 무슨 일이 일어나는지 보고, <span id="idx-entry-221"></span>C11이 그 자리에 들여온 도구 — 원자적 타입과 연산 — 을 익힌다. 왜 <span id="idx-entry-222"></span>데이터 경쟁이 “느려짐”이 아니라 <strong>계약 밖</strong>인지, <code>volatile</code>이 왜 답이 아닌지, 그리고 메모리 순서(memory order)라는 어려운 손잡이를 언제 건드리고 언제 두어야 하는지까지.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>compare_exchange</code>의 strong과 weak은 무엇이 다른가? 왜 “헛되이 실패” 하는 판이 따로 있는가?</li></ol></div></div><div></div><h3 id="s80-1">80.1 잃어버린 갱신 — 눈으로 확인한다</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch80/atomic.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 경쟁 상태와 원자적 연산 — 같은 프로그램을 두 번 돌린다. </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdatomic.h</span><span class="tok-s">></span>
@@ -399,7 +403,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
     <strong><span class="tok-k">return</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span>
 <span class="tok-x">}</span>
 </code></pre></div></div><div class="demo demo-out"><p class="demo-head">실행 결과</p><div class="demo-body"><pre><code>expected  : 800000
-unprotected: 302386  &lt;- we lost some
+unprotected: 275271  &lt;- we lost some
 atomic    : 800000
 
 is atomic_long lock-free? yes

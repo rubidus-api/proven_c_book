@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">이 장의 차례</button><span class="sp"></span><span class="bar-nav"><a href="ch91.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch93.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch92.html">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s92-1"><span class="tf-no">92.1</span>네 컨테이너의 한살이</a><a class="lv3" href="#s92-2"><span class="tf-no">92.2</span>자라는 배열</a><a class="lv3" href="#s92-3"><span class="tf-no">92.3</span>침습적 리스트 — 할당 없는 연결</a><a class="lv3" href="#s92-4"><span class="tf-no">92.4</span>링 버퍼 — 고정 크기의 흐름</a><a class="lv3" href="#s92-5"><span class="tf-no">92.5</span>해시 맵, 그리고 공격받는 자료구조</a><a class="lv3" href="#s92-6"><span class="tf-no">92.6</span>최악을 보장하는 정렬</a><a class="lv3" href="#s92-7"><span class="tf-no">92.7</span>바이트를 글자로 — 해시와 인코딩</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">92장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch91.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch93.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch92.html">En</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s92-1"><span class="tf-no">92.1</span>네 컨테이너의 한살이</a><a class="lv3" href="#s92-2"><span class="tf-no">92.2</span>자라는 배열</a><a class="lv3" href="#s92-3"><span class="tf-no">92.3</span>침습적 리스트 — 할당 없는 연결</a><a class="lv3" href="#s92-4"><span class="tf-no">92.4</span>링 버퍼 — 고정 크기의 흐름</a><a class="lv3" href="#s92-5"><span class="tf-no">92.5</span>해시 맵, 그리고 공격받는 자료구조</a><a class="lv3" href="#s92-6"><span class="tf-no">92.6</span>최악을 보장하는 정렬</a><a class="lv3" href="#s92-7"><span class="tf-no">92.7</span>바이트를 글자로 — 해시와 인코딩</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-92">92 컨테이너와 알고리즘</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>46장 구조체 · 구조체</div><div>45장 동적 메모리 · 동적 배열</div><div>88장 기반 · 뷰와 경계</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>37장에서 C의 배열은 크기가 컴파일 시간에 정해지고, 45장에서 <code>realloc</code> 으로 늘릴 수 있다고 배웠다. 그러면 “자라는 배열”을 직접 만들 때 가장 틀리기 쉬운 자리는 어디인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 세 곳이다. 첫째, <strong>늘릴 크기 계산</strong> — 88장에서 본 곱셈 감김이 여기서 일어난다. 둘째, <strong>실패했을 때의 상태</strong> — <code>realloc</code>이 실패하면 원본 포인터는 그대로 유효한데, 반환값을 곧바로 원본 변수에 대입하는 흔한 코드는 그 원본을 잃어버린다(누수다). 셋째, <strong>늘어난 뒤의 포인터</strong> — 원소를 가리키던 포인터는 재할당 후 무효가 된다. 컨테이너를 직접 만들 때마다 이 셋을 다시 맞히는 것보다, 한 번 제대로 만든 것을 쓰는 편이 낫다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">여기까지 오면 재료가 다 갖춰진다 — 에러(86), 뷰(87), 할당자(88). 컨테이너는 그 셋을 동시에 쓰는 첫 자리라, 앞의 어느 장으로도 당길 수 없다. 그리고 85장 다섯째 버그(검사되지 않는 콜백)의 답도 여기 있다: 정렬과 탐색이 콜백을 받는 자리이기 때문이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-247"></span>여럿을 담는 도구들이다 — 자라는 배열, 침습적 리스트, 링 버퍼, 해시 맵. 그리고 85장의 다섯째 버그(검사되지 않는 콜백)와 그 자리에 딸린 성능 함정에 대한 답으로, <strong>최악에도 보장이 있는</strong> 정렬과 <strong>공격을 견디는</strong> 해시를 본다. 37장의 배열과 46장의 구조체가 여기서 실전 부품이 된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>키드 해시를 쓰면 얼마나 느려지는가? 그리고 OS가 없으면 무작위 비밀은 어디서 오는가?</li></ol></div></div><div></div><h3 id="s92-1">92.1 네 컨테이너의 한살이</h3><p>먼저 넷을 한 화면에서 본다. 만들고, 넣고, 훑고, 되돌리는 과정이 서로 어떻게 다른지가 이 예제에 다 들어 있다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch92/tour.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 네 컨테이너의 한살이 — 만들고, 넣고, 훑고, 되돌린다.</span></em>
 <em><span class="tok-c">   array · list · ring · map 을 한 화면에서 비교한다. </span></em><em><span class="tok-c">*/</span></em>

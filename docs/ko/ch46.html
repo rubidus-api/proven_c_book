@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">이 장의 차례</button><span class="sp"></span><span class="bar-nav"><a href="ch45.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch47.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch46.html">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s46-1"><span class="tf-no">46.1</span>선언, 초기화, 접근</a><a class="lv3" href="#s46-2"><span class="tf-no">46.2</span>sizeof의 첫 놀라움 — 멤버 크기의 합이 아니다</a><a class="lv3" href="#s46-3"><span class="tf-no">46.3</span>통째로 0으로 — { 0 }과 { }</a><a class="lv4" href="#s46-3-1"><span class="tf-no">46.3.1</span>무엇이 보장되는가</a><a class="lv4" href="#s46-3-2"><span class="tf-no">46.3.2</span>{0}과 {}의 미세한 차이 — 패딩</a><a class="lv3" href="#s46-4"><span class="tf-no">46.4</span>구조체는 값이다</a><a class="lv4" href="#s46-4-1"><span class="tf-no">46.4.1</span>대입은 되는데 비교는 안 되는 이유</a><a class="lv3" href="#s46-5"><span class="tf-no">46.5</span>머리와 데이터를 한 덩어리로 — 유연 배열 멤버</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">46장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch45.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch47.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch46.html">En</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s46-1"><span class="tf-no">46.1</span>선언, 초기화, 접근</a><a class="lv3" href="#s46-2"><span class="tf-no">46.2</span>sizeof의 첫 놀라움 — 멤버 크기의 합이 아니다</a><a class="lv3" href="#s46-3"><span class="tf-no">46.3</span>통째로 0으로 — { 0 }과 { }</a><a class="lv4" href="#s46-3-1"><span class="tf-no">46.3.1</span>무엇이 보장되는가</a><a class="lv4" href="#s46-3-2"><span class="tf-no">46.3.2</span>{0}과 {}의 미세한 차이 — 패딩</a><a class="lv3" href="#s46-4"><span class="tf-no">46.4</span>구조체는 값이다</a><a class="lv4" href="#s46-4-1"><span class="tf-no">46.4.1</span>대입은 되는데 비교는 안 되는 이유</a><a class="lv3" href="#s46-5"><span class="tf-no">46.5</span>머리와 데이터를 한 덩어리로 — 유연 배열 멤버</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-46">46 구조체</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>23장 변수 선언 · 변수 선언</div><div>38장 배열 · 여러 값을 한 이름으로</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>23장에서 “타입은 값의 집합 + 연산의 약속”이라 했고, 지금까지 쓴 타입은 전부 미리 있는 것들(int, double, char, 포인터)이었다. 그러면 프로그래머가 <strong>새 타입을 만든다</strong>는 것은 무슨 뜻인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 기억의 모양을 새로 정하고 이름을 붙이는 일이다. “정수 둘이 나란히 <span id="idx-entry-159"></span>있는 덩어리를 점(point)이라 부르겠다”고 선언하면, 그 순간부터 point는 변수를 만들고 함수에 넘기고 배열로 늘어놓을 수 있는 어엿한 타입이 된다. 38장의 배열이 <strong>같은 타입의 반복</strong>이었다면, 구조체(struct)는 <strong>다른 타입의 묶음</strong>이다 — 그리고 그 묶음에 이름이 붙는 순간, 프로그램의 어휘가 늘어난다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">5부에서 「타입을 만드는 선언은 기억 모델을 갖춘 뒤에」라며 미뤄 둔 약속을 갚는다. 7부를 통째로 기다린 이유가 그것이다 — 구조체는 결국 기억의 배치 문제이고, 포인터와 배열을 모르면 <code>-></code> 도 배열 멤버도 설명할 수 없다. 8부가 7부 바로 뒤인 것은 우연이 아니다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">제5부에서 “타입을 만드는 선언은 메모리 모델을 갖춘 뒤”라며 미뤄 둔 <span id="idx-entry-160"></span>약속을 지킨다. 여러 값을 하나로 묶는 타입 — 구조체다. 선언과 초기화, 두 가지 접근 표기(<code>.</code>와 <code>-></code>), 그리고 구조체가 값으로 오가는 방식까지.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 항상 큰 멤버부터 적어야 하는가?</li><li>포인터가 “0으로 채워진다”와 “널이 된다”는 같은 말 아닌가?</li><li><code>struct point</code>라고 매번 <code>struct</code>를 붙이는 것이 번거롭다 — 줄일 수 없는가?</li><li>구조체 안에 자기 자신을 멤버로 넣을 수 있는가 — 리스트 같은 것을 만들려면 필요할 것 같은데.</li></ol></div></div><div></div><p>(26장의 갈래에서 구조체는 <strong>집합체 타입</strong>이자 <strong>파생 타입</strong>이었다. 이 장은 그 칸의 속이다.)</p><h3 id="s46-1">46.1 선언, 초기화, 접근</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch46/point.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 

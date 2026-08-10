@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">이 장의 차례</button><span class="sp"></span><span class="bar-nav"><a href="ch28.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch30.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch29.html">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s29-1"><span class="tf-no">29.1</span>규칙 1 — 정수 승격</a><a class="lv3" href="#s29-2"><span class="tf-no">29.2</span>규칙 2 — 통상 산술 변환</a><a class="lv3" href="#s29-3"><span class="tf-no">29.3</span>규칙 3 — 가변 인자의 기본 진급</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">29장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch28.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch30.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch29.html">En</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s29-1"><span class="tf-no">29.1</span>규칙 1 — 정수 승격</a><a class="lv3" href="#s29-2"><span class="tf-no">29.2</span>규칙 2 — 통상 산술 변환</a><a class="lv3" href="#s29-3"><span class="tf-no">29.3</span>규칙 3 — 가변 인자의 기본 진급</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-29">29 암묵적 변환(implicit conversion) — 승격과 통상 산술 변환</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>26장 타입의 갈래 · 산술 타입이라는 낱말</div><div>27장 정수 · 정수형마다 폭이 다르다</div><div>28장 정수의 연산 · 연산은 같은 타입끼리 일어난다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>7장에서 부호 확장(8→16비트 넓히기)을 배웠고, 28장 끝에서 “작은 그릇의 값은 계산 전에 자동으로 넓혀진다”고 스쳤다. 그러면 <code>char + char</code>의 결과 타입은 char인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 아니다 — int다. 그리고 이 사실이 이 장의 출발점이다. C의 산술 연산은 <strong>작은 정수 타입 위에서 일어나지 않는다</strong>. 계산 전에 모두 int(또는 더 큰 타입)로 넓힌 뒤 계산하고, 결과도 그 넓은 타입이다. 왜 그런지, 어디까지 그런지가 이 장의 내용이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">이 장이 30장의 비교보다 앞에 오는 것이 중요하다. 비교도, 산술도, 함수 호출도 전부 <strong>말없는 변환</strong>을 거치는데, 그것을 모르고 비교를 배우면 「왜 이 비교가 참인가」를 설명할 도리가 없다. 27·28장에서 폭이 다른 정수들을 만난 직후이자, 그것들이 서로 만나기 직전 — 여기가 유일하게 맞는 자리다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">C는 타입이 다른 값들을 만나게 하면 <strong>말없이</strong> 변환한다. 이 장은 그 <span id="idx-entry-112"></span>보이지 않는 변환들을 한자리에 모은다 — 정수 승격, 통상 산술 변환(usual arithmetic conversions), <span id="idx-entry-113"></span>그리고 가변 인자(variadic arguments)의 기본 진급까지. 흩어 놓으면 각각이 수수께끼지만, 모아 놓으면 하나의 규칙 체계다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>이 규칙들을 다 외워야 하는가?</li></ol></div></div><div></div><span id="idx-entry-114"></span><p>이 장이 내내 쓰는 낱말 — <strong>산술 타입</strong>, <strong>정수 타입</strong>, <strong>정수 승격(integer promotion)의 대상</strong> — 은 26장에서 정의한 그대로다. 헷갈리면 그 갈래를 다시 펴 보면 된다.</p><h3 id="s29-1">29.1 규칙 1 — 정수 승격</h3><p><strong>정수 승격</strong>(integer promotion): <code>char</code>, <code>short</code>, <code>bool</code>, 비트 필드처럼 int보다 작은 정수 타입의 값이 산술 연산에 참여하면, 계산 전에 <strong>int로 넓혀진다</strong>(int가 그 값들을 다 담을 수 있으면 int로, 아니면 unsigned int).</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch29/conv.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>

@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">Contents of this chapter</button><span class="sp"></span><span class="bar-nav"><a href="ch44.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch41.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch45.html">한국어</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s45-1"><span class="tf-no">45.1</span>Borrowing, and giving back</a><a class="lv3" href="#s45-2"><span class="tf-no">45.2</span>How to write a malloc call — an old argument</a><a class="lv4" href="#s45-2-1"><span class="tf-no">45.2.1</span>Four reasons for form 1</a><a class="lv4" href="#s45-2-2"><span class="tf-no">45.2.2</span>The case for form 2 — CERT MEM02-C</a><a class="lv4" href="#s45-2-3"><span class="tf-no">45.2.3</span>Form 3 and the “C++ compatibility” reason — is it real?</a><a class="lv3" href="#s45-3"><span class="tf-no">45.3</span>The alignment of the address returned — because it does not know what will go in</a><a class="lv3" href="#s45-4"><span class="tf-no">45.4</span>The price of two cheap-looking lines — why allocation is expensive</a><a class="lv3" href="#s45-5"><span class="tf-no">45.5</span>Borrowing in one dimension, using it as two</a><a class="lv3" href="#s45-6"><span class="tf-no">45.6</span>Ownership — who is responsible for giving it back</a><a class="lv3" href="#s45-7"><span class="tf-no">45.7</span>Closing Part VII</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 45 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch44.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch41.html" title="Next" aria-label="Next">→</a></span><a href="toc.html">Detailed contents</a><a href="../ko/ch45.html">Ko</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s45-1"><span class="tf-no">45.1</span>Borrowing, and giving back</a><a class="lv3" href="#s45-2"><span class="tf-no">45.2</span>How to write a malloc call — an old argument</a><a class="lv4" href="#s45-2-1"><span class="tf-no">45.2.1</span>Four reasons for form 1</a><a class="lv4" href="#s45-2-2"><span class="tf-no">45.2.2</span>The case for form 2 — CERT MEM02-C</a><a class="lv4" href="#s45-2-3"><span class="tf-no">45.2.3</span>Form 3 and the “C++ compatibility” reason — is it real?</a><a class="lv3" href="#s45-3"><span class="tf-no">45.3</span>The alignment of the address returned — because it does not know what will go in</a><a class="lv3" href="#s45-4"><span class="tf-no">45.4</span>The price of two cheap-looking lines — why allocation is expensive</a><a class="lv3" href="#s45-5"><span class="tf-no">45.5</span>Borrowing in one dimension, using it as two</a><a class="lv3" href="#s45-6"><span class="tf-no">45.6</span>Ownership — who is responsible for giving it back</a><a class="lv3" href="#s45-7"><span class="tf-no">45.7</span>Closing Part VII</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-44">45 Dynamic memory</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 44, Lifetime and storage duration · the limits of automatic lifetime</div><div>chapter 2, The regions of memory · the warehouse (the heap)</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 44 taught automatic lifetime (dies with the function) and static lifetime (lives for the whole program). Then memory that is “sized according to input and must live only as long as needed” — in which of the two does it go?</p><div class="qa-a"><p><span class="dev-label">A.</span> Neither fits. We need memory whose size is settled at run time and whose lifetime is decided by the program’s logic — so there is a third place: <span id="idx-entry-99"></span><span id="idx-entry-100"></span><strong>allocated storage duration</strong>, the warehouse commonly called the <strong>heap</strong>. The rule of this place differs decisively from the other two — <strong>the programmer directly orders its birth and its death.</strong></p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The last chapter of part 7 and the completion of the memory picture. The heap comes last not because it is hardest but because it is <strong>what can be deferred longest</strong> — the preceding ten chapters all ran without it. So by the time you arrive, the question “why borrow and return by hand at all?” has formed on its own.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">Part VII’s last place — memory whose size is settled at run time and which is <span id="idx-entry-101"></span>kept alive as long as you wish. <code>malloc</code> and <code>free</code>, the notion of ownership, and this world’s three representative accidents (leak, double free, use after free). The layout of memory is completed here.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Is there no place, then, where the cast is right?</li><li>So which does this book use?</li><li>Could an array of pointers (<code>int **</code>) not be used, keeping the <code>m[i][j]</code> syntax?</li><li>Is it then best to avoid dynamic memory as far as possible?</li></ol></div></div><div></div><h3 id="s45-1">45.1 Borrowing, and giving back</h3><p>The syntax is two functions. <code>malloc(number of bytes)</code> borrows that many contiguous slots from the warehouse and returns their starting address, and <code>free(address)</code> gives back what was borrowed.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch45/dyn.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
@@ -521,8 +525,8 @@ of 8 one-byte requests, ones breaking the default alignment: 0
 address gap between two neighbouring blocks: 32 bytes (for a request of 1)
 
 300000 iterations
-  malloc + free each time :  0.0036 s  ( 12.1 ns each)
-  borrowed once, reused   :  0.0006 s  (  2.0 ns each)
+  malloc + free each time :  0.0037 s  ( 12.2 ns each)
+  borrowed once, reused   :  0.0006 s  (  2.1 ns each)
   a stack array           :  0.0007 s  (  2.2 ns each)
 
 (total 114739248 — a value used so the computation is not erased)

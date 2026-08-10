@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">Contents of this chapter</button><span class="sp"></span><span class="bar-nav"><a href="ch49.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch51.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch50.html">한국어</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s50-1"><span class="tf-no">50.1</span>Choosing a type, and comparing</a><a class="lv3" href="#s50-2"><span class="tf-no">50.2</span>Special values — infinity and NaN</a><a class="lv4" href="#s50-2-1"><span class="tf-no">50.2.1</span>Opening the bits directly</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 50 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch49.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch51.html" title="Next" aria-label="Next">→</a></span><a href="toc.html">Detailed contents</a><a href="../ko/ch50.html">Ko</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s50-1"><span class="tf-no">50.1</span>Choosing a type, and comparing</a><a class="lv3" href="#s50-2"><span class="tf-no">50.2</span>Special values — infinity and NaN</a><a class="lv4" href="#s50-2-1"><span class="tf-no">50.2.1</span>Opening the bits directly</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-50">50 Real numbers — the mathematics of approximation</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 8, Representing numbers · the contract called IEEE 754</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 8 said <code>0.1 + 0.2</code> and <code>0.3</code> are neighbours one final bit (1 ulp) apart, and that comparison must change into “are they close enough?”. Then how is the criterion of “enough” — the epsilon — decided?</p><div class="qa-a"><p><span class="dev-label">A.</span> That it must vary with the size of the values is the lesson of chapter 8′s third incident. Near 0 the ticks are dense so a small fixed value will do, but around <math><msup><mn>10</mn><mn>16</mn></msup></math> the tick spacing itself exceeds 1 and the same criterion becomes meaningless. So practice keeps two — <strong>absolute error</strong> (for near 0) and <strong>relative error</strong> (proportional to size). This chapter’s demonstration shows both side by side.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The approximation learned on paper in chapter 8 comes down into C code forty-two chapters later. The long wait is because saying the right way to compare floats requires operators and conversions (chapters 49 and 29) to be in place. Being in part 9 has the same reason: this is not new syntax but <strong>a deep corner of what is already known</strong>.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">The world of approximation learned on the page in chapter 8 finally comes down <span id="idx-entry-111"></span>into C code. Choosing between <code>float</code> and <code>double</code>, the correct way to compare (epsilon — absolute and relative), and the special values (infinity, NaN). Chapter 8′s three incidents are confirmed by execution results.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Should real numbers then not be used for things like money?</li></ol></div></div><div></div><h3 id="s50-1">50.1 Choosing a type, and comparing</h3><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch50/eps.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">math.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>

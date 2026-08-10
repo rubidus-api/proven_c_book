@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">이 장의 차례</button><span class="sp"></span><span class="bar-nav"><a href="ch88.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch90.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch89.html">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s89-1"><span class="tf-no">89.1</span>할당자는 값이다</a><a class="lv3" href="#s89-2"><span class="tf-no">89.2</span>세 가지 출처를 갈아 끼우기</a><a class="lv3" href="#s89-3"><span class="tf-no">89.3</span>아레나 — 수명이 같은 것들을 한 번에</a><a class="lv3" href="#s89-4"><span class="tf-no">89.4</span>어느 것을 고를 것인가</a><a class="lv3" href="#s89-5"><span class="tf-no">89.5</span>소유와 빌림, 그리고 자기를 가리키는 상태</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">89장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch88.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch90.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch89.html">En</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s89-1"><span class="tf-no">89.1</span>할당자는 값이다</a><a class="lv3" href="#s89-2"><span class="tf-no">89.2</span>세 가지 출처를 갈아 끼우기</a><a class="lv3" href="#s89-3"><span class="tf-no">89.3</span>아레나 — 수명이 같은 것들을 한 번에</a><a class="lv3" href="#s89-4"><span class="tf-no">89.4</span>어느 것을 고를 것인가</a><a class="lv3" href="#s89-5"><span class="tf-no">89.5</span>소유와 빌림, 그리고 자기를 가리키는 상태</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-89">89 할당은 매개변수다</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>45장 동적 메모리 · 동적 메모리</div><div>84장 할당자의 속 · 할당자의 속</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>45장에서 <code>malloc</code>으로 얻은 기억은 누군가 정확히 한 번 <code>free</code>해야 하고, 그 “누군가”를 정하는 것이 프로그램의 설계라고 했다. 그러면 함수 하나만 보고 “이 함수가 기억을 할당하는가”를 알 방법이 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 표준 C에는 없다. <code>malloc</code>은 어디서든 부를 수 있으므로 어떤 함수든 몰래 할당할 수 있고, 시그니처는 그 사실을 말하지 않는다. proven의 답은 규칙 하나로 그 정보를 시그니처에 되돌리는 것이다 — <strong>할당자를 인자로 받지 않는 함수는 할당하지 않는다.</strong> 이 규칙이 지켜지면 시그니처를 읽는 것만 으로 “이 함수는 기억을 잡을 수 있다”를 알 수 있다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">어휘 다음이 기억의 출처다. 이 순서인 이유는 뒤의 모든 자료구조가 「어디서 기억을 얻는가」를 인자로 받기 때문이다 — 할당자를 나중에 설명하면 90장부터 매 함수 서명에 설명 없는 매개변수가 하나씩 붙는다. 45장과 84장에서 본 힙의 사정이 여기서 설계 결정으로 바뀐다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">85장의 넷째 버그 — 불분명한 소유권 — 에 대한 답이다. 기억의 출처를 값으로 다루는 <strong>할당자</strong>(allocator), 수명이 같은 것들을 한꺼번에 되돌리는 <span id="idx-entry-239"></span>아레나(arena), 그리고 소유와 빌림을 타입으로 가르는 규칙까지. 45장에서 배운 힙의 위험이 여기서 설계로 정리된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>heap</code>, <code>arena</code>, <code>pool</code> 말고 내가 직접 할당자를 만들 수도 있는가?</li><li>이게 왜 그렇게 중요한 성질인가? 어차피 대부분은 힙을 쓸 텐데.</li><li>그러면 대가는 무엇인가?</li></ol></div></div><div></div><h3 id="s89-1">89.1 할당자는 값이다</h3><p><code>proven_allocator_t</code>는 구조체 하나다 — 문맥 포인터와 함수 포인터 셋 (할당·재할당·해제). 특별한 전역도, 등록 절차도 없다. 그냥 값이라서 인자로 넘기고, 구조체에 담고, 함수에서 돌려줄 수 있다. 59장에서 본 <strong>가상 함수 표</strong>가 그대로 여기 있다.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
     <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>ctx<span class="tok-x">;</span>                        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이 할당자의 상태(아레나면 아레나 자신) </span></em><em><span class="tok-c">*/</span></em>

@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">이 장의 차례</button><span class="sp"></span><span class="bar-nav"><a href="ch50.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch52.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch51.html">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s51-1"><span class="tf-no">51.1</span>오류는 값이다 — C의 방식</a><a class="lv3" href="#s51-2"><span class="tf-no">51.2</span>계약을 코드로 — assert와 방어</a><a class="lv3" href="#s51-3"><span class="tf-no">51.3</span>const — 가장 값싼 계약</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">51장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch50.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch52.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch51.html">En</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s51-1"><span class="tf-no">51.1</span>오류는 값이다 — C의 방식</a><a class="lv3" href="#s51-2"><span class="tf-no">51.2</span>계약을 코드로 — assert와 방어</a><a class="lv3" href="#s51-3"><span class="tf-no">51.3</span>const — 가장 값싼 계약</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-51">51 오류와 계약</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>33장 함수의 의미 · 함수가 실패를 알리는 방법</div><div>43장 안전한 입력 · 실패를 값으로 다루는 다섯 규율</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>33장 끝에서 <code>fact</code> 함수가 “암묵의 약속”(n은 0 이상, 13 이상이면 넘침) 위에 서 있다고 했다. 그런데 그 약속은 코드 어디에도 적혀 있지 않았다 — 그러면 그것은 존재하는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 존재하지만, <strong>지켜지지 않는 상태로</strong> 존재한다 — 그것이 문제의 핵심이다. 모든 함수에는 암묵의 계약이 있다: 어떤 입력에 대해 제대로 동작하는가 (전제조건), 성공하면 무엇을 보장하는가(후조건). 그 계약이 문서와 코드 어디에도 없으면, 계약 위반은 조용히 지나가 나중에 엉뚱한 곳에서 터진다. 이 장은 계약을 <strong>드러내는</strong> 방법들의 이야기다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">33장에서 심은 계약의 씨앗과 43장에서 세운 다섯 규율이 여기서 하나의 원리로 모인다. 이 장이 52장 바로 앞인 것이 중요하다 — 「계약이란 무엇인가」를 정해 두어야 「계약을 어기면 무슨 일이 일어나는가」를 말할 수 있기 때문이다. 두 장이 한 쌍이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-173"></span>33장에서 심은 계약의 씨앗이 자란다 — 함수는 무엇을 요구하고 무엇을 약속하는가(전제조건·후조건), 실패를 어떻게 알리는가(C의 방식: 오류는 값이다), 그리고 그 값을 반드시 확인하게 만드는 장치들까지. 43장에서 세운 다섯 규율이 여기서 원리로 정리된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>43장의 다섯 규율은 이 원리와 어떻게 이어지는가?</li></ol></div></div><div></div><h3 id="s51-1">51.1 오류는 값이다 — C의 방식</h3><p>많은 현대 언어가 실패를 위한 별도 통로(예외)를 갖고 있지만, C에는 없다. C에서 실패는 <strong>반환값으로 알린다</strong> — 함수의 결과 자체가 “성공했는가”를 담고 나오는 것이다. 관행은 세 갈래다.</p><ul><li><strong>성공/실패 불리언</strong> + 결과는 포인터로 받기(35장의 <code>&amp;</code> 관용구).</li><li><strong>특별한 값</strong>으로 실패 표시 — <code>malloc</code>의 널(45장), <code>fgets</code>의 널, 음수 반환 등.</li><li><strong>오류 코드</strong>를 돌려주고 0을 성공으로 — 시스템 호출 계열의 전통.</li></ul><p>첫 갈래를 시연으로 본다. 28장에서 배운 “0 나누기는 계약 밖”이라는 사실을, 함수 계약으로 다스리는 모습이다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch51/errval.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>

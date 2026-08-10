@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">이 장의 차례</button><span class="sp"></span><span class="bar-nav"><a href="ch81.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch83.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch82.html">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s82-1"><span class="tf-no">82.1</span>무엇이 승격됐나</a><a class="lv3" href="#s82-2"><span class="tf-no">82.2</span>bool — 무엇을 막는가</a><a class="lv3" href="#s82-3"><span class="tf-no">82.3</span>nullptr — 이름 바꾸기가 아니다</a><a class="lv3" href="#s82-4"><span class="tf-no">82.4</span>나머지 승격과 새 낱말</a><a class="lv3" href="#s82-5"><span class="tf-no">82.5</span>기존 코드를 어떻게 옮기는가</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">82장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch81.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch83.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch82.html">En</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s82-1"><span class="tf-no">82.1</span>무엇이 승격됐나</a><a class="lv3" href="#s82-2"><span class="tf-no">82.2</span>bool — 무엇을 막는가</a><a class="lv3" href="#s82-3"><span class="tf-no">82.3</span>nullptr — 이름 바꾸기가 아니다</a><a class="lv3" href="#s82-4"><span class="tf-no">82.4</span>나머지 승격과 새 낱말</a><a class="lv3" href="#s82-5"><span class="tf-no">82.5</span>기존 코드를 어떻게 옮기는가</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-82">82 매크로에서 키워드로 — <code>bool</code>·<code>nullptr</code>과 그 동료들</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>78장 새 표준이 보탠 것과 <code>*_s</code> 논쟁 · 표준이 보탠 것들</div><div>30장 불리언과 비교 · 참·거짓의 타입</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>78장에서 C23이 <code>&lt;stdbool.h></code>를 사실상 불필요하게 만들었고 <code>nullptr</code>이 들어왔다고 표로만 지나갔다. 그런데 매크로로 잘 돌아가던 것을 왜 굳이 언어에 넣는가 — 이름만 바뀐 것 아닌가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 이름만 바뀐 것이 아니다. 매크로는 <strong>전처리기가 글자를 바꾸는 것</strong>이라 <span id="idx-entry-226"></span>타입도 범위(scope)도 없고, 사용자가 <code>#undef</code>할 수도, 다른 뜻으로 다시 정의할 수도 있다. 키워드는 <strong>언어의 문법 요소</strong>라 타입이 있고, 진단을 받을 수 있고, 아무도 재정의할 수 없다. 이 차이가 실제로 사고를 막는 자리가 이 장의 내용이다 — 특히 <code>nullptr</code>은 이름 바꾸기가 아니라 <strong>새 타입</strong> 이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">C23 이 언어에 손댄 자리를 라이브러리 부의 끝에 두는 것이 이상해 보일 수 있다. 그러나 <code>bool</code>·<code>nullptr</code> 은 오랫동안 <strong>헤더의 매크로</strong>였고, 그것이 키워드가 된 이야기라 라이브러리와 언어의 경계에 놓이는 것이 맞다. 78장의 「표준이 보탠 것」 바로 뒤가 그 자리다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-227"></span>C23이 언어에 손댄 가장 눈에 띄는 변화를 다룬다. 오랫동안 헤더의 <span id="idx-entry-228"></span>매크로로 흉내 내던 것들 — <code>bool</code>·<code>true</code>·<code>false</code>, <code>static_assert</code>, <code>alignas</code>, <code>thread_local</code> — 이 왜 키워드로 올라섰는지, <code>nullptr</code>이 무엇을 막으려고 새로 생겼는지, 어떤 규칙과 제한이 따라오는지, 그리고 기존 코드를 어떤 순서로 옮기는지까지.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>bool</code>을 <code>printf</code>로 찍을 때 어떤 서식을 쓰는가?</li><li>옛 표준으로 계속 컴파일해야 하는 프로젝트라면, 이 장은 남의 이야기인가?</li></ol></div></div><div></div><h3 id="s82-1">82.1 무엇이 승격됐나</h3><div class="demo demo-src"><p class="demo-head"><code>examples/ch82/keywords.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> C23 에서 키워드로 승격된 것들 — 무엇이 달라졌나 </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>

@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">이 장의 차례</button><span class="sp"></span><span class="bar-nav"><a href="ch44.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch46.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch45.html">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s45-1"><span class="tf-no">45.1</span>빌리고, 돌려준다</a><a class="lv3" href="#s45-2"><span class="tf-no">45.2</span>malloc을 어떻게 적을 것인가 — 오래된 논쟁</a><a class="lv4" href="#s45-2-1"><span class="tf-no">45.2.1</span>①이 권장되는 이유 넷</a><a class="lv4" href="#s45-2-2"><span class="tf-no">45.2.2</span>②를 권하는 쪽의 근거 — CERT MEM02-C</a><a class="lv4" href="#s45-2-3"><span class="tf-no">45.2.3</span>③과 「C++ 호환」이라는 이유 — 정말 그런가</a><a class="lv3" href="#s45-3"><span class="tf-no">45.3</span>돌려받은 주소의 정렬 — 무엇을 담을지 모르므로</a><a class="lv3" href="#s45-4"><span class="tf-no">45.4</span>값싸 보이는 두 줄의 값 — 할당은 왜 비싼가</a><a class="lv3" href="#s45-5"><span class="tf-no">45.5</span>1차원으로 빌려 2차원으로 쓰기</a><a class="lv3" href="#s45-6"><span class="tf-no">45.6</span>소유 — 누가 돌려줄 책임을 지는가</a><a class="lv3" href="#s45-7"><span class="tf-no">45.7</span>제7부를 닫으며</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">45장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch44.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch46.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch45.html">En</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s45-1"><span class="tf-no">45.1</span>빌리고, 돌려준다</a><a class="lv3" href="#s45-2"><span class="tf-no">45.2</span>malloc을 어떻게 적을 것인가 — 오래된 논쟁</a><a class="lv4" href="#s45-2-1"><span class="tf-no">45.2.1</span>①이 권장되는 이유 넷</a><a class="lv4" href="#s45-2-2"><span class="tf-no">45.2.2</span>②를 권하는 쪽의 근거 — CERT MEM02-C</a><a class="lv4" href="#s45-2-3"><span class="tf-no">45.2.3</span>③과 「C++ 호환」이라는 이유 — 정말 그런가</a><a class="lv3" href="#s45-3"><span class="tf-no">45.3</span>돌려받은 주소의 정렬 — 무엇을 담을지 모르므로</a><a class="lv3" href="#s45-4"><span class="tf-no">45.4</span>값싸 보이는 두 줄의 값 — 할당은 왜 비싼가</a><a class="lv3" href="#s45-5"><span class="tf-no">45.5</span>1차원으로 빌려 2차원으로 쓰기</a><a class="lv3" href="#s45-6"><span class="tf-no">45.6</span>소유 — 누가 돌려줄 책임을 지는가</a><a class="lv3" href="#s45-7"><span class="tf-no">45.7</span>제7부를 닫으며</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-45">45 동적 메모리</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>44장 수명과 저장 기간 · 자동 수명의 한계</div><div>2장 기억의 구역들 · 창고(힙)</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>44장에서 자동 수명(함수와 함께 죽는다)과 정적 수명(프로그램 내내 산다)을 배웠다. 그러면 “입력에 따라 크기가 정해지고, 필요한 동안만 살아야 하는” 기억은 — 둘 중 어디에 두는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 어느 쪽도 맞지 않는다. 크기가 실행 중에 정해지고 수명이 프로그램의 논리에 따라 갈리는 기억이 필요하다 — 그래서 세 번째 자리가 있다: <span id="idx-entry-156"></span><strong>동적 저장 기간</strong>, 흔히 <strong>힙</strong>(heap)이라 부르는 창고다. 이 자리의 규칙은 앞의 둘과 결정적으로 다르다 — <strong>태어남과 죽음을 프로그래머가 직접 지시한다.</strong></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">7부의 마지막이자 기억 배치의 완성이다. 힙을 맨 뒤에 둔 것은 그것이 가장 어려워서가 아니라, <strong>가장 늦게까지 미룰 수 있어서</strong>다 — 앞의 열 장이 전부 힙 없이 돌아갔다. 그래서 여기 올 때쯤이면 「왜 굳이 손으로 빌리고 갚아야 하는가」라는 질문이 저절로 생겨 있다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">제7부의 마지막 자리 — 실행 중에 크기를 정하고, 원하는 때까지 살려 <span id="idx-entry-157"></span>두는 기억이다. <code>malloc</code>과 <code>free</code>, 소유라는 개념, 그리고 이 세계의 세 가지 대표 사고(누수·이중 해제·해제 후 사용)까지. 기억의 배치가 여기서 완성된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 캐스트가 맞는 자리는 없는가?</li><li>그래서 이 책은 어느 쪽인가?</li><li>포인터의 배열(<code>int *</code>)로 만들면 <code>m[i][j]</code> 문법을 그대로 쓸 수 있지 않은가?</li><li>그러면 동적 메모리를 되도록 피하는 것이 상책인가?</li></ol></div></div><div></div><h3 id="s45-1">45.1 빌리고, 돌려준다</h3><p>문법은 함수 두 개다. <code>malloc(바이트 수)</code>는 창고에서 그만큼의 연속된 칸을 빌려 그 시작 주소를 돌려주고, <code>free(주소)</code>는 빌린 것을 돌려준다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch45/dyn.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
@@ -521,7 +525,7 @@ of 8 one-byte requests, ones breaking the default alignment: 0
 address gap between two neighbouring blocks: 32 bytes (though 1 was asked for)
 
 300000 iterations
-  malloc + free every time :  0.0036 s  ( 12.0 ns each)
+  malloc + free every time :  0.0037 s  ( 12.2 ns each)
   borrow once and reuse    :  0.0006 s  (  2.0 ns each)
   a stack array            :  0.0007 s  (  2.2 ns each)
 

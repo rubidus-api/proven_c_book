@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">Contents of this chapter</button><span class="sp"></span><span class="bar-nav"><a href="ch39.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch41.html" title="Next" aria-label="Next">→</a></span><a href="../ko/ch40.html">한국어</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s40-1"><span class="tf-no">40.1</span>Why this chapter has to exist</a><a class="lv4" href="#s40-1-1"><span class="tf-no">40.1.1</span>Why the misunderstanding is so tough</a><a class="lv4" href="#s40-1-2"><span class="tf-no">40.1.2</span>And discovery comes late</a><a class="lv3" href="#s40-2"><span class="tf-no">40.2</span>What differs — five axes</a><a class="lv3" href="#s40-3"><span class="tf-no">40.3</span>Steps to reach it — this is the real difference</a><a class="lv3" href="#s40-4"><span class="tf-no">40.4</span>The accident that crosses a file</a><a class="lv3" href="#s40-5"><span class="tf-no">40.5</span>When they do become the same — three rules</a><a class="lv3" href="#s40-6"><span class="tf-no">40.6</span>The places that do not decay</a><a class="lv3" href="#s40-7"><span class="tf-no">40.7</span>Why 6[a] is legal</a><a class="lv3" href="#s40-8"><span class="tf-no">40.8</span>Parameter conversion happens one layer only</a><a class="lv3" href="#s40-9"><span class="tf-no">40.9</span>So what C cannot do — and the half-told rest</a><a class="lv4" href="#s40-9-1"><span class="tf-no">40.9.1</span>What C99 changed</a><a class="lv3" href="#s40-10"><span class="tf-no">40.10</span>Choosing between them — judgement in practice</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 40 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch39.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch41.html" title="Next" aria-label="Next">→</a></span><a href="toc.html">Detailed contents</a><a href="../ko/ch40.html">Ko</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s40-1"><span class="tf-no">40.1</span>Why this chapter has to exist</a><a class="lv4" href="#s40-1-1"><span class="tf-no">40.1.1</span>Why the misunderstanding is so tough</a><a class="lv4" href="#s40-1-2"><span class="tf-no">40.1.2</span>And discovery comes late</a><a class="lv3" href="#s40-2"><span class="tf-no">40.2</span>What differs — five axes</a><a class="lv3" href="#s40-3"><span class="tf-no">40.3</span>Steps to reach it — this is the real difference</a><a class="lv3" href="#s40-4"><span class="tf-no">40.4</span>The accident that crosses a file</a><a class="lv3" href="#s40-5"><span class="tf-no">40.5</span>When they do become the same — three rules</a><a class="lv3" href="#s40-6"><span class="tf-no">40.6</span>The places that do not decay</a><a class="lv3" href="#s40-7"><span class="tf-no">40.7</span>Why 6[a] is legal</a><a class="lv3" href="#s40-8"><span class="tf-no">40.8</span>Parameter conversion happens one layer only</a><a class="lv3" href="#s40-9"><span class="tf-no">40.9</span>So what C cannot do — and the half-told rest</a><a class="lv4" href="#s40-9-1"><span class="tf-no">40.9.1</span>What C99 changed</a><a class="lv3" href="#s40-10"><span class="tf-no">40.10</span>Choosing between them — judgement in practice</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-40">40 Arrays and pointers — when they are the same and when they are not</h2><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 38, Arrays · decay and pointer arithmetic</div><div>chapter 39, Multidimensional arrays · arrays of arrays and parameters</div><div>chapter 35, Objects, addresses, pointers · addresses and <code>sizeof</code></div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 38 taught that “the name of an array decays into the address of its first element”, and chapter 39 that a 2-D array parameter becomes <code>int (*)[N]</code>. Having learned both, can you answer “are an array and a pointer the same thing” in one sentence?</p><div class="qa-a"><p><span class="dev-label">A.</span> Not yet. And that is why this chapter exists. So far we have learned, one at a time, <strong>the places where decay happens</strong>. But what causes accidents in the field is the opposite — <strong>the places where it does not</strong>, and <strong>what was lost once it did</strong>. The pieces are all gathered; it is time to close them into one picture.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">Having passed chapters 38 and 39, this is the only place where the belief “an array is a pointer” can be ended. Earlier and there is nothing to contrast; later and code has already been built on the belief. That this chapter stands on its own is itself a judgement: this misconception is too large to be handled in a side box.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-89"></span>We end, head on, the most widespread misunderstanding in C — “an array is a pointer.” Why that sentence looks true so often, where it breaks, and what happens the moment it crosses a file boundary, seen for real. Five axes of <span id="idx-entry-90"></span>contrast, the three rules of decay and the places that do not decay, the fact that parameter conversion happens only one layer deep, and what C cannot do — plus how C99 half-solved it.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>If rule ③ turns <code>int p[5]</code> into a pointer anyway, does the <code>[5]</code> mean nothing?</li><li>The idiom <code>sizeof arr / sizeof arr[0]</code> for counting elements is everywhere. I hear there are cases where it is dangerous.</li><li>Then are <code>void f(int m[][3])</code> and <code>void f(int (*m)[3])</code> completely the same?</li></ol></div></div><div></div><h3 id="s40-1">40.1 Why this chapter has to exist</h3><p>Let us first say why this chapter remains after the previous two. Not one piece of new syntax appears in it. What it does is <strong>gather what has already been learned into one place and close it as rules</strong>. Is that worth doing?</p><p>It is. Because <strong>“an array is a pointer” is the most widespread misunderstanding in C, and at the same time the one discovered latest.</strong></p><h4 id="s40-1-1">40.1.1 Why the misunderstanding is so tough</h4><p>For a false sentence to spread it has to be <strong>true often</strong>. This one is exactly that.</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> buf<span class="tok-x">[</span><span class="tok-n">64</span><span class="tok-x">]</span><span class="tok-x">;</span>
 <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>p <strong><span class="tok-x">=</span></strong> buf<span class="tok-x">;</span>
@@ -423,11 +427,11 @@ buf<span class="tok-x">[</span><span class="tok-n">3</span><span class="tok-x">]
   element count: sizeof arr / sizeof arr[0] = 5
 
 ② same address, different type - +1 skips a different width
-  arr      = 0x55c5cd7b4020
-  &amp;arr[0]  = 0x55c5cd7b4020   (the same)
-  &amp;arr     = 0x55c5cd7b4020   (the same - but its type is int(*)[5])
-  arr  + 1 = 0x55c5cd7b4024   (+4 bytes)
-  &amp;arr + 1 = 0x55c5cd7b4034   (+20 bytes - it skips the whole array)
+  arr      = 0x56402a9bf020
+  &amp;arr[0]  = 0x56402a9bf020   (the same)
+  &amp;arr     = 0x56402a9bf020   (the same - but its type is int(*)[5])
+  arr  + 1 = 0x56402a9bf024   (+4 bytes)
+  &amp;arr + 1 = 0x56402a9bf034   (+20 bytes - it skips the whole array)
 
 ③ which one can move
   moving ptr two slots gives *ptr = 30

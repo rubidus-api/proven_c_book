@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">이 장의 차례</button><span class="sp"></span><span class="bar-nav"><a href="ch41.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch43.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch42.html">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s42-1"><span class="tf-no">42.1</span>정체 — 배열, 그리고 약속</a><a class="lv3" href="#s42-2"><span class="tf-no">42.2</span>문자열 리터럴 — 읽기 전용의 땅</a><a class="lv4" href="#s42-2-1"><span class="tf-no">42.2.1</span>타입은 const가 아니다 — C의 이상한 자리</a><a class="lv3" href="#s42-3"><span class="tf-no">42.3</span>리터럴도 배열이다</a><a class="lv3" href="#s42-4"><span class="tf-no">42.4</span>이어 붙이기 — 인접한 리터럴은 하나가 된다</a><a class="lv3" href="#s42-5"><span class="tf-no">42.5</span>접두사 — 어떤 인코딩의 리터럴인가</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">42장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch41.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch43.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch42.html">En</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s42-1"><span class="tf-no">42.1</span>정체 — 배열, 그리고 약속</a><a class="lv3" href="#s42-2"><span class="tf-no">42.2</span>문자열 리터럴 — 읽기 전용의 땅</a><a class="lv4" href="#s42-2-1"><span class="tf-no">42.2.1</span>타입은 const가 아니다 — C의 이상한 자리</a><a class="lv3" href="#s42-3"><span class="tf-no">42.3</span>리터럴도 배열이다</a><a class="lv3" href="#s42-4"><span class="tf-no">42.4</span>이어 붙이기 — 인접한 리터럴은 하나가 된다</a><a class="lv3" href="#s42-5"><span class="tf-no">42.5</span>접두사 — 어떤 인코딩의 리터럴인가</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-42">42 문자열</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>9장 문자와 텍스트 · 글자의 표현</div><div>38장 배열 · 배열과 첨자</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>9장에서 C가 택한 문자열 표현은 “끝에 표지를 세우는” NUL 종단이라 했고, 그 대가 세 가지(길이는 세어야 안다, NUL을 내용에 못 담는다, 표지를 잃으면 폭주)를 예고했다. 이제 배열(38장)을 배웠으니 — C 문자열의 정확한 정체를 스스로 정의해 보면?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>char 배열인데, 어딘가에 값 0인 바이트(NUL 문자, <code>'\0'</code>)가 있고, “문자열”이란 시작부터 그 표지 직전까지를 뜻한다는 약속</strong> — 이것이 전부다. 별도의 문자열 타입은 없다. 배열, 그리고 약속. 이 장은 그 약속의 사용법과 비용을 다룬다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">문자열이 9장(글자)과 38장(배열) 둘 다 뒤에 와야 하는 이유는, C 의 문자열이 정확히 그 둘의 합이기 때문이다 — 글자를 담은 배열에 끝 표시를 붙인 것. 어느 한쪽만 알고 오면 「왜 길이를 따로 안 들고 다니는가」에 답할 수 없다. 그래서 여기, 둘 다 지난 다음이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-148"></span>C의 문자열을 정면으로 다룬다 — char 배열 + NUL 종단이라는 정체, 문자열 리터럴의 특별한 사정, 길이 재기의 진짜 비용, 그리고 한글이 드러내는 “글자 수 ≠ 바이트 수”의 실전까지. 널 삼형제의 마지막(NUL 문자)이 여기서 정식 취급된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>왜 C는 <code>const</code>를 붙이지 않았는가?</li><li>최신 표준과 앞으로의 표준에서는 어떤가?</li><li>한글 처리를 제대로 하려면 — 글자 단위로 다루려면 — 어떻게 해야 하는가?</li></ol></div></div><div></div><h3 id="s42-1">42.1 정체 — 배열, 그리고 약속</h3><p><code>char greet[] = "안녕";</code> — 문자열 리터럴로 배열을 초기화하면, 컴파일러가 글자들의 바이트 <strong>뒤에 <code>'\0'</code>을 붙여</strong> 배열을 만든다. 시연으로 해부한다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch42/str.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>

@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="sp"></span><span class="bar-nav"><a href="sec01.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch01.html" title="Next" aria-label="Next">→</a></span><a href="../ko/">한국어</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><span class="here-at">A note on t…</span><span class="sp"></span><span class="bar-nav"><a href="sec01.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch01.html" title="Next" aria-label="Next">→</a></span><a href="toc.html">Detailed contents</a><a href="../ko/">Ko</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div>
 <main><div class="wrap">
 <h2>A note on this translation</h2><p>The Korean edition is the original. This English edition is translated from it chapter by chapter, and <strong>chapter numbers are kept identical to the original</strong>, so a cross-reference to “chapter 62” means the same chapter in both editions. All 13 parts, 97 chapters, appendices A–E and the index are now translated.</p><p>The two editions are kept in step mechanically: <code>scripts/sync-status.py</code> records the hash of the Korean source each translated file was made from, and every build reports any chapter whose original has changed since, so a change on one side surfaces as a stale entry on the other. <code>scripts/check-xrefs.py</code> compares the chapter cross-references of the two editions and reports any that have drifted apart. Per-chapter status is in <code>TRANSLATION.md</code> in the repository.</p><p>The Korean edition is at:</p><ul><li>Web — <a href="https://rubidus-api.github.io/proven_c_book/ko/">rubidus-api.github.io/proven_c_book/ko/</a></li><li>PDF — the <code>ko</code> asset of the current release</li></ul>
 <div class="nav"><a href="sec01.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch01.html">Next →</a></div>

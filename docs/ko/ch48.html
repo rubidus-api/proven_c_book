@@ -51,6 +51,7 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
   background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
   padding:.1rem .5rem; color:inherit; }
 .here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
 .here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
   border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
   padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
@@ -74,12 +75,15 @@ body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
 .toc-full h4.toc-part { margin-top:1.8rem; }
 .toc a.toc-detail { font-weight:700; }
 @media print { .here-btn, .here-panel { display:none; } }
-.bar { position:sticky; top:0; z-index:20; display:flex; gap:.9rem; align-items:center;
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
        padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
        border-bottom:1px solid var(--rule); font-size:.86rem;
        font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 .bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
-.bar .sp { flex:1 1 auto; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
 main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
 /* ★ 본문 폭 (RFC-0026 D1, 2026-08-10)
    전에는 폭을 가두지 않았다. 재 보니 1920px 창에서 한 줄이 *한글 115자*였다 ---
@@ -356,8 +360,8 @@ h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">이 장의 차례</button><span class="sp"></span><span class="bar-nav"><a href="ch47.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch49.html" title="다음" aria-label="다음">→</a></span><a href="../en/ch48.html">English</a>
-<a href="https://github.com/rubidus-api/proven_c_book">GitHub</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s48-1"><span class="tf-no">48.1</span>공용체 — 겹쳐 놓기</a><a class="lv3" href="#s48-2"><span class="tf-no">48.2</span>표현을 눈으로 — 엔디안과 패딩</a><a class="lv3" href="#s48-3"><span class="tf-no">48.3</span>활성 멤버와 타입 펀닝 — 같은 비트를 다른 눈으로</a><a class="lv4" href="#s48-3-1"><span class="tf-no">48.3.1</span>공용체의 크기와 정렬, 그리고 공통 초기 시퀀스</a><a class="lv3" href="#s48-4"><span class="tf-no">48.4</span>비트 필드 — 한 워드를 쪼개 쓰기</a><a class="lv4" href="#s48-4-1"><span class="tf-no">48.4.1</span>비트 필드에서 구현이 정하는 것들</a><a class="lv3" href="#s48-5"><span class="tf-no">48.5</span>구조체와 공용체를 섞는 실무 무늬</a><a class="lv4" href="#s48-5-1"><span class="tf-no">48.5.1</span>실물 하나 — 2바이트 조합형 한글</a><a class="lv3" href="#s48-6"><span class="tf-no">48.6</span>제8부를 닫으며</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">48장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch47.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch49.html" title="다음" aria-label="다음">→</a></span><a href="toc.html">상세 차례</a><a href="../en/ch48.html">En</a>
+<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s48-1"><span class="tf-no">48.1</span>공용체 — 겹쳐 놓기</a><a class="lv3" href="#s48-2"><span class="tf-no">48.2</span>표현을 눈으로 — 엔디안과 패딩</a><a class="lv3" href="#s48-3"><span class="tf-no">48.3</span>활성 멤버와 타입 펀닝 — 같은 비트를 다른 눈으로</a><a class="lv4" href="#s48-3-1"><span class="tf-no">48.3.1</span>공용체의 크기와 정렬, 그리고 공통 초기 시퀀스</a><a class="lv3" href="#s48-4"><span class="tf-no">48.4</span>비트 필드 — 한 워드를 쪼개 쓰기</a><a class="lv4" href="#s48-4-1"><span class="tf-no">48.4.1</span>비트 필드에서 구현이 정하는 것들</a><a class="lv3" href="#s48-5"><span class="tf-no">48.5</span>구조체와 공용체를 섞는 실무 무늬</a><a class="lv4" href="#s48-5-1"><span class="tf-no">48.5.1</span>실물 하나 — 2바이트 조합형 한글</a><a class="lv3" href="#s48-6"><span class="tf-no">48.6</span>제8부를 닫으며</a></div></div>
 <main><div class="wrap">
 <h2 id="loc-48">48 공용체와 표현</h2><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>46장 구조체 · 구조체의 배치</div><div>5장 워드와 주소 · 표현을 바이트로 본다</div><div>13장 컴파일러 최적화 · 엄격한 앨리어싱</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>13장에서 “float의 비트를 uint32의 눈으로 읽는” 옛 기법이 엄격한 앨리어싱 위반이며, 옳은 방법은 memcpy나 공용체라고 했다. 그러면 공용체란 정확히 무엇이길래 그 자리에 서는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>여러 멤버가 같은 기억을 공유하는 타입</strong>이다. 구조체가 멤버들을 나란히 놓는다면(46장), 공용체는 멤버들을 <strong>겹쳐</strong> 놓는다 — 크기는 가장 큰 멤버에 맞고, 어느 순간에든 실제로 담긴 것은 하나다. “같은 비트를 이 눈으로도 저 눈으로도 본다”는 5장의 관점이 문법이 된 것이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">8부를 공용체로 닫는 이유는 그것이 자료의 모양 가운데 마지막 하나여서가 아니다 — <strong>표현과 추상의 분리</strong>라는 이 책의 후렴구를 여기서 마지막으로 크게 울리기 때문이다. 5장에서 예약한 엔디안 시연이 실제 코드로 실행되는 자리이기도 하다. 9부의 「깊은 구석들」로 넘어가기 직전에 놓기 알맞다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-167"></span>같은 기억을 다른 눈으로 보는 장치 — 공용체다. 그리고 이 장은 표현의 장이기도 하다: 5장에서 예약한 엔디안 관찰 시연을 실행하고, 구조체의 숨은 빈틈(패딩)을 눈으로 확인한다. 표현과 추상의 분리라는 이 책의 후렴구가 마지막으로 크게 울리는 자리다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>공용체는 그러면 언제 쓰는 것이 정석인가?</li><li>그러면 모든 비트열이 값이 되는가?</li></ol></div></div><div></div><p>(26장의 갈래에서 공용체는 파생 타입이되 <strong>집합체는 아니었다</strong> — 한 번에 하나만 살아 있기 때문이라는 그 이유를 이 장에서 실물로 본다.)</p><h3 id="s48-1">48.1 공용체 — 겹쳐 놓기</h3><p>문법은 구조체와 쌍둥이다. <code>struct</code>를 <code>union</code>으로 바꾸면 된다:</p><pre><code data-lang="c"><strong><span class="tok-t">union</span></strong> bits32 <span class="tok-x">{</span>
     <strong><span class="tok-t">uint32_t</span></strong> as_int<span class="tok-x">;</span>
