@@ -554,15 +554,69 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
         padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
 .skip:focus { left:.5rem; top:.5rem; }
 
+/* ── 상단 바의 펼침 패널과 읽기 설정 (저자 지시 2026-08-11) ────────────
+ * 바에는 넷만 둔다. 나머지는 여기로 접었다 --- 늘 보이던 것을 접어 두면
+ * 읽는 자리가 넓어지고, 필요할 때는 한 번의 누름으로 전부 나온다.
+ */
+.here-btn { font:inherit; color:inherit; background:none; border:1px solid transparent;
+  border-radius:4px; padding:.1rem .45rem; cursor:pointer; }
+.here-btn .caret { color:var(--muted); }
+.here-panel { position:sticky; top:2.9rem; z-index:19; max-height:78vh; overflow:auto;
+  background:var(--bg); border-bottom:1px solid var(--rule);
+  padding:.6rem clamp(.8rem,3vw,2.5rem) .9rem; }
+
+/* 도구 줄 --- 인라인으로 죽 늘어서다 좁으면 다음 줄로 넘어간다 */
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .5rem; align-items:center;
+  margin-bottom:.5rem; }
+.tool { font:inherit; font-size:.86rem; color:inherit; background:none;
+  border:1px solid var(--rule); border-radius:4px; padding:.2rem .55rem;
+  text-decoration:none; cursor:pointer; white-space:nowrap;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+
+/* ★ 누를 수 있다는 것을 바탕색으로 말한다(저자 지시) --- 글자만 바뀌면
+   손이 닿기 전에는 알 수 없다. */
+.tool:hover, .here-btn:hover, .bar a:hover, .nav a:hover,
+.here-panel .here-body a:hover { background:var(--box-bg); }
+.tool:hover { border-color:var(--box-rule); }
+.here-btn:hover { border-color:var(--rule); }
+.bar a, .nav a { border-radius:4px; padding:.1rem .35rem; }
+.tool:active, .here-btn:active, .bar a:active { transform:translateY(1px); }
+.segb[aria-pressed="true"] { background:var(--box-bg); border-color:var(--fg); font-weight:700; }
+
+/* 본문 링크 --- 밑줄로 있음을 말하고, 손이 닿으면 바탕으로 답한다 */
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; border-radius:3px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+
+/* 읽기 설정 상자 */
+.setbox { border:1px solid var(--rule); border-radius:5px; padding:.6rem .7rem;
+  margin:0 0 .6rem; font-size:.88rem;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .7rem; align-items:center;
+  margin:.35rem 0; }
+.setlbl { color:var(--muted); min-width:3.2rem; }
+.seg { display:inline-flex; gap:.25rem; }
+.segb { font:inherit; color:inherit; background:none; border:1px solid var(--rule);
+  border-radius:4px; padding:.15rem .5rem; cursor:pointer; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--rule);
+  border-radius:3px; background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; color:var(--muted); font-size:.82rem; }
+
+/* 가로폭 제한 --- 기본은 제한 없음(설계 의도). 독자가 켤 때만 걸린다. */
+:root[data-measure="on"] main .wrap { max-width:46rem; margin-inline:auto; }
+
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
-</style></head>
+</style>
+<script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 32 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch31.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch33.html" title="Next" aria-label="Next">→</a></span><a class="bar-toc" href="toc.html" title="Detailed contents" aria-label="Detailed contents">▤</a><a href="../ko/ch32.html">Ko</a>
-<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s32-1"><span class="tf-no">32.1</span>The three siblings of the loop</a><a class="lv3" href="#s32-2"><span class="tf-no">32.2</span>The reunion — Duff’s device</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 32 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch31.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch33.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch32.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.0/proven_c_book-v0.57.0-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label><button type="button" class="tool" id="s-reset">Reset</button></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s32-1"><span class="tf-no">32.1</span>The three siblings of the loop</a><a class="lv3" href="#s32-2"><span class="tf-no">32.2</span>The reunion — Duff’s device</a></div></div>
 <main id="content"><div class="wrap">
 <h2>32 Repetition — loops and invariants</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 31, Deciding · flow that forks on a condition</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 4 said “even simple steps, taken billions of times a second, can build anything however complicated.” But our programs up to chapter 31 flow from top to bottom once and end — where do the billions of steps come from?</p><div class="qa-a"><p><span class="dev-label">A.</span> From a device that <strong>executes the same statements again</strong>. Going <strong>back</strong> to a block while a condition is true — the loop. If branching was the device that splits flow, the loop is the device that winds it up, and the moment we have both, C becomes a language that can write down everything computable (theoretically so as well — all chapter 4′s model of computation demands is “sequence, branch, repetition”).</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">What diverges must converge. Putting repetition right after branching is necessity, not convention — every loop carries a condition test inside it, so without chapter 31 there is no way to explain what sits in <code>while</code>’s parentheses. And the invariant learned here becomes the thinking tool for nearly every array traversal to come.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">We take a program’s real power — repetition — into our hands. The three siblings of the loop (<code>while</code>, <code>for</code>, <code>do-while</code>), new operators (<code>++</code>, <code>+=</code>), <span id="idx-entry-74"></span>and the frame of thought for reading and writing loops correctly (the invariant). And we finally meet the reunion booked in chapter 12 — Duff’s device.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>What if the condition never becomes false?</li></ol></div></div><div></div><h3 id="s32-1">32.1 The three siblings of the loop</h3><div></div><p><strong><code>while</code></strong> — the most primitive form. “While the condition is true, repeat the block”:</p><pre><code data-lang="c"><strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span>condition<span class="tok-x">)</span> <span class="tok-x">{</span>
     statements to repeat
@@ -591,4 +645,5 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
         <span class="tok-x">}</span> <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><span class="tok-x">(</span>count <strong><span class="tok-x">-=</span></strong> <span class="tok-n">8</span><span class="tok-x">)</span> <strong><span class="tok-x">></span></strong> <span class="tok-n">0</span><span class="tok-x">)</span><span class="tok-x">;</span>
 <span class="tok-x">}</span></code></pre><p>(The <code>*to</code> and <code>*from++</code> parts are chapter 35′s pointer syntax, so for now look only at the outward shape — the point is the structure.) How to read it: the switch jumps <strong>into the middle of a loop</strong>. Remember chapter 31′s fact that a <code>case</code> is only a label — a label stamped <strong>inside</strong> the body of a <code>do-while</code> is not a grammatical violation. The first entry jumps to the point that processes just the remainder, and thereafter the do-while turns the whole eight-line body. Remainder handling and unrolling became one body.</p><p>Duff himself left the remark that on discovering it he felt “a mixture of pride and revulsion”, and the code stands as a monument, on the boundary of legality and grotesquerie, to the flexibility (or perhaps the looseness) of C’s grammar. And today’s lesson is exactly as chapter 12 foretold — <strong>this acrobatics is no longer a human’s job.</strong> A modern compiler unrolls an ordinarily written loop by itself (chapter 13′s editor). Admire Duff’s device as a masterpiece in the museum, and write our own loops plainly and readably like the demonstration’s <code>for</code> — that is modern C.</p><p>With repetition the tools of flow are complete — sequence (chapter 19), branch (chapter 31), repetition (chapter 32). The next chapter closes Part VI by digging into the <strong>meaning</strong> of that device the function — how values cross over, what exactly a side effect is, and the formal answer to the seed planted in chapter 20 (the order of evaluation).</p><p>(The <strong>techniques</strong> of loops — nesting and traversal order, shedding several layers at once, the <code>do { } while (0)</code> that makes a macro one statement — need arrays first, so they are gathered in chapter 41.)</p>
 <div class="nav"><a href="ch31.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch33.html">Next →</a></div>
-</div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>
+</div></main>
+<script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')open(false);});var box=document.getElementById('setbox'),so=document.getElementById('set-open');if(!box||!so)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('pcb-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('pcb-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();document.getElementById('s-width').checked=!!s.width;var t=s.theme||'auto';[].forEach.call(box.querySelectorAll('.segb'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}so.addEventListener('click',function(){box.hidden=!box.hidden;so.setAttribute('aria-expanded',!box.hidden);if(!box.hidden)paint();});document.getElementById('s-width').addEventListener('change',function(){var s=load();s.width=this.checked;save(s);if(s.width)r.setAttribute('data-measure','on');else r.removeAttribute('data-measure');});[].forEach.call(box.querySelectorAll('.segb'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;save(s);if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);if(!s.fg&&!s.bg&&!s.link)setTimeout(paint,0);else paint();});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});document.getElementById('s-reset').addEventListener('click',function(){save({});r.removeAttribute('data-theme');r.removeAttribute('data-measure');['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});paint();});})();</script></body></html>

@@ -554,15 +554,69 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
         padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
 .skip:focus { left:.5rem; top:.5rem; }
 
+/* ── 상단 바의 펼침 패널과 읽기 설정 (저자 지시 2026-08-11) ────────────
+ * 바에는 넷만 둔다. 나머지는 여기로 접었다 --- 늘 보이던 것을 접어 두면
+ * 읽는 자리가 넓어지고, 필요할 때는 한 번의 누름으로 전부 나온다.
+ */
+.here-btn { font:inherit; color:inherit; background:none; border:1px solid transparent;
+  border-radius:4px; padding:.1rem .45rem; cursor:pointer; }
+.here-btn .caret { color:var(--muted); }
+.here-panel { position:sticky; top:2.9rem; z-index:19; max-height:78vh; overflow:auto;
+  background:var(--bg); border-bottom:1px solid var(--rule);
+  padding:.6rem clamp(.8rem,3vw,2.5rem) .9rem; }
+
+/* 도구 줄 --- 인라인으로 죽 늘어서다 좁으면 다음 줄로 넘어간다 */
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .5rem; align-items:center;
+  margin-bottom:.5rem; }
+.tool { font:inherit; font-size:.86rem; color:inherit; background:none;
+  border:1px solid var(--rule); border-radius:4px; padding:.2rem .55rem;
+  text-decoration:none; cursor:pointer; white-space:nowrap;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+
+/* ★ 누를 수 있다는 것을 바탕색으로 말한다(저자 지시) --- 글자만 바뀌면
+   손이 닿기 전에는 알 수 없다. */
+.tool:hover, .here-btn:hover, .bar a:hover, .nav a:hover,
+.here-panel .here-body a:hover { background:var(--box-bg); }
+.tool:hover { border-color:var(--box-rule); }
+.here-btn:hover { border-color:var(--rule); }
+.bar a, .nav a { border-radius:4px; padding:.1rem .35rem; }
+.tool:active, .here-btn:active, .bar a:active { transform:translateY(1px); }
+.segb[aria-pressed="true"] { background:var(--box-bg); border-color:var(--fg); font-weight:700; }
+
+/* 본문 링크 --- 밑줄로 있음을 말하고, 손이 닿으면 바탕으로 답한다 */
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; border-radius:3px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+
+/* 읽기 설정 상자 */
+.setbox { border:1px solid var(--rule); border-radius:5px; padding:.6rem .7rem;
+  margin:0 0 .6rem; font-size:.88rem;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .7rem; align-items:center;
+  margin:.35rem 0; }
+.setlbl { color:var(--muted); min-width:3.2rem; }
+.seg { display:inline-flex; gap:.25rem; }
+.segb { font:inherit; color:inherit; background:none; border:1px solid var(--rule);
+  border-radius:4px; padding:.15rem .5rem; cursor:pointer; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--rule);
+  border-radius:3px; background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; color:var(--muted); font-size:.82rem; }
+
+/* 가로폭 제한 --- 기본은 제한 없음(설계 의도). 독자가 켤 때만 걸린다. */
+:root[data-measure="on"] main .wrap { max-width:46rem; margin-inline:auto; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-</style></head>
+</style>
+<script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">본문으로 건너뛰기</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">75장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch74.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch76.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch75.html">En</a>
-<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s75-1"><span class="tf-no">75.1</span>errno — 전역으로 오류를 나르는 대가</a><a class="lv3" href="#s75-2"><span class="tf-no">75.2</span>assert — 계약을 코드로 적는 가장 싼 방법</a><a class="lv3" href="#s75-3"><span class="tf-no">75.3</span>신호 — 다음 장으로</a><a class="lv3" href="#s75-4"><span class="tf-no">75.4</span>비지역 점프(non-local jump) — setjmp/longjmp</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">75장 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch74.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch76.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/ch75.html">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.0/proven_c_book-v0.57.0-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label><button type="button" class="tool" id="s-reset">되돌리기</button></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s75-1"><span class="tf-no">75.1</span>errno — 전역으로 오류를 나르는 대가</a><a class="lv3" href="#s75-2"><span class="tf-no">75.2</span>assert — 계약을 코드로 적는 가장 싼 방법</a><a class="lv3" href="#s75-3"><span class="tf-no">75.3</span>신호 — 다음 장으로</a><a class="lv3" href="#s75-4"><span class="tf-no">75.4</span>비지역 점프(non-local jump) — setjmp/longjmp</a></div></div>
 <main id="content"><div class="wrap">
 <h2>75 진단과 제어 — <code>&lt;errno.h></code>·<code>&lt;assert.h></code>·<code>&lt;signal.h></code>·<code>&lt;setjmp.h></code></h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>51장 오류와 계약 · 오류를 값으로 알리기</div><div>52장 정의되지 않은 동작 · 계약을 어긴 뒤</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>51장에서 C의 오류 통보 방식이 반환값·전역 상태·프로그램 중단 셋뿐이라 했다. 그러면 <code>errno</code>라는 전역은 정확히 언제 믿을 수 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>실패가 확인된 직후에만</strong> 믿을 수 있다. 표준의 규칙은 두 겹이다. 첫째, 성공한 호출도 <code>errno</code>에 값을 넣을 수 있다 — 그래서 “0이 아니면 실패”가 아니라 “함수가 실패를 알린 뒤에 이유를 읽는” 순서여야 한다. 둘째, 값은 다음 라이브러리 호출이 언제든 덮어쓸 수 있다 — 그래서 읽었으면 즉시 저장한다. 이 두 규칙이 전역 상태로 오류를 나르는 설계의 대가다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">네 헤더를 한 장에 모은 것은 이들이 「잘못됐을 때」라는 한 가지 일을 나눠 맡기 때문이다. 그리고 이 자리에 두는 이유가 중요하다 — 51장의 「오류는 값이다」가 왜 그토록 강한 규율인지는, <strong>대안들이 실제로 어떻게 생겼는지</strong> 보고 나서야 납득된다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">프로그램이 <strong>잘못됐을 때</strong> 쓰는 네 헤더를 한자리에서 본다. 오류 번호를 담는 전역, 계약 위반을 잡는 단언, 바깥에서 날아오는 신호, 그리고 스택을 건너뛰는 점프. 51장에서 세운 “오류는 값이다”라는 규율이 왜 그렇게 중요한지, 대안들의 실제 모습을 보면 분명해진다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>assert</code>는 왜 <code>NDEBUG</code>로 통째로 꺼지게 만들어 두었는가 — 검사는 항상 하는 것이 좋지 않은가?</li></ol></div></div><div></div><h3 id="s75-1">75.1 <code>errno</code> — 전역으로 오류를 나르는 대가</h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples/ch75/errno_demo.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">errno.h</span><span class="tok-s">></span>
@@ -614,4 +668,5 @@ strtol out of range: errno==ERANGE? yes (value=9223372036854775807)
 <strong><span class="tok-k">static</span></strong> <strong><span class="tok-t">void</span></strong> <strong>on_int</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> sig<span class="tok-x">)</span> <span class="tok-x">{</span> <span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>sig<span class="tok-x">;</span> stop <strong><span class="tok-x">=</span></strong> <span class="tok-n">1</span><span class="tok-x">;</span> <span class="tok-x">}</span>
 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> main 루프에서: while (!stop) { ... } </span></em><em><span class="tok-c">*/</span></em></code></pre><p>이 헤더는 다룰 것이 많아 다음 장을 통째로 썼다 — 역사, 함수의 모양과 인자, 반환값, <code>sig_atomic_t</code>의 정체, POSIX <code>sigaction</code>과 그 구조체 속, 그리고 서버·셸·터미널의 실제 사용 사례까지 76장에서 본다.</p><h3 id="s75-4">75.4 비지역 점프(non-local jump) — <code>setjmp</code>/<code>longjmp</code></h3><div></div><p><code>setjmp</code>로 지금 자리를 기억해 두고, 나중에 깊은 곳에서 <code>longjmp</code>로 되돌아 오는 장치다. 예외가 없는 언어에서 예외 비슷한 것을 만들려는 시도이고, 그만큼 대가가 크다 — <strong>건너뛴 함수들이 잡아 둔 자원은 아무도 정리해 주지 않는다.</strong></p><p>이 헤더도 다룰 것이 많아 따로 한 장을 썼다 — 두 낱말의 반환값 규칙, <code>setjmp</code>를 쓸 수 있는 네 문맥, <code>jmp_buf</code>의 속, <code>volatile</code> 규칙의 실측, libjpeg·Lua 같은 실물의 사용례와 오늘날의 대안까지 77장에서 본다.</p><div class="dev realcase"><p class="dev-label">실제 사례.<span style="white-space: pre-wrap">&#x20;&#x20;</span>오류 처리 방식이 만든 코드의 모양</p><div class="dev-body"><p>같은 프로그램을 세 가지 방식으로 짜면 모양이 이렇게 갈린다.</p><ul><li><strong>반환값 + <code>errno</code></strong>: 호출마다 <code>if</code>가 붙고 오류 경로가 눈에 보인다. 번거롭지만 흐름이 정직하다.</li><li><strong><code>setjmp</code>/<code>longjmp</code></strong>: 본문은 깔끔해지지만 자원 정리를 사람이 전부 기억해야 하고, 어디로 튀는지 코드에서 보이지 않는다.</li><li><strong><code>goto cleanup</code></strong>: C 코드베이스에서 가장 널리 정착한 절충이다. 실패하면 한 곳으로 모여 역순으로 정리한다. 리눅스 커널이 이 무늬를 관행으로 못박았고, 30장에서 “goto는 절제해서”라고 한 그 절제된 용법이 바로 이것이다.</li></ul><p>세 방식 모두 “실패를 값으로 다루고, 정리를 잊지 않는다”는 같은 문제를 푼다. 제12부의 라이브러리는 여기에 네 번째 답 — <strong>실패를 타입으로 만드는 것</strong> — 을 얹는다.</p></div></div><div class="dev recap"><p class="dev-label">복습 정리</p><div class="dev-body"><p>진단과 제어 요약.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>도구</strong></th><th><strong>쓰는 자리</strong></th><th><strong>규칙</strong></th></tr><tr><td><code>errno</code></td><td>라이브러리 호출의 실패 이유</td><td>직전 0, 실패 확인 후 읽기, 즉시 저장</td></tr><tr><td><code>assert</code></td><td>내부 불변식</td><td>부수효과 금지, 입력 검사에 쓰지 않기</td></tr><tr><td><code>static_assert</code></td><td>컴파일 시간 가정</td><td>비용 0</td></tr><tr><td><code>signal</code></td><td>Ctrl+C 같은 외부 사건</td><td>처리기에서는 깃발만</td></tr><tr><td><code>SIGSEGV</code></td><td>—</td><td>잡아도 복구 불가</td></tr><tr><td><code>setjmp</code>/<code>longjmp</code></td><td>특수한 복구</td><td><code>volatile</code> 아니면 값 미정, 정리 안 됨</td></tr><tr><td>실무 관용구</td><td>실패 시 정리</td><td><code>goto cleanup</code>으로 한 곳에 모으기</td></tr></table></div><p class="float-caption">표 75.2</p></figure></div></div><p>여기까지가 C89 시절부터 있던 헤더들이다. 다음 장은 그 뒤로 표준이 보탠 것들 — 그리고 “안전한 함수”를 만들려던 시도가 어떻게 되었는지의 이야기다.</p>
 <div class="nav"><a href="ch74.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch76.html">다음 →</a></div>
-</div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>
+</div></main>
+<script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')open(false);});var box=document.getElementById('setbox'),so=document.getElementById('set-open');if(!box||!so)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('pcb-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('pcb-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();document.getElementById('s-width').checked=!!s.width;var t=s.theme||'auto';[].forEach.call(box.querySelectorAll('.segb'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}so.addEventListener('click',function(){box.hidden=!box.hidden;so.setAttribute('aria-expanded',!box.hidden);if(!box.hidden)paint();});document.getElementById('s-width').addEventListener('change',function(){var s=load();s.width=this.checked;save(s);if(s.width)r.setAttribute('data-measure','on');else r.removeAttribute('data-measure');});[].forEach.call(box.querySelectorAll('.segb'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;save(s);if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);if(!s.fg&&!s.bg&&!s.link)setTimeout(paint,0);else paint();});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});document.getElementById('s-reset').addEventListener('click',function(){save({});r.removeAttribute('data-theme');r.removeAttribute('data-measure');['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});paint();});})();</script></body></html>

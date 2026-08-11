@@ -554,15 +554,69 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
         padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
 .skip:focus { left:.5rem; top:.5rem; }
 
+/* ── 상단 바의 펼침 패널과 읽기 설정 (저자 지시 2026-08-11) ────────────
+ * 바에는 넷만 둔다. 나머지는 여기로 접었다 --- 늘 보이던 것을 접어 두면
+ * 읽는 자리가 넓어지고, 필요할 때는 한 번의 누름으로 전부 나온다.
+ */
+.here-btn { font:inherit; color:inherit; background:none; border:1px solid transparent;
+  border-radius:4px; padding:.1rem .45rem; cursor:pointer; }
+.here-btn .caret { color:var(--muted); }
+.here-panel { position:sticky; top:2.9rem; z-index:19; max-height:78vh; overflow:auto;
+  background:var(--bg); border-bottom:1px solid var(--rule);
+  padding:.6rem clamp(.8rem,3vw,2.5rem) .9rem; }
+
+/* 도구 줄 --- 인라인으로 죽 늘어서다 좁으면 다음 줄로 넘어간다 */
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .5rem; align-items:center;
+  margin-bottom:.5rem; }
+.tool { font:inherit; font-size:.86rem; color:inherit; background:none;
+  border:1px solid var(--rule); border-radius:4px; padding:.2rem .55rem;
+  text-decoration:none; cursor:pointer; white-space:nowrap;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+
+/* ★ 누를 수 있다는 것을 바탕색으로 말한다(저자 지시) --- 글자만 바뀌면
+   손이 닿기 전에는 알 수 없다. */
+.tool:hover, .here-btn:hover, .bar a:hover, .nav a:hover,
+.here-panel .here-body a:hover { background:var(--box-bg); }
+.tool:hover { border-color:var(--box-rule); }
+.here-btn:hover { border-color:var(--rule); }
+.bar a, .nav a { border-radius:4px; padding:.1rem .35rem; }
+.tool:active, .here-btn:active, .bar a:active { transform:translateY(1px); }
+.segb[aria-pressed="true"] { background:var(--box-bg); border-color:var(--fg); font-weight:700; }
+
+/* 본문 링크 --- 밑줄로 있음을 말하고, 손이 닿으면 바탕으로 답한다 */
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; border-radius:3px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+
+/* 읽기 설정 상자 */
+.setbox { border:1px solid var(--rule); border-radius:5px; padding:.6rem .7rem;
+  margin:0 0 .6rem; font-size:.88rem;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .7rem; align-items:center;
+  margin:.35rem 0; }
+.setlbl { color:var(--muted); min-width:3.2rem; }
+.seg { display:inline-flex; gap:.25rem; }
+.segb { font:inherit; color:inherit; background:none; border:1px solid var(--rule);
+  border-radius:4px; padding:.15rem .5rem; cursor:pointer; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--rule);
+  border-radius:3px; background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; color:var(--muted); font-size:.82rem; }
+
+/* 가로폭 제한 --- 기본은 제한 없음(설계 의도). 독자가 켤 때만 걸린다. */
+:root[data-measure="on"] main .wrap { max-width:46rem; margin-inline:auto; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-</style></head>
+</style>
+<script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">본문으로 건너뛰기</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">32장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch31.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch33.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch32.html">En</a>
-<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s32-1"><span class="tf-no">32.1</span>루프 3형제</a><a class="lv3" href="#s32-2"><span class="tf-no">32.2</span>재회 — Duff’s device</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">32장 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch31.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch33.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/ch32.html">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.0/proven_c_book-v0.57.0-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label><button type="button" class="tool" id="s-reset">되돌리기</button></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s32-1"><span class="tf-no">32.1</span>루프 3형제</a><a class="lv3" href="#s32-2"><span class="tf-no">32.2</span>재회 — Duff’s device</a></div></div>
 <main id="content"><div class="wrap">
 <h2>32 반복 — 루프와 불변식</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>31장 결정 · 조건으로 갈라지는 흐름</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>4장에서 “단순한 걸음이라도 1초에 수십억 번이면 어떤 복잡한 일이든 지을 수 있다”고 했다. 그런데 31장까지의 우리 프로그램은 위에서 아래로 한 번 흐르고 끝난다 — 수십억 번의 걸음은 어디서 나오는 것인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 같은 문장들을 <strong>다시 실행하는</strong> 장치에서 나온다. 조건이 참인 동안 블록으로 <strong>되돌아가는</strong> 것 — 루프다. 분기가 흐름을 가르는 장치였다면 루프는 흐름을 감아올리는 장치이고, 이 둘을 갖추는 순간 C는 계산 가능한 모든 것을 적을 수 있는 언어가 된다(이론적으로도 그렇다 — 4장의 계산 모델이 요구하는 전부가 “순차, 분기, 반복”이다).</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">갈라졌으면 돌아와야 한다. 반복을 분기 바로 뒤에 두는 것은 관습이 아니라 필연이다 — 모든 루프가 조건 검사를 품고 있어서, 31장 없이는 <code>while</code> 의 괄호 안을 설명할 수 없다. 그리고 여기서 익히는 불변식은 뒤에 나올 거의 모든 배열 순회의 사고 도구가 된다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">프로그램의 진짜 힘 — 되풀이 — 를 손에 넣는다. 루프 3형제(<code>while</code>, <code>for</code>, <code>do-while</code>)와 새 연산자들(<code>++</code>, <code>+=</code>), 루프를 옳게 읽고 쓰는 <span id="idx-entry-122"></span>생각의 틀(불변식)까지. 그리고 12장에서 예약해 둔 재회 — Duff’s device — 를 드디어 만난다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>조건이 영영 거짓이 안 되면 어떻게 되는가?</li></ol></div></div><div></div><h3 id="s32-1">32.1 루프 3형제</h3><div></div><p><strong><code>while</code></strong> — 가장 원초적인 형태다. “조건이 참인 동안, 블록을 반복하라”:</p><pre><code data-lang="c"><strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span>조건<span class="tok-x">)</span> <span class="tok-x">{</span>
     반복할 문장들
@@ -591,4 +645,5 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
         <span class="tok-x">}</span> <strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span><span class="tok-x">(</span>count <strong><span class="tok-x">-=</span></strong> <span class="tok-n">8</span><span class="tok-x">)</span> <strong><span class="tok-x">></span></strong> <span class="tok-n">0</span><span class="tok-x">)</span><span class="tok-x">;</span>
 <span class="tok-x">}</span></code></pre><p>(<code>*to</code>, <code>*from++</code> 부분은 35장의 포인터 문법이라 아직 겉모양만 보면 된다 — 핵심은 구조다.) 읽는 법: switch가 <strong>루프의 한복판으로</strong> 건너 뛴다. <code>case</code>는 이름표일 뿐이라는 31장의 사실을 기억하면 — 이름표가 <code>do-while</code>의 몸통 <strong>안에</strong> 찍혀 있어도 문법 위반이 아니다. 첫 진입은 나머지 개수만큼만 처리하는 지점으로 뛰어들고, 이후는 do-while이 여덟 줄짜리 몸통을 통째로 돈다. 나머지 처리와 언롤링이 한 몸이 된 것이다.</p><p>Duff 자신도 “발견하고 나서 자부심과 혐오감이 뒤섞였다”는 소감을 남긴 이 코드는, 합법과 기괴함의 경계에서 C 문법의 유연함(어쩌면 헐거움)을 보여 주는 기념비다. 그리고 오늘의 교훈은 12장에서 예고한 그대로다 — <strong>이 곡예는 이제 사람의 일이 아니다.</strong> 현대 컴파일러는 평범하게 쓴 루프를 알아서 언롤링한다(13장의 편집자). Duff’s device는 박물관의 걸작으로 감상하고, 우리의 루프는 시연의 <code>for</code>처럼 평범하고 읽기 쉽게 쓰는 것 — 그것이 모던 C다.</p><p>반복까지 갖추며 흐름의 도구가 완성됐다 — 순차(19장), 분기(31장), 반복(32장). 다음 장은 제6부의 마무리로, 함수라는 장치의 <strong>의미</strong>를 파고든다 — 값은 어떻게 건너가는가, 부수효과란 정확히 무엇인가, 그리고 20장에서 심어 둔 씨앗(평가 순서)의 정식 답까지.</p><p>(루프의 <strong>기법</strong> — 중첩과 순회 순서, 여러 겹을 한 번에 벗는 법, 매크로를 한 문장으로 만드는 <code>do { } while (0)</code> — 은 배열을 배운 뒤라야 쓸 수 있어서 41장에 모아 두었다.)</p>
 <div class="nav"><a href="ch31.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch33.html">다음 →</a></div>
-</div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>
+</div></main>
+<script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')open(false);});var box=document.getElementById('setbox'),so=document.getElementById('set-open');if(!box||!so)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('pcb-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('pcb-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();document.getElementById('s-width').checked=!!s.width;var t=s.theme||'auto';[].forEach.call(box.querySelectorAll('.segb'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}so.addEventListener('click',function(){box.hidden=!box.hidden;so.setAttribute('aria-expanded',!box.hidden);if(!box.hidden)paint();});document.getElementById('s-width').addEventListener('change',function(){var s=load();s.width=this.checked;save(s);if(s.width)r.setAttribute('data-measure','on');else r.removeAttribute('data-measure');});[].forEach.call(box.querySelectorAll('.segb'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;save(s);if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);if(!s.fg&&!s.bg&&!s.link)setTimeout(paint,0);else paint();});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});document.getElementById('s-reset').addEventListener('click',function(){save({});r.removeAttribute('data-theme');r.removeAttribute('data-measure');['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});paint();});})();</script></body></html>

@@ -554,15 +554,69 @@ a:focus-visible, button:focus-visible, summary:focus-visible {
         padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
 .skip:focus { left:.5rem; top:.5rem; }
 
+/* ── 상단 바의 펼침 패널과 읽기 설정 (저자 지시 2026-08-11) ────────────
+ * 바에는 넷만 둔다. 나머지는 여기로 접었다 --- 늘 보이던 것을 접어 두면
+ * 읽는 자리가 넓어지고, 필요할 때는 한 번의 누름으로 전부 나온다.
+ */
+.here-btn { font:inherit; color:inherit; background:none; border:1px solid transparent;
+  border-radius:4px; padding:.1rem .45rem; cursor:pointer; }
+.here-btn .caret { color:var(--muted); }
+.here-panel { position:sticky; top:2.9rem; z-index:19; max-height:78vh; overflow:auto;
+  background:var(--bg); border-bottom:1px solid var(--rule);
+  padding:.6rem clamp(.8rem,3vw,2.5rem) .9rem; }
+
+/* 도구 줄 --- 인라인으로 죽 늘어서다 좁으면 다음 줄로 넘어간다 */
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .5rem; align-items:center;
+  margin-bottom:.5rem; }
+.tool { font:inherit; font-size:.86rem; color:inherit; background:none;
+  border:1px solid var(--rule); border-radius:4px; padding:.2rem .55rem;
+  text-decoration:none; cursor:pointer; white-space:nowrap;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+
+/* ★ 누를 수 있다는 것을 바탕색으로 말한다(저자 지시) --- 글자만 바뀌면
+   손이 닿기 전에는 알 수 없다. */
+.tool:hover, .here-btn:hover, .bar a:hover, .nav a:hover,
+.here-panel .here-body a:hover { background:var(--box-bg); }
+.tool:hover { border-color:var(--box-rule); }
+.here-btn:hover { border-color:var(--rule); }
+.bar a, .nav a { border-radius:4px; padding:.1rem .35rem; }
+.tool:active, .here-btn:active, .bar a:active { transform:translateY(1px); }
+.segb[aria-pressed="true"] { background:var(--box-bg); border-color:var(--fg); font-weight:700; }
+
+/* 본문 링크 --- 밑줄로 있음을 말하고, 손이 닿으면 바탕으로 답한다 */
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; border-radius:3px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+
+/* 읽기 설정 상자 */
+.setbox { border:1px solid var(--rule); border-radius:5px; padding:.6rem .7rem;
+  margin:0 0 .6rem; font-size:.88rem;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .7rem; align-items:center;
+  margin:.35rem 0; }
+.setlbl { color:var(--muted); min-width:3.2rem; }
+.seg { display:inline-flex; gap:.25rem; }
+.segb { font:inherit; color:inherit; background:none; border:1px solid var(--rule);
+  border-radius:4px; padding:.15rem .5rem; cursor:pointer; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--rule);
+  border-radius:3px; background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; color:var(--muted); font-size:.82rem; }
+
+/* 가로폭 제한 --- 기본은 제한 없음(설계 의도). 독자가 켤 때만 걸린다. */
+:root[data-measure="on"] main .wrap { max-width:46rem; margin-inline:auto; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
-</style></head>
+</style>
+<script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">본문으로 건너뛰기</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">36장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch35.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch37.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch36.html">En</a>
-<a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s36-1"><span class="tf-no">36.1</span>nullptr — 비어 있음의 이름</a><a class="lv3" href="#s36-2"><span class="tf-no">36.2</span>어디까지 0을 써도 되는가 — 널 포인터 상수의 정확한 정의</a><a class="lv4" href="#s36-2-1"><span class="tf-no">36.2.1</span>담긴 뒤의 비트는 별개다</a><a class="lv3" href="#s36-3"><span class="tf-no">36.3</span>함정 — 표현을 0으로 가정하는 코드</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">36장 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch35.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch37.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/ch36.html">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.0/proven_c_book-v0.57.0-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label><button type="button" class="tool" id="s-reset">되돌리기</button></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s36-1"><span class="tf-no">36.1</span>nullptr — 비어 있음의 이름</a><a class="lv3" href="#s36-2"><span class="tf-no">36.2</span>어디까지 0을 써도 되는가 — 널 포인터 상수의 정확한 정의</a><a class="lv4" href="#s36-2-1"><span class="tf-no">36.2.1</span>담긴 뒤의 비트는 별개다</a><a class="lv3" href="#s36-3"><span class="tf-no">36.3</span>함정 — 표현을 0으로 가정하는 코드</a></div></div>
 <main id="content"><div class="wrap">
 <h2>36 널 — 삼형제의 정식 취급</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>6장 주소의 특수 지식 · 0번지의 특별함</div><div>35장 객체, 주소, 포인터 · 포인터는 무엇을 가리키는 값이다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>6장에서 “널 포인터(null pointer)의 내부 표현은 0이 아닐 수 있다”는 역사(Prime 50, CDC Cyber 180)를 보았다. 그러면 소스 코드에서 <code>p == 0</code>이라는 비교는 — 그런 기계에서 깨지는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 깨지지 않는다 — 그것이 표준의 약속이다. 소스의 정수 상수 0은 포인터 문맥에서 <strong>널 포인터 상수</strong>로 읽히고, 컴파일러가 그 기계의 실제 널 표현과 비교하도록 번역한다. 기호(소스의 0)와 표현(기계 속 비트)의 분리를 컴파일러가 지켜 주는 것이다. 깨지는 것은 다른 종류의 코드다 — “표현이 곧 0”이라고 <strong>비트 차원에서</strong> 가정하는 코드. 이 함정을 뒤에서 본다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">6장에서 얼굴만 익혀 둔 널 삼형제를 정식으로 취급한다. 포인터를 배운 바로 다음 자리인 것이 핵심이다 — 포인터를 손에 쥔 직후가 널 역참조 사고를 가장 처음 만나는 때이기 때문이다. 안전 수칙은 사고보다 먼저 와야 한다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">6장에서 얼굴만 익힌 널 삼형제 — 널 포인터, <code>NULL</code>/<code>nullptr</code>, NUL 문자 — 를 문법과 실무 규칙으로 정식 취급한다. “비어 있음”을 다루는 법은 포인터 안전 수칙의 첫 장이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>NUL 문자(<code>'\0'</code>) 쪽은 정식 취급이 언제인가 — 삼형제 중 하나가 아직 남았다.</li></ol></div></div><div></div><h3 id="s36-1">36.1 nullptr — 비어 있음의 이름</h3><div></div><p>포인터 변수는 선언 즉시 무언가를 가리키게 하거나, 아직 대상이 없다면 <strong>비어 있음</strong>을 명시해야 한다(23장의 초기화 규칙이 포인터에서는 더욱 사활적이다 — 쓰레기 주소를 따라가는 것이 최악의 사고이므로). 비어 있음의 표기는 두 가지가 통용된다 — 전통의 <code>NULL</code> 매크로와, C23이 들여온 키워드 <code>nullptr</code>. 이 책은 <code>nullptr</code>를 쓴다: <code>NULL</code>은 역사적으로 정의가 구현마다 달라 미묘한 함정(가변 인자 등)이 있었고, <code>nullptr</code>는 타입까지 명확한 현대적 표기다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch36/null.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
@@ -698,4 +752,5 @@ in short: the 0 you write in the source is *notation*; what lands in memory is *
 <strong><span class="tok-k">for</span></strong> <span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> i <strong><span class="tok-x">=</span></strong> <span class="tok-n">0</span><span class="tok-x">;</span> i <strong><span class="tok-x">&lt;</span></strong> <span class="tok-n">8</span><span class="tok-x">;</span> i <strong><span class="tok-x">+=</span></strong> <span class="tok-n">1</span><span class="tok-x">)</span> <span class="tok-x">{</span> arr<span class="tok-x">[</span>i<span class="tok-x">]</span> <strong><span class="tok-x">=</span></strong> nullptr<span class="tok-x">;</span> <span class="tok-x">}</span>  <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 올바르다 </span></em><em><span class="tok-c">*/</span></em>
 <em><span class="tok-c">/*</span></em><em><span class="tok-c"> memset(arr, 0, sizeof arr);     — 비트를 0으로 채운다: 다른 뜻! </span></em><em><span class="tok-c">*/</span></em></code></pre><p>첫 줄은 “널 포인터를 담아라”(표기의 세계 — 어떤 표현이든 컴파일러가 알아서). 주석의 memset은 “모든 비트를 0으로 채워라”(표현의 세계). 널 표현이 전부 0인 오늘의 주류 기계에서는 결과가 우연히 같지만, 6장의 역사가 보여 주듯 그 우연은 계약이 아니다. 실무에서 memset 방식을 흔히 보게 되는데(그리고 주류 플랫폼에서 실제로 동작하는데), <strong>이식성의 눈</strong> 으로는 회색 지대임을 알고 쓰는 것과 모르고 쓰는 것이 다르다 — 이 책의 선택은 명시적 <code>nullptr</code> 대입이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> NUL 문자(<code>'\0'</code>) 쪽은 정식 취급이 언제인가 — 삼형제 중 하나가 아직 남았다.</p></div><div class="dev qa-a"><p><span class="dev-label">답.</span> 세 장 뒤다. NUL 문자는 포인터의 세계가 아니라 <strong>문자열의 세계</strong>에서 일하는 물건이라(끝 표시), 문자열을 정식으로 다루는 42장이 그 무대다. 기다리는 동안 구별만 다시 — <code>nullptr</code>는 “가리킬 곳 없음”(포인터 값), <code>'\0'</code>은 “여기가 글의 끝”(문자 값, 크기 1바이트). 사는 세계가 다른 남남이다.</p></div></div><p>비어 있음을 다루는 법을 갖췄다. 다음 장은 포인터에 걸린 나머지 규칙들 — 6장의 정렬이 포인터 캐스트에 거는 제약과, 14장에서 예고한 프로버넌스 (출처 딱지)의 실무 감각이다.</p>
 <div class="nav"><a href="ch35.html">← 이전</a><span class="sp"></span><a href="index.html">목차로</a><span class="sp"></span><a href="ch37.html">다음 →</a></div>
-</div></main><script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');if(!b||!p)return;function set(o){p.hidden=!o;b.setAttribute('aria-expanded',o);}b.addEventListener('click',function(){set(p.hidden);});var x=p.querySelector('.here-x');if(x)x.addEventListener('click',function(){set(false);});p.addEventListener('click',function(e){if(e.target.tagName==='A')set(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')set(false);});})();</script></body></html>
+</div></main>
+<script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')open(false);});var box=document.getElementById('setbox'),so=document.getElementById('set-open');if(!box||!so)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('pcb-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('pcb-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();document.getElementById('s-width').checked=!!s.width;var t=s.theme||'auto';[].forEach.call(box.querySelectorAll('.segb'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}so.addEventListener('click',function(){box.hidden=!box.hidden;so.setAttribute('aria-expanded',!box.hidden);if(!box.hidden)paint();});document.getElementById('s-width').addEventListener('change',function(){var s=load();s.width=this.checked;save(s);if(s.width)r.setAttribute('data-measure','on');else r.removeAttribute('data-measure');});[].forEach.call(box.querySelectorAll('.segb'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;save(s);if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);if(!s.fg&&!s.bg&&!s.link)setTimeout(paint,0);else paint();});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});document.getElementById('s-reset').addEventListener('click',function(){save({});r.removeAttribute('data-theme');r.removeAttribute('data-measure');['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});paint();});})();</script></body></html>
