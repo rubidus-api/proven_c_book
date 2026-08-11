@@ -609,6 +609,10 @@ main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decor
 /* 가로폭 제한 --- 기본은 제한 없음(설계 의도). 독자가 켤 때만 걸린다. */
 :root[data-measure="on"] main .wrap { max-width:46rem; margin-inline:auto; }
 
+/* 펼침 패널 맨 왼쪽의 판 번호 --- 도구가 아니라 표시다(누를 것이 없다) */
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+
 /* ── 시험 중인 웹 조판 값 (RFC-0027 §5) ────────────────────────────────
  *
  * ★ 이 파일은 *조판 견본에만* 실린다(scripts/style-preview-html.py 가 얹는다).
