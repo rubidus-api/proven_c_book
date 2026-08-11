@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">82장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch81.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch83.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch82.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s82-1"><span class="tf-no">82.1</span>무엇이 승격됐나</a><a class="lv3" href="#s82-2"><span class="tf-no">82.2</span>bool — 무엇을 막는가</a><a class="lv3" href="#s82-3"><span class="tf-no">82.3</span>nullptr — 이름 바꾸기가 아니다</a><a class="lv3" href="#s82-4"><span class="tf-no">82.4</span>나머지 승격과 새 낱말</a><a class="lv3" href="#s82-5"><span class="tf-no">82.5</span>기존 코드를 어떻게 옮기는가</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>82 매크로에서 키워드로 — <code>bool</code>·<code>nullptr</code>과 그 동료들</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>78장 새 표준이 보탠 것과 <code>*_s</code> 논쟁 · 표준이 보탠 것들</div><div>30장 불리언과 비교 · 참·거짓의 타입</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>78장에서 C23이 <code>&lt;stdbool.h></code>를 사실상 불필요하게 만들었고 <code>nullptr</code>이 들어왔다고 표로만 지나갔다. 그런데 매크로로 잘 돌아가던 것을 왜 굳이 언어에 넣는가 — 이름만 바뀐 것 아닌가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 이름만 바뀐 것이 아니다. 매크로는 <strong>전처리기가 글자를 바꾸는 것</strong>이라 <span id="idx-entry-227"></span>타입도 범위(scope)도 없고, 사용자가 <code>#undef</code>할 수도, 다른 뜻으로 다시 정의할 수도 있다. 키워드는 <strong>언어의 문법 요소</strong>라 타입이 있고, 진단을 받을 수 있고, 아무도 재정의할 수 없다. 이 차이가 실제로 사고를 막는 자리가 이 장의 내용이다 — 특히 <code>nullptr</code>은 이름 바꾸기가 아니라 <strong>새 타입</strong> 이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">C23 이 언어에 손댄 자리를 라이브러리 부의 끝에 두는 것이 이상해 보일 수 있다. 그러나 <code>bool</code>·<code>nullptr</code> 은 오랫동안 <strong>헤더의 매크로</strong>였고, 그것이 키워드가 된 이야기라 라이브러리와 언어의 경계에 놓이는 것이 맞다. 78장의 「표준이 보탠 것」 바로 뒤가 그 자리다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-228"></span>C23이 언어에 손댄 가장 눈에 띄는 변화를 다룬다. 오랫동안 헤더의 <span id="idx-entry-229"></span>매크로로 흉내 내던 것들 — <code>bool</code>·<code>true</code>·<code>false</code>, <code>static_assert</code>, <code>alignas</code>, <code>thread_local</code> — 이 왜 키워드로 올라섰는지, <code>nullptr</code>이 무엇을 막으려고 새로 생겼는지, 어떤 규칙과 제한이 따라오는지, 그리고 기존 코드를 어떤 순서로 옮기는지까지.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>bool</code>을 <code>printf</code>로 찍을 때 어떤 서식을 쓰는가?</li><li>옛 표준으로 계속 컴파일해야 하는 프로젝트라면, 이 장은 남의 이야기인가?</li></ol></div></div><div></div><h3 id="s82-1">82.1 무엇이 승격됐나</h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples/ch82/keywords.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> C23 에서 키워드로 승격된 것들 — 무엇이 달라졌나 </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 

@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">72장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch71.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch73.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch72.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s72-1"><span class="tf-no">72.1</span>원칙 — UTF-8을 안에, 변환은 경계에만</a><a class="lv3" href="#s72-2"><span class="tf-no">72.2</span>검증 — 문법이 맞아도 거절해야 하는 것들</a><a class="lv3" href="#s72-3"><span class="tf-no">72.3</span>「글자 수」의 세 층위, 그리고 넷째</a><a class="lv3" href="#s72-4"><span class="tf-no">72.4</span>정규화 — 같은 글자, 다른 바이트</a><a class="lv3" href="#s72-5"><span class="tf-no">72.5</span>대소문자와 정렬은 언어에 달렸다</a><a class="lv3" href="#s72-6"><span class="tf-no">72.6</span>아직 살아 있는 레거시 — 2바이트 인코딩</a><a class="lv3" href="#s72-7"><span class="tf-no">72.7</span>변환은 무엇으로 하는가</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>72 실무 — 유니코드와 멀티바이트를 다루는 법</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>71장 와이드 문자 ② · UTF-16과 플랫폼의 갈라짐</div><div>70장 와이드 문자 ① · 변환 함수와 <code>mbstate_t</code></div><div>9장 문자와 텍스트 · 코드포인트와 인코딩</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>70·71장을 지나며 「UTF-8 바이트열을 그대로 다루라」는 권고가 여러 번 나왔다. 그런데 바이트열을 그대로 다루면 「세 번째 글자를 지워라」 같은 일은 어떻게 하는가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> <strong>대부분의 프로그램은 그런 일을 하지 않기 때문</strong>이다. 실제로 하는 일을 세어 보면 이렇다 — 읽고, 저장하고, 비교하고, 이어 붙이고, 찾고, 그대로 내보낸다. 이 여섯 가지는 UTF-8 바이트열에서 <strong>아무 해독 없이</strong> 된다.</p><p>글자 단위로 만져야 하는 일 — 커서 옮기기, 줄 바꿈 자리 찾기, 글자 수 세기 — 은 편집기나 렌더러의 몫이고, 그 층에서는 코드포인트도 모자라 <strong>그래핌 클러스터</strong>가 필요하다. 이 장은 그 경계를 그어 주는 장이다: 어디까지 바이트로 가고, 어디서부터 해독하며, 그때 무엇을 조심하는가.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">세 장(70·71·72)의 마지막이자 처방을 내는 자리다. 처방을 맨 뒤에 둔 것은 「UTF-8 우선」이라는 결론이 <strong>앞의 두 장을 겪은 뒤라야</strong> 설득력을 갖기 때문이다. 아무 근거 없이 먼저 말하면 유행 따르기로 들린다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">실무의 처방을 모은다. UTF-8 우선 설계가 왜 이기는지, 「글자 수」의 세 층위와 그래핌 클러스터, 정규화, 언어에 달린 대소문자, 직접 만든 UTF-8 검증기, 그리고 아직 살아 있는 레거시 2바이트 인코딩의 함정까지.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그래핌 클러스터는 어떻게 세는가?</li></ol></div></div><div></div><h3 id="s72-1">72.1 원칙 — UTF-8을 안에, 변환은 경계에만</h3><div></div><p>먼저 결론이다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>자리</strong></th><th><strong>무엇을 쓰는가</strong></th></tr><tr><td>프로그램 내부</td><td>UTF-8 바이트열(<code>char *</code>, 길이는 바이트 수)</td></tr><tr><td>파일·네트워크·데이터베이스</td><td>UTF-8</td></tr><tr><td>Windows API 를 부를 때</td><td>경계에서만 UTF-16 으로 변환</td></tr><tr><td>글자 단위 편집·렌더링</td><td>필요한 자리에서만 코드포인트·그래핌으로 해독</td></tr></table></div><p class="float-caption">표 72.1</p></figure><p>이 설계가 이기는 이유는 UTF-8의 성질에서 그대로 나온다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>UTF-8의 성질</strong></th><th><strong>그래서 얻는 것</strong></th></tr><tr><td>아스키와 완전히 호환된다</td><td>기존 코드·프로토콜·파일 형식이 그대로 돈다</td></tr><tr><td>후행 바이트가 언제나 0x80 이상</td><td><code>'/'</code>·<code>'\\'</code>·<code>','</code> 같은 구분자와 절대 겹치지 않는다</td></tr><tr><td>자기동기화된다</td><td>아무 위치에서나 글자 경계를 찾을 수 있다</td></tr><tr><td>바이트 순서가 코드포인트 순서와 같다</td><td><code>strcmp</code>가 코드포인트 순 정렬을 준다</td></tr><tr><td>엔디안이 없다</td><td>바이트 순서 표시(BOM)가 필요 없다</td></tr></table></div><p class="float-caption">표 72.2</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples/ch72/utf8_scan.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> UTF-8 을 직접 읽는다 — 규칙, 그리고 거절해야 하는 것들(RFC 3629). </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>

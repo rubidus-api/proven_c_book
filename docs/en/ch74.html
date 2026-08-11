@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">Skip to content</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 74 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch73.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch75.html" title="Next" aria-label="Next">→</a></span><a class="bar-toc" href="toc.html" title="Detailed contents" aria-label="Detailed contents">▤</a><a href="../ko/ch74.html">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s74-1"><span class="tf-no">74.1</span>Three representations of time</a><a class="lv3" href="#s74-2"><span class="tf-no">74.2</span>The traps of struct tm</a><a class="lv3" href="#s74-3"><span class="tf-no">74.3</span>Printing to a string — strftime</a><a class="lv3" href="#s74-4"><span class="tf-no">74.4</span>Time zones and summer time — what the standard does not handle</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>74 Time — <code>&lt;time.h></code></h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 46, Structs · values bundled in a struct</div><div>chapter 61, The terrain of the standard library · the contract the standard settles</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Bringing forward a story to be treated in Part XII: calendar time and elapsed time were said to be different things. Then what is used in standard C to measure exactly “whether three seconds have passed”?</p><div class="qa-a"><p><span class="dev-label">A.</span> With the standard alone there is no way to measure it exactly. <code>time</code> is in seconds and can go backwards when the system adjusts the clock, and <code>clock</code> measures not wall-clock time but <strong>the CPU time the process used</strong> (so it does not grow while waiting for input and output). C11 brought in <code>timespec_get</code> but does not require a monotonic clock. Accurate elapsed measurement is the part of POSIX’s <code>clock_gettime(CLOCK_MONOTONIC, …)</code> or Windows’ <code>QueryPerformanceCounter</code> — that is, of <strong>a platform API</strong>.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">Since the standard settles unusually little here, the later part of the close reading is the right place. To recognize that “the standard does not say” is itself the cause of the traps, you need to have seen enough headers where the standard <strong>did</strong> say. Gaps show only against a contrast.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">The header the standard settled unusually little of. The standard says neither what <code>time_t</code> is nor how time zones are handled. We look at the traps that arise in those gaps — the year with 1900 subtracted, the month starting from 0, functions that return a static buffer, and the fact that <strong>there is no monotonic clock in the standard for measuring elapsed time</strong>.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why do so many types exist for time — would one count of seconds not do?</li></ol></div></div><div></div><h3 id="s74-1">74.1 Three representations of time</h3><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>type or function</strong></th><th><strong>what</strong></th><th><strong>to know</strong></th></tr><tr><td><code>time_t</code></td><td>calendar time (usually seconds since 1970)</td><td>★ the standard settles only “an arithmetic type”</td></tr><tr><td><code>struct tm</code></td><td>split into year, month, day, hour, minute, second</td><td>the field rules are a trap</td></tr><tr><td><code>clock_t</code></td><td>the CPU time the process used</td><td>divide by <code>CLOCKS_PER_SEC</code></td></tr><tr><td><code>struct timespec</code></td><td>seconds + nanoseconds (C11)</td><td><code>timespec_get</code></td></tr></table></div><p class="float-caption">Table 75.1</p></figure><p>That the standard did not settle what <code>time_t</code> is matters. In most implementations it is seconds since 1970-01-01 UTC, but that is <strong>a practice</strong>, not a guarantee of the standard. So portable code does not calculate with <code>time_t</code>’s internal value directly but takes the difference with <code>difftime</code>.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why do so many types exist for time — would one count of seconds not do?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Because three different jobs are involved. <code>time_t</code> is an opaque value naming <strong>one moment</strong>; <code>struct tm</code> is the <strong>calendar notation</strong> people read (year, month, day, hour, minute, second); <code>clock_t</code> is a scale for measuring <strong>elapsed time</strong>. Turning a moment into a calendar is a hard computation full of time zones, daylight saving and leap seconds, so the standard keeps the two in separate types and lets <code>localtime</code> and <code>mktime</code> bridge them.</p><p>The accidents in practice happen exactly at that border — subtracting two <code>time_t</code> values gives seconds, but adding to the fields of a <code>struct tm</code> directly produces an unnormalised date. Date arithmetic must go through <code>mktime</code>.</p></p></div></div><h3 id="s74-2">74.2 The traps of <code>struct tm</code></h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch74/timefns.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">time.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>

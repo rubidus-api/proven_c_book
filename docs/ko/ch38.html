@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">38장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch37.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch39.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch38.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s38-1"><span class="tf-no">38.1</span>선언, 접근, 순회</a><a class="lv3" href="#s38-2"><span class="tf-no">38.2</span>배열과 포인터 — 무너짐의 진실</a><a class="lv3" href="#s38-3"><span class="tf-no">38.3</span>포인터의 덧셈은 보통의 덧셈이 아니다</a><a class="lv4" href="#s38-3-1"><span class="tf-no">38.3.1</span>주소를 정수로 담는 세 타입 — ptrdiff_t·intptr_t·uintptr_t</a><a class="lv4" href="#s38-3-2"><span class="tf-no">38.3.2</span>어디까지 허용되는가 — 산술의 계약</a><a class="lv3" href="#s38-4"><span class="tf-no">38.4</span>매개변수의 배열은 배열이 아니다</a><a class="lv3" href="#s38-5"><span class="tf-no">38.5</span>크기가 실행 중에 정해지는 배열 — VLA</a><a class="lv3" href="#s38-6"><span class="tf-no">38.6</span>매개변수의 [static N] — “최소 이만큼은 온다”</a><a class="lv4" href="#s38-6-1"><span class="tf-no">38.6.1</span>[static 1] — “널이 아니다”를 문법으로 적는 법</a><a class="lv4" href="#s38-6-2"><span class="tf-no">38.6.2</span>같은 대괄호 안의 한정자 — 그것은 포인터의 한정자다</a><a class="lv3" href="#s38-7"><span class="tf-no">38.7</span>경계 — 생사의 규칙</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>38 배열</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>35장 객체, 주소, 포인터 · 주소와 포인터</div><div>11장 기억의 분화 · 기억은 이어진 칸들이다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>11장에서 캐시 라인은 “이웃 예순네 칸을 상자째” 나른다고 했고, 배열(array)을 차례로 훑는 코드가 빠른 이유가 그것이라 했다. 그러면 “배열”이란 기억의 눈으로 정확히 무엇인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 같은 타입의 칸들이 <strong>빈틈없이 이웃하여</strong> 늘어선 것 — 그것이 전부다. <code>int a[5]</code>는 int 다섯 개가 연속된 주소에 나란히 놓인 것이고, 그래서 첫 칸의 주소와 타입만 알면 나머지 위치가 전부 계산된다(<math><mi>𝑖</mi></math>번 원소 = 시작 주소 + <math><mi>𝑖</mi><mo form="infix" lspace="0.2222222222222222em" rspace="0em">×</mo></math> 칸 크기). 이 “계산 가능한 이웃”이라는 성질이 배열의 힘(즉시 접근, 캐시 친화)이자 위험(경계 계산 착오)의 뿌리다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">포인터 다음이 배열인 것은 C 에서 필연이다 — 배열의 이름이 곧 포인터로 무너지므로, 반대 순서로는 배열의 첫 문단조차 쓸 수 없다. 그리고 25장에서 외상으로 남긴 <code>char line[100]</code> 이 여기서 갚아진다. 7부가 「기억」인 이유가 이 장부터 분명해진다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">연속된 기억 — 배열이다. 선언과 순회, 배열과 포인터의 진짜 관계 (악명 높은 “무너짐”), 그리고 경계라는 생사의 규칙까지. 25장의 <code>char line[100]</code> 외상이 여기서 청산된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>왜 이렇게 정했는가 — 그냥 바이트 단위로 더하게 두면 더 단순하지 않은가?</li><li>그러면 포인터 매개변수는 전부 <code>[static 1]</code>로 적는 편이 좋은가?</li><li>경계를 어기면 컴파일러가 잡아 주지 않는가?</li></ol></div></div><div></div><h3 id="s38-1">38.1 선언, 접근, 순회</h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples/ch38/arr.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>

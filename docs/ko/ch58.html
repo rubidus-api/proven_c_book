@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">58장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch57.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch59.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch58.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s58-1"><span class="tf-no">58.1</span>네 개의 도구</a><a class="lv3" href="#s58-2"><span class="tf-no">58.2</span>기본 인자 승격 — ...을 건너는 값은 굵어진다</a><a class="lv3" href="#s58-3"><span class="tf-no">58.3</span>근본적 한계 — 함수는 아무것도 모른다</a><a class="lv3" href="#s58-4"><span class="tf-no">58.4</span>_Generic — 타입을 컴파일 시간에 붙잡기</a><a class="lv3" href="#s58-5"><span class="tf-no">58.5</span>proven의 PROVEN_ARG — 실물의 구조</a><a class="lv3" href="#s58-6"><span class="tf-no">58.6</span>역사 — varargs에서 stdarg로</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>58 가변 인자 함수</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>22장 출력 · printf 라는 가변 인자 함수</div><div>29장 암묵적 변환 · 기본 인자 승격</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p><span id="idx-entry-196"></span>29장에서 가변 인자로 넘어가는 값에는 기본 진급(float→double, 작은 정수→int)이 적용된다고 배웠다. 그런데 왜 하필 그 자리에만 특별한 진급 규칙이 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 받는 쪽이 <strong>타입을 모르기 때문이다.</strong> 보통의 함수는 원형(24장)에 인자 타입이 적혀 있어 컴파일러가 양쪽을 맞춰 준다. 그러나 가변 인자 자리는 원형에 <code>...</code>뿐이라 맞출 상대가 없다 — 그래서 “일단 다들 큰 타입으로 통일해서 보내자”는 약속으로 혼란을 줄인 것이다. 이 장은 그 “타입을 모르는 자리”에서 어떻게 값을 꺼내는지, 그리고 그 대가가 무엇인지의 이야기다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">22장부터 <code>printf</code> 를 써 왔으면서 그 비밀은 여기서야 연다. 미룬 이유는 두 가지가 갖춰져야 했기 때문이다 — 기본 인자 승격(29장)과 포인터(35장). 그리고 이 장이 59장 바로 앞인 것도 맞물린다: 가변 인자와 함수 포인터가 「타입 검사가 느슨해지는 두 자리」로 나란히 읽힌다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><code>printf</code>가 인자를 몇 개든 받을 수 있었던 비밀을 연다. <code>&lt;stdarg.h></code>의 네 도구, 이 장치가 왜 타입 안전하지 않은지, 그 역사(K&amp;R의 <code>varargs</code> 에서 C89의 <code>stdarg</code>, C23의 정리까지), 그리고 오늘의 대안까지. 22장의 “서식은 계약”이 왜 그토록 엄격한 계약이었는지가 여기서 밝혀진다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 <code>_Generic</code>으로 C에 제네릭이 생긴 것인가?</li><li><code>printf</code> 같은 서식 함수를 감싸는 내 함수를 만들려면 어떻게 하는가 — 예컨대 로그 함수?</li></ol></div></div><div></div><h3 id="s58-1">58.1 네 개의 도구</h3><div></div><p><code>&lt;stdarg.h></code>가 주는 것은 타입 하나와 매크로 셋이다 — <code>va_list</code>(읽개), <code>va_start</code>(시작), <code>va_arg</code>(하나 꺼내기), <code>va_end</code>(닫기). 시연으로 본다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch58/va.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdarg.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 

@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">Skip to content</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 30 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch29.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch31.html" title="Next" aria-label="Next">→</a></span><a class="bar-toc" href="toc.html" title="Detailed contents" aria-label="Detailed contents">▤</a><a href="../ko/ch30.html">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s30-1"><span class="tf-no">30.1</span>bool — a type with two values</a><a class="lv3" href="#s30-2"><span class="tf-no">30.2</span>Comparison — expressions that make bools</a><a class="lv3" href="#s30-3"><span class="tf-no">30.3</span>Logical operators — weaving judgements together</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>30 Booleans and comparison</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 20, Expressions and constants · the value of an expression</div><div>chapter 29, Implicit conversions · the promotion rules</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 23 announced that <code>=</code> (putting) and <code>==</code> (comparing) use separate symbols. Then what is the <strong>result</strong> of a comparison like <code>3 &lt; 5</code> — an expression becomes a value (chapter 20), so if a comparison is an expression, what value does it become?</p><div class="qa-a"><p><span class="dev-label">A.</span> <span id="idx-entry-71"></span>True or false — it becomes a value holding only those two. In C23 that type is named <code>bool</code> and its values <code>true</code> and <code>false</code>. That a comparison is not a “question” but <strong>an expression computing a bool value</strong> — that perspective is this chapter’s centre, and in the next chapter branching consumes that value.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">To learn branching (chapter 31) you must first know what a <strong>condition</strong> is, so true and false are set one chapter ahead. In C this matters unusually much: what goes in the condition slot need not be a <code>bool</code> but any scalar, so without settling “what counts as true” the confusion starts at chapter 31 and never stops.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-72"></span>The world of true and false as values — C23′s <code>bool</code>, the comparison operators, and the logical operators with their special property (short-circuit evaluation). The “condition” the next chapter’s branching will ask about is made here.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>How do <code>&amp;</code> (chapter 28) and <code>&amp;&amp;</code> really differ — both are called AND.</li></ol></div></div><div></div><h3 id="s30-1">30.1 bool — a type with two values</h3><div></div><p><code>bool</code> is a type whose value set is just {<code>false</code>, <code>true</code>}. It is the smallest container beside chapter 27′s family of integers. One line of history unravels its odd corners — early C had <strong>no</strong> boolean type, and the practice of counting 0 as false and every nonzero value as true stood in its place. C99 brought one in through the back door (via the <code>&lt;stdbool.h></code> box), and <strong>only with C23</strong> did <code>bool</code>, <code>true</code> and <code>false</code> become proper keywords usable without the box. A formal adoption half a century late — and as a trace of that practice, printing a <code>bool</code> with <code>%d</code> gives 1 and 0 (confirmed in the demonstration).</p><h3 id="s30-2">30.2 Comparison — expressions that make bools</h3><div></div><p>There are six comparison operators — <code>==</code> (equal), <code>!=</code> (not equal), <code>&lt;</code>, <code>&lt;=</code>, <code>></code>, <code>>=</code>. All take two values as material and put out a bool.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch30/cmp.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>

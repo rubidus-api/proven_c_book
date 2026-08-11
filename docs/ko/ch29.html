@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">29장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch28.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch30.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch29.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s29-1"><span class="tf-no">29.1</span>규칙 1 — 정수 승격</a><a class="lv3" href="#s29-2"><span class="tf-no">29.2</span>규칙 2 — 통상 산술 변환</a><a class="lv3" href="#s29-3"><span class="tf-no">29.3</span>규칙 3 — 가변 인자의 기본 진급</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>29 암묵적 변환(implicit conversion) — 승격과 통상 산술 변환</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>26장 타입의 갈래 · 산술 타입이라는 낱말</div><div>27장 정수 · 정수형마다 폭이 다르다</div><div>28장 정수의 연산 · 연산은 같은 타입끼리 일어난다</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>7장에서 부호 확장(8→16비트 넓히기)을 배웠고, 28장 끝에서 “작은 그릇의 값은 계산 전에 자동으로 넓혀진다”고 스쳤다. 그러면 <code>char + char</code>의 결과 타입은 char인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 아니다 — int다. 그리고 이 사실이 이 장의 출발점이다. C의 산술 연산은 <strong>작은 정수 타입 위에서 일어나지 않는다</strong>. 계산 전에 모두 int(또는 더 큰 타입)로 넓힌 뒤 계산하고, 결과도 그 넓은 타입이다. 왜 그런지, 어디까지 그런지가 이 장의 내용이다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">이 장이 30장의 비교보다 앞에 오는 것이 중요하다. 비교도, 산술도, 함수 호출도 전부 <strong>말없는 변환</strong>을 거치는데, 그것을 모르고 비교를 배우면 「왜 이 비교가 참인가」를 설명할 도리가 없다. 27·28장에서 폭이 다른 정수들을 만난 직후이자, 그것들이 서로 만나기 직전 — 여기가 유일하게 맞는 자리다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">C는 타입이 다른 값들을 만나게 하면 <strong>말없이</strong> 변환한다. 이 장은 그 <span id="idx-entry-112"></span>보이지 않는 변환들을 한자리에 모은다 — 정수 승격, 통상 산술 변환(usual arithmetic conversions), <span id="idx-entry-113"></span>그리고 가변 인자(variadic arguments)의 기본 진급까지. 흩어 놓으면 각각이 수수께끼지만, 모아 놓으면 하나의 규칙 체계다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>이 규칙들을 다 외워야 하는가?</li></ol></div></div><div></div><span id="idx-entry-114"></span><p>이 장이 내내 쓰는 낱말 — <strong>산술 타입</strong>, <strong>정수 타입</strong>, <strong>정수 승격(integer promotion)의 대상</strong> — 은 26장에서 정의한 그대로다. 헷갈리면 그 갈래를 다시 펴 보면 된다.</p><h3 id="s29-1">29.1 규칙 1 — 정수 승격</h3><div></div><p><strong>정수 승격</strong>(integer promotion): <code>char</code>, <code>short</code>, <code>bool</code>, 비트 필드처럼 int보다 작은 정수 타입의 값이 산술 연산에 참여하면, 계산 전에 <strong>int로 넓혀진다</strong>(int가 그 값들을 다 담을 수 있으면 int로, 아니면 unsigned int).</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch29/conv.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 

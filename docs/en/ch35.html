@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">Skip to content</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 35 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch34.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch36.html" title="Next" aria-label="Next">→</a></span><a class="bar-toc" href="toc.html" title="Detailed contents" aria-label="Detailed contents">▤</a><a href="../ko/ch35.html">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s35-1"><span class="tf-no">35.1</span>Three notations — declaration, &amp;amp;, *</a><a class="lv3" href="#s35-2"><span class="tf-no">35.2</span>sizeof — asking the size of a container</a><a class="lv4" href="#s35-2-1"><span class="tf-no">35.2.1</span>The type sizeof yields — size_t</a><a class="lv3" href="#s35-3"><span class="tf-no">35.3</span>What kind of number is an address — name, size, order</a><a class="lv4" href="#s35-3-1"><span class="tf-no">35.3.1</span>Why an integer, of all things</a><a class="lv4" href="#s35-3-2"><span class="tf-no">35.3.2</span>The abstraction has thickened with time</a><a class="lv3" href="#s35-4"><span class="tf-no">35.4</span>How to print an address</a><a class="lv4" href="#s35-4-1"><span class="tf-no">35.4.1</span>The exact contract of %p</a><a class="lv4" href="#s35-4-2"><span class="tf-no">35.4.2</span>When it has to become a string — uintptr_t and PRIxPTR</a><a class="lv4" href="#s35-4-3"><span class="tf-no">35.4.3</span>But — does the address need printing at all?</a><a class="lv3" href="#s35-5"><span class="tf-no">35.5</span>The size of a pointer is not one number</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>35 Objects, addresses, pointers</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 5, Words and addresses · an address is a value</div><div>chapter 33, The meaning of a function · copying values alone cannot change the original</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 33 said “the proper method for a function to change a variable outside is to copy and pass the variable’s <strong>address</strong> as a value.” Unfolding that with chapter 5′s knowledge — on what grounds can an address be “copied as a value”?</p><div class="qa-a"><p><p><span class="dev-label">A.</span> On the ground that an address is <strong>a value that can be handled like a number</strong> (chapter 5) — a locker number can be written down elsewhere, copied and handed over. In C the type of that “variable holding an address” is the pointer. What we learn today is not a new concept but dressing chapter 5′s idea in syntax.</p><p>One thing should be nailed down in advance. That it can be copied and compared does not make <strong>a pointer an integer.</strong> C keeps pointers as a different kind of value from integers and attaches a contract to them: the type pointed at, and the provenance — which object it came from. Chapter 6′s remark that “the same number need not be the same pointer” begins here, and chapter 37 finishes it properly under the name of provenance.</p></p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The book’s second mountain starts here. Holding pointers back for thirty-five chapters was not delay but <strong>preparation</strong> — chapter 5 drew the address, chapter 6 handled alignment and address zero, chapter 33 created the need by showing that copying alone cannot change the original. With those three in place, the pointer is not a new idea but <strong>a name put on something already known</strong>.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">Part VII is this book’s second mountain — memory. We walk chapter 5′s locker <span id="idx-entry-79"></span>corridor again, this time in C’s syntax. The first chapter faces head on the type that handles addresses as values, the <strong>pointer</strong> — <code>&amp;</code>, <code>*</code> and <code>sizeof</code>, settling every credit carried since chapter 25.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>So should every variable holding a size just be a <code>size_t</code>?</li><li>How large is a pointer variable itself — what is <code>sizeof p</code>?</li><li>Printing a variable’s address would be interesting — why did the demonstration not print address values?</li><li>Is “an address is an integer” wrong, then?</li><li>Then why not always use <code>PRIxPTR</code> instead of <code>%p</code>?</li><li>Then why can <code>void *</code> be used as “the container that holds any pointer”?</li></ol></div></div><div></div><h3 id="s35-1">35.1 Three notations — declaration, &amp;, *</h3><div></div><p>Pointer syntax is three pieces and no more.</p><p><strong>Declaration</strong> — <code>int *p;</code> declares “a variable p holding the address of an int.” The knack of reading it is from the back: “p is a pointer (<code>*p</code>), and at the place it points there is an int.”</p><p><strong>Taking an address</strong> — <code>&amp;n</code> is the value “n’s address.” The <code>&amp;</code> brushed past in chapter 25′s <code>sscanf(..., &amp;n)</code> has finally got its formal name — the operator that detaches the number tag of the locker called n.</p><span id="idx-entry-80"></span><p><strong>Dereference</strong> — <code>*p</code> means “go to the address written in p and <strong>that slot</strong>.” In a reading position it reads that slot’s value; on the left of an assignment it writes to that slot. That the <code>*</code> of a declaration, the <code>*</code> of an expression (dereference) and the <code>*</code> of multiplication use the same character is C’s notorious thrift — position is the only way to tell them apart.</p><p>The demonstration shows all three at once, including chapter 33′s homework — the proper method by which a function changes an original.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch35/ptr.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">void</span></strong> <strong>set_to</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> <strong><span class="tok-x">*</span></strong>target<span class="tok-x">,</span> <strong><span class="tok-t">int</span></strong> value<span class="tok-x">)</span>

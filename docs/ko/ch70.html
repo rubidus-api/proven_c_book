@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">70장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch69.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch71.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch70.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s70-1"><span class="tf-no">70.1</span>표준이 정한 것과 정하지 않은 것</a><a class="lv3" href="#s70-2"><span class="tf-no">70.2</span>다섯 가지 문자 상수와 문자열</a><a class="lv3" href="#s70-3"><span class="tf-no">70.3</span>MB_CUR_MAX와 MB_LEN_MAX</a><a class="lv3" href="#s70-4"><span class="tf-no">70.4</span>변환 함수의 세 층</a><a class="lv4" href="#s70-4-1"><span class="tf-no">70.4.1</span>mbstate_t가 왜 필요한가</a><a class="lv3" href="#s70-5"><span class="tf-no">70.5</span>mbrtowc — 한 단계씩 뜯어보기</a><a class="lv4" href="#s70-5-1"><span class="tf-no">70.5.1</span>문자열 통째로 — mbsrtowcs</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>70 와이드 문자 ① — <code>wchar_t</code>와 멀티바이트 변환</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>9장 문자와 텍스트 · 코드포인트와 인코딩</div><div>68장 로케일 ① · <code>LC_CTYPE</code></div><div>67장 문자 분류 · 바이트 판정의 한계</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>9장에서 UTF-8은 한 글자가 1~4바이트라고 했다. 그렇다면 “글자 하나를 담는 타입”을 만들면 되지 않는가? C에는 그런 것이 있는가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> 있다. 그것이 <code>wchar_t</code>이고, C95가 바로 그 발상으로 들여왔다 — <strong>한 글자를 한 단위로 담자.</strong> 문제는 그 발상이 30년 뒤의 현실과 어긋났다는 데 있다.</p><p>표준은 <code>wchar_t</code>의 <strong>크기도 인코딩도 정하지 않았다.</strong> “지원하는 로케일 중 가장 큰 확장 문자집합의 모든 원소를 서로 다른 코드로 표현할 수 있는 정수형”이라고만 했다. 그 결과 리눅스에서는 4바이트 UTF-32가 되었고 Windows에서는 2바이트 UTF-16이 되었다 — 그리고 뒤쪽에서는 「한 글자 = 한 단위」가 성립하지 않는다.</p><p>이 장은 그 타입의 정확한 계약과, 바이트열이 글자로 풀리는 과정을 한 단계씩 본다. 어긋남의 결과는 다음 장에서 본다.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">9장에서 배운 코드포인트와 인코딩이 마침내 C 의 타입과 함수로 내려온다. 예순 장을 기다린 것은 이 주제가 로케일(68장)에 통째로 기대기 때문이다. 순서를 뒤집으면 <code>mbrtowc</code> 가 무엇에 의존하는지 말할 수 없다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-210"></span><code>wchar_t</code>의 정체를 밑바닥까지 본다. 표준의 정의와 구현이 밝히는 매크로, 다섯 가지 문자 상수와 문자열의 타입·크기·바이트, <code>MB_CUR_MAX</code>와 <code>MB_LEN_MAX</code>의 차이, <code>mbstate_t</code>가 왜 필요한지, 그리고 <code>mbrtowc</code>가 바이트를 먹으며 글자를 만들어 내는 과정을 단계별 실측으로.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>소스 코드에 <code>"한"</code>이라고 적으면 어떤 바이트가 되는가?</li><li>UTF-8은 최대 4바이트인데 왜 <code>MB_CUR_MAX</code>가 6인가?</li></ol></div></div><div></div><h3 id="s70-1">70.1 표준이 정한 것과 정하지 않은 것</h3><div></div><p><code>wchar_t</code>는 <code>&lt;stddef.h></code>가 정의하는 정수 타입이다. 표준의 정의를 그대로 옮기면 <strong>“지원되는 로케일 중에서 지정된 가장 큰 확장 문자집합의 모든 원소에 대해 서로 다른 코드를 표현할 수 있는 정수 타입”</strong>이다.</p><p>여기에 없는 것을 보아야 한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>표준이 정한 것</strong></th><th><strong>정하지 않은 것</strong></th></tr><tr><td>정수 타입이다</td><td>몇 바이트인지</td></tr><tr><td>문자마다 다른 값을 가진다</td><td>부호가 있는지</td></tr><tr><td>기본 문자집합의 값은 양수</td><td>어떤 인코딩인지(유니코드인지도)</td></tr></table></div><p class="float-caption">표 70.1</p></figure><p>그래서 이식성 있는 코드는 <code>wchar_t</code>의 값을 유니코드 코드포인트로 <strong>가정할 수 없다</strong>. 대신 구현이 그 사실을 밝히는 매크로가 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>매크로</strong></th><th><strong>정의되어 있으면</strong></th></tr><tr><td><code>__STDC_ISO_10646__</code></td><td><code>wchar_t</code> 값이 ISO/IEC 10646(유니코드) 코드포인트와 같다. 값은 <code>yyyymmL</code> 꼴</td></tr><tr><td><code>__STDC_UTF_16__</code></td><td><code>char16_t</code>가 UTF-16이다</td></tr><tr><td><code>__STDC_UTF_32__</code></td><td><code>char32_t</code>가 UTF-32이다</td></tr><tr><td><code>__STDC_MB_MIGHT_NEQ_WC__</code></td><td>기본 문자집합의 문자라도 <code>'x'</code>와 <code>L'x'</code>의 값이 다를 수 있다</td></tr></table></div><p class="float-caption">표 70.2</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples/ch70/wide_lit.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 다섯 가지 문자 상수와 문자열 — 타입, 요소 크기, 그리고 실제 바이트. </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdint.h</span><span class="tok-s">></span>

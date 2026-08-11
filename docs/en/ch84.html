@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">Skip to content</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 84 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch83.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch85.html" title="Next" aria-label="Next">→</a></span><a class="bar-toc" href="toc.html" title="Detailed contents" aria-label="Detailed contents">▤</a><a href="../ko/ch84.html">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s84-1"><span class="tf-no">84.1</span>Ledger ① — the header attached to each block</a><a class="lv3" href="#s84-2"><span class="tf-no">84.2</span>Ledger ② — lists by size and caches per strand</a><a class="lv3" href="#s84-3"><span class="tf-no">84.3</span>Fragmentation — memory grows though there is no leak</a><a class="lv3" href="#s84-4"><span class="tf-no">84.4</span>Swapping out the standard malloc — alternative allocators</a><a class="lv3" href="#s84-5"><span class="tf-no">84.5</span>Alternative standard libraries</a><a class="lv3" href="#s84-6"><span class="tf-no">84.6</span>Alternatives that change the shape — arenas, pools, and the allocator as an argument</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>84 Inside the allocator — the heap, alternative allocators, alternative standard libraries</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 45, Dynamic memory · dynamic allocation</div><div>chapter 83, A program’s memory layout · a program’s memory layout</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 45 said one <code>malloc</code> is “a trip to the warehouse office”, and chapter 83 showed where in the address space that warehouse lies. Then what ledgers exactly does that office keep inside?</p><div class="qa-a"><p><span class="dev-label">A.</span> It writes two things down — <strong>which piece is free</strong> and <strong>how many bytes each piece is</strong>. The classic answer manages the former with lists by size (bins) and the latter with a header attached to each block. How these two ledgers are designed settles an allocator’s performance and security entire. This chapter is the shape of that design.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The inside of <code>malloc</code>, passed over in chapter 45 with only “it is expensive”, is now opened. The thirty-eight-chapter delay is because an allocator’s internals can only be explained on top of chapter 83′s memory layout. And ending part 11 here is right too: only after reading the standard library through does “replacing it” mean anything.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-164"></span>We open the inside of the <code>malloc</code> chapter 45 passed over saying only “it is expensive”. How an allocator manages free pieces (bins, boundary tags, coalescing), why there is a cache per strand, what fragmentation is and why <span id="idx-entry-165"></span>it does not recover. Then the alternatives that can be swapped in for the standard <code>malloc</code> (jemalloc, tcmalloc, mimalloc, snmalloc) and the alternative standard libraries (musl, picolibc and others), and the arenas and pools that change the very shape of allocation. The end of this chapter is the door to Part XII.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Then should <code>malloc</code> no longer be used?</li></ol></div></div><div></div><h3 id="s84-1">84.1 Ledger ① — the header attached to each block</h3><div></div><p><code>free(p)</code> does not take a size. And yet it must know how many bytes are being returned. The answer is simple — <strong>the size is written just before the address that was returned.</strong></p><pre><code data-lang="text">        ┌────────────┬──────────────────────────┐
         │ header     │ the place given to you   │
         │ size·flags │ ← the address malloc gave│

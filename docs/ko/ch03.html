@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">3장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch02.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch04.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch03.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s3-1"><span class="tf-no">3.1</span>프로그램은 명사, 프로세스는 동사</a><a class="lv3" href="#s3-2"><span class="tf-no">3.2</span>프로세스는 어떻게 태어나는가</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>3 프로그램과 프로세스 — 실행된다는 것</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>2장 기억의 구역들 · 기억이 코드·정적·스택·힙으로 나뉜다는 밑그림</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>2장에서 프로그램의 기억이 코드·정적·스택·힙으로 나뉜다고 했다. 그런데 그 구역들은 언제, 누가 마련해 주는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 프로그램이 <strong>실행되는 순간</strong>, 대개 운영체제가 마련한다. 디스크에 놓인 실행 파일은 아직 아무 기억도 갖고 있지 않다 — 그저 “코드는 이렇고, 정적 구역은 이만큼 필요하다”는 설계도다. 그 설계도를 읽어 실제 기억을 펼치고, 작업대를 세우고, 첫 명령으로 뛰어들게 하는 일 — 그것이 실행이고, 그렇게 살아난 한 벌을 <strong>프로세스(process)</strong>라 부른다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">2장이 「기억이 이렇게 나뉜다」고 했다면, 그 구역을 <strong>누가 언제 만들어 주는가</strong>가 남는다. 답은 운영체제이고, 그 답을 여기서 받아 두어야 15장의 첫 프로그램이 「실행된다」는 말이 빈말이 되지 않는다. 파일과 프로세스를 가르는 이 한 걸음이 1부의 마지막이다 — 여기까지가 C 를 배우기 전에 알아야 할 무대다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-6"></span>파일로 있는 <strong>프로그램</strong>과, 실행되어 살아 있는 <strong>프로세스</strong>의 차이를 가른다. 운영체제가 프로세스에게 무엇을 주는지(자기만의 주소 공간, 열린 파일, 종료 상태(exit status)), 그리고 프로세스가 어떻게 태어나는지 — 유닉스 계열의 <span id="idx-entry-7"></span><code>fork</code>와 윈도우의 방식 — 를 짧게 본다. <strong>여기 나오는 것은 C 표준이 아니다.</strong> 표준이 약속하는 것과 운영체제가 주는 것의 경계를 처음으로 긋는 장이기도 하다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>“자기만의 기억”이라는 말이 이상하다 — 기계에 붙은 메모리는 하나 아닌가?</li><li>그러면 프로세스를 지금 알아 두어야 하는 이유는 무엇인가?</li></ol></div></div><div></div><h3 id="s3-1">3.1 프로그램은 명사, 프로세스는 동사</h3><div></div><p>구별은 단순하다.</p><ul><li><strong>프로그램</strong> — 디스크에 놓인 파일. 죽어 있다. 복사할 수 있고, 옮길 수 있다.</li><li><strong>프로세스</strong> — 실행되어 살아 있는 한 벌. 기억을 갖고, 진행 중인 위치를 갖고, 열린 파일을 갖고, 언젠가 끝나며 <strong>종료 상태</strong>를 남긴다.</li></ul><p>같은 프로그램을 세 번 실행하면 프로세스가 셋 생긴다. 셋은 같은 코드를 공유하지만 <strong>기억은 각자 따로</strong>다 — 한쪽에서 값을 바꿔도 다른 쪽은 모른다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>운영체제가 프로세스에게 주는 것</strong></th><th><strong>무엇인가</strong></th><th><strong>이 책에서</strong></th></tr><tr><td>주소 공간</td><td>자기만의 기억 지도(2장의 네 구역)</td><td>83장</td></tr><tr><td>실행 위치</td><td>지금 어느 명령을 하는 중인지</td><td>—</td></tr><tr><td>열린 파일 목록</td><td>표준 입출력을 포함한 통로</td><td>10장·63장</td></tr><tr><td>명령줄 인자·환경</td><td>실행할 때 건네받은 값들</td><td>53장</td></tr><tr><td>종료 상태</td><td>끝나며 남기는 한 숫자</td><td>15장·53장</td></tr></table></div><p class="float-caption">표 3.1</p></figure><p>이 목록에서 두 가지가 이후 장들과 곧장 이어진다. 첫째, 10장에서 볼 <strong>표준 입력·출력·오류</strong>는 운영체제가 프로세스에게 미리 열어 준 통로다 — 프로그램이 직접 여는 것이 아니다. 둘째, 15장의 헬로 월드가 끝내며 돌려주는 <code>0</code>이 바로 <strong>종료 상태</strong>이고, 그 숫자를 받는 쪽은 이 프로세스를 실행한 누군가다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> “자기만의 기억”이라는 말이 이상하다 — 기계에 붙은 메모리는 하나 아닌가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 물리적으로는 하나지만, 운영체제가 프로세스마다 <strong>저마다 다른 주소 공간</strong>을 보여 준다. 프로세스가 보는 주소는 물리 주소가 아니라 그 프로세스만의 번호이고, 하드웨어가 그것을 실제 자리로 옮겨 준다(가상 메모리). 그래서 두 프로세스가 똑같은 주소를 써도 서로 다른 자리를 만지고, 한쪽이 무너져도 다른 쪽은 멀쩡하다.</p><p>이 격리가 없는 세계도 있다 — 운영체제 없이 도는 작은 칩에서는 프로세스라는 개념 자체가 없고, 코드 하나가 기계 전체를 쓴다(83장). 그래서 이 장의 이야기는 “C가 도는 모든 곳”의 이야기가 아니라 <strong>운영체제 위에서 돌 때</strong>의 이야기다.</p></p></div></div><h3 id="s3-2">3.2 프로세스는 어떻게 태어나는가</h3><div></div><p>여기서부터는 운영체제마다 다르다. 두 갈래를 얼굴만 익힌다.</p><div class="dev platform"><p class="dev-label">플랫폼 노트.<span style="white-space: pre-wrap">&#x20;&#x20;</span>유닉스 계열 — <code>fork</code>와 <code>exec</code></p><div class="dev-body"><p>유닉스 계열(리눅스·macOS·BSD)은 프로세스를 만드는 일을 <strong>두 걸음</strong>으로 나눈다. 이 설계가 셸과 파이프라인(10장)의 뿌리다.</p><ul><li><strong><code>fork()</code></strong> — 지금 프로세스를 <strong>복제한다</strong>. 복제된 쪽(자식)은 부모와 같은 코드, 같은 기억 내용, 같은 열린 파일을 갖고 시작한다. 기묘한 것은 이 함수가 <strong>두 번 돌아온다</strong>는 점이다 — 부모에게는 자식의 번호(PID)를, 자식에게는 0을 돌려준다. 그 반환값으로 자기가 누구인지 안다.</li><li><strong><code>exec</code> 계열</strong> — 지금 프로세스의 <strong>내용을 다른 프로그램으로 갈아 끼운다</strong>. 기억이 통째로 새 프로그램의 것으로 바뀌고, 돌아오지 않는다(성공하면).</li><li><strong><code>wait</code> 계열</strong> — 부모가 자식이 끝나기를 기다리고 <strong>종료 상태</strong>를 받는다.</li></ul><pre><code data-lang="c"><strong><span class="tok-t">pid_t</span></strong> pid <strong><span class="tok-x">=</span></strong> <strong>fork</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>
 <strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>pid <strong><span class="tok-x">==</span></strong> <span class="tok-n">0</span><span class="tok-x">)</span> <span class="tok-x">{</span>               <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 자식 </span></em><em><span class="tok-c">*/</span></em>
     <strong>execl</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">/bin/ls</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">ls</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong><span class="tok-n">0</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>

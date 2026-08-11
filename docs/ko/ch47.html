@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">47장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch46.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch48.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch47.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s47-1"><span class="tf-no">47.1</span>중첩과 접근 — 점과 화살표를 섞어 읽기</a><a class="lv3" href="#s47-2"><span class="tf-no">47.2</span>임시 구조체 — 복합 리터럴</a><a class="lv3" href="#s47-3"><span class="tf-no">47.3</span>이름 붙은 인자 — 구조체 하나로 넘기기</a><a class="lv3" href="#s47-4"><span class="tf-no">47.4</span>패딩 — 멤버 사이의 빈자리</a><a class="lv3" href="#s47-5"><span class="tf-no">47.5</span>통째로 저장하거나 보내면 안 되는 이유</a><a class="lv4" href="#s47-5-1"><span class="tf-no">47.5.1</span>그래서 어떻게 하는가 — 필드별 직렬화</a><a class="lv3" href="#s47-6"><span class="tf-no">47.6</span>패딩을 없애는 법, 정렬을 강제하는 법</a><a class="lv4" href="#s47-6-1"><span class="tf-no">47.6.1</span>alignas — 다섯째 갈래, 정렬 지정자</a><a class="lv3" href="#s47-7"><span class="tf-no">47.7</span>이름 없는 멤버와 container_of</a><a class="lv4" href="#s47-7-1"><span class="tf-no">47.7.1</span>익명 구조체·공용체 (C11)</a><a class="lv4" href="#s47-7-2"><span class="tf-no">47.7.2</span>container_of — 멤버에서 바깥을 되찾기</a><a class="lv3" href="#s47-8"><span class="tf-no">47.8</span>배열을 값으로 넘기기 — 되는가, 그리고 해야 하는가</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>47 구조체를 부리는 법 — 임시 값, 이름 붙은 인자, 배치</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>46장 구조체 · 구조체의 정의</div><div>38장 배열 · 배열과 값 전달</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>46장에서 구조체는 값이라 대입하면 통째로 복사되고 함수에 넘기면 사본이 건너간다고 했다. 그런데 38장에서는 배열을 함수에 넘기면 포인터로 무너져 <strong>원본이 건드려진다</strong>고 했다. 두 말이 부딪히지 않는가 — 구조체 안에 배열이 있으면 어느 쪽인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 구조체가 이긴다. 배열이 포인터로 무너지는 것은 <strong>배열 그 자체를 인자로 적었을 때</strong>의 규칙이고, 구조체 멤버로 들어간 배열은 구조체라는 값의 일부라 복사 대상이다. 그래서 C에서 배열을 진짜로 <strong>값처럼</strong> 넘기는 유일한 방법이 “구조체로 감싸기”다. 이 장의 두 번째 예제가 그 대비를 실측으로 보인다 — 값으로 넘긴 쪽은 원본이 그대로이고, 포인터로 무너진 쪽은 원본이 바뀐다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">46장이 문법이었다면 이 장은 <strong>쓰는 법</strong>이다. 둘을 굳이 나눈 것은 분량 때문이 아니라, 쓰는 법 쪽이 앞 장 없이는 한 줄도 못 나가기 때문이다. 그리고 여기서 다루는 패딩과 정렬이 다음 장(48장)의 표현 이야기로 곧장 이어진다 — 세 장이 하나의 활처럼 휘어 있다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">46장이 구조체의 문법이었다면 이 장은 <strong>쓰는 법</strong>이다. 구조체 안의 구조체를 <span id="idx-entry-163"></span>참조하는 표기, 그 자리에서 만들어 넘기는 임시 구조체(복합 리터럴), 그것으로 만드는 “순서 없는 이름 붙은 인자” 관용구, 그리고 멤버 사이에 <span id="idx-entry-164"></span>끼는 패딩과 그것을 없애거나 강제하는 방법까지. 마지막으로 배열을 값으로 넘기는 유일한 길과 그 대가를 잰다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>s.frame->size.y</code>처럼 길게 이어진 표기는 어디서 끊어 읽는가?</li><li>이 관용구에 함정은 없는가?</li><li>그러면 파일 형식을 처음부터 텍스트로 하면 되지 않는가?</li><li>그러면 파일 형식이나 통신 규약을 다룰 때는 packed 구조체를 쓰는 것이 정답인가?</li></ol></div></div><div></div><h3 id="s47-1">47.1 중첩과 접근 — 점과 화살표를 섞어 읽기</h3><div></div><p>구조체의 멤버가 또 구조체일 수 있다. 이때 표기는 겹쳐 적을 뿐이다.</p><pre><code data-lang="c"><strong><span class="tok-t">struct</span></strong> point <span class="tok-x">{</span> <strong><span class="tok-t">int</span></strong> x<span class="tok-x">,</span> y<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
 <strong><span class="tok-t">struct</span></strong> rect  <span class="tok-x">{</span> <strong><span class="tok-t">struct</span></strong> point origin<span class="tok-x">;</span> <strong><span class="tok-t">struct</span></strong> point size<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>
 <strong><span class="tok-t">struct</span></strong> scene <span class="tok-x">{</span> <strong><span class="tok-t">struct</span></strong> rect *frame<span class="tok-x">;</span> <strong><span class="tok-k">const</span></strong> <strong><span class="tok-t">char</span></strong> <strong><span class="tok-x">*</span></strong>name<span class="tok-x">;</span> <span class="tok-x">}</span><span class="tok-x">;</span>

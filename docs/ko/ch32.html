@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">32장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch31.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch33.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch32.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s32-1"><span class="tf-no">32.1</span>루프 3형제</a><a class="lv3" href="#s32-2"><span class="tf-no">32.2</span>재회 — Duff’s device</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>32 반복 — 루프와 불변식</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>31장 결정 · 조건으로 갈라지는 흐름</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>4장에서 “단순한 걸음이라도 1초에 수십억 번이면 어떤 복잡한 일이든 지을 수 있다”고 했다. 그런데 31장까지의 우리 프로그램은 위에서 아래로 한 번 흐르고 끝난다 — 수십억 번의 걸음은 어디서 나오는 것인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 같은 문장들을 <strong>다시 실행하는</strong> 장치에서 나온다. 조건이 참인 동안 블록으로 <strong>되돌아가는</strong> 것 — 루프다. 분기가 흐름을 가르는 장치였다면 루프는 흐름을 감아올리는 장치이고, 이 둘을 갖추는 순간 C는 계산 가능한 모든 것을 적을 수 있는 언어가 된다(이론적으로도 그렇다 — 4장의 계산 모델이 요구하는 전부가 “순차, 분기, 반복”이다).</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">갈라졌으면 돌아와야 한다. 반복을 분기 바로 뒤에 두는 것은 관습이 아니라 필연이다 — 모든 루프가 조건 검사를 품고 있어서, 31장 없이는 <code>while</code> 의 괄호 안을 설명할 수 없다. 그리고 여기서 익히는 불변식은 뒤에 나올 거의 모든 배열 순회의 사고 도구가 된다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">프로그램의 진짜 힘 — 되풀이 — 를 손에 넣는다. 루프 3형제(<code>while</code>, <code>for</code>, <code>do-while</code>)와 새 연산자들(<code>++</code>, <code>+=</code>), 루프를 옳게 읽고 쓰는 <span id="idx-entry-122"></span>생각의 틀(불변식)까지. 그리고 12장에서 예약해 둔 재회 — Duff’s device — 를 드디어 만난다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>조건이 영영 거짓이 안 되면 어떻게 되는가?</li></ol></div></div><div></div><h3 id="s32-1">32.1 루프 3형제</h3><div></div><p><strong><code>while</code></strong> — 가장 원초적인 형태다. “조건이 참인 동안, 블록을 반복하라”:</p><pre><code data-lang="c"><strong><span class="tok-k">while</span></strong> <span class="tok-x">(</span>조건<span class="tok-x">)</span> <span class="tok-x">{</span>
     반복할 문장들
 <span class="tok-x">}</span></code></pre><p>조건을 <strong>먼저</strong> 검사하므로, 처음부터 거짓이면 한 번도 돌지 않는다.</p><p><strong><code>for</code></strong> — 반복의 살림살이(시작·조건·갱신)를 한 줄에 모은 형태다. 시연으로 본다 — 1부터 100까지의 합이다:</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch32/sum.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>

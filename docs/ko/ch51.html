@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">51장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch50.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch52.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch51.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s51-1"><span class="tf-no">51.1</span>오류는 값이다 — C의 방식</a><a class="lv3" href="#s51-2"><span class="tf-no">51.2</span>계약을 코드로 — assert와 방어</a><a class="lv3" href="#s51-3"><span class="tf-no">51.3</span>const — 가장 값싼 계약</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>51 오류와 계약</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>33장 함수의 의미 · 함수가 실패를 알리는 방법</div><div>43장 안전한 입력 · 실패를 값으로 다루는 다섯 규율</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>33장 끝에서 <code>fact</code> 함수가 “암묵의 약속”(n은 0 이상, 13 이상이면 넘침) 위에 서 있다고 했다. 그런데 그 약속은 코드 어디에도 적혀 있지 않았다 — 그러면 그것은 존재하는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 존재하지만, <strong>지켜지지 않는 상태로</strong> 존재한다 — 그것이 문제의 핵심이다. 모든 함수에는 암묵의 계약이 있다: 어떤 입력에 대해 제대로 동작하는가 (전제조건), 성공하면 무엇을 보장하는가(후조건). 그 계약이 문서와 코드 어디에도 없으면, 계약 위반은 조용히 지나가 나중에 엉뚱한 곳에서 터진다. 이 장은 계약을 <strong>드러내는</strong> 방법들의 이야기다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">33장에서 심은 계약의 씨앗과 43장에서 세운 다섯 규율이 여기서 하나의 원리로 모인다. 이 장이 52장 바로 앞인 것이 중요하다 — 「계약이란 무엇인가」를 정해 두어야 「계약을 어기면 무슨 일이 일어나는가」를 말할 수 있기 때문이다. 두 장이 한 쌍이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-174"></span>33장에서 심은 계약의 씨앗이 자란다 — 함수는 무엇을 요구하고 무엇을 약속하는가(전제조건·후조건), 실패를 어떻게 알리는가(C의 방식: 오류는 값이다), 그리고 그 값을 반드시 확인하게 만드는 장치들까지. 43장에서 세운 다섯 규율이 여기서 원리로 정리된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>43장의 다섯 규율은 이 원리와 어떻게 이어지는가?</li></ol></div></div><div></div><h3 id="s51-1">51.1 오류는 값이다 — C의 방식</h3><div></div><p>많은 현대 언어가 실패를 위한 별도 통로(예외)를 갖고 있지만, C에는 없다. C에서 실패는 <strong>반환값으로 알린다</strong> — 함수의 결과 자체가 “성공했는가”를 담고 나오는 것이다. 관행은 세 갈래다.</p><ul><li><strong>성공/실패 불리언</strong> + 결과는 포인터로 받기(35장의 <code>&amp;</code> 관용구).</li><li><strong>특별한 값</strong>으로 실패 표시 — <code>malloc</code>의 널(45장), <code>fgets</code>의 널, 음수 반환 등.</li><li><strong>오류 코드</strong>를 돌려주고 0을 성공으로 — 시스템 호출 계열의 전통.</li></ul><p>첫 갈래를 시연으로 본다. 28장에서 배운 “0 나누기는 계약 밖”이라는 사실을, 함수 계약으로 다스리는 모습이다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch51/errval.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
 

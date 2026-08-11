@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">Skip to content</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 90 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch89.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch91.html" title="Next" aria-label="Next">→</a></span><a class="bar-toc" href="toc.html" title="Detailed contents" aria-label="Detailed contents">▤</a><a href="../ko/ch90.html">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s90-1"><span class="tf-no">90.1</span>Two types, one rule</a><a class="lv3" href="#s90-2"><span class="tf-no">90.2</span>Refuse, rather than truncate</a><a class="lv3" href="#s90-3"><span class="tf-no">90.3</span>Three kinds of writing — refuse, truncate, grow</a><a class="lv3" href="#s90-4"><span class="tf-no">90.4</span>The operations that mend a string</a><a class="lv3" href="#s90-5"><span class="tf-no">90.5</span>Finding and cutting — text handling without copying</a><a class="lv3" href="#s90-6"><span class="tf-no">90.6</span>The boundary of two worlds — NUL termination and UTF-16</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>90 Strings and text</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 42, Strings · strings</div><div>chapter 9, Characters and text · UTF-8 and bytes</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 42 said that for a C string “up to the NUL” is the length, so to know the length it must be counted every time. Then what improves if the length is carried along — and what is lost?</p><div class="qa-a"><p><span class="dev-label">A.</span> Three things are gained. The cost of counting the length vanishes (<math><mi>𝑂</mi><mrow><mo>(</mo><mi>𝑛</mi><mo>)</mo></mrow></math> becomes <math><mi>𝑂</mi><mrow><mo>(</mo><mn>1</mn><mo>)</mo></mrow></math>), data with a zero byte in the middle can be handled, and above all <strong>the boundary can be checked</strong> — without the length there is nothing to check. Two things are lost. One string becomes two words rather than one, and conversion becomes necessary when meeting a world that expects NUL termination, as <code>printf("%s")</code> does. This library keeps a NUL internally as well in order to remove that conversion cost — a compromise that has both.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">It may look odd that chapter 85′s <strong>first</strong> bug is answered only in the fifth chapter. But a length-carrying string stands on views (87), and the memory to hold it comes from an allocator (88), so the order cannot be brought forward. The more famous the problem, the more material its answer needs.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">The answer to chapter 85′s first bug — string functions that do not know the size of the vessel. Strings that carry their length, the distinction between owning and borrowing, and this library’s most contentious decision, <strong>refuse rather than truncate</strong>. Chapter 9′s story of encodings and chapter 42′s story of boundaries gather here into one.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Still, are there not places where truncation is fine, such as one line of a log?</li><li>Which should be the default, <code>_insert</code> or <code>_insert_grow</code>?</li></ol></div></div><div></div><h3 id="s90-1">90.1 Two types, one rule</h3><div></div><p>The string vocabulary is only two.</p><ul><li><code>proven_u8str_t</code> — an <strong>owning</strong> string. It has a buffer, a length and a capacity.</li><li><code>proven_u8str_view_t</code> — a <strong>borrowed</strong> string. Only a pointer and a length.</li></ul><p>If the name has <code>view</code> in it, it is borrowed, and what is borrowed is not destroyed. The rule set up in chapter 89 applied to strings as it is. <code>u8</code> means UTF-8 — that encoding seen in chapter 9 is this library’s default text representation.</p><p>Open them up and why they were divided in two becomes clear.</p><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> the borrowed string — the same shape as chapter 88's mem_view_t </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
     <strong><span class="tok-k">const</span></strong> proven_byte_t <strong><span class="tok-x">*</span></strong>ptr<span class="tok-x">;</span>

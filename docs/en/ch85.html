@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">Skip to content</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 85 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch84.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch86.html" title="Next" aria-label="Next">→</a></span><a class="bar-toc" href="toc.html" title="Detailed contents" aria-label="Detailed contents">▤</a><a href="../ko/ch85.html">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s85-1"><span class="tf-no">85.1</span>One — string functions do not know the size of the vessel</a><a class="lv3" href="#s85-2"><span class="tf-no">85.2</span>Two — there is no device that makes you confirm failure</a><a class="lv3" href="#s85-3"><span class="tf-no">85.3</span>Three — printf believes exactly what you tell it</a><a class="lv3" href="#s85-4"><span class="tf-no">85.4</span>Four — who frees this</a><a class="lv3" href="#s85-5"><span class="tf-no">85.5</span>Five — a callback nobody can type-check for you</a><a class="lv3" href="#s85-6"><span class="tf-no">85.6</span>And a sixth — bytes have types</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>85 The five bugs shipped for fifty years</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 51, Errors and contracts · errors and contracts</div><div>chapter 42, Strings · the danger of strings</div><div>chapter 61, The terrain of the standard library · the traps of the standard library</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 42 said the functions handling strings “do not know the size of the vessel”, and chapter 51 said “a failure not confirmed becomes a thing that never happened”. Then why do such problems still remain — is half a century not more than enough time to mend them?</p><div class="qa-a"><p><span class="dev-label">A.</span> Not because they cannot be mended but because mending them <strong>breaks all the code already written</strong>. The moment one more size parameter is put into <code>strcpy</code>’s signature, every C program in the world stops compiling. The standard is an institution that must protect existing code (chapter 61′s reason for “thin and old” appears here too), so instead of removing dangerous functions it has taken the road of <strong>placing better functions beside them</strong>. So the choice comes over to the programmer — it is, in effect, a language in which knowing what is dangerous and choosing accordingly is itself skill.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">Part 12 introduces the author’s library, and its first chapter does not mention the library. That is this part’s most important arrangement: <strong>state the problem first, and reach for the tool five chapters later.</strong> And to put this chapter here, chapters 51 (contracts) and 61 (the standard library’s traps) had to come first. The preceding eighty-three chapters were, in a sense, the material for these five bugs.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">This part’s statement of the problem. We confirm with actually running code why C has kept shipping the same five classes of bug for half a century — that it is not the programmer’s carelessness but <strong>the shape of the API</strong>. Only after all five have been seen does the name proven appear again. Not introducing the tool first is this part’s principle.</div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Then are these five a list of mistakes beginners make?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> No. These are mistakes <strong>the skilled keep making too</strong>, and that point matters. If people who know the whole grammar still slip in the same places, the cause is not the person but <strong>the shape of the tool</strong>. A function that does not take a size has no way of checking a size, and a function whose return value may be thrown away with nothing happening will one day be thrown away. This chapter takes that “shape” apart one at a time.</p></div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Would it not be better to use another language entirely to avoid such problems?</li></ol></div></div><div></div><h3 id="s85-1">85.1 One — string functions do not know the size of the vessel</h3><div></div><p>The oldest and most exploited class. Exactly as seen in chapter 42.</p><pre><code data-lang="c"><strong><span class="tok-t">char</span></strong> buf<span class="tok-x">[</span><span class="tok-n">64</span><span class="tok-x">]</span><span class="tok-x">;</span>
 <strong>strcpy</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> name</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>            <em><span class="tok-c">/*</span></em><em><span class="tok-c"> how long is name? strcpy does not ask </span></em><em><span class="tok-c">*/</span></em>
 <strong>strcat</strong><strong><span class="tok-x">(</span></strong><strong>buf</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">, welcome!</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span>    <em><span class="tok-c">/*</span></em><em><span class="tok-c"> and how much room is left now? </span></em><em><span class="tok-c">*/</span></em></code></pre><p><code>strcpy</code>’s signature has no destination size. What is not there cannot be checked, so this function will happily write to the 200th byte of a 64-byte vessel. What gets wrecked depends on what the compiler placed after it, and commonly that is the function’s return address (recall chapter 44′s picture of the stack).</p><p>The modern prescription is to use the editions that take a size — <code>snprintf</code> is representative. And here is a second trap. Functions that take a size <strong>quietly truncate</strong> when it overflows.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch85/truncate.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>

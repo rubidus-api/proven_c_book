@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">23장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch22.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch24.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch23.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s23-1"><span class="tf-no">23.1</span>선언 — 타입, 이름, 그리고 첫 값</a><a class="lv3" href="#s23-2"><span class="tf-no">23.2</span>대입 — 상태를 바꾸는 부수효과</a><a class="lv3" href="#s23-3"><span class="tf-no">23.3</span>const — 바꾸지 않겠다는 약속</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>23 변수 선언</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>5장 워드와 주소 · 주소와 칸</div><div>19장 프로그램의 구조 · 선언이 놓이는 자리</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>5장에서 메모리는 번호(주소) 붙은 사물함들이라 했다. 그런데 지금까지 쓴 C 코드에는 주소가 한 번도 등장하지 않았다 — 그러면 프로그램은 사물함을 어떻게 쓰고 있었던 것인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 이름을 통해서다. C에서 <strong>변수</strong>를 선언한다는 것은 “사물함 몇 칸을 잡고, 거기에 사람이 읽을 이름을 붙이는” 일이다. 번호(주소)는 컴파일러가 관리하고, 우리는 이름으로 부른다 — 이름은 주소의 사람용 별명이다. 이 장에서 그 이름을 만드는 법을 배우고, 별명 뒤의 진짜 주소를 다시 만나는 것은 제7부(35장)다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">5부의 제목이 「이름을 만드는 법」인 이유가 여기서 드러난다. 4부까지는 남이 만든 이름만 썼다 — 이제 내가 만든다. 변수를 함수보다 먼저 두는 것은 함수의 매개변수와 반환값이 결국 변수이기 때문이고, 무엇보다 대입 <code>=</code> 를 여기서 정확히 못박아야 34장까지 이어지는 오해가 애초에 생기지 않는다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-89"></span>제5부의 주제는 “이름을 만드는 법”이다. 그 첫걸음으로 변수를 선언한다 — 타입과 이름을 약속하고, 값을 담고, 바꾸는 것까지. 연산자 하나가 새로 합류한다: 대입(assignment) <code>=</code>. 그리고 이 <code>=</code>가 수학의 등호가 <strong>아니라는</strong> 것이 이 장의 가장 중요한 문장이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>타입 이야기에서 <code>int</code>가 “약 ±21억”이라 했는데 — 정확한 크기가 기계마다 다르다는 뜻인가? 7장에서 배운 8비트, 16비트 이야기는 어디로 갔는가?</li></ol></div></div><div></div><h3 id="s23-1">23.1 선언 — 타입, 이름, 그리고 첫 값</h3><div></div><p>변수 선언의 문법은 이미 여러 번 스쳐 본 모양이다:</p><pre><code data-lang="c"><strong><span class="tok-t">int</span></strong> apples <strong><span class="tok-x">=</span></strong> <span class="tok-n">12</span><span class="tok-x">;</span></code></pre><p>세 부분으로 읽는다 — <strong>타입</strong>(<code>int</code>), <strong>이름</strong>(<code>apples</code>), 그리고 <strong>초기화</strong> (<code>= 12</code>). 뜻은: “정수를 담는 칸을 잡고, apples라 부르기로 하고, 첫 값으로 12를 담아라.”</p><p><strong>타입</strong>은 두 가지를 약속한다. 첫째, <strong>값의 집합</strong> — <code>int</code>는 부호 있는 정수의 그릇으로, 흔한 기계에서 32비트, 즉 7장의 2의 보수 세계에서 약 ±21억 범위다. <code>double</code>이라 적으면 8장의 64비트 부동소수점 그릇이 된다. 둘째, <strong>연산의 약속</strong> — 그 이름에 무엇을 해도 되는지(정수 산술인지 근사 산술인지)가 타입에서 나온다. 5장에서 “덩어리를 아는 것은 읽는 쪽”이라 했는데, C에서는 <strong>타입이 바로 그 읽는 눈</strong>이다.</p><p><strong>이름</strong>은 자유롭게 짓되 문법이 정한 틀 안에서다 — 글자·숫자·밑줄로 이루어지고 숫자로 시작할 수 없다. 좋은 이름은 문법이 아니라 사람을 위한 것이다: <code>a</code>보다 <code>apples</code>가 반년 뒤의 자신에게 친절하다.</p><p><strong>초기화</strong>는 관행이 아니라 이 책의 규칙이다. <strong>선언할 때 반드시 첫 값을 담아라.</strong> 초기화 없이 선언만 한 변수의 칸에는 그 자리에 우연히 남아 있던 쓰레기 비트가 들어 있고(5장 — 칸은 언제나 무언가로 차 있다), 그것을 읽는 것은 대표적인 사고 경로다. 정식 취급은 43장에서 하되, 습관은 지금부터 들인다.</p><h3 id="s23-2">23.2 대입 — 상태를 바꾸는 부수효과</h3><div></div><p>선언된 변수의 값은 <strong>대입</strong>(<code>=</code>)으로 바꾼다. 20장의 배분표에 예고됐던 연산자가 드디어 합류하는 것이다. 시연부터:</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch23/var.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 
 <strong><span class="tok-t">int</span></strong> <strong>main</strong><span class="tok-x">(</span><strong><span class="tok-t">void</span></strong><span class="tok-x">)</span>

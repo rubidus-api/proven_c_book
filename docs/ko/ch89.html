@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">89장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch88.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch90.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch89.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s89-1"><span class="tf-no">89.1</span>할당자는 값이다</a><a class="lv3" href="#s89-2"><span class="tf-no">89.2</span>세 가지 출처를 갈아 끼우기</a><a class="lv3" href="#s89-3"><span class="tf-no">89.3</span>아레나 — 수명이 같은 것들을 한 번에</a><a class="lv3" href="#s89-4"><span class="tf-no">89.4</span>어느 것을 고를 것인가</a><a class="lv3" href="#s89-5"><span class="tf-no">89.5</span>소유와 빌림, 그리고 자기를 가리키는 상태</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>89 할당은 매개변수다</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>45장 동적 메모리 · 동적 메모리</div><div>84장 할당자의 속 · 할당자의 속</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>45장에서 <code>malloc</code>으로 얻은 기억은 누군가 정확히 한 번 <code>free</code>해야 하고, 그 “누군가”를 정하는 것이 프로그램의 설계라고 했다. 그러면 함수 하나만 보고 “이 함수가 기억을 할당하는가”를 알 방법이 있는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 표준 C에는 없다. <code>malloc</code>은 어디서든 부를 수 있으므로 어떤 함수든 몰래 할당할 수 있고, 시그니처는 그 사실을 말하지 않는다. proven의 답은 규칙 하나로 그 정보를 시그니처에 되돌리는 것이다 — <strong>할당자를 인자로 받지 않는 함수는 할당하지 않는다.</strong> 이 규칙이 지켜지면 시그니처를 읽는 것만 으로 “이 함수는 기억을 잡을 수 있다”를 알 수 있다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">어휘 다음이 기억의 출처다. 이 순서인 이유는 뒤의 모든 자료구조가 「어디서 기억을 얻는가」를 인자로 받기 때문이다 — 할당자를 나중에 설명하면 90장부터 매 함수 서명에 설명 없는 매개변수가 하나씩 붙는다. 45장과 84장에서 본 힙의 사정이 여기서 설계 결정으로 바뀐다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">85장의 넷째 버그 — 불분명한 소유권 — 에 대한 답이다. 기억의 출처를 값으로 다루는 <strong>할당자</strong>(allocator), 수명이 같은 것들을 한꺼번에 되돌리는 <span id="idx-entry-241"></span>아레나(arena), 그리고 소유와 빌림을 타입으로 가르는 규칙까지. 45장에서 배운 힙의 위험이 여기서 설계로 정리된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li><code>heap</code>, <code>arena</code>, <code>pool</code> 말고 내가 직접 할당자를 만들 수도 있는가?</li><li>이게 왜 그렇게 중요한 성질인가? 어차피 대부분은 힙을 쓸 텐데.</li><li>그러면 대가는 무엇인가?</li></ol></div></div><div></div><h3 id="s89-1">89.1 할당자는 값이다</h3><div></div><p><code>proven_allocator_t</code>는 구조체 하나다 — 문맥 포인터와 함수 포인터 셋 (할당·재할당·해제). 특별한 전역도, 등록 절차도 없다. 그냥 값이라서 인자로 넘기고, 구조체에 담고, 함수에서 돌려줄 수 있다. 59장에서 본 <strong>가상 함수 표</strong>가 그대로 여기 있다.</p><pre><code data-lang="c"><strong><span class="tok-t">typedef</span></strong> <strong><span class="tok-t">struct</span></strong> <span class="tok-x">{</span>
     <strong><span class="tok-t">void</span></strong> <strong><span class="tok-x">*</span></strong>ctx<span class="tok-x">;</span>                        <em><span class="tok-c">/*</span></em><em><span class="tok-c"> 이 할당자의 상태(아레나면 아레나 자신) </span></em><em><span class="tok-c">*/</span></em>
     proven_alloc_fn_t   alloc_fn<span class="tok-x">;</span>

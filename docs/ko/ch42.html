@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">42장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch41.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch43.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch42.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s42-1"><span class="tf-no">42.1</span>정체 — 배열, 그리고 약속</a><a class="lv3" href="#s42-2"><span class="tf-no">42.2</span>문자열 리터럴 — 읽기 전용의 땅</a><a class="lv4" href="#s42-2-1"><span class="tf-no">42.2.1</span>타입은 const가 아니다 — C의 이상한 자리</a><a class="lv3" href="#s42-3"><span class="tf-no">42.3</span>리터럴도 배열이다</a><a class="lv3" href="#s42-4"><span class="tf-no">42.4</span>이어 붙이기 — 인접한 리터럴은 하나가 된다</a><a class="lv3" href="#s42-5"><span class="tf-no">42.5</span>접두사 — 어떤 인코딩의 리터럴인가</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>42 문자열</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>9장 문자와 텍스트 · 글자의 표현</div><div>38장 배열 · 배열과 첨자</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>9장에서 C가 택한 문자열 표현은 “끝에 표지를 세우는” NUL 종단이라 했고, 그 대가 세 가지(길이는 세어야 안다, NUL을 내용에 못 담는다, 표지를 잃으면 폭주)를 예고했다. 이제 배열(38장)을 배웠으니 — C 문자열의 정확한 정체를 스스로 정의해 보면?</p><div class="qa-a"><p><span class="dev-label">답.</span> <strong>char 배열인데, 어딘가에 값 0인 바이트(NUL 문자, <code>'\0'</code>)가 있고, “문자열”이란 시작부터 그 표지 직전까지를 뜻한다는 약속</strong> — 이것이 전부다. 별도의 문자열 타입은 없다. 배열, 그리고 약속. 이 장은 그 약속의 사용법과 비용을 다룬다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">문자열이 9장(글자)과 38장(배열) 둘 다 뒤에 와야 하는 이유는, C 의 문자열이 정확히 그 둘의 합이기 때문이다 — 글자를 담은 배열에 끝 표시를 붙인 것. 어느 한쪽만 알고 오면 「왜 길이를 따로 안 들고 다니는가」에 답할 수 없다. 그래서 여기, 둘 다 지난 다음이다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-149"></span>C의 문자열을 정면으로 다룬다 — char 배열 + NUL 종단이라는 정체, 문자열 리터럴의 특별한 사정, 길이 재기의 진짜 비용, 그리고 한글이 드러내는 “글자 수 ≠ 바이트 수”의 실전까지. 널 삼형제의 마지막(NUL 문자)이 여기서 정식 취급된다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>왜 C는 <code>const</code>를 붙이지 않았는가?</li><li>최신 표준과 앞으로의 표준에서는 어떤가?</li><li>한글 처리를 제대로 하려면 — 글자 단위로 다루려면 — 어떻게 해야 하는가?</li></ol></div></div><div></div><h3 id="s42-1">42.1 정체 — 배열, 그리고 약속</h3><div></div><p><code>char greet[] = "안녕";</code> — 문자열 리터럴로 배열을 초기화하면, 컴파일러가 글자들의 바이트 <strong>뒤에 <code>'\0'</code>을 붙여</strong> 배열을 만든다. 시연으로 해부한다.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch42/str.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">string.h</span><span class="tok-s">></span>
 

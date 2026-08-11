@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
 pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">Skip to content</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="Contents of this chapter">ch. 24 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch23.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch25.html" title="Next" aria-label="Next">→</a></span><a class="bar-toc" href="toc.html" title="Detailed contents" aria-label="Detailed contents">▤</a><a href="../ko/ch24.html">Ko</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>Contents of this chapter</strong><a class="here-all" href="toc.html">Detailed contents</a><button class="here-x" type="button">Close</button></div><div class="here-body"><a class="lv3" href="#s24-1"><span class="tf-no">24.1</span>Definition — the syntax for making a worker</a><a class="lv3" href="#s24-2"><span class="tf-no">24.2</span>Declaration — signing the contract in advance</a><a class="lv3" href="#s24-3"><span class="tf-no">24.3</span>One more word a declaration takes — inline</a><a class="lv4" href="#s24-3-1"><span class="tf-no">24.3.1</span>inline is a request, not an order</a><a class="lv4" href="#s24-3-2"><span class="tf-no">24.3.2</span>Its address can be taken — and that is when a real one is needed</a><a class="lv4" href="#s24-3-3"><span class="tf-no">24.3.3</span>C’s inline model — one rule and its consequences</a><a class="lv4" href="#s24-3-4"><span class="tf-no">24.3.4</span>So in practice only two forms are used</a><a class="lv4" href="#s24-3-5"><span class="tf-no">24.3.5</span>Two restrictions on an inline definition</a><a class="lv3" href="#s24-4"><span class="tf-no">24.4</span>Scope — the range in which a name is visible</a><a class="lv3" href="#s24-5"><span class="tf-no">24.5</span>Settling the credit — int main(void)</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>24 Declaring and defining functions</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 21, Using functions · how a function is called</div><div>chapter 23, Declaring variables · the split between declaration and definition</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 16 said “the compilation stage is satisfied with a <strong>declaration</strong> (an announcement), and it is the linker that finds and joins the body.” That “declaration” and the “variable declaration” of chapter 23 use the same word — is that a coincidence?</p><div class="qa-a"><p><span class="dev-label">A.</span> It is not. In C a <strong>declaration</strong> is always the same job — “telling the compiler in advance a name and its shape (its type).” A variable declaration announces the name of a value; a function declaration announces the name of a piece of work. Once we have made the second kind in this chapter, even the identity of what <code>#include</code> was fetching (a bundle of declarations) is threaded onto one line.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">Three chapters after learning to call one, we come back to making one. Slotting variables (chapter 23) in between is the point of the order: without parameters and locals you cannot read a function definition. And at the end of this chapter the debt on <code>int main(void)</code>, carried since chapter 15, is paid.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">Chapter 21 taught how to <strong>call</strong> a function — now how to <strong>make</strong> one. The <span id="idx-entry-59"></span>distinction between definition and declaration (a prototype), parameters and <code>return</code>, and the first step into scope. And at the end of this chapter the credit carried since chapter 15 — <code>int main(void)</code> and <code>return 0</code> — is settled in full.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Then why not make everything <code>static inline</code>?</li><li>If <code>main</code> is a function too, may we call <code>main()</code> ourselves?</li></ol></div></div><div></div><h3 id="s24-1">24.1 Definition — the syntax for making a worker</h3><div></div><p>We now make workers like chapter 21′s <code>abs</code> or <code>printf</code> ourselves. The syntax of a function <strong>definition</strong> is:</p><pre><code data-lang="c"><strong><span class="tok-k">return</span></strong><strong><span class="tok-x">-</span></strong>type <strong>name</strong><strong><span class="tok-x">(</span></strong><strong>parameter list</strong><strong><span class="tok-x">)</span></strong>
 <span class="tok-x">{</span>
     body — a list of statements

@@ -516,15 +516,54 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
 .dev.open > .open-body > *:last-child { margin-bottom:0; }
 .dev.open .qa-a > p { margin:.35rem 0; }
 
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
+:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
+  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
+  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
+  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
+  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
+    border-color:#4a4d50; }
+}
+:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
+:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
+:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
+:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
 body { font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
 h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
 .colophon-meta dt { font-family:"PCB Sans","Noto Sans CJK KR","Noto Sans KR",system-ui,sans-serif; }
 pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
 </style></head>
 <body>
+<a class="skip" href="#content">본문으로 건너뛰기</a>
 <div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel" title="이 장의 차례">21장 ▾</button><span class="sp"></span><span class="bar-nav"><a href="ch20.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch22.html" title="다음" aria-label="다음">→</a></span><a class="bar-toc" href="toc.html" title="상세 차례" aria-label="상세 차례">▤</a><a href="../en/ch21.html">En</a>
 <a href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div id="here-panel" class="here-panel" hidden><div class="here-head"><strong>이 장의 차례</strong><a class="here-all" href="toc.html">상세 차례</a><button class="here-x" type="button">닫기</button></div><div class="here-body"><a class="lv3" href="#s21-1"><span class="tf-no">21.1</span>호출 — 이름을 부르면 일꾼이 뛴다</a><a class="lv3" href="#s21-2"><span class="tf-no">21.2</span>반환값 — 쓰거나, 버리거나</a><a class="lv3" href="#s21-3"><span class="tf-no">21.3</span>표준 라이브러리 — 미리 만들어진 일꾼들</a></div></div>
-<main><div class="wrap">
+<main id="content"><div class="wrap">
 <h2>21 함수 사용 — 부르는 법</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>20장 수식과 상수 · 수식은 값이 된다</div><div>19장 프로그램의 구조 · 함수라는 이름의 덩어리</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>20장 끝에서 “함수를 부르는 것 자체가 수식이고, 따라서 값이 된다”고 했다. 그러면 <code>printf("%d\n", 2 + 3 * 4)</code> 안의 수식 <code>2 + 3 * 4</code>가 계산된 값 14는 — 정확히 어디로 가는 것인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 함수의 입으로 들어간다. 함수를 부를 때 괄호 안에 적는 수식들의 값이 그 함수에게 <strong>재료</strong>로 전달되고, 함수는 그 재료로 제 일을 한 뒤 <strong>결과 값</strong>을 내놓는다. 재료를 인자, 결과를 반환값이라 부른다 — 이 두 낱말이 이 장의 전부다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">값을 적을 줄 알게 되었으니 남이 만든 일꾼을 부릴 차례다. 만드는 법(24장)을 미루고 부르는 법을 먼저 놓는 것이 이 책의 순서다 — 헬로 월드의 심장이 호출 한 줄이기 때문이다. 그리고 실무에서도 함수를 정의하기 전에 훨씬 많이 부른다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">함수를 <strong>만드는</strong> 법은 아직 멀었다(24장). 이 장은 <strong>부르는</strong> 법이다 — 호출, 인자, 반환값이라는 세 낱말을 익히고 나면, 헬로 월드의 심장 <code>printf("안녕, 세상!\n");</code> 이 완전한 문장으로 읽힌다. 남이 만든 일꾼을 부려 쓰는 것 — 프로그래밍의 절반은 사실 이것이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>버려도 되는 값이라면 애초에 왜 돌려주는가?</li><li><code>abs</code>는 항상 양수를 돌려주는가? 절댓값이니 당연할 것 같은데.</li></ol></div></div><div></div><h3 id="s21-1">21.1 호출 — 이름을 부르면 일꾼이 뛴다</h3><div></div><p>함수는 <strong>이름 붙은 일꾼</strong>이다. 어딘가에 일하는 방법(몸통)이 만들어져 있고, 우리는 이름만 부르면 된다. 부르는 문법은 이미 눈에 익었다:</p><pre><code data-lang="c"><strong>이름</strong><strong><span class="tok-x">(</span></strong><strong>재료1</strong><strong><span class="tok-x">,</span></strong><strong> 재료2</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">...</span></strong><strong><span class="tok-x">)</span></strong></code></pre><p>이것이 <strong>호출</strong>(call)이다. 호출이 실행되는 순서는 이렇다 — ① 괄호 안의 수식들이 먼저 평가되어 값이 되고, ② 그 값들이 함수에게 전달되며, ③ 함수의 몸통이 실행되고, ④ 함수가 내놓은 <strong>반환값</strong>이 호출 자리의 값이 된다. 마지막 항목이 20장의 복선 회수다: <strong>호출은 수식이다</strong> — 호출이 적힌 자리는, 실행이 끝나면 반환값 하나로 바뀐다고 읽으면 된다.</p><p>호출이 수식이므로, 호출을 호출의 재료로 넣을 수도 있다. 시연한다 — <span id="idx-entry-86"></span><code>abs</code>는 표준 라이브러리(standard library)의 일꾼으로, 정수 하나를 받아 그 절댓값을 돌려준다(<code>&lt;stdlib.h></code> 도구 상자에 산다 — 그래서 <code>#include</code>가 하나 더 붙었다).</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch21/call.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>
 
