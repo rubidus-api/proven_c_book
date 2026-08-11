@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">본문으로 건너뛰기</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">21장 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch20.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch22.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/ch21.html">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s21-1"><span class="tf-no">21.1</span>호출 — 이름을 부르면 일꾼이 뛴다</a><a class="lv3" href="#s21-2"><span class="tf-no">21.2</span>반환값 — 쓰거나, 버리거나</a><a class="lv3" href="#s21-3"><span class="tf-no">21.3</span>표준 라이브러리 — 미리 만들어진 일꾼들</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">21장 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch20.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch22.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/ch21.html">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s21-1"><span class="tf-no">21.1</span>호출 — 이름을 부르면 일꾼이 뛴다</a><a class="lv3" href="#s21-2"><span class="tf-no">21.2</span>반환값 — 쓰거나, 버리거나</a><a class="lv3" href="#s21-3"><span class="tf-no">21.3</span>표준 라이브러리 — 미리 만들어진 일꾼들</a></div></div>
 <main id="content"><div class="wrap">
 <h2>21 함수 사용 — 부르는 법</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>20장 수식과 상수 · 수식은 값이 된다</div><div>19장 프로그램의 구조 · 함수라는 이름의 덩어리</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>20장 끝에서 “함수를 부르는 것 자체가 수식이고, 따라서 값이 된다”고 했다. 그러면 <code>printf("%d\n", 2 + 3 * 4)</code> 안의 수식 <code>2 + 3 * 4</code>가 계산된 값 14는 — 정확히 어디로 가는 것인가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 함수의 입으로 들어간다. 함수를 부를 때 괄호 안에 적는 수식들의 값이 그 함수에게 <strong>재료</strong>로 전달되고, 함수는 그 재료로 제 일을 한 뒤 <strong>결과 값</strong>을 내놓는다. 재료를 인자, 결과를 반환값이라 부른다 — 이 두 낱말이 이 장의 전부다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">값을 적을 줄 알게 되었으니 남이 만든 일꾼을 부릴 차례다. 만드는 법(24장)을 미루고 부르는 법을 먼저 놓는 것이 이 책의 순서다 — 헬로 월드의 심장이 호출 한 줄이기 때문이다. 그리고 실무에서도 함수를 정의하기 전에 훨씬 많이 부른다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body">함수를 <strong>만드는</strong> 법은 아직 멀었다(24장). 이 장은 <strong>부르는</strong> 법이다 — 호출, 인자, 반환값이라는 세 낱말을 익히고 나면, 헬로 월드의 심장 <code>printf("안녕, 세상!\n");</code> 이 완전한 문장으로 읽힌다. 남이 만든 일꾼을 부려 쓰는 것 — 프로그래밍의 절반은 사실 이것이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>버려도 되는 값이라면 애초에 왜 돌려주는가?</li><li><code>abs</code>는 항상 양수를 돌려주는가? 절댓값이니 당연할 것 같은데.</li></ol></div></div><div></div><h3 id="s21-1">21.1 호출 — 이름을 부르면 일꾼이 뛴다</h3><div></div><p>함수는 <strong>이름 붙은 일꾼</strong>이다. 어딘가에 일하는 방법(몸통)이 만들어져 있고, 우리는 이름만 부르면 된다. 부르는 문법은 이미 눈에 익었다:</p><pre><code data-lang="c"><strong>이름</strong><strong><span class="tok-x">(</span></strong><strong>재료1</strong><strong><span class="tok-x">,</span></strong><strong> 재료2</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">...</span></strong><strong><span class="tok-x">)</span></strong></code></pre><p>이것이 <strong>호출</strong>(call)이다. 호출이 실행되는 순서는 이렇다 — ① 괄호 안의 수식들이 먼저 평가되어 값이 되고, ② 그 값들이 함수에게 전달되며, ③ 함수의 몸통이 실행되고, ④ 함수가 내놓은 <strong>반환값</strong>이 호출 자리의 값이 된다. 마지막 항목이 20장의 복선 회수다: <strong>호출은 수식이다</strong> — 호출이 적힌 자리는, 실행이 끝나면 반환값 하나로 바뀐다고 읽으면 된다.</p><p>호출이 수식이므로, 호출을 호출의 재료로 넣을 수도 있다. 시연한다 — <span id="idx-entry-86"></span><code>abs</code>는 표준 라이브러리(standard library)의 일꾼으로, 정수 하나를 받아 그 절댓값을 돌려준다(<code>&lt;stdlib.h></code> 도구 상자에 산다 — 그래서 <code>#include</code>가 하나 더 붙었다).</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch21/call.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdlib.h</span><span class="tok-s">></span>

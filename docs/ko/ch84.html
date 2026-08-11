@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">본문으로 건너뛰기</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">84장 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch83.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch85.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/ch84.html">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s84-1"><span class="tf-no">84.1</span>장부 ① — 블록마다 붙는 머리말</a><a class="lv3" href="#s84-2"><span class="tf-no">84.2</span>장부 ② — 크기별 목록과 갈래별 캐시</a><a class="lv3" href="#s84-3"><span class="tf-no">84.3</span>단편화 — 누수가 없는데도 메모리가 는다</a><a class="lv3" href="#s84-4"><span class="tf-no">84.4</span>표준 malloc을 갈아 끼우기 — 대안 할당자들</a><a class="lv3" href="#s84-5"><span class="tf-no">84.5</span>대안 표준 라이브러리</a><a class="lv3" href="#s84-6"><span class="tf-no">84.6</span>모양을 바꾸는 대안 — 아레나, 풀, 그리고 할당자를 인자로</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">84장 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch83.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch85.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/ch84.html">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s84-1"><span class="tf-no">84.1</span>장부 ① — 블록마다 붙는 머리말</a><a class="lv3" href="#s84-2"><span class="tf-no">84.2</span>장부 ② — 크기별 목록과 갈래별 캐시</a><a class="lv3" href="#s84-3"><span class="tf-no">84.3</span>단편화 — 누수가 없는데도 메모리가 는다</a><a class="lv3" href="#s84-4"><span class="tf-no">84.4</span>표준 malloc을 갈아 끼우기 — 대안 할당자들</a><a class="lv3" href="#s84-5"><span class="tf-no">84.5</span>대안 표준 라이브러리</a><a class="lv3" href="#s84-6"><span class="tf-no">84.6</span>모양을 바꾸는 대안 — 아레나, 풀, 그리고 할당자를 인자로</a></div></div>
 <main id="content"><div class="wrap">
 <h2>84 할당자의 속 — 힙, 대안 할당자, 대안 표준 라이브러리</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>45장 동적 메모리 · 동적 할당</div><div>83장 프로그램의 기억 배치 · 프로그램의 기억 배치</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>45장에서 <code>malloc</code> 한 번이 “창고 관리 사무소를 다녀오는 일”이라 했고, 83장에서는 그 창고가 주소 공간의 어느 자리에 있는지 보았다. 그러면 그 사무소는 안에서 정확히 무슨 장부를 쓰는가?</p><div class="qa-a"><p><span class="dev-label">답.</span> 두 가지를 적는다 — <strong>어느 조각이 비었는가</strong>와 <strong>각 조각이 몇 바이트인가</strong>. 전자는 크기별 목록(빈)으로, 후자는 블록마다 붙는 머리말(헤더)로 관리하는 <span id="idx-entry-232"></span>것이 고전적인 답이다. 이 두 장부를 어떻게 설계하느냐가 할당자(allocator)의 성능과 보안을 통째로 정한다. 이 장은 그 설계의 얼개다.</p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">45장에서 「비싸다」고만 하고 지나간 <code>malloc</code> 의 속을 이제 연다. 서른여덟 장을 미룬 것은 할당자의 내부가 83장의 기억 배치 위에서만 설명되기 때문이다. 그리고 이 장이 11부의 끝인 것도 맞다 — 표준 라이브러리를 다 읽고 나서야 「그것을 갈아 끼운다」는 이야기가 뜻을 갖는다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-233"></span>45장에서 “비싸다”고만 하고 지나간 <code>malloc</code>의 속을 연다. 할당자가 빈 조각을 어떻게 관리하는지(빈·경계 태그·병합), 왜 갈래마다 캐시를 <span id="idx-entry-234"></span>두는지, 단편화가 무엇이며 왜 회복되지 않는지. 이어서 표준 <code>malloc</code>을 갈아 끼우는 대안들(jemalloc·tcmalloc·mimalloc·snmalloc)과 대안 표준 라이브러리들(musl·picolibc 등), 그리고 할당을 아예 다른 모양으로 바꾸는 아레나(arena)·풀을 본다. 이 장의 끝이 제12부의 문이다.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>그러면 <code>malloc</code>은 이제 쓰지 말아야 하는가?</li></ol></div></div><div></div><h3 id="s84-1">84.1 장부 ① — 블록마다 붙는 머리말</h3><div></div><p><code>free(p)</code>는 크기를 받지 않는다. 그런데도 몇 바이트를 반납하는지 알아야 한다. 답은 단순하다 — <strong>돌려준 주소 바로 앞에 크기가 적혀 있다.</strong></p><pre><code data-lang="text">        ┌────────────┬──────────────────────────┐
         │ 헤더        │ 사용자에게 준 자리         │

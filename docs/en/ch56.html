@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 56 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch55.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch57.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch56.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s56-1"><span class="tf-no">56.1</span>When and where collisions go off</a><a class="lv3" href="#s56-2"><span class="tf-no">56.2</span>The first weapon — do not export (static)</a><a class="lv3" href="#s56-3"><span class="tf-no">56.3</span>The second weapon — the prefix convention</a><a class="lv3" href="#s56-4"><span class="tf-no">56.4</span>The third weapon — symbol visibility</a><a class="lv3" href="#s56-5"><span class="tf-no">56.5</span>The fourth weapon — cut down the names themselves</a><a class="lv3" href="#s56-6"><span class="tf-no">56.6</span>How C++ solved this spot</a><a class="lv4" href="#s56-6-1"><span class="tf-no">56.6.1</span>The syntax</a><a class="lv4" href="#s56-6-2"><span class="tf-no">56.6.2</span>The anonymous namespace — the equivalent of C’s static</a><a class="lv4" href="#s56-6-3"><span class="tf-no">56.6.3</span>using namespace — the convenience and its price</a><a class="lv4" href="#s56-6-4"><span class="tf-no">56.6.4</span>ADL — looking in the yard of the argument</a><a class="lv4" href="#s56-6-5"><span class="tf-no">56.6.5</span>Name mangling and extern &quot;C&quot;</a><a class="lv3" href="#s56-7"><span class="tf-no">56.7</span>Good habits — a summary</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 56 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch55.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch57.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch56.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s56-1"><span class="tf-no">56.1</span>When and where collisions go off</a><a class="lv3" href="#s56-2"><span class="tf-no">56.2</span>The first weapon — do not export (static)</a><a class="lv3" href="#s56-3"><span class="tf-no">56.3</span>The second weapon — the prefix convention</a><a class="lv3" href="#s56-4"><span class="tf-no">56.4</span>The third weapon — symbol visibility</a><a class="lv3" href="#s56-5"><span class="tf-no">56.5</span>The fourth weapon — cut down the names themselves</a><a class="lv3" href="#s56-6"><span class="tf-no">56.6</span>How C++ solved this spot</a><a class="lv4" href="#s56-6-1"><span class="tf-no">56.6.1</span>The syntax</a><a class="lv4" href="#s56-6-2"><span class="tf-no">56.6.2</span>The anonymous namespace — the equivalent of C’s static</a><a class="lv4" href="#s56-6-3"><span class="tf-no">56.6.3</span>using namespace — the convenience and its price</a><a class="lv4" href="#s56-6-4"><span class="tf-no">56.6.4</span>ADL — looking in the yard of the argument</a><a class="lv4" href="#s56-6-5"><span class="tf-no">56.6.5</span>Name mangling and extern &quot;C&quot;</a><a class="lv3" href="#s56-7"><span class="tf-no">56.7</span>Good habits — a summary</a></div></div>
 <main id="content"><div class="wrap">
 <h2>56 Handling name collisions — from prefixes to <code>namespace</code></h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 54, Many files — splitting and linking · external and internal linkage</div><div>chapter 55, The world of names · four name spaces and three axes</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 55 said C has only four name spaces and that you cannot make a new one. What happens, then, when two libraries that know nothing of each other each export a function called <code>init</code>?</p><div class="qa-a"><p><p><span class="dev-label">A.</span> If both have external linkage the linker refuses with a <strong>multiple definition</strong> — and that is the lucky case. The unlucky one is worse. If one of them sits inside a static library, the linker <strong>takes the first one it finds and moves on in silence.</strong> Compiling and linking both succeed, and the wrong function is called.</p><p>So the answer to this problem is not “fix it when it collides” but <strong>“make a collision impossible in the first place.”</strong> This chapter is those methods.</p></p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">If chapter 55 was “what collides”, this is “so what do you do”. Splitting principle from prescription into two chapters is deliberate: the prescriptions — prefixes, visibility, shortening names — become superstition without the principle. What large projects actually chose is examined here alongside.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-130"></span>Four weapons against name collisions, in order — do not export, the prefix convention, symbol visibility, and cutting down the names themselves. What large projects actually chose comes with them. Finally, how C++ solved this spot with <code>namespace</code>, and what to watch for when the two languages are mixed.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Is <code>multiple definition</code> actually the welcome error?</li><li>How do I check what I am actually exporting?</li><li>Should C then bring name spaces into the language?</li></ol></div></div><div></div><h3 id="s56-1">56.1 When and where collisions go off</h3><div></div><p>Spellings collide in three places, and each is harder to diagnose than the last.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>When</strong></th><th><strong>What tells you</strong></th><th><strong>How easy to handle</strong></th></tr><tr><td>At compile time</td><td>declared twice in one scope — the compiler refuses at once</td><td>Easy. It is visible right there</td></tr><tr><td>At link time</td><td><code>multiple definition of 'init'</code></td><td>Moderate. The message names the files</td></tr><tr><td><strong>Silently</strong></td><td>nothing tells you</td><td>Hard. The wrong function runs and you see only symptoms</td></tr></table></div><p class="float-caption">Table 57.1</p></figure><p>The third is why this chapter exists. Three places where silent collisions arise.</p><ul><li><strong>The link order of static libraries.</strong> If <code>libfoo.a</code> and <code>libbar.a</code> both carry the name, the linker takes whichever it met first on the command line and stops. Reorder the libraries and the program behaves differently.</li><li><strong>Weak symbols.</strong> A name the implementation marked “anyone may override this” is replaced without a word. Swapping in your own <code>malloc</code> is this pattern.</li><li><strong>Interception at run time.</strong> Unix’s <code>LD_PRELOAD</code> lets whatever loaded first win. A legitimate technique for diagnostic tools, and an accident when the same name is used by chance.</li></ul><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Is <code>multiple definition</code> actually the welcome error?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Yes. It is <strong>an audible collision.</strong> What is genuinely dangerous is the linker picking one side without a word.</p><p>So the direction of the discipline is not “let us fix collisions well” but <strong>“let us make sure a collision is heard.”</strong> Cut the exported names to a minimum and (a) the chance of colliding drops and (b) when one happens the linker makes a noise. All four weapons below point that way.</p></p></div></div><h3 id="s56-2">56.2 The first weapon — do not export (<code>static</code>)</h3><div></div><p>The surest defence is not putting the name outside at all. Add <code>static</code> to a file-scope declaration and it has internal linkage (chapter 54): outside that translation unit it does not exist.</p><p>The discipline reduces to one line — <strong>make <code>static</code> the default and release only what goes in the header.</strong> There is a bonus: knowing “this name cannot be called from another file”, the compiler can optimise more aggressively (inlining, removing unused functions).</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Leaving something global that was never meant for the header</p><div class="dev-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> util.c </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-t">int</span></strong> <strong>helper</strong><span class="tok-x">(</span><strong><span class="tok-t">int</span></strong> x<span class="tok-x">)</span> <span class="tok-x">{</span> … <span class="tok-x">}</span>         <em><span class="tok-c">/*</span></em><em><span class="tok-c"> not in any header, yet external </span></em><em><span class="tok-c">*/</span></em></code></pre><p>Nobody calls it, and still it occupies a name in the linker’s yard. The day another file happens to make the same name, the problem surfaces. The cost of writing <code>static</code> is one word.</p></div></div><h3 id="s56-3">56.3 The second weapon — the prefix convention</h3><div></div><p>For names that must be exported, the fence is built by hand. It is the universal practice of C libraries, and the larger the project the fewer the exceptions.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Project</strong></th><th><strong>Prefix</strong></th><th><strong>How far it goes</strong></th></tr><tr><td>SQLite</td><td><code>sqlite3_</code></td><td>functions, types, constants — even the version number is in the prefix</td></tr><tr><td>libcurl</td><td><code>curl_</code>, <code>CURL</code></td><td>lowercase for functions, capitals for constants and types</td></tr><tr><td>zlib</td><td><code>z</code>, <code>inflate</code>/<code>deflate</code></td><td>old enough that the prefix is short — which is why it sometimes collides</td></tr><tr><td>OpenSSL</td><td><code>SSL_</code>, <code>EVP_</code>, <code>X509_</code></td><td>a different prefix per module</td></tr><tr><td>GLib, GTK</td><td><code>g_</code>, <code>gtk_</code>, <code>G_</code>, <code>GTK_</code></td><td>types in camel case, as <code>GtkWidget</code></td></tr><tr><td>SDL</td><td><code>SDL_</code></td><td>functions, types, constants and macros alike</td></tr><tr><td>The Linux kernel</td><td>the subsystem’s name</td><td><code>kmalloc</code>, <code>vfs_</code>, <code>sock_</code> — the layer as the prefix</td></tr></table></div><p class="float-caption">Table 57.2</p></figure><p>Four design rules can be read out of it.</p><ol><li><strong>Short, but unique.</strong> zlib’s <code>z</code> is convenient for being short and collides just as easily. Three or four characters is a safe choice today.</li><li><strong>Put it on types and macros too.</strong> A prefix that covers only functions is half a fence — chapter 55 showed that type names and enumeration constants live in the same yard.</li><li><strong>Split the layers by case.</strong> Combine the prefix with the habit of lowercase for functions and capitals for macros and constants, and a name alone reveals what it is.</li><li><strong>Write it down.</strong> One line in the conventions document saying “our prefix is this” is cheaper than pointing it out a hundred times in review.</li></ol><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The legacy of the days before prefixes</p><div class="dev-body"><p>The standard library is itself a museum of unprefixed names — <code>open</code>, <code>read</code>, <code>write</code>, <code>time</code>, <code>index</code>, <code>link</code>. In the 1970s a program used a handful of libraries, so it was not a problem.</p><p>Today’s common accident is the result. Make a function called <code>read</code> or <code>time</code> in your own code and you hide the standard one, and other code calling it quietly goes elsewhere. That is what chapter 55′s table of reserved names is for, and “assume the short, common words are already taken” is practice’s first rule.</p></div></div><h3 id="s56-4">56.4 The third weapon — symbol visibility</h3><div></div><p>A prefix is a convention people keep, so it leaks. There is one more layer that <strong>lets the build enforce it</strong> — the symbol visibility of a shared library.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Platform</strong></th><th><strong>Hiding by default</strong></th><th><strong>Marking what is exported</strong></th></tr><tr><td>ELF (Linux, BSD)</td><td><code>-fvisibility=hidden</code></td><td><code>__attribute__((visibility("default")))</code></td></tr><tr><td>macOS</td><td><code>-fvisibility=hidden</code></td><td>the same attribute, or a list file of exported symbols</td></tr><tr><td>Windows</td><td>already hidden by default</td><td><code>__declspec(dllexport)</code> or a <code>.def</code> file</td></tr></table></div><p class="float-caption">Table 57.3</p></figure><p>The practice is to wrap it in one macro.</p><pre><code data-lang="c"><strong><span class="tok-k">#if</span></strong><span class="tok-p"> </span><strong><span class="tok-k">defined</span></strong><span class="tok-p">(_WIN32)</span>

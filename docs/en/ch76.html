@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 76 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch75.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch77.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch76.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s76-1"><span class="tf-no">76.1</span>Where it came from — a Unix inheritance</a><a class="lv3" href="#s76-2"><span class="tf-no">76.2</span>Two functions — the exact shape</a><a class="lv4" href="#s76-2-1"><span class="tf-no">76.2.1</span>signal’s arguments and return value</a><a class="lv4" href="#s76-2-2"><span class="tf-no">76.2.2</span>raise’s argument and return value</a><a class="lv4" href="#s76-2-3"><span class="tf-no">76.2.3</span>The six signals the standard defines</a><a class="lv3" href="#s76-3"><span class="tf-no">76.3</span>What a handler may do</a><a class="lv4" href="#s76-3-1"><span class="tf-no">76.3.1</span>What sig_atomic_t really is</a><a class="lv3" href="#s76-4"><span class="tf-no">76.4</span>Handlers and memory — why malloc is not on the list</a><a class="lv3" href="#s76-5"><span class="tf-no">76.5</span>What a signal saves and restores — the register context and errno</a><a class="lv4" href="#s76-5-1"><span class="tf-no">76.5.1</span>errno is the exception — you must look after it yourself</a><a class="lv3" href="#s76-6"><span class="tf-no">76.6</span>The working pattern — raise a flag and return at once</a><a class="lv3" href="#s76-7"><span class="tf-no">76.7</span>POSIX’s sigaction — filling the standard’s gaps</a><a class="lv4" href="#s76-7-1"><span class="tf-no">76.7.1</span>Inside struct sigaction</a><a class="lv4" href="#s76-7-2"><span class="tf-no">76.7.2</span>siginfo_t — who sent it, and why</a><a class="lv4" href="#s76-7-3"><span class="tf-no">76.7.3</span>Blocking a signal for a while — the mask</a><a class="lv3" href="#s76-8"><span class="tf-no">76.8</span>Real uses</a><a class="lv4" href="#s76-8-1"><span class="tf-no">76.8.1</span>Graceful shutdown — the most widely used pattern</a><a class="lv4" href="#s76-8-2"><span class="tf-no">76.8.2</span>SIGPIPE — the signal whose right answer is to ignore it</a><a class="lv4" href="#s76-8-3"><span class="tf-no">76.8.3</span>Interrupted system calls — EINTR</a><a class="lv4" href="#s76-8-4"><span class="tf-no">76.8.4</span>Which software uses signals, and why</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 76 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch75.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch77.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch76.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s76-1"><span class="tf-no">76.1</span>Where it came from — a Unix inheritance</a><a class="lv3" href="#s76-2"><span class="tf-no">76.2</span>Two functions — the exact shape</a><a class="lv4" href="#s76-2-1"><span class="tf-no">76.2.1</span>signal’s arguments and return value</a><a class="lv4" href="#s76-2-2"><span class="tf-no">76.2.2</span>raise’s argument and return value</a><a class="lv4" href="#s76-2-3"><span class="tf-no">76.2.3</span>The six signals the standard defines</a><a class="lv3" href="#s76-3"><span class="tf-no">76.3</span>What a handler may do</a><a class="lv4" href="#s76-3-1"><span class="tf-no">76.3.1</span>What sig_atomic_t really is</a><a class="lv3" href="#s76-4"><span class="tf-no">76.4</span>Handlers and memory — why malloc is not on the list</a><a class="lv3" href="#s76-5"><span class="tf-no">76.5</span>What a signal saves and restores — the register context and errno</a><a class="lv4" href="#s76-5-1"><span class="tf-no">76.5.1</span>errno is the exception — you must look after it yourself</a><a class="lv3" href="#s76-6"><span class="tf-no">76.6</span>The working pattern — raise a flag and return at once</a><a class="lv3" href="#s76-7"><span class="tf-no">76.7</span>POSIX’s sigaction — filling the standard’s gaps</a><a class="lv4" href="#s76-7-1"><span class="tf-no">76.7.1</span>Inside struct sigaction</a><a class="lv4" href="#s76-7-2"><span class="tf-no">76.7.2</span>siginfo_t — who sent it, and why</a><a class="lv4" href="#s76-7-3"><span class="tf-no">76.7.3</span>Blocking a signal for a while — the mask</a><a class="lv3" href="#s76-8"><span class="tf-no">76.8</span>Real uses</a><a class="lv4" href="#s76-8-1"><span class="tf-no">76.8.1</span>Graceful shutdown — the most widely used pattern</a><a class="lv4" href="#s76-8-2"><span class="tf-no">76.8.2</span>SIGPIPE — the signal whose right answer is to ignore it</a><a class="lv4" href="#s76-8-3"><span class="tf-no">76.8.3</span>Interrupted system calls — EINTR</a><a class="lv4" href="#s76-8-4"><span class="tf-no">76.8.4</span>Which software uses signals, and why</a></div></div>
 <main id="content"><div class="wrap">
 <h2>76 Signals — <code>&lt;signal.h></code></h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 75, Diagnostics and control · <code>errno</code> and the handler’s restrictions</div><div>chapter 53, The three faces of <code>main</code> · a program’s start and end</div><div>chapter 3, Programs and processes · the process as a container</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 75 said a signal handler may not call <code>printf</code> or <code>malloc</code>, and that about all it may do is assign to a <code>volatile sig_atomic_t</code>. But a signal ultimately calls <strong>a function inside my own program</strong> — why are the restrictions so severe?</p><div class="qa-a"><p><p><span class="dev-label">A.</span> <strong>Because there is no telling when it will cut in.</strong> A signal does not respect the boundaries of functions. It can arrive while <code>malloc</code> has half-rewritten its free list, or while <code>printf</code> has written half of a buffer. Call the same function again from a handler in that state and the data structure breaks.</p><p>A signal, in other words, is <strong>a third thing</strong> — neither a thread nor a function call. It stops the current flow, cuts in, and returns, so there is no way to know “what is half-done right now”. Every rule in this chapter follows from that one sentence.</p></p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">Chapter 75 surveyed four headers; two of them deserve a close reading of their own. Signals come first because they are flow arriving <strong>from outside</strong>, while the next chapter’s <code>setjmp</code> is flow jumping <strong>from inside</strong> — the two make a contrast. The pair reads as “the two directions in which flow is cut”.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-154"></span>A close reading of one header, <code>&lt;signal.h></code>. Where it came from (a Unix inheritance), the exact shape of its two functions with their arguments and return values, what <code>sig_atomic_t</code> really is, the list of what a handler may do, why memory cannot be allocated inside one, how the kernel saves and restores registers, POSIX’s <code>sigaction</code> and the inside of its structures, and how servers, the JVM and garbage collectors actually use signals.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Why did the standard not take the better <code>sigaction</code>?</li><li>Then what do you do when a handler really must record something?</li><li>Does <code>setjmp</code>/<code>longjmp</code> not do the same thing?</li><li>In a program with several threads, where does a signal go?</li></ol></div></div><div></div><h3 id="s76-1">76.1 Where it came from — a Unix inheritance</h3><div></div><p>C did not invent signals. Unix made them in the 1970s as “the cheapest way to tell a process something”, and the C standard took only <strong>the minimum that would hold anywhere</strong>.</p><p>Early Unix signals had a famous flaw. Once a handler ran, the disposition immediately reverted to the default (so the first line of a handler had to re-install itself), and if the same signal arrived in that gap the program died. Because of that window, the signals of the time were called <strong>unreliable signals</strong>.</p><p>4.2BSD produced a new interface that fixed this (the <code>sigvec</code> family), and that design was tidied into POSIX’s <code>sigaction</code>. What the 1989 C standard took, however, was not the fixed one but <strong>the common denominator</strong> — which is why the old window is still in the standard’s <code>signal</code> today.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Why did the standard not take the better <code>sigaction</code>?</p></div><div class="dev qa-a"><p><p><span class="dev-label">A.</span> Because of C’s long-standing principle: <strong>take only what holds where there is no operating system</strong> (chapter 62). <code>sigaction</code> stands on operating-system notions — processes, signal masks, restarting system calls. C must run on embedded chips that have none of those, so the standard fixed only “if there is such a thing as a signal, this much exists.”</p><p>So this chapter is in two layers. <strong>The standard layer</strong> (works anywhere, with gaps) and <strong>the POSIX layer</strong> (no gaps, but only on Unix-like systems). Practical Unix code uses the latter almost without exception.</p></p></div></div><h3 id="s76-2">76.2 Two functions — the exact shape</h3><div></div><p>The standard defines only two.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Declaration</strong></th><th><strong>What it does</strong></th></tr><tr><td><code>void (*signal(int sig, void (*func)(int)))(int);</code></td><td>Sets the disposition of signal <code>sig</code> to <code>func</code>, and returns <strong>the previous one</strong></td></tr><tr><td><code>int raise(int sig);</code></td><td>Sends signal <code>sig</code> to the caller itself</td></tr></table></div><p class="float-caption">Table 77.1</p></figure><p>Why <code>signal</code>’s declaration is rough was read by procedure in chapter 60 — <strong>“a function taking a signal number and a handler, returning the previous handler.”</strong></p><h4 id="s76-2-1">76.2.1 <code>signal</code>’s arguments and return value</h4><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>Place</strong></th><th><strong>What you give</strong></th><th><strong>Meaning</strong></th></tr><tr><td><code>sig</code></td><td>A signal number</td><td>One of the standard six, or a value the implementation defines</td></tr><tr><td><code>func</code></td><td><code>SIG_DFL</code></td><td>Back to default handling (mostly termination)</td></tr><tr><td><code>func</code></td><td><code>SIG_IGN</code></td><td>Ignore — the signal arrives and nothing happens</td></tr><tr><td><code>func</code></td><td>A function pointer</td><td>Use that function as the handler</td></tr><tr><td>return</td><td>The previous disposition</td><td><code>SIG_DFL</code>, <code>SIG_IGN</code> or the previous handler</td></tr><tr><td>return</td><td><code>SIG_ERR</code></td><td>Setting failed; <code>errno</code> then holds the reason</td></tr></table></div><p class="float-caption">Table 77.2</p></figure><p><strong>Not discarding the return value</strong> is the first discipline. Miss a failure and the program dies quietly when the signal finally arrives.</p><h4 id="s76-2-2">76.2.2 <code>raise</code>’s argument and return value</h4><div></div><p><code>raise(sig)</code> sends the signal to the caller. It returns 0 on success and non-zero on failure. If a handler is installed it runs <strong>before <code>raise</code> returns</strong> — that is, synchronously.</p><p>That is exactly what <code>abort</code> does: it raises <code>SIGABRT</code>, and terminates abnormally if there is no handler or the handler returns (chapter 67).</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch76/sig_basic.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The standard part of &lt;signal.h> — three dispositions and raise. </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">signal.h</span><span class="tok-s">></span>

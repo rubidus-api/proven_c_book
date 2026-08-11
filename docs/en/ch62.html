@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 62 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch61.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch63.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch62.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s62-1"><span class="tf-no">62.1</span>Freestanding and hosted — two worlds</a><a class="lv3" href="#s62-2"><span class="tf-no">62.2</span>The whole list</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 62 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch61.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch63.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch62.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s62-1"><span class="tf-no">62.1</span>Freestanding and hosted — two worlds</a><a class="lv3" href="#s62-2"><span class="tf-no">62.2</span>The whole list</a></div></div>
 <main id="content"><div class="wrap">
 <h2>62 The standard library at a glance</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 61, The terrain of the standard library · the character of the standard library</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 61 said the standard library is “thin and old”, and that the standard pins down not only the grammar but the list of libraries and the contract of each function. Then exactly how many headers are there, and how has that list grown?</p><div class="qa-a"><p><span class="dev-label">A.</span> Thirty-one as of C23. C89 began with fifteen, C95 added two concerning wide characters, C99 nine, C11 five, and C23 a few more. That the speed of growth is almost the same as the language’s speed of change tells the character of this list — <strong>once something enters it stays effectively forever, and so it takes long to let anything in</strong>. It is the other side of the story of <code>gets</code>’s funeral taking decades (chapter 43).</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">Chapter 61 gave the character; this one gives the list. Laying out the full table before the close reading begins is how one avoids walking twenty-one chapters without a guide. Which header arrived in which edition, and which can be used with no operating system — these two axes recur in every chapter that follows.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">We spread into a table every header the C standard settles, without missing one. Which header entered in which edition, what can be used even without an operating system, and in what order the remaining chapters of this part walk those regions. It is the chapter that redraws chapter 61′s landscape at a larger scale.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>How many of these are actually used often?</li></ol></div></div><div></div><h3 id="s62-1">62.1 Freestanding and hosted — two worlds</h3><div></div><p>The standard divides implementations in two. A <strong>hosted implementation</strong> is the ordinary environment running on top of an operating system, and a <strong>freestanding implementation</strong> is an environment with no operating system — firmware, a kernel, a bootloader.</p><p>The difference between the two is exactly the difference in the header list. The headers a freestanding implementation must accept are the following ten; the rest may or may not be there — though C23 added <strong>parts of headers</strong> on top. We pick that up after the table.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>header</strong></th><th><strong>what</strong></th><th><strong>note</strong></th></tr><tr><td><code>&lt;float.h></code></td><td>the limits of real types</td><td>defines values only</td></tr><tr><td><code>&lt;limits.h></code></td><td>the limits of integer types</td><td>defines values only</td></tr><tr><td><code>&lt;stdarg.h></code></td><td>variadic arguments</td><td>chapter 58</td></tr><tr><td><code>&lt;stdbool.h></code></td><td><code>bool</code></td><td>C99. effectively unnecessary in C23</td></tr><tr><td><code>&lt;stddef.h></code></td><td><code>size_t</code>, <code>NULL</code>, <code>offsetof</code></td><td>the most basic of the basics</td></tr><tr><td><code>&lt;stdint.h></code></td><td>fixed-width integers</td><td>C99</td></tr><tr><td><code>&lt;stdalign.h></code></td><td><code>alignas</code>, <code>alignof</code></td><td>C11. keywords in C23</td></tr><tr><td><code>&lt;stdnoreturn.h></code></td><td><code>noreturn</code></td><td>C11. to be retired in C23</td></tr><tr><td><code>&lt;iso646.h></code></td><td>alternative spellings such as <code>and</code>, <code>or</code></td><td>C95</td></tr><tr><td><code>&lt;stdbit.h></code></td><td>bit manipulation</td><td>added in C23</td></tr><tr><td><code>&lt;stdckdint.h></code></td><td>checked arithmetic</td><td>added in C23</td></tr></table></div><p class="float-caption">Table 63.1</p></figure><p>That C23 lengthened this list is worth noticing. The two that newly entered are <strong>pure computation needing no operating system</strong>, so they can be provided in a freestanding environment too, and what they do (counting bits and checking overflow) is especially handy in embedded work. That the list grows in the direction of “what works without an OS” shows this division’s character too.</p><p>And a whole header being required differs from only <strong>some</strong> of its declarations being required. C23 uses that second way. Beyond the ten headers above, §4p7 requires <code>&lt;string.h></code> — minus six functions (<code>strcoll</code>, <code>strdup</code>, <code>strerror</code>, <code>strndup</code>, <code>strtok</code>, <code>strxfrm</code>) — and from <code>&lt;stdlib.h></code> requires exactly one function, <code>memalignment</code>. Look at the six that were taken out and the reason shows: they lean on the locale (<code>strcoll</code>, <code>strxfrm</code>, <code>strerror</code>), they need an allocator (<code>strdup</code>, <code>strndup</code>), or they carry hidden state (<code>strtok</code>). It is <strong>the list with only what cannot be done without an OS taken out</strong>.</p><p>Floating point is conditional too. If an implementation defines <code>__STDC_IEC_60559_BFP__</code> or <code>__STDC_IEC_60559_DFP__</code>, then <code>&lt;fenv.h></code>, <code>&lt;math.h></code> and the <code>strto*</code> family must be usable in freestanding as well (§4p8).</p><p>That this list is short is the background of this whole book — in embedded work neither <code>printf</code> nor <code>malloc</code> is a given (Part XII’s freestanding story begins here).</p><h3 id="s62-2">62.2 The whole list</h3><div></div><p>Every header the standard settles. “Edition” is the edition in which that header entered the standard, and the chapter of this part that treats it is written alongside.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>header</strong></th><th><strong>edition</strong></th><th><strong>what it holds</strong></th><th><strong>in this part</strong></th></tr><tr><td><code>&lt;assert.h></code></td><td>C89</td><td><code>assert</code> — the diagnosis that catches contract violations</td><td>chapter 75</td></tr><tr><td><code>&lt;complex.h></code></td><td>C99</td><td>complex arithmetic</td><td>chapter 73</td></tr><tr><td><code>&lt;ctype.h></code></td><td>C89</td><td>character classification and conversion</td><td>chapter 67</td></tr><tr><td><code>&lt;errno.h></code></td><td>C89</td><td>the error-number global</td><td>chapter 75</td></tr><tr><td><code>&lt;fenv.h></code></td><td>C99</td><td>the floating-point environment (rounding, exceptions)</td><td>chapter 73</td></tr><tr><td><code>&lt;float.h></code></td><td>C89</td><td>the limits of real types</td><td>chapters 27, 73</td></tr><tr><td><code>&lt;inttypes.h></code></td><td>C99</td><td>formats and conversions for fixed-width integers</td><td>appendix B, chapter 78</td></tr><tr><td><code>&lt;iso646.h></code></td><td>C95</td><td>alternative spellings of operators</td><td>chapter 78</td></tr><tr><td><code>&lt;limits.h></code></td><td>C89</td><td>the limits of integer types</td><td>chapter 27</td></tr><tr><td><code>&lt;locale.h></code></td><td>C89</td><td>locale settings</td><td>chapter 67</td></tr><tr><td><code>&lt;math.h></code></td><td>C89</td><td>mathematical functions</td><td>chapter 73</td></tr><tr><td><code>&lt;setjmp.h></code></td><td>C89</td><td>non-local jumps</td><td>chapter 75</td></tr><tr><td><code>&lt;signal.h></code></td><td>C89</td><td>signal handling</td><td>chapter 75</td></tr><tr><td><code>&lt;stdalign.h></code></td><td>C11</td><td>specifying and querying alignment</td><td>chapter 78</td></tr><tr><td><code>&lt;stdarg.h></code></td><td>C89</td><td>variadic arguments</td><td>chapter 58</td></tr><tr><td><code>&lt;stdatomic.h></code></td><td>C11</td><td>atomic operations</td><td>chapter 80</td></tr><tr><td><code>&lt;stdbit.h></code></td><td>C23</td><td>bit manipulation (counting, rotating and so on)</td><td>chapter 78</td></tr><tr><td><code>&lt;stdbool.h></code></td><td>C99</td><td><code>bool</code>, <code>true</code>, <code>false</code></td><td>chapter 78</td></tr><tr><td><code>&lt;stdckdint.h></code></td><td>C23</td><td>arithmetic that checks for overflow</td><td>chapters 52, 81</td></tr><tr><td><code>&lt;stddef.h></code></td><td>C89</td><td><code>size_t</code>, <code>ptrdiff_t</code>, <code>NULL</code>, <code>offsetof</code></td><td>chapter 78</td></tr><tr><td><code>&lt;stdint.h></code></td><td>C99</td><td>fixed-width integer types</td><td>chapters 27, 78</td></tr><tr><td><code>&lt;stdio.h></code></td><td>C89</td><td>stream input and output, files</td><td>chapters 54, 64</td></tr><tr><td><code>&lt;stdlib.h></code></td><td>C89</td><td>conversion, random numbers, allocation, sorting, program termination</td><td>chapter 66</td></tr><tr><td><code>&lt;stdnoreturn.h></code></td><td>C11</td><td><code>noreturn</code></td><td>chapter 78</td></tr><tr><td><code>&lt;string.h></code></td><td>C89</td><td>strings and memory blocks</td><td>chapter 65</td></tr><tr><td><code>&lt;tgmath.h></code></td><td>C99</td><td>type-generic mathematical functions</td><td>chapter 73</td></tr><tr><td><code>&lt;threads.h></code></td><td>C11</td><td>threads, mutexes, condition variables</td><td>chapter 78</td></tr><tr><td><code>&lt;time.h></code></td><td>C89</td><td>time and the calendar</td><td>chapter 74</td></tr><tr><td><code>&lt;uchar.h></code></td><td>C11</td><td>UTF-16 and UTF-32 character types</td><td>chapter 67</td></tr><tr><td><code>&lt;wchar.h></code></td><td>C95</td><td>wide-character input, output and strings</td><td>chapter 67</td></tr><tr><td><code>&lt;wctype.h></code></td><td>C95</td><td>wide-character classification</td><td>chapter 67</td></tr></table></div><p class="float-caption">Table 63.2</p></figure><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> How many of these are actually used often?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Most programs live on about five — <code>&lt;stdio.h></code>, <code>&lt;stdlib.h></code>, <code>&lt;string.h></code>, <code>&lt;stdint.h></code>, and as needed <code>&lt;math.h></code> or <code>&lt;time.h></code>. The rest are things you “know exist and look up when needed”. So this part’s aim too is not memorising but <strong>keeping the whole shape in your head</strong> — roughly where what is, and which regions are slippery.</p></div></div><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“If it is in the standard library it is a safe and portable function”</strong></p><div class="dev-body">Being in the standard means <strong>it is everywhere</strong>, not <strong>it is safe</strong>. <code>gets</code> was in the 1989 standard and was deleted only in 2011 (chapter 64). <code>strncpy</code>, contrary to its name, is not a safe copying function (chapter 65), and <code>atoi</code> has no way at all to report failure (chapter 66). Some functions of <strong>the same name even behave differently according to the locale</strong> (chapter 67). Using the standard library means not “using what has been verified” but <strong>“using what has a stated contract”</strong>, and reading that contract is still our part.</div></div><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>The accident one header called down — <code>&lt;strings.h></code> is not standard</p><div class="dev-body">There is a place confusable by similarity of name. <code>&lt;string.h></code> is standard but <code>&lt;strings.h></code> (plural) is POSIX. Functions such as <code>strcasecmp</code> and <code>bzero</code> are in there, so code using it does not compile on Windows. Conversely <code>strlcpy</code> and <code>strlcat</code> came out of OpenBSD and spread to several Unixes but <strong>were not standard</strong> — only in C23 were functions of similar intent so much as discussed. The guess “it is used a lot, so it must be standard” is a common beginning of portability accidents.</div></div><div class="dev recap"><p class="dev-label">Recap</p><div class="dev-body"><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>to remember</strong></th><th><strong>the point</strong></th></tr><tr><td>number of headers</td><td>thirty-one as of C23. grown from C89′s fifteen</td></tr><tr><td>freestanding</td><td>only eleven are guaranteed without an operating system (C23 added two)</td></tr><tr><td>speed of entering</td><td>slow. the speed of leaving is slower</td></tr><tr><td>standard = safe</td><td>no. standard = <strong>the contract is written down</strong></td></tr><tr><td><code>&lt;strings.h></code></td><td>not standard (POSIX). do not be fooled by the name</td></tr></table></div><p class="float-caption">Table 63.3</p></figure></div></div><p>The shape is laid out, so we walk. The next two chapters are the region used the most and slipped in the most — stream input and output.</p>
 <div class="nav"><a href="ch61.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch63.html">Next →</a></div>

@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 27 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch26.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch28.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch27.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s27-1"><span class="tf-no">27.1</span>The family of integer types</a><a class="lv3" href="#s27-2"><span class="tf-no">27.2</span>The basic types at a glance — minimum and actual ranges</a><a class="lv3" href="#s27-3"><span class="tf-no">27.3</span>The type of an integer constant — the same value, typed by its notation</a><a class="lv3" href="#s27-4"><span class="tf-no">27.4</span>Where size is the contract — fixed-width types</a><a class="lv3" href="#s27-5"><span class="tf-no">27.5</span>Seeing the boundary with our own eyes</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 27 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch26.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch28.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch27.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s27-1"><span class="tf-no">27.1</span>The family of integer types</a><a class="lv3" href="#s27-2"><span class="tf-no">27.2</span>The basic types at a glance — minimum and actual ranges</a><a class="lv3" href="#s27-3"><span class="tf-no">27.3</span>The type of an integer constant — the same value, typed by its notation</a><a class="lv3" href="#s27-4"><span class="tf-no">27.4</span>Where size is the contract — fixed-width types</a><a class="lv3" href="#s27-5"><span class="tf-no">27.5</span>Seeing the boundary with our own eyes</a></div></div>
 <main id="content"><div class="wrap">
 <h2>27 Integers — a world of finite numbers</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 26, The families of types · where the integer and basic types sit</div><div>chapter 7, Representing integers · sign and overflow</div><div>chapter 23, Declaring variables · a type is the shape of the vessel</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 7 said that overflow of unsigned integers is “defined wrap-around” while signed overflow is outside the contract. But is the <code>int</code> we made in chapter 23 signed or unsigned — which world have our variables been in all along?</p><div class="qa-a"><p><span class="dev-label">A.</span> <code>int</code> is a <strong>signed</strong> integer — that is, our variables have been in the world of “outside the contract if it overflows.” Fortunately the examples so far never came near the ±2.1 billion container, but it is time to draw that boundary exactly. The kinds and sizes of containers, where the boundary lies, and the rule when it is crossed — that is this chapter.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">The <strong>representation</strong> of integers learned in chapter 7 turns here into C’s <strong>types</strong>. The twenty-chapter gap between them was needed to erect the skeleton of the language; now the bit-level story can be laid on top of syntax. That is also why part 6 begins with forging values: know the values exactly before controlling how they flow.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-65"></span>Part VI forges values and governs flow. Its first chapter faces C’s integers head on — how the world of representation learned in chapter 7 appears as C’s family of types, what face overflow wears in practice, and the modern C practice (<code>&lt;stdint.h></code>).</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>What happens if the value fits nothing in the list?</li><li>It seems strange that <code>char</code> is a member of the integer family — is it not a character?</li></ol></div></div><div></div><p>This chapter digs into one cell of what chapter 26 laid out — the family passed over there in the single phrase “the signed and unsigned integer types”.</p><h3 id="s27-1">27.1 The family of integer types</h3><div></div><p>C’s integer types are not <code>int</code> alone but a family. The basic members on the signed side, in order of size, are <code>char</code> (1 byte — the “byte = character” story of chapter 4 survives in the name), <code>short</code>, <code>int</code>, <code>long</code> and <code>long long</code>, and putting <code>unsigned</code> in front of each gives its unsigned partner (<code>unsigned int</code> and so on). The standard fixes only each type’s <strong>minimum</strong> size — <code>int</code> at least 16 bits, <code>long</code> at least 32 — so the exact size is the platform’s business (on mainstream systems <code>int</code> is 32 bits).</p><p>If “it differs by machine” sounds uneasy, that is an accurate instinct — which is why modern C practice is to use types with the size fixed in the name. The <code>&lt;stdint.h></code> toolbox’s <code>int32_t</code> (exactly 32 bits, signed), <code>uint8_t</code>, <code>int64_t</code> and the like. Wherever size is part of the contract — file formats, communication, everywhere chapter 5′s endianness matters — that side is standard practice. C23 added <code>_BitInt(N)</code> on top: an integer whose bit width you write yourself. This book’s examples use <code>int</code> by default for simplicity on the page, but switch to the <code>&lt;stdint.h></code> family in scenes where size matters.</p><h3 id="s27-2">27.2 The basic types at a glance — minimum and actual ranges</h3><div></div><p>Here we gather in one place exactly what C’s basic types are and how large each is. This section is a place to look things up.</p><p><strong>Integer types</strong> come in five tiers, each with a signed and an unsigned version — <code>char</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>long long</code>. To these are attached <code>bool</code> (C99) and the character-specific types (<code>char16_t</code>, <code>char32_t</code>, <code>wchar_t</code>). <strong>Floating types</strong> are three — <code>float</code>, <code>double</code>, <code>long double</code>.</p><p>What the standard pins down is <strong>not size but minimum range</strong>. The common saying “int is 4 bytes” is not a sentence of the standard but an observation that most platforms are like that today.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>type</strong></th><th><strong>minimum range guaranteed</strong></th><th><strong>minimum width</strong></th><th><strong>limit macros</strong></th></tr><tr><td><code>signed char</code></td><td>−127 to +127</td><td>8 bits</td><td><code>SCHAR_MIN</code> <code>SCHAR_MAX</code></td></tr><tr><td><code>unsigned char</code></td><td>0 to 255</td><td>8 bits</td><td><code>UCHAR_MAX</code></td></tr><tr><td><code>char</code></td><td>one of the two above (implementation-defined)</td><td>8 bits</td><td><code>CHAR_MIN</code> <code>CHAR_MAX</code></td></tr><tr><td><code>short</code></td><td>−32767 to +32767</td><td>16 bits</td><td><code>SHRT_MIN</code> <code>SHRT_MAX</code></td></tr><tr><td><code>unsigned short</code></td><td>0 to 65535</td><td>16 bits</td><td><code>USHRT_MAX</code></td></tr><tr><td><code>int</code></td><td>−32767 to +32767</td><td>16 bits</td><td><code>INT_MIN</code> <code>INT_MAX</code></td></tr><tr><td><code>unsigned int</code></td><td>0 to 65535</td><td>16 bits</td><td><code>UINT_MAX</code></td></tr><tr><td><code>long</code></td><td>−2147483647 to +2147483647</td><td>32 bits</td><td><code>LONG_MIN</code> <code>LONG_MAX</code></td></tr><tr><td><code>unsigned long</code></td><td>0 to 4294967295</td><td>32 bits</td><td><code>ULONG_MAX</code></td></tr><tr><td><code>long long</code></td><td>about ±9.2×10<sup>18</sup></td><td>64 bits</td><td><code>LLONG_MIN</code> <code>LLONG_MAX</code></td></tr><tr><td><code>unsigned long long</code></td><td>0 to about 1.8×10<sup>19</sup></td><td>64 bits</td><td><code>ULLONG_MAX</code></td></tr></table></div><p class="float-caption">Table 27.1</p></figure><p>Your eye will go to the minimum range being −127 (not −128). That is because the old standard permitted all three sign representations (chapter 7); now that C23 has pinned two’s complement down, it is effectively −128.</p><p>The standard also fixes <strong>the order of sizes</strong>. Widths cannot run against this order.</p><pre><code data-lang="text">char  ≤  short  ≤  int  ≤  long  ≤  long long</code></pre><p>And <code>sizeof(char)</code> is always 1 — because a byte is by definition the size of a <code>char</code> (chapter 4). How many bits are in a byte, though, is told by <code>CHAR_BIT</code>, and the standard guarantees only 8 or more.</p><p>The limits of <strong>floating types</strong> are the business of <code>&lt;float.h></code>. Picking only those in frequent use:</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>macro</strong></th><th><strong>meaning</strong></th><th><strong>for IEEE 754 double</strong></th></tr><tr><td><code>FLT_DIG</code> <code>DBL_DIG</code></td><td>trustworthy decimal digits</td><td>6 / 15</td></tr><tr><td><code>FLT_MAX</code> <code>DBL_MAX</code></td><td>largest representable value</td><td>about 1.8×10<sup>308</sup></td></tr><tr><td><code>FLT_MIN</code> <code>DBL_MIN</code></td><td>smallest normalised value</td><td>about 2.2×10<sup>−308</sup></td></tr><tr><td><code>FLT_EPSILON</code> <code>DBL_EPSILON</code></td><td>smallest difference distinguishable from 1.0</td><td>about 2.2×10<sup>−16</sup></td></tr><tr><td><code>FLT_RADIX</code></td><td>the base of the exponent</td><td>2</td></tr></table></div><p class="float-caption">Table 27.2</p></figure><p><code>DBL_EPSILON</code> is met again in chapter 50 when comparing floating-point numbers — it is the value used to set the criterion for judging “equal”.</p><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch27/limits.c</code></p><div class="demo-body"><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stdio.h</span><span class="tok-s">></span>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">limits.h</span><span class="tok-s">></span>

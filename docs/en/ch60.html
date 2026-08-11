@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 60 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch59.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch61.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch60.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s60-1"><span class="tf-no">60.1</span>The two readings</a><a class="lv3" href="#s60-2"><span class="tf-no">60.2</span>Reading ① in practice — connecting it in English word order</a><a class="lv4" href="#s60-2-1"><span class="tf-no">60.2.1</span>This reading has a name — boustrophedon</a><a class="lv4" href="#s60-2-2"><span class="tf-no">60.2.2</span>Reading by erasing</a><a class="lv3" href="#s60-3"><span class="tf-no">60.3</span>Reading ② — when there is no name</a><a class="lv3" href="#s60-4"><span class="tf-no">60.4</span>typedef — dividing into layers and naming them</a><a class="lv4" href="#s60-4-1"><span class="tf-no">60.4.1</span>Where to use it and where not to</a><a class="lv3" href="#s60-5"><span class="tf-no">60.5</span>The real thing — declarations that actually shipped</a><a class="lv4" href="#s60-5-1"><span class="tf-no">60.5.1</span>① The monster the standard itself produced — signal</a><a class="lv4" href="#s60-5-2"><span class="tf-no">60.5.2</span>② Rougher in the wild — X11′s error handler</a><a class="lv4" href="#s60-5-3"><span class="tf-no">60.5.3</span>③ And the genuinely pointless ones</a><a class="lv3" href="#s60-6"><span class="tf-no">60.6</span>Leaving it to a tool — cdecl</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 60 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch59.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch61.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch60.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s60-1"><span class="tf-no">60.1</span>The two readings</a><a class="lv3" href="#s60-2"><span class="tf-no">60.2</span>Reading ① in practice — connecting it in English word order</a><a class="lv4" href="#s60-2-1"><span class="tf-no">60.2.1</span>This reading has a name — boustrophedon</a><a class="lv4" href="#s60-2-2"><span class="tf-no">60.2.2</span>Reading by erasing</a><a class="lv3" href="#s60-3"><span class="tf-no">60.3</span>Reading ② — when there is no name</a><a class="lv3" href="#s60-4"><span class="tf-no">60.4</span>typedef — dividing into layers and naming them</a><a class="lv4" href="#s60-4-1"><span class="tf-no">60.4.1</span>Where to use it and where not to</a><a class="lv3" href="#s60-5"><span class="tf-no">60.5</span>The real thing — declarations that actually shipped</a><a class="lv4" href="#s60-5-1"><span class="tf-no">60.5.1</span>① The monster the standard itself produced — signal</a><a class="lv4" href="#s60-5-2"><span class="tf-no">60.5.2</span>② Rougher in the wild — X11′s error handler</a><a class="lv4" href="#s60-5-3"><span class="tf-no">60.5.3</span>③ And the genuinely pointless ones</a><a class="lv3" href="#s60-6"><span class="tf-no">60.6</span>Leaving it to a tool — cdecl</a></div></div>
 <main id="content"><div class="wrap">
 <h2>60 How to read a declaration — two readings and <code>typedef</code></h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 59, Functions as values · the notation of a function pointer</div><div>chapter 38, Arrays · the array declarator</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>While learning function pointers in chapter 59 a declaration like <code>int (*(*s)(void))(int);</code> appeared, and we passed on saying only “it is hard to read, so use a <code>typedef</code>”. But by what rule are such declarations built — why do they twist like this?</p><div class="qa-a"><p><span class="dev-label">A.</span> Because a C declaration is not <strong>writing down a type</strong> but <strong>writing down how that name is used</strong>. Dennis Ritchie’s design principle was that declaration reflects use. <code>int *p;</code> reads “<strong><code>*p</code> is an int</strong>”, and <code>int a[3];</code> reads “<code>a[3]</code> is an int”. This principle is elegant in the simple cases, but once <code>*</code> and <code>[]</code> and <code>()</code> overlap, parentheses intrude because of precedence and it quickly turns rough. Hence the separate need for <strong>rules for reading</strong>.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">There is a reason C’s most notorious corner sits at the end of part 10. Ugly declarations arise where arrays (chapter 38), pointers (chapter 35) and function pointers (chapter 59) <strong>overlap</strong>, and all three have only just come together. Teach it earlier and there is nothing to read; later and the reader is already frightened.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-137"></span>C’s most notorious place — we learn how to read a declaration such as <code>char *(*table[4])(int)</code>. There are only two principles: reading <strong>from the outside in</strong>, and reading <strong>from the innermost name outward</strong>. That the two have different uses, and how to unfold this rough declaration in <span id="idx-entry-138"></span>layers with <code>typedef</code>. Finally we introduce a tool that does the job for you.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>This order is hard to memorise. Is there no simpler knack?</li><li>I have heard of a “clockwise spiral rule” too — is it the same thing?</li><li><code>typedef</code>’s syntax is odd — why is it not <code>typedef newname = type</code>?</li><li>Then why practise reading such declarations at all?</li><li>If a tool exists, must one bother learning to read by hand?</li></ol></div></div><div></div><h3 id="s60-1">60.1 The two readings</h3><div></div><p>One rule suffices to begin. The three symbols attaching beside the name in a declaration have different strengths.</p><ul><li><code>[]</code> (array) and <code>()</code> (function) attach <strong>to the right of the name</strong>, and <code>*</code> (pointer) attaches <strong>to the left</strong>.</li><li>The two on the right are <strong>stronger</strong> than the one on the left. So <code>int *a[3]</code> is “an array of pointers”, not “a pointer to an array”.</li><li>To reverse the order, bind with parentheses — <code>int (*a)[3]</code>.</li></ul><p>On this difference of strength the two readings arise.</p><p><strong>Reading ① — from the innermost name outward (the right-left rule).</strong> Find the identifier, start there, and go outward alternately, <strong>looking right first and then left</strong>. On meeting a parenthesis, read all of its inside and then step out. The charm of this method is that what you say as you read connects in English word order.</p><p><strong>Reading ② — from the outside in.</strong> Start from the type name (the leftmost thing, such as <code>int</code> or <code>char</code>) and wrap your way in asking “this is a what of a what”. In a declaration with no identifier at all — the <strong>abstract declarator</strong> written in a cast or in <code>sizeof</code> — there is no name to start from, so this is the only road.</p><p>The two readings arrive at the same conclusion. Use whichever suits the occasion.</p><h3 id="s60-2">60.2 Reading ① in practice — connecting it in English word order</h3><div></div><div class="demo demo-src"><p class="demo-head"><code>examples-en/ch60/decl.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> The two ways of reading a declaration, confirmed with the eyes.</span></em>
 <em><span class="tok-c">   Whether the type built up out of typedefs really is the original one is</span></em>

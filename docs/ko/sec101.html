@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">본문으로 건너뛰기</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">부록 B <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="sec100.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="sec102.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="sec01.html#sx1"><span class="tf-no"></span>서식 지정의 뼈대</a><a class="lv3" href="sec01.html#sx2"><span class="tf-no"></span>출력 변환 — 전체 목록</a><a class="lv3" href="sec105.html#sx3"><span class="tf-no"></span>플래그, 폭, 정밀도</a><a class="lv3" href="sec105.html#sx4"><span class="tf-no"></span>길이 수식어 — 타입의 폭을 알려 주는 자리</a><a class="lv3" href="sec105.html#sx5"><span class="tf-no"></span>고정 폭 정수의 서식</a><a class="lv3" href="sec105.html#sx6"><span class="tf-no"></span>입력 변환 — 전체 목록</a><a class="lv3" href="sec105.html#sx7"><span class="tf-no"></span>입력에서만 통하는 규칙들</a><a class="lv3" href="sec105.html#sx8"><span class="tf-no"></span>반환값 정리</a><a class="lv3" href="#sx9"><span class="tf-no"></span>자주 하는 실수 모음</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">부록 B <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="sec100.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="sec102.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="sec01.html#sx1"><span class="tf-no"></span>서식 지정의 뼈대</a><a class="lv3" href="sec01.html#sx2"><span class="tf-no"></span>출력 변환 — 전체 목록</a><a class="lv3" href="sec105.html#sx3"><span class="tf-no"></span>플래그, 폭, 정밀도</a><a class="lv3" href="sec105.html#sx4"><span class="tf-no"></span>길이 수식어 — 타입의 폭을 알려 주는 자리</a><a class="lv3" href="sec105.html#sx5"><span class="tf-no"></span>고정 폭 정수의 서식</a><a class="lv3" href="sec105.html#sx6"><span class="tf-no"></span>입력 변환 — 전체 목록</a><a class="lv3" href="sec105.html#sx7"><span class="tf-no"></span>입력에서만 통하는 규칙들</a><a class="lv3" href="sec105.html#sx8"><span class="tf-no"></span>반환값 정리</a><a class="lv3" href="#sx9"><span class="tf-no"></span>자주 하는 실수 모음</a></div></div>
 <main id="content"><div class="wrap">
 <h2>부록 B — printf·scanf 서식 완전 정리</h2><div></div><p>22장에서 최소 집합(<code>%d</code>, <code>%s</code>, <code>%%</code>)을 익혔고, 61장에서 서식 문자열을 해부했다. 이 부록은 <strong>찾아보기 위한</strong> 자리다 — 필요한 줄만 짚어 읽으면 된다. 규칙 하나만 앞세운다: 서식과 인자의 타입이 어긋나면 계약 밖(정의되지 않은 동작)이다(47·61장).</p><h3 id="sx1">서식 지정의 뼈대</h3><div></div><p>출력과 입력의 문법은 닮았지만 뜻이 다르다. 먼저 두 뼈대를 나란히 둔다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>출력(<code>printf</code> 계열)</strong></th><th><strong>입력(<code>scanf</code> 계열)</strong></th></tr><tr><td><code>%</code> <code>[플래그]</code> <code>[폭]</code> <code>[.정밀도]</code> <code>[길이]</code> <code>변환</code></td><td><code>%</code> <code>[*]</code> <code>[최대폭]</code> <code>[길이]</code> <code>변환</code></td></tr><tr><td>폭 = <strong>최소</strong> 글자 수 — 모자라면 채우고, 넘쳐도 자르지 않는다</td><td>폭 = <strong>최대</strong> 읽을 글자 수 — 버퍼를 지키는 수단이다</td></tr><tr><td>정밀도가 있다(<code>.</code>)</td><td>정밀도가 없다</td></tr><tr><td><code>*</code>는 폭·정밀도를 인자로 받는다</td><td><code>*</code>는 읽되 저장하지 않는다(억제)</td></tr></table></div><p class="float-caption">표 98.1</p></figure><h3 id="sx2">출력 변환 — 전체 목록</h3><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>변환</strong></th><th><strong>인자 타입</strong></th><th><strong>출력 모양</strong></th><th><strong>메모</strong></th></tr><tr><td><code>%d</code> <code>%i</code></td><td><code>int</code></td><td>십진 부호 있는 정수</td><td>출력에서는 둘이 같다</td></tr><tr><td><code>%u</code></td><td><code>unsigned int</code></td><td>십진 부호 없는 정수</td><td></td></tr><tr><td><code>%o</code></td><td><code>unsigned int</code></td><td>8진</td><td><code>#</code>를 붙이면 앞에 <code>0</code></td></tr><tr><td><code>%x</code> <code>%X</code></td><td><code>unsigned int</code></td><td>16진 소문자·대문자</td><td><code>#</code>를 붙이면 <code>0x</code>·<code>0X</code></td></tr><tr><td><code>%f</code> <code>%F</code></td><td><code>double</code></td><td><code>123.456000</code></td><td>기본 정밀도 6</td></tr><tr><td><code>%e</code> <code>%E</code></td><td><code>double</code></td><td><code>1.234560e+02</code></td><td>지수 표기</td></tr><tr><td><code>%g</code> <code>%G</code></td><td><code>double</code></td><td>짧은 쪽 자동 선택</td><td>뒤따르는 0을 지운다</td></tr><tr><td><code>%a</code> <code>%A</code></td><td><code>double</code></td><td><code>0x1.edp+6</code></td><td>16진 부동소수(C99) — 비트를 정확히 본다</td></tr><tr><td><code>%c</code></td><td><code>int</code>(문자로)</td><td>문자 하나</td><td>인자는 승격되어 <code>int</code>로 온다</td></tr><tr><td><code>%s</code></td><td><code>char *</code></td><td>NUL까지의 문자열</td><td>정밀도로 최대 길이를 제한할 수 있다</td></tr><tr><td><code>%p</code></td><td><code>void *</code></td><td>구현 정의 표기</td><td>대개 16진 주소</td></tr><tr><td><code>%n</code></td><td><code>int *</code></td><td>(출력 없음)</td><td>★ 찍은 글자 수를 <strong>쓴다</strong> — 보안상 쓰지 않는다</td></tr><tr><td><code>%%</code></td><td>—</td><td><code>%</code> 한 글자</td><td></td></tr></table></div><p class="float-caption">표 98.2</p></figure><h3 id="sx3">플래그, 폭, 정밀도</h3><div></div><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>자리</strong></th><th><strong>표기</strong></th><th><strong>뜻</strong></th></tr><tr><td>플래그</td><td><code>-</code></td><td>왼쪽 정렬(기본은 오른쪽)</td></tr><tr><td></td><td><code>0</code></td><td>남는 자리를 0으로 채운다(<code>-</code>와 함께면 무시)</td></tr><tr><td></td><td><code>+</code></td><td>양수에도 부호를 붙인다</td></tr><tr><td></td><td>빈칸</td><td>양수 앞에 빈칸 하나</td></tr><tr><td></td><td><code>#</code></td><td>대체 형식 — <code>%#o</code>→<code>0</code>, <code>%#x</code>→<code>0x</code>, <code>%#f</code>→소수점 항상</td></tr><tr><td>폭</td><td><code>%8d</code></td><td>최소 8칸</td></tr><tr><td></td><td><code>%*d</code></td><td>폭을 인자로 받는다: <code>printf("%*d", 8, n)</code></td></tr><tr><td>정밀도</td><td><code>%.3f</code></td><td>소수 셋째 자리까지(반올림)</td></tr><tr><td></td><td><code>%.5d</code></td><td>정수를 최소 5자리로(앞을 0으로)</td></tr><tr><td></td><td><code>%.4s</code></td><td>문자열을 최대 4글자만</td></tr><tr><td></td><td><code>%.*s</code></td><td>최대 길이를 인자로: <code>printf("%.*s", len, p)</code></td></tr></table></div><p class="float-caption">표 98.3</p></figure><p><code>%.*s</code>는 이 책에서 자주 쓴 형태다 — 길이를 따로 지니고 다니는 문자열(58·90장의 뷰)을 NUL 종단 없이 그대로 찍을 수 있기 때문이다.</p><p>다만 한 가지를 지켜야 한다. <strong><code>*</code>가 받는 폭·정밀도 인자의 타입은 <code>int</code>다.</strong> 길이를 <code>size_t</code>로 들고 다니는 코드(뷰가 대개 그렇다)에서 그대로 넘기면 가변 인자의 타입이 어긋난다 — 58장에서 본 그 불일치다. 길이를 확인한 뒤 캐스트해 넘기는 것이 정석이다.</p><pre><code data-lang="c"><strong><span class="tok-k">if</span></strong> <span class="tok-x">(</span>v<span class="tok-x">.</span>size <strong><span class="tok-x">&lt;=</span></strong> INT_MAX<span class="tok-x">)</span>
     <strong>printf</strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-s">%.*s</span></strong><strong><span class="tok-s">"</span></strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-t">int</span></strong><strong><span class="tok-x">)</span></strong><strong>v</strong><strong><span class="tok-x">.</span></strong><strong>size</strong><strong><span class="tok-x">,</span></strong><strong> </strong><strong><span class="tok-x">(</span></strong><strong><span class="tok-k">const</span></strong><strong> </strong><strong><span class="tok-t">char</span></strong><strong> </strong><strong><span class="tok-x">*</span></strong><strong><span class="tok-x">)</span></strong><strong>v</strong><strong><span class="tok-x">.</span></strong><strong>ptr</strong><strong><span class="tok-x">)</span></strong><span class="tok-x">;</span></code></pre><h3 id="sx4">길이 수식어 — 타입의 폭을 알려 주는 자리</h3><div></div><p>가변 인자에는 타입 정보가 실려 가지 않으므로(58장), 이 글자가 곧 계약 이다. 틀리면 스택을 잘못 읽는다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>수식어</strong></th><th><strong>함께 쓰는 변환</strong></th><th><strong>출력 인자</strong></th><th><strong>입력 인자</strong></th></tr><tr><td>(없음)</td><td><code>d i u o x X</code></td><td><code>int</code> / <code>unsigned int</code></td><td><code>int *</code> / <code>unsigned *</code></td></tr><tr><td><code>hh</code></td><td><code>d i u o x X</code></td><td><code>int</code>(char 폭으로 해석)</td><td><code>signed char *</code></td></tr><tr><td><code>h</code></td><td><code>d i u o x X</code></td><td><code>int</code>(short 폭으로 해석)</td><td><code>short *</code></td></tr><tr><td><code>l</code></td><td><code>d i u o x X</code></td><td><code>long</code></td><td><code>long *</code></td></tr><tr><td><code>ll</code></td><td><code>d i u o x X</code></td><td><code>long long</code></td><td><code>long long *</code></td></tr><tr><td><code>j</code></td><td><code>d i u o x X</code></td><td><code>intmax_t</code></td><td><code>intmax_t *</code></td></tr><tr><td><code>z</code></td><td><code>d i u o x X</code></td><td><code>size_t</code></td><td><code>size_t *</code></td></tr><tr><td><code>t</code></td><td><code>d i u o x X</code></td><td><code>ptrdiff_t</code></td><td><code>ptrdiff_t *</code></td></tr><tr><td><code>L</code></td><td><code>f e g a</code></td><td><code>long double</code></td><td><code>long double *</code></td></tr><tr><td><code>l</code></td><td><code>c</code> / <code>s</code></td><td><code>wint_t</code> / <code>wchar_t *</code></td><td><code>wchar_t *</code></td></tr></table></div><p class="float-caption">표 98.4</p></figure><p>실수에는 특별한 주의가 필요하다. <strong>출력</strong>에서 <code>float</code>은 기본 진급으로 <code>double</code>이 되므로 <code>%f</code> 하나면 되고 <code>%lf</code>도 같은 뜻이다. <strong>입력</strong>에서는 진급이 없으므로 <code>%f</code>는 <code>float *</code>, <code>%lf</code>는 <code>double *</code>로 반드시 갈라야 한다(61장의 오개념 상자).</p><h3 id="sx5">고정 폭 정수의 서식</h3><div></div><p><code>int32_t</code> 같은 타입은 플랫폼마다 실제 타입이 달라서, 서식을 손으로 적으면 어긋날 수 있다. 표준은 <code>&lt;inttypes.h></code>에 매크로를 두었다.</p><pre><code data-lang="c"><strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">inttypes.h</span><span class="tok-s">></span>

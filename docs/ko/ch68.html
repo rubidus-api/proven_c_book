@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">본문으로 건너뛰기</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">68장 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch67.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch69.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/ch68.html">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s68-1"><span class="tf-no">68.1</span>왜 있는가 — 관습은 나라마다 다르다</a><a class="lv3" href="#s68-2"><span class="tf-no">68.2</span>로케일은 프로그램 전역 상태다</a><a class="lv3" href="#s68-3"><span class="tf-no">68.3</span>여섯 범주 — 무엇이 무엇을 지배하는가</a><a class="lv3" href="#s68-4"><span class="tf-no">68.4</span>setlocale의 정확한 계약</a><a class="lv3" href="#s68-5"><span class="tf-no">68.5</span>로케일 이름의 문법</a><a class="lv4" href="#s68-5-1"><span class="tf-no">68.5.1</span>문자집합 이름과 정규화</a><a class="lv4" href="#s68-5-2"><span class="tf-no">68.5.2</span>다른 세계의 이름 — BCP 47과 Windows</a><a class="lv3" href="#s68-6"><span class="tf-no">68.6</span>환경 변수의 우선순위</a><a class="lv3" href="#s68-7"><span class="tf-no">68.7</span>로케일 데이터는 어디에 있는가</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">68장 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch67.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch69.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/ch68.html">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s68-1"><span class="tf-no">68.1</span>왜 있는가 — 관습은 나라마다 다르다</a><a class="lv3" href="#s68-2"><span class="tf-no">68.2</span>로케일은 프로그램 전역 상태다</a><a class="lv3" href="#s68-3"><span class="tf-no">68.3</span>여섯 범주 — 무엇이 무엇을 지배하는가</a><a class="lv3" href="#s68-4"><span class="tf-no">68.4</span>setlocale의 정확한 계약</a><a class="lv3" href="#s68-5"><span class="tf-no">68.5</span>로케일 이름의 문법</a><a class="lv4" href="#s68-5-1"><span class="tf-no">68.5.1</span>문자집합 이름과 정규화</a><a class="lv4" href="#s68-5-2"><span class="tf-no">68.5.2</span>다른 세계의 이름 — BCP 47과 Windows</a><a class="lv3" href="#s68-6"><span class="tf-no">68.6</span>환경 변수의 우선순위</a><a class="lv3" href="#s68-7"><span class="tf-no">68.7</span>로케일 데이터는 어디에 있는가</a></div></div>
 <main id="content"><div class="wrap">
 <h2>68 로케일 ① — 프로그램의 지역 설정</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>67장 문자 분류 · 판정이 로케일에 달렸다는 것</div><div>53장 <code>main</code>의 세 얼굴 · 환경 변수</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>67장에서 <code>isalpha</code>의 답이 “현재 로케일”에 달렸다고 했다. 그런데 나는 로케일을 설정한 적이 없다. 설정하지 않은 것에 답이 달려 있다는 말은 무슨 뜻인가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> <strong>설정하지 않아도 하나가 이미 정해져 있기 때문</strong>이다. 표준이 그것까지 정해 두었다 — 프로그램이 시작할 때 <code>setlocale(LC_ALL, "C")</code>를 부른 것과 같은 상태가 된다(§7.11.1.1p4). 그래서 아무것도 하지 않은 프로그램은 「C 로케일」이라는 최소 환경에서 돈다.</p><p>로케일은 <strong>프로그램 밖의 설정이 프로그램 안의 동작을 바꾸는 장치</strong>다. 같은 실행 파일이 서울에서는 <code>2026년 8월 6일</code>을, 베를린에서는 <code>06.08.2026</code>을, 그리고 <code>printf("%f")</code>에서 <code>3,14</code>를 찍게 만드는 것이 이것이다. 이 장은 그 장치의 이름과 규칙을, 다음 장은 그것이 바꾸는 것들을 본다.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">로케일을 두 장으로 편 것은 이것이 C 에서 가장 과소평가된 전역 상태이기 때문이다. 67장이 「판정마저 로케일에 달렸다」를 보인 직후가 그 정체를 캐물을 때다. 그리고 이 장이 없으면 70장의 멀티바이트 변환이 어디에 기대는지 설명할 길이 없다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-203"></span>로케일이 무엇인지 밑바닥부터 본다. 왜 있는지, 여섯 범주가 무엇을 나누는지, <code>setlocale</code>의 정확한 계약, <code>ko_KR.UTF-8</code> 같은 이름이 어떤 규칙과 어떤 국제 표준으로 만들어지는지, 환경 변수의 우선순위, 그리고 그 데이터가 기계 어디에 있는지까지.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>로케일은 번역인가?</li><li>범주를 섞어 쓸 수 있는가?</li><li>이 문법은 어느 표준이 정한 것인가?</li></ol></div></div><div></div><h3 id="s68-1">68.1 왜 있는가 — 관습은 나라마다 다르다</h3><div></div><p>프로그램이 사람에게 무언가를 보여 줄 때, 「옳은 표기」는 하나가 아니다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>무엇</strong></th><th><strong>한국</strong></th><th><strong>독일</strong></th></tr><tr><td>소수점</td><td><code>3.14</code></td><td><code>3,14</code></td></tr><tr><td>천 단위</td><td><code>1,234,567</code></td><td><code>1.234.567</code></td></tr><tr><td>날짜</td><td><code>2026년 8월 6일</code></td><td><code>06.08.2026</code></td></tr><tr><td>통화</td><td><code>₩1,234</code></td><td><code>1.234,00 €</code></td></tr><tr><td>정렬</td><td>가나다순</td><td><code>ä</code>를 <code>a</code>와 같은 자리에</td></tr></table></div><p class="float-caption">표 68.1</p></figure><p>이것을 프로그램마다 손으로 적으면 나라 수만큼 코드가 늘어난다. 그래서 유닉스와 C는 다른 길을 택했다 — <strong>관습을 데이터로 만들어 프로그램 밖에 두고, 프로그램은 “지금 어느 관습으로 일할지”만 고른다.</strong> 그 데이터 묶음의 이름이 로케일이다.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">문.</span> 로케일은 번역인가?</p></div><div class="dev qa-a"><p><p><span class="dev-label">답.</span> 아니다. 이 구별이 중요하다. 로케일은 <strong>관습</strong>(convention)을 다룬다 — 소수점, 자리 묶음, 날짜 배열, 정렬 순서, 대소문자, 통화 기호. 반면 프로그램이 내는 메시지를 다른 언어로 바꾸는 일, 즉 <strong>번역</strong>(translation)은 표준 C의 범위 밖이다.</p><p>유닉스에는 번역을 위한 <code>LC_MESSAGES</code> 범주와 <code>gettext</code> 같은 도구가 따로 있지만, C 표준이 정한 여섯 범주에 그것은 없다. 이 책이 다루는 것도 관습까지다.</p></p></div></div><h3 id="s68-2">68.2 로케일은 프로그램 전역 상태다</h3><div></div><p>로케일의 성격을 한 줄로 적으면 이렇다 — <strong>프로세스 하나에 로케일 하나</strong>.</p><div class="demo demo-src"><p class="demo-head"><code>examples/ch68/locale_probe.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 로케일은 프로그램 전역 상태다 — 무엇으로 시작하고, 무엇으로 바뀌는가. </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">locale.h</span><span class="tok-s">></span>

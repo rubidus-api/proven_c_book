@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 14 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch13.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch15.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch14.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s14-1"><span class="tf-no">14.1</span>Completing the thesis — putting three pieces together</a><a class="lv3" href="#s14-2"><span class="tf-no">14.2</span>The current direction — pointers acquire an origin</a><a class="lv3" href="#s14-3"><span class="tf-no">14.3</span>A closing panorama — which machine’s language is C?</a><a class="lv3" href="#s14-4"><span class="tf-no">14.4</span>Closing Part II</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 14 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch13.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch15.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch14.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s14-1"><span class="tf-no">14.1</span>Completing the thesis — putting three pieces together</a><a class="lv3" href="#s14-2"><span class="tf-no">14.2</span>The current direction — pointers acquire an origin</a><a class="lv3" href="#s14-3"><span class="tf-no">14.3</span>A closing panorama — which machine’s language is C?</a><a class="lv3" href="#s14-4"><span class="tf-no">14.4</span>Closing Part II</a></div></div>
 <main id="content"><div class="wrap">
 <h2>14 And so C is an abstract language</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 13, Compiler optimisation · what a compiler keeps is only the observable behaviour</div><div>chapter 4, A simple model of the machine · the simple machine model</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 13 said “what a C programmer deals with is not the real machine.” Then was it wasted labour to look so closely at the real machine — clocks, lockers, words — all through chapters 4 and 5?</p><div class="qa-a"><p><span class="dev-label">A.</span> The opposite. Those pictures are the <strong>skeleton</strong> of the abstract machine. The standard’s abstract machine was not invented out of thin air: it distilled the common skeleton of real machines — memory as a sequence of bytes, addresses, sequential execution — and wrote it into the contract. You must know the real machine to understand why the abstract machine has that shape, and you must know the abstract machine not to be shaken by the real machine’s vortex (chapters 11–13). The two pictures are not rivals but a pair.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">This closes part 2, so it is not new knowledge but <strong>assembly</strong>. Without tying the three scattered pieces into one proposition here, the reader remembers part 2 as “eleven chapters of trivia”. And standing that proposition — C is the language of an abstract machine — in front of part 3′s first program is what stops the habit of reading that program as a nickname for machine code before it can form.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">The conclusion of Part II. The scattered pieces — memory that became a ladder, execution that overlaps, the compiler that acts as an editor — are gathered into one thesis: C is not a nickname for machine code but the language of an abstract machine, and must therefore be approached abstractly. We see why the increasingly strict rules about pointers (provenance) follow from that, and close the part by contrasting CPU and GPU to ask which machine’s language C really is.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Does chapter 6′s tagged pointer — the trick of tucking a tag into the free bits of an address — collide with this rule?</li></ol></div></div><div></div><h3 id="s14-1">14.1 Completing the thesis — putting three pieces together</h3><div></div><p>Reduced to one line each, the pieces this part has stacked up:</p><ul><li>Chapter 11 — memory is not one lump but a <strong>ladder</strong> from register to warehouse, and the source code does not say which rung your variable is on right now.</li><li>Chapter 12 — execution is not one step at a time but <strong>overlap and guesswork</strong>, and the real progress of instructions differs from the order of lines.</li><li>Chapter 13 — above that stands an <strong>editor</strong> that rewrites the code wholesale, keeping only the apparent results.</li></ul><p>The thought that each line of source is “what the machine will do, as written” therefore collapses on three counts. What remains solid is one thing: the <strong>contract</strong>. What does my code mean on the virtual machine (the abstract machine) defined by that contract, the standard? That alone is the real meaning of a C program, and everything else — cache hits, pipelines, reordering, register allocation — is the inner business of realising that meaning quickly.</p><p><strong>And so C is an abstract language, and must be approached abstractly.</strong> Not the habit of guessing “how will the machine run this code”, but the habit of asking “what does this code mean on the contract” — that habit is what this book tries to cultivate in every chapter that follows.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“C is a language for manipulating hardware directly”</strong></p><div class="dev-body">The most famous sentence about C, mixing half history with half misunderstanding. Historically it was close to fact (chapters 4 and 5), and even today C is the language that <strong>takes you nearest</strong> to the hardware. But between today’s C code and the hardware stand an editor (the compiler) and a contract (the standard), and code written with a naive “direct manipulation” instinct — a shortcut outside the contract, say — breaks in the face of the editor’s discretion (chapter 13′s vanished eraser, and chapter 52). The accurate sentence is this: C is not a language that manipulates hardware directly but <strong>a language that lets you meet the hardware through the contract called the abstract machine</strong>.</div></div><h3 id="s14-2">14.2 The current direction — pointers acquire an origin</h3><div></div><p>The representative trend showing where this perspective is heading is the refinement of the rules about pointers.</p><p>Chapter 5 said “an address is a number too.” In the naive picture a pointer is just a number — the same number is the same place, and if the number is right you should be able to touch that place however you obtained it. But in the editor’s world this picture cannot hold. The compiler’s optimisation stands on tracing “where did this pointer <strong>come from</strong>” — the assumption that a pointer derived from this variable cannot touch that one (chapter 13′s strict aliasing is one branch of it) is what makes reordering and caching possible.</p><span id="idx-entry-44"></span><p>So the modern standards discussion is refining pointers from “a number” into “a number + a <strong>tag of origin</strong>.” The same bit pattern may be usable in different places depending on where it came from — this notion of origin is called <strong>provenance</strong>, and the C committee has been working to write it into the text. The direction is consistent: the rules for pointers grow more explicit and stricter, that is, the clauses of the contract grow more precise. At an introductory stage there is no need to know the details of the clauses — plant only the instinct that “a pointer is not just a number; it has a lineage.” The practical rules come in chapter 37, and the consequences of violating the contract in chapter 52.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Does chapter 6′s tagged pointer — the trick of tucking a tag into the free bits of an address — collide with this rule?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> That is exactly where it can collide. Manipulating a pointer like a number to insert and strip a tag was self-evident under “number = pointer”, but in a world of origin tags it becomes work that must follow <strong>a procedure that does not lose the lineage</strong> (there are legitimate routes that go through integer conversion). The lower-level the technique, the more the contract has to be read closely — that is modern C.</p></div></div><h3 id="s14-3">14.3 A closing panorama — which machine’s language is C?</h3><div></div><p>Before closing the part, let us widen the view once. What we have been calling “the machine” is in fact not one kind.</p><p>Out of the same transistors you can build opposite machines. One <strong>finishes a single job as fast as possible</strong> — deep pipelines, large caches, elaborate branch prediction (chapters 11 and 12) are all devices for reducing <strong>latency</strong>. That is the CPU we have been drawing. The other <strong>does the same job to a mountain of data at once</strong> — it strips away prediction and deep pipelines and plants thousands of simple calculators in their place. The machine of <strong>throughput</strong>: the GPU. It was born to spray the same calculation over millions of pixels on a screen, and that constitution turned out to match matrix arithmetic — the heart of artificial intelligence — making it the protagonist of the age.</p><p>As a restaurant metaphor, the CPU is one or two master chefs who turn out any order immediately, and the GPU is a canteen line producing ten thousand plates of the same dish at once. Asking which is better does not parse — the orders are different.</p><p>C’s relation to this becomes the last sentence of the chapter. Even the GPU’s world has programming languages (CUDA, OpenCL) built as dialects of C — chapter 1′s story that C is the lingua franca of the systems world repeats here too. But to be precise, <strong>C’s abstract machine is an image of the CPU</strong>. Sequential execution, a single memory, addresses — the contract’s virtual machine is modelled on the CPU’s skeleton, and the GPU’s different constitution is handled through dialects and extensions of that contract. To learn C is to learn, along with its language, the most fundamental image among computing’s many machines: the sequential machine that has come down to us from von Neumann.</p><h3 id="s14-4">14.4 Closing Part II</h3><div></div><p>The groundwork is done. We started from the bit (chapter 4), walked the locker corridor (chapters 5 and 6), learned how to hold integers and decimals and letters and flows (chapters 7–10), and saw how machines grew complicated and what contract stands on top of them (chapters 11–14). All of it is capital that the deeper exchanges will keep summoning.</p><p>Now we really can begin. In the next part we finally write the first program — hello world is printed on the page, and the journey of reading that one piece is the whole of the rest of the book.</p>
 <div class="nav"><a href="ch13.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch15.html">Next →</a></div>

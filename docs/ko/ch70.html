@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Men
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">본문으로 건너뛰기</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">70장 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch69.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch71.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/ch70.html">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s70-1"><span class="tf-no">70.1</span>표준이 정한 것과 정하지 않은 것</a><a class="lv3" href="#s70-2"><span class="tf-no">70.2</span>다섯 가지 문자 상수와 문자열</a><a class="lv3" href="#s70-3"><span class="tf-no">70.3</span>MB_CUR_MAX와 MB_LEN_MAX</a><a class="lv3" href="#s70-4"><span class="tf-no">70.4</span>변환 함수의 세 층</a><a class="lv4" href="#s70-4-1"><span class="tf-no">70.4.1</span>mbstate_t가 왜 필요한가</a><a class="lv3" href="#s70-5"><span class="tf-no">70.5</span>mbrtowc — 한 단계씩 뜯어보기</a><a class="lv4" href="#s70-5-1"><span class="tf-no">70.5.1</span>문자열 통째로 — mbsrtowcs</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">70장 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch69.html" title="이전" aria-label="이전">←</a><a href="index.html" title="목차로" aria-label="목차로">↑</a><a href="ch71.html" title="다음" aria-label="다음">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ 읽기 설정</button><a class="tool" href="toc.html">▤ 상세 차례</a><a class="tool" href="../en/ch70.html">En</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-ko.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>가로폭 제한</span></label><div class="setrow"><span class="setlbl">테마</span><span class="seg"><button type="button" class="segb" data-theme="auto">시스템</button><button type="button" class="segb" data-theme="light">밝게</button><button type="button" class="segb" data-theme="dark">어둡게</button></span></div><div class="setrow"><span class="setlbl">색</span><label class="col"><span>글자</span><input type="color" id="s-fg"></label><label class="col"><span>배경</span><input type="color" id="s-bg"></label><label class="col"><span>링크</span><input type="color" id="s-link"></label></div><p class="setnote">설정은 이 브라우저에만 저장된다.</p></div><div class="here-head"><strong>이 장의 차례</strong></div><div class="here-body"><a class="lv3" href="#s70-1"><span class="tf-no">70.1</span>표준이 정한 것과 정하지 않은 것</a><a class="lv3" href="#s70-2"><span class="tf-no">70.2</span>다섯 가지 문자 상수와 문자열</a><a class="lv3" href="#s70-3"><span class="tf-no">70.3</span>MB_CUR_MAX와 MB_LEN_MAX</a><a class="lv3" href="#s70-4"><span class="tf-no">70.4</span>변환 함수의 세 층</a><a class="lv4" href="#s70-4-1"><span class="tf-no">70.4.1</span>mbstate_t가 왜 필요한가</a><a class="lv3" href="#s70-5"><span class="tf-no">70.5</span>mbrtowc — 한 단계씩 뜯어보기</a><a class="lv4" href="#s70-5-1"><span class="tf-no">70.5.1</span>문자열 통째로 — mbsrtowcs</a></div></div>
 <main id="content"><div class="wrap">
 <h2>70 와이드 문자 ① — <code>wchar_t</code>와 멀티바이트 변환</h2><div></div><div class="dev open prereq"><p class="dev-label">먼저 알아야 할 것</p><div class="open-body"><div>9장 문자와 텍스트 · 코드포인트와 인코딩</div><div>68장 로케일 ① · <code>LC_CTYPE</code></div><div>67장 문자 분류 · 바이트 판정의 한계</div></div></div><div class="dev open deepqa"><p class="dev-label">돌아보기</p><div class="open-body"><p>9장에서 UTF-8은 한 글자가 1~4바이트라고 했다. 그렇다면 “글자 하나를 담는 타입”을 만들면 되지 않는가? C에는 그런 것이 있는가?</p><div class="qa-a"><p><p><span class="dev-label">답.</span> 있다. 그것이 <code>wchar_t</code>이고, C95가 바로 그 발상으로 들여왔다 — <strong>한 글자를 한 단위로 담자.</strong> 문제는 그 발상이 30년 뒤의 현실과 어긋났다는 데 있다.</p><p>표준은 <code>wchar_t</code>의 <strong>크기도 인코딩도 정하지 않았다.</strong> “지원하는 로케일 중 가장 큰 확장 문자집합의 모든 원소를 서로 다른 코드로 표현할 수 있는 정수형”이라고만 했다. 그 결과 리눅스에서는 4바이트 UTF-32가 되었고 Windows에서는 2바이트 UTF-16이 되었다 — 그리고 뒤쪽에서는 「한 글자 = 한 단위」가 성립하지 않는다.</p><p>이 장은 그 타입의 정확한 계약과, 바이트열이 글자로 풀리는 과정을 한 단계씩 본다. 어긋남의 결과는 다음 장에서 본다.</p></p></div></div></div><div class="dev open why"><p class="dev-label">이 장의 필요성과 맥락</p><div class="open-body">9장에서 배운 코드포인트와 인코딩이 마침내 C 의 타입과 함수로 내려온다. 예순 장을 기다린 것은 이 주제가 로케일(68장)에 통째로 기대기 때문이다. 순서를 뒤집으면 <code>mbrtowc</code> 가 무엇에 의존하는지 말할 수 없다.</div></div><div class="dev open organizer"><p class="dev-label">이 장이 끝나면</p><div class="open-body"><span id="idx-entry-210"></span><code>wchar_t</code>의 정체를 밑바닥까지 본다. 표준의 정의와 구현이 밝히는 매크로, 다섯 가지 문자 상수와 문자열의 타입·크기·바이트, <code>MB_CUR_MAX</code>와 <code>MB_LEN_MAX</code>의 차이, <code>mbstate_t</code>가 왜 필요한지, 그리고 <code>mbrtowc</code>가 바이트를 먹으며 글자를 만들어 내는 과정을 단계별 실측으로.</div></div><div class="dev open questions"><p class="dev-label">이 장에서 답할 질문</p><div class="open-body"><ol class="qlist"><li>소스 코드에 <code>"한"</code>이라고 적으면 어떤 바이트가 되는가?</li><li>UTF-8은 최대 4바이트인데 왜 <code>MB_CUR_MAX</code>가 6인가?</li></ol></div></div><div></div><h3 id="s70-1">70.1 표준이 정한 것과 정하지 않은 것</h3><div></div><p><code>wchar_t</code>는 <code>&lt;stddef.h></code>가 정의하는 정수 타입이다. 표준의 정의를 그대로 옮기면 <strong>“지원되는 로케일 중에서 지정된 가장 큰 확장 문자집합의 모든 원소에 대해 서로 다른 코드를 표현할 수 있는 정수 타입”</strong>이다.</p><p>여기에 없는 것을 보아야 한다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>표준이 정한 것</strong></th><th><strong>정하지 않은 것</strong></th></tr><tr><td>정수 타입이다</td><td>몇 바이트인지</td></tr><tr><td>문자마다 다른 값을 가진다</td><td>부호가 있는지</td></tr><tr><td>기본 문자집합의 값은 양수</td><td>어떤 인코딩인지(유니코드인지도)</td></tr></table></div><p class="float-caption">표 70.1</p></figure><p>그래서 이식성 있는 코드는 <code>wchar_t</code>의 값을 유니코드 코드포인트로 <strong>가정할 수 없다</strong>. 대신 구현이 그 사실을 밝히는 매크로가 있다.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>매크로</strong></th><th><strong>정의되어 있으면</strong></th></tr><tr><td><code>__STDC_ISO_10646__</code></td><td><code>wchar_t</code> 값이 ISO/IEC 10646(유니코드) 코드포인트와 같다. 값은 <code>yyyymmL</code> 꼴</td></tr><tr><td><code>__STDC_UTF_16__</code></td><td><code>char16_t</code>가 UTF-16이다</td></tr><tr><td><code>__STDC_UTF_32__</code></td><td><code>char32_t</code>가 UTF-32이다</td></tr><tr><td><code>__STDC_MB_MIGHT_NEQ_WC__</code></td><td>기본 문자집합의 문자라도 <code>'x'</code>와 <code>L'x'</code>의 값이 다를 수 있다</td></tr></table></div><p class="float-caption">표 70.2</p></figure><div class="demo demo-src"><p class="demo-head"><code>examples/ch70/wide_lit.c</code></p><div class="demo-body"><pre><code data-lang="c"><em><span class="tok-c">/*</span></em><em><span class="tok-c"> 다섯 가지 문자 상수와 문자열 — 타입, 요소 크기, 그리고 실제 바이트. </span></em><em><span class="tok-c">*/</span></em>
 <strong><span class="tok-k">#include</span></strong><span class="tok-p"> </span><span class="tok-s">&lt;</span><span class="tok-s">stddef.h</span><span class="tok-s">></span>

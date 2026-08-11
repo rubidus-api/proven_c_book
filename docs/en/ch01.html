@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 1 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="sec02.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch02.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch01.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s1-1"><span class="tf-no">1.1</span>What is programming</a><a class="lv3" href="#s1-2"><span class="tf-no">1.2</span>Where C is</a><a class="lv3" href="#s1-3"><span class="tf-no">1.3</span>The world of C is in motion right now</a><a class="lv3" href="#s1-4"><span class="tf-no">1.4</span>Why this book was made</a><a class="lv3" href="#s1-5"><span class="tf-no">1.5</span>How to read this book</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 1 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="sec02.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch02.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch01.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s1-1"><span class="tf-no">1.1</span>What is programming</a><a class="lv3" href="#s1-2"><span class="tf-no">1.2</span>Where C is</a><a class="lv3" href="#s1-3"><span class="tf-no">1.3</span>The world of C is in motion right now</a><a class="lv3" href="#s1-4"><span class="tf-no">1.4</span>Why this book was made</a><a class="lv3" href="#s1-5"><span class="tf-no">1.5</span>How to read this book</a></div></div>
 <main id="content"><div class="wrap">
 <h2>1 Setting the scene</h2><div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">There is a reason the first chapter is background rather than syntax. C is, for someone starting out, <strong>the language most in need of explanation</strong> — it has survived half a century and is still in service, and the world changed enough in that time that without knowing <strong>why it looks the way it does</strong>, every rule reads as arbitrary. So the first slot goes to the state of the language and the stance of this book. The way of reading settled here is the contract for the ninety-six chapters that follow.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body">What programming is, what kind of language C is and where it currently stands, and why a new introduction to C is needed right now. This chapter also settles how the book was written and how it is meant to be read.</div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>If there is that much old-standard code about, is it not more practical to learn the old idiom first?</li><li>Then would it not be better to start with Rust or Zig instead?</li><li>If it is a book promoting a library, does the content not lean that way?</li></ol></div></div><div></div><h3 id="s1-1">1.1 What is programming</h3><div></div><p>A computer is a machine that does what it is told. The difficulty is in the telling. A computer does not understand human speech; it moves only when it receives brutally simple instructions in order. <strong>Programming</strong> is the work of turning what we want into a list of such simple instructions, and the agreed notation for writing that list down is a <strong>programming language</strong>.</p><p>There are hundreds of languages. Some sit close to the human side and are comfortable to write; others sit close to the machine and let you handle it down to its details. C, the subject of this book, is the leading example of the latter — the language of systems, which has held the machine-side seat for half a century.</p><h3 id="s1-2">1.2 Where C is</h3><div></div><p>C is not easy to spot. Other languages stand at the front of flashy apps and websites. Lift the faces of those, though, and C is nearly everywhere underneath.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>A day spent on top of C</p><div class="dev-body">The alarm goes off on your phone in the morning — the core of that operating system (the kernel) is written in C. You send a message and the firmware of the radio module goes to work — C. You open the web and a server and a browser exchange data — the encryption library and transfer tool doing it (OpenSSL, curl) are C. The app stores something — SQLite, the most widely deployed database in the world, is C. The braking system in a car, the control panel of a washing machine, a pacemaker: most embedded devices are C. Even when you run machine learning from Python, a large part of the engine actually doing the arithmetic underneath is C (and its neighbours). Learning C means becoming able to read and write this invisible layer.</div></div><h3 id="s1-3">1.3 The world of C is in motion right now</h3><div></div><p>So why a new introduction <strong>now</strong>? If the language is old, surely an old book will do. It will not — the landscape around C looks quiet but is shifting a great deal, and that shifting is where this book starts.</p><p><strong>First, several eras of C coexist inside the language.</strong> C is governed by an official specification, the standard, and it has come through C89 (1989), C99, C11 and C17 to the current C23. The trouble is that old standards never retire. Industry is still full of code written exactly as it was in the C89 days, many textbooks are written in that era’s idiom, and alongside them C23 has brought new vocabulary such as <code>bool</code> and <code>nullptr</code> into the standard. Dialects thirty years apart live together under the single name “C”.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> If there is that much old-standard code about, is it not more practical to learn the old idiom first?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Separate reading from writing and the answer settles. The day will come when you have to <strong>read</strong> old code — which is why this book covers history and the stories behind old idioms throughout. But there is no reason for code you <strong>write</strong> today to be in the old idiom. The newer standards are the result of decades of field experience filling in the traps of the older ones. The earlier you are in your learning, the more you gain by starting from today’s safest idiom; the old idiom is quite enough as background knowledge of “why they wrote it that way.”</p></div></div><p><strong>Second, neighbouring languages are encroaching on C’s territory.</strong> C++, which started under the same roof, has gone through revisions at a rapid pace and become an enormous language — vastly expressive, but grown large enough that people say hardly anyone knows all of it. From another direction a new generation of systems languages has appeared. Rust promises to seal off, at the language level, the memory accidents C has long suffered; Zig marches under the banner of “succeed C, but simpler and more honest.” Each is pushing into ground C used to hold alone. Rust code beginning to enter operating system kernels was a symbolic moment.</p><p><strong>Third, under that pressure C itself is showing signs of change.</strong> C23 was the largest revision in recent memory, and the committee continues work on tightening the rules for pointers (provenance) and on the safety discussion. C is a slow-moving language, but the direction is clear — towards clearer contracts and safer defaults.</p><div class="dev misconception"><p class="dev-label">A common misconception. <strong>“C is an old language, so learning it will soon be pointless”</strong></p><div class="dev-body">It is a plausible worry — the new languages are arriving in force. But the actual numbers point the other way. As we saw above, the world’s infrastructure stands on C, and this layer is so expensive to replace that it moves only on the scale of decades. Even the new languages are born with the ability to talk to C (a C interface) as a condition of survival — C is the lingua franca of the systems world, so whether you write Rust or Zig you end up having to read and understand C. Far from ageing out, C is the kind of language that grows <strong>more</strong> important as its neighbours multiply.</div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Then would it not be better to start with Rust or Zig instead?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> Honestly: it depends on your goal. If the goal is to build one safe application right now, other choices are good too. But if the goal is to understand <strong>how a computer actually works</strong> from the ground up, there is no better teaching material than C. C is the language that wraps the machine most thinly, so learning C turns out to be the same thing as learning about the machine, memory and the compiler. And that understanding is capital you can carry with you into Rust or Zig unchanged. This book is here to supply that capital in today’s idiom.</p></div></div><h3 id="s1-4">1.4 Why this book was made</h3><div></div><p>That shifting landscape is the first reason. With several standards coexisting, neighbouring languages competing, and C itself changing, what is needed now is not an introduction written by the inertia of the old idiom but one that <strong>starts from today’s C (C23) and today’s practice</strong>. So the table of contents was rebuilt from scratch. Instead of listing grammatical items in order, the book starts with the basics of the machine and meets C in the order in which the concepts become necessary.</p><p>The second reason is best stated plainly. The author builds and publishes a C library called <strong>proven</strong>. proven aims to provide, in verified form, the fundamentals where C programming most often goes wrong — handling strings, processing input, converting numbers. Most of C’s famous traps go off in this layer of fundamentals, and the standard library, for historical reasons, carries those traps as they are. The later parts of this book show why the traps are genuinely dangerous and then use proven as the basis of examples for how they can be blocked. This book is also meant to make that library known — but the order is respected. First the concepts are learned properly in standard C alone; proven appears at the point where its necessity has proved itself.</p><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> If it is a book promoting a library, does the content not lean that way?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> The structure is built to prevent it. The first thirty-odd chapters do not use a single line of proven — they proceed purely on the basics of computing and standard C. proven appears only after the text itself has made plain “why a tool like this is needed”, and even then the standard approach is shown first and proven offered as a comparison. The C knowledge in this book stands entirely on its own without proven.</p></div></div><h3 id="s1-5">1.5 How to read this book</h3><div></div><p>This is a book to be read. That sounds obvious, but as a promise from a programming book it is unusual.</p><p><strong>It was written to be readable straight through.</strong> So there are no exercises and no instructions to “try it yourself.” You do not need to be sitting at a computer — on a sofa, on the train, you can read it front to back like a novel. Every piece of code is demonstrated on the page from beginning to end, and the results of running it are printed on the page as well. Those results are not decoration but the real thing: every example in this book carries the output obtained by a machine actually compiling and running it.</p><p>If you want drills, another book is better. Designing good assignments and walking you through them step by step is something the existing good C primers do far better. This book’s place is beside them — the reading side, the one that explains why things are shaped as they are.</p><p><strong>It proceeds by question and answer.</strong> Throughout the text, the question a reader might have just formed is asked on the spot and answered immediately. It is best to pause for a moment when you meet a question and try to answer it yourself before reading on, but reading straight through is fine too — the exchange is part of the explanation.</p><p><strong>It does not ask you to memorise.</strong> Anything worth remembering comes back at the head of a later chapter under the name “looking back”, where you meet the previous chapter’s material again as a slightly deeper question. That is this book’s revision device. It is fine to have forgotten — the answer is right next to it.</p><p><strong>It moves quickly in small chapters.</strong> A chapter is short. It handles one idea and moves on. Large subjects pass by several times across several chapters, spiral-fashion, a little deeper each time. Not everything is said in one chapter, so if you are left curious about something, that is usually deliberate — you will meet that curiosity again a few chapters later.</p><p>Now we begin. The two remaining chapters of this part lay down two sketches that will be used throughout — how a program divides the memory it uses (chapter 2), and what it means for a program to be <strong>run</strong> (chapter 3). Neither contains any C syntax; they only draw pictures.</p><p>The first step of the part after that is not C but the computer itself — why C looks the way it does only makes sense once you have seen the machine it was born on.</p>
 <div class="nav"><a href="sec02.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch02.html">Next →</a></div>

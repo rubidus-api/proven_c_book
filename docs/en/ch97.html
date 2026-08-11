@@ -49,14 +49,31 @@
   font-weight:400; font-style:normal; font-display:swap; }
 @font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
   font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
 :root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
-  --rule:#d6d6d6; --box-bg:#f6f6f6; --box-rule:#9a9a9a; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
   --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
   --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
-@media (prefers-color-scheme: dark) { :root { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
-  --rule:#333; --box-bg:#1c1e20; --box-rule:#6d6d6d; --code-bg:#1b1d1f; --link:#8ab4e8;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
   --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
-  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
        font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
@@ -424,7 +441,8 @@ li { margin:.3rem 0; }
 
 /* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
    경계를 말하되 글자보다 앞서지 않게. */
-h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
 
 /* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
    (저자 지시 2026-08-10, 웹판 견본) */
@@ -438,11 +456,11 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 
 /* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
    (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
-.demo { border-color:#d5d5d5; }
-.demo > .demo-head { border-bottom-color:#d5d5d5; }
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
 
 /* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
- * 텍스트 판과 같은 값을 쓴다: 표지 줄 #d5d5d5 · 내용 칸 #d5d5d5.
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
  * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
 .dev > .dev-label,
 .dev.open > .dev-label,
@@ -450,19 +468,19 @@ h1, h2, h3, h4 { border-bottom-color:#d5d5d5 !important; }
 .dev.misconception > .dev-label, .dev.realcase > .dev-label,
 .dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
 .dev.platform > .dev-label, .dev.recap > .dev-label {
-  border-left-color:#d5d5d5; }
+  border-left-color:var(--box-rule); }
 
 .dev > .dev-body,
 .dev > .open-body,
 .dev.open .qa-a,
 .qa-box .qa-a,
-.deepqa .qa-a { border-left-color:#d5d5d5; }
+.deepqa .qa-a { border-left-color:var(--box-rule); }
 
 /* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
    여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
 h1, h2, h3, h4, .colophon > div {
-  border-color:#d5d5d5; }
+  border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
 
 /* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
@@ -474,7 +492,7 @@ h1, h2, h3, h4, .colophon > div {
 .dev.open .qa-a,
 .dev.deepqa .qa-a,
 .qa-box > .qa-a,
-.qa-box > .qa-q { border-left-color:#d5d5d5; }
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
 
 /* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
 .bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
@@ -522,24 +540,10 @@ h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
  *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
  *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
  */
-:root { --box-rule:#c4c4c4; --rule:#c9c9c9; }
-:root[data-theme="dark"], :root:not([data-theme="light"]) {}
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
 .dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
-h1, h2, h3, h4, .colophon > div { border-color:#c4c4c4; }
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
 .tbl table, .tbl th, .tbl td { border-color:initial; }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .dev, :root:not([data-theme="light"]) .dev *,
-  :root:not([data-theme="light"]) .qa-box, :root:not([data-theme="light"]) .qa-box *,
-  :root:not([data-theme="light"]) .demo, :root:not([data-theme="light"]) .demo *,
-  :root:not([data-theme="light"]) h1, :root:not([data-theme="light"]) h2,
-  :root:not([data-theme="light"]) h3, :root:not([data-theme="light"]) h4 {
-    border-color:#4a4d50; }
-}
-:root[data-theme="dark"] .dev, :root[data-theme="dark"] .dev *,
-:root[data-theme="dark"] .qa-box, :root[data-theme="dark"] .qa-box *,
-:root[data-theme="dark"] .demo, :root[data-theme="dark"] .demo *,
-:root[data-theme="dark"] h1, :root[data-theme="dark"] h2,
-:root[data-theme="dark"] h3, :root[data-theme="dark"] h4 { border-color:#4a4d50; }
 
 /* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
 a:focus-visible, button:focus-visible, summary:focus-visible {
@@ -616,7 +620,7 @@ pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,mo
 <script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
-<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 97 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch96.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch98.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch97.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.1/proven_c_book-v0.57.1-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s97-1"><span class="tf-no">97.1</span>The embedded compilers</a><a class="lv3" href="#s97-2"><span class="tf-no">97.2</span>The tools beside make and git</a></div></div>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">ch. 97 <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="ch96.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="ch98.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><button class="tool" type="button" id="set-open">⚙ Reading settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/ch97.html">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.57.2/proven_c_book-v0.57.2-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="#s97-1"><span class="tf-no">97.1</span>The embedded compilers</a><a class="lv3" href="#s97-2"><span class="tf-no">97.2</span>The tools beside make and git</a></div></div>
 <main id="content"><div class="wrap">
 <h2>97 The embedded toolbox — compilers and the tools beside them</h2><div></div><div class="dev open prereq"><p class="dev-label">What to know first</p><div class="open-body"><div>chapter 18, The compiler landscape · the terrain of compilers</div><div>chapter 83, A program’s memory layout · memory in embedded systems</div></div></div><div class="dev open deepqa"><p class="dev-label">Looking back</p><div class="open-body"><p>Chapter 18 said that numerically the largest branch of the world’s C compilers is embedded. Why is that — cannot gcc alone target them all?</p><div class="qa-a"><p><span class="dev-label">A.</span> Three reasons. First, <strong>there are chips gcc does not know</strong> — when a company invents its own instruction set, the compiler that knows that chip is made by that company. Second, <strong>certification</strong>. The safety standards of automotive, aerospace and medical devices demand evidence that “this compiler has been qualified against the standard”, and selling that qualification together with the responsibility is the business of specialist firms. Third, <strong>code size</strong>. On a chip with tens of KiB of memory, a few per cent of size decides whether a product exists.</p></div></div></div><div class="dev open why"><p class="dev-label">The need for this chapter, and its context</p><div class="open-body">Setting embedded aside for the end is not because it is an appendix-like topic — it is, if anything, where C is least replaceable. But that world’s tools only make sense with both chapter 18′s compiler landscape and chapter 83′s memory layout in hand, so having passed both, now is at once the latest and the earliest possible slot.</div></div><div class="dev open organizer"><p class="dev-label">By the end of this chapter</p><div class="open-body"><span id="idx-entry-187"></span>What people who write C that runs on chips carry with them. The compilers that differ by vendor (IAR, Arm, TI, Microchip, Renesas, SDCC and others), and the tools that sit beside make and git — build tools, debug probes and on-chip debugging, how to see a log on a machine with no screen, simulators, static analysis and unit testing, and the tools that measure size. There is no need to install any of it now. The point is <strong>to know the names and what they are for.</strong></div></div><div class="dev open questions"><p class="dev-label">The questions this chapter answers</p><div class="open-body"><ol class="qlist"><li>Must all of this be learned before starting embedded work?</li></ol></div></div><div></div><h3 id="s97-1">97.1 The embedded compilers</h3><div></div><p>Only those currently in service. Since the point is recognising names, a table will do.</p><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>compiler</strong></th><th><strong>chips targeted</strong></th><th><strong>character</strong></th></tr><tr><td>IAR Embedded Workbench</td><td>Arm, RISC-V, 8051, MSP430, AVR, RX, RL78, RH850 and many more</td><td>commercial. known for certification (automotive, medical) and code size</td></tr><tr><td>Arm Compiler for Embedded (<code>armclang</code>)</td><td>the Arm Cortex family</td><td>commercial (included in Keil MDK). Clang-based</td></tr><tr><td>TI Arm Clang (<code>tiarmclang</code>)</td><td>TI’s Arm cores</td><td>free. Clang-based, with TI extensions</td></tr><tr><td>MPLAB XC8 / XC-DSC / XC32</td><td>Microchip PIC, AVR, SAM</td><td>usable free of charge. XC32 covers Arm and MIPS</td></tr><tr><td>Renesas CC-RX / CC-RL</td><td>Renesas RX, RL78</td><td>commercial. Renesas chips only</td></tr><tr><td>Green Hills Optimising Compilers</td><td>Arm, PowerPC, RISC-V and others</td><td>commercial. a long-standing power in the safety market</td></tr><tr><td>Wind River Diab</td><td>Arm, PowerPC and others</td><td>commercial. aerospace and automotive certification</td></tr><tr><td>SDCC</td><td>8051, STM8, Z80, 6502, PDK and other 8-bit</td><td>free software. the standard for small chips</td></tr><tr><td><code>arm-none-eabi-gcc</code> and other GCC ports</td><td>Arm, RISC-V, AVR, MSP430 …</td><td>free software. the default inside vendor SDKs</td></tr><tr><td>Clang/LLVM embedded builds</td><td>Arm, RISC-V</td><td>the common base of the vendor compilers</td></tr></table></div><p class="float-caption">Table 98.1</p></figure><p>Two currents show. One is the same as in chapter 18 — <strong>nearly every new compiler is LLVM-based</strong> (Arm’s <code>armclang</code>, TI’s <code>tiarmclang</code>, Microchip’s new XC32). The other is <strong>becoming free</strong>. Compilers that required a paid key to enable optimisation used to be common; Microchip removed that restriction in recent editions.</p><div class="dev platform"><p class="dev-label">Platform note.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Look at the chip vendor’s SDK first</p><div class="dev-body">In practice the starting point is often not choosing a compiler but getting <strong>the development bundle the chip company provides</strong> (its SDK) — ST’s STM32Cube, NXP’s MCUXpresso, Espressif’s ESP-IDF, Nordic’s nRF Connect SDK and the like. Inside them a compiler (usually GCC or Clang), a linker script, startup code, peripheral libraries and debugging configuration already come paired. Choosing tools one by one from scratch is something you do after learning why that bundle looks the way it does.</div></div><h3 id="s97-2">97.2 The tools beside make and git</h3><div></div><p>Now for the tools. On an embedded developer’s desk there are several beyond make and git. Grouped by what they do:</p><p><strong>① Assembling the build.</strong> <code>make</code> is still the base, but today’s practice puts a <strong>generator</strong> on top. <code>CMake</code> is the de facto standard (it produces build files and is commonly paired with <code>Ninja</code>, a fast executor, behind it), and <code>Meson</code> is used too. Higher-level tools that manage libraries, boards and toolchains wholesale include <code>PlatformIO</code> (many boards with one command), the Zephyr project’s <code>west</code>, and Espressif’s <code>idf.py</code>. Projects with many configuration options, like a kernel, switch features on and off with <code>Kconfig</code> and describe the hardware layout in a <strong>device tree</strong>.</p><p><strong>② Burning it onto the chip and stopping it.</strong> To flash a program onto a chip and halt it mid-execution to look inside, you need a small piece of hardware called a <strong>debug probe</strong>. SEGGER’s <code>J-Link</code>, ST’s <code>ST-Link</code> and the standard <code>CMSIS-DAP</code> family are common. The software joining probe to computer is <code>OpenOCD</code>, <code>pyOCD</code> or the vendor’s own server, and on top of that chapter 17′s <code>gdb</code> works just as before — except that this is remote debugging, with the program running <strong>on another machine</strong>. Chip and probe are connected by a few wires called JTAG or SWD.</p><p><strong>③ Seeing a log on a machine with no screen.</strong> Embedded boards usually have no screen, so where <code>printf</code> output goes becomes a question. The traditional answer is to send it out of a <strong>serial port</strong> (UART) and receive it on a computer with a terminal program (<code>picocom</code>, <code>minicom</code>, <code>screen</code>, <code>PuTTY</code>). The Arm family has two faster routes — <code>ITM</code>/<code>SWO</code>, which floats characters out over the debug line, and SEGGER’s <code>RTT</code>, in which the probe peeks at a memory buffer. There is also <strong>semihosting</strong>, where the debugger performs host I/O on the target’s behalf, but it is slow and used only for testing.</p><div class="dev antipattern"><p class="dev-label">Counter-example.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Using <code>printf</code> anywhere in embedded code</p><div class="dev-body"><p>The <code>printf</code> debugging habit formed on a host (chapter 17) brings three problems in embedded work. <strong>Size</strong> — the whole format interpreter is linked in and eats tens of KiB. <strong>Speed</strong> — pushing one character at a time over a UART costs milliseconds. <strong>Timing</strong> — that delay changes the real-time behaviour, so the bug disappears the moment you print: the classic situation.</p><p>So practice uses lighter alternatives: a reduced <code>printf</code> handling integers only, a scheme that sends <strong>only a number</strong> instead of putting the format string on the chip, or a nearly free channel such as the RTT above. It is also why chapter 17′s “learn the debugger” is especially valuable in embedded work.</p></div></div><p><strong>④ Running it without the machine.</strong> When the hardware does not exist yet, or many boards must be tested automatically, you use a <strong>simulator</strong>. <code>QEMU</code> imitates various boards, and <code>Renode</code> can imitate several devices and even a network together, which makes it common in test automation (CI). Vendor IDEs often ship an instruction-level simulator too.</p><p><strong>⑤ Having the code read for you.</strong> Embedded software is hard to fix once shipped (the product leaves your hands), so <strong>static analysis</strong> has great value. Free tools include <code>cppcheck</code> and <code>clang-tidy</code> (and the compiler’s own <code>-Wall -Wextra</code>); commercial ones commonly used are <code>PC-lint Plus</code>, <code>PVS-Studio</code>, <code>Polyspace</code> and <code>Coverity</code>. In the automotive industry the ability to check conformance to a set of coding rules called <code>MISRA C</code> is especially important — an approach of “using only the subset of C that has been decided as allowed.”</p><p><strong>⑥ Testing.</strong> Code that runs on a chip is unit-tested too. For C, <code>Unity</code> (with its build tool <code>Ceedling</code>) and <code>CppUTest</code> are widely used, and it is the practice to compile logic that does not touch hardware <strong>on the host</strong> and test it there — where you can turn on checkers like <code>-fsanitize=address,undefined</code> (chapter 17), receiving in place of the chip the checks it cannot give you.</p><p><strong>⑦ Measuring size and layout.</strong> Memory is small, so “how much went in” is measured constantly. Binary tools such as <code>size</code>, <code>nm</code>, <code>objdump</code> and <code>readelf</code> are the basics, and you read the <strong>map file</strong> the linker leaves to see what occupies the space. Tools such as <code>bloaty</code> and <code>puncover</code> present that analysis nicely. To convert into a format for the chip you use <code>objcopy</code> (ELF → bin/hex) or <code>srec_cat</code>.</p><p><strong>⑧ Seeing the signals with your eyes.</strong> A moment comes when software tools alone will not do. When you must see what signal is leaving a pin, out come the <span id="idx-entry-188"></span><strong>logic analyser</strong> (the free software <code>sigrok</code>/PulseView supports inexpensive hardware) and the oscilloscope. That half of the “the code is right but it does not work” problems are wiring and power is an old proverb of this world.</p><div class="dev realcase"><p class="dev-label">In practice.<span style="white-space: pre-wrap">&#x20;&#x20;</span>Compiler Explorer — a museum of compilers opened in a browser</p><div class="dev-body"><p>One tool that needs no installation. The website <a href="https://godbolt.org"><code>godbolt.org</code></a> (Compiler Explorer) lets you write C on the left and shows, immediately on the right, <strong>what machine code that code becomes</strong>. You can compare across compilers and versions (from gcc 4 to the newest, clang, MSVC, embedded arm targets — hundreds of them) and optimisation options.</p><p>It is the easiest way to <strong>see with your own eyes</strong> what chapter 13 (compiler optimisation) called “the editor rewriting the code” — <code>x * 2</code> becoming a shift, the outputs of <code>-O0</code> and <code>-O2</code> being utterly different, a loop disappearing entirely, all visible in seconds. In embedded work it is also used to check “how many bytes of instruction does this code become.”</p></div></div><div class="qa-box"><div class="dev qa-q"><p><span class="dev-label">Q.</span> Must all of this be learned before starting embedded work?</p></div><div class="dev qa-a"><p><span class="dev-label">A.</span> No. The minimum bundle to start is four things — <strong>the chip company’s SDK</strong>, <strong>a compiler</strong> (usually inside the SDK), <strong>one debug probe</strong>, and <strong>a serial terminal</strong>. The rest grows one at a time as the need arises. The purpose of this chapter is not to make you memorise a list but to let you recognise, when you later meet those names, <strong>which slot the tool sits in</strong>.</p></div></div><div class="dev recap"><p class="dev-label">Recap</p><div class="dev-body"><figure class="tbl"><div class="tblwrap"><table><tr><th><strong>what it does</strong></th><th><strong>tools</strong></th></tr><tr><td>assembling the build</td><td>CMake, Ninja, Meson; PlatformIO, west, idf.py; Kconfig</td></tr><tr><td>burning and halting</td><td>J-Link, ST-Link, CMSIS-DAP + OpenOCD, pyOCD + gdb</td></tr><tr><td>seeing logs</td><td>UART + terminal, ITM/SWO, RTT, (slow) semihosting</td></tr><tr><td>running without hardware</td><td>QEMU, Renode, vendor simulators</td></tr><tr><td>having code read</td><td>cppcheck, clang-tidy; PC-lint Plus, PVS-Studio; MISRA</td></tr><tr><td>testing</td><td>Unity, Ceedling, CppUTest; sanitizers on the host</td></tr><tr><td>measuring size</td><td>size, nm, objdump, readelf; map files; bloaty, puncover</td></tr><tr><td>seeing signals</td><td>logic analyser (sigrok), oscilloscope</td></tr><tr><td>inspecting machine code</td><td>Compiler Explorer (godbolt.org)</td></tr></table></div><p class="float-caption">Table 98.2</p></figure></div></div><p>We have looked round the embedded desk. After chapter 18′s landscape of compilers and chapter 96′s toolbox, the tools of the place where C is rooted most deeply have their names too.</p><p>Now the last chapter. It retraces the road this book has travelled, gathers the practices of modern C into a single page of guidance, and closes.</p>
 <div class="nav"><a href="ch96.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="ch98.html">Next →</a></div>
