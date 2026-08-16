@@ -56,7 +56,7 @@ int main(void)
            old == SIG_ERR ? "SIG_ERR" : "there was one");
     (void)signal(SIGINT, old == SIG_ERR ? SIG_DFL : old);
 
-    /* ② 같은 무늬 — 설치하고, 이전 것을 돌려받는다 */
+    /* ② 같은 꼴 — 설치하고, 이전 것을 돌려받는다 */
     puts("\ninstalling an X11-style error handler:");
     int (*prev)(Display *, XErrorEvent *) = set_error_handler(my_error_handler);
     printf("  previous handler: %s\n", prev ? "present" : "none (first install)");

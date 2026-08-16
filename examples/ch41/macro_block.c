@@ -17,7 +17,7 @@
         printf("[log] " fmt "\n", __VA_ARGS__);   \
     } while (0)
 
-/* goto 로 정리 지점을 한 곳에 모으는 무늬 — 리눅스 커널이 쓰는 그 형태다.
+/* goto 로 정리 지점을 한 곳에 모으는 패턴 — 리눅스 커널이 쓰는 그 형태다.
    중간에 실패해도 '거기까지 얻은 것만' 되돌린다. */
 static bool build(size_t n, bool fail_at_second)
 {

@@ -14,7 +14,7 @@ union control_reg {
     } f;                          /* 필드로 보는 눈 */
 };
 
-/* 구조체 안에 공용체를 넣는 실무 무늬: 태그 + 내용 */
+/* 구조체 안에 공용체를 넣는 실무 패턴: 태그 + 내용 */
 enum msg_kind { MSG_INT, MSG_TEXT, MSG_POINT };
 
 struct message {

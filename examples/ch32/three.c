@@ -82,7 +82,7 @@ static int odd_sum_while_fixed(void)
    size_t 는 0 아래로 내려가지 못하므로 for (size_t i = n-1; i >= 0; i--) 는
    무한 루프가 된다(41장). do-while 은 「먼저 하나 줄이고, 0 을 처리한 뒤 끝낸다」
    를 그대로 적을 수 있다. 단, 몸통이 먼저 도는 형태이므로 n 이 0 이 아니어야
-   한다 — 그 검사가 이 무늬의 값과 짝을 이룬다. */
+   한다 — 그 검사가 이 패턴의 값과 짝을 이룬다. */
 static void countdown(size_t n)
 {
     if (n == 0) {                   /* do-while 의 「최소 한 번」을 막아 준다 */

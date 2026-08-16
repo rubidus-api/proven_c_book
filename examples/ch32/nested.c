@@ -29,7 +29,7 @@ static void forgot_to_reset(void)
     printf("  counter declared inside  : %d cells visited\n", visits);
 }
 
-/* ③ 안쪽에서 바깥 카운터를 올리는 실수 (실제 사례의 무늬).
+/* ③ 안쪽에서 바깥 카운터를 올리는 실수 (실제 사례의 패턴).
       멈추게 하려고 한도를 두었다 — 실제 코드에는 그런 안전장치가 없다. */
 static void wrong_counter(void)
 {

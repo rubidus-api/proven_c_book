@@ -36,6 +36,12 @@ JOSA = "를은는이가다에로와의처럼란"
 # 한국어: 명사 「지도」만. 앞 글자가 한글이면 조사 「-지도」이므로 뺀다.
 KO = re.compile(rf"(?<![가-힣])지도(?={MARKUP}[{JOSA}]|{MARKUP}(?:$|\s|\)|\]|」|·))")
 
+# 「무늬」 --- 되풀이되는 코드의 *짜임*을 가리키는 데 쓰고 있었다(102곳). 무늬는
+# 표면의 장식이라 구조를 뜻하지 못한다(저자 지시 2026-08-16).
+#     이름 붙은 기법·되풀이되는 방식  → 패턴
+#     그냥 「같은 종류의 것」          → 꼴
+KO_PATTERN = re.compile("무늬")
+
 # 영어: 비유로 쓰인 map 만. 아래는 *진짜* map 이라 세지 않는다.
 EN = re.compile(r"\bmaps?\b", re.I)
 EN_OK = re.compile(
@@ -48,6 +54,8 @@ EN_OK = re.compile(
 
 HINT = ("지도 → 배치(공간) · 갈래(분류) · 지형(판세) · 밑그림/길잡이(큰 틀).  "
         "RFC-0022 §2.1")
+HINT_PATTERN = ("무늬 → 패턴(이름 붙은 기법·되풀이되는 방식) · 꼴(같은 종류의 것).  "
+                "무늬는 표면의 장식이지 구조가 아니다.")
 
 
 def allow_list():
@@ -70,7 +78,7 @@ def scan(edition, pattern, skip=None):
     if not base.exists():
         return hits
     for f in sorted(base.rglob("*")):
-        if f.suffix not in (".typ", ".svg"):
+        if f.suffix not in (".typ", ".svg", ".c", ".h"):
             continue
         # 장 참조 호출(`#chref("stdlib-map")`)은 산문이 아니다 --- id 에 든 낱말이
         # 비유로 잡히면 안 된다(RFC-0028 이전 뒤 실제로 그랬다).
@@ -91,13 +99,20 @@ def scan(edition, pattern, skip=None):
 def main() -> int:
     allowed = allow_list()
     hits = scan("book", KO) + scan("book-en", EN, EN_OK)
+    # 예제의 한국어 주석도 그대로 인쇄된다 --- 원고와 같은 규율을 받는다
+    pattern_hits = (scan("book", KO_PATTERN) + scan("examples", KO_PATTERN))
     bad = [h for h in hits if (h[0], h[2]) not in allowed]
+    bad_pattern = [h for h in pattern_hits if (h[0], h[2]) not in allowed]
 
-    for name, ln, word, ctx in bad[:30]:
+    for name, ln, word, ctx in (bad + bad_pattern)[:30]:
         print(f"  ⚠️  {name}:{ln}  [{word}]  …{ctx}…")
+    if bad_pattern:
+        print(f"     {HINT_PATTERN}")
     if bad:
         print(f"     {HINT}")
         print("     그 자리에서 옳다고 판단했다면 docs/metaphor-allow.tsv 에 올린다.")
+    bad = bad + bad_pattern
+    hits = hits + pattern_hits
     allowed_n = len(hits) - len(bad)
     tail = f" (허용 목록 {allowed_n}건)" if allowed_n else ""
     print(f"check-metaphor: 비유 낱말 규율 --- "

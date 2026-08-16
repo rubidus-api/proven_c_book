@@ -1,4 +1,4 @@
-/* 예외 흉내 — libjpeg 계열이 쓰는 오류 처리 무늬, 그리고 그 대가. */
+/* 예외 흉내 — libjpeg 계열이 쓰는 오류 처리 패턴, 그리고 그 대가. */
 #include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -6,7 +6,7 @@
 
 /* ── libjpeg 의 error manager 를 줄여 옮긴 모양 ──────────────────
    구조체 안에 jmp_buf 를 넣어 두고, 깊은 곳에서 오류가 나면 그리로 뛴다.
-   실제 libjpeg 의 setup_error_handler / png_jmpbuf 가 이 무늬다. */
+   실제 libjpeg 의 setup_error_handler / png_jmpbuf 가 이 패턴이다. */
 typedef struct {
     jmp_buf env;
     char    message[64];
