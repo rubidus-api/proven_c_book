@@ -104,6 +104,11 @@ for src in $(find "$root/$tree" -name '*.c' | sort); do
         fail=1
         continue
     fi
+    # 캡처한 출력에 이 기계의 절대 경로가 섞이면 책에 그대로 인쇄된다
+    # (53장 예제가 argv[0] 을 찍는다). 저장소 밖의 자리는 책에 실을 것이 아니다.
+    if grep -q "$root" "$out" 2>/dev/null; then
+        sed -i "s#$root/build/examples-bin-en#.#g; s#$root/build/examples-bin#.#g; s#$root#.#g" "$out"
+    fi
     echo "ok: $rel"
 done
 

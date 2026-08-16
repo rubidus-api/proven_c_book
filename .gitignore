@@ -64,3 +64,7 @@ resources/cache/
 /scripts/wrap-html.py
 /scripts/release.sh
 /scripts/make-zip.py
+
+# 파이썬 바이트코드 --- 절대 경로가 박혀 있어 공개 저장소에 들어가면 안 된다
+__pycache__/
+*.pyc

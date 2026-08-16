@@ -19,8 +19,8 @@
 set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
 typst=${TYPST:-typst}
-command -v "$typst" >/dev/null 2>&1 || \
-  typst=<workspace>/usr/toolchains/typst/typst
+# 공용 도구는 작업공간의 usr/ 에 있다 --- 자리를 절대 경로로 적지 않는다.
+command -v "$typst" >/dev/null 2>&1 || typst="$root/../usr/toolchains/typst/typst"
 fonts=${FONT_PATH:-$root/../toolchains/fonts}
 ver=$(grep -m1 'Current:' "$root/VERSION.md" | sed 's/.*\*\*\(v[0-9.]*\)\*\*.*/\1/')
 mkdir -p "$root/dist" "$root/build"

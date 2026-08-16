@@ -25,7 +25,11 @@ git add docs/style-specimen.html docs/style-specimen.pdf book/style.typ book/sty
         styles/book-trial.css styles/book.css book/lib.typ 2>/dev/null || true
 git -c user.name=rubidus-api -c user.email=rubidus@gmail.com \
     commit -q -m "조판 견본 갱신 (시험 값)"
-tok=$(cat <workspace>/github-personal-access-token | tr -d '\n\r ')
+# 인증서는 저장소 밖에 둔다. 자리는 GH_TOKEN_FILE 로 주고, 기본값은 저장소
+# 바깥의 상대 경로다 --- 이 기계의 절대 경로를 공개 저장소에 적지 않는다.
+tokfile=${GH_TOKEN_FILE:-"$root/../github-personal-access-token"}
+[ -f "$tokfile" ] || { echo "publish-specimen: 인증서를 찾지 못했다 (GH_TOKEN_FILE)" >&2; exit 1; }
+tok=$(tr -d '\n\r ' < "$tokfile")
 git push -q "https://x-access-token:$tok@github.com/rubidus-api/proven_c_book.git" main
 echo "publish-specimen: 올렸다"
 echo "  웹  https://rubidus-api.github.io/proven_c_book/style-specimen.html"

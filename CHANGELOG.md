@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.65.1] - 2026-08-16
+
+### Fixed
+- ★ **공개 저장소에 이 기계의 절대 경로가 실려 있었다**(저자 지시로 전수 점검). 53장
+  예제가 `argv[0]` 을 찍는데 그 값이 빌드 디렉터리의 절대 경로여서, 캡처된 출력이
+  그대로 책(444쪽)과 웹판에 인쇄되고 있었다. 이제 예제 출력을 캡처할 때 저장소
+  바깥의 자리를 지운다 --- `argv[0] = "./ch53/entry"` 로 인쇄된다.
+- `scripts/__pycache__/*.pyc` 세 개가 추적되고 있었다(v0.64.0 에서 딸려 들어갔다).
+  바이트코드에는 원본의 절대 경로가 박혀 있다. 추적을 풀고 `.gitignore` 에 올렸다.
+- `make-specimen.sh` 가 공용 typst 의 자리를, `publish-specimen.sh` 가 *인증서
+  파일의 자리*를 절대 경로로 적고 있었다. 둘 다 저장소 기준의 상대 경로와 환경
+  변수(`GH_TOKEN_FILE`)로 바꿨다.
+
+### Added
+- `scripts/check-privacy.py` --- 추적 파일과 *캡처된 예제 출력*에서 이 기계의 절대
+  경로와 인증서 꼴을 찾는다. `project-check` 와 릴리스 게이트에 걸었고, 일부러
+  넣어 보아 잡히는 것까지 확인했다. 종전 `project-check` 의 검사는 data URI 로 박힌
+  글꼴(base64)을 경로로 오인하고 있어 함께 고쳤다.
+
 ## [v0.65.0] - 2026-08-16
 
 ### Added
