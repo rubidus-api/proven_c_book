@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """장 사이의 「약속」이 실제로 지켜졌는지 본다 (RFC-0020, 저자 지시 2026-08-08).
 
-`check-xrefs.py` 는 두 판의 장 번호가 *일치하는지*만 본다. 그러나 진짜 물어야 할 것은
+`check-chapter-refs.py` 는 두 판이 *같은 장*을 가리키는지만 본다. 그러나 진짜 물어야 할 것은
 다른 것이다 --- **「43장에서 다룬다」고 했으면 43장에 정말 그 이야기가 있는가.**
 
 이 도구는 본문에서 「N장…키워드」 꼴의 약속을 뽑아, 그 키워드가 N장에 실제로 있는지
@@ -17,6 +17,8 @@
 종료 상태: 깨진 약속이 있으면 1
 """
 import pathlib
+
+import chapters as chreg
 import re
 import sys
 
@@ -40,7 +42,8 @@ def chapters():
     for f in sorted(KO.glob("ch*.typ")):
         m = re.match(r"ch(\d+)\.typ$", f.name)
         if m:
-            out[int(m.group(1))] = f.read_text(encoding="utf-8")
+            out[int(m.group(1))] = chreg.expand(f.read_text(encoding="utf-8"),
+                                                   chreg.lang_of(f))
     return out
 
 

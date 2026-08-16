@@ -22,9 +22,11 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 def truth():
     src = (ROOT / "book" / "main.typ").read_text(encoding="utf-8")
-    parts = re.findall(r'\("(제\d+부[^"]*)",\s*(?:"[^"]*"|none),\s*\(([^)]*)\)\)', src)
+    # 부·장의 단일 출처는 등록부다(RFC-0028). main.typ 은 그것을 옮겨 담을 뿐이다.
+    reg = (ROOT / "book" / "registry.typ").read_text(encoding="utf-8")
+    parts = re.findall(r'ko: "(제\d+부[^"]*)",[\s\S]*?chapters: \(([^)]*)\)', reg)
     chapters = sum(
-        len([c for c in chs.split(",") if c.strip()]) for _, chs in parts
+        len(re.findall(r'"[^"]+"', chs)) for _, chs in parts
     )
     letters = []
     for f in sorted((ROOT / "book" / "appendix").glob("*.typ")):

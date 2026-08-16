@@ -6,6 +6,47 @@ This project follows Keep a Changelog.
 
 ## [Unreleased]
 
+## [v0.63.0] - 2026-08-16
+
+### Changed
+- ★ **장 참조를 숫자에서 이름으로 옮겼다**(저자 지시, RFC-0028). 원고의
+  `32장`·`chapter 32` 4,669곳(양판 221파일)이 `#chref("loops")` 가 되고, 번호는
+  `book/registry.typ` 이 매긴다 --- 부와 장의 순서를 정하는 *단 하나의 자리*다.
+  - 순서를 바꾸는 일이 등록부 한 줄이 됐다. `scripts/reorder-chapters.py --move
+    loops --after arrays-2d` 로 32장을 39장 자리에 옮겨 보았더니 원고를 한 글자도
+    고치지 않고 차례와 본문의 모든 참조가 따라왔다(확인 뒤 되돌렸다).
+  - 이전의 안전선은 *렌더 결과 대조*였다. 한국어판 867쪽 중 글자가 다른 쪽은 5쪽,
+    전부 예제가 찍는 주소·시간 같은 실측값이다. 영어판은 열거 표기가
+    「chapters 36, 40」에서 「chapters 36 and 40」으로 정규화된 것뿐이다.
+  - Typst 함정 셋을 실측으로 잡았다: 겹친 자리표시자를 한 번만 펴면 원고에
+    제어문자가 박힌다 · 삽입한 호출 뒤의 `(` 는 함수 호출로 읽힌다 · `;` 는 코드
+    모드의 문장 구분자라 조용히 먹힌다(뒤의 둘은 `/**/` 로 끊었다).
+- 도구 정리: `check-xrefs.py`(번호 대조)와 `renumber-chapters.py`(원고 전체 재작성)를
+  은퇴시키고, `check-chapter-refs.py`(맨 숫자 참조 금지 + 두 판 id 대조)·
+  `reorder-chapters.py`·`migrate-chapter-refs.py`·공용 모듈 `chapters.py` 를 세웠다.
+
+### Added
+- ★ **`check-counting-prose.py` 신설**(저자 지시). 「앞선 여덟 장」·「이 부의 남은 두
+  장」처럼 *개수를 세는 서술*을 모아 목록으로 낸다 --- 장을 옮길 때 기계가 고칠 수
+  없어 사람이 읽어야 하는 자리다. 기준선 `docs/counting-prose.tsv`(111건)와 달라지면
+  릴리스가 멈춘다. ★첫 규칙이 「여덟 장이」를 놓쳤다 --- 조사가 붙은 낱말 뒤를 한글
+  전체로 막았기 때문이고, *조사만* 허용하도록 고쳤다.
+- 17장 「설치가 부담이면 --- 웹에서 바로 해 보기」 표의 *모든* 항목에 웹 주소와
+  누를 수 있는 링크를 넣었다(저자 지시). 전에는 Compiler Explorer 와 cdecl 에만
+  있었다. 넣기 전에 일곱 곳을 모두 열어 응답을 확인했다 --- godbolt.org ·
+  onlinegdb.com · wandbox.org · coliru.stacked-crooked.com · replit.com ·
+  pythontutor.com/c.html · cdecl.org.
+- 5장의 `bss` 에 원어를 병기했다(저자 지시) --- `bss`(*Block Started by Symbol*),
+  1950년대 중반 IBM 704 용 어셈블러 UA-SAP 의 의사 명령에서 왔고 하는 일이
+  「이름표를 붙이고 초기화하지 않은 자리를 그만큼 잡아 두라」였다는 각주까지(양판).
+
+### Fixed
+- ★ **영어판이 41장을 두 번 싣고 있었다.** 부 목록에 중복이 있었고, 그 뒤의 모든
+  장이 한 번호씩 밀려 인쇄되고 있었다(929 → 917쪽). 등록부 일원화로 사라졌다.
+- 영어판 94장이 「82 (memory layout)」이라고 한 장 어긋나게 가리키던 것을 바로잡았다
+  --- 번호만 맞대던 옛 검사는 통과시켰지만, id 로 맞대자 드러났다.
+- 재생성된 PDF 가 `git diff --check` 에 걸리지 않도록 `.gitattributes` 를 두었다.
+
 ## [v0.62.0] - 2026-08-16
 
 ### Changed

@@ -29,6 +29,8 @@
 어긴 곳이 있으면 목록을 찍고 1을 돌려준다.
 """
 import pathlib
+
+import chapters
 import re
 import sys
 
@@ -50,7 +52,8 @@ REF_EN = re.compile(r"\[\s*chapter\s+\d+\s*,\s*\S", re.I)
 
 
 def check_file(path: pathlib.Path, rel: str, is_first: bool, lang: str) -> list[str]:
-    text = path.read_text(encoding="utf-8")
+    # 장 참조는 이름으로 적혀 있다(RFC-0028) --- 번호로 펴서 본다.
+    text = chapters.expand(path.read_text(encoding="utf-8"), lang)
     problems: list[str] = []
 
     first_section = text.find("\n== ")

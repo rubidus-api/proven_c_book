@@ -18,6 +18,8 @@
 사용법: python3 scripts/make-depgraph.py
 """
 import pathlib
+
+import chapters as chreg
 import re
 import sys
 
@@ -37,7 +39,7 @@ def chapters(lang):
         if not m:
             continue
         n = int(m.group(1))
-        text = f.read_text(encoding="utf-8")
+        text = chreg.expand(f.read_text(encoding="utf-8"), lang)
         tm = re.search(r"^=\s+(.+)$", text, re.M)
         title = tm.group(1).strip() if tm else f"ch{n}"
         deps = []
@@ -54,6 +56,18 @@ def chapters(lang):
 
 def parts(lang):
     """main.typ 의 부 구성이 단일 출처다. [(제목, [장…])…]"""
+    # 부 구성의 단일 출처는 등록부다(RFC-0028). main.typ 은 그것을 옮겨 담을 뿐이다.
+    reg = (ROOT / "book" / "registry.typ").read_text(encoding="utf-8")
+    key = "ko" if lang == "ko" else "en"
+    out = []
+    for m in re.finditer(r'\(%s: "([^"]+)",[\s\S]*?chapters: \(([^)]*)\)\)' % key, reg):
+        title = m.group(1)
+        chs = [chreg.NO[i] for i in re.findall(r'"([^"]+)"', m.group(2)) if i in chreg.NO]
+        out.append((title, chs))
+    return out
+
+
+def _unused_parts(lang):
     src = (ROOT / ("book" if lang == "ko" else "book-en") / "main.typ").read_text(encoding="utf-8")
     block = src[src.index("#let parts = ("):]
     block = block[:block.index("\n)")]
