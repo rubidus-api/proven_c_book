@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* the array begins where sizeof ends --- offsetof(12) == sizeof(12) */
+struct s1 { uint16_t a; uint32_t b; uint16_t c; uint32_t data[]; };
+/* the first two elements reach into sizeof --- offsetof(10) < sizeof(12) */
 struct s2 { uint16_t a; uint32_t b; uint16_t c; char data[]; };
 
 #define NEED(n) (offsetof(struct s2, data) + (n) * sizeof(char))
@@ -21,10 +24,28 @@ static struct s2 *make(size_t n, char fill)
 int main(void)
 {
     size_t n = 3;
-    printf("sizeof(struct s2) = %zu, offsetof(data) = %zu, three elements need %zu\n",
-           sizeof(struct s2), offsetof(struct s2, data), NEED(n));
-    printf("so data[0] and data[1] lie *inside* the first %zu bytes; data[2] does not\n",
-           sizeof(struct s2));
+    puts("how many elements fall inside sizeof? that is what decides everything:");
+    printf("  s1: offsetof(data)=%zu sizeof=%zu -> %zu element(s) inside\n",
+           offsetof(struct s1, data), sizeof(struct s1),
+           (sizeof(struct s1) - offsetof(struct s1, data)) / sizeof(uint32_t));
+    printf("  s2: offsetof(data)=%zu sizeof=%zu -> %zu element(s) inside\n",
+           offsetof(struct s2, data), sizeof(struct s2),
+           sizeof(struct s2) - offsetof(struct s2, data));
+
+    puts("\n(0) assigning an s1: the array begins where sizeof ends");
+    struct s1 *x = calloc(1, offsetof(struct s1, data) + n * sizeof(uint32_t));
+    struct s1 *y = calloc(1, offsetof(struct s1, data) + n * sizeof(uint32_t));
+    if (!x || !y) { perror("calloc"); return 1; }
+    x->a = 1; y->a = 9;
+    for (size_t i = 0; i < n; i++) { x->data[i] = 100 + (uint32_t)i;
+                                     y->data[i] = 900 + (uint32_t)i; }
+    *y = *x;
+    printf("  y after *y = *x: a=%u data=%u %u %u   <- the array was left alone\n",
+           y->a, y->data[0], y->data[1], y->data[2]);
+    free(x); free(y);
+
+    printf("\nnow s2, where two elements fall inside sizeof.\n");
+    printf("three elements need %zu bytes\n", NEED(n));
 
     struct s2 *src = make(n, '?'), *dst = make(n, '.');
     src->a = 1; src->b = 2; src->c = 3;
