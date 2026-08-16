@@ -8,7 +8,7 @@ Re-run it whenever the manuscript changes.
 ![Dependencies between chapters](dependency-graph-en.svg)
 
 - Chapters: **98**
-- Dependencies: **203**
+- Dependencies: **204**
 - Chapters leaning on nothing: 1
 
 ## Leaning on a later chapter
@@ -20,12 +20,12 @@ None. Every chapter leans only on chapters before it.
 | Ch. | Title | Chapters leaning on it |
 |---|---|---|
 | 38 | Arrays | 10 |
-| 5 | Words and addresses — the archetype of C | 7 |
-| 4 | A simple model of the machine — the birth of C | 6 |
-| 9 | Characters and text — scars in the standard | 6 |
+| 3 | Words and addresses — the archetype of C | 8 |
+| 2 | A simple model of the machine — the birth of C | 6 |
+| 8 | Characters and text — scars in the standard | 6 |
 | 19 | The structure of a program | 6 |
 | 51 | Errors and contracts | 6 |
-| 2 | The regions of memory — where a program puts what | 5 |
+| 9 | The origin of streams — punched cards, line printers, printing terminals | 5 |
 | 16 | The general shape of compilation | 5 |
 | 23 | Declaring variables | 5 |
 | 24 | Declaring and defining functions | 5 |
@@ -34,36 +34,36 @@ None. Every chapter leans only on chapters before it.
 
 ## Full table by part
 
-### Part I — Ground
+### Part I — Ground: the machine and its memory
 
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
-| 1 | Setting the scene | — | 2, 4 |
-| 2 | The regions of memory — where a program puts what | 1 | 3, 4, 44, 45, 83 |
-| 3 | Programs and processes — what it is to be run | 2 | 53, 76 |
+| 1 | Setting the scene | — | 2 |
+| 2 | A simple model of the machine — the birth of C | 1 | 3, 6, 11, 12, 14, 16 |
+| 3 | Words and addresses — the archetype of C | 2 | 4, 5, 6, 11, 13, 23, 35, 48 |
+| 4 | Special knowledge about addresses — address 0, alignment, low bits | 3 | 5, 26, 36, 37 |
+| 5 | The regions of memory — where a program puts what | 3, 4 | 10, 44, 45, 83 |
 
-### Part II — How computing works
+### Part II — What the machine really is: representation and execution
 
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
-| 4 | A simple model of the machine — the birth of C | 1, 2 | 5, 7, 11, 12, 14, 16 |
-| 5 | Words and addresses — the archetype of C | 4 | 6, 7, 11, 13, 23, 35, 48 |
-| 6 | Special knowledge about addresses — address 0, alignment, low bits | 5 | 26, 36, 37 |
-| 7 | Representing integers — sign, overflow, shift | 4, 5 | 8, 20, 27, 28 |
-| 8 | Representing numbers — the contract called IEEE 754 | 7 | 9, 26, 50, 73 |
-| 9 | Characters and text — scars in the standard | 8 | 10, 42, 67, 70, 72, 90 |
-| 10 | The origin of streams — punched cards, line printers, printing terminals | 9 | 15, 22, 25, 63 |
-| 11 | Memory divides — registers, caches, a ladder of layers | 4, 5 | 12, 38, 39, 80 |
-| 12 | The machinery of speed — the birth of the standard | 4, 11 | 13, 79 |
-| 13 | Compiler optimisation — the abstract machine | 12, 5 | 14, 19, 48, 52 |
-| 14 | And so C is an abstract language | 13, 4 | 37 |
+| 6 | Representing integers — sign, overflow, shift | 2, 3 | 7, 20, 27, 28 |
+| 7 | Representing numbers — the contract called IEEE 754 | 6 | 8, 26, 50, 73 |
+| 8 | Characters and text — scars in the standard | 7 | 9, 42, 67, 70, 72, 90 |
+| 9 | The origin of streams — punched cards, line printers, printing terminals | 8 | 10, 15, 22, 25, 63 |
+| 10 | Programs and processes — what it is to be run | 5, 9 | 53, 76 |
+| 11 | Memory divides — registers, caches, a ladder of layers | 2, 3 | 12, 38, 39, 80 |
+| 12 | The machinery of speed — the birth of the standard | 2, 11 | 13, 79 |
+| 13 | Compiler optimisation — the abstract machine | 12, 3 | 14, 19, 48, 52 |
+| 14 | And so C is an abstract language | 13, 2 | 37 |
 
 ### Part III — The first program
 
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
-| 15 | Hello world | 10 | 16, 19 |
-| 16 | The general shape of compilation | 15, 4 | 17, 18, 54, 57, 61 |
+| 15 | Hello world | 9 | 16, 19 |
+| 16 | The general shape of compilation | 15, 2 | 17, 18, 54, 57, 61 |
 | 17 | Setting up a development environment | 16 | 18, 96 |
 | 18 | The compiler landscape — C compilers in active service | 16, 17 | 97 |
 
@@ -72,25 +72,25 @@ None. Every chapter leans only on chapters before it.
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
 | 19 | The structure of a program | 15, 13 | 20, 21, 22, 23, 53, 57 |
-| 20 | Expressions and constants — the things that become values | 7, 19 | 21, 30, 33, 49 |
+| 20 | Expressions and constants — the things that become values | 6, 19 | 21, 30, 33, 49 |
 | 21 | Using functions — how to call | 20, 19 | 24 |
-| 22 | Output | 10, 19 | 25, 58, 63 |
+| 22 | Output | 9, 19 | 25, 58, 63 |
 
 ### Part V — Declarations: how names are made
 
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
-| 23 | Declaring variables | 5, 19 | 24, 26, 27, 34, 46 |
+| 23 | Declaring variables | 3, 19 | 24, 26, 27, 34, 46 |
 | 24 | Declaring and defining functions | 21, 23 | 33, 44, 54, 55, 59 |
-| 25 | Input | 22, 10 | 43, 93 |
+| 25 | Input | 22, 9 | 43, 93 |
 
 ### Part VI — Values and flow
 
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
-| 26 | The families of types — how the standard divides them | 23, 6, 8 | 27, 29 |
-| 27 | Integers — a world of finite numbers | 26, 7, 23 | 28, 29, 67, 81 |
-| 28 | Integer operations — division, bits | 7, 27 | 29 |
+| 26 | The families of types — how the standard divides them | 23, 4, 7 | 27, 29 |
+| 27 | Integers — a world of finite numbers | 26, 6, 23 | 28, 29, 67, 81 |
+| 28 | Integer operations — division, bits | 6, 27 | 29 |
 | 29 | Implicit conversions — promotion and the usual arithmetic conversions | 26, 27, 28 | 30, 34, 58 |
 | 30 | Booleans and comparison | 20, 29 | 31, 82 |
 | 31 | Deciding — if and switch | 30 | 32 |
@@ -102,17 +102,17 @@ None. Every chapter leans only on chapters before it.
 
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
-| 35 | Objects, addresses, pointers | 5, 33 | 36, 37, 38, 40 |
-| 36 | Null — the three siblings, formally | 6, 35 | — |
-| 37 | The rules of pointers — alignment and provenance | 35, 6, 14 | 39, 88 |
+| 35 | Objects, addresses, pointers | 3, 33 | 36, 37, 38, 40 |
+| 36 | Null — the three siblings, formally | 4, 35 | — |
+| 37 | The rules of pointers — alignment and provenance | 35, 4, 14 | 39, 88 |
 | 38 | Arrays | 35, 11 | 39, 40, 42, 46, 47, 49, 59, 60, 65, 88 |
 | 39 | Multidimensional arrays | 38, 37, 11 | 40, 41 |
 | 40 | Arrays and pointers — when they are the same and when they are not | 38, 39, 35 | — |
 | 41 | Loop techniques — nesting, escaping, and making a block | 32, 39 | — |
-| 42 | Strings | 9, 38 | 43, 65, 85, 90 |
+| 42 | Strings | 8, 38 | 43, 65, 85, 90 |
 | 43 | Safe input — blocking overflow, handling failure | 25, 42 | 51, 61, 64 |
-| 44 | Lifetime and storage duration | 24, 2 | 45, 77, 79, 80, 83 |
-| 45 | Dynamic memory | 44, 2 | 66, 84, 89, 92 |
+| 44 | Lifetime and storage duration | 24, 5 | 45, 77, 79, 80, 83 |
+| 45 | Dynamic memory | 44, 5 | 66, 84, 89, 92 |
 
 ### Part VIII — The shape of data
 
@@ -121,14 +121,14 @@ None. Every chapter leans only on chapters before it.
 | 41 | Loop techniques — nesting, escaping, and making a block | 32, 39 | — |
 | 46 | Structs | 23, 38 | 47, 48, 49, 74, 92 |
 | 47 | Using structs — temporary values, named arguments, layout | 46, 38 | — |
-| 48 | Unions and representation | 46, 5, 13 | — |
+| 48 | Unions and representation | 46, 3, 13 | — |
 
 ### Part IX — Deep corners
 
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
 | 49 | Expressions and operators | 20, 34, 38, 46 | — |
-| 50 | Real numbers — the mathematics of approximation | 8 | 73 |
+| 50 | Real numbers — the mathematics of approximation | 7 | 73 |
 | 51 | Errors and contracts | 33, 43 | 52, 75, 77, 85, 87, 98 |
 | 52 | Undefined behaviour | 13, 51 | 75, 81, 98 |
 
@@ -136,7 +136,7 @@ None. Every chapter leans only on chapters before it.
 
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
-| 53 | The three faces of `main` — entry point and exit status | 3, 19 | 68, 76, 79 |
+| 53 | The three faces of `main` — entry point and exit status | 10, 19 | 68, 76, 79 |
 | 54 | Several files — splitting and linking | 16, 24 | 55, 56, 86, 96 |
 | 55 | The world of names — four name spaces and three axes | 24, 54 | 56 |
 | 56 | Handling name collisions — from prefixes to `namespace` | 54, 55 | — |
@@ -151,27 +151,27 @@ None. Every chapter leans only on chapters before it.
 | Ch. | Title | Leans on | Leaned on by |
 |---|---|---|---|
 | 62 | The standard library at a glance | 61 | 78 |
-| 63 | Streams in reality — `<stdio.h>` ① | 10, 22 | 64, 69, 71, 93 |
+| 63 | Streams in reality — `<stdio.h>` ① | 9, 22 | 64, 69, 71, 93 |
 | 64 | The traps of reading and writing — `<stdio.h>` ② | 63, 43 | 78 |
 | 65 | Strings and memory — `<string.h>` | 42, 38 | — |
 | 66 | The drawer of odds and ends — `<stdlib.h>` | 61, 45 | — |
-| 67 | Character classification — `<ctype.h>` | 9, 27 | 68, 70 |
+| 67 | Character classification — `<ctype.h>` | 8, 27 | 68, 70 |
 | 68 | Locales ① — a program's regional settings | 67, 53 | 69, 70 |
 | 69 | Locales ② — numbers, money, time and sorting | 68, 63 | — |
-| 70 | Wide characters ① — `wchar_t` and multibyte conversion | 9, 68, 67 | 71, 72 |
+| 70 | Wide characters ① — `wchar_t` and multibyte conversion | 8, 68, 67 | 71, 72 |
 | 71 | Wide characters ② — the platforms, and wide I/O | 70, 63 | 72 |
-| 72 | In practice — handling Unicode and multibyte encodings | 71, 70, 9 | — |
-| 73 | Numbers — `<math.h>`, `<fenv.h>`, `<tgmath.h>` | 50, 8 | — |
+| 72 | In practice — handling Unicode and multibyte encodings | 71, 70, 8 | — |
+| 73 | Numbers — `<math.h>`, `<fenv.h>`, `<tgmath.h>` | 50, 7 | — |
 | 74 | Time — `<time.h>` | 46, 61 | — |
 | 75 | Diagnosis and control — `<errno.h>`, `<assert.h>`, `<signal.h>`, `<setjmp.h>` | 51, 52 | 76 |
-| 76 | Signals — `<signal.h>` | 75, 53, 3 | 77 |
+| 76 | Signals — `<signal.h>` | 75, 53, 10 | 77 |
 | 77 | Non-local jumps — `<setjmp.h>` | 76, 44, 51 | — |
 | 78 | What the new standards added, and the `*_s` controversy | 62, 64 | 82 |
 | 79 | Running in separate strands — `<threads.h>` | 12, 44, 53 | 80 |
 | 80 | Operations that do not split — `<stdatomic.h>` | 79, 11, 44 | 94 |
 | 81 | How to ask about overflow — `<stdckdint.h>` | 27, 52 | 88 |
 | 82 | From macro to keyword — `bool`, `nullptr` and their companions | 78, 30 | — |
-| 83 | A program's memory layout — operating systems and embedded | 44, 2 | 84, 94, 97 |
+| 83 | A program's memory layout — operating systems and embedded | 44, 5 | 84, 94, 97 |
 | 84 | Inside the allocator — the heap, alternative allocators, alternative standard libraries | 45, 83 | 89 |
 
 ### Part XII — proven — a new, stable foundation
@@ -183,7 +183,7 @@ None. Every chapter leans only on chapters before it.
 | 87 | Errors are values | 51, 85 | 95 |
 | 88 | The foundation — bytes, views, and arithmetic that does not overflow | 37, 38, 81 | 92, 95 |
 | 89 | Allocation is a parameter | 45, 84 | 95 |
-| 90 | Strings and text | 42, 9 | 95 |
+| 90 | Strings and text | 42, 8 | 95 |
 | 91 | Formatting and parsing — not writing the type twice | 58, 61 | — |
 | 92 | Containers and algorithms | 46, 45, 88 | — |
 | 93 | The outside world — files, streams, time, random numbers | 63, 25 | — |

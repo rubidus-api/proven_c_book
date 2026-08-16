@@ -79,6 +79,26 @@ static int odd_sum_while_fixed(void)
     return sum;
 }
 
+/* Where do-while really earns its keep - walking backwards with an unsigned index.
+   size_t cannot go below 0, so for (size_t i = n-1; i >= 0; i--) is an endless
+   loop (chapter 41). do-while writes down exactly 'step down first, handle 0,
+   then stop'. Since the body runs first, n must not be 0 - and that check is
+   part of the pattern. */
+static void countdown(size_t n)
+{
+    if (n == 0) {                   /* guards do-while's at-least-once rule */
+        printf("  (nothing to visit)\n");
+        return;
+    }
+    printf("  ");
+    size_t i = n;
+    do {
+        i--;                        /* n-1 down to 0 */
+        printf("%s%zu", i == n - 1 ? "" : " ", i);
+    } while (i > 0);
+    printf("\n");
+}
+
 int main(void)
 {
     printf("[the same job, three ways]\n");
@@ -93,6 +113,12 @@ int main(void)
     printf("\n[continue and the update step]\n");
     printf("  for   : sum of odd numbers 1..9 = %d\n", odd_sum_for());
     printf("  while : sum of odd numbers 1..9 = %d\n", odd_sum_while_fixed());
+    printf("\n[walking backwards with an unsigned index]\n");
+    countdown(6);
+    countdown(1);
+    countdown(0);
+    printf("  do-while says it plainly: step down first, handle 0, then stop.\n");
+
     printf("  in the for loop i++ runs even after continue;\n");
     printf("  in the while loop the update sits in the body, so continue can skip it -\n");
     printf("  that is how a working loop turns into an endless one when it is rewritten.\n");

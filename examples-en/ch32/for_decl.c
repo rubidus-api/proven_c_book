@@ -27,6 +27,40 @@ static void scope_of_the_name(void)
     printf("  after the loop i = %d (the outer one was never touched)\n", i);
 }
 
+/* 2b. Lifetime - the name in clause-1 is *one object* for the whole loop.
+      A variable declared in the body is not: it is born and dies every turn. */
+static void lifetime_of_the_two(void)
+{
+    int last_body = -1;
+
+    for (int i = 0; i < 3; i++) {
+        int body = 0;                   /* a new object each turn - so always from 0 */
+        body++;
+        last_body = body;
+        printf("  turn %d: counter i = %d (one object, kept), body = %d (reborn)\n",
+               i, i, body);
+    }
+    printf("  the body variable never grew past %d - it died at every closing brace\n",
+           last_body);
+}
+
+/* 2c. That it is one object shows in its address - the same on all three turns. */
+static void one_object_one_address(void)
+{
+    const void *first = nullptr;
+
+    for (int i = 0; i < 3; i++) {
+        if (i == 0)
+            first = (const void *)&i;
+        printf("  turn %d: &i %s\n", i,
+               (const void *)&i == first ? "is the same address as turn 0"
+                                         : "CHANGED (would mean a new object)");
+    }
+    /* Leaving the loop ends that object's lifetime. Reading the address kept
+       above would be undefined behaviour, so we do not. The name is gone too ---
+       writing i here would be a compile error. */
+}
+
 /* 3. C23's auto - the type is inferred from the initializer. */
 static void c23_auto(void)
 {
@@ -50,6 +84,12 @@ int main(void)
 
     printf("\n[the name lives in the loop and nowhere else]\n");
     scope_of_the_name();
+
+    printf("\n[the counter lives for the whole loop, a body variable does not]\n");
+    lifetime_of_the_two();
+
+    printf("\n[one object means one address]\n");
+    one_object_one_address();
 
     printf("\n[C23: auto infers the type from the initializer]\n");
     c23_auto();

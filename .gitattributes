@@ -1,0 +1,8 @@
+# 바이너리 산출물은 diff·검사 대상이 아니다.
+# (2026-08-16: 재생성된 dist/·docs/ 의 PDF 가 `git diff --check` 에서 「줄 끝
+#  공백」으로 잡히던 것을 여기서 막는다 --- 텍스트로 훑을 파일이 아니다.)
+*.pdf   binary
+*.zip   binary
+*.woff2 binary
+*.png   binary
+*.jpg   binary

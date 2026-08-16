@@ -23,13 +23,20 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-# 새로 끼우는 장: 40(반복의 기법, RFC-0017), 39장 바로 다음
-INSERTS = (40,)
+# 2026-08-16 (RFC-0002 rev.j): 제1·2부 재편 — 1장 다음에 「단순한 기계 모델」이
+# 오도록 되돌리고, 나중에 끼워 넣었던 「기억의 구역들」과 「프로그램과 프로세스」를
+# 각자 가장 가까운 이웃 옆으로 옮긴다. 11장부터는 번호가 그대로다.
+#
+#   1 배경설명            → 1          6 주소의 특수 지식  → 4
+#   4 단순한 기계 모델    → 2          2 기억의 구역들     → 5
+#   5 워드와 주소         → 3          7·8·9·10           → 6·7·8·9
+#                                      3 프로그램과 프로세스 → 10
+PERM = {1: 1, 4: 2, 5: 3, 6: 4, 2: 5, 7: 6, 8: 7, 9: 8, 10: 9, 3: 10}
 
 
 def remap(n: int) -> int:
-    """옛 장 번호 → 새 장 번호."""
-    return n if n < 40 else n + 1
+    """옛 장 번호 → 새 장 번호. 순열이므로 표에 없는 번호는 그대로 둔다."""
+    return PERM.get(n, n)
 
 
 PLACE = "«{}»"   # «n»
@@ -84,19 +91,29 @@ def targets():
 
 
 def rename_chapter_files(dry: bool) -> int:
+    """★ 순열이므로 두 단계로 옮긴다.
+
+    번호를 서로 맞바꾸는 이동(4→2 와 2→5 처럼)에서는 「큰 번호부터」 규칙이
+    통하지 않는다 --- 목적지에 아직 다른 장이 앉아 있을 수 있다. 그래서 먼저
+    전부 임시 이름으로 옮기고, 그다음 제 번호로 앉힌다.
+    """
     moved = 0
     for ed in ("book", "book-en"):
         chdir = ROOT / ed / "chapters"
-        # 큰 번호부터 옮겨야 덮어쓰지 않는다
-        for path in sorted(chdir.glob("ch*.typ"), reverse=True):
+        pending = []
+        for path in sorted(chdir.glob("ch*.typ")):
             old = int(path.stem[2:])
             new = remap(old)
             if new == old:
                 continue
-            dest = chdir / f"ch{new:02d}.typ"
             moved += 1
+            tmp = chdir / f"__ch{new:02d}.typ.tmp"
+            pending.append((tmp, chdir / f"ch{new:02d}.typ"))
             if not dry:
-                path.rename(dest)
+                path.rename(tmp)
+        for tmp, dest in pending:
+            if not dry:
+                tmp.rename(dest)
     return moved
 
 
