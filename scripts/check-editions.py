@@ -96,6 +96,21 @@ def main() -> int:
                     f"{web}: {name} 이 원고 {src[name]}개인데 HTML 은 "
                     f"{out[name]}개 — HTML 에서 사라진 것이 있다")
 
+    # ★ HTML 차례가 장을 다 담고 있는가 (2026-08-16 사고).
+    #   부 구성을 읽던 정규식이 헛돌자 표지·상세 차례에서 98개 장이 통째로
+    #   사라졌는데 --- 장 파일은 멀쩡했으므로 위의 검사들이 전부 통과했다.
+    #   그래서 「차례에서 각 장으로 가는 길이 있는가」를 따로 묻는다.
+    for web, n_ch in (("docs/ko", len(ko)), ("docs/en", len(en))):
+        idx = ROOT / web / "index.html"
+        if not idx.exists():
+            continue
+        html = idx.read_text(encoding="utf-8")
+        links = len(re.findall(r'href="ch\d+\.html"', html))
+        if links < n_ch:
+            problems.append(
+                f"{web}/index.html: 차례에 장 링크가 {links}개뿐이다 "
+                f"(장은 {n_ch}개) --- 차례에서 본문으로 가는 길이 끊겼다")
+
     if problems:
         for p in problems:
             print("⚠️ ", p)
