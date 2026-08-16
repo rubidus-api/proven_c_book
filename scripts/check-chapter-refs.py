@@ -53,6 +53,20 @@ def main():
                 bad += 1
                 print(f"  ⚠️  맨 숫자 참조  {path.relative_to(ROOT)}: {m.group(0).strip()}")
 
+    # ★ *표·그림* 참조 뒤에는 「이/가」·「은/는」·「을/를」을 붙이지 않는다.
+    #   그 참조는 숫자로 끝나서(「표 40.7」) 번호가 바뀌면 받침이 바뀌고, 조사가
+    #   틀리게 된다 --- 실제로 「표 40.7가」가 인쇄됐다. 「에」·「에서」처럼 변하지
+    #   않는 조사를 쓰거나 문장을 바꾼다.
+    #   장 참조는 해당 없다. 언제나 「…장」으로 끝나므로 조사가 변하지 않는다.
+    VAR_JOSA = re.compile(r'#(?:tblref|figref)\([^()]*\)(?:/\*\*/)?(이|가|은|는|을|를)(?![가-힣])')
+    for path in sorted(KO.rglob("*.typ")):
+        if path.name in SKIP:
+            continue
+        for m in VAR_JOSA.finditer(path.read_text(encoding="utf-8")):
+            bad += 1
+            print(f"  ⚠️  참조 뒤 변이 조사 「{m.group(1)}」  {path.relative_to(ROOT)}: "
+                  f"{m.group(0)[-24:]}")
+
     # ② 두 판이 같은 장을 가리키는가
     pairs = 0
     for ko in sorted((KO / "chapters").glob("ch*.typ")):

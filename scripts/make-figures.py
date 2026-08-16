@@ -59,6 +59,9 @@ TAIL = "</svg>"
 
 
 def text(x, y, s, size=13, weight="normal", anchor="middle", fill="#111"):
+    # ★ SVG 는 XML 이다 --- `&p` 같은 글자를 그대로 쓰면 개체 참조로 읽혀 빌드가
+    #   멈춘다("malformed entity reference"). 여기 한 곳에서 막는다.
+    s = (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
     return (f'<text x="{x}" y="{y}" font-size="{size}" font-weight="{weight}" '
             f'text-anchor="{anchor}" fill="{fill}">{s}</text>')
 
@@ -554,7 +557,235 @@ def fig_type_tree(L):
     return "".join(o)
 
 
+
+# ── F15. 포인터의 배열 (40장) ─────────────────────────────────
+def fig_ptr_array(L):
+    w, h = 760, 300
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+
+    # 왼쪽 --- 포인터 셋이 나란히 (연속)
+    x0, y0, cw, ch = 48, 74, 118, 40
+    out.append(text(x0, y0 - 14, L["arr"], size=12, weight="bold", anchor="start"))
+    for i in range(3):
+        y = y0 + i * ch
+        out.append(box(x0, y, cw, ch))
+        out.append(text(x0 + cw / 2, y + 25, L["addr"][i], size=11))
+        out.append(text(x0 - 8, y + 25, f"[{i}]", size=10.5, anchor="end"))
+    out.append(text(x0, y0 + 3 * ch + 20, L["arr_note"], size=10.5, anchor="start"))
+
+    # 오른쪽 --- 길이가 제각각인 문자열들 (흩어져 있다)
+    sx = 360
+    ys = [y0 - 6, y0 + 58, y0 + 120]
+    for i, (s, a) in enumerate(zip(L["str"], L["addr"])):
+        cells = len(s) + 1
+        for j in range(cells):
+            out.append(box(sx + j * 26, ys[i], 26, 30))
+            ch_ = s[j] if j < len(s) else "\\0"
+            out.append(text(sx + j * 26 + 13, ys[i] + 20, ch_, size=11))
+        out.append(text(sx - 10, ys[i] + 20, a, size=10.5, anchor="end"))
+        out.append(arrow(x0 + cw + 6, y0 + i * ch + 20, sx - 62, ys[i] + 15))
+    out.append(text(sx, ys[2] + 52, L["str_note"], size=10.5, anchor="start"))
+
+    out.append(text(w / 2, h - 16, L["note"], size=11.5, weight="bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F16. 포인터의 포인터 (40장) ───────────────────────────────
+def fig_ptr_ptr(L):
+    w, h = 760, 342
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+
+    # 부르는 쪽
+    cx, cy = 60, 86
+    bw = fit_width([L["caller_var"], L["before"]], 11, minimum=190)
+    out.append(text(cx, cy - 16, L["caller"], size=12, weight="bold", anchor="start"))
+    out.append(box(cx, cy, bw, 46))
+    out.append(text(cx + bw / 2, cy + 20, L["caller_var"], size=11))
+    out.append(text(cx + bw / 2, cy + 38, L["before"], size=10.5))
+    out.append(text(cx, cy + 70, L["caller_addr"], size=10.5, anchor="start"))
+
+    # 넘기는 값 --- 그 변수의 주소
+    mx = cx + bw + 40
+    out.append(arrow(cx + bw + 6, cy + 23, mx + 54, cy + 23))
+    out.append(text(mx + 30, cy + 14, L["handoff"], size=10.5, anchor="start"))
+
+    # 부름받는 쪽
+    fx = mx + 60
+    fw = fit_width([L["param"], L["param_val"]], 11, minimum=200)
+    out.append(text(fx, cy - 16, L["callee"], size=12, weight="bold", anchor="start"))
+    out.append(box(fx, cy, fw, 46))
+    out.append(text(fx + fw / 2, cy + 20, L["param"], size=11))
+    out.append(text(fx + fw / 2, cy + 38, L["param_val"], size=10.5))
+
+    # 되돌아가는 화살표 --- *out = buf
+    ly = cy + 108
+    out.append(f'<line x1="{fx + fw / 2}" y1="{cy + 46}" x2="{fx + fw / 2}" y2="{ly}" '
+               f'stroke="#111" stroke-width="1.8"/>')
+    out.append(f'<line x1="{fx + fw / 2}" y1="{ly}" x2="{cx + bw / 2}" y2="{ly}" '
+               f'stroke="#111" stroke-width="1.8"/>')
+    out.append(arrow(cx + bw / 2, ly, cx + bw / 2, cy + 50))
+    out.append(text((fx + cx) / 2 + 40, ly + 18, L["write"], size=11, weight="bold"))
+
+    # 새로 잡은 자리
+    hx, hy = fx, ly + 30
+    out.append(box(hx, hy, fw, 38, dash="5 4"))
+    out.append(text(hx + fw / 2, hy + 24, L["heap"], size=11))
+
+    # 요약 두 줄 --- 어떤 상자 안에도 들어가지 않도록 아래에 둔다
+    out.append(text(w / 2, h - 42, L["after_line"], size=11.5))
+    out.append(text(w / 2, h - 16, L["note"], size=11.5, weight="bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F17. 구조체의 배열 — 원소 사이에는 빈자리가 없다 (47장) ────
+def fig_struct_array(L):
+    w, h = 760, 306
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+    out.append(text(w / 2, 46, L["decl"], size=11.5))
+
+    # 한 원소의 속 --- 멤버 + 꼬리 패딩
+    x0, y0, unit = 60, 84, 40           # 1바이트 = 40
+    parts = [(L["m1"], 4, False), (L["m2"], 1, False), (L["pad"], 3, True)]
+    x = x0
+    out.append(text(x0, y0 - 14, L["one"], size=12, weight="bold", anchor="start"))
+    for name, n, is_pad in parts:
+        out.append(box(x, y0, unit * n, 44, fill="url(#hatch)" if is_pad else "none"))
+        out.append(text(x + unit * n / 2, y0 + 28, name, size=11))
+        x += unit * n
+    out.append(text(x + 12, y0 + 28, L["size"], size=11, anchor="start", weight="bold"))
+
+    # 배열 --- 원소 셋이 딱 붙어 있다
+    ay, aunit = 176, 26
+    out.append(text(x0, ay - 14, L["arr"], size=12, weight="bold", anchor="start"))
+    for e in range(3):
+        ex = x0 + e * aunit * 8
+        for name, n, is_pad in parts:
+            out.append(box(ex, ay, aunit * n, 40, fill="url(#hatch)" if is_pad else "none"))
+            ex += aunit * n
+        out.append(text(x0 + e * aunit * 8 + aunit * 4, ay - 8, f"[{e}]", size=11, weight="bold"))
+        out.append(text(x0 + e * aunit * 8, ay + 58, L["off"][e], size=10.5, anchor="middle"))
+    out.append(text(x0 + aunit * 24 + 14, ay + 25, L["stride"], size=11, anchor="start", weight="bold"))
+
+    out.append(text(w / 2, h - 40, L["why"], size=11.5))
+    out.append(text(w / 2, h - 18, L["note"], size=11.5, weight="bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F18. 유연 배열 멤버 — 한 덩어리와 두 덩어리 (46장) ─────────
+def fig_flex_array(L):
+    w, h = 760, 306
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+
+    # 위 --- 포인터 멤버: 할당 둘
+    x0, y0 = 60, 74
+    out.append(text(x0, y0 - 14, L["a_head"], size=12, weight="bold", anchor="start"))
+    out.append(box(x0, y0, 90, 42))
+    out.append(text(x0 + 45, y0 + 26, L["len"], size=11))
+    out.append(box(x0 + 90, y0, 120, 42))
+    out.append(text(x0 + 150, y0 + 26, L["ptr"], size=11))
+    bx = x0 + 330
+    out.append(box(bx, y0, 300, 42, dash="5 4"))
+    out.append(text(bx + 150, y0 + 26, L["buf"], size=11))
+    out.append(arrow(x0 + 210, y0 + 21, bx - 6, y0 + 21))
+    out.append(text(x0, y0 + 62, L["a_note"], size=10.5, anchor="start"))
+
+    # 아래 --- 유연 배열 멤버: 할당 하나
+    y1 = 182
+    out.append(text(x0, y1 - 14, L["b_head"], size=12, weight="bold", anchor="start"))
+    out.append(box(x0, y1, 90, 42))
+    out.append(text(x0 + 45, y1 + 26, L["len"], size=11))
+    out.append(box(x0 + 90, y1, 420, 42))
+    out.append(text(x0 + 300, y1 + 26, L["data"], size=11))
+    out.append(f'<line x1="{x0}" y1="{y1 + 54}" x2="{x0 + 510}" y2="{y1 + 54}" '
+               f'stroke="#111" stroke-width="1.4"/>')
+    out.append(text(x0 + 255, y1 + 70, L["one_alloc"], size=11, weight="bold"))
+    out.append(text(x0, y1 + 92, L["b_note"], size=10.5, anchor="start"))
+
+    out.append(text(w / 2, h - 14, L["note"], size=11.5, weight="bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
 FIGS = {
+    "ptr-array": (fig_ptr_array, {
+        "ko": dict(title="포인터의 배열 --- 길이가 제각각인 것들을 하나로 묶는다",
+                   arr="char *names[3]", addr=["0x5f10", "0x5f30", "0x5f48"],
+                   arr_note="배열 자체는 연속이다 --- 포인터 셋이 8바이트씩 나란히",
+                   str=["ada", "grace", "linus"],
+                   str_note="가리키는 곳은 흩어져 있고 길이도 제각각이다",
+                   note="배열은 붙어 있고, 내용은 흩어져 있다"),
+        "en": dict(title="an array of pointers --- tying together things of different lengths",
+                   arr="char *names[3]", addr=["0x5f10", "0x5f30", "0x5f48"],
+                   arr_note="the array itself is contiguous --- three pointers, 8 bytes apart",
+                   str=["ada", "grace", "linus"],
+                   str_note="what they point at is scattered, and each has its own length",
+                   note="the array is contiguous; its contents are not"),
+    }),
+    "ptr-ptr": (fig_ptr_ptr, {
+        "ko": dict(title="포인터의 포인터 --- 남의 포인터를 고치는 법",
+                   caller="부르는 쪽", caller_var="char *p", before="처음엔 널",
+                   caller_addr="p 가 사는 자리: 0x7ffd10",
+                   handoff="&p 를 넘긴다 (0x7ffd10)",
+                   callee="부름받는 쪽 (char **out)", param="out",
+                   param_val="0x7ffd10 --- p 가 사는 자리",
+                   write="*out = buf;  ← 남의 변수에 쓴다",
+                   heap="새로 잡은 자리 0x5f10",
+                   after_line="돌아오면 p 는 0x5f10 --- 부르는 쪽의 변수가 바뀌었다",
+                   note="한 겹을 더 두는 이유: 인자는 값 복사라서, 주소를 넘겨야 원본이 바뀐다"),
+        "en": dict(title="a pointer to a pointer --- how to change someone else's pointer",
+                   caller="caller", caller_var="char *p", before="null at first",
+                   caller_addr="where p lives: 0x7ffd10",
+                   handoff="pass &p (0x7ffd10)",
+                   callee="callee (char **out)", param="out",
+                   param_val="0x7ffd10 --- where p lives",
+                   write="*out = buf;  <- writes into the caller's variable",
+                   heap="the newly allocated block 0x5f10",
+                   after_line="on return p is 0x5f10 --- the caller's variable changed",
+                   note="the extra level exists because arguments are copies: pass the address to change the original"),
+    }),
+    "struct-array": (fig_struct_array, {
+        "ko": dict(title="구조체의 배열 --- 원소 사이에는 빈자리가 없다",
+                   decl="struct rec { int id; char code; };   sizeof = 8, _Alignof = 4",
+                   one="원소 하나의 속", m1="id (4)", m2="code", pad="꼬리 패딩 (3)",
+                   size="sizeof = 8", arr="struct rec v[3]",
+                   off=["+0", "+8", "+16"], stride="간격 = sizeof",
+                   why="원소가 딱 붙어 놓이므로, 크기가 정렬의 배수여야 둘째 원소부터도 정렬이 맞는다",
+                   note="그래서 꼬리 패딩이 생긴다 --- 마지막 멤버 뒤의 빈자리는 낭비가 아니라 계약이다"),
+        "en": dict(title="an array of structs --- no gap between elements",
+                   decl="struct rec { int id; char code; };   sizeof = 8, _Alignof = 4",
+                   one="inside one element", m1="id (4)", m2="code", pad="tail padding (3)",
+                   size="sizeof = 8", arr="struct rec v[3]",
+                   off=["+0", "+8", "+16"], stride="stride = sizeof",
+                   why="elements sit flush against each other, so the size must be a multiple of the alignment for every element to stay aligned",
+                   note="that is where tail padding comes from --- the space after the last member is a contract, not waste"),
+    }),
+    "flex-array": (fig_flex_array, {
+        "ko": dict(title="유연 배열 멤버 --- 머리와 데이터를 한 덩어리로",
+                   a_head="① 포인터 멤버 (할당 둘)", len="len", ptr="char *data",
+                   buf="따로 잡은 버퍼",
+                   a_note="malloc 두 번, free 두 번. 머리와 데이터가 멀리 떨어진다",
+                   b_head="② 유연 배열 멤버 char data[] (할당 하나)",
+                   data="data[] --- 잡을 때 길이를 정한다",
+                   one_alloc="malloc(offsetof(struct msg, data) + len) 한 번",
+                   b_note="sizeof 에 data 는 들어가지 않는다. 마지막 멤버여야 하고, 앞에 멤버가 하나 이상 있어야 한다",
+                   note="한 덩어리라 캐시에 함께 들어오고, free 도 한 번이다"),
+        "en": dict(title="a flexible array member --- header and data in one block",
+                   a_head="1. a pointer member (two allocations)", len="len", ptr="char *data",
+                   buf="a separately allocated buffer",
+                   a_note="two mallocs, two frees, and the header sits far from the data",
+                   b_head="2. a flexible array member char data[] (one allocation)",
+                   data="data[] --- its length is fixed when it is allocated",
+                   one_alloc="one malloc(offsetof(struct msg, data) + len)",
+                   b_note="data is not counted in sizeof; it must be the last member, with at least one member before it",
+                   note="one block: it arrives in the cache together, and there is one free"),
+    }),
     "regions": (fig_regions, {
         "ko": dict(title="한 프로그램의 기억 배치", names=["코드", "정적 구역", "힙 (창고)", "스택 (작업대)"],
                    subs=["명령들 · 읽기 전용", "전역 · 프로그램 내내", "빌리고 돌려준다", "함수가 도는 동안"],

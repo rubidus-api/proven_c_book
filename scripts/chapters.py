@@ -18,6 +18,13 @@ _ids = []
 for _m in re.finditer(r"chapters:\s*\(([^)]*)\)", _text):
     _ids += re.findall(r'"([^"]+)"', _m.group(1))
 
+# 장 이름도 영문 소문자·숫자·하이픈만 쓴다 (저자 지시 2026-08-16).
+# 두 판이 같은 이름 하나를 가리켜야 하므로, 이름은 어느 판의 언어도 아니어야 한다.
+_bad = [c for c in _ids if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", c)]
+if _bad:
+    raise SystemExit("registry.typ: 장 이름은 영문 소문자·숫자·하이픈만 — "
+                     + ", ".join(_bad))
+
 #: 장 id → 장 번호
 NO = {cid: i + 1 for i, cid in enumerate(_ids)}
 #: 읽기 순서대로의 장 id

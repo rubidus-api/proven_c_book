@@ -74,8 +74,10 @@ def scan(edition, pattern, skip=None):
             continue
         # 장 참조 호출(`#chref("stdlib-map")`)은 산문이 아니다 --- id 에 든 낱말이
         # 비유로 잡히면 안 된다(RFC-0028 이전 뒤 실제로 그랬다).
-        body = re.sub(r'#(?:chref|chrefs|chrange)\([^()]*\)(?:/\*\*/)?', " ",
+        body = re.sub(r'#(?:chref|chrefs|chrange|tblref|figref)\([^()]*\)(?:/\*\*/)?', " ",
                       f.read_text(encoding="utf-8"))
+        # 표·그림의 id 도 산문이 아니다 --- 이름에 든 낱말이 비유로 잡히면 안 된다
+        body = re.sub(r'^\s*id: "[^"]*",\s*$', " ", body, flags=re.M)
         for ln, line in enumerate(body.splitlines(), 1):
             for m in pattern.finditer(line):
                 a = max(0, m.start() - 44)
