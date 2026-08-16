@@ -1,0 +1,641 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Appendix G — List of tables and figures — Proven C Book</title><style>/* ── 웹 판의 조판 (RFC-0027, 저자 지시 2026-08-10) ────────────────
+ *
+ * 전에는 이 CSS 가 scripts/wrap-html.py 안의 문자열이었다. 디자인을 한 줄
+ * 고치려면 파이썬 파일을 열어야 했고, 무엇이 디자인이고 무엇이 생성 논리인지
+ * 섞여 있었다. 이제 갈라 둔다 --- 디자인은 여기, 생성은 거기.
+ *
+ * ★ 고치는 절차
+ *   1. 이 파일만 고친다.
+ *   2. scripts/style-preview.sh --- build/style-preview.html 을 본다(몇 초).
+ *   3. 괜찮으면 그때 scripts/build-html.sh 로 전체를 만든다.
+ *
+ * ★ 규율 하나: 장치는 *왼쪽 세로선*으로 영역을 말하고, 제목은 *가로 밑줄*로
+ *   경계를 말한다. 소스 코드와 실행 결과(.demo)만 네 변 상자를 쓴다.
+ */
+
+/* ── 글꼴을 직접 싣는다 (RFC-0026 D2, 저자 지시 2026-08-10) ────────
+   전에는 @font-face 가 하나도 없어, CSS 가 적어 둔 이름이 방문자 기계에 없으면
+   대체 글꼴로 떨어졌다 --- 세리프 본문이 고딕으로 보이는 일이 흔했다.
+   이 책이 쓰는 갈래는 셋뿐이다: serif(본문) · sans-serif(제목·UI) · monospace(코드).
+   파일은 scripts/make-webfonts.sh 가 *이 책에 쓰인 글자만* 남겨 만든다.
+   font-display:swap --- 글꼴을 기다리느라 글이 안 보이는 일이 없게 한다. */
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-italic.woff2") format("woff2");
+  font-weight:400; font-style:italic; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Serif"; src:url("../fonts/serif-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap;
+  unicode-range:U+0000-024F,U+2000-206F,U+20A0-20BF,U+2100-21FF,U+2190-2BFF; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans-kr.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Sans"; src:url("../fonts/sans-kr-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Mono"; src:url("../fonts/mono.woff2") format("woff2");
+  font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:"PCB Mono"; src:url("../fonts/mono-bold.woff2") format("woff2");
+  font-weight:700; font-style:normal; font-display:swap; }
+/* ── 색은 세 가지 상태를 모두 적어야 한다 (저자 지적 2026-08-11) ───────
+ * ★ 예전에는 어두운 팔레트가 `@media (prefers-color-scheme: dark)` *안에만*
+ *   있었다. 그래서 「어둡게」 단추가 `data-theme` 를 붙여도 응답할 규칙이 없어
+ *   아무 일도 일어나지 않았고, 「밝게」도 시스템이 어두우면 소용없었다.
+ *   이제 세 자리에 적는다:
+ *     ① 바탕(:root)                          --- 밝은 팔레트
+ *     ② 시스템이 어두울 때, 단 밝게를 고르지 않았으면  --- 어두운 팔레트
+ *     ③ 어둡게를 골랐을 때                      --- 어두운 팔레트
+ *   ②③ 은 같은 값이라 되풀이되지만, CSS 에서 변수 묶음을 이름으로 나눠 쓸
+ *   방법이 없다. 고칠 때는 *둘 다* 고쳐야 한다.
+ */
+:root { color-scheme: light dark; --fg:#141414; --bg:#ffffff; --muted:#5c5c5c;
+  --rule:#c9c9c9; --box-bg:#f6f6f6; --box-rule:#c4c4c4; --code-bg:#f2f2f2; --link:#1a4f8a;
+  --tok-c:#3f5b4a; --tok-k:#123c87; --tok-t:#0f5b63; --tok-s:#7a3b0a;
+  --tok-n:#8a2222; --tok-p:#6b2d8a; --tok-x:#555555; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+    --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+    --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+    --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; } }
+:root[data-theme="dark"] { color-scheme: dark; --fg:#e8e8e8; --bg:#121314; --muted:#a6a6a6;
+  --rule:#3a3d40; --box-bg:#1c1e20; --box-rule:#4a4d50; --code-bg:#1b1d1f; --link:#8ab4e8;
+  --tok-c:#9fbfa8; --tok-k:#9fc0f0; --tok-t:#7fcbd4; --tok-s:#e0b080;
+  --tok-n:#e79a9a; --tok-p:#c79ae0; --tok-x:#a6a6a6; }
+:root[data-theme="light"] { color-scheme: light; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.75;
+       font-family:"PCB Serif","Noto Serif CJK KR","Noto Serif KR",Georgia,serif; }
+/* ── 상세 차례와 「이 장의 차례」 패널 (저자 지시 2026-08-10) ── */
+.here-btn { margin-left:.7rem; font:inherit; font-size:.92rem; cursor:pointer;
+  background:none; border:1px solid var(--rule,#bbb); border-radius:.25rem;
+  padding:.1rem .5rem; color:inherit; }
+.here-btn:hover { background:rgba(127,127,127,.14); }
+.here-at { margin-left:.7rem; font-size:.92rem; color:var(--muted); }
+.here-panel { position:sticky; top:2.9rem; z-index:19; max-height:70vh; overflow:auto;
+  border:1px solid var(--rule,#bbb); border-top:none; background:var(--bg,#fff);
+  padding:.6rem .9rem 1rem; box-shadow:0 6px 18px rgba(0,0,0,.12); }
+.here-head { display:flex; align-items:center; gap:.8rem; padding:.2rem 0 .5rem;
+  border-bottom:1px solid var(--rule,#ddd); margin-bottom:.5rem; }
+.here-head .sp { flex:1; }
+.here-all { margin-left:auto; font-size:.9rem; }
+.here-x { font:inherit; font-size:.9rem; cursor:pointer; background:none;
+  border:1px solid var(--rule,#bbb); border-radius:.25rem; padding:.05rem .45rem;
+  color:inherit; }
+.here-body a, .tf-secs a { display:block; text-decoration:none; padding:.12rem 0;
+  line-height:1.45; }
+.here-body a:hover, .tf-secs a:hover { text-decoration:underline; }
+.here-body a.lv4, .tf-secs a.lv4 { padding-left:1.6rem; font-size:.94rem;
+  color:var(--muted,#555); }
+.tf-no { display:inline-block; min-width:3.2rem; color:var(--muted,#666);
+  font-variant-numeric:tabular-nums; }
+.toc-full .tf-ch { margin:.9rem 0 .15rem; font-weight:700; }
+.toc-full .tf-secs { margin:0 0 .5rem .2rem; border-left:2px solid var(--rule,#e2e2e2);
+  padding-left:.7rem; }
+.toc-full h4.toc-part { margin-top:1.8rem; }
+.toc a.toc-detail { font-weight:700; }
+@media print { .here-btn, .here-panel { display:none; } }
+/* 왼쪽부터 죽 이어 쓰고, 좁으면 개행한다 (저자 지시 2026-08-10).
+   전에는 가운데 여백(.sp)이 뒤쪽 항목을 오른쪽 끝으로 밀어 두 덩이로
+   갈라져 있었다. 좁은 화면에서는 그 사이가 벌어져 읽기 나빴다. */
+.bar { position:sticky; top:0; z-index:20; display:flex; flex-wrap:wrap; gap:.35rem .8rem; align-items:center;
+       padding:.55rem clamp(.8rem,3vw,2.5rem); background:var(--bg);
+       border-bottom:1px solid var(--rule); font-size:.86rem;
+       font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.bar a { color:var(--link); text-decoration:none; } .bar a:hover { text-decoration:underline; }
+.bar .sp { display:none; }        /* 더 쓰지 않는다 --- 왼쪽 정렬로 이어 쓴다 */
+main { width:100%; padding:1.6rem clamp(.9rem,3vw,2.5rem) 5rem; }
+/* 폭을 가두지 않는다 — 보통의 웹 문서처럼 화면 가로를 그대로 쓴다.
+   (2026-08-10: 40rem 으로 가둬 봤으나 저자가 「모양이 깨졌다」며 되돌리라고
+   했다. 줄 길이 문제는 D4 의 *독자가 고르는 폭*으로 푼다.) */
+.wrap { width:100%; max-width:none; margin:0; }
+h1,h2,h3,h4 { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; line-height:1.35;
+  padding-bottom:.18rem; border-bottom:1px solid var(--rule); }
+h1 { font-size:clamp(1.5rem,3.4vw,2.1rem); margin:.2rem 0 .9rem; }
+h2 { font-size:clamp(1.35rem,3vw,1.8rem); margin:0 0 .7rem; padding-bottom:.35rem;
+     border-bottom:2px solid var(--fg); }
+h3 { font-size:clamp(1.05rem,2.2vw,1.25rem); margin:1.5rem 0 .5rem;
+     padding-bottom:.22rem; border-bottom:1.5px solid var(--fg); }
+p { margin:.9rem 0; } a { color:var(--link); }
+/* 본문 문단은 첫 줄을 한 글자만큼 들여쓴다 — PDF 와 같은 규칙
+   (저자 지시 2026-08-06). 구조적인 자리(표지·차례·표제·캡션·목록)는 뺀다. */
+main p { text-indent: 1em; }
+.cover p, .note p, .toc p, .float-caption, .metalist p, .memrow p,
+.colophon-meta p, li p, td p, th p, figure p, blockquote p,
+.demo-src p, .demo-out p, pre, pre p,
+.dev-label, p.dev-label { text-indent: 0; }
+/* 출처 주석 — PDF 의 각주에 해당한다(lib.typ 의 note). Typst 의 HTML 내보내기가
+   각주 본문을 버리므로 lib.typ 이 본문에 펴 두고, wrap-html.py 의 collect_notes 가
+   번호를 매겨 장 끝의 「주」로 옮긴다. 아래 .src-note 는 혹시 옮겨지지 않은 것이
+   있을 때의 대비책이다. */
+.src-note { font-size: .86em; color: var(--muted, #666); }
+.src-note code { font-size: .95em; }
+sup.fnref { font-size: .72em; line-height: 0; vertical-align: super; }
+sup.fnref a { text-decoration: none; padding: 0 .1em; }
+sup.fnref a::before { content: "["; }
+sup.fnref a::after  { content: "]"; }
+.chapter-notes { margin: 3rem 0 1rem; padding-top: .9rem;
+                 border-top: 2px solid var(--rule, #333); }
+.chapter-notes h2 { font-size: 1.05rem; margin: 0 0 .6rem; }
+.chapter-notes ol { margin: 0; padding-left: 1.6em; }
+.chapter-notes li { font-size: .92em; margin: .35em 0; text-indent: 0; }
+.chapter-notes a.fnback { text-decoration: none; }
+/* 상자 안에서는 표제 줄에 붙는 첫 문단만 들여쓰지 않는다(PDF 의 all:false) */
+.dev p { text-indent: 0; }
+.dev p + p { text-indent: 1em; }
+/* 표지(문./답.)가 들어간 첫 문단은 절대 들여쓰지 않는다 */
+.dev p:has(> span.dev-label:first-child) { text-indent: 0; }
+.chapter-head p { text-indent: 0; }
+pre,code,kbd { font-family:"PCB Mono","D2Coding",ui-monospace,SFMono-Regular,Menlo,monospace; }
+code { background:none; padding:0; font-size:.95em; }
+pre { background:none; border:1px solid var(--fg); border-radius:0;
+      padding:.95rem 1.05rem; overflow-x:auto; line-height:1.6; font-size:.95rem;
+      margin:1.2rem 0; }
+.tok-c { color:var(--tok-c); font-style:italic; }
+.tok-k { color:var(--tok-k); font-weight:700; }
+.tok-s { color:var(--tok-s); }
+.tok-n { color:var(--tok-n); }
+.tok-t { color:var(--tok-t); font-weight:700; }
+.tok-x { color:var(--tok-x); }
+.tok-p { color:var(--tok-p); }
+pre code { background:none; padding:0; }
+/* 표: 바깥은 굵게, 안은 가늘게, 머리행은 굵은 글씨에 옅은 음영
+   (저자 지시 2026-08-06). */
+/* 표는 내용에 필요한 만큼만 폭을 쓰고 가운데에 선다. 100% 폭으로 늘리면
+   셀 오른쪽에 빈 칸이 생겨 테두리와 내용이 어긋나 보인다
+   (저자 지적 2026-08-06). 넘칠 때는 감싼 .tblwrap 이 가로로 스크롤한다. */
+.tblwrap { overflow-x:auto; text-align:center; }
+/* inline-table 은 언제나 내용만큼만 넓어진다(shrink-to-fit). flex 로 가운데를
+   맞추면 브라우저에 따라 늘어나거나 왼쪽이 잘리는 일이 있어 이 방식을 쓴다. */
+.tblwrap > table { display:inline-table; width:auto; max-width:none; margin:1.1rem 0; }
+table { border-collapse:collapse; margin:1.1rem auto; font-size:.95rem;
+        width:auto; max-width:100%; border:2px solid var(--fg);
+        table-layout:auto; }
+th, td { white-space:normal; }
+th,td { border:1px solid var(--rule); padding:.42rem .6rem; text-align:left; vertical-align:top; }
+/* 머리행 — 옅은 음영으로 포인트를 준다(PDF 와 같은 처리). 색이 아니라
+   반투명 회색이라 밝은·어두운 테마 양쪽에서 자연스럽다. */
+th { background:rgba(128,128,128,.16); font-weight:700;
+     border-bottom:2px solid var(--fg);
+     font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
+ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
+.memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
+.memrow table.mem { display:inline-table; border-collapse:collapse;
+  border:none; margin:0; width:auto; }
+.memrow td.cell { border:1px solid var(--fg); padding:.3rem .5rem;
+  font-family:"PCB Mono","D2Coding",ui-monospace,monospace; font-size:.9rem;
+  text-align:center; background:none; }
+.memrow td.cell.hi { border-width:2px; }
+.memrow td.addr { border:none; padding:.15rem .5rem 0; text-align:center;
+  font-family:"PCB Mono","D2Coding",ui-monospace,monospace; font-size:.82rem;
+  color:var(--muted); }
+/* 시연 — 소스와 실행 결과는 선명한 검은 테두리로 묶는다 */
+/* 시연 상자 — 문답과 같은 1×2 모양. 위 칸은 표제(파일 경로는 고정폭,
+   "실행 결과"는 산세리프 굵은 글씨), 가로선 아래 칸이 내용이다
+   (저자 지시 2026-08-06). */
+.demo { border:1px solid var(--fg); margin:1.15rem 0; }
+.demo > .demo-head { margin:0; padding:.5rem .9rem; text-indent:0;
+  border-bottom:1px solid var(--fg); font-weight:700; font-size:.92rem; }
+.demo-src > .demo-head { font-family:"PCB Mono","D2Coding",ui-monospace,monospace; }
+.demo-in > .demo-head, .demo-out > .demo-head {
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.demo > .demo-body { padding:0; }
+.demo > .demo-body pre { border:none; border-radius:0; margin:0;
+  padding:.6rem .9rem; }
+
+/* ── 왼쪽 세로선 규율 (저자 지시 2026-08-10) ─────────────────
+   네 변 상자는 좌우 안쪽 여백이 양쪽에서 폭을 갉는다. 왼쪽 세로선 하나로
+   영역만 표시하고 오른쪽은 열어 둔다. 제목 쪽 선이 내용 쪽보다 굵고, 둘은
+   서로 붙지 않는다(사이에 여백). 제목(heading)은 반대로 *가로* 밑줄이다 ---
+   영역과 경계는 하는 일이 다르므로 표시도 갈라 둔다. */
+.dev { margin:1.15rem 0; padding:0; background:none; border:none; border-radius:0; }
+/* 표지 줄 --- 굵은 왼쪽 선 */
+.dev > .dev-label { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0 0 .34rem; }
+/* 본문 --- 가는 왼쪽 선 *하나*로 끝까지 이어진다.
+   ★ 자식마다 선을 그으면 문단 사이에서 끊기고, 한 문단짜리 본문(맨 글)은
+   선을 아예 받지 못한다. 그래서 본문을 한 겹으로 감싸고 그 칸에만 긋는다. */
+.dev > .dev-body { border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem .35rem .8rem; margin:0; }
+.dev > .dev-body > *:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child { margin-bottom:0; }
+/* 표·그림 캡션 — 대상 아래 가운데, 산세리프 */
+.float-caption { text-align:center; font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; color:var(--muted); margin:.35rem 0 1.2rem; }
+figure { margin:1.2rem 0; }
+figure.tbl table { margin-bottom:.2rem; }
+figure.tbl { text-align:center; }
+.dev > p:first-child { margin-top:0; } .dev > p:last-child { margin-bottom:0; }
+.dev-label { font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+             font-size:.92rem; color:var(--muted); margin-bottom:.4rem; }
+/* 장 서두 — 넷을 각각 하나의 상자로 둔다. 표제 줄과 내용을 가로선으로
+   가르는 모양은 문답·복습 정리와 같다 (저자 지시 2026-08-06).
+   ★ 좌우 여백은 *상자*가 준다. 자식 요소에 주면, 본문이 요소로 감싸이지 않은
+     칸(「이 장이 끝나면」)은 여백이 0 이 되고 문단이 여럿인 칸(질문 목록)은
+     여백이 겹쳐 들쭉날쭉해진다. */
+.dev.open { border:none; border-radius:0; background:none;
+  padding:0; margin:.75rem 0; }
+.dev.open > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.98rem; color:var(--fg); text-transform:none; letter-spacing:0; }
+/* 서두 본문은 한 겹(.open-body) 안에 있다 — 위·아래 여백을 여기서 한 번만 준다 */
+.dev.open > .open-body { margin:0; padding:.35rem .8rem;
+  border-left:2px solid var(--box-rule); }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open > .open-body > * { margin:.4rem 0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+/* 질문 목록 — 번호를 보이게 하고 항목 간격은 촘촘히 */
+.dev.open .open-body > ol.qlist { margin:0; padding-left:1.35rem; }
+.dev.open ol.qlist li { margin:.18rem 0; padding-left:.15rem; }
+.dev.open ol.qlist li::marker { color:var(--muted); font-weight:700; }
+/* 돌아보기 안의 답 — 왼쪽 가는 선으로 구분 */
+.dev.open .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.06rem 0 .06rem .7rem; margin:.32rem 0 0; }
+/* 서두 표지: 굵고 선명한 검은 산세리프, 본문보다 약간 크게
+   (저자 지시 2026-08-06). 대문자 변형과 자간 늘리기는 쓰지 않는다. */
+.prereq .dev-label, .deepqa .dev-label, .why .dev-label,
+.organizer .dev-label, .questions .dev-label {
+  text-transform:none; letter-spacing:0; font-size:1.12rem; font-weight:700;
+  color:var(--fg); margin-bottom:.45rem; }
+/* 돌아보기 안의 답 — 왼쪽 세로선을 또렷하게 */
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+
+/* 문답 — 질문 쪽 선이 굵고, 답 쪽이 가늘고, 둘 사이가 떨어져 있다 */
+.qa-box { border:none; margin:1.15rem 0; }
+.qa-box .dev { margin:0; border:none; border-radius:0; padding:0; background:none; }
+.qa-box .qa-q { border-left:4px solid var(--fg);
+  padding:.1rem .8rem .25rem .8rem; margin:0; }
+.qa-box .qa-a { border:none; border-left:2px solid var(--box-rule);
+  padding:.35rem .8rem; margin:.34rem 0 0; }
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:0; }
+/* 복습 정리도 문답과 같은 상자 — 표제 줄과 본문을 가로선으로 가른다 */
+.dev.recap { border:none; background:none; padding:0; margin:1.15rem 0; }
+.dev.recap > .dev-label { margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem;
+  text-indent:0; border-left:4px solid var(--fg);
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+.dev.recap > .dev-body > p, .dev.recap > .dev-body > div:not(.demo),
+.dev.recap > .dev-body > figure { margin:.3rem 0; padding:0; }
+
+/* ★ 장치 안에 든 시연 상자 --- 소스와 실행 결과는 중첩되어도 상자 그대로다
+   (저자 지시 2026-08-10). 바깥의 세로선 안쪽에서 조금 좁혀 놓는다. */
+.dev > .dev-body > .demo { margin:.7rem 0; }
+.deepqa .qa-a { border-left:2px solid var(--muted); padding-left:.75rem; }
+/* 문./답. 은 줄을 바꾸지 않고 질문·답 첫 문단과 같은 줄에 이어 붙는다
+   (저자 지시 2026-08-06). 답의 둘째 문단부터는 그대로 문단으로 흐른다. */
+.qa-q .dev-label, .qa-a .dev-label, .deepqa .qa-a .dev-label {
+  display:inline; margin-bottom:0; }
+.qa-q .dev-label + p, .qa-a .dev-label + p { display:inline; }
+.qa-q .dev-label, .qa-q .dev-label + p {
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  color:var(--fg); font-size:1rem; }
+.qa-a .dev-label { color:var(--muted); }
+.qa-a .dev-label + p { font-family:inherit; font-weight:400; }
+span.dev-label { display:inline; font-size:1rem; margin:0; }
+/* 상자형 장치 공통 — 문답 상자와 같은 모양: 표제 줄과 본문을 가로선으로
+   가르고, 좌우 여백은 상자가 준다 (저자 지시 2026-08-06).
+   ★ 예전의 2단 구조(.misconception + div) 규칙이 남아 뒤따르는 문답 상자를
+     오해 상자의 아랫칸처럼 그리던 문제를 여기서 없앤다. */
+/* 같은 꼴을 쓰는 상자들 --- 네 변을 걷고 왼쪽 세로선만 남긴다
+   (저자 지시 2026-08-10). 소스 코드와 실행 결과(.demo)는 그대로 상자다. */
+.dev.misconception, .dev.realcase, .dev.antipattern, .dev.mathbox,
+.dev.platform, .dev.recap {
+  border:none; border-radius:0; background:none; padding:0; margin:1.15rem 0; }
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  margin:0 0 .34rem; padding:.1rem .8rem .25rem .8rem; text-indent:0;
+  border-left:4px solid var(--fg);
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-weight:700;
+  font-size:.95rem; color:var(--fg); }
+/* ★ 본문 칸(.dev-body)은 건드리지 않는다 --- 전에는 `> div` 가 그것까지 잡아
+   padding:0 으로 덮어, 실제 사례·반례·흔한 오해의 글이 왼쪽 선에 바짝 붙었다
+   (저자 지적 2026-08-10). 안쪽 문단의 간격만 손본다. */
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure, .dev > .open-body > p {
+  margin:.35rem 0; padding:0; }
+/* 상자 안의 문단 간격은 한 줄 사이 정도로 — 본문 문단 간격(.9rem)을 그대로
+   쓰면 상자 안이 헐렁해 보인다 (저자 지시 2026-08-06). */
+/* 고정 바: 제목은 왼쪽 끝, 장 이동 화살표·언어·GitHub 는 오른쪽 끝
+   (저자 지시 2026-08-06) */
+.bar > strong { flex:0 0 auto; }
+.bar .bar-nav { display:flex; gap:.55rem; align-items:center; margin-right:.35rem; }
+.bar .bar-nav a, .bar .bar-nav .off {
+  display:inline-block; min-width:1.35rem; text-align:center;
+  font-size:1.15rem; line-height:1.1; text-decoration:none; }
+.bar .bar-nav a:hover { text-decoration:none; color:var(--fg); }
+.bar .bar-nav .off { color:var(--muted); opacity:.35; }
+.dev p, .dev div, .dev ul, .dev ol, .qa-box p, .qa-box div {
+  margin-top:.4rem; margin-bottom:.4rem; }
+.dev > *:first-child, .qa-box .dev > *:first-child { margin-top:0; }
+.dev > *:last-child, .qa-box .dev > *:last-child { margin-bottom:0; }
+.dev ul, .dev ol { padding-left:1.3rem; }
+.dev li { margin:.15rem 0; }
+/* ★ 반례의 세로선도 실선이다(저자 지시 2026-08-10). 예전에는 점선으로 갈래를
+   구별했는데, 왼쪽 세로선 체계로 바꾼 뒤로는 그것만 따로 놀았다 --- 갈래는
+   선 모양이 아니라 표지 글(「반례.」)이 말한다. */
+.dev.antipattern > .dev-label { border-left-style:solid; }
+
+.dev.mathbox { font-size:.95rem; }
+.note { border:1px solid var(--rule); background:none; padding:.65rem .9rem;
+        margin:0 0 1.6rem; font-size:.9rem; }
+/* ★ 표지에는 가로줄을 두지 않는다(저자 지시 2026-08-10) --- 제목 밑의 옅은 줄은
+   *일반 제목의 밑줄 규칙*이 표지 제목까지 잡은 것이었고, 소개글 밑의 줄은 표지
+   블록 자신의 아래 테두리였다. 표지는 경계를 말할 자리가 아니다. */
+.cover { text-align:center; margin:1.4rem 0 2rem; padding-bottom:1.2rem; }
+.cover h1 { font-size:clamp(1.9rem,5vw,2.9rem); margin:0; letter-spacing:.01em;
+            padding-bottom:0; border-bottom:none; }
+.cover p { margin:.45rem 0; }
+.cover-sub { font-size:clamp(1rem,2.2vw,1.2rem); color:var(--fg); }
+.badge { display:inline-block; margin-top:.5rem; padding:.16rem .6rem;
+         border:1px solid var(--fg); font-size:.8rem; font-weight:700;
+         font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-meta { color:var(--muted); font-size:.9rem;
+              font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.cover-author { margin-top:1.1rem; font-size:1.05rem; }
+.cover-links { font-size:.87rem; }
+.cover-links a { margin:0 .6rem; }
+.cover-blurb { max-width:44rem; margin:1.7rem auto 0; font-size:.95rem; color:var(--muted); }
+.cover-blurb p { margin:.5rem 0; }
+.metalist { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+  margin:.6rem 0 1rem; }
+.metalist dt { color:var(--muted); font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif;
+  font-size:.92rem; }
+.metalist dd { margin:0; }
+.colophon-meta { display:grid; grid-template-columns:max-content 1fr; gap:.35rem 1.2rem;
+                 margin:1.2rem 0 1.8rem; font-size:.93rem; }
+.colophon-meta dt { color:var(--muted);
+                    font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; font-size:.88rem; }
+.colophon-meta dd { margin:0; }
+.colophon { font-size:.93rem; }
+.colophon > div { margin:.9rem 0; padding-left:.9rem; border-left:1px solid var(--rule); }
+/* 개념도 — 흑백 선화라 다크 모드에서는 반전해 준다 */
+figure.fig { margin:1.6rem 0; text-align:center; }
+figure.fig img { max-width:100%; height:auto; }
+figure.fig figcaption { margin-top:.5rem; font-size:.92rem; color:var(--muted); }
+@media (prefers-color-scheme: dark) { figure.fig img { filter:invert(1) hue-rotate(180deg); } }
+:root[data-theme="dark"] figure.fig img { filter:invert(1) hue-rotate(180deg); }
+:root[data-theme="light"] figure.fig img { filter:none; }
+.toc { columns:24rem; column-gap:2.4rem; }
+.toc-part { break-inside:avoid; margin:1.1rem 0 .3rem; font-size:.95rem; letter-spacing:.02em;
+            font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.toc-part:first-child { margin-top:0; }
+.toc-front { margin-bottom:.4rem; }
+/* 차례도 선 없이 --- 왼쪽 세로줄과 장마다의 밑줄을 걷어 낸다(저자 지시 2026-08-10).
+   여기는 장치가 아니라 목록이라 선이 뜻하는 바가 없다. */
+.toc-group { break-inside:avoid; padding-left:.85rem; }
+.toc a { display:block; padding:.28rem 0; text-decoration:none; }
+.toc a:hover { text-decoration:underline; }
+.nav { display:flex; gap:1rem; align-items:center; margin-top:3rem; padding-top:1rem;
+       border-top:1px solid var(--rule); font-size:.9rem;
+       font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.nav .sp { flex:1 1 auto; }
+
+/* ── 서식 예시의 이름표 ─────────────────────────────────────────
+   조판 견본(style-specimen)에서만 나온다. 「이 모양을 뭐라고 부르는가」를
+   그 자리에 붙여 둔다 --- 본문에는 쓰지 않는다. */
+code.style-name { font-family:"PCB Mono","D2Coding",ui-monospace,monospace;
+  font-size:.72em; color:var(--muted); background:var(--rule);
+  padding:.05em .35em; border-radius:3px; white-space:nowrap;
+  font-weight:400; letter-spacing:0; }
+
+/* ── 조판 값 --- 견본에서 시험해 채택한 것들 (저자 지시 2026-08-10) ─────
+ *
+ * 아래는 견본(style-specimen)에서 눈으로 확인한 뒤 책에 들인 값이다.
+ * 여백은 일반적인 책의 숨에 맞추고, 선은 색 하나(#d5d5d5)로 모았다
+ * --- 표만 예외다(격자는 옅으면 칸이 안 읽힌다).
+ */
+
+/* 서두 다섯 칸 --- 표지 줄이 선에 눌려 있었다 */
+.dev.open > .dev-label { padding-top:.42rem; padding-bottom:.42rem; }
+.dev.open > .open-body { padding-top:.4rem; padding-bottom:.4rem; }
+.dev.open > .open-body > p { margin:.6rem 0; }
+
+/* 장치 안의 글도 조금 넉넉하게 */
+.dev > .dev-body { padding-top:.5rem; padding-bottom:.5rem; }
+.dev > .dev-body > p, .dev > .dev-body > div:not(.demo),
+.dev > .dev-body > figure { margin:.55rem 0; }
+
+/* 본문 --- 줄 사이와 문단 사이 */
+main { line-height:1.85; }
+p { margin:1.15rem 0; }
+h2 { margin-top:2.4rem; }
+h3 { margin-top:2rem; }
+li { margin:.3rem 0; }
+
+/* 제목 밑줄 --- 시험 중: 검정 대신 흐린 회색(저자 지시 2026-08-10).
+   경계를 말하되 글자보다 앞서지 않게. */
+/* 제목 밑줄도 팔레트를 따른다 --- 고정색이면 어두운 테마에서 홀로 밝다 */
+h1, h2, h3, h4 { border-bottom-color:var(--box-rule) !important; }
+
+/* 차례 --- 본문의 넉넉한 행간을 그대로 받아 헐거웠다. 목록은 촘촘해야 훑힌다.
+   (저자 지시 2026-08-10, 웹판 견본) */
+.toc { line-height:1.45; }
+.toc a { padding:.16rem 0; }
+.toc-part { margin:.85rem 0 .2rem; }
+
+/* 저작권·연락처 --- 두 칸짜리 표는 줄 사이가 벌어질수록 짝이 흩어진다 */
+.metalist { line-height:1.45; gap:.2rem 1.2rem; }
+.metalist dt, .metalist dd { margin:0; }
+
+/* 시연 상자(소스 코드·실행 결과) --- 시험 중: 테두리를 연한 회색으로
+   (저자 지시 2026-08-10). 코드가 이미 검은 덩어리다. */
+.demo { border-color:var(--box-rule); }
+.demo > .demo-head { border-bottom-color:var(--box-rule); }
+
+/* ── 왼쪽 세로선 --- 시험 중: 검정에서 연한 회색으로 (저자 지시 2026-08-10)
+ * 색은 팔레트(--box-rule)를 따른다 --- 테마가 바뀌면 선도 함께 바뀐다.
+ * 굵기(4px 대 2px)가 층위를 말하므로 색까지 세게 말할 까닭이 없다. */
+.dev > .dev-label,
+.dev.open > .dev-label,
+.qa-box .qa-q,
+.dev.misconception > .dev-label, .dev.realcase > .dev-label,
+.dev.antipattern > .dev-label, .dev.mathbox > .dev-label,
+.dev.platform > .dev-label, .dev.recap > .dev-label {
+  border-left-color:var(--box-rule); }
+
+.dev > .dev-body,
+.dev > .open-body,
+.dev.open .qa-a,
+.qa-box .qa-a,
+.deepqa .qa-a { border-left-color:var(--box-rule); }
+
+/* ★ 선의 색은 하나다(저자 지시 2026-08-10) --- 표(.tbl)만 예외로 제 색을 쓴다.
+   여기 한 줄로 못 박아, 뒤에 무엇이 오든 같은 회색이 되게 한다. */
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div {
+  border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+
+/* ★ 특이도(specificity) 함정 --- `.dev.open > .open-body` 는 클래스가 셋이라
+   위의 `.dev *`(하나) 나 `.dev > .open-body`(둘) 보다 세다. 그래서 서두 칸의
+   *내용* 세로선만 var(--box-rule)=#9a9a9a 로 남아 혼자 진했다(저자 지적).
+   같은 자리를 같은 힘으로 눌러 준다. */
+.dev.open > .open-body,
+.dev.open > .qa-a,
+.dev.open .qa-a,
+.dev.deepqa .qa-a,
+.qa-box > .qa-a,
+.qa-box > .qa-q { border-left-color:var(--box-rule); }
+
+/* 상단 바의 차례 그림글자 --- 글자 크기를 조금 키워 다른 이름들과 눈높이를 맞춘다 */
+.bar .bar-toc { font-size:1.15em; line-height:1; text-decoration:none; }
+
+/* ── 통일 (저자 지시 2026-08-11) ─────────────────────────────────────
+ * ★ 「글 전체의 통일성이 중요하다」 --- 장치 안의 글도, 장 안의 차례도, 본문과
+ *   같은 크기·행간·문단 간격을 쓴다. 예전에는 자리마다 값이 조금씩 달라
+ *   상자를 지날 때마다 리듬이 흔들렸다.
+ */
+.dev, .dev-body, .open-body, .qa-box, .qa-q, .qa-a, .dev-label,
+.toc-full, .toc-full .tf-secs { line-height:inherit; font-size:1rem; }
+.dev > .dev-body > p, .dev > .open-body > p,
+.qa-box .qa-q > p, .qa-box .qa-a > p { margin:1.15rem 0; }
+.dev > .dev-body > *:first-child, .dev > .open-body > *:first-child,
+.qa-box .qa-q > p:first-child, .qa-box .qa-a > p:first-child { margin-top:0; }
+.dev > .dev-body > *:last-child, .dev > .open-body > *:last-child,
+.qa-box .qa-q > p:last-child, .qa-box .qa-a > p:last-child { margin-bottom:0; }
+/* 표지 줄만은 제 크기를 지킨다 --- 이름이지 본문이 아니다 */
+.dev > .dev-label, .dev.open > .dev-label { font-size:.98rem; line-height:1.4; }
+
+/* 제목: 글자와 밑줄 사이를 넉넉히, 그만큼 밑줄 아래도 넉넉히 */
+h1,h2,h3,h4 { padding-bottom:.34rem; }
+h1 { margin:.2rem 0 1.3rem; }
+h2 { padding-bottom:.42rem; margin-bottom:1.15rem; }
+h3 { padding-bottom:.36rem; margin-bottom:.95rem; }
+
+/* ── 장 서두 칸의 목록과 문단 (저자 지시 2026-08-11) ──────────────────
+ * ★ 항목 사이에 여백을 또 주면 *행간이 두 번 붙은 것처럼* 보인다. 서두 칸은
+ *   짧은 줄이 여럿 늘어서는 자리라 그 겹침이 특히 크게 보였다. 항목 사이
+ *   간격은 행간이 대신하게 두고, 여백은 문단 사이에만 최소로 준다.
+ *   행간 자체는 본문과 같다(main 에서 물려받는다) --- 값을 따로 두지 않는다.
+ */
+.dev.open > .open-body > * { margin:.3rem 0; }
+.dev.open > .open-body > p { margin:.5rem 0; }
+.dev.open > .open-body > div { margin:.15rem 0; }   /* 「먼저 알아야 할 것」의 한 줄들 */
+.dev.open ul, .dev.open ol { margin:.3rem 0; }
+.dev.open li, .dev.open ol.qlist li { margin:0; }
+.dev.open > .open-body > *:first-child { margin-top:0; }
+.dev.open > .open-body > *:last-child { margin-bottom:0; }
+.dev.open .qa-a > p { margin:.35rem 0; }
+
+/* ── 웹판만의 조정 (저자 승인 2026-08-11) ─────────────────────────────
+ * ★ 선의 색을 종이와 화면이 나눠 쓴다. 종이는 잉크가 실제로 얹혀 #d5d5d5 도
+ *   보이지만, 화면에서는 흰 배경 대비 **1.47:1** 이라 밝기를 낮추거나 값싼
+ *   패널에서는 사실상 사라진다 --- 「영역을 한눈에」라는 목적이 화면에서만
+ *   무너진다. 그래서 웹만 한 단계 진하게 둔다(#c4c4c4, 대비 1.75:1).
+ */
+/* 선의 색은 팔레트의 --box-rule 을 따른다 --- 테마가 바뀌면 함께 바뀐다 */
+.dev, .dev *, .qa-box, .qa-box *, .demo, .demo *,
+h1, h2, h3, h4, .colophon > div { border-color:var(--box-rule); }
+.tbl table, .tbl th, .tbl td { border-color:initial; }
+
+/* 키보드로 다닐 때 지금 어디인지 보여야 한다 --- 없으면 링크를 세며 다녀야 한다 */
+a:focus-visible, button:focus-visible, summary:focus-visible {
+  outline:2px solid var(--link); outline-offset:2px; border-radius:2px; }
+
+/* 고정 바 아래로 제목이 숨지 않게 --- 차례에서 절을 누르면 바에 가렸다 */
+:target, h1, h2, h3, h4, [id] { scroll-margin-top:4.2rem; }
+
+/* 본문 건너뛰기 --- 상단 바의 링크를 매 쪽마다 지나지 않아도 되게 */
+.skip { position:absolute; left:-9999px; top:0; z-index:30;
+        background:var(--bg); color:var(--fg); border:1px solid var(--fg);
+        padding:.5rem .8rem; font-size:.9rem; text-decoration:none; }
+.skip:focus { left:.5rem; top:.5rem; }
+
+/* ── 상단 바의 펼침 패널과 읽기 설정 (저자 지시 2026-08-11) ────────────
+ * 바에는 넷만 둔다. 나머지는 여기로 접었다 --- 늘 보이던 것을 접어 두면
+ * 읽는 자리가 넓어지고, 필요할 때는 한 번의 누름으로 전부 나온다.
+ */
+.here-btn { font:inherit; color:inherit; background:none; border:1px solid transparent;
+  border-radius:4px; padding:.1rem .45rem; cursor:pointer; }
+.here-btn .caret { color:var(--muted); }
+.here-panel { position:sticky; top:2.9rem; z-index:19; max-height:78vh; overflow:auto;
+  background:var(--bg); border-bottom:1px solid var(--rule);
+  padding:.6rem clamp(.8rem,3vw,2.5rem) .9rem; }
+
+/* 도구 줄 --- 인라인으로 죽 늘어서다 좁으면 다음 줄로 넘어간다 */
+.here-panel .tools { display:flex; flex-wrap:wrap; gap:.3rem .5rem; align-items:center;
+  margin-bottom:.5rem; }
+.tool { font:inherit; font-size:.86rem; color:inherit; background:none;
+  border:1px solid var(--rule); border-radius:4px; padding:.2rem .55rem;
+  text-decoration:none; cursor:pointer; white-space:nowrap;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+
+/* ★ 누를 수 있다는 것을 바탕색으로 말한다(저자 지시) --- 글자만 바뀌면
+   손이 닿기 전에는 알 수 없다. */
+.tool:hover, .here-btn:hover, .bar a:hover, .nav a:hover,
+.here-panel .here-body a:hover { background:var(--box-bg); }
+.tool:hover { border-color:var(--box-rule); }
+.here-btn:hover { border-color:var(--rule); }
+.bar a, .nav a { border-radius:4px; padding:.1rem .35rem; }
+.tool:active, .here-btn:active, .bar a:active { transform:translateY(1px); }
+.segb[aria-pressed="true"] { background:var(--box-bg); border-color:var(--fg); font-weight:700; }
+
+/* 본문 링크 --- 밑줄로 있음을 말하고, 손이 닿으면 바탕으로 답한다 */
+main a { text-decoration:underline; text-decoration-color:var(--box-rule);
+  text-underline-offset:2px; border-radius:3px; }
+main a:hover { background:var(--box-bg); text-decoration-color:var(--link); }
+main .toc a, main .toc-full a, main .here-body a { text-decoration:none; }
+main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decoration:underline; }
+
+/* 읽기 설정 상자 */
+.setbox { border:1px solid var(--rule); border-radius:5px; padding:.6rem .7rem;
+  margin:0 0 .6rem; font-size:.88rem;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
+.setrow { display:flex; flex-wrap:wrap; gap:.4rem .7rem; align-items:center;
+  margin:.35rem 0; }
+.setlbl { color:var(--muted); min-width:3.2rem; }
+.seg { display:inline-flex; gap:.25rem; }
+.segb { font:inherit; color:inherit; background:none; border:1px solid var(--rule);
+  border-radius:4px; padding:.15rem .5rem; cursor:pointer; }
+.col { display:inline-flex; align-items:center; gap:.3rem; }
+.col input[type=color] { width:2rem; height:1.4rem; padding:0; border:1px solid var(--rule);
+  border-radius:3px; background:none; cursor:pointer; }
+.setnote { margin:.5rem 0 0; color:var(--muted); font-size:.82rem; }
+
+/* 가로폭 제한 --- 기본은 제한 없음(설계 의도). 독자가 켤 때만 걸린다. */
+:root[data-measure="on"] main .wrap { max-width:46rem; margin-inline:auto; }
+
+/* 펼침 패널 맨 왼쪽의 판 번호 --- 도구가 아니라 표시다(누를 것이 없다) */
+.here-panel .ver { font-size:.82rem; color:var(--muted); padding:.2rem .45rem .2rem 0;
+  font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; white-space:nowrap; }
+
+/* ── 코드와 실행 결과의 줄바꿈 (저자 지시 2026-08-11) ─────────────────
+ * ★ 가로로 흘러 넘치게 두면 긴 줄은 *가로 스크롤 안에 숨는다.* 종이에서는
+ *   글자 단위로 접어 넣고 있으니(lib.typ 의 _hardwrap), 화면에서도 같은
+ *   약속을 지킨다 --- 넘치는 대신 접는다. 들여쓰기는 그대로 살린다.
+ */
+.demo pre, .demo pre code {
+  white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+.demo > .demo-body { overflow-x:visible; }
+
+body { font-family:"PCB Serif","Noto Serif",Georgia,"Noto Serif CJK KR",serif; }
+h1,h2,h3,h4,.bar,.dev-label,.toc-part,.cover-meta,.badge,
+.colophon-meta dt { font-family:"Noto Sans",system-ui,"Noto Sans CJK KR",sans-serif; }
+pre,code,kbd { font-family:"Noto Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace; }
+</style>
+<script>(function(){try{var s=JSON.parse(localStorage.getItem('pcb-read')||'{}');var r=document.documentElement;if(s.theme&&s.theme!=='auto')r.setAttribute('data-theme',s.theme);if(s.fg)r.style.setProperty('--fg',s.fg);if(s.bg)r.style.setProperty('--bg',s.bg);if(s.link)r.style.setProperty('--link',s.link);if(s.width)r.setAttribute('data-measure','on');}catch(e){}})();</script></head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<div class="bar"><strong><a href="index.html">Proven C Book</a></strong><button class="here-btn" type="button" aria-expanded="false" aria-controls="here-panel">app. G <span class="caret">▾</span></button><span class="sp"></span><span class="bar-nav"><a href="sec108.html" title="Prev" aria-label="Prev">←</a><a href="index.html" title="Contents" aria-label="Contents">↑</a><a href="sec110.html" title="Next" aria-label="Next">→</a></span></div><div id="here-panel" class="here-panel" hidden><div class="tools"><span class="ver">v0.65.0</span><button class="tool" type="button" id="set-open">⚙ Settings</button><a class="tool" href="toc.html">▤ Detailed contents</a><a class="tool" href="../ko/">Ko</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book/releases/download/v0.65.0/proven_c_book-v0.65.0-en.pdf">⤓ PDF</a><a class="tool" href="https://github.com/rubidus-api/proven_c_book">Git</a></div><div class="setbox" id="setbox" hidden><label class="setrow"><input type="checkbox" id="s-width"><span>Limit line width</span></label><div class="setrow"><span class="setlbl">Theme</span><span class="seg"><button type="button" class="segb" data-theme="auto">System</button><button type="button" class="segb" data-theme="light">Light</button><button type="button" class="segb" data-theme="dark">Dark</button></span></div><div class="setrow"><span class="setlbl">Colours</span><label class="col"><span>Text</span><input type="color" id="s-fg"></label><label class="col"><span>Background</span><input type="color" id="s-bg"></label><label class="col"><span>Link</span><input type="color" id="s-link"></label></div><p class="setnote">Settings are kept in this browser only.</p></div><div class="here-head"><strong>Contents of this chapter</strong></div><div class="here-body"><a class="lv3" href="sec107.html#sx1"><span class="tf-no"></span>Tables</a><a class="lv3" href="sec107.html#sx2"><span class="tf-no"></span>Figures</a></div></div>
+<main id="content"><div class="wrap">
+<h2>Appendix G — List of tables and figures</h2><div></div><p>Every table and figure in the book, in order. The numbers, titles and pages are not written by hand but taken from the text itself, so this list changes whenever the text does. In the PDF, the number is a link to the table or figure.</p><h3 id="sx1">Tables</h3><div></div><p class="float-list-row"><a href="ch02.html#proven-float-1">Table 2.1</a> — The representation efficiency of three whole-number bases</p><p class="float-list-row"><a href="ch02.html#proven-float-2">Table 2.2</a> — Small values where base 3 wins instead</p><p class="float-list-row"><a href="ch02.html#proven-float-3">Table 2.3</a> — Voltage levels crowd together as the radix grows</p><p class="float-list-row"><a href="ch02.html#proven-float-4">Table 2.4</a> — Which radix is ‘most efficient’ depends on what you count</p><p class="float-list-row"><a href="ch04.html#proven-float-8">Table 4.1</a> — Two layers for reading null — the notation in source and the representation in memory</p><p class="float-list-row"><a href="ch05.html#proven-float-11">Table 5.1</a> — The four regions of memory and what each is like</p><p class="float-list-row"><a href="ch05.html#proven-float-12">Table 5.2</a> — The axes that separate static, stack and heap</p><p class="float-list-row"><a href="ch05.html#proven-float-13">Table 5.3</a> — This chapter’s words and the standard’s words</p><p class="float-list-row"><a href="ch05.html#proven-float-14">Table 5.4</a> — Machines where this sketch does not hold</p><p class="float-list-row"><a href="ch05.html#proven-float-15">Table 5.5</a> — Where the four regions come back</p><p class="float-list-row"><a href="ch07.html#proven-float-18">Table 7.1</a> — How the bits of <code>float</code> and <code>double</code> are divided</p><p class="float-list-row"><a href="ch07.html#proven-float-20">Table 7.2</a> — The special values reserved at the two ends of the exponent</p><p class="float-list-row"><a href="ch07.html#proven-float-21">Table 7.3</a> — The same numbers as 64-bit representations</p><p class="float-list-row"><a href="ch08.html#proven-float-22">Table 8.1</a> — The numbers ASCII and EBCDIC gave the same characters</p><p class="float-list-row"><a href="ch08.html#proven-float-23">Table 8.2</a> — Where EBCDIC’s alphabet breaks, and what sits in the gaps</p><p class="float-list-row"><a href="ch08.html#proven-float-24">Table 8.3</a> — Classifying a character by hand versus asking the library</p><p class="float-list-row"><a href="ch08.html#proven-float-25">Table 8.4</a> — UTF-8′s bit layout by byte count</p><p class="float-list-row"><a href="ch08.html#proven-float-26">Table 8.5</a> — The names the standard gives the character sets</p><p class="float-list-row"><a href="ch08.html#proven-float-27">Table 8.6</a> — The translation phases where character sets change</p><p class="float-list-row"><a href="ch08.html#proven-float-28">Table 8.7</a> — The encoding names C23 tidied up</p><p class="float-list-row"><a href="ch08.html#proven-float-29">Table 8.8</a> — String literal prefixes and what each guarantees</p><p class="float-list-row"><a href="ch10.html#proven-float-30">Table 10.1</a> — What the operating system gives a process</p><p class="float-list-row"><a href="ch10.html#proven-float-31">Table 10.2</a> — Program and process — what to remember</p><p class="float-list-row"><a href="ch11.html#proven-float-32">Table 11.1</a> — The memory ladder — size and latency by tier</p><p class="float-list-row"><a href="ch12.html#proven-float-33">Table 12.1</a> — What this book calls a grey zone, and what it does not</p><p class="float-list-row"><a href="ch12.html#proven-float-34">Table 12.2</a> — Grey-zone practices and where each is treated</p><p class="float-list-row"><a href="ch12.html#proven-float-35">Table 12.3</a> — Questions that raise the cost of a grey zone</p><p class="float-list-row"><a href="ch12.html#proven-float-36">Table 12.4</a> — The ladder for handling a grey zone</p><p class="float-list-row"><a href="ch12.html#proven-float-37">Table 12.5</a> — The standard’s stance and what it promises instead</p><p class="float-list-row"><a href="ch12.html#proven-float-38">Table 12.6</a> — What to write down when a grey zone is used</p><p class="float-list-row"><a href="ch15.html#proven-float-39">Table 15.1</a> — Terminal, shell, prompt — the words sorted out</p><p class="float-list-row"><a href="ch15.html#proven-float-40">Table 15.2</a> — What the terminal does and what the shell does</p><p class="float-list-row"><a href="ch15.html#proven-float-41">Table 15.3</a> — How to tell which shell you are in</p><p class="float-list-row"><a href="ch15.html#proven-float-42">Table 15.4</a> — The shell commands used on day one</p><p class="float-list-row"><a href="ch15.html#proven-float-43">Table 15.5</a> — Which key to press, by situation</p><p class="float-list-row"><a href="ch15.html#proven-float-44">Table 15.6</a> — The forms a path can take</p><p class="float-list-row"><a href="ch15.html#proven-float-45">Table 15.7</a> — The first build command, per compiler</p><p class="float-list-row"><a href="ch15.html#proven-float-46">Table 15.8</a> — The same job, spelled per compiler</p><p class="float-list-row"><a href="ch16.html#proven-float-47">Table 16.1</a> — Kinds of error, by stage of compilation</p><p class="float-list-row"><a href="ch17.html#proven-float-48">Table 17.1</a> — Tools that need no installation</p><p class="float-list-row"><a href="ch17.html#proven-float-51">Table 17.2</a> — The compiler options that settle character sets</p><p class="float-list-row"><a href="ch17.html#proven-float-52">Table 17.3</a> — The four links where Hangul breaks</p><p class="float-list-row"><a href="ch17.html#proven-float-53">Table 17.4</a> — The gdb commands used most</p><p class="float-list-row"><a href="ch18.html#proven-float-54">Table 18.1</a> — C compilers in active service</p><p class="float-list-row"><a href="ch18.html#proven-float-55">Table 18.2</a> — What gets said about GCC and Clang</p><p class="float-list-row"><a href="ch18.html#proven-float-56">Table 18.3</a> — Win32′s strengths and what they cost</p><p class="float-list-row"><a href="ch18.html#proven-float-57">Table 18.4</a> — What a toolchain contains</p><p class="float-list-row"><a href="ch18.html#proven-float-58">Table 18.5</a> — The stories behind the compiler names</p><p class="float-list-row"><a href="ch18.html#proven-float-59">Table 18.6</a> — Official documentation, per compiler</p><p class="float-list-row"><a href="ch18.html#proven-float-60">Table 18.7</a> — Embedded compilers in one line each</p><p class="float-list-row"><a href="ch20.html#proven-float-61">Table 20.1</a> — The bases an integer constant can be written in</p><p class="float-list-row"><a href="ch20.html#proven-float-62">Table 20.2</a> — The suffixes of an integer constant</p><p class="float-list-row"><a href="ch20.html#proven-float-63">Table 20.3</a> — Where the C23 digit separator works and where it does not</p><p class="float-list-row"><a href="ch20.html#proven-float-64">Table 20.4</a> — Character constant prefixes and their types</p><p class="float-list-row"><a href="ch20.html#proven-float-65">Table 20.5</a> — The kinds of escape sequence</p><p class="float-list-row"><a href="ch20.html#proven-float-66">Table 20.6</a> — The suffixes of a floating constant</p><p class="float-list-row"><a href="ch20.html#proven-float-67">Table 20.7</a> — String literal prefixes and their encodings</p><p class="float-list-row"><a href="ch20.html#proven-float-68">Table 20.8</a> — What the things that look like constants really are</p><p class="float-list-row"><a href="ch20.html#proven-float-69">Table 20.9</a> — Where a <code>const int</code> is refused</p><p class="float-list-row"><a href="ch20.html#proven-float-70">Table 20.10</a> — Four kinds of ‘constant’ and what each lacks</p><p class="float-list-row"><a href="ch20.html#proven-float-71">Table 20.11</a> — Where <code>constexpr</code> may be used</p><p class="float-list-row"><a href="ch20.html#proven-float-72">Table 20.12</a> — What the two compilers do when the value does not fit exactly</p><p class="float-list-row"><a href="ch22.html#proven-float-73">Table 22.1</a> — The slots of a conversion specification and their names</p><p class="float-list-row"><a href="ch22.html#proven-float-74">Table 22.2</a> — The conversions used on day one</p><p class="float-list-row"><a href="ch22.html#proven-float-75">Table 22.3</a> — Three output functions and where each fits</p><p class="float-list-row"><a href="ch24.html#proven-float-76">Table 24.1</a> — Declaration and definition — what we did</p><p class="float-list-row"><a href="ch24.html#proven-float-77">Table 24.2</a> — Where a prototype goes</p><p class="float-list-row"><a href="ch24.html#proven-float-78">Table 24.3</a> — What is forbidden in a function, and why</p><p class="float-list-row"><a href="ch25.html#proven-float-79">Table 25.1</a> — What <code>fgets</code> promises</p><p class="float-list-row"><a href="ch25.html#proven-float-80">Table 25.2</a> — Reading the result from what the buffer’s end looks like</p><p class="float-list-row"><a href="ch26.html#proven-float-81">Table 26.1</a> — What a type settles</p><p class="float-list-row"><a href="ch26.html#proven-float-82">Table 26.2</a> — Object types and function types</p><p class="float-list-row"><a href="ch26.html#proven-float-83">Table 26.3</a> — What an incomplete type cannot do</p><p class="float-list-row"><a href="ch26.html#proven-float-84">Table 26.4</a> — The basic types, as the standard has them</p><p class="float-list-row"><a href="ch26.html#proven-float-85">Table 26.5</a> — The three character types</p><p class="float-list-row"><a href="ch26.html#proven-float-86">Table 26.6</a> — The clauses that make <code>bool</code> an integer type</p><p class="float-list-row"><a href="ch26.html#proven-float-87">Table 26.7</a> — The collective names the standard gives types</p><p class="float-list-row"><a href="ch26.html#proven-float-89">Table 26.8</a> — Derived types — what comes from what</p><p class="float-list-row"><a href="ch26.html#proven-float-90">Table 26.9</a> — What each type qualifier promises</p><p class="float-list-row"><a href="ch26.html#proven-float-91">Table 26.10</a> — Type qualifiers and storage-class specifiers, side by side</p><p class="float-list-row"><a href="ch26.html#proven-float-92">Table 26.11</a> — What <code>const</code> protects, depending on where it sits</p><p class="float-list-row"><a href="ch26.html#proven-float-93">Table 26.12</a> — The vocabulary of types and where each is gathered</p><p class="float-list-row"><a href="ch26.html#proven-float-94">Table 26.13</a> — The three families of <code>&lt;stdint.h></code></p><p class="float-list-row"><a href="ch26.html#proven-float-95">Table 26.14</a> — Choosing the integer type that fits the place</p><p class="float-list-row"><a href="ch26.html#proven-float-96">Table 26.15</a> — The standard’s words and the chapter that faces each</p><p class="float-list-row"><a href="ch27.html#proven-float-97">Table 27.1</a> — The minimum ranges the integer types guarantee, and their limit macros</p><p class="float-list-row"><a href="ch27.html#proven-float-98">Table 27.2</a> — The floating-point limit macros</p><p class="float-list-row"><a href="ch27.html#proven-float-99">Table 27.3</a> — How the type of a suffixless constant is settled</p><p class="float-list-row"><a href="ch27.html#proven-float-100">Table 27.4</a> — Measured types when the same value is written differently</p><p class="float-list-row"><a href="ch27.html#proven-float-101">Table 27.5</a> — The kinds of overflow</p><p class="float-list-row"><a href="ch28.html#proven-float-102">Table 28.1</a> — What each arithmetic operator demands of its operands</p><p class="float-list-row"><a href="ch28.html#proven-float-103">Table 28.2</a> — Shift, case by case</p><p class="float-list-row"><a href="ch32.html#proven-float-105">Table 32.1</a> — The three loop forms — where the condition is seen, and the minimum number of turns</p><p class="float-list-row"><a href="ch32.html#proven-float-106">Table 32.2</a> — The three pieces of checking an invariant</p><p class="float-list-row"><a href="ch32.html#proven-float-107">Table 32.3</a> — Four ways invariants are used in practice</p><p class="float-list-row"><a href="ch32.html#proven-float-108">Table 32.4</a> — What an invariant catches</p><p class="float-list-row"><a href="ch32.html#proven-float-109">Table 32.5</a> — Lifetime, by where the variable is declared</p><p class="float-list-row"><a href="ch32.html#proven-float-110">Table 32.6</a> — What may go in <code>for</code>’s first slot — by standard and compiler</p><p class="float-list-row"><a href="ch32.html#proven-float-111">Table 32.7</a> — When the condition slot touches the loop variable</p><p class="float-list-row"><a href="ch32.html#proven-float-112">Table 32.8</a> — What compilers do with a loop that may not end</p><p class="float-list-row"><a href="ch32.html#proven-float-113">Table 32.9</a> — The mistakes that appear once loops are nested</p><p class="float-list-row"><a href="ch33.html#proven-float-114">Table 33.1</a> — The groups of operators at a glance</p><p class="float-list-row"><a href="ch34.html#proven-float-115">Table 34.1</a> — Lvalue and rvalue — the relation the standard sets</p><p class="float-list-row"><a href="ch34.html#proven-float-116">Table 34.2</a> — How many times the left side is evaluated in a compound assignment</p><p class="float-list-row"><a href="ch34.html#proven-float-117">Table 34.3</a> — Assignment, case by case</p><p class="float-list-row"><a href="ch34.html#proven-float-118">Table 34.4</a> — Assignment and side effects — what to remember</p><p class="float-list-row"><a href="ch35.html#proven-float-119">Table 35.1</a> — What an object, an address and a pointer each are</p><p class="float-list-row"><a href="ch35.html#proven-float-120">Table 35.2</a> — The same number means different things in different places</p><p class="float-list-row"><a href="ch35.html#proven-float-122">Table 35.3</a> — The basic rules for handling a pointer</p><p class="float-list-row"><a href="ch35.html#proven-float-123">Table 35.4</a> — Build options that catch pointer accidents</p><p class="float-list-row"><a href="ch35.html#proven-float-124">Table 35.5</a> — Pointer sizes, by platform</p><p class="float-list-row"><a href="ch35.html#proven-float-125">Table 35.6</a> — The specifiers that print a pointer</p><p class="float-list-row"><a href="ch36.html#proven-float-126">Table 36.1</a> — Which spellings count as a null pointer constant</p><p class="float-list-row"><a href="ch36.html#proven-float-127">Table 36.2</a> — The layers that handle null, and what each promises</p><p class="float-list-row"><a href="ch36.html#proven-float-128">Table 36.3</a> — Where C and C++ part over null</p><p class="float-list-row"><a href="ch37.html#proven-float-129">Table 37.1</a> — The privileges of <code>void *</code> and the character pointers</p><p class="float-list-row"><a href="ch37.html#proven-float-130">Table 37.2</a> — Idioms that separate once the provenance model lands</p><p class="float-list-row"><a href="ch38.html#proven-float-132">Table 38.1</a> — What follows from elements being flush against each other</p><p class="float-list-row"><a href="ch38.html#proven-float-134">Table 38.2</a> — The four shapes of pointer arithmetic</p><p class="float-list-row"><a href="ch38.html#proven-float-135">Table 38.3</a> — Which arithmetic a pointer may join, and which not</p><p class="float-list-row"><a href="ch38.html#proven-float-136">Table 38.4</a> — What GCC says to the forbidden shapes</p><p class="float-list-row"><a href="ch38.html#proven-float-137">Table 38.5</a> — The three types that hold an address as an integer</p><p class="float-list-row"><a href="ch38.html#proven-float-138">Table 38.6</a> — How far pointer arithmetic is allowed</p><p class="float-list-row"><a href="ch39.html#proven-float-139">Table 39.1</a> — How a multidimensional subscript unfolds</p><p class="float-list-row"><a href="ch39.html#proven-float-141">Table 39.2</a> — The four patterns for handling multidimensional data</p><p class="float-list-row"><a href="ch39.html#proven-float-142">Table 39.3</a> — Multidimensional arrays — what to remember</p><p class="float-list-row"><a href="ch40.html#proven-float-143">Table 40.1</a> — The five axes that separate an array from a pointer</p><p class="float-list-row"><a href="ch40.html#proven-float-144">Table 40.2</a> — The number of steps an indexed access takes</p><p class="float-list-row"><a href="ch40.html#proven-float-145">Table 40.3</a> — What happens when the declarations disagree</p><p class="float-list-row"><a href="ch40.html#proven-float-146">Table 40.4</a> — The three rules by which an array becomes a pointer</p><p class="float-list-row"><a href="ch40.html#proven-float-147">Table 40.5</a> — The places decay does not happen</p><p class="float-list-row"><a href="ch40.html#proven-float-148">Table 40.6</a> — In a parameter only the outer layer changes</p><p class="float-list-row"><a href="ch40.html#proven-float-150">Table 40.7</a> — The same three words, two layouts</p><p class="float-list-row"><a href="ch40.html#proven-float-152">Table 40.8</a> — One more level for each thing you mean to change</p><p class="float-list-row"><a href="ch40.html#proven-float-153">Table 40.9</a> — The ways around returning an array</p><p class="float-list-row"><a href="ch40.html#proven-float-154">Table 40.10</a> — Choosing between array and pointer for the job</p><p class="float-list-row"><a href="ch40.html#proven-float-155">Table 40.11</a> — Arrays and pointers — what to remember</p><p class="float-list-row"><a href="ch41.html#proven-float-156">Table 41.1</a> — The eightfold difference traversal order makes</p><p class="float-list-row"><a href="ch41.html#proven-float-157">Table 41.2</a> — Devices for shedding several layers, by language</p><p class="float-list-row"><a href="ch41.html#proven-float-158">Table 41.3</a> — Four ways out of nested loops</p><p class="float-list-row"><a href="ch41.html#proven-float-159">Table 41.4</a> — The discipline for using <code>goto</code></p><p class="float-list-row"><a href="ch41.html#proven-float-160">Table 41.5</a> — Three shapes for a macro body</p><p class="float-list-row"><a href="ch41.html#proven-float-161">Table 41.6</a> — Loop idioms and their traps</p><p class="float-list-row"><a href="ch42.html#proven-float-162">Table 42.1</a> — The kinds of string literal and their sizes</p><p class="float-list-row"><a href="ch43.html#proven-float-163">Table 43.1</a> — How each input function reports success, and where it trips</p><p class="float-list-row"><a href="ch44.html#proven-float-164">Table 44.1</a> — The standard’s four axes — storage duration, scope, linkage, name space</p><p class="float-list-row"><a href="ch44.html#proven-float-165">Table 44.2</a> — The four storage durations and their lifetimes</p><p class="float-list-row"><a href="ch44.html#proven-float-166">Table 44.3</a> — The kinds of scope</p><p class="float-list-row"><a href="ch44.html#proven-float-167">Table 44.4</a> — The three kinds of linkage</p><p class="float-list-row"><a href="ch44.html#proven-float-168">Table 44.5</a> — The seven storage-class specifiers</p><p class="float-list-row"><a href="ch44.html#proven-float-169">Table 44.6</a> — What lives in each region, and for how long</p><p class="float-list-row"><a href="ch45.html#proven-float-170">Table 45.1</a> — What <code>calloc</code> promises and what it does not</p><p class="float-list-row"><a href="ch45.html#proven-float-171">Table 45.2</a> — Two ways to spell a <code>malloc</code> call</p><p class="float-list-row"><a href="ch45.html#proven-float-172">Table 45.3</a> — What the compiler says when it is called undeclared</p><p class="float-list-row"><a href="ch45.html#proven-float-173">Table 45.4</a> — Mistakes around freeing, and the diagnostics</p><p class="float-list-row"><a href="ch45.html#proven-float-174">Table 45.5</a> — What a C++ compiler says to the same code</p><p class="float-list-row"><a href="ch46.html#proven-float-176">Table 46.1</a> — What <code>{ 0 }</code> puts in, by member type</p><p class="float-list-row"><a href="ch46.html#proven-float-179">Table 46.2</a> — Which rule applies depends on what is being asked</p><p class="float-list-row"><a href="ch47.html#proven-float-181">Table 47.1</a> — The two demands that create tail padding</p><p class="float-list-row"><a href="ch47.html#proven-float-182">Table 47.2</a> — Three ways to pass a struct, and what each is worth</p><p class="float-list-row"><a href="ch47.html#proven-float-183">Table 47.3</a> — What goes wrong when a struct is written out whole</p><p class="float-list-row"><a href="ch47.html#proven-float-185">Table 47.4</a> — Anonymous members — shapes and meaning</p><p class="float-list-row"><a href="ch47.html#proven-float-186">Table 47.5</a> — Where an anonymous member is forbidden</p><p class="float-list-row"><a href="ch47.html#proven-float-187">Table 47.6</a> — Where <code>container_of</code> earns its keep</p><p class="float-list-row"><a href="ch47.html#proven-float-188">Table 47.7</a> — Using structs — what to remember</p><p class="float-list-row"><a href="ch48.html#proven-float-189">Table 48.1</a> — Ways to type-pun, and how C rules on each</p><p class="float-list-row"><a href="ch48.html#proven-float-190">Table 48.2</a> — The size and alignment rules of a union</p><p class="float-list-row"><a href="ch48.html#proven-float-191">Table 48.3</a> — What the implementation decides about bit-fields</p><p class="float-list-row"><a href="ch48.html#proven-float-192">Table 48.4</a> — The bit layout of Johab Hangul</p><p class="float-list-row"><a href="ch49.html#proven-float-193">Table 49.1</a> — What an expression carries</p><p class="float-list-row"><a href="ch49.html#proven-float-194">Table 49.2</a> — Associativity, by operator group</p><p class="float-list-row"><a href="ch49.html#proven-float-195">Table 49.3</a> — Where precedence groups it differently than intended</p><p class="float-list-row"><a href="ch49.html#proven-float-196">Table 49.4</a> — Prefix and postfix increment, compared</p><p class="float-list-row"><a href="ch49.html#proven-float-197">Table 49.5</a> — The standard’s sentences that set sequence points</p><p class="float-list-row"><a href="ch49.html#proven-float-198">Table 49.6</a> — Results that differ by optimisation level</p><p class="float-list-row"><a href="ch49.html#proven-float-199">Table 49.7</a> — How C and C++ rule on the same code</p><p class="float-list-row"><a href="ch49.html#proven-float-200">Table 49.8</a> — The contract of the arithmetic operators</p><p class="float-list-row"><a href="ch49.html#proven-float-201">Table 49.9</a> — The contract of the relational operators</p><p class="float-list-row"><a href="ch49.html#proven-float-202">Table 49.10</a> — The contract of the logical operators</p><p class="float-list-row"><a href="ch49.html#proven-float-203">Table 49.11</a> — The contract of the bitwise operators</p><p class="float-list-row"><a href="ch49.html#proven-float-204">Table 49.12</a> — The contract of the assignment operators</p><p class="float-list-row"><a href="ch49.html#proven-float-205">Table 49.13</a> — The contract of the member and subscript operators</p><p class="float-list-row"><a href="ch49.html#proven-float-206">Table 49.14</a> — The contract of the remaining operators</p><p class="float-list-row"><a href="ch49.html#proven-float-207">Table 49.15</a> — Verdicts on expressions seen often</p><p class="float-list-row"><a href="ch49.html#proven-float-208">Table 49.16</a> — Where a constant expression is required</p><p class="float-list-row"><a href="ch49.html#proven-float-209">Table 49.17</a> — The places left unspecified</p><p class="float-list-row"><a href="ch49.html#proven-float-210">Table 49.18</a> — The places the implementation decides</p><p class="float-list-row"><a href="ch49.html#proven-float-211">Table 49.19</a> — Things that look like expressions</p><p class="float-list-row"><a href="ch49.html#proven-float-212">Table 49.20</a> — Expressions and operators — what to remember</p><p class="float-list-row"><a href="ch52.html#proven-float-213">Table 52.1</a> — Kinds of undefined behaviour and the standard’s stance</p><p class="float-list-row"><a href="ch52.html#proven-float-214">Table 52.2</a> — What the standard requires, and what breaking it means</p><p class="float-list-row"><a href="ch52.html#proven-float-215">Table 52.3</a> — Common UB code and where the standard puts it</p><p class="float-list-row"><a href="ch53.html#proven-float-216">Table 53.1</a> — The forms of <code>main</code> and their standing</p><p class="float-list-row"><a href="ch53.html#proven-float-217">Table 53.2</a> — The ways to end a program</p><p class="float-list-row"><a href="ch53.html#proven-float-218">Table 53.3</a> — Exit status values and their meanings</p><p class="float-list-row"><a href="ch53.html#proven-float-219">Table 53.4</a> — The three faces of <code>main</code> — what to remember</p><p class="float-list-row"><a href="ch55.html#proven-float-220">Table 55.1</a> — The stages of a split build</p><p class="float-list-row"><a href="ch55.html#proven-float-221">Table 55.2</a> — Output size and content, by build</p><p class="float-list-row"><a href="ch55.html#proven-float-222">Table 55.3</a> — What an ABI settles</p><p class="float-list-row"><a href="ch55.html#proven-float-223">Table 55.4</a> — Two ways to return a struct (x86-64 System V)</p><p class="float-list-row"><a href="ch55.html#proven-float-224">Table 55.5</a> — The same 64-bit machine, a different promise</p><p class="float-list-row"><a href="ch55.html#proven-float-225">Table 55.6</a> — Changes that are source compatible but not binary compatible</p><p class="float-list-row"><a href="ch55.html#proven-float-226">Table 55.7</a> — The tables linking uses, and the shape of indirection</p><p class="float-list-row"><a href="ch56.html#proven-float-227">Table 56.1</a> — The four scopes the standard defines</p><p class="float-list-row"><a href="ch56.html#proven-float-228">Table 56.2</a> — Working discipline for shadowing</p><p class="float-list-row"><a href="ch56.html#proven-float-229">Table 56.3</a> — Two layers make names, by two different rules</p><p class="float-list-row"><a href="ch56.html#proven-float-230">Table 56.4</a> — Three questions about a name and its object</p><p class="float-list-row"><a href="ch57.html#proven-float-231">Table 57.1</a> — The four name spaces and what lives in each</p><p class="float-list-row"><a href="ch57.html#proven-float-232">Table 57.2</a> — The three axes that settle a name</p><p class="float-list-row"><a href="ch57.html#proven-float-233">Table 57.3</a> — Naming policies and their grounds</p><p class="float-list-row"><a href="ch57.html#proven-float-234">Table 57.4</a> — Options that catch shadowing, measured</p><p class="float-list-row"><a href="ch57.html#proven-float-235">Table 57.5</a> — The range of reserved names</p><p class="float-list-row"><a href="ch58.html#proven-float-236">Table 58.1</a> — When a name collision shows up</p><p class="float-list-row"><a href="ch58.html#proven-float-237">Table 58.2</a> — Prefix conventions in real projects</p><p class="float-list-row"><a href="ch58.html#proven-float-238">Table 58.3</a> — Handling symbol visibility, per platform</p><p class="float-list-row"><a href="ch58.html#proven-float-239">Table 58.4</a> — What C++ <code>namespace</code> gains and costs</p><p class="float-list-row"><a href="ch58.html#proven-float-240">Table 58.5</a> — Symbol kinds by declaration, as <code>nm</code> shows them</p><p class="float-list-row"><a href="ch58.html#proven-float-241">Table 58.6</a> — Naming conventions and their grounds</p><p class="float-list-row"><a href="ch58.html#proven-float-242">Table 58.7</a> — The name in source and the name the linker sees</p><p class="float-list-row"><a href="ch58.html#proven-float-243">Table 58.8</a> — Habits worth forming about names</p><p class="float-list-row"><a href="ch59.html#proven-float-244">Table 59.1</a> — The rules for using a macro</p><p class="float-list-row"><a href="ch59.html#proven-float-245">Table 59.2</a> — Translation phases — Korean names and the standard’s</p><p class="float-list-row"><a href="ch59.html#proven-float-246">Table 59.3</a> — Translation phases 1-2 — what happens</p><p class="float-list-row"><a href="ch59.html#proven-float-247">Table 59.4</a> — Translation phases 3-4 — what happens</p><p class="float-list-row"><a href="ch59.html#proven-float-248">Table 59.5</a> — Translation phases 5-6 — what happens</p><p class="float-list-row"><a href="ch59.html#proven-float-249">Table 59.6</a> — Translation phases 7-8 — what happens</p><p class="float-list-row"><a href="ch59.html#proven-float-250">Table 59.7</a> — The eight translation phases at a glance</p><p class="float-list-row"><a href="ch60.html#proven-float-251">Table 60.1</a> — How values are promoted through a variadic call</p><p class="float-list-row"><a href="ch60.html#proven-float-252">Table 60.2</a> — The ways a variadic call breaks</p><p class="float-list-row"><a href="ch61.html#proven-float-253">Table 61.1</a> — Callback designs and their relation to the standard</p><p class="float-list-row"><a href="ch61.html#proven-float-254">Table 61.2</a> — Round-tripping a generic function pointer</p><p class="float-list-row"><a href="ch61.html#proven-float-255">Table 61.3</a> — Ways to print a function pointer, and their portability</p><p class="float-list-row"><a href="ch61.html#proven-float-256">Table 61.4</a> — What may be done to a function pointer</p><p class="float-list-row"><a href="ch61.html#proven-float-257">Table 61.5</a> — The rules for using a callback</p><p class="float-list-row"><a href="ch62.html#proven-float-258">Table 62.1</a> — The vocabulary for reading a declaration</p><p class="float-list-row"><a href="ch62.html#proven-float-259">Table 62.2</a> — Reading a declaration with <code>const</code> in it</p><p class="float-list-row"><a href="ch62.html#proven-float-260">Table 62.3</a> — Reading a declaration through, step by step</p><p class="float-list-row"><a href="ch62.html#proven-float-261">Table 62.4</a> — Reading a hard declaration through, step by step</p><p class="float-list-row"><a href="ch62.html#proven-float-262">Table 62.5</a> — Reading declarations — what to remember</p><p class="float-list-row"><a href="ch63.html#proven-float-263">Table 63.1</a> — The families of the standard library and their headers</p><p class="float-list-row"><a href="ch63.html#proven-float-264">Table 63.2</a> — Output conversions, by data type</p><p class="float-list-row"><a href="ch63.html#proven-float-265">Table 63.3</a> — Input conversions, by data type</p><p class="float-list-row"><a href="ch64.html#proven-float-266">Table 64.1</a> — The standard headers at a glance</p><p class="float-list-row"><a href="ch64.html#proven-float-267">Table 64.2</a> — Headers added by edition</p><p class="float-list-row"><a href="ch64.html#proven-float-268">Table 64.3</a> — The terrain of the standard library — what to remember</p><p class="float-list-row"><a href="ch65.html#proven-float-269">Table 65.1</a> — Success and failure in <code>&lt;stdio.h></code> functions</p><p class="float-list-row"><a href="ch65.html#proven-float-270">Table 65.2</a> — The rules for handling a stream</p><p class="float-list-row"><a href="ch66.html#proven-float-271">Table 66.1</a> — The reading functions and how they rate</p><p class="float-list-row"><a href="ch66.html#proven-float-272">Table 66.2</a> — The writing functions and what to watch</p><p class="float-list-row"><a href="ch66.html#proven-float-273">Table 66.3</a> — Choosing the I/O function that fits the job</p><p class="float-list-row"><a href="ch67.html#proven-float-274">Table 67.1</a> — The string-copy functions — standing and truncation</p><p class="float-list-row"><a href="ch67.html#proven-float-275">Table 67.2</a> — The string-search functions and what to watch</p><p class="float-list-row"><a href="ch67.html#proven-float-276">Table 67.3</a> — Choosing the string function that fits the job</p><p class="float-list-row"><a href="ch68.html#proven-float-277">Table 68.1</a> — The contracts and traps of <code>&lt;stdlib.h></code></p><p class="float-list-row"><a href="ch68.html#proven-float-278">Table 68.2</a> — What cleanup each way of ending performs</p><p class="float-list-row"><a href="ch68.html#proven-float-279">Table 68.3</a> — The <code>&lt;stdlib.h></code> function that fits the job</p><p class="float-list-row"><a href="ch69.html#proven-float-280">Table 69.1</a> — When each <code>&lt;ctype.h></code> function answers true</p><p class="float-list-row"><a href="ch69.html#proven-float-281">Table 69.2</a> — The rules for using character classification</p><p class="float-list-row"><a href="ch70.html#proven-float-282">Table 70.1</a> — What a locale changes — Korea and Germany</p><p class="float-list-row"><a href="ch70.html#proven-float-283">Table 70.2</a> — Locale categories and the functions each governs</p><p class="float-list-row"><a href="ch70.html#proven-float-284">Table 70.3</a> — What <code>setlocale</code>’s second argument means</p><p class="float-list-row"><a href="ch70.html#proven-float-285">Table 70.4</a> — Locale names — their parts and what settles them</p><p class="float-list-row"><a href="ch70.html#proven-float-286">Table 70.5</a> — The standards behind locale notation</p><p class="float-list-row"><a href="ch70.html#proven-float-287">Table 70.6</a> — The precedence of the locale environment variables</p><p class="float-list-row"><a href="ch70.html#proven-float-288">Table 70.7</a> — The steps of handling a locale</p><p class="float-list-row"><a href="ch70.html#proven-float-289">Table 70.8</a> — Locales 1 — what to remember</p><p class="float-list-row"><a href="ch71.html#proven-float-290">Table 71.1</a> — The members of <code>struct lconv</code></p><p class="float-list-row"><a href="ch71.html#proven-float-291">Table 71.2</a> — The grouping array’s values and meanings</p><p class="float-list-row"><a href="ch71.html#proven-float-292">Table 71.3</a> — What the sign-position values mean</p><p class="float-list-row"><a href="ch71.html#proven-float-293">Table 71.4</a> — Assembling a currency string, piece by piece</p><p class="float-list-row"><a href="ch71.html#proven-float-294">Table 71.5</a> — <code>strftime</code> conversions — families and properties</p><p class="float-list-row"><a href="ch71.html#proven-float-295">Table 71.6</a> — Collation schemes and the means for each</p><p class="float-list-row"><a href="ch71.html#proven-float-296">Table 71.7</a> — The locale tool that fits the job</p><p class="float-list-row"><a href="ch71.html#proven-float-297">Table 71.8</a> — Locales 2 — what to remember</p><p class="float-list-row"><a href="ch72.html#proven-float-298">Table 72.1</a> — What the standard settles about <code>wchar_t</code>, and what it leaves</p><p class="float-list-row"><a href="ch72.html#proven-float-299">Table 72.2</a> — The macros around wide characters</p><p class="float-list-row"><a href="ch72.html#proven-float-300">Table 72.3</a> — Wide character and string literals — types and encodings</p><p class="float-list-row"><a href="ch72.html#proven-float-301">Table 72.4</a> — Which header each wide-character macro lives in</p><p class="float-list-row"><a href="ch72.html#proven-float-302">Table 72.5</a> — The layers of multibyte conversion functions</p><p class="float-list-row"><a href="ch72.html#proven-float-303">Table 72.6</a> — What <code>mbrtowc</code>’s return values mean</p><p class="float-list-row"><a href="ch72.html#proven-float-304">Table 72.7</a> — Wide characters 1 — what to remember</p><p class="float-list-row"><a href="ch73.html#proven-float-305">Table 73.1</a> — The de facto encoding, by platform</p><p class="float-list-row"><a href="ch73.html#proven-float-306">Table 73.2</a> — The ranges of the surrogate area</p><p class="float-list-row"><a href="ch73.html#proven-float-307">Table 73.3</a> — Windows API suffixes and their string types</p><p class="float-list-row"><a href="ch73.html#proven-float-308">Table 73.4</a> — Why UTF-8 is the default choice</p><p class="float-list-row"><a href="ch73.html#proven-float-309">Table 73.5</a> — String types, by toolkit</p><p class="float-list-row"><a href="ch73.html#proven-float-310">Table 73.6</a> — Stream orientation — states and meanings</p><p class="float-list-row"><a href="ch73.html#proven-float-311">Table 73.7</a> — Wide characters 2 — what to remember</p><p class="float-list-row"><a href="ch74.html#proven-float-312">Table 74.1</a> — What to use, place by place</p><p class="float-list-row"><a href="ch74.html#proven-float-313">Table 74.2</a> — The properties of UTF-8 and what they buy</p><p class="float-list-row"><a href="ch74.html#proven-float-314">Table 74.3</a> — Byte sequences that must be rejected</p><p class="float-list-row"><a href="ch74.html#proven-float-315">Table 74.4</a> — The layers of counting text and their units</p><p class="float-list-row"><a href="ch74.html#proven-float-316">Table 74.5</a> — The four Unicode normalisation forms</p><p class="float-list-row"><a href="ch74.html#proven-float-317">Table 74.6</a> — Where handling text slips</p><p class="float-list-row"><a href="ch74.html#proven-float-318">Table 74.7</a> — Legacy encodings, by region</p><p class="float-list-row"><a href="ch74.html#proven-float-319">Table 74.8</a> — Trail-byte ranges of the legacy encodings</p><p class="float-list-row"><a href="ch74.html#proven-float-320">Table 74.9</a> — The means for handling Unicode</p><p class="float-list-row"><a href="ch74.html#proven-float-321">Table 74.10</a> — Unicode in practice — what to remember</p><p class="float-list-row"><a href="ch75.html#proven-float-322">Table 75.1</a> — The traps of <code>&lt;math.h></code></p><p class="float-list-row"><a href="ch75.html#proven-float-323">Table 75.2</a> — Choosing the maths function for the situation</p><p class="float-list-row"><a href="ch76.html#proven-float-324">Table 76.1</a> — The types and functions of <code>&lt;time.h></code></p><p class="float-list-row"><a href="ch76.html#proven-float-325">Table 76.2</a> — The <code>strftime</code> specifiers</p><p class="float-list-row"><a href="ch76.html#proven-float-326">Table 76.3</a> — The time function that fits the job</p><p class="float-list-row"><a href="ch77.html#proven-float-327">Table 77.1</a> — The diagnostic and control functions</p><p class="float-list-row"><a href="ch77.html#proven-float-328">Table 77.2</a> — The diagnostic tools and their rules</p><p class="float-list-row"><a href="ch78.html#proven-float-329">Table 78.1</a> — The declarations of <code>&lt;signal.h></code></p><p class="float-list-row"><a href="ch78.html#proven-float-330">Table 78.2</a> — What a handler receives and what it means</p><p class="float-list-row"><a href="ch78.html#proven-float-331">Table 78.3</a> — The standard signals and their default actions</p><p class="float-list-row"><a href="ch78.html#proven-float-332">Table 78.4</a> — What is allowed inside a handler</p><p class="float-list-row"><a href="ch78.html#proven-float-333">Table 78.5</a> — What blocks async-signal safety</p><p class="float-list-row"><a href="ch78.html#proven-float-334">Table 78.6</a> — When a handler calls <code>malloc</code></p><p class="float-list-row"><a href="ch78.html#proven-float-335">Table 78.7</a> — Using signals together with <code>longjmp</code></p><p class="float-list-row"><a href="ch78.html#proven-float-336">Table 78.8</a> — The gaps in standard <code>signal</code>, and <code>sigaction</code></p><p class="float-list-row"><a href="ch78.html#proven-float-337">Table 78.9</a> — The members of <code>siginfo_t</code></p><p class="float-list-row"><a href="ch78.html#proven-float-338">Table 78.10</a> — What the <code>sigaction</code> flags mean</p><p class="float-list-row"><a href="ch78.html#proven-float-339">Table 78.11</a> — The members that handle a signal set</p><p class="float-list-row"><a href="ch78.html#proven-float-340">Table 78.12</a> — What each signal is used for</p><p class="float-list-row"><a href="ch78.html#proven-float-341">Table 78.13</a> — Why it had to be a signal</p><p class="float-list-row"><a href="ch78.html#proven-float-342">Table 78.14</a> — Signals — what to remember</p><p class="float-list-row"><a href="ch79.html#proven-float-343">Table 79.1</a> — The declarations of <code>&lt;setjmp.h></code></p><p class="float-list-row"><a href="ch79.html#proven-float-344">Table 79.2</a> — What <code>setjmp</code> returns</p><p class="float-list-row"><a href="ch79.html#proven-float-345">Table 79.3</a> — The contexts where <code>setjmp</code> is allowed</p><p class="float-list-row"><a href="ch79.html#proven-float-346">Table 79.4</a> — <code>longjmp</code>’s conditions and what breaking them means</p><p class="float-list-row"><a href="ch79.html#proven-float-347">Table 79.5</a> — What the jump buffer stores</p><p class="float-list-row"><a href="ch79.html#proven-float-348">Table 79.6</a> — The parts of a jump buffer and their sizes</p><p class="float-list-row"><a href="ch79.html#proven-float-349">Table 79.7</a> — Variable values after a <code>longjmp</code></p><p class="float-list-row"><a href="ch79.html#proven-float-350">Table 79.8</a> — Which variables need <code>volatile</code></p><p class="float-list-row"><a href="ch79.html#proven-float-351">Table 79.9</a> — What <code>longjmp</code> breaks</p><p class="float-list-row"><a href="ch79.html#proven-float-352">Table 79.10</a> — Exception machinery in other languages</p><p class="float-list-row"><a href="ch79.html#proven-float-353">Table 79.11</a> — Who solves resource cleanup</p><p class="float-list-row"><a href="ch79.html#proven-float-354">Table 79.12</a> — The recommended approach, by intent</p><p class="float-list-row"><a href="ch79.html#proven-float-355">Table 79.13</a> — Non-local jumps — what to remember</p><p class="float-list-row"><a href="ch80.html#proven-float-356">Table 80.1</a> — What Annex K added, and where it stands today</p><p class="float-list-row"><a href="ch80.html#proven-float-357">Table 80.2</a> — The headers that became optional</p><p class="float-list-row"><a href="ch80.html#proven-float-358">Table 80.3</a> — What each edition added, and whether it is used</p><p class="float-list-row"><a href="ch81.html#proven-float-359">Table 81.1</a> — The functions of <code>&lt;threads.h></code></p><p class="float-list-row"><a href="ch81.html#proven-float-360">Table 81.2</a> — What <code>shared += 1</code> really does</p><p class="float-list-row"><a href="ch81.html#proven-float-361">Table 81.3</a> — Kinds of mutex and where each fits</p><p class="float-list-row"><a href="ch81.html#proven-float-362">Table 81.4</a> — The mutex functions</p><p class="float-list-row"><a href="ch81.html#proven-float-363">Table 81.5</a> — The condition-variable functions</p><p class="float-list-row"><a href="ch81.html#proven-float-364">Table 81.6</a> — Shapes of once-only initialisation</p><p class="float-list-row"><a href="ch81.html#proven-float-365">Table 81.7</a> — The thread-specific storage functions</p><p class="float-list-row"><a href="ch81.html#proven-float-366">Table 81.8</a> — Why C11 threads are used less</p><p class="float-list-row"><a href="ch81.html#proven-float-367">Table 81.9</a> — C11, POSIX and Win32 thread APIs compared</p><p class="float-list-row"><a href="ch81.html#proven-float-368">Table 81.10</a> — Thread recommendations, by situation</p><p class="float-list-row"><a href="ch82.html#proven-float-369">Table 82.1</a> — The three things an atomic operation gives</p><p class="float-list-row"><a href="ch82.html#proven-float-370">Table 82.2</a> — The atomic operations and where each fits</p><p class="float-list-row"><a href="ch82.html#proven-float-371">Table 82.3</a> — The memory orders and what each guarantees</p><p class="float-list-row"><a href="ch82.html#proven-float-372">Table 82.4</a> — The concurrency tool recommended, by situation</p><p class="float-list-row"><a href="ch82.html#proven-float-373">Table 82.5</a> — Atomics — what to remember</p><p class="float-list-row"><a href="ch83.html#proven-float-374">Table 83.1</a> — Checking overflow — the old idiom and today’s</p><p class="float-list-row"><a href="ch83.html#proven-float-375">Table 83.2</a> — Asking about overflow — what to remember</p><p class="float-list-row"><a href="ch84.html#proven-float-376">Table 84.1</a> — The names that went from macro to keyword</p><p class="float-list-row"><a href="ch84.html#proven-float-377">Table 84.2</a> — The words C23 brought in</p><p class="float-list-row"><a href="ch84.html#proven-float-378">Table 84.3</a> — From macro to keyword — what to remember</p><p class="float-list-row"><a href="ch85.html#proven-float-379">Table 85.1</a> — The sections of an executable and their permissions</p><p class="float-list-row"><a href="ch85.html#proven-float-380">Table 85.2</a> — Address-space layout in Linux and Windows</p><p class="float-list-row"><a href="ch85.html#proven-float-381">Table 85.3</a> — Memory layout on embedded machines</p><p class="float-list-row"><a href="ch85.html#proven-float-382">Table 85.4</a> — A program’s memory layout — what to remember</p><p class="float-list-row"><a href="ch86.html#proven-float-383">Table 86.1</a> — The layers of an allocator</p><p class="float-list-row"><a href="ch86.html#proven-float-384">Table 86.2</a> — Ways to ease fragmentation</p><p class="float-list-row"><a href="ch86.html#proven-float-385">Table 86.3</a> — Alternative allocators and their character</p><p class="float-list-row"><a href="ch86.html#proven-float-386">Table 86.4</a> — Alternative standard library implementations</p><p class="float-list-row"><a href="ch86.html#proven-float-387">Table 86.5</a> — Inside the allocator — what to remember</p><p class="float-list-row"><a href="ch87.html#proven-float-388">Table 87.1</a> — The five bugs — what C gives and what is needed</p><p class="float-list-row"><a href="ch88.html#proven-float-389">Table 88.1</a> — What proven does not do</p><p class="float-list-row"><a href="ch88.html#proven-float-390">Table 88.2</a> — proven’s name shapes and what they mean</p><p class="float-list-row"><a href="ch88.html#proven-float-391">Table 88.3</a> — Bringing proven into a build</p><p class="float-list-row"><a href="ch89.html#proven-float-392">Table 89.1</a> — Accidents born of an ignored error</p><p class="float-list-row"><a href="ch89.html#proven-float-393">Table 89.2</a> — The result package types</p><p class="float-list-row"><a href="ch89.html#proven-float-394">Table 89.3</a> — Error handling, case by case</p><p class="float-list-row"><a href="ch90.html#proven-float-395">Table 90.1</a> — Ownership and writability of the view types</p><p class="float-list-row"><a href="ch90.html#proven-float-396">Table 90.2</a> — What the checked arithmetic functions return</p><p class="float-list-row"><a href="ch90.html#proven-float-397">Table 90.3</a> — The names of the byte operations</p><p class="float-list-row"><a href="ch90.html#proven-float-398">Table 90.4</a> — Alignment functions and their contracts</p><p class="float-list-row"><a href="ch91.html#proven-float-399">Table 91.1</a> — The steps of an allocation</p><p class="float-list-row"><a href="ch91.html#proven-float-400">Table 91.2</a> — Where each allocator function fits</p><p class="float-list-row"><a href="ch91.html#proven-float-401">Table 91.3</a> — Heap, arena and pool compared</p><p class="float-list-row"><a href="ch91.html#proven-float-402">Table 91.4</a> — Choosing the allocator for the situation</p><p class="float-list-row"><a href="ch92.html#proven-float-403">Table 92.1</a> — Allocation and destruction in the string functions</p><p class="float-list-row"><a href="ch92.html#proven-float-404">Table 92.2</a> — Failure atomicity in the string operations</p><p class="float-list-row"><a href="ch92.html#proven-float-405">Table 92.3</a> — The contracts of the UTF-8 functions</p><p class="float-list-row"><a href="ch92.html#proven-float-406">Table 92.4</a> — Failure and ownership in the text functions</p><p class="float-list-row"><a href="ch93.html#proven-float-407">Table 93.1</a> — What may go in a formatting slot</p><p class="float-list-row"><a href="ch93.html#proven-float-408">Table 93.2</a> — The formatting functions and their allocators</p><p class="float-list-row"><a href="ch93.html#proven-float-409">Table 93.3</a> — What the parsing functions read and return</p><p class="float-list-row"><a href="ch93.html#proven-float-410">Table 93.4</a> — The scanner API</p><p class="float-list-row"><a href="ch94.html#proven-float-411">Table 94.1</a> — Containers — creating, allocating, iterating</p><p class="float-list-row"><a href="ch94.html#proven-float-412">Table 94.2</a> — The container macros</p><p class="float-list-row"><a href="ch94.html#proven-float-413">Table 94.3</a> — Keys for a hash map, and what to watch</p><p class="float-list-row"><a href="ch94.html#proven-float-414">Table 94.4</a> — The algorithm tools and where each fits</p><p class="float-list-row"><a href="ch95.html#proven-float-415">Table 95.1</a> — The steps of handling a file</p><p class="float-list-row"><a href="ch95.html#proven-float-416">Table 95.2</a> — What the file flags mean</p><p class="float-list-row"><a href="ch95.html#proven-float-417">Table 95.3</a> — The stream functions and what to watch</p><p class="float-list-row"><a href="ch95.html#proven-float-418">Table 95.4</a> — The time and random APIs</p><p class="float-list-row"><a href="ch96.html#proven-float-419">Table 96.1</a> — Coroutines — what is verified and what is not</p><p class="float-list-row"><a href="ch96.html#proven-float-420">Table 96.2</a> — The answers to the five bugs, and their chapters</p><p class="float-list-row"><a href="ch97.html#proven-float-421">Table 97.1</a> — The tiny JSON — what is in and what is out</p><p class="float-list-row"><a href="ch97.html#proven-float-422">Table 97.2</a> — What the code says and what it leaves unsaid</p><p class="float-list-row"><a href="ch97.html#proven-float-423">Table 97.3</a> — The same place in plain C and in proven</p><p class="float-list-row"><a href="ch97.html#proven-float-424">Table 97.4</a> — What each tool did, and what without it</p><p class="float-list-row"><a href="ch97.html#proven-float-425">Table 97.5</a> — Writing it three times — what to remember</p><p class="float-list-row"><a href="ch98.html#proven-float-426">Table 98.1</a> — The tools of practice</p><p class="float-list-row"><a href="ch98.html#proven-float-427">Table 98.2</a> — What each profiler measures</p><p class="float-list-row"><a href="ch98.html#proven-float-428">Table 98.3</a> — Notable C projects, and why C</p><p class="float-list-row"><a href="ch98.html#proven-float-429">Table 98.4</a> — What each build tool does</p><p class="float-list-row"><a href="ch98.html#proven-float-430">Table 98.5</a> — What the safety levels mean</p><p class="float-list-row"><a href="ch98.html#proven-float-431">Table 98.6</a> — The coding standards and what each governs</p><p class="float-list-row"><a href="ch98.html#proven-float-432">Table 98.7</a> — What the standards forbid, and where this book treats it</p><p class="float-list-row"><a href="ch98.html#proven-float-433">Table 98.8</a> — What C and C++ each lack of the other</p><p class="float-list-row"><a href="ch99.html#proven-float-434">Table 99.1</a> — Embedded compilers and the chips they target</p><p class="float-list-row"><a href="ch99.html#proven-float-435">Table 99.2</a> — Embedded tools, by job</p><p class="float-list-row"><a href="ch100.html#proven-float-436">Table 100.1</a> — What C23 brought, and where we met it</p><p class="float-list-row"><a href="sec103.html#proven-float-437">Table 100.1</a> — Associativity, by operator group</p><p class="float-list-row"><a href="sec103.html#proven-float-438">Table 100.2</a> — Where precedence groups it differently than intended</p><p class="float-list-row"><a href="sec103.html#proven-float-439">Table 100.3</a> — Where to look for what</p><p class="float-list-row"><a href="sec104.html#proven-float-440">Table 100.1</a> — The skeleton of output and input conversions</p><p class="float-list-row"><a href="sec104.html#proven-float-441">Table 100.2</a> — The full list of output conversions</p><p class="float-list-row"><a href="sec104.html#proven-float-442">Table 100.3</a> — The places of flags, width and precision</p><p class="float-list-row"><a href="sec104.html#proven-float-443">Table 100.4</a> — The length modifiers</p><p class="float-list-row"><a href="sec104.html#proven-float-444">Table 100.5</a> — The full list of input conversions</p><p class="float-list-row"><a href="sec104.html#proven-float-445">Table 100.6</a> — The return values of the formatted I/O functions</p><p class="float-list-row"><a href="sec104.html#proven-float-446">Table 100.7</a> — Common formatting mistakes and their fixes</p><p class="float-list-row"><a href="sec105.html#proven-float-447">Table 100.1</a> — The risk of each conversion</p><p class="float-list-row"><a href="sec106.html#proven-float-448">Table 100.1</a> — Where to get the standard documents</p><p class="float-list-row"><a href="sec106.html#proven-float-449">Table 100.2</a> — Books to read next</p><p class="float-list-row"><a href="sec106.html#proven-float-450">Table 100.3</a> — Talks worth watching, and the chapters they meet</p><p class="float-list-row"><a href="sec106.html#proven-float-451">Table 100.4</a> — The tools’ character and what they give a learner</p><p class="float-list-row"><a href="sec106.html#proven-float-452">Table 100.5</a> — Reference material</p><p class="float-list-row"><a href="sec106.html#proven-float-453">Table 100.6</a> — The marks of outdated code</p><p class="float-list-row"><a href="sec106.html#proven-float-454">Table 100.7</a> — The standard editions and their free drafts</p><p class="float-list-row"><a href="sec107.html#proven-float-455">Table 100.1</a> — EBNF notation and its meaning</p><p class="float-list-row"><a href="sec107.html#proven-float-456">Table 100.2</a> — The conventions for writing the grammar</p><p class="float-list-row"><a href="sec107.html#proven-float-457">Table 100.3</a> — What the grammar settles, and what lies outside</p><p class="float-list-row"><a href="sec107.html#proven-float-458">Table 100.4</a> — The grammar — what to remember</p><p class="float-list-row"><a href="sec108.html#proven-float-459">Table 100.1</a> — What the columns of this reference mean</p><p class="float-list-row"><a href="sec108.html#proven-float-460">Table 100.2</a> — <code>&lt;stdio.h></code> reference</p><p class="float-list-row"><a href="sec108.html#proven-float-461">Table 100.3</a> — <code>&lt;string.h></code> reference</p><p class="float-list-row"><a href="sec108.html#proven-float-462">Table 100.4</a> — <code>&lt;stdlib.h></code> reference</p><p class="float-list-row"><a href="sec108.html#proven-float-463">Table 100.5</a> — <code>&lt;math.h></code> reference</p><p class="float-list-row"><a href="sec108.html#proven-float-464">Table 100.6</a> — <code>&lt;time.h></code> reference</p><p class="float-list-row"><a href="sec108.html#proven-float-465">Table 100.7</a> — Macros and types</p><p class="float-list-row"><a href="sec108.html#proven-float-466">Table 100.8</a> — What holds for every function</p><p class="float-list-row"><a href="sec108.html#proven-float-467">Table 100.9</a> — <code>&lt;ctype.h></code> reference</p><p class="float-list-row"><a href="sec108.html#proven-float-468">Table 100.10</a> — Reference for the remaining headers</p><p class="float-list-row"><a href="sec108.html#proven-float-469">Table 100.11</a> — The common conventions of this reference</p><p class="float-list-row"><a href="sec110.html#proven-float-470">Table 100.1</a> — The order in which sources are written</p><h3 id="sx2">Figures</h3><div></div><p class="float-list-row"><a href="ch03.html#proven-float-5">Figure 3.1</a> — A cell of memory — eight bits each, numbered one by one</p><p class="float-list-row"><a href="ch03.html#proven-float-6">Figure 3.2</a> — Big-endian — the most significant byte goes first</p><p class="float-list-row"><a href="ch03.html#proven-float-7">Figure 3.3</a> — Little-endian — the least significant byte goes first</p><p class="float-list-row"><a href="ch04.html#proven-float-9">Figure 4.1</a> — Four aligned bytes — starting at a multiple of four</p><p class="float-list-row"><a href="ch05.html#proven-float-10">Figure 5.1</a> — The memory layout of one program. Nearly every later chapter is read on top of this picture.</p><p class="float-list-row"><a href="ch06.html#proven-float-16">Figure 6.1</a> — Outside, the value read as an <code>unsigned char</code>; inside, the same bits read as a <code>signed char</code>.</p><p class="float-list-row"><a href="ch06.html#proven-float-17">Figure 6.2</a> — The same eight bits: what fills the front depends on the signedness of the original type.</p><p class="float-list-row"><a href="ch07.html#proven-float-19">Figure 7.1</a> — The bit layout of <code>float</code> and <code>double</code>. The width of each field is the ratio of its bit count.</p><p class="float-list-row"><a href="ch17.html#proven-float-49">Figure 17.1</a> — How a screen that shows one source line becoming several machine-code lines is laid out.</p><p class="float-list-row"><a href="ch17.html#proven-float-50">Figure 17.2</a> — Values as boxes, pointers as arrows — the picture a visualiser draws.</p><p class="float-list-row"><a href="ch26.html#proven-float-88">Figure 26.1</a> — How the standard divides types. A dashed box is a name that gathers several branches.</p><p class="float-list-row"><a href="ch29.html#proven-float-104">Figure 29.1</a> — Follow the four in order. Most accidents happen at step 3.</p><p class="float-list-row"><a href="ch35.html#proven-float-121">Figure 35.1</a> — The three things that travel with one pointer value. The same address does not make the same pointer.</p><p class="float-list-row"><a href="ch38.html#proven-float-131">Figure 38.1</a> — The address is the same and the type is not — so how many elements there are disappears.</p><p class="float-list-row"><a href="ch38.html#proven-float-133">Figure 38.2</a> — The distance <code>+1</code> jumps is the size of the type pointed at.</p><p class="float-list-row"><a href="ch39.html#proven-float-140">Figure 39.1</a> — The two jumps that reach <code>a[2][1]</code> — one row-sized, one element-sized.</p><p class="float-list-row"><a href="ch40.html#proven-float-149">Figure 40.1</a> — An array of pointers — the array itself is contiguous, what it points at is scattered.</p><p class="float-list-row"><a href="ch40.html#proven-float-151">Figure 40.2</a> — To change the caller’s pointer you must pass the place where that pointer lives.</p><p class="float-list-row"><a href="ch46.html#proven-float-175">Figure 46.1</a> — The hatched cells are padding. Each member sits at a multiple of its alignment, and space is added at the end too.</p><p class="float-list-row"><a href="ch46.html#proven-float-177">Figure 46.2</a> — Header and data in one block — two allocations become one.</p><p class="float-list-row"><a href="ch46.html#proven-float-178">Figure 46.3</a> — The <code>sizeof</code> rule and the <code>offsetof</code> rule — only the tail differs.</p><p class="float-list-row"><a href="ch47.html#proven-float-180">Figure 47.1</a> — An array of structs — since no gap is allowed between elements, the size is rounded up to a multiple of the alignment.</p><p class="float-list-row"><a href="ch47.html#proven-float-184">Figure 47.2</a> — Above, twelve bytes with the padding going out; below, seven bytes in the order we chose.</p>
+<div class="nav"><a href="sec108.html">← Prev</a><span class="sp"></span><a href="index.html">Contents</a><span class="sp"></span><a href="sec110.html">Next →</a></div>
+</div></main>
+<script>(function(){var b=document.querySelector('.here-btn'),p=document.getElementById('here-panel');function open(o){if(!p)return;p.hidden=!o;if(b)b.setAttribute('aria-expanded',o);}if(b)b.addEventListener('click',function(){open(p.hidden);});if(p)p.addEventListener('click',function(e){if(e.target.tagName==='A'&&e.target.getAttribute('href').charAt(0)==='#')open(false);});document.addEventListener('keydown',function(e){if(e.key==='Escape')open(false);});var box=document.getElementById('setbox'),so=document.getElementById('set-open');if(!box||!so)return;var r=document.documentElement;function load(){try{return JSON.parse(localStorage.getItem('pcb-read')||'{}');}catch(e){return {};}}function save(s){try{localStorage.setItem('pcb-read',JSON.stringify(s));}catch(e){}}function css(n){return getComputedStyle(r).getPropertyValue(n).trim();}function paint(){var s=load();document.getElementById('s-width').checked=!!s.width;var t=s.theme||'auto';[].forEach.call(box.querySelectorAll('.segb'),function(x){x.setAttribute('aria-pressed',x.dataset.theme===t);});document.getElementById('s-fg').value=s.fg||hex(css('--fg'));document.getElementById('s-bg').value=s.bg||hex(css('--bg'));document.getElementById('s-link').value=s.link||hex(css('--link'));}function hex(v){var m=v.match(/^rgba?\((\d+)[ ,]+(\d+)[ ,]+(\d+)/);if(!m)return v.charAt(0)==='#'?v:'#000000';return '#'+[1,2,3].map(function(i){return ('0'+parseInt(m[i],10).toString(16)).slice(-2);}).join('');}so.addEventListener('click',function(){box.hidden=!box.hidden;so.setAttribute('aria-expanded',!box.hidden);if(!box.hidden)paint();});document.getElementById('s-width').addEventListener('change',function(){var s=load();s.width=this.checked;save(s);if(s.width)r.setAttribute('data-measure','on');else r.removeAttribute('data-measure');});[].forEach.call(box.querySelectorAll('.segb'),function(x){x.addEventListener('click',function(){var s=load();s.theme=x.dataset.theme;delete s.fg;delete s.bg;delete s.link;save(s);['--fg','--bg','--link'].forEach(function(n){r.style.removeProperty(n);});if(s.theme==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',s.theme);setTimeout(paint,0);});});[['s-fg','--fg','fg'],['s-bg','--bg','bg'],['s-link','--link','link']].forEach(function(a){document.getElementById(a[0]).addEventListener('input',function(){var s=load();s[a[2]]=this.value;save(s);r.style.setProperty(a[1],this.value);});});})();</script></body></html>

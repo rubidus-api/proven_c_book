@@ -4,7 +4,7 @@
 `scripts/sync-status.py --write` 가 자동으로 갱신한다.
 The Korean edition is the source; this table is generated.
 
-- **synced** 112 · **stale** 0 · **pending** 0
+- **synced** 115 · **stale** 0 · **pending** 0
 
 | 원본 / source | 상태 / state |
 |---|---|
@@ -18,6 +18,7 @@ The Korean edition is the source; this table is generated.
 | `book/chapters/ch08.typ` | ✅ synced |
 | `book/chapters/ch09.typ` | ✅ synced |
 | `book/chapters/ch10.typ` | ✅ synced |
+| `book/chapters/ch100.typ` | ✅ synced |
 | `book/chapters/ch11.typ` | ✅ synced |
 | `book/chapters/ch12.typ` | ✅ synced |
 | `book/chapters/ch13.typ` | ✅ synced |
@@ -106,6 +107,7 @@ The Korean edition is the source; this table is generated.
 | `book/chapters/ch96.typ` | ✅ synced |
 | `book/chapters/ch97.typ` | ✅ synced |
 | `book/chapters/ch98.typ` | ✅ synced |
+| `book/chapters/ch99.typ` | ✅ synced |
 | `book/parts/part01.typ` | ✅ synced |
 | `book/parts/part02.typ` | ✅ synced |
 | `book/parts/part11s.typ` | ✅ synced |
@@ -117,6 +119,7 @@ The Korean edition is the source; this table is generated.
 | `book/appendix/a4-reading.typ` | ✅ synced |
 | `book/appendix/a6-grammar.typ` | ✅ synced |
 | `book/appendix/a7-library.typ` | ✅ synced |
+| `book/appendix/a8-floats.typ` | ✅ synced |
 | `book/back/bibliography.typ` | ✅ synced |
 | `book/back/index.typ` | ✅ synced |
 | `book/main.typ` | ✅ synced |

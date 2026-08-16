@@ -713,7 +713,72 @@ def fig_flex_array(L):
     return "".join(out)
 
 
+def fig_flex_size(L):
+    """sizeof 와 offsetof 가 갈리는 자리를 바이트 눈금 위에 겹쳐 보인다."""
+    u = 23                      # 한 바이트의 너비
+    x0, w, h = 132, 760, 330
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+
+    def bx(b):                  # 바이트 번호 → x 좌표
+        return x0 + b * u
+
+    # 바이트 눈금
+    ytick = 52
+    for b in (0, 4, 8, 12, 16, 18, 22):
+        out.append(f'<line x1="{bx(b)}" y1="{ytick}" x2="{bx(b)}" y2="{ytick + 6}" '
+                   f'stroke="#666" stroke-width="1"/>')
+        out.append(text(bx(b), ytick - 4, str(b), size=9.5, fill="#666"))
+
+    rows = [
+        (74, L["r_type"], [(0, 8, L["stamp"], "none"), (8, 4, L["count"], "none"),
+                           (12, 4, L["pad"], "#eee")], 16, L["n_type"]),
+        (162, L["r_off"], [(0, 8, L["stamp"], "none"), (8, 4, L["count"], "none"),
+                           (12, 6, L["three"], "#dbe7f3")], 18, L["n_off"]),
+        (250, L["r_size"], [(0, 8, L["stamp"], "none"), (8, 4, L["count"], "none"),
+                            (12, 6, L["three"], "#dbe7f3"), (18, 4, L["unused"], "#f6e3e3")],
+         22, L["n_size"]),
+    ]
+    for y, head, cells, total, note in rows:
+        out.append(text(x0 - 10, y + 22, head, size=11, weight="bold", anchor="end"))
+        for start, span, label, fill in cells:
+            out.append(box(bx(start), y, span * u, 36, fill=fill))
+            out.append(text(bx(start) + span * u / 2, y + 23, label, size=10.5))
+        out.append(text(bx(total) + 10, y + 23, f"{total} B", size=10.5,
+                        weight="bold", anchor="start"))
+        out.append(text(x0, y + 54, note, size=10.5, anchor="start"))
+
+    # offsetof 자리를 세 줄에 걸쳐 세로로 잇는다 --- 원소는 언제나 여기서 시작한다
+    out.append(f'<line x1="{bx(12)}" y1="{68}" x2="{bx(12)}" y2="{292}" '
+               f'stroke="#c0392b" stroke-width="1.4" stroke-dasharray="4 4"/>')
+    out.append(text(bx(12), 64, L["mark"], size=10.5, weight="bold", fill="#c0392b"))
+
+    out.append(text(w / 2, h - 12, L["note"], size=11.5, weight="bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
 FIGS = {
+    "flex-size": (fig_flex_size, {
+        "ko": dict(title="같은 자료, 두 가지 크기 셈 --- 원소는 어느 쪽이든 같은 자리에서 시작한다",
+                   r_type="struct rec", r_off="offsetof 규칙", r_size="sizeof 규칙",
+                   stamp="stamp (8)", count="count (4)", pad="꼬리 패딩 (4)",
+                   three="data[3] --- 2바이트씩 셋", unused="안 쓰는 4B",
+                   mark="offsetof(data) = 12",
+                   n_type="타입 자체. sizeof 는 정렬 8 에 맞춰 16 으로 올림된다",
+                   n_off="offsetof(data) + 3×2 = 18 --- 딱 맞는다",
+                   n_size="sizeof + 3×2 = 22 --- 꼬리 패딩을 한 번 더 센다",
+                   note="갈리는 것은 끝자락 4바이트뿐이다 --- 그런데 크기를 되물으면 그 4바이트가 답을 바꾼다"),
+        "en": dict(title="one record, two ways to size it --- the elements start at the same place either way",
+                   r_type="struct rec", r_off="offsetof rule", r_size="sizeof rule",
+                   stamp="stamp (8)", count="count (4)", pad="tail padding (4)",
+                   three="data[3] --- three 2-byte slots", unused="4 B unused",
+                   mark="offsetof(data) = 12",
+                   n_type="the type itself. sizeof rounds 12 up to 16 for alignment 8",
+                   n_off="offsetof(data) + 3x2 = 18 --- an exact fit",
+                   n_size="sizeof + 3x2 = 22 --- the tail padding is counted twice",
+                   note="only the last 4 bytes differ --- but ask the size backwards and those 4 bytes change the answer"),
+    }),
     "ptr-array": (fig_ptr_array, {
         "ko": dict(title="포인터의 배열 --- 길이가 제각각인 것들을 하나로 묶는다",
                    arr="char *names[3]", addr=["0x5f10", "0x5f30", "0x5f48"],

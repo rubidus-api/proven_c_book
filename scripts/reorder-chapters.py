@@ -9,8 +9,12 @@
 
 쓰는 법
     reorder-chapters.py --move loops --after arrays-2d      한 장을 옮긴다
+    reorder-chapters.py --insert scope --after linking       장을 새로 끼운다
     reorder-chapters.py --order id1,id2,…                    전체 순서를 준다
     reorder-chapters.py --dry-run …                          무엇이 바뀌는지만
+
+`--insert` 는 등록부에 id 를 끼우고, 뒤 장들의 파일 이름을 한 칸씩 밀고, 두 판에
+빈 장 파일을 만든다. 내용은 사람이 쓴다 --- 도구는 자리만 낸다.
 
 옮긴 뒤에는 사람이 두 가지를 본다.
     scripts/check-counting-prose.py    「앞선 여덟 장」 같은 *개수* 서술
@@ -51,6 +55,46 @@ def write_order(new_ids):
     REGISTRY.write_text(text, encoding="utf-8")
 
 
+def insert_id(text, newid, anchor, before):
+    """등록부의 부 목록 안에 id 를 끼운다 --- 기준 장이 있는 부에 들어간다."""
+    def repl(m):
+        ids = re.findall(r'"([^"]+)"', m.group(1))
+        if anchor not in ids:
+            return m.group(0)
+        at = ids.index(anchor) + (0 if before else 1)
+        ids.insert(at, newid)
+        return "chapters: (" + ", ".join(f'"{x}"' for x in ids) + ",)"
+    return re.sub(r"chapters:\s*\(([^)]*)\)", repl, text)
+
+
+def shift_files(old, new, dry):
+    """장이 하나 늘었다 --- 뒤 장들의 파일 이름을 뒤에서부터 한 칸씩 민다."""
+    pos_old = {cid: i + 1 for i, cid in enumerate(old)}
+    moved = 0
+    for ed in ("book", "book-en"):
+        base = ROOT / ed / "chapters"
+        for cid in reversed(old):          # 뒤에서부터 밀어야 서로 덮지 않는다
+            a, b = pos_old[cid], new.index(cid) + 1
+            if a == b:
+                continue
+            moved += 1
+            if not dry:
+                shutil.move(base / f"ch{a:02d}.typ", base / f"ch{b:02d}.typ")
+    return moved
+
+
+def make_stub(newid, no, dry):
+    """두 판에 빈 장 파일을 만든다 --- 서두 정형은 사람이 채운다."""
+    for ed, note in (("book", "// 새 장 --- 내용은 사람이 쓴다"),
+                     ("book-en", "// new chapter --- the text is written by hand")):
+        path = ROOT / ed / "chapters" / f"ch{no:02d}.typ"
+        if dry:
+            continue                       # 아직 밀지 않았으니 자리는 차 있다
+        if path.exists():
+            raise SystemExit(f"{path} 가 이미 있다 --- 자리를 잘못 냈다")
+        path.write_text(f"{note} ({newid})\n", encoding="utf-8")
+
+
 def rename_files(old, new, dry):
     """옛 순서에서의 위치 → 새 순서에서의 위치로 장 파일을 옮긴다 (두 단계)."""
     pos_old = {cid: i + 1 for i, cid in enumerate(old)}
@@ -79,6 +123,33 @@ def main():
     dry = "--dry-run" in sys.argv
     old = current_order()
     new = None
+
+    if "--insert" in sys.argv:
+        who = sys.argv[sys.argv.index("--insert") + 1]
+        if who in old:
+            print(f"{who} 는 이미 있다", file=sys.stderr)
+            return 1
+        if "--after" in sys.argv:
+            anchor, before = sys.argv[sys.argv.index("--after") + 1], False
+        elif "--before" in sys.argv:
+            anchor, before = sys.argv[sys.argv.index("--before") + 1], True
+        else:
+            print("--after 또는 --before 가 필요하다", file=sys.stderr)
+            return 2
+        if anchor not in old:
+            print(f"기준 장 {anchor} 를 찾지 못했다", file=sys.stderr)
+            return 1
+        new = list(old)
+        new.insert(new.index(anchor) + (0 if before else 1), who)
+        moved = shift_files(old, new, dry)
+        make_stub(who, new.index(who) + 1, dry)
+        if not dry:
+            REGISTRY.write_text(insert_id(REGISTRY.read_text(encoding="utf-8"),
+                                          who, anchor, before), encoding="utf-8")
+        print(f"장 신설: {who} --- 파일 {moved}개를 밀고 빈 장 둘을 만들었다"
+              + ("  (--dry-run)" if dry else ""))
+        print("이제 볼 것: 장 서두 정형, 규모 표기(check-counts), 부 도입부.")
+        return 0
 
     if "--order" in sys.argv:
         new = sys.argv[sys.argv.index("--order") + 1].split(",")
