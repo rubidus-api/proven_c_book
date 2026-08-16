@@ -797,8 +797,8 @@ of 8 one-byte requests, ones breaking the default alignment: 0
 address gap between two neighbouring blocks: 32 bytes (though 1 was asked for)
 
 300000 iterations
-  malloc + free every time :  0.0036 s  ( 12.0 ns each)
-  borrow once and reuse    :  0.0006 s  (  2.0 ns each)
+  malloc + free every time :  0.0037 s  ( 12.4 ns each)
+  borrow once and reuse    :  0.0006 s  (  2.1 ns each)
   a stack array            :  0.0007 s  (  2.2 ns each)
 
 (total 114739248 - a value we use so the work is not optimized away)
