@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
-## [Unreleased]
+## [v0.65.2] - 2026-08-16
 
 ### Changed
 - ★ **「무늬」를 「패턴」·「꼴」로 고쳤다**(저자 지적: 「패턴을 무늬라고 번역하는 곳이
