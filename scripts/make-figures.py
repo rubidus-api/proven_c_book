@@ -714,44 +714,47 @@ def fig_flex_array(L):
 
 
 def fig_flex_size(L):
-    """sizeof 와 offsetof 가 갈리는 자리를 바이트 눈금 위에 겹쳐 보인다."""
-    u = 23                      # 한 바이트의 너비
-    x0, w, h = 132, 760, 330
+    """앞 멤버가 같은 두 구조체 --- 마지막 멤버의 타입이 자리를 바꾼다."""
+    u = 40                      # 한 바이트의 너비
+    x0, w, h = 150, 760, 330
     out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
     out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
 
-    def bx(b):                  # 바이트 번호 → x 좌표
+    def bx(b):
         return x0 + b * u
 
-    # 바이트 눈금
-    ytick = 52
-    for b in (0, 4, 8, 12, 16, 18, 22):
+    ytick = 54
+    for b in range(0, 15):
         out.append(f'<line x1="{bx(b)}" y1="{ytick}" x2="{bx(b)}" y2="{ytick + 6}" '
                    f'stroke="#666" stroke-width="1"/>')
-        out.append(text(bx(b), ytick - 4, str(b), size=9.5, fill="#666"))
+        if b % 2 == 0:
+            out.append(text(bx(b), ytick - 4, str(b), size=9.5, fill="#666"))
 
     rows = [
-        (74, L["r_type"], [(0, 8, L["stamp"], "none"), (8, 4, L["count"], "none"),
-                           (12, 4, L["pad"], "#eee")], 16, L["n_type"]),
-        (162, L["r_off"], [(0, 8, L["stamp"], "none"), (8, 4, L["count"], "none"),
-                           (12, 6, L["three"], "#dbe7f3")], 18, L["n_off"]),
-        (250, L["r_size"], [(0, 8, L["stamp"], "none"), (8, 4, L["count"], "none"),
-                            (12, 6, L["three"], "#dbe7f3"), (18, 4, L["unused"], "#f6e3e3")],
-         22, L["n_size"]),
+        (78, L["s1"], [(0, 2, "a", "none"), (2, 2, L["pad"], "#eee"),
+                       (4, 4, "b", "none"), (8, 2, "c", "none"),
+                       (10, 2, L["pad"], "#f6e3e3"), (12, 2, L["data4"], "#dbe7f3")],
+         12, 12, L["n1"]),
+        (188, L["s2"], [(0, 2, "a", "none"), (2, 2, L["pad"], "#eee"),
+                        (4, 4, "b", "none"), (8, 2, "c", "none"),
+                        (10, 3, L["data1"], "#dbe7f3")],
+         10, 12, L["n2"]),
     ]
-    for y, head, cells, total, note in rows:
-        out.append(text(x0 - 10, y + 22, head, size=11, weight="bold", anchor="end"))
-        for start, span, label, fill in cells:
-            out.append(box(bx(start), y, span * u, 36, fill=fill))
-            out.append(text(bx(start) + span * u / 2, y + 23, label, size=10.5))
-        out.append(text(bx(total) + 10, y + 23, f"{total} B", size=10.5,
-                        weight="bold", anchor="start"))
-        out.append(text(x0, y + 54, note, size=10.5, anchor="start"))
-
-    # offsetof 자리를 세 줄에 걸쳐 세로로 잇는다 --- 원소는 언제나 여기서 시작한다
-    out.append(f'<line x1="{bx(12)}" y1="{68}" x2="{bx(12)}" y2="{292}" '
-               f'stroke="#c0392b" stroke-width="1.4" stroke-dasharray="4 4"/>')
-    out.append(text(bx(12), 64, L["mark"], size=10.5, weight="bold", fill="#c0392b"))
+    for y, head, cells, off, size, note in rows:
+        out.append(text(x0 - 12, y + 24, head, size=12, weight="bold", anchor="end"))
+        for s, span, label, fill in cells:
+            out.append(box(bx(s), y, span * u, 40, fill=fill))
+            out.append(text(bx(s) + span * u / 2, y + 25, label, size=10.5))
+        # sizeof 자리와 offsetof 자리를 눈금 위에 표시한다
+        out.append(f'<line x1="{bx(off)}" y1="{y - 12}" x2="{bx(off)}" y2="{y + 46}" '
+                   f'stroke="#c0392b" stroke-width="1.6" stroke-dasharray="4 3"/>')
+        out.append(text(bx(off), y - 16, L["off"] + " " + str(off), size=10,
+                        weight="bold", fill="#c0392b"))
+        out.append(f'<line x1="{bx(size)}" y1="{y + 46}" x2="{bx(size)}" y2="{y + 62}" '
+                   f'stroke="#2c6fbb" stroke-width="1.6"/>')
+        out.append(text(bx(size) + 6, y + 60, L["size"] + " " + str(size), size=10,
+                        weight="bold", fill="#2c6fbb", anchor="start"))
+        out.append(text(x0, y + 80, note, size=10.5, anchor="start"))
 
     out.append(text(w / 2, h - 12, L["note"], size=11.5, weight="bold"))
     out.append(TAIL)
@@ -760,24 +763,20 @@ def fig_flex_size(L):
 
 FIGS = {
     "flex-size": (fig_flex_size, {
-        "ko": dict(title="같은 자료, 두 가지 크기 셈 --- 원소는 어느 쪽이든 같은 자리에서 시작한다",
-                   r_type="struct rec", r_off="offsetof 규칙", r_size="sizeof 규칙",
-                   stamp="stamp (8)", count="count (4)", pad="꼬리 패딩 (4)",
-                   three="data[3] --- 2바이트씩 셋", unused="안 쓰는 4B",
-                   mark="offsetof(data) = 12",
-                   n_type="타입 자체. sizeof 는 정렬 8 에 맞춰 16 으로 올림된다",
-                   n_off="offsetof(data) + 3×2 = 18 --- 딱 맞는다",
-                   n_size="sizeof + 3×2 = 22 --- 꼬리 패딩을 한 번 더 센다",
-                   note="갈리는 것은 끝자락 4바이트뿐이다 --- 그런데 크기를 되물으면 그 4바이트가 답을 바꾼다"),
-        "en": dict(title="one record, two ways to size it --- the elements start at the same place either way",
-                   r_type="struct rec", r_off="offsetof rule", r_size="sizeof rule",
-                   stamp="stamp (8)", count="count (4)", pad="tail padding (4)",
-                   three="data[3] --- three 2-byte slots", unused="4 B unused",
-                   mark="offsetof(data) = 12",
-                   n_type="the type itself. sizeof rounds 12 up to 16 for alignment 8",
-                   n_off="offsetof(data) + 3x2 = 18 --- an exact fit",
-                   n_size="sizeof + 3x2 = 22 --- the tail padding is counted twice",
-                   note="only the last 4 bytes differ --- but ask the size backwards and those 4 bytes change the answer"),
+        "ko": dict(title="앞 멤버가 같아도 마지막 멤버의 타입이 자리를 바꾼다",
+                   s1="struct s1", s2="struct s2", pad="채움",
+                   data4="data[] (uint32_t)", data1="data[] (char)",
+                   off="offsetof(data)", size="sizeof",
+                   n1="data 가 uint32_t --- 정렬 4 에 맞추느라 c 뒤에 2바이트가 빈다",
+                   n2="data 가 char --- 정렬 1 이라 c 바로 뒤에 붙는다. 앞에 빈자리가 없다",
+                   note="두 구조체의 sizeof 는 똑같이 12 다 --- 그런데 data 가 앉는 자리는 다르다"),
+        "en": dict(title="Same leading members, and the last member's type moves the boundary",
+                   s1="struct s1", s2="struct s2", pad="padding",
+                   data4="data[] (uint32_t)", data1="data[] (char)",
+                   off="offsetof(data)", size="sizeof",
+                   n1="data is uint32_t --- aligning it to 4 leaves two bytes empty after c",
+                   n2="data is char --- alignment 1, so it follows c directly, with no gap",
+                   note="both structs have sizeof 12 --- yet data begins in a different place"),
     }),
     "ptr-array": (fig_ptr_array, {
         "ko": dict(title="포인터의 배열 --- 길이가 제각각인 것들을 하나로 묶는다",
