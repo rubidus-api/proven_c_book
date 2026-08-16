@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
-## [Unreleased]
+## [v0.65.4] - 2026-08-16
 
 ### Added
 - ★ 복사 규칙을 저자의 정식화대로 다시 적었다 --- *마지막 멤버 앞까지는 복사되고,
