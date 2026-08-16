@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [Unreleased]
+
+### Added
+- ★ 46장에 문답 신설 --- 「함수가 유연 배열 멤버가 있는 구조체를 *값으로 돌려주면*
+  받는 쪽의 배열은 덮어씌워지는가, 그대로 남는가」(저자 물음). 실측하면 `sizeof`
+  바이트만큼의 바이트 복사라 *앞의 `sizeof` 안은 덮이고 바깥은 남는다* ---
+  13바이트 물건에 받으면 `PQR` 이 `ABR` 이 된다. ★ 그리고 `struct s2 v;` 처럼
+  *선언한* 물건에도 원소가 둘 들어간다(§6.7.3.2 p20: 그 물건을 넘기지 않는 가장 긴
+  배열로 취급). 다만 표준이 보장하는 것은 「덮인다」도 「남는다」도 아닌 *부정한
+  표현*이고(p28), gcc 는 이 코드에 「이 ABI 는 GCC 4.4 에서 바뀌었다」는 알림을
+  붙인다. 그래서 실무의 답은 *값으로 돌려주지 않는다*이다.
+
 ## [v0.65.3] - 2026-08-16
 
 ### Changed
