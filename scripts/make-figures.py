@@ -761,7 +761,75 @@ def fig_flex_size(L):
     return "".join(out)
 
 
+def fig_memory_order(L):
+    """깃발과 데이터 --- 순서를 안 묶으면 무엇이 어긋나는가."""
+    w, h = 760, 350
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 24, L["title"], size=14, weight="bold"))
+
+    def panel(x0, y0, head, note, ok):
+        o = []
+        o.append(text(x0 + 170, y0, head, size=12, weight="bold"))
+        # 두 줄기: 쓰는 쪽 / 읽는 쪽
+        o.append(box(x0, y0 + 12, 160, 96, fill="#f7f7f7"))
+        o.append(text(x0 + 80, y0 + 32, L["writer"], size=10.5, weight="bold"))
+        o.append(text(x0 + 80, y0 + 54, L["w1"], size=10))
+        o.append(text(x0 + 80, y0 + 74, L["w2"], size=10))
+        o.append(box(x0 + 180, y0 + 12, 160, 96, fill="#f7f7f7"))
+        o.append(text(x0 + 260, y0 + 32, L["reader"], size=10.5, weight="bold"))
+        o.append(text(x0 + 260, y0 + 54, L["r1"], size=10))
+        o.append(text(x0 + 260, y0 + 74, L["r2"], size=10))
+        o.append(arrow(x0 + 160, y0 + 60, x0 + 178, y0 + 60))
+        o.append(text(x0 + 170, y0 + 128, note, size=10.5,
+                      fill="#2c6fbb" if ok else "#c0392b"))
+        return o
+
+    out += panel(30, 60, L["bad_head"], L["bad_note"], False)
+    out += panel(400, 60, L["good_head"], L["good_note"], True)
+
+    # 아래: 벽 그림
+    out.append(box(400, 210, 340, 74, dash="5 4"))
+    out.append(text(570, 232, L["wall1"], size=10.5, weight="bold"))
+    out.append(text(570, 252, L["wall2"], size=10))
+    out.append(text(570, 270, L["wall3"], size=10))
+
+    out.append(box(30, 210, 340, 74, dash="5 4"))
+    out.append(text(200, 232, L["free1"], size=10.5, weight="bold"))
+    out.append(text(200, 252, L["free2"], size=10))
+    out.append(text(200, 270, L["free3"], size=10))
+
+    out.append(text(w / 2, 320, L["note"], size=11.5, weight="bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
 FIGS = {
+    "memory-order": (fig_memory_order, {
+        "ko": dict(title="깃발이 보이면 데이터도 보이는가",
+                   writer="쓰는 쪽", reader="읽는 쪽",
+                   w1="data = 42", w2="flag = 1",
+                   r1="flag 를 본다", r2="data 를 읽는다",
+                   bad_head="순서를 안 묶으면", good_head="release / acquire 로 묶으면",
+                   bad_note="깃발이 먼저 보일 수 있다 → 옛 data 를 읽는다",
+                   good_note="깃발이 보이면 그 앞의 쓰기도 보인다",
+                   free1="누가 순서를 바꾸나", free2="컴파일러가 바꾼다 (한 갈래만 보므로 문제없다고 판단)",
+                   free3="CPU 도 바꾼다 (쓰기 버퍼·비순차 실행)",
+                   wall1="짝이 세우는 벽", wall2="release: 앞의 쓰기가 아래로 못 내려간다",
+                   wall3="acquire: 뒤의 읽기가 위로 못 올라간다",
+                   note="벽은 한쪽만 세워도 소용없다 --- 쓰는 쪽과 읽는 쪽이 짝을 이뤄야 한다"),
+        "en": dict(title="If the flag is visible, is the data visible too?",
+                   writer="writer", reader="reader",
+                   w1="data = 42", w2="flag = 1",
+                   r1="sees flag", r2="reads data",
+                   bad_head="with no ordering", good_head="paired release / acquire",
+                   bad_note="the flag can arrive first -> stale data is read",
+                   good_note="seeing the flag means seeing the writes before it",
+                   free1="who reorders?", free2="the compiler does (one thread looks unaffected)",
+                   free3="so does the CPU (store buffers, out-of-order execution)",
+                   wall1="the wall the pair builds", wall2="release: earlier writes cannot sink below",
+                   wall3="acquire: later reads cannot rise above",
+                   note="one side alone is useless --- writer and reader must pair up"),
+    }),
     "flex-size": (fig_flex_size, {
         "ko": dict(title="앞 멤버가 같아도 마지막 멤버의 타입이 자리를 바꾼다",
                    s1="struct s1", s2="struct s2", pad="채움",
