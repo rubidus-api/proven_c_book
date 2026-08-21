@@ -6,3 +6,6 @@
 *.woff2 binary
 *.png   binary
 *.jpg   binary
+
+# 생성물의 줄 끝 공백은 예제 출력에서 온다 --- 손으로 고칠 수 없으므로 검사에서 뺀다
+docs/**/*.html -whitespace
