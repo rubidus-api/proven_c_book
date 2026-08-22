@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.71.0] - 2026-08-22
+
+### Changed
+- ★ **3장이 이름을 부를 때 뜻도 함께 적는다**(두 판). 갑자기 나오던 약어와 아키텍처
+  이름을 첫 자리에서 풀어 썼다 --- *명령어 집합*(instruction set architecture, 줄여서
+  ISA)에 「이 기계에 무엇을 시킬 수 있는가의 목록」이라는 한 줄을 붙였고, MMU(memory
+  management unit)·DRAM·x86-64·AArch64·TBI(top byte ignore)·MTE·NaN(not a
+  number)·CHERI·Arm Morello 에도 무엇의 줄임말이고 무엇을 가리키는 이름인지를 달았다.
+  인텔·AMD·ARM 은 「어디에 들어가는 칩인가」로 바꿔 적었다. NaN 은 7장으로 넘긴다.
+- ★ **「그 시절 기계의 정직한 별명」을 「기계의 특성이 그대로 비치는 언어」로 바꿨다**
+  (두 판, 2장). 인용문이 아니라 이 책이 지어낸 표현이었고, *별명*은 C 가 기계를 가리키는
+  다른 말이라는 뜻으로 읽힐 수 있었다. 이 표현을 되받는 14장·15장의 자리도 함께 고쳤다.
+
+### Fixed
+- 14장이 기계의 성질을 이야기한 장을 **3장이라 잘못 가리키던 것**을 2장으로 바로잡았다
+  (두 판).
+- `docs/jargon.tsv` 에 AArch64·x86-64·NaN·CHERI·DRAM 을 더했다(지키는 낱말 13 → 18).
+
 ## [v0.70.1] - 2026-08-22
 
 ### Added
