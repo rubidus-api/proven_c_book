@@ -35,6 +35,16 @@ if [ -f scripts/check-chapter-openings.py ]; then
   python3 scripts/check-chapter-openings.py || fail "chapter opening rule violated"
 fi
 
+# 문체의 잔재 --- 금지 표현이 있거나 기준선보다 늘었으면 잡는다 (RFC-0038)
+if [ -f scripts/check-style.py ]; then
+  python3 scripts/check-style.py --check || fail "문체 잔재가 늘었다"
+fi
+
+# 어려운 낱말이 처음 나올 때 설명이 붙어 있는가 (RFC-0039)
+if [ -f scripts/check-jargon.py ]; then
+  python3 scripts/check-jargon.py --check || fail "설명 없이 등장하는 낱말이 있다"
+fi
+
 # 공개 저장소에 이 기계의 절대 경로·인증서가 새지 않았는가
 if [ -f scripts/check-privacy.py ]; then
   python3 scripts/check-privacy.py || fail "local paths or credentials in the repository"
