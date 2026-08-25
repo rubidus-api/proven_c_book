@@ -7,8 +7,8 @@ Re-run it whenever the manuscript changes.
 
 ![Dependencies between chapters](dependency-graph-en.svg)
 
-- Chapters: **101**
-- Dependencies: **212**
+- Chapters: **102**
+- Dependencies: **215**
 - Chapters leaning on nothing: 1
 
 ## Leaning on a later chapter
@@ -21,12 +21,12 @@ None. Every chapter leans only on chapters before it.
 |---|---|---|
 | 39 | Arrays | 10 |
 | 3 | Words and addresses — the archetype of C | 8 |
+| 25 | Declaring and defining functions | 7 |
 | 2 | A simple model of the machine — the birth of C | 6 |
 | 8 | Characters and text — scars in the standard | 6 |
 | 9 | The origin of streams — punched cards, line printers, printing terminals | 6 |
 | 17 | The general shape of compilation | 6 |
 | 20 | The structure of a program | 6 |
-| 25 | Declaring and defining functions | 6 |
 | 45 | Lifetime and storage duration | 6 |
 | 47 | Structs | 6 |
 | 52 | Errors and contracts | 6 |
@@ -38,7 +38,7 @@ None. Every chapter leans only on chapters before it.
 
 Mostly the closing part. One near the front may be weakly connected.
 
-11, 37, 41, 42, 48, 49, 50, 56, 57, 59, 60, 63, 68, 69, 72, 75, 76, 77, 80, 85, 89, 94, 95, 96, 97, 98, 100, 101
+11, 37, 41, 42, 48, 49, 50, 57, 59, 60, 61, 64, 69, 70, 73, 76, 77, 78, 81, 86, 90, 95, 96, 97, 98, 99, 101, 102
 
 ---
 

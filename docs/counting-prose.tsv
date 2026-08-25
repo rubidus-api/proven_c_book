@@ -25,35 +25,35 @@ book-en/chapters/ch52.typ	two chapters
 book-en/chapters/ch53.typ	three chapters
 book-en/chapters/ch54.typ	two chapters
 book-en/chapters/ch59.typ	two chapters
-book-en/chapters/ch64.typ	two chapters
-book-en/chapters/ch65.typ	The next two chapters
-book-en/chapters/ch65.typ	one chapters
 book-en/chapters/ch65.typ	two chapters
-book-en/chapters/ch67.typ	two chapters
-book-en/chapters/ch70.typ	five chapters
-book-en/chapters/ch70.typ	the next five chapters
-book-en/chapters/ch70.typ	the next two chapters
-book-en/chapters/ch70.typ	two chapters
+book-en/chapters/ch66.typ	The next two chapters
+book-en/chapters/ch66.typ	one chapters
+book-en/chapters/ch66.typ	two chapters
+book-en/chapters/ch68.typ	two chapters
+book-en/chapters/ch71.typ	five chapters
+book-en/chapters/ch71.typ	the next five chapters
+book-en/chapters/ch71.typ	the next two chapters
 book-en/chapters/ch71.typ	two chapters
-book-en/chapters/ch75.typ	six chapters
-book-en/chapters/ch75.typ	three chapters
-book-en/chapters/ch78.typ	one chapter
-book-en/chapters/ch80.typ	three chapters
-book-en/chapters/ch81.typ	ten chapters
-book-en/chapters/ch81.typ	three remaining chapters
-book-en/chapters/ch81.typ	two chapters
-book-en/chapters/ch85.typ	thirteen chapters
-book-en/chapters/ch85.typ	two chapters
-book-en/chapters/ch85.typ	two remaining chapters
-book-en/chapters/ch88.typ	five chapters
-book-en/chapters/ch88.typ	three chapters
-book-en/chapters/ch89.typ	four chapters
-book-en/chapters/ch89.typ	nine chapters
-book-en/chapters/ch91.typ	six chapters
-book-en/chapters/ch97.typ	one chapter
-book-en/chapters/ch97.typ	six chapters
-book-en/chapters/ch97.typ	two remaining chapters
-book-en/chapters/ch98.typ	ten chapters
+book-en/chapters/ch72.typ	two chapters
+book-en/chapters/ch76.typ	six chapters
+book-en/chapters/ch76.typ	three chapters
+book-en/chapters/ch79.typ	one chapter
+book-en/chapters/ch81.typ	three chapters
+book-en/chapters/ch82.typ	ten chapters
+book-en/chapters/ch82.typ	three remaining chapters
+book-en/chapters/ch82.typ	two chapters
+book-en/chapters/ch86.typ	thirteen chapters
+book-en/chapters/ch86.typ	two chapters
+book-en/chapters/ch86.typ	two remaining chapters
+book-en/chapters/ch89.typ	five chapters
+book-en/chapters/ch89.typ	three chapters
+book-en/chapters/ch90.typ	four chapters
+book-en/chapters/ch90.typ	nine chapters
+book-en/chapters/ch92.typ	six chapters
+book-en/chapters/ch98.typ	one chapter
+book-en/chapters/ch98.typ	six chapters
+book-en/chapters/ch98.typ	two remaining chapters
+book-en/chapters/ch99.typ	ten chapters
 book-en/parts/part11s.typ	The last three chapters
 book-en/parts/part11s.typ	three chapters
 book-en/parts/part12.typ	nine chapters
@@ -61,7 +61,7 @@ book-en/parts/part12.typ	six chapters
 book/appendix/a4-reading.typ	두 장
 book/chapters/ch01.typ	몇 장
 book/chapters/ch01.typ	여러 장
-book/chapters/ch100.typ	두 장
+book/chapters/ch101.typ	두 장
 book/chapters/ch12.typ	아홉 장
 book/chapters/ch15.typ	열 장
 book/chapters/ch16.typ	열다섯 장
@@ -83,29 +83,29 @@ book/chapters/ch52.typ	두 장
 book/chapters/ch53.typ	세 장
 book/chapters/ch57.typ	여러 장
 book/chapters/ch59.typ	두 장
-book/chapters/ch61.typ	세부
-book/chapters/ch63.typ	세부
-book/chapters/ch65.typ	두 장
+book/chapters/ch62.typ	세부
+book/chapters/ch64.typ	세부
 book/chapters/ch66.typ	두 장
 book/chapters/ch67.typ	두 장
 book/chapters/ch68.typ	두 장
-book/chapters/ch70.typ	다섯 장
-book/chapters/ch70.typ	두 장
+book/chapters/ch69.typ	두 장
+book/chapters/ch71.typ	다섯 장
 book/chapters/ch71.typ	두 장
-book/chapters/ch75.typ	두 장
-book/chapters/ch75.typ	여섯 장
-book/chapters/ch79.typ	두 장
-book/chapters/ch81.typ	세 장
-book/chapters/ch81.typ	열 장
-book/chapters/ch85.typ	두 장
-book/chapters/ch85.typ	열세 장
-book/chapters/ch88.typ	다섯 장
-book/chapters/ch89.typ	아홉 장
-book/chapters/ch90.typ	부 열
-book/chapters/ch91.typ	여섯 장
-book/chapters/ch97.typ	두 장
-book/chapters/ch97.typ	여섯 장
-book/chapters/ch98.typ	열 장
+book/chapters/ch72.typ	두 장
+book/chapters/ch76.typ	두 장
+book/chapters/ch76.typ	여섯 장
+book/chapters/ch80.typ	두 장
+book/chapters/ch82.typ	세 장
+book/chapters/ch82.typ	열 장
+book/chapters/ch86.typ	두 장
+book/chapters/ch86.typ	열세 장
+book/chapters/ch89.typ	다섯 장
+book/chapters/ch90.typ	아홉 장
+book/chapters/ch91.typ	부 열
+book/chapters/ch92.typ	여섯 장
+book/chapters/ch98.typ	두 장
+book/chapters/ch98.typ	여섯 장
+book/chapters/ch99.typ	열 장
 book/front/preface.typ	두 부
 book/parts/part02.typ	두 걸음
 book/parts/part11s.typ	세 장
