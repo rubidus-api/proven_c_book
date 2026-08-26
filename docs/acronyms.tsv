@@ -1,0 +1,89 @@
+# 약어 풀이 정책 (RFC-0041 §3)
+#
+# 저자 지시: "약자로 나오는 것들은 챕터별로 맨 처음에 무엇의 약자인지를 괄호 안의
+# 영어 원문으로 잘 설명해야 합니다."
+#
+# 풀이의 형식 --- 한국어 이름을 먼저, 괄호 안에 영어 원문을.
+#     응용 이진 인터페이스(application binary interface, 줄여서 ABI)
+#
+# 정책 세 갈래
+#   chapter  장마다 첫 자리에서 푼다 --- 짐작할 수 없는 개념 약어
+#   book     책에서 한 번만 --- 일상어가 되었거나 이 책 밖에서도 흔한 것
+#   skip     풀지 않는다 --- 그 자체가 이름이거나 풀어도 뜻이 안 는다
+#
+# 약어	정책	한국어 이름	영어 원문
+ABI	chapter	응용 이진 인터페이스	application binary interface
+API	book	응용 프로그램 인터페이스	application programming interface
+ISA	chapter	명령어 집합	instruction set architecture
+MMU	chapter	기억 관리 장치	memory management unit
+TLB	chapter	번역 참조 버퍼	translation lookaside buffer
+DMA	chapter	직접 기억 접근	direct memory access
+VLA	chapter	가변 길이 배열	variable-length array
+UB	chapter	미정의 동작	undefined behaviour
+ASLR	chapter	주소 공간 배치 무작위화	address space layout randomisation
+SIMD	chapter	하나의 명령으로 여러 자료를	single instruction, multiple data
+ELF	chapter	실행·링크 형식	executable and linkable format
+UART	chapter	범용 비동기 송수신기	universal asynchronous receiver/transmitter
+RTOS	chapter	실시간 운영체제	real-time operating system
+DSP	chapter	디지털 신호 처리기	digital signal processor
+POSIX	book	이식 가능 운영체제 인터페이스	portable operating system interface
+MISRA	chapter	자동차 산업 소프트웨어 신뢰성 협회	Motor Industry Software Reliability Association
+ICU	chapter	유니코드 국제화 구성 요소	International Components for Unicode
+BOM	chapter	바이트 순서 표시	byte order mark
+NFC	chapter	정규 합성 형식	normalization form C
+NFD	chapter	정규 분해 형식	normalization form D
+CAS	chapter	비교 후 교환	compare and swap
+TBI	chapter	맨 위 바이트 무시	top byte ignore
+MTE	chapter	기억 태깅 확장	memory tagging extension
+CHERI	chapter	권한 하드웨어 확장 RISC 명령	capability hardware enhanced RISC instructions
+# PIC 는 두 뜻이다 --- 「위치 독립 코드」와 마이크로컨트롤러 제품군. 기계가 가릴 수 없어 사람이 본다.
+PIC	skip	---	---
+CVE	book	공개된 취약점 목록 번호	common vulnerabilities and exposures
+RTT	chapter	실시간 전송	real-time transfer
+CI	book	지속적 통합	continuous integration
+SDK	book	소프트웨어 개발 키트	software development kit
+IDE	book	통합 개발 환경	integrated development environment
+GUI	book	그래픽 사용자 인터페이스	graphical user interface
+UI	book	사용자 인터페이스	user interface
+CPU	book	중앙 처리 장치	central processing unit
+GPU	book	그래픽 처리 장치	graphics processing unit
+RAM	book	임의 접근 기억 장치	random-access memory
+DRAM	book	동적 임의 접근 기억 장치	dynamic random-access memory
+OS	book:98	운영체제	operating system
+JSON	book	자바스크립트 객체 표기	JavaScript Object Notation
+HTTP	book	하이퍼텍스트 전송 규약	Hypertext Transfer Protocol
+UTC	book	협정 세계시	coordinated universal time
+ASCII	book	미국 정보 교환 표준 부호	American Standard Code for Information Interchange
+EBCDIC	book	확장 이진화 십진 교환 부호	extended binary coded decimal interchange code
+UTF	book:8	유니코드 변환 형식	Unicode transformation format
+EUC	book	확장 유닉스 부호	extended Unix code
+# RISC·CISC 는 이 책이 가르치는 개념이 아니다 --- 「RISC-V」처럼 이름의 일부로만 나온다.
+RISC	skip	---	---
+CISC	skip	---	---
+BMP	book	기본 다국어 평면	basic multilingual plane
+GNU	book	GNU 는 유닉스가 아니다	GNU's Not Unix
+ANSI	book	미국 표준 협회	American National Standards Institute
+ISO	book	국제 표준화 기구	International Organization for Standardization
+IEC	book	국제 전기 기술 위원회	International Electrotechnical Commission
+IEEE	book:7	전기전자기술자협회	Institute of Electrical and Electronics Engineers
+CERT	book	컴퓨터 비상 대응 팀	Computer Emergency Response Team
+SEI	skip	---	---
+# WG14·SEI 는 인용 각주에만 나온다 --- 서지 정보는 풀지 않는다.
+WG14	skip	---	---
+BSD	book	버클리 소프트웨어 배포판	Berkeley Software Distribution
+WSL	book	윈도의 리눅스 하위 시스템	Windows Subsystem for Linux
+NUL	skip	---	---
+C23	skip	---	---
+C17	skip	---	---
+C11	skip	---	---
+C99	skip	---	---
+C95	skip	---	---
+C89	skip	---	---
+GCC	skip	---	---
+LLVM	skip	---	---
+MSVC	skip	---	---
+IBM	skip	---	---
+AMD	skip	---	---
+ARM	skip	---	---
+AVR	skip	---	---
+PDP	skip	---	---

@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.73.0] - 2026-08-25
+
+### Added
+- ★★ **약어 검사기 `scripts/check-acronyms.py` 신설**(RFC-0041). 「약어는 그 장의 첫
+  자리에서 무엇의 줄임인지 밝힌다」는 규율을 두 판 모두에서 지킨다. 정책은 사람이
+  `docs/acronyms.tsv` 에 적는다 --- `chapter`(장마다) · `book`(책에 한 번) ·
+  `book:N`(사람이 고른 장에서) · `skip`(풀지 않는다). `project-check` 와 릴리스
+  게이트에 걸었다.
+- **19장에 「이 장에 나오는 줄임말」 표**(두 판). API·SDK·IDE·UI/GUI·CI·SIMD 일곱이
+  제품 소개 문맥에 한꺼번에 쏟아지던 자리다.
+- **50장에 연산자 시연**(`examples/ch49/precedence.c`, 두 판). 570줄에 표가 스무 개인데
+  돌려 본 코드가 한 줄도 없던 장이다. 우선순위(`1 << 2 + 3`)·`==` 가 `&` 보다 세게
+  묶이는 함정·결합성·`1 < 2 < 3` 은 참인데 `3 > 2 > 1` 은 거짓인 이유·짧은 회로를
+  한 프로그램으로 보인다.
+- **10장에 프로세스 시연**(`examples/ch49/process.c`, 두 판). `run_count` 가 몇 번을
+  돌려도 1 인 것으로 「프로그램은 명사, 프로세스는 동사」를 눈으로 보인다.
+- **101장에 `printf` 를 UART 로 내보내는 실물 코드**(두 판). `_write` 를 채우는 모양과
+  `volatile` 이 왜 필수인지를 함께 적었다.
+- **4장에 정렬 실사례**(두 판). 패킷에서 4바이트를 꺼내는 흔한 코드가 인텔에서는 돌고
+  ARM·MIPS 에서 죽는 이야기, 그리고 `memcpy` 라는 처방.
+
+### Fixed
+- ★★ **약어 풀이 182곳**(두 판). ABI·API·ISA·MMU·TLB·DMA·VLA·UB·ASLR·SIMD·ELF·
+  UART·RTOS·DSP·POSIX·MISRA·ICU·BOM·NFC/NFD·CAS·TBI·MTE·CHERI·CVE·CPU·RAM·GPU·
+  ASCII·EBCDIC·EUC·UTF·IEEE·ISO/IEC·ANSI·GNU·BSD·WSL·HTTP·UTC·BMP·JSON·RTT 를
+  각각 제자리에서 풀었다. **13장의 `UB` 처럼 정식 풀이가 다음 장에 있던 자리**가
+  이번 검토의 대표적인 발견이다.
+- ★★ **개수·거리 서술 46곳**(두 판). 「포인터를 서른다섯 장이나 미룬 것은」처럼 배치를
+  설명하는 문장은 장을 하나 끼울 때마다 낡는데, 11장·61장을 넣은 뒤로 스물세 곳이
+  어긋나 있었다. 1장 「남은 아흔여섯 장」(→백한 장), 76장 「세 장(70·71·72)」(→74·75·76),
+  12부 도입부 「앞의 마흔여섯 장」(→여든여덟 장) 등. `check-counting-prose.py` 의 낱말
+  목록을 넓혀 앞으로는 기계가 먼저 잡는다.
+
+### Changed
+- 검토 결과를 문서로 남겼다(비공개) --- RFC-0041(검토 계획)·RFC-0042(수정 계획)와
+  부별 검토 문서 13개 + 종합.
+
 ## [v0.72.0] - 2026-08-25
 
 ### Added
