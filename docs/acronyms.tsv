@@ -49,7 +49,7 @@ CPU	book	중앙 처리 장치	central processing unit
 GPU	book	그래픽 처리 장치	graphics processing unit
 RAM	book	임의 접근 기억 장치	random-access memory
 DRAM	book	동적 임의 접근 기억 장치	dynamic random-access memory
-OS	book:98	운영체제	operating system
+OS	book:99	운영체제	operating system
 JSON	book	자바스크립트 객체 표기	JavaScript Object Notation
 HTTP	book	하이퍼텍스트 전송 규약	Hypertext Transfer Protocol
 UTC	book	협정 세계시	coordinated universal time
@@ -68,6 +68,7 @@ IEC	book	국제 전기 기술 위원회	International Electrotechnical Commissio
 IEEE	book:7	전기전자기술자협회	Institute of Electrical and Electronics Engineers
 CERT	book	컴퓨터 비상 대응 팀	Computer Emergency Response Team
 SEI	skip	---	---
+# ★ book:N 의 N 은 *장 번호*라 장을 끼우면 낡는다. 장을 옮긴 뒤에는 이 표를 본다.
 # WG14·SEI 는 인용 각주에만 나온다 --- 서지 정보는 풀지 않는다.
 WG14	skip	---	---
 BSD	book	버클리 소프트웨어 배포판	Berkeley Software Distribution

@@ -7,8 +7,8 @@ Re-run it whenever the manuscript changes.
 
 ![Dependencies between chapters](dependency-graph-en.svg)
 
-- Chapters: **102**
-- Dependencies: **215**
+- Chapters: **103**
+- Dependencies: **218**
 - Chapters leaning on nothing: 1
 
 ## Leaning on a later chapter
@@ -29,8 +29,8 @@ None. Every chapter leans only on chapters before it.
 | 20 | The structure of a program | 6 |
 | 45 | Lifetime and storage duration | 6 |
 | 47 | Structs | 6 |
-| 52 | Errors and contracts | 6 |
-| 55 | Building out of several files — translation units and linkage | 6 |
+| 53 | Errors and contracts | 6 |
+| 56 | Building out of several files — translation units and linkage | 6 |
 
 ## Full table by part
 
@@ -38,7 +38,7 @@ None. Every chapter leans only on chapters before it.
 
 Mostly the closing part. One near the front may be weakly connected.
 
-11, 37, 41, 42, 48, 49, 50, 57, 59, 60, 61, 64, 69, 70, 73, 76, 77, 78, 81, 86, 90, 95, 96, 97, 98, 99, 101, 102
+11, 37, 41, 42, 48, 49, 51, 58, 60, 61, 62, 65, 70, 71, 74, 77, 78, 79, 82, 87, 91, 96, 97, 98, 99, 100, 102, 103
 
 ---
 
