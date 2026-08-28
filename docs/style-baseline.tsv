@@ -1,39 +1,10 @@
 # 문체 기준선 (RFC-0038) --- check-style.py --write 가 만든다
 # 갈래	파일	표현	횟수
-warn	book-en/back/bibliography.typ	Note that	1
-warn	book-en/chapters/ch02.typ	In other words	1
-warn	book-en/chapters/ch02.typ	essentially	1
 warn	book-en/chapters/ch02.typ	robust	1
 warn	book-en/chapters/ch04.typ	Note that	1
-warn	book-en/chapters/ch06.typ	In summary	1
-warn	book-en/chapters/ch06.typ	essentially	2
-warn	book-en/chapters/ch07.typ	essentially	1
-warn	book-en/chapters/ch07.typ	the fact that	1
-warn	book-en/chapters/ch11.typ	the fact that	1
-warn	book-en/chapters/ch12.typ	essentially	1
-warn	book-en/chapters/ch19.typ	essentially	1
-warn	book-en/chapters/ch25.typ	Note that	1
-warn	book-en/chapters/ch26.typ	essentially	1
-warn	book-en/chapters/ch37.typ	vital	1
 warn	book-en/chapters/ch38.typ	the fact that	1
-warn	book-en/chapters/ch39.typ	In summary	1
-warn	book-en/chapters/ch40.typ	essentially	1
-warn	book-en/chapters/ch43.typ	In summary	1
-warn	book-en/chapters/ch45.typ	Moreover	1
-warn	book-en/chapters/ch48.typ	Moreover	1
-warn	book-en/chapters/ch53.typ	In summary	1
-warn	book-en/chapters/ch60.typ	In other words	1
-warn	book-en/chapters/ch61.typ	Moreover	1
-warn	book-en/chapters/ch64.typ	In other words	2
+warn	book-en/chapters/ch64.typ	In other words	1
 warn	book-en/chapters/ch64.typ	Note that	1
-warn	book-en/chapters/ch65.typ	the fact that	1
-warn	book-en/chapters/ch66.typ	Moreover	1
-warn	book-en/chapters/ch71.typ	Moreover	2
-warn	book-en/chapters/ch79.typ	the fact that	1
-warn	book-en/chapters/ch81.typ	robust	1
-warn	book-en/chapters/ch86.typ	In summary	1
-warn	book-en/chapters/ch91.typ	Moreover	1
-warn	book-en/chapters/ch93.typ	Moreover	1
 warn	book/appendix/a4-reading.typ	을 통해	1
 warn	book/chapters/ch08.typ	에 대해서	3
 warn	book/chapters/ch16.typ	를 통해	1

@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.74.4] - 2026-08-28
+
+### Changed
+- ★ **영어판의 문체 잔재를 걷었다**(주의 56 → 24). 한국어판 번역투를 쓸어낸 뒤 남아
+  있던 영어 쪽 표시들이다 --- `essentially`(8곳)는 `in practice`·`virtually`·
+  `effectively`·`next to no` 로 갈랐고, 격식 연결어 `Moreover`(8곳)는 `And`·`It also`·
+  `On top of that` 로, `In summary`(5곳)는 `To put it in one line`·`So`·
+  `In one sentence` 로 바꿨다. 군더더기 `the fact that` 넷과 `In other words`·
+  `Note that`·`robust`·`vital` 도 손봤다.
+- ★ 인용문 안의 것은 그대로 두었다 --- C23 각주의 "Note that this need not be…"과
+  POSIX APPLICATION USAGE 의 "Note that conversion from a `void *`…" 이다.
+  *남의 말을 고치지 않는다.*
+- 7장의 「*the fact that* a computer's numbers are approximations* is *the fact*
+  this book returns to most often」처럼 한 문장에 같은 낱말이 겹친 자리도 함께 풀었다.
+
 ## [v0.74.3] - 2026-08-28
 
 ### Changed
