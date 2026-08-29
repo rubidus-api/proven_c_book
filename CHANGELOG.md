@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [Unreleased]
+
+### Added
+- ★ **질문 게시판 안내를 세 자리에 두었다**(저자 지시) --- 두 README, 웹 판의 첫
+  페이지(`docs/index.html`), 그리고 한국어판·영어판 HTML 의 표지 페이지다. 책 내용이
+  궁금하면 [Q&A Discussions](https://github.com/rubidus-api/proven_c_book/discussions/categories/q-a)
+  에 남겨 달라는 것, 시간이 되는 대로 아는 범위에서 답한다는 것, *한국어와 영어 어느
+  쪽이든 괜찮다*는 것을 적었다.
+- 두 창구의 몫도 함께 밝혔다 --- *질문은 게시판, 오탈자와 틀린 내용은 이슈*.
+  이슈는 고쳐야 할 일로 남아 판마다 확인되고, 게시판의 답은 뒤에 읽는 사람에게 쌓인다.
+
+### Fixed
+- 웹 판 첫 페이지(`docs/index.html`)가 낡아 있었다 --- 판 번호가 `v0.1.0`,
+  「12부 58장 + 부록 A~E」, 영어판은 「Translation in progress — front matter only」.
+  지금 상태(v0.75.0 · 13부 103장 · 부록 A~G · 두 판 완성)로 고쳤다.
+
 ## [v0.75.0] - 2026-08-29
 
 ### Fixed

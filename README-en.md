@@ -27,6 +27,21 @@ those who have just finished a first textbook.
 - 13 parts, 103 chapters, appendices A–G and an index — 968 pages in English, 917 in Korean.
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
+## If you have a question
+
+If something in the book leaves you wondering, please ask on the
+**[Q&A board (Discussions)](https://github.com/rubidus-api/proven_c_book/discussions/categories/q-a)**.
+I answer as time allows and as far as I know the answer.
+**Korean or English — either is fine.**
+
+"Why is this passage the way it is?", "my compiler prints something else here — why?"
+are the kinds of question that belong there. Answers accumulate where later readers
+can find them.
+
+If you have found a typo or something **factually wrong**, an
+[issue](https://github.com/rubidus-api/proven_c_book/issues) is the better place ---
+it stays on the list as work to do and gets checked every edition.
+
 ## What kind of book is this
 
 C carries scars left by a long history. Why the null pointer became a thing that
