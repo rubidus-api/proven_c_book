@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
-## [Unreleased]
+## [v0.75.1] - 2026-08-29
 
 ### Added
 - ★ **질문 게시판 안내를 세 자리에 두었다**(저자 지시) --- 두 README, 웹 판의 첫
