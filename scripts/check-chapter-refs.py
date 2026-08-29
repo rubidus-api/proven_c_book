@@ -26,15 +26,22 @@ SKIP = {"lib.typ", "registry.typ", "style.typ", "main.typ"}
 
 FENCE = re.compile(r"```[\s\S]*?```")
 INLINE = re.compile(r"`[^`\n]*`")
-STRING = re.compile(r'"[^"\n]*"')
-BARE_KO = re.compile(r"(?<![\d.])\d{1,3}\s*장(?![가-힣])")
-BARE_EN = re.compile(r"\b[Cc]hapters?\s+\d{1,3}\b")
+# ★ 예전에는 따옴표 안을 통째로 지웠다(`"[^"\n]*"`). 그런데 한국어 본문은
+#   인용에 그 따옴표를 쓴다 --- 「그때의 "선언"과, 23장에서 배운 "변수」의 가운데가
+#   문자열로 오인되어 맨 숫자 참조 넷이 여러 판 동안 숨어 있었다. 지금은
+#   *함수 호출의 인자*만 지운다. 경로 인자(`#demo("examples/ch57/…")`)가 표적이다.
+CALL = re.compile(r'#[A-Za-z][\w-]*\([^()]*\)')
+# ★ 예전에는 뒤에 한글이 오면 그냥 넘겼다(`(?![가-힣])`). 그런데 한국어는 조사가
+#   바로 붙는다 --- 「51장에서 배운」이 그래서 여러 판 동안 숨었다. 지금은 조사를
+#   허용하고, 「장」으로 시작하는 *다른 낱말*(장면·장치…)만 뺀다.
+BARE_KO = re.compile(r"(?<![\d.])\d{1,3}\s*장(?![면치벽독][가-힣]|가|기)")
+BARE_EN = re.compile(r"\b(?:[Cc]hapters?\s+\d{1,3}|ch\.\s*\d{1,3})\b")
 REF = re.compile(r'#(?:chref|chrefs|chrange)\(([^()]*)\)')
 
 
 def prose(path):
     t = path.read_text(encoding="utf-8")
-    return STRING.sub(" ", INLINE.sub(" ", FENCE.sub(" ", t)))
+    return CALL.sub(" ", INLINE.sub(" ", FENCE.sub(" ", t)))
 
 
 def ids_in(path):

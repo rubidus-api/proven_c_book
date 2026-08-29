@@ -34,6 +34,54 @@ def pending():
     return out
 
 
+def header_rows():
+    """★ 헤더 표의 「어디서 다루는가」 열이 *그 헤더의 이름을 단 장*을 가리키는지 본다.
+
+    2026-08-29 에 열한 줄이 틀린 것을 찾았다 --- `<setjmp.h>` 가 82장(제목이
+    「비지역 점프 --- `<setjmp.h>`」)이 아니라 80장을, `<threads.h>` 가 84장이 아니라
+    83장을 가리키고 있었다. 표가 먼저 쓰이고 장이 나중에 서면서 갈라진 것이다.
+    장 *제목*에 헤더 이름이 박혀 있으면, 그 판정은 사람이 아니라 기계가 할 수 있다.
+    """
+    reg = (ROOT / "book" / "registry.typ").read_text(encoding="utf-8")
+    ids = []
+    for m in re.finditer(r"chapters:\s*\(([^)]*)\)", reg):
+        ids += re.findall(r'"([^"]+)"', m.group(1))
+
+    owner = {}          # <헤더> → 그 헤더를 제목에 단 장들의 id
+                        #   ★ 둘 이상일 수 있다 --- 80장은 `<signal.h>` 를 *소개*하고
+                        #     81장이 그것으로 한 장을 쓴다. 그 중 하나를 가리키면 된다.
+    for i, cid in enumerate(ids, 1):
+        text = (ROOT / "book" / "chapters" / f"ch{i:02d}.typ").read_text(encoding="utf-8")
+        title = next((l for l in text.split("\n") if l.startswith("= ")), "")
+        for h in re.findall(r"<([a-z0-9_]+\.h)>", title):
+            owner.setdefault(h, []).append(cid)
+
+    bad = 0
+    for ed in ("book", "book-en"):
+        for path in sorted((ROOT / ed / "chapters").glob("ch*.typ")):
+            # ★ 「어디서 다루는가」 열을 가진 표만 본다. 다른 표의 참조는 뜻이
+            #   다르다 --- 83장의 `<stdatomic.h>` 행은 「오늘의 위치」를 적으면서
+            #   캐시 이야기(13장)를 가리키는데, 그것은 틀린 것이 아니다.
+            here = None
+            for line in path.read_text(encoding="utf-8").split("\n"):
+                idm = re.search(r'id:\s*"([^"]+)"', line)
+                if idm:
+                    here = idm.group(1)
+                m = re.match(r"\s*\[`<([a-z0-9_]+\.h)>`\],", line)
+                if not m or m.group(1) not in owner or here != "headers-by-edition":
+                    continue
+                want = owner[m.group(1)]
+                refs = re.findall(r'#chrefs?\(([^)]*)\)', line)
+                if not refs:
+                    continue
+                if not any(f'"{w}"' in " ".join(refs) for w in want):
+                    bad += 1
+                    print(f"  ⚠️  <{m.group(1)}> 를 제목에 단 장은 {'·'.join(want)} 인데 "
+                          f"표는 딴 곳을 가리킨다  "
+                          f"{path.relative_to(ROOT)}: {' '.join(refs)}")
+    return bad
+
+
 def main() -> int:
     if not INV.exists():
         print("check-library-tables: 인벤토리가 없다 --- "
@@ -72,6 +120,8 @@ def main() -> int:
     if skip:
         print(f"     아직 착수하지 않은 헤더 {len(skip)}개 "
               f"(docs/library-todo.tsv) --- 다 쓰면 그 파일을 비운다")
+    total_missing += header_rows()
+
     if total_missing:
         print(f"check-library-tables: 빠진 항목 {total_missing}건")
         return 1
