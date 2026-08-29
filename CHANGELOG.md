@@ -16,6 +16,8 @@ This project follows Keep a Changelog.
   이슈는 고쳐야 할 일로 남아 판마다 확인되고, 게시판의 답은 뒤에 읽는 사람에게 쌓인다.
 
 ### Fixed
+- ★ 웹 판 첫 페이지의 판 번호 배지와 PDF 링크를 **「최신 판」으로 잇는 링크**로 바꿨다.
+  손으로 적어 두면 판마다 낡는 자리였다 --- 실제로 v0.1.0 에 멈춰 있었다.
 - 웹 판 첫 페이지(`docs/index.html`)가 낡아 있었다 --- 판 번호가 `v0.1.0`,
   「12부 58장 + 부록 A~E」, 영어판은 「Translation in progress — front matter only」.
   지금 상태(v0.75.0 · 13부 103장 · 부록 A~G · 두 판 완성)로 고쳤다.
