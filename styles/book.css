@@ -188,6 +188,9 @@ th { background:rgba(128,128,128,.16); font-weight:700;
      font-family:"PCB Sans","Noto Sans CJK KR",system-ui,sans-serif; }
 table tr:first-child th, table tr:first-child td { border-bottom:1px solid var(--fg); }
 ul,ol { padding-left:1.4rem; } li { margin:.3rem 0; }
+/* 표·그림 목록은 훑어보는 것이라 촘촘해야 한다 (저자 지시 2026-08-31) */
+.float-list { list-style:none; padding-left:0; }
+.float-list li { margin:.12rem 0; }
 /* 메모리 사물함 도해 — 칸과 그 아래 주소. 표 서식과 섞이지 않게 따로 둔다. */
 .memrow { overflow-x:auto; text-align:center; margin:1.1rem 0 .2rem; }
 .memrow table.mem { display:inline-table; border-collapse:collapse;
