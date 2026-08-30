@@ -1,6 +1,8 @@
 # 장·절·부의 개수를 세는 서술 (RFC-0028 §3.4).
 # 재편 뒤에는 한 줄씩 읽고 고친 다음 --- scripts/check-counting-prose.py --write
 # 파일	표현
+book-en/appendix/a10-paths.typ	fifteen chapters
+book-en/appendix/a10-paths.typ	one chapter
 book-en/appendix/a4-reading.typ	two chapters
 book-en/chapters/ch01.typ	four remaining chapters
 book-en/chapters/ch01.typ	several chapters
@@ -53,6 +55,8 @@ book-en/parts/part11s.typ	The last three chapters
 book-en/parts/part11s.typ	three chapters
 book-en/parts/part12.typ	eight chapters
 book-en/parts/part12.typ	nine chapters
+book/appendix/a10-paths.typ	두 부
+book/appendix/a10-paths.typ	열다섯 장
 book/appendix/a4-reading.typ	두 장
 book/chapters/ch01.typ	몇 장
 book/chapters/ch01.typ	여러 장
