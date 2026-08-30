@@ -114,6 +114,15 @@ def main():
                     bad += 1
                     print(f"  \u26a0\ufe0f  장 목록이 내림차순  {path.relative_to(ROOT)}: "
                           f"{', '.join(args)} = {ns}")
+                # ★ 이어진 두 장은 목록이 아니라 *구간*이다. 「47·48장」은 틀리지
+                #   않지만, 점을 「떨어진 장들」에만 남겨 두면 기호 자체가 뜻을
+                #   나른다 --- 점이면 흩어져 있고 대시면 이어져 있다.
+                #   (2026-08-31 저자 지적: 부록 H 에 점이 여전히 남아 있다.)
+                elif len(ns) == 2 and ns[1] - ns[0] == 1:
+                    bad += 1
+                    print(f"  \u26a0\ufe0f  이어진 두 장은 구간이다  "
+                          f"{path.relative_to(ROOT)}: {', '.join(args)} = "
+                          f"{ns[0]}·{ns[1]} --- #chrange 를 쓴다")
 
     # ② 두 판이 같은 장을 가리키는가
     pairs = 0
