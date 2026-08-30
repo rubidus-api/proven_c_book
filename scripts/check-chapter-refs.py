@@ -74,6 +74,20 @@ def main():
             print(f"  ⚠️  참조 뒤 변이 조사 「{m.group(1)}」  {path.relative_to(ROOT)}: "
                   f"{m.group(0)[-24:]}")
 
+    # ★ 장·부의 *구간*은 en dash 로 적는다 --- `#chrange` 가 「16–26장」으로 펴고,
+    #   본문의 「제3–5부」도 같은 기호다. 물결표(`~`)는 *값*의 범위에만 쓴다
+    #   (`0x20~0x7E`, `A`~`Z`, 1~4바이트). 두 기호가 섞이면 읽는 사람이 무엇이
+    #   장이고 무엇이 값인지 기호로 가를 수 없다. (2026-08-31 저자 지시)
+    STRUCT_TILDE = re.compile(r"제\s*\d+\s*\\?~\s*\d+\s*[부장]|[Pp]arts?\s+[IVX]+\s*\\?~")
+    for base in (KO, EN):
+        for path in sorted(base.rglob("*.typ")):
+            if path.name in SKIP:
+                continue
+            for m in STRUCT_TILDE.finditer(path.read_text(encoding="utf-8")):
+                bad += 1
+                print(f"  \u26a0\ufe0f  구간에 물결표  {path.relative_to(ROOT)}: "
+                      f"{m.group(0).strip()} --- en dash 로 적는다")
+
     # ★ 목록(`#chrefs`)의 장 번호가 오름차순인가.
     #   내림차순이면 두 가지가 걸린다 --- 읽는 사람이 순서를 근거로 짚지 못하고,
     #   무엇보다 「51·48장」처럼 *범위로 오해*되기 쉽다. 범위를 뜻했다면 도구가
