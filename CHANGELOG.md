@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.80.1] - 2026-08-31
+
+### Added
+- ★ **부록 H 의 「어디서 배울 것인가」를 넓히고 링크를 넣었다**(저자 지시). 저자가 지목한
+  여덟 곳을 하나씩 열어 응답을 확인하고, GitHub 저장소는 API 로 갱신 시점까지 재어
+  판정했다. 세 갈래로 갈라 **표 셋 · 링크 열셋**으로 실었다.
+  - *C 를 더 파고들 곳* --- 「씹어먹는 C 언어」(한국어) · Beej's Guide to C ·
+    Beej's Guide to Network Programming · `awesome-c`
+  - *컴퓨터 과학을 넓게 볼 곳* --- CS50 · MIT OpenCourseWare · **Georgia Tech OMSCS 공개
+    강의**(운영체제·컴퓨터 구조·임베디드 최적화) · K-MOOC · **OSSU**
+  - *길잡이와 목록* --- Free Programming Books(한국어 목록 있음) · roadmap.sh · Awesome ·
+    Coding Interview University
+- 단서를 함께 적었다 --- Beej 는 저자가 스스로 *베타*라 밝히고, OMSCS 는 *강의와 연습만*
+  공개하며, OSSU 는 *주당 스무 시간에 이 년*이 걸리고, Coding Interview University 는
+  면접용이라 이 부록의 목적과 *결이 다르다*.
+
+### Changed
+- `developer-roadmap` 저장소가 다른 계정으로 옮겨진 것을 확인해, 주소를 도메인이 더
+  오래갈 **`roadmap.sh`** 로 적었다.
+- ★ 별 수 같은 인기 지표는 본문에 적지 않았다 --- 낡는다. 판정에만 쓰고 본문에는
+  *성격과 단서*만 남겼다.
+- `check-metaphor` 가 「지도」를 잡았다(이 책은 지도를 *지리*에만 쓴다) --- 「길잡이」로 고쳤다.
+
 ## [v0.80.0] - 2026-08-31
 
 ### Added
