@@ -28,6 +28,27 @@ case "$tree" in
 esac
 fail=0
 total=0
+skipped=0
+
+# ── 교차 검증에서만 사는 건너뜀 ────────────────────────────────
+# ★ 이 책의 약속은 「기준 컴파일러로 전수 통과」다. 기준 판에서는 아래 목록을
+#   아예 읽지 않는다 --- 하나도 건너뛰지 않는다. 다른 컴파일러로 교차 검증할
+#   때만 목록이 산다(까닭은 docs/example-cross-skip.tsv 에 하나씩 적혀 있다).
+#   건너뛴 것은 *반드시 소리 내어* 알린다. 조용한 건너뜀은 없는 검사와 같다.
+refcc=${REF_CC:-gcc}
+cross=0
+[ "$(basename "$cc")" != "$(basename "$refcc")" ] && cross=1
+skiplist="$root/docs/example-cross-skip.tsv"
+
+# 이 예제가 교차 검증에서 건너뛸 자리인가. 까닭을 표준출력으로 돌려준다.
+cross_reason() {
+    [ "$cross" -eq 1 ] || return 1
+    [ -f "$skiplist" ] || return 1
+    awk -F'\t' -v want="$1" '
+        /^#/ || NF < 3 { next }
+        $1 == want { print $2 " --- " $3; found = 1; exit }
+        END { exit !found }' "$skiplist"
+}
 
 # vendor: proven 라이브러리 (예제가 <proven/...>을 include하면 자동 연동)
 vinc="$root/vendor/proven/include"
@@ -92,12 +113,24 @@ for src in $(find "$root/$tree" -name '*.c' | sort); do
     fi
 
     if ! $cc $cflags -o "$bin" $srcs $extra 2>"$out.ccerr"; then
+        if reason=$(cross_reason "$rel"); then
+            echo "skip: $rel — $reason"
+            skipped=$((skipped + 1))
+            rm -f "$out.ccerr"
+            continue
+        fi
         echo "FAIL build: $rel"
         sed 's/^/    /' "$out.ccerr"
         fail=1
         continue
     fi
     rm -f "$out.ccerr"
+    # 목록에 올라 있는데 통과했다면 까닭이 사라진 것이다 --- 줄을 지워야 한다.
+    if reason=$(cross_reason "$rel"); then
+        echo "FAIL stale-skip: $rel — 이제 통과한다. docs/example-cross-skip.tsv 에서 지울 것"
+        fail=1
+        continue
+    fi
 
     stdin_file="${src%.c}.in"
     if [ -f "$stdin_file" ]; then
@@ -129,8 +162,18 @@ for runner in $(find "$root/$tree" -name 'run.sh' | sort); do
     out="$outdir/$rel.out"
     mkdir -p "$(dirname "$out")"
     if ! sh "$runner" >"$out" 2>&1; then
+        if reason=$(cross_reason "$rel"); then
+            echo "skip: $rel — $reason"
+            skipped=$((skipped + 1))
+            continue
+        fi
         echo "FAIL run:   $rel"
         sed 's/^/    /' "$out"
+        fail=1
+        continue
+    fi
+    if reason=$(cross_reason "$rel"); then
+        echo "FAIL stale-skip: $rel — 이제 통과한다. docs/example-cross-skip.tsv 에서 지울 것"
         fail=1
         continue
     fi
@@ -144,4 +187,14 @@ if [ "$fail" -ne 0 ]; then
     echo "verify-examples: FAILED"
     exit 1
 fi
-echo "verify-examples: $tree — all examples green"
+# ★ 마지막 줄은 *무엇으로 쟀는지*와 *몇을 건너뛰었는지*를 말해야 한다.
+#   「all green」 만 적으면 건너뛴 것이 통과한 것처럼 읽힌다.
+if [ "$cross" -eq 1 ]; then
+    if [ "$skipped" -gt 0 ]; then
+        echo "verify-examples: $tree — $(basename "$cc") 교차 검증 통과 · 건너뜀 ${skipped}건 (까닭은 docs/example-cross-skip.tsv)"
+    else
+        echo "verify-examples: $tree — $(basename "$cc") 교차 검증 전수 통과 · 건너뜀 없음"
+    fi
+else
+    echo "verify-examples: $tree — all examples green ($(basename "$cc"))"
+fi
