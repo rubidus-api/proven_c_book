@@ -624,3 +624,29 @@ main .toc a:hover, main .toc-full a:hover { background:var(--box-bg); text-decor
 .demo pre, .demo pre code {
   white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
 .demo > .demo-body { overflow-x:visible; }
+
+/* ── 절의 주소(permalink) ─────────────────────────────────────────
+   종이 책에는 쪽수가 있지만 웹 판에는 없어서, 남에게 「거기」를 알려 줄
+   방법이 없었다. 절마다 닻을 두되 *읽기를 방해하지 않게* --- 평소에는
+   보이지 않다가 제목에 닿거나 키보드 초점이 오면 드러난다. */
+.plink {
+  margin-left: .4em; font-weight: 400; text-decoration: none;
+  color: var(--muted, #888); opacity: 0; transition: opacity .12s;
+}
+h3:hover > .plink, h4:hover > .plink,
+h3 > .plink:focus, h4 > .plink:focus { opacity: 1; }
+@media (hover: none) { .plink { opacity: .45; } }
+
+/* ── 검색 ─────────────────────────────────────────────────────────
+   *제목과 색인 표제어*만 찾는다. 본문 전체 색인은 판마다 수 MB 라
+   내려받게 하는 값이 얻는 것보다 크다. 무엇을 찾는지 화면에 적어 둔다. */
+.searchbox { margin:.6em 0 0; }
+.searchbox input[type=search] {
+  width: 100%; padding: .45em .6em; font: inherit;
+  border: 1px solid var(--rule, #ccc); border-radius: 4px;
+  background: var(--bg, #fff); color: var(--fg, #111);
+}
+.search-hint { color: var(--muted, #777); font-size: .85em; margin:.3em 0 0; }
+.search-results { list-style: none; padding: 0; margin: .5em 0 0; }
+.search-results li { margin: .15em 0; }
+.search-results .where { color: var(--muted, #777); font-size: .85em; margin-left: .4em; }
