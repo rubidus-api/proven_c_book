@@ -99,6 +99,18 @@ def tidy_decl(decl, name):
     return " ".join(reversed(keep) if keep else []) + (" " if keep else "") + tail
 
 
+# ★ 타입 낱말은 함수 이름이 아니다. 아래 정규식은 「`(` 앞의 이름」을 함수로
+#   보는데, 함수 포인터를 돌려주는 선언에서는 그 자리에 타입이 온다 ---
+#   `void (*signal(int, void (*)(int)))(int);` 에서 `void (` 가 걸려
+#   `signal.h` 의 함수 목록에 **void** 가 들어와 있었다(2026-08-31 발견).
+NOT_A_NAME = {
+    "void", "int", "char", "long", "short", "float", "double", "signed",
+    "unsigned", "const", "volatile", "restrict", "struct", "union", "enum",
+    "typedef", "static", "extern", "inline", "return", "sizeof", "if",
+    "while", "for", "switch", "case", "do", "else", "goto", "bool",
+}
+
+
 def parse_header(chunk):
     """한 헤더의 덩어리에서 함수·매크로·타입을 가른다."""
     decls = {}
@@ -106,6 +118,8 @@ def parse_header(chunk):
                          r"\b([a-z_][a-z0-9_]*)\s*\([^;]{0,400}?\)\s*;)", chunk):
         decl = " ".join(m.group(1).split())
         name = m.group(2)
+        if name in NOT_A_NAME:
+            continue
         decls.setdefault(name, tidy_decl(decl, name))
 
     names = set(decls)

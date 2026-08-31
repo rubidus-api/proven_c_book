@@ -6,7 +6,7 @@
     "variants": [
      "assert"
     ],
-    "decl": "void assert (scalar expression);"
+    "decl": "void assert(scalar expression);"
    }
   ],
   "macros": [
@@ -23,7 +23,7 @@
      "cabsf",
      "cabsl"
     ],
-    "decl": "double cabs (double complex z);"
+    "decl": "double cabs(double complex z);"
    },
    {
     "name": "cacos",
@@ -32,7 +32,7 @@
      "cacosf",
      "cacosl"
     ],
-    "decl": "switch double complex cacos (double complex z);"
+    "decl": "switch double complex cacos(double complex z);"
    },
    {
     "name": "cacosh",
@@ -41,7 +41,7 @@
      "cacoshf",
      "cacoshl"
     ],
-    "decl": "double complex cacosh (double complex z);"
+    "decl": "double complex cacosh(double complex z);"
    },
    {
     "name": "carg",
@@ -50,7 +50,7 @@
      "cargf",
      "cargl"
     ],
-    "decl": "double carg (double complex z);"
+    "decl": "double carg(double complex z);"
    },
    {
     "name": "casin",
@@ -59,7 +59,7 @@
      "casinf",
      "casinl"
     ],
-    "decl": "double complex casin (double complex z);"
+    "decl": "double complex casin(double complex z);"
    },
    {
     "name": "casinh",
@@ -68,7 +68,7 @@
      "casinhf",
      "casinhl"
     ],
-    "decl": "double complex casinh (double complex z);"
+    "decl": "double complex casinh(double complex z);"
    },
    {
     "name": "catan",
@@ -77,7 +77,7 @@
      "catanf",
      "catanl"
     ],
-    "decl": "double complex catan (double complex z);"
+    "decl": "double complex catan(double complex z);"
    },
    {
     "name": "catanh",
@@ -86,7 +86,7 @@
      "catanhf",
      "catanhl"
     ],
-    "decl": "double complex catanh (double complex z);"
+    "decl": "double complex catanh(double complex z);"
    },
    {
     "name": "ccos",
@@ -95,7 +95,7 @@
      "ccosf",
      "ccosl"
     ],
-    "decl": "double complex ccos (double complex z);"
+    "decl": "double complex ccos(double complex z);"
    },
    {
     "name": "ccosh",
@@ -104,7 +104,7 @@
      "ccoshf",
      "ccoshl"
     ],
-    "decl": "double complex ccosh (double complex z);"
+    "decl": "double complex ccosh(double complex z);"
    },
    {
     "name": "cexp",
@@ -113,7 +113,7 @@
      "cexpf",
      "cexpl"
     ],
-    "decl": "double complex cexp (double complex z);"
+    "decl": "double complex cexp(double complex z);"
    },
    {
     "name": "cimag",
@@ -122,7 +122,7 @@
      "cimagf",
      "cimagl"
     ],
-    "decl": "double cimag (double complex z);"
+    "decl": "double cimag(double complex z);"
    },
    {
     "name": "clog",
@@ -131,7 +131,7 @@
      "clogf",
      "clogl"
     ],
-    "decl": "double complex clog (double complex z);"
+    "decl": "double complex clog(double complex z);"
    },
    {
     "name": "conj",
@@ -140,7 +140,7 @@
      "conjf",
      "conjl"
     ],
-    "decl": "double complex conj (double complex z);"
+    "decl": "double complex conj(double complex z);"
    },
    {
     "name": "cpow",
@@ -149,7 +149,7 @@
      "cpowf",
      "cpowl"
     ],
-    "decl": "double complex cpow (double complex x, double complex y);"
+    "decl": "double complex cpow(double complex x, double complex y);"
    },
    {
     "name": "cproj",
@@ -158,7 +158,7 @@
      "cprojf",
      "cprojl"
     ],
-    "decl": "double complex cproj (double complex z);"
+    "decl": "double complex cproj(double complex z);"
    },
    {
     "name": "creal",
@@ -167,7 +167,7 @@
      "crealf",
      "creall"
     ],
-    "decl": "double creal (double complex z);"
+    "decl": "double creal(double complex z);"
    },
    {
     "name": "csin",
@@ -176,7 +176,7 @@
      "csinf",
      "csinl"
     ],
-    "decl": "double complex csin (double complex z);"
+    "decl": "double complex csin(double complex z);"
    },
    {
     "name": "csinh",
@@ -185,7 +185,7 @@
      "csinhf",
      "csinhl"
     ],
-    "decl": "double complex csinh (double complex z);"
+    "decl": "double complex csinh(double complex z);"
    },
    {
     "name": "csqrt",
@@ -194,7 +194,7 @@
      "csqrtf",
      "csqrtl"
     ],
-    "decl": "double complex csqrt (double complex z);"
+    "decl": "double complex csqrt(double complex z);"
    },
    {
     "name": "ctan",
@@ -203,7 +203,7 @@
      "ctanf",
      "ctanl"
     ],
-    "decl": "double complex ctan (double complex z);"
+    "decl": "double complex ctan(double complex z);"
    },
    {
     "name": "ctanh",
@@ -212,7 +212,7 @@
      "ctanhf",
      "ctanhl"
     ],
-    "decl": "double complex ctanh (double complex z);"
+    "decl": "double complex ctanh(double complex z);"
    }
   ],
   "macros": [
@@ -231,98 +231,98 @@
     "variants": [
      "isalnum"
     ],
-    "decl": "int isalnum (int c);"
+    "decl": "int isalnum(int c);"
    },
    {
     "name": "isalpha",
     "variants": [
      "isalpha"
     ],
-    "decl": "int isalpha (int c);"
+    "decl": "int isalpha(int c);"
    },
    {
     "name": "isblank",
     "variants": [
      "isblank"
     ],
-    "decl": "int isblank (int c);"
+    "decl": "int isblank(int c);"
    },
    {
     "name": "iscntrl",
     "variants": [
      "iscntrl"
     ],
-    "decl": "int iscntrl (int c);"
+    "decl": "int iscntrl(int c);"
    },
    {
     "name": "isdigit",
     "variants": [
      "isdigit"
     ],
-    "decl": "int isdigit (int c);"
+    "decl": "int isdigit(int c);"
    },
    {
     "name": "isgraph",
     "variants": [
      "isgraph"
     ],
-    "decl": "int isgraph (int c);"
+    "decl": "int isgraph(int c);"
    },
    {
     "name": "islower",
     "variants": [
      "islower"
     ],
-    "decl": "int islower (int c);"
+    "decl": "int islower(int c);"
    },
    {
     "name": "isprint",
     "variants": [
      "isprint"
     ],
-    "decl": "int isprint (int c);"
+    "decl": "int isprint(int c);"
    },
    {
     "name": "ispunct",
     "variants": [
      "ispunct"
     ],
-    "decl": "int ispunct (int c);"
+    "decl": "int ispunct(int c);"
    },
    {
     "name": "isspace",
     "variants": [
      "isspace"
     ],
-    "decl": "int isspace (int c);"
+    "decl": "int isspace(int c);"
    },
    {
     "name": "isupper",
     "variants": [
      "isupper"
     ],
-    "decl": "int isupper (int c);"
+    "decl": "int isupper(int c);"
    },
    {
     "name": "isxdigit",
     "variants": [
      "isxdigit"
     ],
-    "decl": "int isxdigit (int c);"
+    "decl": "int isxdigit(int c);"
    },
    {
     "name": "tolower",
     "variants": [
      "tolower"
     ],
-    "decl": "int tolower (int c);"
+    "decl": "int tolower(int c);"
    },
    {
     "name": "toupper",
     "variants": [
      "toupper"
     ],
-    "decl": "int toupper (int c);"
+    "decl": "int toupper(int c);"
    }
   ],
   "macros": [],
@@ -360,105 +360,105 @@
     "variants": [
      "feclearexcept"
     ],
-    "decl": "int feclearexcept (int excepts);"
+    "decl": "int feclearexcept(int excepts);"
    },
    {
     "name": "fegetenv",
     "variants": [
      "fegetenv"
     ],
-    "decl": "int fegetenv (fenv_t *envp);"
+    "decl": "int fegetenv(fenv_t *envp);"
    },
    {
     "name": "fegetexceptflag",
     "variants": [
      "fegetexceptflag"
     ],
-    "decl": "int fegetexceptflag (fexcept_t *flagp, int excepts);"
+    "decl": "int fegetexceptflag(fexcept_t *flagp, int excepts);"
    },
    {
     "name": "fegetmode",
     "variants": [
      "fegetmode"
     ],
-    "decl": "int fegetmode (femode_t *modep);"
+    "decl": "int fegetmode(femode_t *modep);"
    },
    {
     "name": "fegetround",
     "variants": [
      "fegetround"
     ],
-    "decl": "int fegetround (void);"
+    "decl": "int fegetround(void);"
    },
    {
     "name": "feholdexcept",
     "variants": [
      "feholdexcept"
     ],
-    "decl": "int feholdexcept (fenv_t *envp);"
+    "decl": "int feholdexcept(fenv_t *envp);"
    },
    {
     "name": "feraiseexcept",
     "variants": [
      "feraiseexcept"
     ],
-    "decl": "int feraiseexcept (int excepts);"
+    "decl": "int feraiseexcept(int excepts);"
    },
    {
     "name": "fesetenv",
     "variants": [
      "fesetenv"
     ],
-    "decl": "int fesetenv (const fenv_t *envp);"
+    "decl": "int fesetenv(const fenv_t *envp);"
    },
    {
     "name": "fesetexcept",
     "variants": [
      "fesetexcept"
     ],
-    "decl": "int fesetexcept (int excepts);"
+    "decl": "int fesetexcept(int excepts);"
    },
    {
     "name": "fesetexceptflag",
     "variants": [
      "fesetexceptflag"
     ],
-    "decl": "int fesetexceptflag (const fexcept_t *flagp, int excepts);"
+    "decl": "int fesetexceptflag(const fexcept_t *flagp, int excepts);"
    },
    {
     "name": "fesetmode",
     "variants": [
      "fesetmode"
     ],
-    "decl": "int fesetmode (const femode_t *modep);"
+    "decl": "int fesetmode(const femode_t *modep);"
    },
    {
     "name": "fesetround",
     "variants": [
      "fesetround"
     ],
-    "decl": "int fesetround (int rnd);"
+    "decl": "int fesetround(int rnd);"
    },
    {
     "name": "fetestexcept",
     "variants": [
      "fetestexcept"
     ],
-    "decl": "int fetestexcept (int excepts);"
+    "decl": "int fetestexcept(int excepts);"
    },
    {
     "name": "fetestexceptflag",
     "variants": [
      "fetestexceptflag"
     ],
-    "decl": "int fetestexceptflag (const fexcept_t *flagp, int excepts);"
+    "decl": "int fetestexceptflag(const fexcept_t *flagp, int excepts);"
    },
    {
     "name": "feupdateenv",
     "variants": [
      "feupdateenv"
     ],
-    "decl": "int feupdateenv (const fenv_t *envp);"
+    "decl": "int feupdateenv(const fenv_t *envp);"
    }
   ],
   "macros": [
@@ -569,42 +569,42 @@
     "variants": [
      "imaxabs"
     ],
-    "decl": "SCNxFASTN SCNxMAX SCNxPTR intmax_t imaxabs (intmax_t j);"
+    "decl": "SCNxFASTN SCNxMAX SCNxPTR intmax_t imaxabs(intmax_t j);"
    },
    {
     "name": "imaxdiv",
     "variants": [
      "imaxdiv"
     ],
-    "decl": "imaxdiv_t imaxdiv (intmax_t numer, intmax_t denom);"
+    "decl": "imaxdiv_t imaxdiv(intmax_t numer, intmax_t denom);"
    },
    {
     "name": "strtoimax",
     "variants": [
      "strtoimax"
     ],
-    "decl": "intmax_t strtoimax (const char * restrict nptr, char ** restrict endptr, int base);"
+    "decl": "intmax_t strtoimax(const char * restrict nptr, char ** restrict endptr, int base);"
    },
    {
     "name": "strtoumax",
     "variants": [
      "strtoumax"
     ],
-    "decl": "uintmax_t strtoumax (const char * restrict nptr, char ** restrict endptr, int base);"
+    "decl": "uintmax_t strtoumax(const char * restrict nptr, char ** restrict endptr, int base);"
    },
    {
     "name": "wcstoimax",
     "variants": [
      "wcstoimax"
     ],
-    "decl": "intmax_t wcstoimax (const wchar_t *restrict nptr, wchar_t **restrict endptr, int base);"
+    "decl": "intmax_t wcstoimax(const wchar_t *restrict nptr, wchar_t **restrict endptr, int base);"
    },
    {
     "name": "wcstoumax",
     "variants": [
      "wcstoumax"
     ],
-    "decl": "uintmax_t wcstoumax (const wchar_t *restrict nptr, wchar_t **restrict endptr, int base);"
+    "decl": "uintmax_t wcstoumax(const wchar_t *restrict nptr, wchar_t **restrict endptr, int base);"
    }
   ],
   "macros": [
@@ -705,7 +705,7 @@
      "acosf",
      "acosl"
     ],
-    "decl": "double acos (double x);"
+    "decl": "double acos(double x);"
    },
    {
     "name": "acosh",
@@ -717,7 +717,7 @@
      "acoshf",
      "acoshl"
     ],
-    "decl": "double acosh (double x);"
+    "decl": "double acosh(double x);"
    },
    {
     "name": "acospi",
@@ -729,7 +729,7 @@
      "acospif",
      "acospil"
     ],
-    "decl": "double acospi (double x);"
+    "decl": "double acospi(double x);"
    },
    {
     "name": "asin",
@@ -741,7 +741,7 @@
      "asinf",
      "asinl"
     ],
-    "decl": "double asin (double x);"
+    "decl": "double asin(double x);"
    },
    {
     "name": "asinh",
@@ -753,7 +753,7 @@
      "asinhf",
      "asinhl"
     ],
-    "decl": "double asinh (double x);"
+    "decl": "double asinh(double x);"
    },
    {
     "name": "asinpi",
@@ -765,7 +765,7 @@
      "asinpif",
      "asinpil"
     ],
-    "decl": "double asinpi (double x);"
+    "decl": "double asinpi(double x);"
    },
    {
     "name": "atan",
@@ -777,7 +777,7 @@
      "atanf",
      "atanl"
     ],
-    "decl": "double atan (double x);"
+    "decl": "double atan(double x);"
    },
    {
     "name": "atan2",
@@ -789,7 +789,7 @@
      "atan2f",
      "atan2l"
     ],
-    "decl": "double atan2 (double y, double x);"
+    "decl": "double atan2(double y, double x);"
    },
    {
     "name": "atan2pi",
@@ -801,7 +801,7 @@
      "atan2pif",
      "atan2pil"
     ],
-    "decl": "double atan2pi (double y, double x);"
+    "decl": "double atan2pi(double y, double x);"
    },
    {
     "name": "atanh",
@@ -813,7 +813,7 @@
      "atanhf",
      "atanhl"
     ],
-    "decl": "double atanh (double x);"
+    "decl": "double atanh(double x);"
    },
    {
     "name": "atanpi",
@@ -825,7 +825,7 @@
      "atanpif",
      "atanpil"
     ],
-    "decl": "double atanpi (double x);"
+    "decl": "double atanpi(double x);"
    },
    {
     "name": "canonicalize",
@@ -837,7 +837,7 @@
      "canonicalizef",
      "canonicalizel"
     ],
-    "decl": "int canonicalize (double *cx, const double *x);"
+    "decl": "int canonicalize(double *cx, const double *x);"
    },
    {
     "name": "cbrt",
@@ -849,7 +849,7 @@
      "cbrtf",
      "cbrtl"
     ],
-    "decl": "double cbrt (double x);"
+    "decl": "double cbrt(double x);"
    },
    {
     "name": "ceil",
@@ -861,7 +861,7 @@
      "ceilf",
      "ceill"
     ],
-    "decl": "double ceil (double x);"
+    "decl": "double ceil(double x);"
    },
    {
     "name": "compoundn",
@@ -873,7 +873,7 @@
      "compoundnf",
      "compoundnl"
     ],
-    "decl": "double compoundn (double x, long long int n);"
+    "decl": "double compoundn(double x, long long int n);"
    },
    {
     "name": "copysign",
@@ -885,7 +885,7 @@
      "copysignf",
      "copysignl"
     ],
-    "decl": "double copysign (double x, double y);"
+    "decl": "double copysign(double x, double y);"
    },
    {
     "name": "cos",
@@ -897,7 +897,7 @@
      "cosf",
      "cosl"
     ],
-    "decl": "double cos (double x);"
+    "decl": "double cos(double x);"
    },
    {
     "name": "cosh",
@@ -909,7 +909,7 @@
      "coshf",
      "coshl"
     ],
-    "decl": "double cosh (double x);"
+    "decl": "double cosh(double x);"
    },
    {
     "name": "cospi",
@@ -921,259 +921,259 @@
      "cospif",
      "cospil"
     ],
-    "decl": "double cospi (double x);"
+    "decl": "double cospi(double x);"
    },
    {
     "name": "d32addd128",
     "variants": [
      "d32addd128"
     ],
-    "decl": "_Decimal32 d32addd128 (_Decimal128 x, _Decimal128 y);"
+    "decl": "_Decimal32 d32addd128(_Decimal128 x, _Decimal128 y);"
    },
    {
     "name": "d32addd64",
     "variants": [
      "d32addd64"
     ],
-    "decl": "_Decimal32 d32addd64 (_Decimal64 x, _Decimal64 y);"
+    "decl": "_Decimal32 d32addd64(_Decimal64 x, _Decimal64 y);"
    },
    {
     "name": "d32divd128",
     "variants": [
      "d32divd128"
     ],
-    "decl": "_Decimal32 d32divd128 (_Decimal128 x, _Decimal128 y);"
+    "decl": "_Decimal32 d32divd128(_Decimal128 x, _Decimal128 y);"
    },
    {
     "name": "d32divd64",
     "variants": [
      "d32divd64"
     ],
-    "decl": "_Decimal32 d32divd64 (_Decimal64 x, _Decimal64 y);"
+    "decl": "_Decimal32 d32divd64(_Decimal64 x, _Decimal64 y);"
    },
    {
     "name": "d32fmad128",
     "variants": [
      "d32fmad128"
     ],
-    "decl": "_Decimal32 d32fmad128 (_Decimal128 x, _Decimal128 y, _Decimal128 z);"
+    "decl": "_Decimal32 d32fmad128(_Decimal128 x, _Decimal128 y, _Decimal128 z);"
    },
    {
     "name": "d32fmad64",
     "variants": [
      "d32fmad64"
     ],
-    "decl": "_Decimal32 d32fmad64 (_Decimal64 x, _Decimal64 y, _Decimal64 z);"
+    "decl": "_Decimal32 d32fmad64(_Decimal64 x, _Decimal64 y, _Decimal64 z);"
    },
    {
     "name": "d32muld128",
     "variants": [
      "d32muld128"
     ],
-    "decl": "_Decimal32 d32muld128 (_Decimal128 x, _Decimal128 y);"
+    "decl": "_Decimal32 d32muld128(_Decimal128 x, _Decimal128 y);"
    },
    {
     "name": "d32muld64",
     "variants": [
      "d32muld64"
     ],
-    "decl": "_Decimal32 d32muld64 (_Decimal64 x, _Decimal64 y);"
+    "decl": "_Decimal32 d32muld64(_Decimal64 x, _Decimal64 y);"
    },
    {
     "name": "d32sqrtd128",
     "variants": [
      "d32sqrtd128"
     ],
-    "decl": "_Decimal32 d32sqrtd128 (_Decimal128 x);"
+    "decl": "_Decimal32 d32sqrtd128(_Decimal128 x);"
    },
    {
     "name": "d32sqrtd64",
     "variants": [
      "d32sqrtd64"
     ],
-    "decl": "_Decimal32 d32sqrtd64 (_Decimal64 x);"
+    "decl": "_Decimal32 d32sqrtd64(_Decimal64 x);"
    },
    {
     "name": "d32subd128",
     "variants": [
      "d32subd128"
     ],
-    "decl": "_Decimal32 d32subd128 (_Decimal128 x, _Decimal128 y);"
+    "decl": "_Decimal32 d32subd128(_Decimal128 x, _Decimal128 y);"
    },
    {
     "name": "d32subd64",
     "variants": [
      "d32subd64"
     ],
-    "decl": "_Decimal32 d32subd64 (_Decimal64 x, _Decimal64 y);"
+    "decl": "_Decimal32 d32subd64(_Decimal64 x, _Decimal64 y);"
    },
    {
     "name": "d64addd128",
     "variants": [
      "d64addd128"
     ],
-    "decl": "_Decimal64 d64addd128 (_Decimal128 x, _Decimal128 y);"
+    "decl": "_Decimal64 d64addd128(_Decimal128 x, _Decimal128 y);"
    },
    {
     "name": "d64divd128",
     "variants": [
      "d64divd128"
     ],
-    "decl": "_Decimal64 d64divd128 (_Decimal128 x, _Decimal128 y);"
+    "decl": "_Decimal64 d64divd128(_Decimal128 x, _Decimal128 y);"
    },
    {
     "name": "d64fmad128",
     "variants": [
      "d64fmad128"
     ],
-    "decl": "_Decimal64 d64fmad128 (_Decimal128 x, _Decimal128 y, _Decimal128 z);"
+    "decl": "_Decimal64 d64fmad128(_Decimal128 x, _Decimal128 y, _Decimal128 z);"
    },
    {
     "name": "d64muld128",
     "variants": [
      "d64muld128"
     ],
-    "decl": "_Decimal64 d64muld128 (_Decimal128 x, _Decimal128 y);"
+    "decl": "_Decimal64 d64muld128(_Decimal128 x, _Decimal128 y);"
    },
    {
     "name": "d64sqrtd128",
     "variants": [
      "d64sqrtd128"
     ],
-    "decl": "_Decimal64 d64sqrtd128 (_Decimal128 x);"
+    "decl": "_Decimal64 d64sqrtd128(_Decimal128 x);"
    },
    {
     "name": "d64subd128",
     "variants": [
      "d64subd128"
     ],
-    "decl": "_Decimal64 d64subd128 (_Decimal128 x, _Decimal128 y);"
+    "decl": "_Decimal64 d64subd128(_Decimal128 x, _Decimal128 y);"
    },
    {
     "name": "daddl",
     "variants": [
      "daddl"
     ],
-    "decl": "double daddl (long double x, long double y);"
+    "decl": "double daddl(long double x, long double y);"
    },
    {
     "name": "ddivl",
     "variants": [
      "ddivl"
     ],
-    "decl": "double ddivl (long double x, long double y);"
+    "decl": "double ddivl(long double x, long double y);"
    },
    {
     "name": "decodebind128",
     "variants": [
      "decodebind128"
     ],
-    "decl": "void decodebind128 (_Decimal128 * restrict xptr, const unsigned char encptr[restrict static 16]);"
+    "decl": "void decodebind128(_Decimal128 * restrict xptr, const unsigned char encptr[restrict static 16]);"
    },
    {
     "name": "decodebind32",
     "variants": [
      "decodebind32"
     ],
-    "decl": "void decodebind32 (_Decimal32 * restrict xptr, const unsigned char encptr[restrict static 4]);"
+    "decl": "void decodebind32(_Decimal32 * restrict xptr, const unsigned char encptr[restrict static 4]);"
    },
    {
     "name": "decodebind64",
     "variants": [
      "decodebind64"
     ],
-    "decl": "void decodebind64 (_Decimal64 * restrict xptr, const unsigned char encptr[restrict static 8]);"
+    "decl": "void decodebind64(_Decimal64 * restrict xptr, const unsigned char encptr[restrict static 8]);"
    },
    {
     "name": "decodedecd128",
     "variants": [
      "decodedecd128"
     ],
-    "decl": "void decodedecd128 (_Decimal128 * restrict xptr, const unsigned char encptr[restrict static 16]);"
+    "decl": "void decodedecd128(_Decimal128 * restrict xptr, const unsigned char encptr[restrict static 16]);"
    },
    {
     "name": "decodedecd32",
     "variants": [
      "decodedecd32"
     ],
-    "decl": "void decodedecd32 (_Decimal32 * restrict xptr, const unsigned char encptr[restrict static 4]);"
+    "decl": "void decodedecd32(_Decimal32 * restrict xptr, const unsigned char encptr[restrict static 4]);"
    },
    {
     "name": "decodedecd64",
     "variants": [
      "decodedecd64"
     ],
-    "decl": "void decodedecd64 (_Decimal64 * restrict xptr, const unsigned char encptr[restrict static 8]);"
+    "decl": "void decodedecd64(_Decimal64 * restrict xptr, const unsigned char encptr[restrict static 8]);"
    },
    {
     "name": "dfmal",
     "variants": [
      "dfmal"
     ],
-    "decl": "double dfmal (long double x, long double y, long double z);"
+    "decl": "double dfmal(long double x, long double y, long double z);"
    },
    {
     "name": "dmull",
     "variants": [
      "dmull"
     ],
-    "decl": "double dmull (long double x, long double y);"
+    "decl": "double dmull(long double x, long double y);"
    },
    {
     "name": "dsqrtl",
     "variants": [
      "dsqrtl"
     ],
-    "decl": "double dsqrtl (long double x);"
+    "decl": "double dsqrtl(long double x);"
    },
    {
     "name": "dsubl",
     "variants": [
      "dsubl"
     ],
-    "decl": "double dsubl (long double x, long double y);"
+    "decl": "double dsubl(long double x, long double y);"
    },
    {
     "name": "encodebind128",
     "variants": [
      "encodebind128"
     ],
-    "decl": "void encodebind128 (unsigned char encptr[restrict static 16], const_Decimal128 * restrict xptr);"
+    "decl": "void encodebind128(unsigned char encptr[restrict static 16], const_Decimal128 * restrict xptr);"
    },
    {
     "name": "encodebind32",
     "variants": [
      "encodebind32"
     ],
-    "decl": "void encodebind32 (unsigned char encptr[restrict static 4], const_Decimal32 * restrict xptr);"
+    "decl": "void encodebind32(unsigned char encptr[restrict static 4], const_Decimal32 * restrict xptr);"
    },
    {
     "name": "encodebind64",
     "variants": [
      "encodebind64"
     ],
-    "decl": "void encodebind64 (unsigned char encptr[restrict static 8], const_Decimal64 * restrict xptr);"
+    "decl": "void encodebind64(unsigned char encptr[restrict static 8], const_Decimal64 * restrict xptr);"
    },
    {
     "name": "encodedecd128",
     "variants": [
      "encodedecd128"
     ],
-    "decl": "void encodedecd128 (unsigned char encptr[restrict static 16], const_Decimal128 * restrict xptr);"
+    "decl": "void encodedecd128(unsigned char encptr[restrict static 16], const_Decimal128 * restrict xptr);"
    },
    {
     "name": "encodedecd32",
     "variants": [
      "encodedecd32"
     ],
-    "decl": "void encodedecd32 (unsigned char encptr[restrict static 4], const_Decimal32 * restrict xptr);"
+    "decl": "void encodedecd32(unsigned char encptr[restrict static 4], const_Decimal32 * restrict xptr);"
    },
    {
     "name": "encodedecd64",
     "variants": [
      "encodedecd64"
     ],
-    "decl": "void encodedecd64 (unsigned char encptr[restrict static 8], const_Decimal64 * restrict xptr);"
+    "decl": "void encodedecd64(unsigned char encptr[restrict static 8], const_Decimal64 * restrict xptr);"
    },
    {
     "name": "erf",
@@ -1185,7 +1185,7 @@
      "erff",
      "erfl"
     ],
-    "decl": "double erf (double x);"
+    "decl": "double erf(double x);"
    },
    {
     "name": "erfc",
@@ -1197,7 +1197,7 @@
      "erfcf",
      "erfcl"
     ],
-    "decl": "double erfc (double x);"
+    "decl": "double erfc(double x);"
    },
    {
     "name": "exp",
@@ -1209,7 +1209,7 @@
      "expf",
      "expl"
     ],
-    "decl": "double exp (double x);"
+    "decl": "double exp(double x);"
    },
    {
     "name": "exp10",
@@ -1221,7 +1221,7 @@
      "exp10f",
      "exp10l"
     ],
-    "decl": "double exp10 (double x);"
+    "decl": "double exp10(double x);"
    },
    {
     "name": "exp10m1",
@@ -1233,7 +1233,7 @@
      "exp10m1f",
      "exp10m1l"
     ],
-    "decl": "double exp10m1 (double x);"
+    "decl": "double exp10m1(double x);"
    },
    {
     "name": "exp2",
@@ -1245,7 +1245,7 @@
      "exp2f",
      "exp2l"
     ],
-    "decl": "double exp2 (double x);"
+    "decl": "double exp2(double x);"
    },
    {
     "name": "exp2m1",
@@ -1257,7 +1257,7 @@
      "exp2m1f",
      "exp2m1l"
     ],
-    "decl": "double exp2m1 (double x);"
+    "decl": "double exp2m1(double x);"
    },
    {
     "name": "expm1",
@@ -1269,7 +1269,7 @@
      "expm1f",
      "expm1l"
     ],
-    "decl": "double expm1 (double x);"
+    "decl": "double expm1(double x);"
    },
    {
     "name": "fabs",
@@ -1281,7 +1281,7 @@
      "fabsf",
      "fabsl"
     ],
-    "decl": "double fabs (double x);"
+    "decl": "double fabs(double x);"
    },
    {
     "name": "fadd",
@@ -1289,7 +1289,7 @@
      "fadd",
      "faddl"
     ],
-    "decl": "float fadd (double x, double y);"
+    "decl": "float fadd(double x, double y);"
    },
    {
     "name": "fdim",
@@ -1301,7 +1301,7 @@
      "fdimf",
      "fdiml"
     ],
-    "decl": "double fdim (double x, double y);"
+    "decl": "double fdim(double x, double y);"
    },
    {
     "name": "fdiv",
@@ -1309,7 +1309,7 @@
      "fdiv",
      "fdivl"
     ],
-    "decl": "float fdiv (double x, double y);"
+    "decl": "float fdiv(double x, double y);"
    },
    {
     "name": "ffma",
@@ -1317,7 +1317,7 @@
      "ffma",
      "ffmal"
     ],
-    "decl": "float ffma (double x, double y, double z);"
+    "decl": "float ffma(double x, double y, double z);"
    },
    {
     "name": "floor",
@@ -1329,7 +1329,7 @@
      "floorf",
      "floorl"
     ],
-    "decl": "double floor (double x);"
+    "decl": "double floor(double x);"
    },
    {
     "name": "fma",
@@ -1341,7 +1341,7 @@
      "fmaf",
      "fmal"
     ],
-    "decl": "double fma (double x, double y, double z);"
+    "decl": "double fma(double x, double y, double z);"
    },
    {
     "name": "fmax",
@@ -1353,7 +1353,7 @@
      "fmaxf",
      "fmaxl"
     ],
-    "decl": "double fmax (double x, double y);"
+    "decl": "double fmax(double x, double y);"
    },
    {
     "name": "fmaximum",
@@ -1365,7 +1365,7 @@
      "fmaximumf",
      "fmaximuml"
     ],
-    "decl": "double fmaximum (double x, double y);"
+    "decl": "double fmaximum(double x, double y);"
    },
    {
     "name": "fmaximum_mag",
@@ -1413,7 +1413,7 @@
      "fminf",
      "fminl"
     ],
-    "decl": "double fmin (double x, double y);"
+    "decl": "double fmin(double x, double y);"
    },
    {
     "name": "fminimum",
@@ -1425,7 +1425,7 @@
      "fminimumf",
      "fminimuml"
     ],
-    "decl": "double fminimum (double x, double y);"
+    "decl": "double fminimum(double x, double y);"
    },
    {
     "name": "fminimum_mag",
@@ -1473,7 +1473,7 @@
      "fmodf",
      "fmodl"
     ],
-    "decl": "double fmod (double x, double y);"
+    "decl": "double fmod(double x, double y);"
    },
    {
     "name": "fmul",
@@ -1481,14 +1481,14 @@
      "fmul",
      "fmull"
     ],
-    "decl": "float fmul (double x, double y);"
+    "decl": "float fmul(double x, double y);"
    },
    {
     "name": "fpclassify",
     "variants": [
      "fpclassify"
     ],
-    "decl": "switch int fpclassify (real-floating x);"
+    "decl": "switch int fpclassify(real-floating x);"
    },
    {
     "name": "frexp",
@@ -1500,7 +1500,7 @@
      "frexpf",
      "frexpl"
     ],
-    "decl": "double frexp (double value, int *p);"
+    "decl": "double frexp(double value, int *p);"
    },
    {
     "name": "fromfp",
@@ -1512,7 +1512,7 @@
      "fromfpf",
      "fromfpl"
     ],
-    "decl": "double fromfp (double x, int rnd, unsigned int width);"
+    "decl": "double fromfp(double x, int rnd, unsigned int width);"
    },
    {
     "name": "fromfpx",
@@ -1524,7 +1524,7 @@
      "fromfpxf",
      "fromfpxl"
     ],
-    "decl": "double fromfpx (double x, int rnd, unsigned int width);"
+    "decl": "double fromfpx(double x, int rnd, unsigned int width);"
    },
    {
     "name": "fsqrt",
@@ -1532,7 +1532,7 @@
      "fsqrt",
      "fsqrtl"
     ],
-    "decl": "float fsqrt (double x);"
+    "decl": "float fsqrt(double x);"
    },
    {
     "name": "fsub",
@@ -1540,7 +1540,7 @@
      "fsub",
      "fsubl"
     ],
-    "decl": "float fsub (double x, double y);"
+    "decl": "float fsub(double x, double y);"
    },
    {
     "name": "getpayload",
@@ -1552,7 +1552,7 @@
      "getpayloadf",
      "getpayloadl"
     ],
-    "decl": "double getpayload (const double *x);"
+    "decl": "double getpayload(const double *x);"
    },
    {
     "name": "hypot",
@@ -1564,7 +1564,7 @@
      "hypotf",
      "hypotl"
     ],
-    "decl": "double hypot (double x, double y);"
+    "decl": "double hypot(double x, double y);"
    },
    {
     "name": "ilogb",
@@ -1576,112 +1576,112 @@
      "ilogbf",
      "ilogbl"
     ],
-    "decl": "int ilogb (double x);"
+    "decl": "int ilogb(double x);"
    },
    {
     "name": "iscanonical",
     "variants": [
      "iscanonical"
     ],
-    "decl": "int iscanonical (real-floating x);"
+    "decl": "int iscanonical(real-floating x);"
    },
    {
     "name": "iseqsig",
     "variants": [
      "iseqsig"
     ],
-    "decl": "int iseqsig (real-floating x, real-floating y);"
+    "decl": "int iseqsig(real-floating x, real-floating y);"
    },
    {
     "name": "isfinite",
     "variants": [
      "isfinite"
     ],
-    "decl": "int isfinite (real-floating x);"
+    "decl": "int isfinite(real-floating x);"
    },
    {
     "name": "isgreater",
     "variants": [
      "isgreater"
     ],
-    "decl": "int isgreater (real-floating x, real-floating y);"
+    "decl": "int isgreater(real-floating x, real-floating y);"
    },
    {
     "name": "isgreaterequal",
     "variants": [
      "isgreaterequal"
     ],
-    "decl": "int isgreaterequal (real-floating x, real-floating y);"
+    "decl": "int isgreaterequal(real-floating x, real-floating y);"
    },
    {
     "name": "isinf",
     "variants": [
      "isinf"
     ],
-    "decl": "int isinf (real-floating x);"
+    "decl": "int isinf(real-floating x);"
    },
    {
     "name": "isless",
     "variants": [
      "isless"
     ],
-    "decl": "int isless (real-floating x, real-floating y);"
+    "decl": "int isless(real-floating x, real-floating y);"
    },
    {
     "name": "islessequal",
     "variants": [
      "islessequal"
     ],
-    "decl": "int islessequal (real-floating x, real-floating y);"
+    "decl": "int islessequal(real-floating x, real-floating y);"
    },
    {
     "name": "islessgreater",
     "variants": [
      "islessgreater"
     ],
-    "decl": "int islessgreater (real-floating x, real-floating y);"
+    "decl": "int islessgreater(real-floating x, real-floating y);"
    },
    {
     "name": "isnan",
     "variants": [
      "isnan"
     ],
-    "decl": "int isnan (real-floating x);"
+    "decl": "int isnan(real-floating x);"
    },
    {
     "name": "isnormal",
     "variants": [
      "isnormal"
     ],
-    "decl": "int isnormal (real-floating x);"
+    "decl": "int isnormal(real-floating x);"
    },
    {
     "name": "issignaling",
     "variants": [
      "issignaling"
     ],
-    "decl": "int issignaling (real-floating x);"
+    "decl": "int issignaling(real-floating x);"
    },
    {
     "name": "issubnormal",
     "variants": [
      "issubnormal"
     ],
-    "decl": "int issubnormal (real-floating x);"
+    "decl": "int issubnormal(real-floating x);"
    },
    {
     "name": "isunordered",
     "variants": [
      "isunordered"
     ],
-    "decl": "int isunordered (real-floating x, real-floating y);"
+    "decl": "int isunordered(real-floating x, real-floating y);"
    },
    {
     "name": "iszero",
     "variants": [
      "iszero"
     ],
-    "decl": "int iszero (real-floating x);"
+    "decl": "int iszero(real-floating x);"
    },
    {
     "name": "ldexp",
@@ -1693,7 +1693,7 @@
      "ldexpf",
      "ldexpl"
     ],
-    "decl": "double ldexp (double x, int p);"
+    "decl": "double ldexp(double x, int p);"
    },
    {
     "name": "lgamma",
@@ -1705,7 +1705,7 @@
      "lgammaf",
      "lgammal"
     ],
-    "decl": "double lgamma (double x);"
+    "decl": "double lgamma(double x);"
    },
    {
     "name": "llogb",
@@ -1717,28 +1717,28 @@
      "llogbf",
      "llogbl"
     ],
-    "decl": "long int llogb (double x);"
+    "decl": "long int llogb(double x);"
    },
    {
     "name": "llquantexpd128",
     "variants": [
      "llquantexpd128"
     ],
-    "decl": "long long int llquantexpd128 (_Decimal128 x);"
+    "decl": "long long int llquantexpd128(_Decimal128 x);"
    },
    {
     "name": "llquantexpd32",
     "variants": [
      "llquantexpd32"
     ],
-    "decl": "long long int llquantexpd32 (_Decimal32 x);"
+    "decl": "long long int llquantexpd32(_Decimal32 x);"
    },
    {
     "name": "llquantexpd64",
     "variants": [
      "llquantexpd64"
     ],
-    "decl": "long long int llquantexpd64 (_Decimal64 x);"
+    "decl": "long long int llquantexpd64(_Decimal64 x);"
    },
    {
     "name": "llrint",
@@ -1750,7 +1750,7 @@
      "llrintf",
      "llrintl"
     ],
-    "decl": "long long int llrint (double x);"
+    "decl": "long long int llrint(double x);"
    },
    {
     "name": "llround",
@@ -1762,7 +1762,7 @@
      "llroundf",
      "llroundl"
     ],
-    "decl": "long long int llround (double x);"
+    "decl": "long long int llround(double x);"
    },
    {
     "name": "log",
@@ -1774,7 +1774,7 @@
      "logf",
      "logl"
     ],
-    "decl": "double log (double x);"
+    "decl": "double log(double x);"
    },
    {
     "name": "log10",
@@ -1786,7 +1786,7 @@
      "log10f",
      "log10l"
     ],
-    "decl": "double log10 (double x);"
+    "decl": "double log10(double x);"
    },
    {
     "name": "log10p1",
@@ -1798,7 +1798,7 @@
      "log10p1f",
      "log10p1l"
     ],
-    "decl": "double log10p1 (double x);"
+    "decl": "double log10p1(double x);"
    },
    {
     "name": "log1p",
@@ -1810,7 +1810,7 @@
      "log1pf",
      "log1pl"
     ],
-    "decl": "double log1p (double x);"
+    "decl": "double log1p(double x);"
    },
    {
     "name": "log2",
@@ -1822,7 +1822,7 @@
      "log2f",
      "log2l"
     ],
-    "decl": "double log2 (double x);"
+    "decl": "double log2(double x);"
    },
    {
     "name": "log2p1",
@@ -1834,7 +1834,7 @@
      "log2p1f",
      "log2p1l"
     ],
-    "decl": "double log2p1 (double x);"
+    "decl": "double log2p1(double x);"
    },
    {
     "name": "logb",
@@ -1846,7 +1846,7 @@
      "logbf",
      "logbl"
     ],
-    "decl": "double logb (double x);"
+    "decl": "double logb(double x);"
    },
    {
     "name": "logp1",
@@ -1858,7 +1858,7 @@
      "logp1f",
      "logp1l"
     ],
-    "decl": "double logp1 (double x);"
+    "decl": "double logp1(double x);"
    },
    {
     "name": "lrint",
@@ -1870,7 +1870,7 @@
      "lrintf",
      "lrintl"
     ],
-    "decl": "long int lrint (double x);"
+    "decl": "long int lrint(double x);"
    },
    {
     "name": "lround",
@@ -1882,7 +1882,7 @@
      "lroundf",
      "lroundl"
     ],
-    "decl": "long int lround (double x);"
+    "decl": "long int lround(double x);"
    },
    {
     "name": "modf",
@@ -1894,7 +1894,7 @@
      "modff",
      "modfl"
     ],
-    "decl": "double modf (double value, double *iptr);"
+    "decl": "double modf(double value, double *iptr);"
    },
    {
     "name": "nan",
@@ -1906,7 +1906,7 @@
      "nanf",
      "nanl"
     ],
-    "decl": "double nan (const char *tagp);"
+    "decl": "double nan(const char *tagp);"
    },
    {
     "name": "nearbyint",
@@ -1918,7 +1918,7 @@
      "nearbyintf",
      "nearbyintl"
     ],
-    "decl": "double nearbyint (double x);"
+    "decl": "double nearbyint(double x);"
    },
    {
     "name": "nextafter",
@@ -1930,7 +1930,7 @@
      "nextafterf",
      "nextafterl"
     ],
-    "decl": "double nextafter (double x, double y);"
+    "decl": "double nextafter(double x, double y);"
    },
    {
     "name": "nextdown",
@@ -1942,7 +1942,7 @@
      "nextdownf",
      "nextdownl"
     ],
-    "decl": "double nextdown (double x);"
+    "decl": "double nextdown(double x);"
    },
    {
     "name": "nexttoward",
@@ -1954,7 +1954,7 @@
      "nexttowardf",
      "nexttowardl"
     ],
-    "decl": "double nexttoward (double x, long double y);"
+    "decl": "double nexttoward(double x, long double y);"
    },
    {
     "name": "nextup",
@@ -1966,7 +1966,7 @@
      "nextupf",
      "nextupl"
     ],
-    "decl": "double nextup (double x);"
+    "decl": "double nextup(double x);"
    },
    {
     "name": "pow",
@@ -1978,7 +1978,7 @@
      "powf",
      "powl"
     ],
-    "decl": "double pow (double x, double y);"
+    "decl": "double pow(double x, double y);"
    },
    {
     "name": "pown",
@@ -1990,7 +1990,7 @@
      "pownf",
      "pownl"
     ],
-    "decl": "double pown (double x, long long int n);"
+    "decl": "double pown(double x, long long int n);"
    },
    {
     "name": "powr",
@@ -2002,49 +2002,49 @@
      "powrf",
      "powrl"
     ],
-    "decl": "double powr (double y, double x);"
+    "decl": "double powr(double y, double x);"
    },
    {
     "name": "quantized128",
     "variants": [
      "quantized128"
     ],
-    "decl": "_Decimal128 quantized128 (_Decimal128 x, _Decimal128 y);"
+    "decl": "_Decimal128 quantized128(_Decimal128 x, _Decimal128 y);"
    },
    {
     "name": "quantized32",
     "variants": [
      "quantized32"
     ],
-    "decl": "_Decimal32 quantized32 (_Decimal32 x, _Decimal32 y);"
+    "decl": "_Decimal32 quantized32(_Decimal32 x, _Decimal32 y);"
    },
    {
     "name": "quantized64",
     "variants": [
      "quantized64"
     ],
-    "decl": "_Decimal64 quantized64 (_Decimal64 x, _Decimal64 y);"
+    "decl": "_Decimal64 quantized64(_Decimal64 x, _Decimal64 y);"
    },
    {
     "name": "quantumd128",
     "variants": [
      "quantumd128"
     ],
-    "decl": "_Decimal128 quantumd128 (_Decimal128 x);"
+    "decl": "_Decimal128 quantumd128(_Decimal128 x);"
    },
    {
     "name": "quantumd32",
     "variants": [
      "quantumd32"
     ],
-    "decl": "_Decimal32 quantumd32 (_Decimal32 x);"
+    "decl": "_Decimal32 quantumd32(_Decimal32 x);"
    },
    {
     "name": "quantumd64",
     "variants": [
      "quantumd64"
     ],
-    "decl": "_Decimal64 quantumd64 (_Decimal64 x);"
+    "decl": "_Decimal64 quantumd64(_Decimal64 x);"
    },
    {
     "name": "remainder",
@@ -2056,7 +2056,7 @@
      "remainderf",
      "remainderl"
     ],
-    "decl": "double remainder (double x, double y);"
+    "decl": "double remainder(double x, double y);"
    },
    {
     "name": "remquo",
@@ -2065,7 +2065,7 @@
      "remquof",
      "remquol"
     ],
-    "decl": "double remquo (double x, double y, int *quo);"
+    "decl": "double remquo(double x, double y, int *quo);"
    },
    {
     "name": "rint",
@@ -2077,7 +2077,7 @@
      "rintf",
      "rintl"
     ],
-    "decl": "double rint (double x);"
+    "decl": "double rint(double x);"
    },
    {
     "name": "rootn",
@@ -2089,7 +2089,7 @@
      "rootnf",
      "rootnl"
     ],
-    "decl": "double rootn (double x, long long int n);"
+    "decl": "double rootn(double x, long long int n);"
    },
    {
     "name": "round",
@@ -2101,7 +2101,7 @@
      "roundf",
      "roundl"
     ],
-    "decl": "double round (double x);"
+    "decl": "double round(double x);"
    },
    {
     "name": "roundeven",
@@ -2113,7 +2113,7 @@
      "roundevenf",
      "roundevenl"
     ],
-    "decl": "double roundeven (double x);"
+    "decl": "double roundeven(double x);"
    },
    {
     "name": "rsqrt",
@@ -2125,28 +2125,28 @@
      "rsqrtf",
      "rsqrtl"
     ],
-    "decl": "double rsqrt (double x);"
+    "decl": "double rsqrt(double x);"
    },
    {
     "name": "samequantumd128",
     "variants": [
      "samequantumd128"
     ],
-    "decl": "bool samequantumd128 (_Decimal128 x, _Decimal128 y);"
+    "decl": "bool samequantumd128(_Decimal128 x, _Decimal128 y);"
    },
    {
     "name": "samequantumd32",
     "variants": [
      "samequantumd32"
     ],
-    "decl": "bool samequantumd32 (_Decimal32 x, _Decimal32 y);"
+    "decl": "bool samequantumd32(_Decimal32 x, _Decimal32 y);"
    },
    {
     "name": "samequantumd64",
     "variants": [
      "samequantumd64"
     ],
-    "decl": "bool samequantumd64 (_Decimal64 x, _Decimal64 y);"
+    "decl": "bool samequantumd64(_Decimal64 x, _Decimal64 y);"
    },
    {
     "name": "scalbln",
@@ -2158,7 +2158,7 @@
      "scalblnf",
      "scalblnl"
     ],
-    "decl": "double scalbln (double x, long int n);"
+    "decl": "double scalbln(double x, long int n);"
    },
    {
     "name": "scalbn",
@@ -2170,7 +2170,7 @@
      "scalbnf",
      "scalbnl"
     ],
-    "decl": "double scalbn (double x, int n);"
+    "decl": "double scalbn(double x, int n);"
    },
    {
     "name": "setpayload",
@@ -2182,7 +2182,7 @@
      "setpayloadf",
      "setpayloadl"
     ],
-    "decl": "int setpayload (double *res, double pl);"
+    "decl": "int setpayload(double *res, double pl);"
    },
    {
     "name": "setpayloadsig",
@@ -2194,14 +2194,14 @@
      "setpayloadsigf",
      "setpayloadsigl"
     ],
-    "decl": "int setpayloadsig (double *res, double pl);"
+    "decl": "int setpayloadsig(double *res, double pl);"
    },
    {
     "name": "signbit",
     "variants": [
      "signbit"
     ],
-    "decl": "int signbit (real-floating x);"
+    "decl": "int signbit(real-floating x);"
    },
    {
     "name": "sin",
@@ -2213,7 +2213,7 @@
      "sinf",
      "sinl"
     ],
-    "decl": "double sin (double x);"
+    "decl": "double sin(double x);"
    },
    {
     "name": "sinh",
@@ -2225,7 +2225,7 @@
      "sinhf",
      "sinhl"
     ],
-    "decl": "double sinh (double x);"
+    "decl": "double sinh(double x);"
    },
    {
     "name": "sinpi",
@@ -2237,7 +2237,7 @@
      "sinpif",
      "sinpil"
     ],
-    "decl": "double sinpi (double x);"
+    "decl": "double sinpi(double x);"
    },
    {
     "name": "sqrt",
@@ -2249,7 +2249,7 @@
      "sqrtf",
      "sqrtl"
     ],
-    "decl": "double sqrt (double x);"
+    "decl": "double sqrt(double x);"
    },
    {
     "name": "tan",
@@ -2261,7 +2261,7 @@
      "tanf",
      "tanl"
     ],
-    "decl": "double tan (double x);"
+    "decl": "double tan(double x);"
    },
    {
     "name": "tanh",
@@ -2273,7 +2273,7 @@
      "tanhf",
      "tanhl"
     ],
-    "decl": "double tanh (double x);"
+    "decl": "double tanh(double x);"
    },
    {
     "name": "tanpi",
@@ -2285,7 +2285,7 @@
      "tanpif",
      "tanpil"
     ],
-    "decl": "double tanpi (double x);"
+    "decl": "double tanpi(double x);"
    },
    {
     "name": "tgamma",
@@ -2297,7 +2297,7 @@
      "tgammaf",
      "tgammal"
     ],
-    "decl": "double tgamma (double x);"
+    "decl": "double tgamma(double x);"
    },
    {
     "name": "totalorder",
@@ -2309,7 +2309,7 @@
      "totalorderf",
      "totalorderl"
     ],
-    "decl": "int totalorder (const double *x, const double *y);"
+    "decl": "int totalorder(const double *x, const double *y);"
    },
    {
     "name": "totalordermag",
@@ -2321,7 +2321,7 @@
      "totalordermagf",
      "totalordermagl"
     ],
-    "decl": "int totalordermag (const double *x, const double *y);"
+    "decl": "int totalordermag(const double *x, const double *y);"
    },
    {
     "name": "trunc",
@@ -2333,7 +2333,7 @@
      "truncf",
      "truncl"
     ],
-    "decl": "double trunc (double x);"
+    "decl": "double trunc(double x);"
    },
    {
     "name": "ufromfp",
@@ -2345,7 +2345,7 @@
      "ufromfpf",
      "ufromfpl"
     ],
-    "decl": "double ufromfp (double x, int rnd, unsigned int width);"
+    "decl": "double ufromfp(double x, int rnd, unsigned int width);"
    },
    {
     "name": "ufromfpx",
@@ -2357,7 +2357,7 @@
      "ufromfpxf",
      "ufromfpxl"
     ],
-    "decl": "double ufromfpx (double x, int rnd, unsigned int width);"
+    "decl": "double ufromfpx(double x, int rnd, unsigned int width);"
    }
   ],
   "macros": [
@@ -2443,14 +2443,14 @@
     "variants": [
      "longjmp"
     ],
-    "decl": "void longjmp (jmp_buf env, int val);"
+    "decl": "void longjmp(jmp_buf env, int val);"
    },
    {
     "name": "setjmp",
     "variants": [
      "setjmp"
     ],
-    "decl": "__STDC_VERSION_SETJMP_H__ jmp_buf int setjmp (jmp_buf env);"
+    "decl": "__STDC_VERSION_SETJMP_H__ jmp_buf int setjmp(jmp_buf env);"
    }
   ],
   "macros": [],
@@ -2463,14 +2463,7 @@
     "variants": [
      "raise"
     ],
-    "decl": "int raise (int sig);"
-   },
-   {
-    "name": "void",
-    "variants": [
-     "void"
-    ],
-    "decl": "void (*func)(int)))(int);"
+    "decl": "int raise(int sig);"
    }
   ],
   "macros": [
@@ -2832,49 +2825,49 @@
     "variants": [
      "clearerr"
     ],
-    "decl": "void clearerr (FILE *stream);"
+    "decl": "void clearerr(FILE *stream);"
    },
    {
     "name": "fclose",
     "variants": [
      "fclose"
     ],
-    "decl": "int fclose (FILE *stream);"
+    "decl": "int fclose(FILE *stream);"
    },
    {
     "name": "feof",
     "variants": [
      "feof"
     ],
-    "decl": "int feof (FILE *stream);"
+    "decl": "int feof(FILE *stream);"
    },
    {
     "name": "ferror",
     "variants": [
      "ferror"
     ],
-    "decl": "int ferror (FILE *stream);"
+    "decl": "int ferror(FILE *stream);"
    },
    {
     "name": "fflush",
     "variants": [
      "fflush"
     ],
-    "decl": "int fflush (FILE *stream);"
+    "decl": "int fflush(FILE *stream);"
    },
    {
     "name": "fgetc",
     "variants": [
      "fgetc"
     ],
-    "decl": "int fgetc (FILE *stream);"
+    "decl": "int fgetc(FILE *stream);"
    },
    {
     "name": "fgetpos",
     "variants": [
      "fgetpos"
     ],
-    "decl": "int fgetpos (FILE * restrict stream, fpos_t * restrict pos);"
+    "decl": "int fgetpos(FILE * restrict stream, fpos_t * restrict pos);"
    },
    {
     "name": "fgets",
@@ -2902,7 +2895,7 @@
     "variants": [
      "fprintf"
     ],
-    "decl": "int fprintf (FILE * restrict stream, const char * restrict format, ...);"
+    "decl": "int fprintf(FILE * restrict stream, const char * restrict format, ...);"
    },
    {
     "name": "fprintf_s",
@@ -2916,21 +2909,21 @@
     "variants": [
      "fputc"
     ],
-    "decl": "int fputc (int c, FILE *stream);"
+    "decl": "int fputc(int c, FILE *stream);"
    },
    {
     "name": "fputs",
     "variants": [
      "fputs"
     ],
-    "decl": "int fputs (const char * restrict s, FILE * restrict stream);"
+    "decl": "int fputs(const char * restrict s, FILE * restrict stream);"
    },
    {
     "name": "fread",
     "variants": [
      "fread"
     ],
-    "decl": "size_t fread (void * restrict ptr, size_t size, size_t nmemb, FILE * restrict stream);"
+    "decl": "size_t fread(void * restrict ptr, size_t size, size_t nmemb, FILE * restrict stream);"
    },
    {
     "name": "freopen",
@@ -2951,7 +2944,7 @@
     "variants": [
      "fscanf"
     ],
-    "decl": "int fscanf (FILE * restrict stream, const char * restrict format, ...);"
+    "decl": "int fscanf(FILE * restrict stream, const char * restrict format, ...);"
    },
    {
     "name": "fscanf_s",
@@ -2965,42 +2958,42 @@
     "variants": [
      "fseek"
     ],
-    "decl": "int fseek (FILE *stream, long int offset, int whence);"
+    "decl": "int fseek(FILE *stream, long int offset, int whence);"
    },
    {
     "name": "fsetpos",
     "variants": [
      "fsetpos"
     ],
-    "decl": "int fsetpos (FILE *stream, const fpos_t *pos);"
+    "decl": "int fsetpos(FILE *stream, const fpos_t *pos);"
    },
    {
     "name": "ftell",
     "variants": [
      "ftell"
     ],
-    "decl": "long int ftell (FILE *stream);"
+    "decl": "long int ftell(FILE *stream);"
    },
    {
     "name": "fwrite",
     "variants": [
      "fwrite"
     ],
-    "decl": "size_t fwrite (const void * restrict ptr, size_t size, size_t nmemb, FILE * restrict stream);"
+    "decl": "size_t fwrite(const void * restrict ptr, size_t size, size_t nmemb, FILE * restrict stream);"
    },
    {
     "name": "getc",
     "variants": [
      "getc"
     ],
-    "decl": "int getc (FILE *stream);"
+    "decl": "int getc(FILE *stream);"
    },
    {
     "name": "getchar",
     "variants": [
      "getchar"
     ],
-    "decl": "int getchar (void);"
+    "decl": "int getchar(void);"
    },
    {
     "name": "gets_s",
@@ -3014,14 +3007,14 @@
     "variants": [
      "perror"
     ],
-    "decl": "void perror (const char *s);"
+    "decl": "void perror(const char *s);"
    },
    {
     "name": "printf",
     "variants": [
      "printf"
     ],
-    "decl": "int printf (const char * restrict format, ...);"
+    "decl": "int printf(const char * restrict format, ...);"
    },
    {
     "name": "printf_s",
@@ -3035,49 +3028,49 @@
     "variants": [
      "putc"
     ],
-    "decl": "int putc (int c, FILE *stream);"
+    "decl": "int putc(int c, FILE *stream);"
    },
    {
     "name": "putchar",
     "variants": [
      "putchar"
     ],
-    "decl": "int putchar (int c);"
+    "decl": "int putchar(int c);"
    },
    {
     "name": "puts",
     "variants": [
      "puts"
     ],
-    "decl": "int puts (const char *s);"
+    "decl": "int puts(const char *s);"
    },
    {
     "name": "remove",
     "variants": [
      "remove"
     ],
-    "decl": "stdin stdout_PRINTF_NAN_LEN_MAX __STDC_VERSION_STDIO_H__ int remove (const char *filename);"
+    "decl": "stdin stdout_PRINTF_NAN_LEN_MAX __STDC_VERSION_STDIO_H__ int remove(const char *filename);"
    },
    {
     "name": "rename",
     "variants": [
      "rename"
     ],
-    "decl": "int rename (const char *old, const char *new);"
+    "decl": "int rename(const char *old, const char *new);"
    },
    {
     "name": "rewind",
     "variants": [
      "rewind"
     ],
-    "decl": "void rewind (FILE *stream);"
+    "decl": "void rewind(FILE *stream);"
    },
    {
     "name": "scanf",
     "variants": [
      "scanf"
     ],
-    "decl": "int scanf (const char * restrict format, ...);"
+    "decl": "int scanf(const char * restrict format, ...);"
    },
    {
     "name": "scanf_s",
@@ -3091,21 +3084,21 @@
     "variants": [
      "setbuf"
     ],
-    "decl": "void setbuf (FILE * restrict stream, char * restrict buf);"
+    "decl": "void setbuf(FILE * restrict stream, char * restrict buf);"
    },
    {
     "name": "setvbuf",
     "variants": [
      "setvbuf"
     ],
-    "decl": "int setvbuf (FILE * restrict stream, char * restrict buf, int mode, size_t size);"
+    "decl": "int setvbuf(FILE * restrict stream, char * restrict buf, int mode, size_t size);"
    },
    {
     "name": "snprintf",
     "variants": [
      "snprintf"
     ],
-    "decl": "int snprintf (char * restrict s, size_t n, const char * restrict format, ...);"
+    "decl": "int snprintf(char * restrict s, size_t n, const char * restrict format, ...);"
    },
    {
     "name": "snprintf_s",
@@ -3119,7 +3112,7 @@
     "variants": [
      "sprintf"
     ],
-    "decl": "int sprintf (char * restrict s, const char * restrict format, ...);"
+    "decl": "int sprintf(char * restrict s, const char * restrict format, ...);"
    },
    {
     "name": "sprintf_s",
@@ -3133,7 +3126,7 @@
     "variants": [
      "sscanf"
     ],
-    "decl": "int sscanf (const char * restrict s, const char * restrict format, ...);"
+    "decl": "int sscanf(const char * restrict s, const char * restrict format, ...);"
    },
    {
     "name": "sscanf_s",
@@ -3175,14 +3168,14 @@
     "variants": [
      "ungetc"
     ],
-    "decl": "int ungetc (int c, FILE *stream);"
+    "decl": "int ungetc(int c, FILE *stream);"
    },
    {
     "name": "vfprintf",
     "variants": [
      "vfprintf"
     ],
-    "decl": "int vfprintf (FILE * restrict stream, const char * restrict format, va_list arg);"
+    "decl": "int vfprintf(FILE * restrict stream, const char * restrict format, va_list arg);"
    },
    {
     "name": "vfprintf_s",
@@ -3196,7 +3189,7 @@
     "variants": [
      "vfscanf"
     ],
-    "decl": "int vfscanf (FILE * restrict stream, const char * restrict format, va_list arg);"
+    "decl": "int vfscanf(FILE * restrict stream, const char * restrict format, va_list arg);"
    },
    {
     "name": "vfscanf_s",
@@ -3210,7 +3203,7 @@
     "variants": [
      "vprintf"
     ],
-    "decl": "int vprintf (const char * restrict format, va_list arg);"
+    "decl": "int vprintf(const char * restrict format, va_list arg);"
    },
    {
     "name": "vprintf_s",
@@ -3224,7 +3217,7 @@
     "variants": [
      "vscanf"
     ],
-    "decl": "int vscanf (const char * restrict format, va_list arg);"
+    "decl": "int vscanf(const char * restrict format, va_list arg);"
    },
    {
     "name": "vscanf_s",
@@ -3238,7 +3231,7 @@
     "variants": [
      "vsnprintf"
     ],
-    "decl": "int vsnprintf (char * restrict s, size_t n, const char * restrict format, va_list arg);"
+    "decl": "int vsnprintf(char * restrict s, size_t n, const char * restrict format, va_list arg);"
    },
    {
     "name": "vsnprintf_s",
@@ -3252,7 +3245,7 @@
     "variants": [
      "vsprintf"
     ],
-    "decl": "int vsprintf (char * restrict s, const char * restrict format, va_list arg);"
+    "decl": "int vsprintf(char * restrict s, const char * restrict format, va_list arg);"
    },
    {
     "name": "vsprintf_s",
@@ -3266,7 +3259,7 @@
     "variants": [
      "vsscanf"
     ],
-    "decl": "int vsscanf (const char * restrict s, const char * restrict format, va_list arg);"
+    "decl": "int vsscanf(const char * restrict s, const char * restrict format, va_list arg);"
    },
    {
     "name": "vsscanf_s",
@@ -3303,21 +3296,21 @@
     "variants": [
      "abort"
     ],
-    "decl": "void abort (void);"
+    "decl": "void abort(void);"
    },
    {
     "name": "abort_handler_s",
     "variants": [
      "abort_handler_s"
     ],
-    "decl": "void abort_handler_s(const char * restrict msg, void * restrict ptr, errno_t error );"
+    "decl": "void abort_handler_s(const char * restrict msg, void * restrict ptr, errno_t error);"
    },
    {
     "name": "abs",
     "variants": [
      "abs"
     ],
-    "decl": "int abs (int j);"
+    "decl": "int abs(int j);"
    },
    {
     "name": "aligned_alloc",
@@ -3338,21 +3331,21 @@
     "variants": [
      "atexit"
     ],
-    "decl": "int atexit (void (*func)(void));"
+    "decl": "int atexit(void (*func)(void));"
    },
    {
     "name": "atof",
     "variants": [
      "atof"
     ],
-    "decl": "double atof (const char *nptr);"
+    "decl": "double atof(const char *nptr);"
    },
    {
     "name": "atoi",
     "variants": [
      "atoi"
     ],
-    "decl": "int atoi (const char *nptr);"
+    "decl": "int atoi(const char *nptr);"
    },
    {
     "name": "atol",
@@ -3360,7 +3353,7 @@
      "atol",
      "atoll"
     ],
-    "decl": "long int atol (const char *nptr);"
+    "decl": "long int atol(const char *nptr);"
    },
    {
     "name": "bsearch",
@@ -3395,21 +3388,21 @@
     "variants": [
      "div"
     ],
-    "decl": "div_t div (int numer, int denom);"
+    "decl": "div_t div(int numer, int denom);"
    },
    {
     "name": "exit",
     "variants": [
      "exit"
     ],
-    "decl": "void exit (int status);"
+    "decl": "void exit(int status);"
    },
    {
     "name": "free",
     "variants": [
      "free"
     ],
-    "decl": "void free (void *ptr);"
+    "decl": "void free(void *ptr);"
    },
    {
     "name": "free_aligned_sized",
@@ -3444,35 +3437,35 @@
     "variants": [
      "ignore_handler_s"
     ],
-    "decl": "void ignore_handler_s(const char * restrict msg, void * restrict ptr, errno_t error );"
+    "decl": "void ignore_handler_s(const char * restrict msg, void * restrict ptr, errno_t error);"
    },
    {
     "name": "labs",
     "variants": [
      "labs"
     ],
-    "decl": "long int labs (long int j);"
+    "decl": "long int labs(long int j);"
    },
    {
     "name": "ldiv",
     "variants": [
      "ldiv"
     ],
-    "decl": "ldiv_t ldiv (long int numer, long int denom);"
+    "decl": "ldiv_t ldiv(long int numer, long int denom);"
    },
    {
     "name": "llabs",
     "variants": [
      "llabs"
     ],
-    "decl": "long long int llabs (long long int j);"
+    "decl": "long long int llabs(long long int j);"
    },
    {
     "name": "lldiv",
     "variants": [
      "lldiv"
     ],
-    "decl": "lldiv_t lldiv (long long int numer, long long int denom);"
+    "decl": "lldiv_t lldiv(long long int numer, long long int denom);"
    },
    {
     "name": "malloc",
@@ -3486,14 +3479,14 @@
     "variants": [
      "mblen"
     ],
-    "decl": "int mblen (const char *s, size_t n);"
+    "decl": "int mblen(const char *s, size_t n);"
    },
    {
     "name": "mbstowcs",
     "variants": [
      "mbstowcs"
     ],
-    "decl": "size_t mbstowcs (wchar_t * restrict pwcs, const char * restrict s, size_t n);"
+    "decl": "size_t mbstowcs(wchar_t * restrict pwcs, const char * restrict s, size_t n);"
    },
    {
     "name": "mbstowcs_s",
@@ -3507,21 +3500,21 @@
     "variants": [
      "mbtowc"
     ],
-    "decl": "int mbtowc (wchar_t * restrict pwc, const char * restrict s, size_t n);"
+    "decl": "int mbtowc(wchar_t * restrict pwc, const char * restrict s, size_t n);"
    },
    {
     "name": "memalignment",
     "variants": [
      "memalignment"
     ],
-    "decl": "size_t memalignment (const void *p);"
+    "decl": "size_t memalignment(const void *p);"
    },
    {
     "name": "qsort",
     "variants": [
      "qsort"
     ],
-    "decl": "void qsort (void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));"
+    "decl": "void qsort(void *base, size_t nmemb, size_t size, int (*compar)(const void *, const void *));"
    },
    {
     "name": "qsort_s",
@@ -3542,7 +3535,7 @@
     "variants": [
      "rand"
     ],
-    "decl": "int rand (void);"
+    "decl": "int rand(void);"
    },
    {
     "name": "realloc",
@@ -3563,84 +3556,84 @@
     "variants": [
      "srand"
     ],
-    "decl": "void srand (unsigned int seed);"
+    "decl": "void srand(unsigned int seed);"
    },
    {
     "name": "strfromd",
     "variants": [
      "strfromd"
     ],
-    "decl": "int strfromd (char * restrict s, size_t n, const char * restrict format, double fp);"
+    "decl": "int strfromd(char * restrict s, size_t n, const char * restrict format, double fp);"
    },
    {
     "name": "strfromd128",
     "variants": [
      "strfromd128"
     ],
-    "decl": "int strfromd128 (char * restrict s, size_t n, const char * restrict format, _Decimal128 fp);"
+    "decl": "int strfromd128(char * restrict s, size_t n, const char * restrict format, _Decimal128 fp);"
    },
    {
     "name": "strfromd32",
     "variants": [
      "strfromd32"
     ],
-    "decl": "int strfromd32 (char * restrict s, size_t n, const char * restrict format, _Decimal32 fp);"
+    "decl": "int strfromd32(char * restrict s, size_t n, const char * restrict format, _Decimal32 fp);"
    },
    {
     "name": "strfromd64",
     "variants": [
      "strfromd64"
     ],
-    "decl": "int strfromd64 (char * restrict s, size_t n, const char * restrict format, _Decimal64 fp);"
+    "decl": "int strfromd64(char * restrict s, size_t n, const char * restrict format, _Decimal64 fp);"
    },
    {
     "name": "strfromf",
     "variants": [
      "strfromf"
     ],
-    "decl": "int strfromf (char * restrict s, size_t n, const char * restrict format, float fp);"
+    "decl": "int strfromf(char * restrict s, size_t n, const char * restrict format, float fp);"
    },
    {
     "name": "strfroml",
     "variants": [
      "strfroml"
     ],
-    "decl": "int strfroml (char * restrict s, size_t n, const char * restrict format, long double fp);"
+    "decl": "int strfroml(char * restrict s, size_t n, const char * restrict format, long double fp);"
    },
    {
     "name": "strtod",
     "variants": [
      "strtod"
     ],
-    "decl": "double strtod (const char * restrict nptr, char ** restrict endptr);"
+    "decl": "double strtod(const char * restrict nptr, char ** restrict endptr);"
    },
    {
     "name": "strtod128",
     "variants": [
      "strtod128"
     ],
-    "decl": "_Decimal128 strtod128 (const char * restrict nptr, char ** restrict endptr);"
+    "decl": "_Decimal128 strtod128(const char * restrict nptr, char ** restrict endptr);"
    },
    {
     "name": "strtod32",
     "variants": [
      "strtod32"
     ],
-    "decl": "_Decimal32 strtod32 (const char * restrict nptr, char ** restrict endptr);"
+    "decl": "_Decimal32 strtod32(const char * restrict nptr, char ** restrict endptr);"
    },
    {
     "name": "strtod64",
     "variants": [
      "strtod64"
     ],
-    "decl": "_Decimal64 strtod64 (const char * restrict nptr, char ** restrict endptr);"
+    "decl": "_Decimal64 strtod64(const char * restrict nptr, char ** restrict endptr);"
    },
    {
     "name": "strtof",
     "variants": [
      "strtof"
     ],
-    "decl": "float strtof (const char * restrict nptr, char ** restrict endptr);"
+    "decl": "float strtof(const char * restrict nptr, char ** restrict endptr);"
    },
    {
     "name": "strtol",
@@ -3648,14 +3641,14 @@
      "strtol",
      "strtoll"
     ],
-    "decl": "long int strtol (const char * restrict nptr, char ** restrict endptr, int base);"
+    "decl": "long int strtol(const char * restrict nptr, char ** restrict endptr, int base);"
    },
    {
     "name": "strtold",
     "variants": [
      "strtold"
     ],
-    "decl": "long double strtold (const char * restrict nptr, char ** restrict endptr);"
+    "decl": "long double strtold(const char * restrict nptr, char ** restrict endptr);"
    },
    {
     "name": "strtoul",
@@ -3663,21 +3656,21 @@
      "strtoul",
      "strtoull"
     ],
-    "decl": "unsigned long int strtoul (const char * restrict nptr, char ** restrict endptr, int base);"
+    "decl": "unsigned long int strtoul(const char * restrict nptr, char ** restrict endptr, int base);"
    },
    {
     "name": "system",
     "variants": [
      "system"
     ],
-    "decl": "int system (const char *string);"
+    "decl": "int system(const char *string);"
    },
    {
     "name": "wcstombs",
     "variants": [
      "wcstombs"
     ],
-    "decl": "size_t wcstombs (char * restrict s, const wchar_t * restrict pwcs, size_t n);"
+    "decl": "size_t wcstombs(char * restrict s, const wchar_t * restrict pwcs, size_t n);"
    },
    {
     "name": "wcstombs_s",
@@ -3691,7 +3684,7 @@
     "variants": [
      "wctomb"
     ],
-    "decl": "int wctomb (char *s, wchar_t wc);"
+    "decl": "int wctomb(char *s, wchar_t wc);"
    },
    {
     "name": "wctomb_s",
@@ -3741,7 +3734,7 @@
     "variants": [
      "memcmp"
     ],
-    "decl": "int memcmp (const void *s1, const void *s2, size_t n);"
+    "decl": "int memcmp(const void *s1, const void *s2, size_t n);"
    },
    {
     "name": "memcpy",
@@ -3818,14 +3811,14 @@
     "variants": [
      "strcmp"
     ],
-    "decl": "int strcmp (const char *s1, const char *s2);"
+    "decl": "int strcmp(const char *s1, const char *s2);"
    },
    {
     "name": "strcoll",
     "variants": [
      "strcoll"
     ],
-    "decl": "int strcoll (const char *s1, const char *s2);"
+    "decl": "int strcoll(const char *s1, const char *s2);"
    },
    {
     "name": "strcpy",
@@ -3846,7 +3839,7 @@
     "variants": [
      "strcspn"
     ],
-    "decl": "size_t strcspn (const char *s1, const char *s2);"
+    "decl": "size_t strcspn(const char *s1, const char *s2);"
    },
    {
     "name": "strdup",
@@ -3874,7 +3867,7 @@
     "variants": [
      "strlen"
     ],
-    "decl": "size_t strlen (const char *s);"
+    "decl": "size_t strlen(const char *s);"
    },
    {
     "name": "strncat",
@@ -3895,7 +3888,7 @@
     "variants": [
      "strncmp"
     ],
-    "decl": "int strncmp (const char *s1, const char *s2, size_t n);"
+    "decl": "int strncmp(const char *s1, const char *s2, size_t n);"
    },
    {
     "name": "strncpy",
@@ -3944,7 +3937,7 @@
     "variants": [
      "strspn"
     ],
-    "decl": "size_t strspn (const char *s1, const char *s2);"
+    "decl": "size_t strspn(const char *s1, const char *s2);"
    },
    {
     "name": "strstr",
@@ -3972,7 +3965,7 @@
     "variants": [
      "strxfrm"
     ],
-    "decl": "size_t strxfrm (char * restrict s1, const char * restrict s2, size_t n);"
+    "decl": "size_t strxfrm(char * restrict s1, const char * restrict s2, size_t n);"
    }
   ],
   "macros": [
@@ -4201,7 +4194,7 @@
     "variants": [
      "clock"
     ],
-    "decl": "timespec struct tm clock_t clock (void);"
+    "decl": "timespec struct tm clock_t clock(void);"
    },
    {
     "name": "ctime",
@@ -4222,7 +4215,7 @@
     "variants": [
      "difftime"
     ],
-    "decl": "double difftime (time_t time1, time_t time0);"
+    "decl": "double difftime(time_t time1, time_t time0);"
    },
    {
     "name": "gmtime",
@@ -4271,28 +4264,28 @@
     "variants": [
      "mktime"
     ],
-    "decl": "time_t mktime (struct tm *timeptr);"
+    "decl": "time_t mktime(struct tm *timeptr);"
    },
    {
     "name": "strftime",
     "variants": [
      "strftime"
     ],
-    "decl": "size_t strftime (char * restrict s, size_t maxsize, const char * restrict format, const struct tm * restrict timeptr);"
+    "decl": "size_t strftime(char * restrict s, size_t maxsize, const char * restrict format, const struct tm * restrict timeptr);"
    },
    {
     "name": "time",
     "variants": [
      "time"
     ],
-    "decl": "* timer);"
+    "decl": "time_t time(time_t *timer);"
    },
    {
     "name": "timegm",
     "variants": [
      "timegm"
     ],
-    "decl": "time_t timegm (struct tm *timeptr);"
+    "decl": "time_t timegm(struct tm *timeptr);"
    },
    {
     "name": "timespec_get",
@@ -4332,42 +4325,42 @@
     "variants": [
      "c16rtomb"
     ],
-    "decl": "size_t c16rtomb (char * restrict s, char16_t c16, mbstate_t * restrict ps);"
+    "decl": "size_t c16rtomb(char * restrict s, char16_t c16, mbstate_t * restrict ps);"
    },
    {
     "name": "c32rtomb",
     "variants": [
      "c32rtomb"
     ],
-    "decl": "size_t c32rtomb (char * restrict s, char32_t c32, mbstate_t * restrict ps);"
+    "decl": "size_t c32rtomb(char * restrict s, char32_t c32, mbstate_t * restrict ps);"
    },
    {
     "name": "c8rtomb",
     "variants": [
      "c8rtomb"
     ],
-    "decl": "size_t c8rtomb (char * restrict s, char8_t c8, mbstate_t * restrict ps);"
+    "decl": "size_t c8rtomb(char * restrict s, char8_t c8, mbstate_t * restrict ps);"
    },
    {
     "name": "mbrtoc16",
     "variants": [
      "mbrtoc16"
     ],
-    "decl": "size_t mbrtoc16 (char16_t * restrict pc16, const char * restrict s, size_t n, mbstate_t * restrict ps);"
+    "decl": "size_t mbrtoc16(char16_t * restrict pc16, const char * restrict s, size_t n, mbstate_t * restrict ps);"
    },
    {
     "name": "mbrtoc32",
     "variants": [
      "mbrtoc32"
     ],
-    "decl": "size_t mbrtoc32 (char32_t * restrict pc32, const char * restrict s, size_t n, mbstate_t * restrict ps);"
+    "decl": "size_t mbrtoc32(char32_t * restrict pc32, const char * restrict s, size_t n, mbstate_t * restrict ps);"
    },
    {
     "name": "mbrtoc8",
     "variants": [
      "mbrtoc8"
     ],
-    "decl": "size_t mbrtoc8 (char8_t * restrict pc8, const char * restrict s, size_t n, mbstate_t * restrict ps);"
+    "decl": "size_t mbrtoc8(char8_t * restrict pc8, const char * restrict s, size_t n, mbstate_t * restrict ps);"
    }
   ],
   "macros": [],
@@ -4386,14 +4379,14 @@
     "variants": [
      "btowc"
     ],
-    "decl": "wint_t btowc (int c);"
+    "decl": "wint_t btowc(int c);"
    },
    {
     "name": "fgetwc",
     "variants": [
      "fgetwc"
     ],
-    "decl": "wint_t fgetwc (FILE *stream);"
+    "decl": "wint_t fgetwc(FILE *stream);"
    },
    {
     "name": "fgetws",
@@ -4407,28 +4400,28 @@
     "variants": [
      "fputwc"
     ],
-    "decl": "wint_t fputwc (wchar_t c, FILE *stream);"
+    "decl": "wint_t fputwc(wchar_t c, FILE *stream);"
    },
    {
     "name": "fputws",
     "variants": [
      "fputws"
     ],
-    "decl": "int fputws (const wchar_t * restrict s, FILE * restrict stream);"
+    "decl": "int fputws(const wchar_t * restrict s, FILE * restrict stream);"
    },
    {
     "name": "fwide",
     "variants": [
      "fwide"
     ],
-    "decl": "int fwide (FILE *stream, int mode);"
+    "decl": "int fwide(FILE *stream, int mode);"
    },
    {
     "name": "fwprintf",
     "variants": [
      "fwprintf"
     ],
-    "decl": "int fwprintf (FILE * restrict stream, const wchar_t * restrict format, ...);"
+    "decl": "int fwprintf(FILE * restrict stream, const wchar_t * restrict format, ...);"
    },
    {
     "name": "fwprintf_s",
@@ -4442,7 +4435,7 @@
     "variants": [
      "fwscanf"
     ],
-    "decl": "int fwscanf (FILE * restrict stream, const wchar_t * restrict format, ...);"
+    "decl": "int fwscanf(FILE * restrict stream, const wchar_t * restrict format, ...);"
    },
    {
     "name": "fwscanf_s",
@@ -4456,42 +4449,42 @@
     "variants": [
      "getwc"
     ],
-    "decl": "wint_t getwc (FILE *stream);"
+    "decl": "wint_t getwc(FILE *stream);"
    },
    {
     "name": "getwchar",
     "variants": [
      "getwchar"
     ],
-    "decl": "wint_t getwchar (void);"
+    "decl": "wint_t getwchar(void);"
    },
    {
     "name": "mbrlen",
     "variants": [
      "mbrlen"
     ],
-    "decl": "size_t mbrlen (const char * restrict s, size_t n, mbstate_t * restrict ps);"
+    "decl": "size_t mbrlen(const char * restrict s, size_t n, mbstate_t * restrict ps);"
    },
    {
     "name": "mbrtowc",
     "variants": [
      "mbrtowc"
     ],
-    "decl": "size_t mbrtowc (wchar_t * restrict pwc, const char * restrict s, size_t n, mbstate_t * restrict ps);"
+    "decl": "size_t mbrtowc(wchar_t * restrict pwc, const char * restrict s, size_t n, mbstate_t * restrict ps);"
    },
    {
     "name": "mbsinit",
     "variants": [
      "mbsinit"
     ],
-    "decl": "int mbsinit (const mbstate_t *ps);"
+    "decl": "int mbsinit(const mbstate_t *ps);"
    },
    {
     "name": "mbsrtowcs",
     "variants": [
      "mbsrtowcs"
     ],
-    "decl": "size_t mbsrtowcs (wchar_t * restrict dst, const char ** restrict src, size_t len, mbstate_t * restrict ps);"
+    "decl": "size_t mbsrtowcs(wchar_t * restrict dst, const char ** restrict src, size_t len, mbstate_t * restrict ps);"
    },
    {
     "name": "mbsrtowcs_s",
@@ -4505,14 +4498,14 @@
     "variants": [
      "putwc"
     ],
-    "decl": "wint_t putwc (wchar_t c, FILE *stream);"
+    "decl": "wint_t putwc(wchar_t c, FILE *stream);"
    },
    {
     "name": "putwchar",
     "variants": [
      "putwchar"
     ],
-    "decl": "wint_t putwchar (wchar_t c);"
+    "decl": "wint_t putwchar(wchar_t c);"
    },
    {
     "name": "snwprintf_s",
@@ -4526,7 +4519,7 @@
     "variants": [
      "swprintf"
     ],
-    "decl": "int swprintf (wchar_t * restrict s, size_t n, const wchar_t * restrict format, ...);"
+    "decl": "int swprintf(wchar_t * restrict s, size_t n, const wchar_t * restrict format, ...);"
    },
    {
     "name": "swprintf_s",
@@ -4540,7 +4533,7 @@
     "variants": [
      "swscanf"
     ],
-    "decl": "int swscanf (const wchar_t * restrict s, const wchar_t * restrict format, ...);"
+    "decl": "int swscanf(const wchar_t * restrict s, const wchar_t * restrict format, ...);"
    },
    {
     "name": "swscanf_s",
@@ -4554,14 +4547,14 @@
     "variants": [
      "ungetwc"
     ],
-    "decl": "wint_t ungetwc (wint_t c, FILE *stream);"
+    "decl": "wint_t ungetwc(wint_t c, FILE *stream);"
    },
    {
     "name": "vfwprintf",
     "variants": [
      "vfwprintf"
     ],
-    "decl": "int vfwprintf (FILE * restrict stream, const wchar_t * restrict format, va_list arg);"
+    "decl": "int vfwprintf(FILE * restrict stream, const wchar_t * restrict format, va_list arg);"
    },
    {
     "name": "vfwprintf_s",
@@ -4575,7 +4568,7 @@
     "variants": [
      "vfwscanf"
     ],
-    "decl": "int vfwscanf (FILE * restrict stream, const wchar_t * restrict format, va_list arg);"
+    "decl": "int vfwscanf(FILE * restrict stream, const wchar_t * restrict format, va_list arg);"
    },
    {
     "name": "vfwscanf_s",
@@ -4596,7 +4589,7 @@
     "variants": [
      "vswprintf"
     ],
-    "decl": "int vswprintf (wchar_t * restrict s, size_t n, const wchar_t * restrict format, va_list arg);"
+    "decl": "int vswprintf(wchar_t * restrict s, size_t n, const wchar_t * restrict format, va_list arg);"
    },
    {
     "name": "vswprintf_s",
@@ -4610,7 +4603,7 @@
     "variants": [
      "vswscanf"
     ],
-    "decl": "int vswscanf (const wchar_t * restrict s, const wchar_t * restrict format, va_list arg);"
+    "decl": "int vswscanf(const wchar_t * restrict s, const wchar_t * restrict format, va_list arg);"
    },
    {
     "name": "vswscanf_s",
@@ -4624,7 +4617,7 @@
     "variants": [
      "vwprintf"
     ],
-    "decl": "int vwprintf (const wchar_t * restrict format, va_list arg);"
+    "decl": "int vwprintf(const wchar_t * restrict format, va_list arg);"
    },
    {
     "name": "vwprintf_s",
@@ -4638,7 +4631,7 @@
     "variants": [
      "vwscanf"
     ],
-    "decl": "int vwscanf (const wchar_t * restrict format, va_list arg);"
+    "decl": "int vwscanf(const wchar_t * restrict format, va_list arg);"
    },
    {
     "name": "vwscanf_s",
@@ -4652,7 +4645,7 @@
     "variants": [
      "wcrtomb"
     ],
-    "decl": "size_t wcrtomb (char * restrict s, wchar_t wc, mbstate_t * restrict ps);"
+    "decl": "size_t wcrtomb(char * restrict s, wchar_t wc, mbstate_t * restrict ps);"
    },
    {
     "name": "wcrtomb_s",
@@ -4687,14 +4680,14 @@
     "variants": [
      "wcscmp"
     ],
-    "decl": "int wcscmp (const wchar_t *s1, const wchar_t *s2);"
+    "decl": "int wcscmp(const wchar_t *s1, const wchar_t *s2);"
    },
    {
     "name": "wcscoll",
     "variants": [
      "wcscoll"
     ],
-    "decl": "int wcscoll (const wchar_t *s1, const wchar_t *s2);"
+    "decl": "int wcscoll(const wchar_t *s1, const wchar_t *s2);"
    },
    {
     "name": "wcscpy",
@@ -4715,21 +4708,21 @@
     "variants": [
      "wcscspn"
     ],
-    "decl": "size_t wcscspn (const wchar_t *s1, const wchar_t *s2);"
+    "decl": "size_t wcscspn(const wchar_t *s1, const wchar_t *s2);"
    },
    {
     "name": "wcsftime",
     "variants": [
      "wcsftime"
     ],
-    "decl": "size_t wcsftime (wchar_t * restrict s, size_t maxsize, const wchar_t * restrict format, const struct tm * restrict timeptr);"
+    "decl": "size_t wcsftime(wchar_t * restrict s, size_t maxsize, const wchar_t * restrict format, const struct tm * restrict timeptr);"
    },
    {
     "name": "wcslen",
     "variants": [
      "wcslen"
     ],
-    "decl": "size_t wcslen (const wchar_t *s);"
+    "decl": "size_t wcslen(const wchar_t *s);"
    },
    {
     "name": "wcsncat",
@@ -4750,7 +4743,7 @@
     "variants": [
      "wcsncmp"
     ],
-    "decl": "int wcsncmp (const wchar_t *s1, const wchar_t *s2, size_t n);"
+    "decl": "int wcsncmp(const wchar_t *s1, const wchar_t *s2, size_t n);"
    },
    {
     "name": "wcsncpy",
@@ -4792,7 +4785,7 @@
     "variants": [
      "wcsrtombs"
     ],
-    "decl": "size_t wcsrtombs (char * restrict dst, const wchar_t ** restrict src, size_t len, mbstate_t * restrict ps);"
+    "decl": "size_t wcsrtombs(char * restrict dst, const wchar_t ** restrict src, size_t len, mbstate_t * restrict ps);"
    },
    {
     "name": "wcsrtombs_s",
@@ -4806,7 +4799,7 @@
     "variants": [
      "wcsspn"
     ],
-    "decl": "size_t wcsspn (const wchar_t *s1, const wchar_t *s2);"
+    "decl": "size_t wcsspn(const wchar_t *s1, const wchar_t *s2);"
    },
    {
     "name": "wcsstr",
@@ -4820,35 +4813,35 @@
     "variants": [
      "wcstod"
     ],
-    "decl": "double wcstod (const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
+    "decl": "double wcstod(const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
    },
    {
     "name": "wcstod128",
     "variants": [
      "wcstod128"
     ],
-    "decl": "_Decimal128 wcstod128 (const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
+    "decl": "_Decimal128 wcstod128(const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
    },
    {
     "name": "wcstod32",
     "variants": [
      "wcstod32"
     ],
-    "decl": "_Decimal32 wcstod32 (const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
+    "decl": "_Decimal32 wcstod32(const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
    },
    {
     "name": "wcstod64",
     "variants": [
      "wcstod64"
     ],
-    "decl": "_Decimal64 wcstod64 (const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
+    "decl": "_Decimal64 wcstod64(const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
    },
    {
     "name": "wcstof",
     "variants": [
      "wcstof"
     ],
-    "decl": "float wcstof (const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
+    "decl": "float wcstof(const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
    },
    {
     "name": "wcstok",
@@ -4870,14 +4863,14 @@
      "wcstol",
      "wcstoll"
     ],
-    "decl": "long int wcstol (const wchar_t * restrict nptr, wchar_t ** restrict endptr, int base);"
+    "decl": "long int wcstol(const wchar_t * restrict nptr, wchar_t ** restrict endptr, int base);"
    },
    {
     "name": "wcstold",
     "variants": [
      "wcstold"
     ],
-    "decl": "long double wcstold (const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
+    "decl": "long double wcstold(const wchar_t * restrict nptr, wchar_t ** restrict endptr);"
    },
    {
     "name": "wcstoul",
@@ -4885,21 +4878,21 @@
      "wcstoul",
      "wcstoull"
     ],
-    "decl": "unsigned long int wcstoul (const wchar_t * restrict nptr, wchar_t ** restrict endptr, int base);"
+    "decl": "unsigned long int wcstoul(const wchar_t * restrict nptr, wchar_t ** restrict endptr, int base);"
    },
    {
     "name": "wcsxfrm",
     "variants": [
      "wcsxfrm"
     ],
-    "decl": "size_t wcsxfrm (wchar_t * restrict s1, const wchar_t * restrict s2, size_t n);"
+    "decl": "size_t wcsxfrm(wchar_t * restrict s1, const wchar_t * restrict s2, size_t n);"
    },
    {
     "name": "wctob",
     "variants": [
      "wctob"
     ],
-    "decl": "int wctob (wint_t c);"
+    "decl": "int wctob(wint_t c);"
    },
    {
     "name": "wmemchr",
@@ -4913,7 +4906,7 @@
     "variants": [
      "wmemcmp"
     ],
-    "decl": "int wmemcmp (const wchar_t *s1, const wchar_t *s2, size_t n);"
+    "decl": "int wmemcmp(const wchar_t *s1, const wchar_t *s2, size_t n);"
    },
    {
     "name": "wmemcpy",
@@ -4955,7 +4948,7 @@
     "variants": [
      "wprintf"
     ],
-    "decl": "int wprintf (const wchar_t * restrict format, ...);"
+    "decl": "int wprintf(const wchar_t * restrict format, ...);"
    },
    {
     "name": "wprintf_s",
@@ -4969,7 +4962,7 @@
     "variants": [
      "wscanf"
     ],
-    "decl": "int wscanf (const wchar_t * restrict format, ...);"
+    "decl": "int wscanf(const wchar_t * restrict format, ...);"
    },
    {
     "name": "wscanf_s",
@@ -5002,126 +4995,126 @@
     "variants": [
      "iswalnum"
     ],
-    "decl": "int iswalnum (wint_t wc);"
+    "decl": "int iswalnum(wint_t wc);"
    },
    {
     "name": "iswalpha",
     "variants": [
      "iswalpha"
     ],
-    "decl": "int iswalpha (wint_t wc);"
+    "decl": "int iswalpha(wint_t wc);"
    },
    {
     "name": "iswblank",
     "variants": [
      "iswblank"
     ],
-    "decl": "int iswblank (wint_t wc);"
+    "decl": "int iswblank(wint_t wc);"
    },
    {
     "name": "iswcntrl",
     "variants": [
      "iswcntrl"
     ],
-    "decl": "int iswcntrl (wint_t wc);"
+    "decl": "int iswcntrl(wint_t wc);"
    },
    {
     "name": "iswctype",
     "variants": [
      "iswctype"
     ],
-    "decl": "int iswctype (wint_t wc, wctype_t desc);"
+    "decl": "int iswctype(wint_t wc, wctype_t desc);"
    },
    {
     "name": "iswdigit",
     "variants": [
      "iswdigit"
     ],
-    "decl": "int iswdigit (wint_t wc);"
+    "decl": "int iswdigit(wint_t wc);"
    },
    {
     "name": "iswgraph",
     "variants": [
      "iswgraph"
     ],
-    "decl": "int iswgraph (wint_t wc);"
+    "decl": "int iswgraph(wint_t wc);"
    },
    {
     "name": "iswlower",
     "variants": [
      "iswlower"
     ],
-    "decl": "int iswlower (wint_t wc);"
+    "decl": "int iswlower(wint_t wc);"
    },
    {
     "name": "iswprint",
     "variants": [
      "iswprint"
     ],
-    "decl": "int iswprint (wint_t wc);"
+    "decl": "int iswprint(wint_t wc);"
    },
    {
     "name": "iswpunct",
     "variants": [
      "iswpunct"
     ],
-    "decl": "int iswpunct (wint_t wc);"
+    "decl": "int iswpunct(wint_t wc);"
    },
    {
     "name": "iswspace",
     "variants": [
      "iswspace"
     ],
-    "decl": "int iswspace (wint_t wc);"
+    "decl": "int iswspace(wint_t wc);"
    },
    {
     "name": "iswupper",
     "variants": [
      "iswupper"
     ],
-    "decl": "int iswupper (wint_t wc);"
+    "decl": "int iswupper(wint_t wc);"
    },
    {
     "name": "iswxdigit",
     "variants": [
      "iswxdigit"
     ],
-    "decl": "int iswxdigit (wint_t wc);"
+    "decl": "int iswxdigit(wint_t wc);"
    },
    {
     "name": "towctrans",
     "variants": [
      "towctrans"
     ],
-    "decl": "wint_t towctrans (wint_t wc, wctrans_t desc);"
+    "decl": "wint_t towctrans(wint_t wc, wctrans_t desc);"
    },
    {
     "name": "towlower",
     "variants": [
      "towlower"
     ],
-    "decl": "wint_t towlower (wint_t wc);"
+    "decl": "wint_t towlower(wint_t wc);"
    },
    {
     "name": "towupper",
     "variants": [
      "towupper"
     ],
-    "decl": "wint_t towupper (wint_t wc);"
+    "decl": "wint_t towupper(wint_t wc);"
    },
    {
     "name": "wctrans",
     "variants": [
      "wctrans"
     ],
-    "decl": "wctrans_t wctrans (const char *property);"
+    "decl": "wctrans_t wctrans(const char *property);"
    },
    {
     "name": "wctype",
     "variants": [
      "wctype"
     ],
-    "decl": "wctype_t wctype (const char *property);"
+    "decl": "wctype_t wctype(const char *property);"
    }
   ],
   "macros": [
