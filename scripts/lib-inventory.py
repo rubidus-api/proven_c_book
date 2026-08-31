@@ -56,8 +56,11 @@ def annex_b(text):
     body = re.sub(r"\s+", " ", body)
     # ★ PDF 추출이 밑줄 앞에 공백을 넣는다(354곳): "rsize _t" → "rsize_t".
     #   고치지 않으면 이름이 "_s" 처럼 잘려 인벤토리가 통째로 어긋난다.
+    # ★★ 다만 *소문자로 이어지는 자리*만 붙인다(2026-08-31). 넓게 붙였더니
+    #    표준이 줄을 바꿔 적은 "NULL / _IOFBF / _IOLBF / _IONBF" 가 통째로
+    #    `NULL_IOFBF_IOLBF_IONBF` 라는 있지도 않은 매크로가 되었다.
     for _ in range(3):
-        body = re.sub(r"([A-Za-z0-9]) _([A-Za-z])", r"\1_\2", body)
+        body = re.sub(r"([a-z0-9]) _([a-z])", r"\1_\2", body)
     return body
 
 

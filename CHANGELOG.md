@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.85.0] - 2026-08-31
+
+### Added
+- ★★★ **부록 F 「표준 라이브러리 요람」이 완결되었다.** C23(N3220) 부속서 B 의 표준
+  헤더 *스물아홉을 모두* 실었다 --- 마지막으로 `<stdlib.h>` · `<stdio.h>` · `<math.h>` 를
+  썼다. `check-library-tables.py` 가 이 판에서 처음으로 **「전 헤더 완료」** 를 말한다.
+  그 게이트가 만들어진 뒤 줄곧 「착수한 헤더만」 검사해 왔는데, 이제 `library-todo.tsv`
+  가 비어 검사가 *완전성*을 뜻하게 되었다.
+  `<math.h>` 는 함수가 백예순여덟이지만 규칙 셋(접미 `f`·`l` / `<tgmath.h>` /
+  십진 `d32`·`d64`·`d128`)으로 갈라 실었고, `fmax` 와 C23 의 `fmaximum` 이 NaN 을
+  다르게 다루는 것 같은 *가르는 지점*을 함정으로 적었다.
+  서두의 진행 문단은 약속대로 사라졌다 --- 게이트가 「다 썼는데 문단이 남아 있다」고
+  일러 주었다.
+
+### Fixed
+- 정본 생성기가 `"rsize _t" → "rsize_t"` 보정을 *너무 넓게* 걸어, 표준이 줄을 바꿔 적은
+  `NULL` · `_IOFBF` · `_IOLBF` · `_IONBF` 가 `NULL_IOFBF_IOLBF_IONBF` 라는 있지도 않은
+  매크로 하나로 붙어 있었다. 소문자로 이어지는 자리만 붙이도록 좁히니 그 넷이 제자리로
+  돌아왔고, 함께 삼켜져 있던 `FP_FAST_D64SQRTD128` 도 드러났다.
+
 ## [v0.84.0] - 2026-08-31
 
 ### Fixed
