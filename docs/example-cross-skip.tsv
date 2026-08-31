@@ -1,0 +1,19 @@
+# 교차 검증에서만 건너뛰는 예제 (scripts/verify-examples.sh)
+#
+# 이 책의 약속은 「기준 컴파일러(GCC)로 전수 통과」다. 그 판에서는 이 목록을
+# *아예 읽지 않는다* --- 하나도 건너뛰지 않는다.
+#
+# 다른 컴파일러로 교차 검증할 때만 이 목록이 산다. 두 가지 까닭뿐이다.
+#   intentional --- 예제가 *일부러* 일으키는 상황을 그 컴파일러가 진단한다.
+#                   컴파일러가 옳다. 경고를 잠재우려 예제를 고치면 가르침이 무뎌진다.
+#   toolchain   --- 그 도구모음이 아직 못 하는 것(구현 미지원·런타임 부재).
+#                   책의 표준 설명이 틀린 것이 아니다.
+#
+# ★ 썩지 않게 하는 규칙: 여기 오른 예제가 그 컴파일러에서 *통과해 버리면*
+#   그 줄은 낡은 것으로 보고하고 검증을 실패시킨다. 까닭이 사라졌으면 지운다.
+#
+# 형식: 예제<TAB>종류<TAB>왜
+ch20/constants.c	intentional	`(double)0.1f == 0.1` 이 거짓임을 보이는 예제다. Clang 의 -Wliteral-range 가 「언제나 거짓」이라고 정확히 짚는다 --- 그것이 이 예제가 가르치려는 바다
+ch62/convert.c	intentional	`takes_int(3.7)` 이 3 으로 잘리는 것을 보인다. Clang 의 -Wliteral-conversion 이 그 잘림을 짚는다 --- 예제의 요점 그대로다
+ch32/for_decl.c	toolchain	C23 의 `for (static int ...)` 를 Clang 19 가 아직 거부한다. 표준 설명이 아니라 지원 시점의 문제다
+ch102/stale/run.sh	toolchain	ASan 으로 넘침을 보이는 시연인데, 이 자리의 Clang 에는 `libclang_rt.asan` 런타임이 없어 링크되지 않는다

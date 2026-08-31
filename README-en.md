@@ -14,17 +14,17 @@ those who have just finished a first textbook.
 > default, and ends as a manual for the
 > [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.81.1 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.81.1/proven_c_book-v0.81.1-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.81.1/proven_c_book-v0.81.1-ko.pdf)
+- **Current edition**: v0.82.0 — **draft**
+- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.82.0/proven_c_book-v0.82.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.82.0/proven_c_book-v0.82.0-ko.pdf)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.81.1/proven_c_book-v0.81.1-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.81.1/proven_c_book-v0.81.1-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.81.1/proven_c_book-v0.81.1-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.81.1-en.pdf) · [ko PDF](dist/proven_c_book-v0.81.1-ko.pdf)
+- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.82.0/proven_c_book-v0.82.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.82.0/proven_c_book-v0.82.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.82.0/proven_c_book-v0.82.0-all.zip)
+- Copies inside the repository: [en PDF](dist/proven_c_book-v0.82.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.82.0-ko.pdf)
 - **Style specimen** — every device the book uses, gathered in one place, with each
   element labelled by its own name (CSS selector on the web, function name in the
   typeset edition). Always current, independently of releases:
   [web](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13 parts, 105 chapters, appendices A–I and an index — 968 pages in English, 917 in Korean.
+- 13 parts, 105 chapters, appendices A–I and an index — 1,059 pages in English, 1,003 in Korean.
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## If you have a question
@@ -82,9 +82,10 @@ documents, and the complete C grammar in EBNF.
 
 ## What makes it different
 
-- **Every printed output is real.** All 160 listings are compiled and run on
-  every build and their output is pasted into the page (GCC, cross-checked with
-  Clang). Not one line of output was copied by hand.
+- **Every printed output is real.** All 191 listings are compiled and run on
+  every build and their output is pasted into the page (all of them under GCC 14;
+  cross-checked with Clang 19, where 4 are skipped for reasons written down in
+  `docs/example-cross-skip.tsv`). Not one line of output was copied by hand.
 - **Claims are measured by running code.** Statements such as "at `-O2` a
   non-`volatile` local reverts to its old value after a `longjmp`" carry the
   result of actually building at both optimization levels. What the standard can
@@ -104,7 +105,8 @@ documents, and the complete C grammar in EBNF.
 
 > **What that verification covers.** It reaches exactly this far: *the examples
 > build and run in this environment, and the output on the page came from that
-> run* (x86-64 Linux, GCC as the base with Clang as a cross-check). It is not an
+> run* (x86-64 Linux, all of them under GCC 14.2, cross-checked with Clang 19.1
+> where 4 are skipped). It is not an
 > audit of the book's prose against the standard, not a security audit, and not
 > validation by large-scale real use. The prose is grounded separately, in clauses
 > of the standard and primary sources; the verified scope and the limits of the
@@ -139,7 +141,8 @@ scripts/verify-examples.sh examples-en  # the English tree
 CC=clang scripts/verify-examples.sh     # cross-check with another compiler
 ```
 
-- A C23 compiler is required (GCC 14+ or Clang 16+).
+- A C23 compiler is required. What was actually measured is GCC 14.2 (all pass) and
+  Clang 19.1 (4 skipped); older versions were not tested, so nothing is promised for them.
 - Listings that `#include <proven...>` build `vendor/proven` alongside them
   automatically.
 
@@ -153,7 +156,7 @@ CC=clang scripts/verify-examples.sh     # cross-check with another compiler
 ```
 dist/        Distribution — PDFs (ko, en) and zip bundles
 docs/        The HTML edition served by GitHub Pages (ko/, en/)
-examples/    The 160 listings that appear in the book — all verified
+examples/    The 191 listings that appear in the book — all verified
 examples-en/ The same listings in English (comments, strings, output)
 scripts/     Listing verification scripts
 vendor/      A snapshot of the proven library (for linking the listings)

@@ -82,6 +82,50 @@ def header_rows():
     return bad
 
 
+# 한글 수사 --- 서두 문단이 「스물두 헤더」처럼 적으므로 그대로 견준다.
+_KO = {2: "둘", 4: "넷"}
+_KO_N = {20: "스무", 21: "스물한", 22: "스물두", 23: "스물세", 24: "스물네",
+         25: "스물다섯", 26: "스물여섯"}
+
+
+def progress_claim(skip) -> int:
+    """부록 F 서두가 밝힌 진행 상태가 실제와 같은가.
+
+    ★ 왜 --- 서두는 「빠짐없이 싣는 것을 *목표*로 한다」고만 말해서, 독자가 첫
+      화면에서 진행률을 알 수 없었다(검토 2026-08-29 §4). 그래서 지금 어디까지
+      왔는지를 적었는데, 적어 두기만 하면 그 문장이 곧 낡는다. 여기서 대조한다.
+    """
+    import re
+    app = ROOT / "book" / "appendix" / "a7-library.typ"
+    if not app.exists():
+        return 0
+    txt = app.read_text(encoding="utf-8")
+    caps = set(re.findall(r"caption:\s*\[`<([a-z]+\.h)>`", txt))
+    done = sorted(caps - set(skip))
+    partial = sorted(caps & set(skip))
+    rest = len(skip) - len(partial)
+    if "어디까지 왔는지 먼저 밝힌다" not in txt:
+        if not skip:
+            return 0        # 다 썼으면 그 문단은 사라져 있어야 한다
+        print("  ⚠️  부록 F 서두에 진행 상태가 없다 --- 독자가 진행률을 알 수 없다")
+        return 1
+    if not skip:
+        print("  ⚠️  전 헤더를 다 썼는데 부록 F 서두의 진행 문단이 남아 있다 --- 지울 것")
+        return 1
+    bad = 0
+    for h in done:
+        if f"`<{h}>`" not in txt.split("어디까지 왔는지")[1][:400]:
+            print(f"  ⚠️  부록 F 서두가 완결된 <{h}> 을 말하지 않는다")
+            bad += 1
+    if _KO.get(len(done)) and _KO[len(done)] not in txt.split("어디까지 왔는지")[1][:300]:
+        print(f"  ⚠️  부록 F 서두의 완결 헤더 수가 실제({len(done)})와 다르다")
+        bad += 1
+    if _KO_N.get(rest) and _KO_N[rest] not in txt:
+        print(f"  ⚠️  부록 F 서두의 미착수 헤더 수가 실제({rest})와 다르다")
+        bad += 1
+    return bad
+
+
 def main() -> int:
     if not INV.exists():
         print("check-library-tables: 인벤토리가 없다 --- "
@@ -121,6 +165,7 @@ def main() -> int:
         print(f"     아직 착수하지 않은 헤더 {len(skip)}개 "
               f"(docs/library-todo.tsv) --- 다 쓰면 그 파일을 비운다")
     total_missing += header_rows()
+    total_missing += progress_claim(skip)
 
     if total_missing:
         print(f"check-library-tables: 빠진 항목 {total_missing}건")
