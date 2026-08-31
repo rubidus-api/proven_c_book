@@ -4,7 +4,7 @@
 `scripts/sync-status.py --write` 가 자동으로 갱신한다.
 The Korean edition is the source; this table is generated.
 
-- **synced** 118 · **stale** 0 · **pending** 5
+- **synced** 125 · **stale** 0 · **pending** 5
 
 | 원본 / source | 상태 / state |
 |---|---|
@@ -121,6 +121,13 @@ The Korean edition is the source; this table is generated.
 | `book/front/reading-paths.typ` | ⏳ pending |
 | `book/appendix/a1-operators.typ` | ✅ synced |
 | `book/appendix/a11-next.typ` | ⏳ pending |
+| `book/appendix/a12-postmortem.typ` | ✅ synced |
+| `book/appendix/a13-formats.typ` | ✅ synced |
+| `book/appendix/a14-baremetal.typ` | ✅ synced |
+| `book/appendix/a15-boot.typ` | ✅ synced |
+| `book/appendix/a16-links.typ` | ✅ synced |
+| `book/appendix/a17-disk.typ` | ✅ synced |
+| `book/appendix/a18-measured.typ` | ✅ synced |
 | `book/appendix/a2-formats.typ` | ✅ synced |
 | `book/appendix/a3-conversions.typ` | ✅ synced |
 | `book/appendix/a4-reading.typ` | ✅ synced |

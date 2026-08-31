@@ -1035,7 +1035,7 @@ def fig_dma_path(L):
 
 
 # ── F. 디스크 한 장의 지도 (부록 N) ──────────────────────────────
-def fig_disk_map(L):
+def fig_disk_layers(L):
     w, h = 780, 420
     out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
     out.append(text(w / 2, 22, L["title"], 14, "bold"))
@@ -1131,6 +1131,203 @@ def fig_ssd_erase(L):
     out.append(box(60, 344, 660, 44, dash="4 3"))
     out.append(text(390, 364, L["trim1"], 11, "bold"))
     out.append(text(390, 380, L["trim2"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── 부록 O 의 도해는 *잰 값*을 그린다 ────────────────────────────
+# ★ 측정 예제가 `#DATA ...` 줄로 값을 함께 내고, verify-examples.sh 가 그것을
+#   `<이름>.c.data` 로 갈라 둔다. 여기서 그 파일을 읽는다 --- 그림이 지난번
+#   숫자를 기억하지 않게 하려는 것이다. 값이 없으면 *없다고 그린다*(빈 그림을
+#   그럴듯하게 채우지 않는다).
+def _measured(name):
+    f = ROOT / "build" / "examples-out" / "apx-measured" / (name + ".c.data")
+    rows = []
+    if f.exists():
+        for line in f.read_text(encoding="utf-8").splitlines():
+            if line.startswith("#DATA "):
+                rows.append(line.split()[1:])
+    return rows
+
+
+def fig_measure_traps(L):
+    w, h = 780, 400
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    for x, panel in zip((30, 275, 520), L["panels"]):
+        out.append(box(x, 44, 230, 330))
+        out.append(text(x + 115, 68, panel["t"], 13, "bold"))
+        y = 86
+        for r in panel["rows"]:
+            out.append(box(x + 25, y, 180, 34, fill="#f5f5f5"))
+            out.append(text(x + 115, y + 22, r, 10))
+            y += 46
+        if panel.get("gone"):
+            out.append(text(x + 115, 232, panel["gone"], 11, "bold"))
+        for i, line in enumerate(panel["why"]):
+            out.append(text(x + 115, 258 + i * 16, line, 10))
+        for i, line in enumerate(panel["fix"]):
+            out.append(text(x + 115, 306 + i * 16, line, 10, "bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
+def fig_cache_ladder(L):
+    import math
+    rows = [(int(r[0]), float(r[1]), float(r[2]), r[3]) for r in _measured("cache_ladder")]
+    w, h = 780, 470
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    if not rows:
+        out.append(text(w / 2, 200, L["nodata"], 12)); out.append(TAIL)
+        return "".join(out)
+    x0, y0, pw, ph = 90, 60, 620, 280
+    xs = [math.log2(r[0]) for r in rows]
+    x_min, x_max = min(xs), max(xs)
+    y_max = max(max(r[1] for r in rows), 1.0) * 1.1
+    px = lambda k: x0 + (math.log2(k) - x_min) / (x_max - x_min) * pw
+    py = lambda v: y0 + ph - v / y_max * ph
+    out.append(f'<line x1="{x0}" y1="{y0 + ph}" x2="{x0 + pw}" y2="{y0 + ph}" stroke="#111" stroke-width="1.4"/>')
+    out.append(f'<line x1="{x0}" y1="{y0}" x2="{x0}" y2="{y0 + ph}" stroke="#111" stroke-width="1.4"/>')
+    for v in range(0, int(y_max) + 1, 20):
+        out.append(f'<line x1="{x0 - 4}" y1="{py(v)}" x2="{x0}" y2="{py(v)}" stroke="#111" stroke-width="1"/>')
+        out.append(text(x0 - 8, py(v) + 4, str(v), 9, anchor="end"))
+    out.append(text(30, y0 + ph / 2, L["ns"], 10, "bold"))
+    out.append(text(x0 + pw / 2, y0 + ph + 38, L["xaxis"], 10, "bold"))
+    for kib, lab in zip((32, 256, 16384), L["caches"]):
+        if x_min <= math.log2(kib) <= x_max:
+            X = px(kib)
+            out.append(f'<line x1="{X}" y1="{y0}" x2="{X}" y2="{y0 + ph}" stroke="#888" stroke-width="1" stroke-dasharray="4 3"/>')
+            out.append(text(X, y0 - 6, lab, 9, "bold"))
+    out.append('<polyline points="' + " ".join(f"{px(r[0])},{py(r[1])}" for r in rows)
+               + '" fill="none" stroke="#111" stroke-width="2.2"/>')
+    for r in rows:
+        out.append(f'<circle cx="{px(r[0])}" cy="{py(r[1])}" r="3" fill="#111"/>')
+    out.append('<polyline points="' + " ".join(f"{px(r[0])},{py(r[2])}" for r in rows)
+               + '" fill="none" stroke="#111" stroke-width="1.4" stroke-dasharray="5 3"/>')
+    mid = rows[len(rows) // 2]
+    lab_y = py(y_max * 0.30)
+    out.append(text(x0 + 24, lab_y - 6, L["dashed"].format(v=f"{mid[2]:.2f}"), 9, anchor="start"))
+    out.append(arrow(x0 + 150, lab_y, px(mid[0]), py(mid[2]) - 5))
+    for r in rows:
+        if r[0] in (4, 32, 256, 1024, 16384, 131072):
+            lab = f"{r[0]} KiB" if r[0] < 1024 else f"{r[0] // 1024} MiB"
+            out.append(text(px(r[0]), y0 + ph + 18, lab, 9))
+    out.append(text(x0 + 20, y0 + 20, L["solid_leg"], 10, anchor="start"))
+    out.append(text(x0 + 20, y0 + 38, L["dashed_leg"], 10, anchor="start"))
+    first, last = rows[0][1], rows[-1][1]
+    out.append(box(90, 402, 620, 48, dash="4 3"))
+    out.append(text(w / 2, 422, L["end1"].format(a=f"{first:.2f}", b=f"{last:.1f}",
+                                                 n=f"{last / first:.0f}"), 11, "bold"))
+    out.append(text(w / 2, 440, L["end2"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
+def fig_cache_line(L):
+    import math
+    rows = [(float(r[0]), float(r[1])) for r in _measured("stride")]
+    w, h = 780, 400
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    if not rows:
+        out.append(text(w / 2, 200, L["nodata"], 12)); out.append(TAIL)
+        return "".join(out)
+    x0, y0, pw, ph = 90, 70, 620, 230
+    xs = [math.log2(r[0]) for r in rows]
+    x_min, x_max = min(xs), max(xs)
+    y_max = max(r[1] for r in rows) * 1.15
+    px = lambda v: x0 + (math.log2(v) - x_min) / (x_max - x_min) * pw
+    py = lambda v: y0 + ph - v / y_max * ph
+    out.append(f'<line x1="{x0}" y1="{y0 + ph}" x2="{x0 + pw}" y2="{y0 + ph}" stroke="#111" stroke-width="1.4"/>')
+    out.append(f'<line x1="{x0}" y1="{y0}" x2="{x0}" y2="{y0 + ph}" stroke="#111" stroke-width="1.4"/>')
+    for v in range(0, int(y_max) + 1, 2):
+        out.append(f'<line x1="{x0 - 4}" y1="{py(v)}" x2="{x0}" y2="{py(v)}" stroke="#111" stroke-width="1"/>')
+        out.append(text(x0 - 8, py(v) + 4, str(v), 9, anchor="end"))
+    out.append(text(34, y0 + ph / 2, L["ns"], 10, "bold"))
+    out.append(text(x0 + pw / 2, y0 + ph + 36, L["xaxis"], 10, "bold"))
+    X = px(64)
+    out.append(f'<line x1="{X}" y1="{y0 - 4}" x2="{X}" y2="{y0 + ph}" stroke="#888" stroke-width="1" stroke-dasharray="4 3"/>')
+    out.append(text(X, y0 - 10, L["line64"], 9, "bold"))
+    out.append('<polyline points="' + " ".join(f"{px(r[0])},{py(r[1])}" for r in rows)
+               + '" fill="none" stroke="#111" stroke-width="2.2"/>')
+    for r in rows:
+        out.append(f'<circle cx="{px(r[0])}" cy="{py(r[1])}" r="3" fill="#111"/>')
+        if int(r[0]) in (1, 8, 64, 512, 4096):
+            out.append(text(px(r[0]), y0 + ph + 18, str(int(r[0])), 9))
+    out.append(text(x0 + 20, y0 + 20, L["left"], 10, anchor="start"))
+    out.append(text(X + 14, y0 + 42, L["right"], 10, anchor="start"))
+    out.append(box(90, 322, 620, 62, dash="4 3"))
+    out.append(text(w / 2, 344, L["end1"], 11, "bold"))
+    out.append(text(w / 2, 362, L["end2"], 10))
+    out.append(text(w / 2, 378, L["end3"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
+def fig_branch_pipeline(L):
+    w, h = 780, 380
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    stages = L["stages"]
+
+    def lane(y, title, n_ok, flush_at, note):
+        out.append(text(40, y - 10, title, 12, "bold", anchor="start"))
+        for c in range(6):
+            for st in range(4):
+                x = 150 + c * 100
+                yy = y + st * 22
+                filled = c < n_ok or (flush_at is None)
+                if flush_at is not None and c >= flush_at:
+                    filled = False
+                out.append(box(x, yy, 92, 18, fill="#ececec" if filled else "none",
+                               dash=None if filled else "3 2", sw=1.0))
+                out.append(text(x + 46, yy + 13,
+                                f"{stages[st]} {c + 1}" if filled else L["dropped"], 8))
+        out.append(text(w / 2, y + 104, note, 10))
+
+    lane(60, L["lane1"], 6, None, L["note1"])
+    lane(210, L["lane2"], 2, 2, L["note2"])
+    out.append(box(40, 330, 700, 40, dash="4 3"))
+    out.append(text(w / 2, 348, L["end1"], 11, "bold"))
+    out.append(text(w / 2, 364, L["end2"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
+def fig_false_sharing(L):
+    w, h = 780, 380
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+
+    def scene(y, title, same_line, note1, note2):
+        out.append(text(40, y - 8, title, 12, "bold", anchor="start"))
+        out.append(box(60, y + 4, 120, 52))
+        out.append(text(120, y + 26, L["coreA"], 11, "bold"))
+        out.append(text(120, y + 44, L["incx"], 9))
+        out.append(box(600, y + 4, 120, 52))
+        out.append(text(660, y + 26, L["coreB"], 11, "bold"))
+        out.append(text(660, y + 44, L["incy"], 9))
+        if same_line:
+            out.append(box(300, y + 4, 180, 52, fill="#ececec"))
+            out.append(text(390, y + 24, L["one_line"], 9, "bold"))
+            out.append(text(390, y + 42, L["side_by_side"], 9))
+            out.append(arrow(180, y + 22, 298, y + 22))
+            out.append(arrow(600, y + 40, 482, y + 40))
+            out.append(text(390, y + 74, L["fight"], 10, "bold"))
+        else:
+            out.append(box(250, y + 4, 130, 52, fill="#ececec"))
+            out.append(text(315, y + 24, L["line1"], 9, "bold")); out.append(text(315, y + 42, "x", 9))
+            out.append(box(410, y + 4, 130, 52, fill="#ececec"))
+            out.append(text(475, y + 24, L["line2"], 9, "bold")); out.append(text(475, y + 42, "y", 9))
+            out.append(arrow(180, y + 30, 248, y + 30))
+            out.append(arrow(600, y + 30, 542, y + 30))
+            out.append(text(390, y + 74, L["apart"], 10, "bold"))
+        out.append(text(390, y + 92, note1, 10))
+        out.append(text(390, y + 108, note2, 10, "bold"))
+
+    scene(60, L["s1"], True, L["s1n1"], L["s1n2"])
+    scene(220, L["s2"], False, L["s2n1"], L["s2n2"])
     out.append(TAIL)
     return "".join(out)
 
@@ -1413,8 +1610,108 @@ FIGS = {
                    d2="function, pointer", d3="atomic (_Atomic)",
                    note="a dashed box is a collective name — not a branch of the tree but a word gathering several."),
     }),
-    "disk-map": (fig_disk_map, {
-        "ko": dict(title="디스크 한 장의 지도 --- 세 층이 겹쳐 있다",
+    "measure-traps": (fig_measure_traps, {
+        "ko": dict(title="측정의 세 함정 --- 잰 수가 이상하면 먼저 여기를 본다",
+                   panels=[dict(t="① 지워짐", rows=["내가 쓴 코드", "컴파일러", "실행된 코드"],
+                                gone="✗ 지워짐",
+                                why=["결과를 아무도 안 쓰면", "계산이 통째로 사라진다"],
+                                fix=["→ 결과를 volatile 에 넣거나", "   반환값을 쓴다"]),
+                           dict(t="② 데우기", rows=["첫 회", "둘째 회", "셋째 회…"],
+                                why=["첫 회에는 쪽 부재·캐시 채우기", "값이 섞인다 (이 기계에서 9배)"],
+                                fix=["→ 데우기 회차를 돌리고", "   그 회차는 버린다"]),
+                           dict(t="③ 잡음", rows=["회차들", "평균", "중앙값"],
+                                why=["남의 일이 한 번 끼어들면", "평균이 그쪽으로 끌려간다"],
+                                fix=["→ 중앙값을 쓰고", "   최솟값을 함께 적는다"])]),
+        "en": dict(title="three traps in measuring --- look here first when a number looks wrong",
+                   panels=[dict(t="1. eliminated", rows=["the code I wrote", "the compiler", "the code that ran"],
+                                gone="x eliminated",
+                                why=["if nobody uses the result,", "the computation disappears entirely"],
+                                fix=["-> put the result in a volatile,", "   or use the return value"]),
+                           dict(t="2. warming up", rows=["first round", "second round", "third round…"],
+                                why=["the first round mixes in page faults", "and cache filling (9x on this machine)"],
+                                fix=["-> run warm-up rounds", "   and discard them"]),
+                           dict(t="3. noise", rows=["the rounds", "mean", "median"],
+                                why=["one interruption from other work", "drags the mean towards it"],
+                                fix=["-> use the median, and", "   state the minimum alongside"])]),
+    }),
+    "cache-ladder": (fig_cache_ladder, {
+        "ko": dict(title="기억의 사다리 --- 실제로 잰 계단", nodata="(측정 결과가 아직 없다)",
+                   ns="나노초", xaxis="작업 집합 크기 (두 배씩)",
+                   caches=["L1 32 KiB", "L2 256 KiB", "L3 16 MiB"],
+                   dashed="점선(차례로 훑기)은 바닥에 붙어 있다 --- {v} 나노초",
+                   solid_leg="실선 = 무작위 접근(포인터 추적) --- 지연이 보인다",
+                   dashed_leg="점선 = 차례로 훑기 --- 미리 가져오기가 지연을 가린다",
+                   end1="가장 안쪽 {a} 나노초 → 가장 바깥 {b} 나노초 --- {n}배",
+                   end2="같은 코드, 같은 명령 수 --- 달라진 것은 자료가 어디 있느냐뿐이다"),
+        "en": dict(title="the memory ladder --- the steps, actually measured", nodata="(no measurement yet)",
+                   ns="ns", xaxis="working set size (doubling)",
+                   caches=["L1 32 KiB", "L2 256 KiB", "L3 16 MiB"],
+                   dashed="the dashed line (sequential) hugs the floor --- {v} ns",
+                   solid_leg="solid = random access (pointer chasing) --- the latency shows",
+                   dashed_leg="dashed = sequential --- prefetching hides the latency",
+                   end1="innermost {a} ns -> outermost {b} ns --- {n} times",
+                   end2="same code, same instruction count --- only where the data sits has changed"),
+    }),
+    "cache-line": (fig_cache_line, {
+        "ko": dict(title="걸음 폭이 캐시 줄을 넘어서는 자리", nodata="(측정 결과가 아직 없다)",
+                   ns="나노초", xaxis="걸음 폭 (바이트, 두 배씩)", line64="캐시 줄 64바이트",
+                   left="왼쪽: 한 줄을 여러 번 나눠 쓴다 --- 값이 낮다",
+                   right="오른쪽: 걸음마다 새 줄 --- 값이 올라 평평해진다",
+                   end1="줄이 64바이트라는 사실이 시간에 그대로 나타난다",
+                   end2="8바이트만 쓰려 해도 기계는 64바이트를 실어 온다",
+                   end3="→ 그래서 「무엇을 읽는가」만큼 「어떻게 늘어놓는가」가 값을 정한다"),
+        "en": dict(title="where the stride crosses the cache line", nodata="(no measurement yet)",
+                   ns="ns", xaxis="stride (bytes, doubling)", line64="cache line, 64 bytes",
+                   left="left: one line used several times over --- the cost is low",
+                   right="right: a new line every step --- the cost rises, then flattens",
+                   end1="that a line is 64 bytes shows up directly in the time",
+                   end2="ask for 8 bytes and the machine still fetches 64",
+                   end3="-> so how things are laid out settles the cost as much as what is read"),
+    }),
+    "branch-pipeline": (fig_branch_pipeline, {
+        "ko": dict(title="맞혔을 때와 틀렸을 때 --- 파이프라인에서 벌어지는 일",
+                   stages=["가져오기", "해독", "실행", "쓰기"], dropped="버려짐",
+                   lane1="① 예측이 맞았을 때 --- 빈칸 없이 이어진다",
+                   note1="분기 명령이 끝나기 전에 다음 명령들이 이미 들어와 있다 --- 분기가 공짜처럼 보인다",
+                   lane2="② 예측이 틀렸을 때 --- 채워 둔 것을 버리고 다시 채운다",
+                   note2="잘못된 길로 들어온 명령을 전부 버리고, 옳은 자리에서 다시 채운다",
+                   end1="그 「다시 채우는 시간」이 틀린 예측의 값이다",
+                   end2="이 기계에서 잰 값: 한 번 틀릴 때 약 6 나노초 --- 덧셈 수십 번에 맞먹는다"),
+        "en": dict(title="right and wrong --- what happens in the pipeline",
+                   stages=["fetch", "decode", "execute", "write"], dropped="discarded",
+                   lane1="1. the prediction was right --- it continues without a gap",
+                   note1="the following instructions are already in before the branch finishes --- the branch looks free",
+                   lane2="2. the prediction was wrong --- what was filled in is thrown away and refilled",
+                   note2="every instruction from the wrong path is discarded and the pipeline refills from the right place",
+                   end1="that refilling time is the cost of a wrong prediction",
+                   end2="measured on this machine: about 6 ns per miss --- as much as dozens of additions"),
+    }),
+    "false-sharing": (fig_false_sharing, {
+        "ko": dict(title="거짓 공유 --- 남의 변수 때문에 내 코어가 기다린다",
+                   coreA="코어 A", coreB="코어 B", incx="x 를 올린다", incy="y 를 올린다",
+                   one_line="캐시 줄 하나 (64바이트)", side_by_side="x  y  (같은 줄에 나란히)",
+                   fight="줄을 통째로 뺏고 뺏긴다", line1="줄 1", line2="줄 2",
+                   apart="서로 건드리지 않는다",
+                   s1="① 두 변수가 같은 줄에 있을 때",
+                   s1n1="코드는 서로 남의 변수를 만지지 않는다 --- 그런데도",
+                   s1n2="이 기계에서 잰 값: 완벽한 나눔보다 1.39배 느리다",
+                   s2="② 64바이트 떨어뜨렸을 때",
+                   s2n1="같은 코드, 같은 계산, 자리만 옮겼다",
+                   s2n2="이 기계에서 잰 값: 1.00배 --- 손해가 사라졌다"),
+        "en": dict(title="false sharing --- my core waits because of somebody else's variable",
+                   coreA="core A", coreB="core B", incx="increments x", incy="increments y",
+                   one_line="one cache line (64 bytes)", side_by_side="x  y  (side by side in one line)",
+                   fight="the line is taken back and forth", line1="line 1", line2="line 2",
+                   apart="they do not touch each other",
+                   s1="1. when the two variables share a line",
+                   s1n1="the code never touches the other's variable --- and yet",
+                   s1n2="measured here: 1.39 times slower than a perfect split",
+                   s2="2. when they are 64 bytes apart",
+                   s2n1="same code, same computation, only the place moved",
+                   s2n2="measured here: 1.00 times --- the loss is gone"),
+    }),
+    "disk-layers": (fig_disk_layers, {
+        "ko": dict(title="디스크 한 장의 배치 --- 세 층이 겹쳐 있다",
                    l1="① 기계가 보는 것: 번호 붙은 칸(섹터)의 줄",
                    sectors=["LBA 0", "1", "2 ~ 33", "34 …", "…", "끝-33 …", "끝"],
                    l2="② 파티션 표가 말하는 것: 어디부터 어디까지가 한 덩어리인가",
@@ -1427,7 +1724,7 @@ FIGS = {
                    end1="세 층은 서로를 모른다",
                    end2="기계는 섹터만 알고 · 파티션 표는 범위만 알고 · 파일 시스템은 제 파티션 안만 안다",
                    end3="그래서 파티션 표가 날아가도 자료는 그 자리에 있고, 포맷을 해도 다른 파티션은 멀쩡하다"),
-        "en": dict(title="the map of one disk --- three layers on top of each other",
+        "en": dict(title="one disk, laid out --- three layers on top of each other",
                    l1="1. what the machine sees: a row of numbered cells (sectors)",
                    sectors=["LBA 0", "1", "2 - 33", "34 …", "…", "end-33 …", "end"],
                    l2="2. what the partition table says: from where to where is one piece",

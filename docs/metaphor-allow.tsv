@@ -18,3 +18,4 @@
 # 예외는 적을수록 좋다. 올릴 때는 왜 옳은지를 셋째 칸에 반드시 적는다.
 ch39.typ	maps	동사 — "element-wise arithmetic maps onto that addressing mode". 비유가 아니다
 ch97.typ	map	자료구조 — proven 의 해시맵을 가리킨다("counts with a map")
+a17-disk.typ	무늬	RAID 의 「줄무늬」(striping)는 규격이 정한 이름이다 --- 코드의 짜임을 가리키는 그 「무늬」가 아니다
