@@ -871,6 +871,87 @@ def fig_format_skeleton(L):
     return "".join(out)
 
 
+# ── F. 장치를 어디에 두는가 (부록 K) ─────────────────────────────
+def fig_addr_space(L):
+    w, h = 760, 330
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    out.append(text(180, 52, L["mm"], 12, "bold"))
+    out.append(box(60, 64, 100, 210))
+    out.append(text(110, 80, "CPU", 11, "bold"))
+    out.append(text(110, 100, L["mm1"], 10))
+    out.append(text(110, 116, L["mm2"], 10))
+    out.append(arrow(160, 130, 208, 130))
+    out.append(box(210, 64, 90, 210, dash="4 3"))
+    out.append(text(255, 80, L["decoder"], 10, "bold"))
+    for label, y in zip(L["devices"], (100, 150, 200, 245)):
+        out.append(box(310, y - 18, 90, 34))
+        out.append(text(355, y + 4, label, 10))
+        out.append(arrow(300, 130, 308, y))
+    out.append(text(180, 300, L["mm_note"], 11, "bold"))
+    out.append(text(600, 52, L["pm"], 12, "bold"))
+    # ★ 상자 폭은 재서 정한다 --- 영어의 "dedicated instructions" 가 100px 을 넘었다.
+    cpu_w = fit_width(["CPU", L["pm1"], "in / out"], 10, pad=12, minimum=100)
+    out.append(box(570 - cpu_w, 64, cpu_w, 210))
+    cx = 570 - cpu_w / 2
+    out.append(text(cx, 80, "CPU", 11, "bold"))
+    out.append(text(cx, 100, L["pm1"], 10))
+    out.append(text(cx, 116, "in / out", 10))
+    out.append(arrow(570, 110, 618, 110))
+    out.append(box(620, 88, 110, 44))
+    out.append(text(675, 106, L["io_space"], 10, "bold"))
+    out.append(text(675, 122, L["io_sub"], 9))
+    out.append(arrow(cx, 274, cx, 300))
+    out.append(box(620, 170, 110, 44, dash="4 3"))
+    out.append(text(675, 188, L["mem_space"], 10, "bold"))
+    out.append(text(675, 204, L["mm1"], 9))
+    out.append(arrow(570, 190, 618, 190))
+    out.append(text(600, 300, L["pm_note"], 11, "bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F. 0 으로 나누면 무슨 일이 일어나는가 (부록 K) ───────────────
+def fig_trap_path(L):
+    w, h = 760, 250
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    for (label, sub), x in zip(L["steps"], (40, 220, 400, 580)):
+        out.append(box(x, 70, 150, 60))
+        out.append(text(x + 75, 92, label, 11, "bold"))
+        out.append(text(x + 75, 112, sub, 10))
+    for x in (190, 370, 550):
+        out.append(arrow(x, 100, x + 28, 100))
+    out.append(text(w / 2, 160, L["note1"], 11))
+    out.append(text(w / 2, 182, L["note2"], 11))
+    out.append(arrow(655, 138, 655, 200))
+    out.append(text(655, 218, L["escape"], 10, "bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F. 인터럽트에서 하드웨어가 저장해 주는 양 (부록 K) ───────────
+def fig_irq_save(L):
+    w, h = 760, 300
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    for (name, n, items, note), x in zip(L["cols"], (60, 300, 540)):
+        out.append(text(x + 80, 52, name, 12, "bold"))
+        out.append(box(x, 64, 160, 150, fill="#f7f7f7" if n else "#fdeaea"))
+        if items:
+            for i, it in enumerate(items):
+                out.append(box(x + 20, 78 + i * 26, 120, 22, fill="#dbe7f3"))
+                out.append(text(x + 80, 93 + i * 26, it, 10))
+        else:
+            out.append(text(x + 80, 140, L["none1"], 12, "bold"))
+            out.append(text(x + 80, 160, L["none2"], 12, "bold"))
+        out.append(text(x + 80, 232, L["count"].format(n=n), 11, "bold"))
+        out.append(text(x + 80, 252, note, 9.5))
+    out.append(text(w / 2, 286, L["note"], 12, "bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
 FIGS = {
     "memory-order": (fig_memory_order, {
         "ko": dict(title="깃발이 보이면 데이터도 보이는가",
@@ -1148,6 +1229,55 @@ FIGS = {
                    derived="derived types", d1="array, struct, union",
                    d2="function, pointer", d3="atomic (_Atomic)",
                    note="a dashed box is a collective name — not a branch of the tree but a word gathering several."),
+    }),
+    "addr-space": (fig_addr_space, {
+        "ko": dict(title="장치를 어디에 두는가 --- 두 가지 설계",
+                   mm="기억 사상 입출력 (memory-mapped I/O)", mm1="적재·저장",
+                   mm2="명령 하나로", decoder="해독 회로",
+                   devices=["RAM", "UART", "타이머", "..."],
+                   mm_note="주소 공간이 하나다 --- 포인터가 그대로 닿는다",
+                   pm="포트 입출력 (port-mapped I/O)", pm1="전용 명령",
+                   io_space="입출력 공간", io_sub="64 KiB, 따로",
+                   mem_space="기억 공간",
+                   pm_note="공간이 둘이다 --- C 문법으로는 닿지 못한다"),
+        "en": dict(title="where the devices sit --- two designs",
+                   mm="memory-mapped I/O", mm1="load and store",
+                   mm2="with one instruction", decoder="address decoder",
+                   devices=["RAM", "UART", "timer", "..."],
+                   mm_note="one address space --- a pointer reaches it directly",
+                   pm="port-mapped I/O", pm1="dedicated instructions",
+                   io_space="I/O space", io_sub="64 KiB, separate",
+                   mem_space="memory space",
+                   pm_note="two spaces --- C syntax cannot reach one of them"),
+    }),
+    "trap-path": (fig_trap_path, {
+        "ko": dict(title="0 으로 나누면 무슨 일이 일어나는가 --- 네 걸음",
+                   steps=[("① 내 C 코드", "x / zero"), ("② CPU", "예외를 일으킨다"),
+                          ("③ 커널", "트랩 처리기가 받는다"), ("④ 내 C 함수", "신호 처리기")],
+                   note1="돌아가면? --- 같은 명령을 다시 실행하려 든다. 그래서 무한히 다시 터진다.",
+                   note2="표준도 그렇게 적어 두었다: 트랩 처리기에서 그냥 반환하면 미정의 동작이다.",
+                   escape="siglongjmp 으로 빠져나온다"),
+        "en": dict(title="what happens when you divide by zero --- four steps",
+                   steps=[("1. my C code", "x / zero"), ("2. the CPU", "raises an exception"),
+                          ("3. the kernel", "the trap handler receives it"),
+                          ("4. my C function", "the signal handler")],
+                   note1="and on return? --- it retries the same instruction, so it faults again, forever.",
+                   note2="the standard says as much: returning from such a handler is undefined behaviour.",
+                   escape="leave through siglongjmp"),
+    }),
+    "irq-save": (fig_irq_save, {
+        "ko": dict(title="인터럽트가 걸릴 때 하드웨어가 저장해 주는 양",
+                   cols=[("Arm Cortex-M", 8, ["R0–R3", "R12", "LR", "PC", "xPSR"], "보통 C 함수로 충분"),
+                         ("AVR", 1, ["PC (2바이트)"], "SREG 저장·reti 를 컴파일러가"),
+                         ("RISC-V", 0, [], "쓰는 레지스터 전부를 컴파일러가")],
+                   none1="아무것도", none2="저장하지 않는다", count="하드웨어가 {n} 개",
+                   note="하드웨어가 해 주는 양이 곧 컴파일러가 해야 할 일의 양이다"),
+        "en": dict(title="how much the hardware saves when an interrupt arrives",
+                   cols=[("Arm Cortex-M", 8, ["R0–R3", "R12", "LR", "PC", "xPSR"], "an ordinary C function usually suffices"),
+                         ("AVR", 1, ["PC (2 bytes)"], "the compiler saves SREG and emits reti"),
+                         ("RISC-V", 0, [], "the compiler saves every register used")],
+                   none1="it saves", none2="nothing at all", count="{n} saved by hardware",
+                   note="what the hardware does is exactly what the compiler need not"),
     }),
     "format-skeleton": (fig_format_skeleton, {
         "ko": dict(title="형식은 달라도 로더가 묻는 질문은 같다",
