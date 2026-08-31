@@ -1034,6 +1034,107 @@ def fig_dma_path(L):
     return "".join(out)
 
 
+# ── F. 디스크 한 장의 지도 (부록 N) ──────────────────────────────
+def fig_disk_map(L):
+    w, h = 780, 420
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    out.append(text(40, 58, L["l1"], 11, "bold", anchor="start"))
+    x = 40
+    for i, lab in enumerate(L["sectors"]):
+        wid = 150 if i in (2, 3, 5) else 80
+        out.append(box(x, 68, wid, 34, fill="#f5f5f5" if i in (0, 1, 6) else "none"))
+        out.append(text(x + wid / 2, 89, lab, 10))
+        x += wid
+    out.append(text(40, 140, L["l2"], 11, "bold", anchor="start"))
+    heads = ((40, 80, L["mbr"], L["mbr_s"]), (120, 80, L["gpth"], "LBA 1"),
+             (200, 90, L["entries"], "128×128B"))
+    for xx, wid, lab, sub in heads:
+        out.append(box(xx, 150, wid, 40, fill="#e8e8e8"))
+        out.append(text(xx + wid / 2, 168, lab, 9, "bold"))
+        out.append(text(xx + wid / 2, 182, sub, 8))
+    for (xx, wid), lab in zip(((290, 130), (420, 180), (600, 90)), L["parts"]):
+        out.append(box(xx, 150, wid, 40))
+        out.append(text(xx + wid / 2, 174, lab, 10))
+    out.append(box(690, 90, 40, 40, fill="#e8e8e8", dash="4 3") if False else "")
+    out.append(box(690, 150, 90, 40, fill="#e8e8e8", dash="4 3"))
+    out.append(text(735, 168, L["alt"], 9, "bold"))
+    out.append(text(735, 182, L["alt_s"], 8))
+    out.append(text(40, 232, L["l3"], 11, "bold", anchor="start"))
+    out.append(arrow(480, 195, 300, 240))
+    for (xx, wid), (lab, sub) in zip(((40, 110), (150, 130), (280, 130), (410, 370)),
+                                     L["inner"]):
+        out.append(box(xx, 250, wid, 46, fill="#f5f5f5" if xx == 40 else "none"))
+        out.append(text(xx + wid / 2, 270, lab, 10, "bold"))
+        out.append(text(xx + wid / 2, 286, sub, 9))
+    out.append(box(40, 320, 740, 78, dash="4 3"))
+    out.append(text(w / 2, 344, L["end1"], 12, "bold"))
+    out.append(text(w / 2, 364, L["end2"], 10))
+    out.append(text(w / 2, 384, L["end3"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F. 확장 파티션의 EBR 사슬 (부록 N) ───────────────────────────
+def fig_ebr_chain(L):
+    w, h = 780, 330
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    out.append(box(30, 60, 110, 50, fill="#e8e8e8"))
+    out.append(text(85, 80, "MBR", 10, "bold")); out.append(text(85, 96, "LBA 0", 9))
+    out.append(box(150, 60, 600, 50, dash="4 3"))
+    out.append(text(450, 78, L["ext"], 10, "bold"))
+    out.append(text(450, 96, L["ext_s"], 9))
+    for x, (lab, sub) in zip((170, 400), L["ebrs"]):
+        out.append(box(x, 140, 90, 44, fill="#f5f5f5"))
+        out.append(text(x + 45, 160, lab, 10, "bold"))
+        out.append(text(x + 45, 176, sub, 9))
+    for x, lab in zip((270, 500), L["logicals"]):
+        out.append(box(x, 140, 120, 44))
+        out.append(text(x + 60, 166, lab, 10))
+    out.append(arrow(260, 162, 268, 162))
+    out.append(arrow(490, 162, 498, 162))
+    out.append(arrow(215, 184, 445, 184))
+    for y, s, bold in ((210, L["n1"], "bold"), (226, L["n1s"], "normal"),
+                       (250, L["n2"], "bold"), (266, L["n2s"], "normal")):
+        out.append(text(215, y, s, 10, bold, anchor="start"))
+    out.append(box(30, 286, 720, 34, dash="4 3"))
+    out.append(text(w / 2, 308, L["end"], 11, "bold"))
+    out.append(TAIL)
+    return "".join(out)
+
+
+# ── F. SSD 는 쓰는 단위와 지우는 단위가 다르다 (부록 N) ──────────
+def fig_ssd_erase(L):
+    w, h = 780, 400
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    out.append(text(40, 56, L["s1"], 12, "bold", anchor="start"))
+    out.append(box(60, 68, 660, 60, dash="4 3"))
+    out.append(text(390, 62, L["erase_unit"], 9, "bold"))
+    for i in range(8):
+        x = 75 + i * 81
+        out.append(box(x, 78, 70, 40, fill="#ececec" if i < 5 else "none"))
+        out.append(text(x + 35, 96, L["page"].format(n=i + 1), 9))
+        out.append(text(x + 35, 110, L["used"] if i < 5 else L["free"], 8))
+    out.append(text(390, 142, L["write_unit"], 10))
+    out.append(text(40, 176, L["s2"], 12, "bold", anchor="start"))
+    for lab, x in zip(L["steps"], (60, 240, 420, 600)):
+        out.append(box(x, 194, 150, 46))
+        out.append(text(x + 75, 220, lab, 10))
+        if x < 600:
+            out.append(arrow(x + 150, 217, x + 178, 217))
+    out.append(text(40, 274, L["s3"], 12, "bold", anchor="start"))
+    out.append(box(60, 286, 660, 46, fill="#f5f5f5"))
+    out.append(text(390, 306, L["amp1"], 11, "bold"))
+    out.append(text(390, 324, L["amp2"], 10))
+    out.append(box(60, 344, 660, 44, dash="4 3"))
+    out.append(text(390, 364, L["trim1"], 11, "bold"))
+    out.append(text(390, 380, L["trim2"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
 FIGS = {
     "memory-order": (fig_memory_order, {
         "ko": dict(title="깃발이 보이면 데이터도 보이는가",
@@ -1311,6 +1412,80 @@ FIGS = {
                    derived="derived types", d1="array, struct, union",
                    d2="function, pointer", d3="atomic (_Atomic)",
                    note="a dashed box is a collective name — not a branch of the tree but a word gathering several."),
+    }),
+    "disk-map": (fig_disk_map, {
+        "ko": dict(title="디스크 한 장의 지도 --- 세 층이 겹쳐 있다",
+                   l1="① 기계가 보는 것: 번호 붙은 칸(섹터)의 줄",
+                   sectors=["LBA 0", "1", "2 ~ 33", "34 …", "…", "끝-33 …", "끝"],
+                   l2="② 파티션 표가 말하는 것: 어디부터 어디까지가 한 덩어리인가",
+                   mbr="MBR", mbr_s="또는 보호 MBR", gpth="GPT 헤더", entries="항목 배열",
+                   parts=["파티션 1 (ESP)", "파티션 2 (root)", "파티션 3"],
+                   alt="짝 GPT", alt_s="디스크 끝",
+                   l3="③ 파티션 *안*: 파일 시스템이 다시 제 방식으로 나눈다",
+                   inner=[("부트 섹터", "BPB·서명"), ("FAT 1벌", "다음 클러스터 표"),
+                          ("FAT 2벌", "사본"), ("자료 구역", "클러스터 2, 3, 4 …")],
+                   end1="세 층은 서로를 모른다",
+                   end2="기계는 섹터만 알고 · 파티션 표는 범위만 알고 · 파일 시스템은 제 파티션 안만 안다",
+                   end3="그래서 파티션 표가 날아가도 자료는 그 자리에 있고, 포맷을 해도 다른 파티션은 멀쩡하다"),
+        "en": dict(title="the map of one disk --- three layers on top of each other",
+                   l1="1. what the machine sees: a row of numbered cells (sectors)",
+                   sectors=["LBA 0", "1", "2 - 33", "34 …", "…", "end-33 …", "end"],
+                   l2="2. what the partition table says: from where to where is one piece",
+                   mbr="MBR", mbr_s="or a protective MBR", gpth="GPT header", entries="entry array",
+                   parts=["partition 1 (ESP)", "partition 2 (root)", "partition 3"],
+                   alt="alternate GPT", alt_s="end of disk",
+                   l3="3. *inside* a partition: the filesystem divides it again its own way",
+                   inner=[("boot sector", "BPB and signature"), ("FAT copy 1", "the next-cluster table"),
+                          ("FAT copy 2", "a duplicate"), ("data area", "clusters 2, 3, 4 …")],
+                   end1="the three layers know nothing of each other",
+                   end2="the machine knows only sectors · the table only ranges · the filesystem only its own partition",
+                   end3="so losing the table leaves the data where it was, and formatting one partition leaves the others intact"),
+    }),
+    "ebr-chain": (fig_ebr_chain, {
+        "ko": dict(title="확장 파티션의 EBR 사슬 --- 기준이 둘이라 헷갈린다",
+                   ext="확장 파티션 (MBR 의 4번 항목, 종류 0x0F)", ext_s="시작 LBA = E",
+                   ebrs=[("EBR 1", "LBA E"), ("EBR 2", "LBA E + d")],
+                   logicals=["논리 1", "논리 2"],
+                   n1="① 1번 항목 = 바로 뒤의 논리 파티션",
+                   n1s="기준 = 이 EBR 자신 (상대 LBA + EBR 의 자리)",
+                   n2="② 2번 항목 = 다음 EBR",
+                   n2s="기준 = 확장 파티션의 시작 E (상대 LBA + E)",
+                   end="같은 표의 두 칸인데 더하는 기준이 다르다 --- 손으로 읽을 때 가장 많이 틀리는 자리"),
+        "en": dict(title="the EBR chain of an extended partition --- two different bases confuse it",
+                   ext="the extended partition (MBR entry 4, type 0x0F)", ext_s="start LBA = E",
+                   ebrs=[("EBR 1", "LBA E"), ("EBR 2", "LBA E + d")],
+                   logicals=["logical 1", "logical 2"],
+                   n1="1. entry 1 = the logical partition right behind it",
+                   n1s="base = this EBR itself (relative LBA + the EBR's place)",
+                   n2="2. entry 2 = the next EBR",
+                   n2s="base = the start of the extended partition, E (relative LBA + E)",
+                   end="two entries of one table with different bases --- the most misread place when doing it by hand"),
+    }),
+    "ssd-erase": (fig_ssd_erase, {
+        "ko": dict(title="SSD 는 쓰는 단위와 지우는 단위가 다르다",
+                   s1="① 블록 하나 안에 쪽이 여럿 있다",
+                   erase_unit="지우기 단위 = 블록 (수 MiB)", page="쪽 {n}",
+                   used="쓰임", free="빈칸",
+                   write_unit="쓰기 단위 = 쪽 (수 KiB) · 읽기도 쪽 단위",
+                   s2="② 쪽 하나만 고치고 싶다 --- 그런데 제자리 덮어쓰기가 안 된다",
+                   steps=["고칠 쪽을 읽고", "새 빈 쪽에 쓰고", "옛 쪽은 「죽음」 표시", "나중에 블록째 지운다"],
+                   s3="③ 그래서 「쓰기 증폭」이 생긴다",
+                   amp1="4 KiB 를 고치려고 → 블록(수 MiB)을 옮겨 쓰고 지운다",
+                   amp2="실제로 쓴 양 ÷ 요청한 양 = 쓰기 증폭 (write amplification)",
+                   trim1="TRIM 은 「이 쪽은 이제 안 쓴다」를 알려 주는 신호다",
+                   trim2="미리 알면 한가할 때 정리해 둘 수 있어, 쓰기가 느려지는 것을 막는다"),
+        "en": dict(title="an SSD writes in one unit and erases in another",
+                   s1="1. one block holds many pages",
+                   erase_unit="erase unit = a block (several MiB)", page="page {n}",
+                   used="used", free="free",
+                   write_unit="write unit = a page (several KiB) · reads are by page too",
+                   s2="2. you want to change one page --- but it cannot be overwritten in place",
+                   steps=["read the page", "write a fresh page", "mark the old one dead", "erase the block later"],
+                   s3="3. hence write amplification",
+                   amp1="to change 4 KiB -> a block (several MiB) is rewritten and erased",
+                   amp2="bytes actually written / bytes asked for = write amplification",
+                   trim1="TRIM is the signal that says this page is no longer in use",
+                   trim2="knowing in advance lets it tidy up while idle, so writes do not slow down"),
     }),
     "serial-parallel": (fig_serial_parallel, {
         "ko": dict(title="같은 한 바이트를 보내는 두 가지 방법",
