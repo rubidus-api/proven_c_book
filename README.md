@@ -22,7 +22,7 @@
   판을 내지 않고도 늘 최신이다:
   [웹](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13부 105장 + 부록 A~K + 찾아보기 — 한국어판 1,031쪽, 영어판 1,093쪽
+- 13부 105장 + 부록 A~L + 찾아보기 — 한국어판 1,031쪽, 영어판 1,093쪽
 - 갱신 내역은 [CHANGELOG.md](CHANGELOG.md)에 있다.
 
 ## 궁금한 것이 있으면

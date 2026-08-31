@@ -103,6 +103,11 @@ for src in $(find "$root/$tree" -name '*.c' | sort); do
     if grep -q '#include <math.h>' "$src"; then
         extra="-lm"
     fi
+    # ★ `atomic_is_lock_free` 같은 것은 libatomic 에 있다. 헤더만 넣고 잇지
+    #   않으면 링크에서만 터진다 --- 컴파일은 통과하므로 눈에 늦게 띈다.
+    if grep -q '#include <stdatomic.h>' "$src"; then
+        extra="$extra -latomic"
+    fi
     if grep -q '#include <proven' "$src"; then
         if ! build_vendor; then
             echo "FAIL vendor build (needed by $rel)"
