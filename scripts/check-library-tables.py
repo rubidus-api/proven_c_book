@@ -83,9 +83,39 @@ def header_rows():
 
 
 # 한글 수사 --- 서두 문단이 「스물두 헤더」처럼 적으므로 그대로 견준다.
-_KO = {2: "둘", 4: "넷"}
+_KO = {2: "둘", 4: "넷", 6: "여섯", 9: "아홉", 11: "열하나", 14: "열넷",
+       17: "열일곱", 20: "스물", 21: "스물하나", 22: "스물둘", 23: "스물셋",
+       24: "스물넷", 25: "스물다섯", 26: "스물여섯", 27: "스물일곱", 29: "스물아홉"}
 _KO_N = {20: "스무", 21: "스물한", 22: "스물두", 23: "스물세", 24: "스물네",
          25: "스물다섯", 26: "스물여섯"}
+
+
+def caption_matches_section() -> int:
+    """표 제목이 단 헤더 이름이 *그 절의 헤더*와 같은가.
+
+    ★ 왜 --- `<string.h>` 절 안의 표 넷이 `<stdio.h>` · `<stdlib.h>` · `<math.h>` ·
+      `<time.h>` 요람이라는 이름을 달고 있었다. 절을 복사해 표를 채우면서 제목만
+      안 고친 것인데, 그 헤더들이 *아직 안 쓴 것*이라 목록만 보면 「이미 썼다」로
+      읽혔다. 사람 눈으로는 표 안을 열어 봐야 알 수 있고, 기계는 한 줄로 안다.
+    """
+    import re
+    bad = 0
+    for ed in ("book", "book-en"):
+        f = ROOT / ed / "appendix" / "a7-library.typ"
+        if not f.exists():
+            continue
+        sec = None
+        for line in f.read_text(encoding="utf-8").split("\n"):
+            if line.startswith("== "):
+                sec = line[3:]
+            # ★ 「요람/reference」이라 이름 붙은 표만 본다. 「`<math.h>` 와 짝을
+            #   이루는 것들」처럼 *남의 헤더를 가리키는 것이 옳은* 제목이 있다.
+            m = re.search(r"caption:\s*\[`(<[a-z0-9_]+\.h>)`\s*(요람|reference)", line)
+            if m and sec and m.group(1) not in sec:
+                print(f"  ⚠️  [{ed}] 절 「{sec[:40]}」 안의 표가 "
+                      f"{m.group(1)} 요람이라 적혀 있다 --- 복사한 제목이 아닌가")
+                bad += 1
+    return bad
 
 
 def progress_claim(skip) -> int:
@@ -100,8 +130,12 @@ def progress_claim(skip) -> int:
     if not app.exists():
         return 0
     txt = app.read_text(encoding="utf-8")
+    # ★ 완결 여부를 *표 제목*으로 판정했더니, 표 제목에 헤더 이름을 안 단 절
+    #   (`<complex.h>`)이 검사에서 통째로 빠졌다. 판정의 근거는 정본이라야 한다
+    #   --- 인벤토리의 헤더 전부에서 미착수를 뺀 것이 「다 쓴 것」이다.
+    inv = json.loads(INV.read_text(encoding="utf-8")) if INV.exists() else {}
+    done = sorted(set(inv) - set(skip))
     caps = set(re.findall(r"caption:\s*\[`<([a-z]+\.h)>`", txt))
-    done = sorted(caps - set(skip))
     partial = sorted(caps & set(skip))
     rest = len(skip) - len(partial)
     if "어디까지 왔는지 먼저 밝힌다" not in txt:
@@ -112,12 +146,16 @@ def progress_claim(skip) -> int:
     if not skip:
         print("  ⚠️  전 헤더를 다 썼는데 부록 F 서두의 진행 문단이 남아 있다 --- 지울 것")
         return 1
+    # ★ 문단 전체를 본다. 처음에는 앞 400자만 봤는데, 헤더를 더 쓸수록 문단이
+    #   길어져 뒤에 붙은 이름이 검사 밖으로 밀려났다 --- 검사가 *조용히* 통과했다.
+    #   자리 수로 자르는 검사는 대상이 자라면 죽는다.
+    para = txt.split("어디까지 왔는지", 1)[1].split("\n\n", 1)[0]
     bad = 0
     for h in done:
-        if f"`<{h}>`" not in txt.split("어디까지 왔는지")[1][:400]:
+        if f"`<{h}>`" not in para:
             print(f"  ⚠️  부록 F 서두가 완결된 <{h}> 을 말하지 않는다")
             bad += 1
-    if _KO.get(len(done)) and _KO[len(done)] not in txt.split("어디까지 왔는지")[1][:300]:
+    if _KO.get(len(done)) and _KO[len(done)] not in para:
         print(f"  ⚠️  부록 F 서두의 완결 헤더 수가 실제({len(done)})와 다르다")
         bad += 1
     if _KO_N.get(rest) and _KO_N[rest] not in txt:
@@ -166,6 +204,7 @@ def main() -> int:
               f"(docs/library-todo.tsv) --- 다 쓰면 그 파일을 비운다")
     total_missing += header_rows()
     total_missing += progress_claim(skip)
+    total_missing += caption_matches_section()
 
     if total_missing:
         print(f"check-library-tables: 빠진 항목 {total_missing}건")
