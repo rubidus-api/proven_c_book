@@ -24,7 +24,7 @@ those who have just finished a first textbook.
   typeset edition). Always current, independently of releases:
   [web](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13 parts, 105 chapters, appendices A–L and an index — 1,093 pages in English, 1,031 in Korean.
+- 13 parts, 105 chapters, appendices A–M and an index — 1,093 pages in English, 1,031 in Korean.
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## If you have a question

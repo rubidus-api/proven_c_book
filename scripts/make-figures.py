@@ -952,6 +952,29 @@ def fig_irq_save(L):
     return "".join(out)
 
 
+# ── F. 부팅의 사슬 (부록 L) ──────────────────────────────────────
+def fig_boot_chain(L):
+    w, h = 780, 430
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 22, L["title"], 14, "bold"))
+    xs = (40, 230, 420, 610)
+    for (name, steps), y in zip(L["lanes"], (70, 190, 310)):
+        out.append(text(40, y - 14, name, 12, "bold", anchor="start"))
+        for i, (x, s) in enumerate(zip(xs, steps)):
+            out.append(box(x, y, 150, 62, fill="#f5f5f5" if i == 0 else "none"))
+            lines = s.split("|")
+            for j, line in enumerate(lines):
+                out.append(text(x + 75, y + (26 if len(lines) == 1 else 20) + j * 16,
+                                line, 10))
+            if i < 3:
+                out.append(arrow(x + 150, y + 31, x + 188, y + 31))
+    out.append(box(40, 380, 700, 40, dash="4 3"))
+    out.append(text(w / 2, 396, L["note1"], 11, "bold"))
+    out.append(text(w / 2, 412, L["note2"], 10))
+    out.append(TAIL)
+    return "".join(out)
+
+
 FIGS = {
     "memory-order": (fig_memory_order, {
         "ko": dict(title="깃발이 보이면 데이터도 보이는가",
@@ -1229,6 +1252,20 @@ FIGS = {
                    derived="derived types", d1="array, struct, union",
                    d2="function, pointer", d3="atomic (_Atomic)",
                    note="a dashed box is a collective name — not a branch of the tree but a word gathering several."),
+    }),
+    "boot-chain": (fig_boot_chain, {
+        "ko": dict(title="부팅은 사슬이다 --- 각 칸은 다음 칸을 찾아 검사하고 넘긴다",
+                   lanes=[("도스 (BIOS)", ["전원·POST", "부팅 섹터|0x7C00", "IO.SYS|MSDOS.SYS", "COMMAND.COM"]),
+                          ("리눅스 (UEFI)", ["전원·펌웨어", "ESP 의 .efi|(PE 형식)", "커널 + initramfs", "PID 1 (init)"]),
+                          ("임베디드 RTOS", ["전원·리셋 벡터", "부트 ROM / SPL", "부트로더|(서명 검사)", "펌웨어 이미지|= 앱 + 커널"])],
+                   note1="각 칸이 하는 일은 같다 --- 다음 것을 찾고, 읽어 싣고, 맞는지 보고, 제어를 넘긴다",
+                   note2="넘길 때 앞 칸은 대개 사라진다 --- 그래서 무엇을 물려주는지가 규약이 된다(명령줄, 메모리 맵, 장치 트리)"),
+        "en": dict(title="booting is a chain --- each link finds the next, checks it, and hands over",
+                   lanes=[("DOS (BIOS)", ["power, POST", "boot sector|0x7C00", "IO.SYS|MSDOS.SYS", "COMMAND.COM"]),
+                          ("Linux (UEFI)", ["power, firmware", ".efi on the ESP|(PE format)", "kernel + initramfs", "PID 1 (init)"]),
+                          ("embedded RTOS", ["power, reset vector", "boot ROM / SPL", "bootloader|(signature check)", "firmware image|= app + kernel"])],
+                   note1="every link does the same work --- find the next, load it, check it, hand over control",
+                   note2="the previous link usually disappears --- so what is handed over becomes the contract (command line, memory map, device tree)"),
     }),
     "addr-space": (fig_addr_space, {
         "ko": dict(title="장치를 어디에 두는가 --- 두 가지 설계",
