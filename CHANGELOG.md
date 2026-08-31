@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 This project follows Keep a Changelog.
 
+## [v0.83.0] - 2026-08-31
+
+### Added
+- ★★ **부록 F 를 절반 넘게 채웠다** --- 빠짐없이 실은 헤더가 *둘에서 스물로*.
+  이번에 쓴 것: `<assert.h>` · `<errno.h>` · `<setjmp.h>` · `<stdarg.h>` ·
+  `<stddef.h>` · `<stdbool.h>` · `<stdalign.h>` · `<limits.h>` · `<float.h>` ·
+  `<stdint.h>` · `<inttypes.h>` · `<stdbit.h>` · `<locale.h>` · `<wctype.h>` ·
+  `<uchar.h>` · `<signal.h>` · `<fenv.h>` · `<tgmath.h>`.
+  이름을 나열하는 대신 *규칙*을 먼저 적었다 --- `_MIN`/`_MAX`/`_WIDTH` 의 짝,
+  `FLT_`·`DBL_`·`LDBL_` 의 세 접두, `intN_t`/`int_leastN_t`/`int_fastN_t` 의 세 갈래,
+  `PRI` 형식 매크로의 꼴. 외울 것을 예순셋에서 열다섯으로 줄이는 것이 요람의 일이다.
+  `<stdbool.h>` 와 `<stdalign.h>` 는 *실을 것이 없다는 사실 자체*를 항목으로 실었다.
+
+### Fixed
+- `docs/library-inventory.json` 의 `signal.h` 에 **`void` 라는 함수**가 있었다.
+  `void (*signal(int, void (*)(int)))(int);` 처럼 함수 포인터를 돌려주는 선언에서
+  생성기가 `void (` 를 이름으로 집은 것이다. 생성기를 고쳐 타입 낱말을 막고 정본을
+  다시 뽑았다 --- 사라진 이름은 그 하나뿐임을 대조로 확인했다.
+
 ## [v0.82.0] - 2026-08-31
 
 ### Fixed
