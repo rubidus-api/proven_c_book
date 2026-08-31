@@ -21,10 +21,16 @@
 `#chref` 가 가리키는 장이 실제로 그 이야기를 하지 않는 자리다. 하나는 아예
 책에 없는 문장을 인용하고 있었다("goto는 절제해서", 31장에는 goto 가 없다).
 
-남은 14건은 사람이 하나씩 읽어 *약속은 옳고 낱말만 안 맞는 것*으로 판정했다
-(2026-08-31). 그래서 이 도구는 아직 project-check 에 걸지 않는다 --- 0 을 만들 수
-없는 검사를 게이트로 걸면 아무도 안 보게 되고, 그것이 애초에 이 도구가 잠들어
-있던 이유다. 정밀도를 더 올려 0 이 되는 날 게이트로 승격한다.
+그다음 두 가지를 더 고쳐 21건이 11건이 되었다 --- 조사 자리가 *쉼표를 먹어*
+「80장, 스레드…」의 뒷말이 80장의 약속으로 붙던 것과, `#idx("…")` 의 색인
+표제어가 본문처럼 읽히던 것이다(색인은 *읽는 쪽*에서만 걷는다 --- 대조하는 쪽에서는
+그 장이 그 낱말을 다룬다는 증거이므로 둔다).
+
+남은 11건은 사람이 대상 장을 하나씩 열어 *약속은 옳고 낱말만 없는 것*으로
+판정하고 `docs/promises-allow.tsv` 에 이유와 함께 적었다(2026-08-31). 그래서
+이 도구는 이제 **릴리스를 막는 게이트다**. 허용 목록이 낡으면 --- 약속 문장이
+바뀌어 더는 걸리지 않으면 --- 그 줄도 실패로 보고한다. 확인하지 않은 것을
+허용에 올리는 순간 이 검사는 다시 잠든다.
 
 사용법: python3 scripts/check-promises.py [--all]
 종료 상태: 깨진 약속이 있으면 1
@@ -40,7 +46,8 @@ KO = ROOT / "book" / "chapters"
 
 # 「… N장에서 다룬다 / N장의 X / N장에서 본다」 꼴을 잡는다
 PROMISE = re.compile(
-    r"([^.。\n]{0,50}?)(\d+)\s*장(?:의|에서|에|은|이|과|와|,)?\s*([^.。\n]{0,40})")
+    r"(?P<before>[^.。\n]{0,50}?)(?P<no>\d+)\s*장"
+    r"(?P<josa>의|에서|에|은|이|과|와|,)?\s*(?P<after>[^.。\n]{0,40})")
 STOP = set("그 이 저 것 수 때 더 또 및 첫 한 그것 여기 거기 지금 이제 다시 정식 "
            "이야기 자리 대로 그대로 부분 내용 경우 때문 위해 통해 대한 관한 "
            "본다 다룬다 있다 없다 한다 된다 같다 보자 보면 이다 이고 하는 "
@@ -52,13 +59,20 @@ BAD_TAIL = ("고", "서", "며", "면", "지", "게", "야", "라", "다", "은"
             "가", "을", "를", "에", "로", "와", "과", "도", "만", "의", "요")
 
 
+# 색인 표제어는 *본문이 아니다*. `#idx("스레드와 원자적 연산")` 이 문장 한가운데
+# 붙어 있어, 약속 문장을 *읽을 때* 엉뚱한 낱말이 딸려 들어왔다.
+# ★ 다만 걷어내는 것은 읽는 쪽뿐이다 --- 대조하는 쪽에서는 두어야 한다.
+#   색인 표제어는 그 장이 그 낱말을 다룬다는 *증거*이기 때문이다.
+IDX = re.compile(r'#idx\("[^"]*"\)')
+
+
 def chapters():
     out = {}
     for f in sorted(KO.glob("ch*.typ")):
         m = re.match(r"ch(\d+)\.typ$", f.name)
         if m:
             out[int(m.group(1))] = chreg.expand(f.read_text(encoding="utf-8"),
-                                                   chreg.lang_of(f))
+                                                chreg.lang_of(f))
     return out
 
 
@@ -105,19 +119,39 @@ def keywords(text):
     return out
 
 
+def allowed():
+    """사람이 「약속은 옳다」고 판정한 자리. (출발, 대상, 낱말) 로 잡는다."""
+    f = ROOT / "docs" / "promises-allow.tsv"
+    out = {}
+    if not f.exists():
+        return out
+    for line in f.read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        c = line.split("\t")
+        if len(c) >= 3:
+            out[(int(c[0]), int(c[1]), c[2].strip())] = line
+    return out
+
+
 def main() -> int:
     ch = chapters()
+    ok, used = allowed(), set()
     broken, checked = [], 0
     for n in sorted(ch):
         body = ch[n]
         for m in PROMISE.finditer(body):
-            before, target, after = m.group(1), int(m.group(2)), m.group(3)
+            before = m.group("before")
+            target = int(m.group("no"))
+            after = m.group("after")
             # ★ 낱말은 *그 인용에 딸린 것*이라야 한다. 40자를 그냥 집으면 바로
             #   뒤에 오는 다른 장의 구절까지 삼켜, 「43장」의 약속을 74장 이야기에
             #   나온 `strcoll` 로 판정하는 일이 생겼다. 그래서 쉼표·괄호·다음
             #   장 인용에서 끊는다 --- 앞쪽은 마지막 토막, 뒤쪽은 첫 토막이다.
-            before = CLAUSE.split(before)[-1]
-            after = CLAUSE.split(after)[0]
+            before = IDX.sub("", CLAUSE.split(before or "")[-1])
+            # 조사 자리가 쉼표를 먹으면 뒤쪽 경계가 사라진다 --- 「80장, 스레드와…」
+            # 에서 쉼표 다음은 *다른 장의 이야기*이므로 약속은 거기서 끝난다.
+            after = "" if m.group("josa") == "," else IDX.sub("", CLAUSE.split(after or "")[0])
             if target == n or target not in ch:
                 continue
             kws = keywords(after) or keywords(before)
@@ -129,13 +163,22 @@ def main() -> int:
             # 하나라도 대상 장에 있으면 지켜진 약속으로 본다(보수적)
             if any(k in hay for k in kws):
                 continue
+            key = next(((n, target, k) for k in kws if (n, target, k) in ok), None)
+            if key:
+                used.add(key)
+                continue
             broken.append((n, target, kws, m.group(0).strip()[:72]))
 
     show_all = "--all" in sys.argv
     for n, t, kws, quote in (broken if show_all else broken[:40]):
         print(f"  ⚠️  {n:>2}장 → {t:>2}장  [{'/'.join(kws)}]  …{quote}…")
-    print(f"check-promises: 약속 {checked}건 검사 · 깨진 약속 {len(broken)}건")
-    return 1 if broken else 0
+    # 낡은 허용 --- 약속 문장이 바뀌어 더는 걸리지 않는 줄은 지워야 한다.
+    stale = sorted(set(ok) - used)
+    for a, b, k in stale:
+        print(f"  ⚠️  낡은 허용: {a}장 → {b}장 [{k}] --- 더 걸리지 않는다. 지울 것")
+    print(f"check-promises: 약속 {checked}건 검사 · 깨진 약속 {len(broken)}건"
+          f" · 사람이 판정해 둔 것 {len(used)}건")
+    return 1 if broken or stale else 0
 
 
 if __name__ == "__main__":
