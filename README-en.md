@@ -14,17 +14,17 @@ those who have just finished a first textbook.
 > default, and ends as a manual for the
 > [proven](https://github.com/rubidus-api) C library.
 
-- **Current edition**: v0.86.1 — **draft**
-- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.86.1/proven_c_book-v0.86.1-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.86.1/proven_c_book-v0.86.1-ko.pdf)
+- **Current edition**: v0.87.0 — **draft**
+- **Download the PDF** — [English PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.87.0/proven_c_book-v0.87.0-en.pdf) · [Korean PDF](https://github.com/rubidus-api/proven_c_book/releases/download/v0.87.0/proven_c_book-v0.87.0-ko.pdf)
 - **Read on the web** — [English](https://rubidus-api.github.io/proven_c_book/en/) · [한국어](https://rubidus-api.github.io/proven_c_book/ko/)
-- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.86.1/proven_c_book-v0.86.1-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.86.1/proven_c_book-v0.86.1-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.86.1/proven_c_book-v0.86.1-all.zip)
-- Copies inside the repository: [en PDF](dist/proven_c_book-v0.86.1-en.pdf) · [ko PDF](dist/proven_c_book-v0.86.1-ko.pdf)
+- **Bundles (zip)** — [en](https://github.com/rubidus-api/proven_c_book/releases/download/v0.87.0/proven_c_book-v0.87.0-en.zip) · [ko](https://github.com/rubidus-api/proven_c_book/releases/download/v0.87.0/proven_c_book-v0.87.0-ko.zip) · [all](https://github.com/rubidus-api/proven_c_book/releases/download/v0.87.0/proven_c_book-v0.87.0-all.zip)
+- Copies inside the repository: [en PDF](dist/proven_c_book-v0.87.0-en.pdf) · [ko PDF](dist/proven_c_book-v0.87.0-ko.pdf)
 - **Style specimen** — every device the book uses, gathered in one place, with each
   element labelled by its own name (CSS selector on the web, function name in the
   typeset edition). Always current, independently of releases:
   [web](https://rubidus-api.github.io/proven_c_book/style-specimen.html) ·
   [PDF](https://rubidus-api.github.io/proven_c_book/style-specimen.pdf)
-- 13 parts, 105 chapters, appendices A–I and an index — 1,092 pages in English, 1,030 in Korean.
+- 13 parts, 105 chapters, appendices A–I and an index — 1,093 pages in English, 1,031 in Korean.
 - The change log lives in [CHANGELOG.md](CHANGELOG.md).
 
 ## If you have a question
@@ -82,7 +82,7 @@ documents, and the complete C grammar in EBNF.
 
 ## What makes it different
 
-- **Every printed output is real.** All 191 listings are compiled and run on
+- **Every printed output is real.** All 192 listings are compiled and run on
   every build and their output is pasted into the page (all of them under GCC 14;
   cross-checked with Clang 19, where 4 are skipped for reasons written down in
   `docs/example-cross-skip.tsv`). Not one line of output was copied by hand.
@@ -156,7 +156,7 @@ CC=clang scripts/verify-examples.sh     # cross-check with another compiler
 ```
 dist/        Distribution — PDFs (ko, en) and zip bundles
 docs/        The HTML edition served by GitHub Pages (ko/, en/)
-examples/    The 191 listings that appear in the book — all verified
+examples/    The 192 listings that appear in the book — all verified
 examples-en/ The same listings in English (comments, strings, output)
 scripts/     Listing verification scripts
 vendor/      A snapshot of the proven library (for linking the listings)
