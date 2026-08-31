@@ -803,6 +803,48 @@ def fig_memory_order(L):
     return "".join(out)
 
 
+# ── F. 가상 주소가 물리 주소가 되기까지 (12장) ────────────────────
+def fig_paging(L):
+    """★ 이 그림이 나르는 것은 *하나*다 --- 「이웃한 가상 쪽이 물리에서는
+    이웃이 아니다」. 표를 타고 내려가는 단계 수보다 그 사실이 먼저다.
+    그래서 화살표를 일부러 엇갈리게 그린다."""
+    w, h = 760, 300
+    out = [HEAD.format(w=w, h=h, f=FONT), DEFS]
+    out.append(text(w / 2, 26, L["title"], 14, "bold"))
+
+    bw, bh = 150, 40
+    lx, rx = 40, 570
+    ys = [64, 112, 160, 208]
+    # 왼쪽 --- 가상 쪽 (이어져 있다)
+    out.append(text(lx + bw / 2, ys[0] - 16, L["virtual"], 12.5, "bold"))
+    for i, y in enumerate(ys):
+        out.append(box(lx, y, bw, bh))
+        out.append(text(lx + bw / 2, y + 25, L["vpage"].format(n=i), 12.5))
+    # 오른쪽 --- 물리 쪽 (흩어져 있다)
+    out.append(text(rx + bw / 2, ys[0] - 16, L["physical"], 12.5, "bold"))
+    phys = [L["ppage"].format(n=n) for n in (7, 2, 9, 4)]
+    for y, lab in zip(ys, phys):
+        out.append(box(rx, y, bw, bh))
+        out.append(text(rx + bw / 2, y + 25, lab, 12.5))
+    # 가운데 --- 쪽 표. ★ 폭은 *재서* 정한다(손으로 적으면 판마다 넘친다 ---
+    #   영어 부제가 상자를 25px 넘겼다).
+    tw = fit_width([L["table"], L["table_sub"]], 11, pad=18, minimum=160)
+    tx = (lx + bw + rx - tw) / 2
+    ty, th = ys[0] - 6, ys[-1] + bh + 6 - (ys[0] - 6)
+    out.append(box(tx, ty, tw, th, dash="5 4"))
+    out.append(text(tx + tw / 2, ty + th / 2 - 8, L["table"], 13, "bold"))
+    out.append(text(tx + tw / 2, ty + th / 2 + 14, L["table_sub"], 11, fill="#444"))
+    # 엇갈리는 화살표 --- 순서가 지켜지지 않는다는 것이 요점이다
+    order = [1, 3, 0, 2]
+    for i, y in enumerate(ys):
+        out.append(arrow(lx + bw, y + bh / 2, tx, y + bh / 2))
+        out.append(arrow(tx + tw, ys[order[i]] + bh / 2, rx, ys[order[i]] + bh / 2))
+    out.append(text(w / 2, h - 34, L["note"], 11.5, fill="#444"))
+    out.append(text(w / 2, h - 14, L["note2"], 11.5, fill="#444"))
+    out.append(TAIL)
+    return "".join(out)
+
+
 FIGS = {
     "memory-order": (fig_memory_order, {
         "ko": dict(title="깃발이 보이면 데이터도 보이는가",
@@ -1080,6 +1122,22 @@ FIGS = {
                    derived="derived types", d1="array, struct, union",
                    d2="function, pointer", d3="atomic (_Atomic)",
                    note="a dashed box is a collective name — not a branch of the tree but a word gathering several."),
+    }),
+    "paging": (fig_paging, {
+        "ko": dict(title="가상 주소가 물리 주소가 되기까지",
+                   virtual="가상 쪽 (프로그램이 보는 것)",
+                   physical="물리 쪽 (DRAM 의 자리)",
+                   vpage="가상 쪽 {n}", ppage="물리 쪽 {n}",
+                   table="쪽 표", table_sub="어느 가상 쪽이 어느 물리 쪽인가",
+                   note="이어져 있던 것이 흩어진다 --- 가상에서 이웃이어도 물리에서는 이웃이 아니다.",
+                   note2="그래서 「주소가 가깝다」가 「빠르다」를 뜻하지 않는다."),
+        "en": dict(title="how a virtual address becomes a physical one",
+                   virtual="virtual pages (what the program sees)",
+                   physical="physical pages (places in DRAM)",
+                   vpage="virtual page {n}", ppage="physical page {n}",
+                   table="page table", table_sub="which virtual page is which physical page",
+                   note="what was contiguous is scattered --- neighbours in virtual space are not neighbours in physical space.",
+                   note2="which is why \"close in address\" does not mean \"fast\"."),
     }),
     "pointer-parts": (fig_pointer_parts, {
         "ko": dict(title="포인터 값에 붙어 다니는 것", value="포인터 값", value_sub="복사·비교할 수 있다",
